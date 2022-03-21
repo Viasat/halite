@@ -240,6 +240,17 @@
      arg-types))
   :Boolean)
 
+(s/defn ^:private type-check-if :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-exactly 3 expr)
+  (let [[pred-type s t] (mapv (partial type-check tenv) (rest expr))
+        m (meet s t)]
+    (when (not= :Boolean pred-type)
+      (throw (ex-info "First argument to 'if' must be boolean" {:form expr})))
+    (when (and (not= m s) (not= m t))
+      (throw (ex-info "then and else branches to 'if' have incompatible types" {:form expr})))
+    m))
+
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
@@ -253,6 +264,7 @@
     (list? expr) (condp = (first expr)
                    'get* (type-check-get* tenv expr)
                    '= (type-check-equals tenv expr)
+                   'if (type-check-if tenv expr)
                    (type-check-fn-application tenv expr))
     (coll? expr) (type-check-coll tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -292,6 +304,10 @@
     (list? expr) (condp = (first expr)
                    'get* (apply eval-get* env (rest expr))
                    '= (apply = (map (partial eval-expr env) (rest expr)))
+                   'if (let [[pred then else] (rest expr)]
+                         (if (eval-expr env pred)
+                           (eval-expr env then)
+                           (eval-expr env else)))
                    (apply (:impl (get builtins (first expr)))
                           (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)

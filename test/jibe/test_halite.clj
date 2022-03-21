@@ -159,3 +159,23 @@
 
       '(= (* 2 3) (+ 2 4)) true
       '(= [1 2 3] [2 1 3]) false)))
+
+(deftest if-tests
+  (are [expr etype]
+      (= etype (halite/type-check tenv expr))
+    '(if true 1 2) :Integer
+    '(if false [[]] [[1]]) [:Vec [:Vec :Integer]])
+
+  (are [expr err-msg]
+      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+    '(if true 2) #"Wrong number of arguments"
+    '(if 1 2 3) #"must be boolean"
+    '(if true 1 "two") #"incompatible types")
+
+  (let [env (assoc tenv :bindings {} :refinesTo {})]
+    (are [expr v]
+        (= v (halite/eval-expr env expr))
+
+      '(if true 1 2) 1
+      '(if (< 1 (Cardinality [])) 12 (+ 2 3)) 5)))
