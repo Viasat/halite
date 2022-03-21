@@ -9,26 +9,13 @@
 
 (clojure.test/use-fixtures :once validate-schemas)
 
-(deftest test-compatible
-  (are [t1 t2 expected]
-      (= expected (halite/compatible t1 t2))
-
-    :Integer :Integer :Integer
-    :Integer :String nil
-    :EmptySet :EmptySet :EmptySet
-    :EmptySet :EmptyVec nil
-    :EmptySet [:Set :Integer] [:Set :Integer]
-    [:Set :Integer] :EmptySet [:Set :Integer]
-    [:Vec :EmptySet] [:Vec [:Set :String]] [:Vec [:Set :String]]
-    [:Vec [:Set :String]] [:Vec [:Set :Integer]] nil
-    :EmptyVec [:Vec [:Vec :Integer]] [:Vec [:Vec :Integer]]))
-
 (deftest literal-type-tests
   (let [tenv {:specs {:ws/A$v1 {:x :Integer
                                 :y :Boolean
                                 :c :ws2/B$v1}
                       :ws2/B$v1 {:s :String}
-                      :ws/C$v1 {:xs [:Vec :Integer]}}
+                      :ws/C$v1 {:xs [:Vec :Integer]}
+                      :ws/D$v1 {:xss [:Vec [:Vec :Integer]]}}
               :vars {}
               :refinesTo* {}}]
     (are [expr etype]
@@ -47,9 +34,13 @@
       #{1 2 3} [:Set :Integer]
       [[]] [:Vec :EmptyVec]
       [#{} #{"foo"}] [:Vec [:Set :String]]
+      [1 "two"] [:Vec :Any]
+      #{[] #{}} [:Set :Coll]
+      #{[1] #{}} [:Set :Coll]
       {:$type :ws/C$v1 :xs []} :ws/C$v1
       {:$type :ws/C$v1 :xs [1 2 3]} :ws/C$v1
-      [{:$type :ws2/B$v1 :s "bar"}] [:Vec :ws2/B$v1])
+      [{:$type :ws2/B$v1 :s "bar"}] [:Vec :ws2/B$v1]
+      {:$type :ws/D$v1 :xss [[]]} :ws/D$v1)
 
     (are [expr err-msg]
         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
@@ -62,8 +53,7 @@
       {:$type :ws/A$v1 :x 1 :y 1 :c {:$type :ws2/B$v1 :s "foo"}} #"value of :y has wrong type"
       {:$type :ws/A$v1 :x 1 :y false :c {:$type :ws2/B$v1 :s 12}} #"value of :s has wrong type"
       {:$type :ws2/B$v1 :s "foo" :foo "bar"} #"variables not defined on spec"
-      [1 "two"] #"vector elements must be of same type"
-      {:$type :ws/C$v1 :xs [1 "two"]} #"vector elements must be of same type")))
+      {:$type :ws/C$v1 :xs [1 "two"]} #"value of :xs has wrong type")))
 
 (deftest literal-eval-tests
   (let [env {:specs {:ws/A$v1 {:x :Integer

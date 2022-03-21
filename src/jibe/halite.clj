@@ -20,7 +20,7 @@
   Unqualified keywords identify built-in scalar types."
   (s/conditional
    #(and (keyword? %) (namespaced? %)) NamespacedKeyword
-   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Any)))
+   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Coll :Any)))
 
 (s/defschema HaliteType
   "A Halite type is either a type atom (keyword), or a collection type."
@@ -28,22 +28,29 @@
    TypeAtom
    [(s/one (s/enum :Set :Vec) "coll-type") (s/one (s/recursive #'HaliteType) "elem-type")]))
 
-(s/defn compatible :- (s/maybe HaliteType)
-  "If types t1 and t2 are compatible, return the more concrete type. Otherwise return nil."
-  ([] nil)
-  ([t :- HaliteType] t)
-  ([t1 :- HaliteType, t2 :- HaliteType]
-   (cond
-     (and (= :EmptySet t1) (vector? t2) (= :Set (first t2))) t2
-     (and (= :EmptyVec t1) (vector? t2) (= :Vec (first t2))) t2
-     (and (= :EmptySet t2) (vector? t1) (= :Set (first t1))) t1
-     (and (= :EmptyVec t2) (vector? t1) (= :Vec (first t1))) t1
-     (and (vector? t1) (vector? t2) (= (first t1) (first t2))) (when-let [elem-type (compatible (second t1) (second t2))]
-                                                                 [(first t1) elem-type])
-     (and (= :Any t1) (not= :Any t2)) t2
-     (= :Any t2) t1
-     (= t1 t2) t1
-     :else nil)))
+(s/defn ^:private subtype? :- s/Bool
+  [s :- HaliteType, t :- HaliteType]
+  (or
+    (= s t) ; the subtyping relation is reflexive
+    (= t :Any) ; :Any is the 'top' type
+    (and (= t :Coll) (boolean (#{:EmptyVec :EmptySet} s)))
+    (and (= s :EmptyVec) (vector? t) (= :Vec (first t)))
+    (and (= s :EmptySet) (vector? t) (= :Set (first t)))
+    (and (vector? s) (vector? t) (= (first s) (first t)) (subtype? (second s) (second t)))
+    (and (vector? s) (= t :Coll))))
+
+(s/defn ^:private meet :- HaliteType
+  "The 'least' supertype of m and t. Formally, return the type m such that all are true:
+    (subtype? s m)
+    (subtype? t m)
+    For all types l, (implies (and (subtype? s l) (subtype? t l)) (subtype? l m))"
+  [s :- HaliteType, t :- HaliteType]
+  (cond
+    (subtype? s t) t
+    (subtype? t s) s
+    (and (vector? s) (vector? t) (= (first s) (first t))) [(first s) (meet (second s) (second t))]
+    (and (subtype? s :Coll) (subtype? t :Coll)) :Coll
+    :else :Any))
 
 (s/defschema TypeEnv
   "A type environment.
@@ -89,9 +96,7 @@
      '<= (mk-builtin <= [:Integer :Integer] :Boolean)
      '> (mk-builtin > [:Integer :Integer] :Boolean)
      '>= (mk-builtin >= [:Integer :Integer] :Boolean)
-     'Cardinality (mk-builtin count
-                              [[:Vec :Any]] :Integer
-                              [[:Set :Any]] :Integer)
+     'Cardinality (mk-builtin count [:Coll] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean )
      'or (mk-builtin (fn [& args] (true? (some true? args)))
@@ -105,10 +110,10 @@
   (let [{:keys [arg-types variadic-tail]} sig]
     (and
      (<= (count arg-types) (count actual-types))
-     (every? true? (map #(some? (compatible %1 %2)) actual-types arg-types))
+     (every? true? (map #(subtype? %1 %2) actual-types arg-types))
      (or (and (= (count arg-types) (count actual-types))
               (nil? variadic-tail))
-         (every? true? (map #(some? (compatible variadic-tail %1))
+         (every? true? (map #(subtype? %1 variadic-tail)
                             (drop (count arg-types) actual-types)))))))
 
 (s/defn ^:private type-check-fn-application :- HaliteType
@@ -154,24 +159,25 @@
     (doseq [[field-kw field-type] field-types]
       (let [field-val (get inst field-kw)
             actual-type (type-check tenv field-val)]
-        (when (nil? (compatible actual-type field-type))
+        (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
                           {:form inst :variable field-kw :expected field-type :actual actual-type})))))
     t))
 
 (s/defn ^:private type-check-coll :- HaliteType
   [tenv :- TypeEnv, coll]
-  (let [coll-type (cond
-                    (vector? coll) :Vec
-                    (set? coll) :Set
-                    :else (throw (ex-info "Invalid value" {:form coll})))
-        inner-type (->> coll (map (partial type-check tenv)) (reduce compatible))]
-    (cond
-      (= [] coll) :EmptyVec
-      (= #{} coll) :EmptySet
-      :else (if (nil? inner-type)
-              (throw (ex-info (str (if (vector? coll) "vector" "set") " elements must be of same type") {:form coll}))
-              [coll-type inner-type]))))
+  (cond
+    (= [] coll) :EmptyVec
+    (= #{} coll) :EmptySet
+    :else (let [elem-types (map (partial type-check tenv) coll)]
+            [(cond
+               (vector? coll) :Vec
+               (set? coll) :Set
+               :else (throw (ex-info "Invalid value" {:form coll})))
+             (condp = (count coll)
+               0 nil
+               1 (first elem-types)
+               (reduce meet elem-types))])))
 
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
