@@ -199,3 +199,35 @@
 
       '(if true 1 2) 1
       '(if (< 1 (Cardinality [])) 12 (+ 2 3)) 5)))
+
+(deftest let-tests
+  (are [expr etype]
+      (= etype (halite/type-check tenv expr))
+
+    '(let [] 1) :Integer
+    '(let [x (+ 1 2)
+           y [x]]
+       y) [:Vec :Integer]
+    '(let [x 1] (let [x "foo"] x)) :String
+    '(let [x "foo"
+           y (let [x 1] (+ x 2))]
+       y) :Integer)
+
+  (are [expr err-msg]
+      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+    '(let) #"Wrong number of arguments"
+    '(let [x] x) #"must have an even number of forms"
+    '(let []) #"Wrong number of arguments"
+    '(let [1 2] 1) #"must be symbols"
+    '(let [x "foo"] (+ x 1)) #"no matching signature")
+
+  (let [env (assoc tenv :bindings {} :refinesTo {})]
+    (are [expr v]
+        (= v (halite/eval-expr env expr))
+
+      '(let [] 1) 1
+      '(let [x (+ 1 2), y [x]] y) [3]
+      '(let [x 1] (let [x "foo"] x)) "foo" 
+      '(let [x "foo", y (let [x 1] (+ x 2))] y) 3
+      )))

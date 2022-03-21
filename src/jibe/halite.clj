@@ -251,6 +251,22 @@
       (throw (ex-info "then and else branches to 'if' have incompatible types" {:form expr})))
     m))
 
+(s/defn ^:private type-check-let :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-exactly 2 expr)
+  (let [[bindings body] (rest expr)]
+    (when-not (zero? (mod (count bindings) 2))
+      (throw (ex-info "let bindings form must have an even number of forms" {:form expr})))
+    (type-check
+     (reduce
+      (fn [tenv [sym body]]
+        (when-not (symbol? sym)
+          (throw (ex-info "even-numbered forms in let binding vector must be symbols" {:form expr})))
+        (assoc-in tenv [:vars sym] (type-check tenv body)))
+      tenv
+      (partition 2 bindings))
+     body)))
+
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
@@ -265,6 +281,7 @@
                    'get* (type-check-get* tenv expr)
                    '= (type-check-equals tenv expr)
                    'if (type-check-if tenv expr)
+                   'let (type-check-let tenv expr)
                    (type-check-fn-application tenv expr))
     (coll? expr) (type-check-coll tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -291,6 +308,16 @@
       (nth target (eval-expr env index))
       (get target index))))
 
+(s/defn ^:private eval-let :- s/Any
+  [env bindings body]
+  (eval-expr
+   (reduce
+    (fn [env [sym body]]
+      (assoc-in env [:bindings sym] (eval-expr env body)))
+    env
+    (partition 2 bindings))
+   body))
+
 (s/defn eval-expr :- s/Any
   [env :- Env, expr]
   (cond
@@ -308,6 +335,7 @@
                          (if (eval-expr env pred)
                            (eval-expr env then)
                            (eval-expr env else)))
+                   'let (apply eval-let env (rest expr))
                    (apply (:impl (get builtins (first expr)))
                           (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)
