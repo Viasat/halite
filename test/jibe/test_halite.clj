@@ -89,3 +89,50 @@
       [1 2 3]
       [{:$type :ws2/B$v1 :s "bar"}])))
 
+(deftest application-type-checking-tests
+  (let [tenv {:specs {:ws/A$v1 {:x :Integer
+                                :y :Boolean
+                                :c :ws2/B$v1}
+                      :ws2/B$v1 {:s :String}
+                      :ws/C$v1 {:xs [:Vec :Integer]}}
+              :vars {}
+              :refinesTo* {}}]
+    (are [expr etype]
+        (= etype (halite/type-check tenv expr))
+
+      '(+ 1 2) :Integer
+      '(+ (- 3 2) (* 4 5)) :Integer
+      '(and (< 1 2) (> (+ 5 6) 90) (or true (<= 1 4))) :Boolean
+      '(Cardinality [true true false]) :Integer)
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+      '(foo) #"function 'foo' not found"
+      '(+ 1 "two") #"no matching signature for '\+'"
+      '(+ 1) #"no matching signature for '\+'")))
+
+(deftest application-eval-tests
+  (let [tenv {:specs {:ws/A$v1 {:x :Integer
+                                :y :Boolean
+                                :c :ws2/B$v1}
+                      :ws2/B$v1 {:s :String}
+                      :ws/C$v1 {:xs [:Vec :Integer]}}
+              :vars {}
+              :refinesTo* {}}]
+    (are [expr v]
+        (= v (halite/eval-expr tenv expr))
+
+      '(+ 1 2) 3
+      '(- 5 3) 2
+      '(< 1 2) true
+      '(< 2 1) false
+      '(> 1 2) false
+      '(> 2 1) true
+      '(<= 1 1) true
+      '(>= 1 1) true
+      '(Cardinality [1 2 3 1]) 4
+      '(and true false true) false
+      '(or true false false) true
+      '(or false false) false
+      '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (Cardinality #{1 2}) 3))) true)))

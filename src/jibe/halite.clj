@@ -20,7 +20,7 @@
   Unqualified keywords identify built-in scalar types."
   (s/conditional
    #(and (keyword? %) (namespaced? %)) NamespacedKeyword
-   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec)))
+   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Any)))
 
 (s/defschema HaliteType
   "A Halite type is either a type atom (keyword), or a collection type."
@@ -40,6 +40,8 @@
      (and (= :EmptyVec t2) (vector? t1) (= :Vec (first t1))) t1
      (and (vector? t1) (vector? t2) (= (first t1) (first t2))) (when-let [elem-type (compatible (second t1) (second t2))]
                                                                  [(first t1) elem-type])
+     (and (= :Any t1) (not= :Any t2)) t2
+     (= :Any t2) t1
      (= t1 t2) t1
      :else nil)))
 
@@ -54,7 +56,76 @@
    :vars {BareSymbol HaliteType}
    :refinesTo* {NamespacedKeyword #{NamespacedKeyword}}})
 
+(s/defschema FnSignature
+  {:arg-types [HaliteType]
+   (s/optional-key :variadic-tail) HaliteType
+   :return-type HaliteType})
+
+(s/defschema Builtin
+  {:signatures (s/constrained [FnSignature] seq)
+   :impl clojure.lang.IFn})
+
+(def & :&)
+
+(s/defn ^:private mk-builtin :- Builtin
+  [impl & signatures]
+  (when (not= 0 (mod (count signatures) 2))
+    (throw (ex-info "argument count must be a multiple of 2" {})))
+  {:impl impl
+   :signatures
+   (vec (for [[arg-types return-type] (partition 2 signatures)
+              :let [n (count arg-types)
+                    variadic? (and (< 1 n) (= :& (nth arg-types (- n 2))))]]
+          (cond-> {:arg-types (cond-> arg-types variadic? (subvec 0 (- n 2)))
+                   :return-type return-type}
+            variadic? (assoc :variadic-tail (last arg-types)))))})
+
+(def ^:private builtins
+  (s/with-fn-validation
+    {'+ (mk-builtin + [:Integer :Integer & :Integer] :Integer)
+     '- (mk-builtin - [:Integer :Integer & :Integer] :Integer)
+     '* (mk-builtin * [:Integer :Integer & :Integer] :Integer)
+     '< (mk-builtin < [:Integer :Integer] :Boolean)
+     '<= (mk-builtin <= [:Integer :Integer] :Boolean)
+     '> (mk-builtin > [:Integer :Integer] :Boolean)
+     '>= (mk-builtin >= [:Integer :Integer] :Boolean)
+     'Cardinality (mk-builtin count
+                              [[:Vec :Any]] :Integer
+                              [[:Set :Any]] :Integer)
+     'and (mk-builtin (fn [& args] (every? true? args))
+                      [:Boolean & :Boolean] :Boolean )
+     'or (mk-builtin (fn [& args] (true? (some true? args)))
+                     [:Boolean & :Boolean] :Boolean)
+     }))
+
 (declare type-check)
+
+(s/defn ^:private matches-signature?
+  [sig :- FnSignature, actual-types :- [HaliteType]]
+  (let [{:keys [arg-types variadic-tail]} sig]
+    (and
+     (<= (count arg-types) (count actual-types))
+     (every? true? (map #(some? (compatible %1 %2)) actual-types arg-types))
+     (or (and (= (count arg-types) (count actual-types))
+              (nil? variadic-tail))
+         (every? true? (map #(some? (compatible variadic-tail %1))
+                            (drop (count arg-types) actual-types)))))))
+
+(s/defn ^:private type-check-fn-application :- HaliteType
+  [tenv :- TypeEnv, form :- [(s/one BareSymbol :op) s/Any]]
+  (let [[op & args] form
+        nargs (count args)
+        {:keys [signatures impl] :as builtin} (get builtins op)
+        actual-types (map (partial type-check tenv) args)]
+    (when (nil? builtin)
+      (throw (ex-info (str "function '" op "' not found") {:form form})))
+
+    (loop [[sig & signatures] signatures]
+      (cond
+        (nil? sig) (throw (ex-info (str "no matching signature for '" (name op) "'")
+                                   {:form form}))
+        (matches-signature? sig actual-types) (:return-type sig)
+        :else (recur signatures)))))
 
 (s/defn ^:private type-check-instance :- NamespacedKeyword
   [tenv :- TypeEnv, inst :- {s/Keyword s/Any}]
@@ -111,6 +182,7 @@
     (integer? expr) :Integer
     (string? expr) :String
     (map? expr) (type-check-instance tenv expr)
+    (list? expr) (type-check-fn-application tenv expr)
     (coll? expr) (type-check-coll tenv expr)))
 
 (def Env
@@ -135,5 +207,7 @@
     (map? expr) (->> (dissoc expr :$type)
                      (map (fn [[k v]] [k (eval-expr env v)]))
                      (into (select-keys expr [:$type])))
+    (list? expr) (apply (:impl (get builtins (first expr)))
+                        (map (partial eval-expr env) (rest expr)))
     (vector? expr) (mapv (partial eval-expr env) expr)
     (set? expr) (set (map (partial eval-expr env) expr))))
