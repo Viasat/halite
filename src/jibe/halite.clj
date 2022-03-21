@@ -255,7 +255,7 @@
       (get target index))))
 
 (s/defn eval-expr :- s/Any
-  [env expr]
+  [env :- Env, expr]
   (cond
     (or (boolean? expr)
         (integer? expr)
