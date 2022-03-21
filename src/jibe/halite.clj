@@ -186,11 +186,22 @@
   (or (get-in tenv [:vars sym])
       (throw (ex-info (str "Undefined: '" (name sym) "'") {:form sym}))))
 
+(defn- arg-count-exactly
+  [n form]
+  (when (not= n (count (rest form)))
+    (throw (ex-info (format "Wrong number of arguments to '%s': expected %d, but got %d"
+                            (name (first form)) n (count (rest form)))
+                    {:form form}))))
+
+(defn- arg-count-at-least
+  [n form]
+  (when (< (count (rest form)) n)
+    (throw (ex-info (format "Wrong number of arguments to '%s': expected at least %d, but got %d"
+                            (name (first form)) n (count (rest form)))))))
+
 (s/defn ^:private type-check-get* :- HaliteType
   [tenv :- TypeEnv, form]
-  (when (not= 2 (count (rest form)))
-    (throw (ex-info (format "Wrong number of arguments to '%s': expected %d, but got %d" (name (first form)) 2 (count (rest form)))
-                    {:form form})))
+  (arg-count-exactly 2 form)
   (let [[_ subexpr index] form
         subexpr-type (type-check tenv subexpr)]
     (cond
@@ -216,6 +227,19 @@
       :else (throw (ex-info "First argument to get* must be an instance or non-empty vector"
                             {:form form})))))
 
+(s/defn type-check-equals :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-at-least 2 expr)
+  (let [arg-types (mapv (partial type-check tenv) (rest expr))]
+    (reduce
+     (fn [s t]
+       (let [m (meet s t)]
+         (when (and (not= m s) (not= m t))
+           (throw (ex-info "Arguments to '=' have incompatible types" {:form expr})))
+         m))
+     arg-types))
+  :Boolean)
+
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
@@ -228,6 +252,7 @@
     (map? expr) (type-check-instance tenv expr)
     (list? expr) (condp = (first expr)
                    'get* (type-check-get* tenv expr)
+                   '= (type-check-equals tenv expr)
                    (type-check-fn-application tenv expr))
     (coll? expr) (type-check-coll tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -266,6 +291,7 @@
                      (into (select-keys expr [:$type])))
     (list? expr) (condp = (first expr)
                    'get* (apply eval-get* env (rest expr))
+                   '= (apply = (map (partial eval-expr env) (rest expr)))
                    (apply (:impl (get builtins (first expr)))
                           (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)

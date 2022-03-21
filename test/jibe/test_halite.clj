@@ -139,4 +139,23 @@
       '(get* (get* c :bs) 2) (get-in c [:bs 2])
       '(get* (get* (get* c :bs) 2) :a) (get-in c [:bs 2 :a]))))
 
+(deftest equality-tests
+  (are [expr etype]
+      (= etype (halite/type-check tenv expr))
 
+    '(= 1 (+ 2 3)) :Boolean
+    '(= [#{}] [#{1} #{2}]) :Boolean
+    '(= [#{12}] [#{}]) :Boolean)
+
+  (are [expr err-msg]
+      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+    '(= 1 "two") #"incompatible types"
+    '(= [] #{}) #"incompatible types")
+
+  (let [env (assoc tenv :bindings {} :refinesTo {})]
+    (are [expr v]
+        (= v (halite/eval-expr env expr))
+
+      '(= (* 2 3) (+ 2 4)) true
+      '(= [1 2 3] [2 1 3]) false)))
