@@ -15,11 +15,13 @@
 (s/defschema ^:private NamespacedKeyword (s/constrained s/Keyword namespaced?))
 (s/defschema ^:private BareSymbol (s/constrained s/Symbol bare?))
 
+(defn- spec-type? [t] (and (keyword? t) (namespaced? t)))
+
 (s/defschema TypeAtom
   "Type atoms are always keywords. Namespace-qualified keywords are interpreted as spec ids.
   Unqualified keywords identify built-in scalar types."
   (s/conditional
-   #(and (keyword? %) (namespaced? %)) NamespacedKeyword
+   spec-type? NamespacedKeyword
    :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Coll :Any)))
 
 (s/defschema HaliteType
@@ -179,6 +181,41 @@
                1 (first elem-types)
                (reduce meet elem-types))])))
 
+(s/defn ^:private type-check-symbol :- HaliteType
+  [tenv :- TypeEnv, sym]
+  (or (get-in tenv [:vars sym])
+      (throw (ex-info (str "Undefined: '" (name sym) "'") {:form sym}))))
+
+(s/defn ^:private type-check-get* :- HaliteType
+  [tenv :- TypeEnv, form]
+  (when (not= 2 (count (rest form)))
+    (throw (ex-info (format "Wrong number of arguments to '%s': expected %d, but got %d" (name (first form)) 2 (count (rest form)))
+                    {:form form})))
+  (let [[_ subexpr index] form
+        subexpr-type (type-check tenv subexpr)]
+    (cond
+      (subtype? subexpr-type [:Vec :Any])
+      (let [index-type (type-check tenv index)]
+        (when (= :EmptyVec subexpr-type)
+          (throw (ex-info "Cannot index into empty vector" {:form form})))
+        (when (not= :Integer index-type)
+          (throw (ex-info "Second argument to get* must be an integer when first argument is a vector"
+                          {:form index :expected :Integer :actual-type index-type})))
+        (second subexpr-type))
+
+      (spec-type? subexpr-type)
+      (let [field-types (get-in tenv [:specs subexpr-type])]
+        (when-not (and (keyword? index) (bare? index))
+          (throw (ex-info "Second argument to get* must be a variable name (as a keyword) when first argument is an instance"
+                          {:form form})))
+        (when-not (contains? field-types index)
+          (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) subexpr-type)
+                          {:form form})))
+        (get field-types index))
+
+      :else (throw (ex-info "First argument to get* must be an instance or non-empty vector"
+                            {:form form})))))
+
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
@@ -187,9 +224,13 @@
     (boolean? expr) :Boolean
     (integer? expr) :Integer
     (string? expr) :String
+    (symbol? expr) (type-check-symbol tenv expr)
     (map? expr) (type-check-instance tenv expr)
-    (list? expr) (type-check-fn-application tenv expr)
-    (coll? expr) (type-check-coll tenv expr)))
+    (list? expr) (condp = (first expr)
+                   'get* (type-check-get* tenv expr)
+                   (type-check-fn-application tenv expr))
+    (coll? expr) (type-check-coll tenv expr)
+    :else (throw (ex-info "Syntax error" {:form expr}))))
 
 (def Env
   "An environment in which expressions may be evaluated.
@@ -204,16 +245,28 @@
                        [{:guard s/Any
                          :expr s/Any}]}}}))
 
+(declare eval-expr)
+
+(s/defn ^:private eval-get* :- s/Any
+  [env target-expr index]
+  (let [target (eval-expr env target-expr)]
+    (if (vector? target)
+      (nth target (eval-expr env index))
+      (get target index))))
+
 (s/defn eval-expr :- s/Any
   [env expr]
   (cond
     (or (boolean? expr)
         (integer? expr)
         (string? expr)) expr
+    (symbol? expr) (get-in env [:bindings expr])
     (map? expr) (->> (dissoc expr :$type)
                      (map (fn [[k v]] [k (eval-expr env v)]))
                      (into (select-keys expr [:$type])))
-    (list? expr) (apply (:impl (get builtins (first expr)))
-                        (map (partial eval-expr env) (rest expr)))
+    (list? expr) (condp = (first expr)
+                   'get* (apply eval-get* env (rest expr))
+                   (apply (:impl (get builtins (first expr)))
+                          (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)
     (set? expr) (set (map (partial eval-expr env) expr))))

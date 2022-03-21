@@ -126,3 +126,56 @@
       '(or true false false) true
       '(or false false) false
       '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (Cardinality #{1 2}) 3))) true)))
+
+(deftest get*-type-checking-tests
+  (let [tenv {:specs {:ws/A$v1 {:x :Integer}
+                      :ws/B$v1 {:a :ws/A$v1}
+                      :ws/C$v1 {:bs [:Vec :ws/B$v1]}}
+              :vars {'a :ws/A$v1
+                     'b :ws/B$v1
+                     'c :ws/C$v1
+                     'xs [:Vec :String]}
+              :refinesTo* {}}]
+    (are [expr etype]
+        (= etype (halite/type-check tenv expr))
+      
+      'a :ws/A$v1   ; warm-up: symbol lookup
+      '(get* a :x) :Integer
+      '(get* b :a) :ws/A$v1
+      '(get* (get* b :a) :x) :Integer
+      '(get* xs (+ 1 2)) :String
+      '(get* (get* (get* (get* c :bs) 2) :a) :x) :Integer)
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+      'foo #"Undefined"
+      '(get*) #"Wrong number of arguments"
+      '(get* [] 1) #"Cannot index into empty vector"
+      '(get* xs (< 1 2)) #"Second argument to get\* must be an integer"
+      '(get* a :foo/bar) #"must be a variable name"
+      '(get* a 12) #"must be a variable name"
+      '(get* a :b) #"No such variable"
+      '(get* #{} 1) #"must be an instance or non-empty vector")
+    ))
+
+(deftest get*-eval-tests
+  (let [c {:$type :ws/C$v1
+           :bs (mapv (fn [x]
+                       {:$type :ws/B$v1
+                        :a {:$type :ws/A$v1
+                            :x x}})
+                     (range 5))}
+        env {:specs {:ws/A$v1 {:x :Integer}
+                     :ws/B$v1 {:a :ws/A$v1}
+                     :ws/C$v1 {:bs [:Vec :ws/B$v1]}}
+             :vars {'c :ws/C$v1}
+             :refinesTo* {}
+             :bindings {'c c}
+             :refinesTo {}}]
+    (are [expr v]
+        (= v (halite/eval-expr env expr))
+      'c c
+      '(get* c :bs) (get c :bs)
+      '(get* (get* c :bs) 2) (get-in c [:bs 2])
+      '(get* (get* (get* c :bs) 2) :a) (get-in c [:bs 2 :a]))))
