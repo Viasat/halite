@@ -138,6 +138,11 @@
      'expt (mk-builtin expt [:Integer :Integer] :Integer)
      'str (mk-builtin str [& :String] :String)
      'subset? (mk-builtin set/subset? [[:Set :Any] [:Set :Any]] :Boolean)
+     'sort (mk-builtin sort
+                       [:EmptyVec] :EmptyVec
+                       [:EmptySet] :EmptyVec
+                       [[:Set :Integer]] [:Vec :Integer]
+                       [[:Vec :Integer]] [:Vec :Integer])
      }))
 
 (declare type-check)
@@ -358,6 +363,49 @@
     (check-all-sets expr arg-types)
     (first arg-types)))
 
+(s/defn type-check-first :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-exactly 1 expr)
+  (let [arg-type (type-check tenv (second expr))]
+    (when-not (subtype? arg-type [:Vec :Any])
+      (throw (ex-info "Argument to 'first' must be a vector" {:form expr})))
+    (when (= :EmptyVec arg-type)
+      (throw (ex-info "argument to first is always empty" {:form expr})))
+    (second arg-type)))
+
+(s/defn type-check-rest :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-exactly 1 expr)
+  (let [arg-type (type-check tenv (second expr))]
+    (when-not (subtype? arg-type [:Vec :Any])
+      (throw (ex-info "Argument to 'rest' must be a vector" {:form expr})))
+    arg-type))
+
+(s/defn type-check-conj :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-at-least 2 expr)
+  (let [[base-type & elem-types] (mapv (partial type-check tenv) (rest expr))]
+    (when-not (subtype? base-type :Coll)
+      (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
+    (let [col-type (if (or (= :EmptyVec base-type) (and (vector? base-type) (= :Vec (first base-type)))) :Vec :Set)]
+      (reduce meet base-type (map #(vector col-type %) elem-types)))))
+
+(s/defn type-check-into :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-exactly 2 expr)
+  (let [[s t] (mapv (partial type-check tenv) (rest expr))]
+    (when-not (subtype? s :Coll)
+      (throw (ex-info "First argument to 'into' must be a set or vector" {:form expr})))
+    (when-not (subtype? t :Coll)
+      (throw (ex-info "Second argument to 'into' must be a set or vector" {:form expr})))
+    (when (and (subtype? s [:Vec :Any]) (not (subtype? t [:Vec :Any])))
+      (throw (ex-info "When first argument to 'into' is a vector, second argument must also be a vector" {:form expr})))
+    (if (#{:EmptySet :EmptyVec} t)
+      s
+      (let [elem-type (second t)
+            col-type (if (or (= :EmptyVec s) (and (vector? s) (= :Vec (first s)))) :Vec :Set)]
+        (meet s [col-type elem-type])))))
+
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
@@ -380,6 +428,10 @@
                    'union (type-check-union tenv expr)
                    'intersection (type-check-intersection tenv expr)
                    'difference (type-check-difference tenv expr)
+                   'first (type-check-first tenv expr)
+                   'rest (type-check-rest tenv expr)
+                   'conj (type-check-conj tenv expr)
+                   'into (type-check-into tenv expr)
                    (type-check-fn-application tenv expr))
     (coll? expr) (type-check-coll tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -400,14 +452,14 @@
 (declare eval-expr)
 
 (s/defn ^:private eval-get* :- s/Any
-  [env target-expr index]
+  [env :- Env, target-expr index]
   (let [target (eval-expr env target-expr)]
     (if (vector? target)
       (nth target (dec (eval-expr env index)))
       (get target index :Unset))))
 
 (s/defn ^:private eval-let :- s/Any
-  [env bindings body]
+  [env :- Env, bindings body]
   (eval-expr
    (reduce
     (fn [env [sym body]]
@@ -444,6 +496,12 @@
                    'union (reduce set/union (map (partial eval-expr env) (rest expr)))
                    'intersection (reduce set/intersection (map (partial eval-expr env) (rest expr)))
                    'difference (apply set/difference (map (partial eval-expr env) (rest expr)))
+                   'first (or (first (eval-expr env (second expr)))
+                              (throw (ex-info "empty vector has no first element" {:form expr})))
+                   'rest (let [arg (eval-expr env (second expr))]
+                           (if (empty? arg) [] (subvec arg 1)))
+                   'conj (apply conj (map (partial eval-expr env) (rest expr)))
+                   'into (apply into (map (partial eval-expr env) (rest expr)))
                    (apply (:impl (get builtins (first expr)))
                           (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)

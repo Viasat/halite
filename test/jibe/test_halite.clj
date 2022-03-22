@@ -371,3 +371,66 @@
 
       '(difference #{} #{1}) #{}
       '(difference #{1 2 3} #{2}) #{1 3})))
+
+(deftest vector-tests
+  (are [expr etype]
+      (= etype (halite/type-check tenv expr))
+    '(first [1]) :Integer
+    '(rest []) :EmptyVec
+    '(rest [1 2]) [:Vec :Integer]
+    '(rest [1]) [:Vec :Integer]
+    '(conj [] 1) [:Vec :Integer]
+    '(conj [1] 2) [:Vec :Integer]
+    '(conj [] "one" "two") [:Vec :String]
+    '(conj [1] "two") [:Vec :Any]
+    '(conj #{} "one") [:Set :String]
+    '(into [] []) :EmptyVec
+    '(into [1 2] [3]) [:Vec :Integer]
+    '(into #{} []) :EmptySet
+    '(into #{} #{}) :EmptySet
+    '(into #{"foo"} ["bar"]) [:Set :String]
+    '(sort []) :EmptyVec
+    '(sort #{}) :EmptyVec
+    '(sort [1 2]) [:Vec :Integer]
+    '(sort #{1 2}) [:Vec :Integer])
+
+  (are [expr err-msg]
+      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+    '(first) #"Wrong number of arguments"
+    '(first [] []) #"Wrong number of arguments"
+    '(first []) #"argument to first is always empty"
+    '(first 12) #"must be a vector"
+    '(rest) #"Wrong number of arguments"
+    '(rest #{}) #"must be a vector"
+    '(conj) #"Wrong number of arguments"
+    '(conj []) #"Wrong number of arguments"
+    '(conj 1 2) #"must be a set or vector"
+    '(into) #"Wrong number of arguments"
+    '(into 1) #"Wrong number of arguments"
+    '(into 1 2) #"must be a set or vector"
+    '(into [] #{}) #"second argument must also be a vector"
+    '(sort) #"no matching signature"
+    '(sort 1) #"no matching signature")
+
+  (let [env (assoc tenv :bindings {} :refinesTo {})]
+    (are [expr v]
+        (= v (halite/eval-expr env expr))
+
+      '(first [1 2 3]) 1
+      '(rest []) []
+      '(rest [1]) []
+      '(rest [1 2 3]) [2 3]
+      '(conj [] 1) [1]
+      '(conj [1] 2) [1 2]
+      '(conj [1] "two") [1 "two"]
+      '(conj [1] 2 3 4) [1 2 3 4]
+      '(conj #{1} 2 3 2 4) #{1 2 3 4}
+      '(into [] []) []
+      '(into [1 2] [1 2]) [1 2 1 2]
+      '(into #{} #{}) #{}
+      '(into #{} []) #{}
+      '(into #{1 2} [1 2 3]) #{1 2 3})
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr env expr))
+      '(first (rest [1])) #"empty vector has no first element")))
