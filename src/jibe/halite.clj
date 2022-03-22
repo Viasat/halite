@@ -130,6 +130,7 @@
                       [:Boolean & :Boolean] :Boolean )
      'or (mk-builtin (fn [& args] (true? (some true? args)))
                      [:Boolean & :Boolean] :Boolean)
+     'not (mk-builtin not [:Boolean] :Boolean)
      'contains? (mk-builtin contains? [[:Set :Any] :Any] :Boolean)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (mk-builtin quot [:Integer :Integer] :Integer)
