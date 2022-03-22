@@ -296,6 +296,23 @@
         '(if-value- x x 12) 12
         '(let [y no-value-] (if-value- y "foo" true)) true))))
 
+(deftest no-value-restrictions
+  ;; We want to limit the ways in which [:Maybe <T>] can be used.
+  ;; Specifically:
+  ;; 1) [:Set [:Maybe <T>]] and [:Vec [:Maybe <T>]] are not valid types!
+  ;;    We want `no-value-` to represent the absence of a value, and you
+  ;;    can't put a value you don't have in a collection!
+  ;; 2) [:Maybe [:Maybe <T>]] is not a valid type!
+  (let [tenv (-> tenv
+                 (assoc-in [:vars 'x] [:Maybe :Integer]))
+        env (assoc tenv :bindings {'x :Unset})]
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+      '[x] #"vector literal element may not always evaluate to a value"
+      '#{x} #"set literal element may not always evaluate to a value"
+      '(conj [] x) #"cannot conj possibly unset value to vector")))
+
 (deftest union-tests
   (are [expr etype]
       (= etype (halite/type-check tenv expr))
@@ -334,7 +351,7 @@
     '(intersection #{1 2} #{"three"}) :EmptySet
     '(intersection #{1 2} #{}) :EmptySet
     '(intersection #{1 2} (union #{1} #{"two"})) [:Set :Integer]
-    '(intersection #{no-value- 3} #{12}) [:Set :Integer])
+    '(intersection #{"two" 3} #{12}) [:Set :Integer])
 
   (are [expr err-msg]
       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))

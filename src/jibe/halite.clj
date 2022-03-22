@@ -27,15 +27,19 @@
    spec-type? NamespacedKeyword
    :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Coll :Any :Unset)))
 
+(defn- maybe-type? [t]
+  (or (= :Unset t)
+      (and (vector? t) (= :Maybe (first t)))))
+
 (s/defschema HaliteType
   "A Halite type is either a type atom (keyword), or a collection type."
   (s/cond-pre
    TypeAtom
-   [(s/one (s/enum :Set :Vec :Maybe) "coll-type") (s/one (s/recursive #'HaliteType) "elem-type")]))
-
-(defn- maybe-type? [t]
-  (or (= :Unset t)
-      (and (vector? t) (= :Maybe (first t)))))
+   (s/constrained
+    [(s/one (s/enum :Set :Vec :Maybe) "coll-type") (s/one (s/recursive #'HaliteType) "elem-type")]
+    (fn [[col-type elem-type]]
+      (not (maybe-type? elem-type)))
+    :no-maybe-in-collection)))
 
 (s/defn ^:private subtype? :- s/Bool
   [s :- HaliteType, t :- HaliteType]
@@ -215,11 +219,16 @@
   (cond
     (= [] coll) :EmptyVec
     (= #{} coll) :EmptySet
-    :else (let [elem-types (map (partial type-check tenv) coll)]
-            [(cond
-               (vector? coll) :Vec
-               (set? coll) :Set
-               :else (throw (ex-info "Invalid value" {:form coll})))
+    :else (let [elem-types (map (partial type-check tenv) coll)
+                coll-type (cond
+                            (vector? coll) :Vec
+                            (set? coll) :Set
+                            :else (throw (ex-info "Invalid value" {:form coll})))]
+            (doseq [[elem elem-type] (map vector coll elem-types)]
+              (when (maybe-type? elem-type)
+                (throw (ex-info (format "%s literal element may not always evaluate to a value" ({:Vec "vector" :Set "set"} coll-type))
+                                {:form elem}))))
+            [coll-type
              (condp = (count coll)
                0 nil
                1 (first elem-types)
@@ -388,6 +397,10 @@
     (when-not (subtype? base-type :Coll)
       (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
     (let [col-type (if (or (= :EmptyVec base-type) (and (vector? base-type) (= :Vec (first base-type)))) :Vec :Set)]
+      (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
+        (when (maybe-type? elem-type)
+          (throw (ex-info (format "cannot conj possibly unset value to %s" ({:Vec "vector" :Set "set"} col-type))
+                          {:form elem}))))
       (reduce meet base-type (map #(vector col-type %) elem-types)))))
 
 (s/defn type-check-into :- HaliteType
