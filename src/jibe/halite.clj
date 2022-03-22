@@ -51,7 +51,7 @@
     (and (vector? s) (boolean (#{:Set :Vec} (first s))) (= t :Coll))))
 
 (s/defn ^:private meet :- HaliteType
-  "The 'least' supertype of m and t. Formally, return the type m such that all are true:
+  "The 'least' supertype of s and t. Formally, return the type m such that all are true:
     (subtype? s m)
     (subtype? t m)
     For all types l, (implies (and (subtype? s l) (subtype? t l)) (subtype? l m))"
@@ -62,6 +62,23 @@
     (and (vector? s) (vector? t) (= (first s) (first t))) [(first s) (meet (second s) (second t))]
     (and (subtype? s :Coll) (subtype? t :Coll)) :Coll
     :else :Any))
+
+(s/defn ^:private join :- (s/maybe HaliteType)
+  "The 'greatest' subtype of s and t. Formally, return the type m such that all are true:
+    (subtype? m s)
+    (subtype? m t)
+    For all types l, (implies (and (subtype? l s) (subtype? l t)) (subtype? l m))
+
+   The Halite type system has no 'bottom' type, so this function may return nil in the case where
+   s and t have no common subtype (e.g. :String and :Integer)."
+  [s :- HaliteType, t :- HaliteType]
+  (cond
+    (subtype? s t) s
+    (subtype? t s) t
+    (and (vector? s) (vector? t) (= (first s) (first t))) (if-let [m (join (second s) (second t))]
+                                                            [(first s) m]
+                                                            (if (= :Set (first s)) :EmptySet :EmptyVec))
+    :else nil))
 
 (s/defschema TypeEnv
   "A type environment.
@@ -218,7 +235,8 @@
   [n form]
   (when (< (count (rest form)) n)
     (throw (ex-info (format "Wrong number of arguments to '%s': expected at least %d, but got %d"
-                            (name (first form)) n (count (rest form)))))))
+                            (name (first form)) n (count (rest form)))
+                    {:form form}))))
 
 (s/defn ^:private type-check-get* :- HaliteType
   [tenv :- TypeEnv, form]
@@ -313,12 +331,24 @@
                             {:form expr})))
           m)))))
 
+(defn- check-all-sets [[op :as expr] arg-types]
+  (when-not (every? #(subtype? % [:Set :Any]) arg-types)
+    (throw (ex-info (format "Arguments to '%s' must be sets" op) {:form expr}))))
+
 (s/defn ^:private type-check-union :- HaliteType
   [tenv :- TypeEnv, expr :- s/Any]
   (let [arg-types (mapv (partial type-check tenv) (rest expr))]
-    (when-not (every? #(subtype? % [:Set :Any]) arg-types)
-      (throw (ex-info "Arguments to 'union' must be sets" {:form expr})))
+    (check-all-sets expr arg-types)
     (reduce meet :EmptySet arg-types)))
+
+(s/defn ^:private type-check-intersection :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-at-least 1 expr)
+  (let [arg-types (mapv (partial type-check tenv) (rest expr))]
+    (check-all-sets expr arg-types)
+    (if (empty? arg-types)
+      :EmptySet
+      (reduce join arg-types))))
 
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
@@ -340,6 +370,7 @@
                    'let (type-check-let tenv expr)
                    'if-value- (type-check-if-value tenv expr)
                    'union (type-check-union tenv expr)
+                   'intersection (type-check-intersection tenv expr)
                    (type-check-fn-application tenv expr))
     (coll? expr) (type-check-coll tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -402,6 +433,7 @@
                                   (eval-expr env else)
                                   (eval-expr env then)))
                    'union (reduce set/union (map (partial eval-expr env) (rest expr)))
+                   'intersection (reduce set/intersection (map (partial eval-expr env) (rest expr)))
                    (apply (:impl (get builtins (first expr)))
                           (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)

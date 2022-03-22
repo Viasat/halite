@@ -302,7 +302,8 @@
     '(union) :EmptySet
     '(union #{1}) [:Set :Integer]
     '(union #{[]} #{#{}}) [:Set :Coll]
-    '(union #{1} #{2} #{3} #{4}) [:Set :Integer])
+    '(union #{1} #{2} #{3} #{4}) [:Set :Integer]
+    '(union #{#{}} #{#{3}}) [:Set [:Set :Integer]])
 
   (are [expr err-msg]
       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
@@ -320,3 +321,29 @@
       '(union #{1}) #{1}
       '(union #{[]} #{#{}}) #{[] #{}}
       '(union #{1} #{2} #{3} #{4}) #{1 2 3 4})))
+
+(deftest intersection-tests
+  (are [expr etype]
+      (= etype (halite/type-check tenv expr))
+
+    '(intersection #{1 2}) [:Set :Integer]
+    '(intersection #{1 2} #{"three"}) :EmptySet
+    '(intersection #{1 2} #{}) :EmptySet
+    '(intersection #{1 2} (union #{1} #{"two"})) [:Set :Integer]
+    '(intersection #{no-value- 3} #{12}) [:Set :Integer])
+
+  (are [expr err-msg]
+      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+    '(intersection) #"Wrong number of arguments"
+    '(intersection #{1} [2]) #"must be sets")
+
+  (let [env (assoc tenv :bindings {} :refinesTo {})]
+    (are [expr v]
+        (= v (halite/eval-expr env expr))
+
+    '(intersection #{1 2}) #{1 2}
+    '(intersection #{1 2} #{"three"}) #{}
+    '(intersection #{1 2} #{}) #{}
+    '(intersection #{1 2} (union #{1} #{"two"})) #{1}
+    '(intersection #{no-value- 3} #{12}) #{})))
