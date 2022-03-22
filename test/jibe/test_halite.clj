@@ -291,3 +291,32 @@
         '(get* m :x) :Unset
         '(if-value- x x 12) 12
         '(let [y no-value-] (if-value- y "foo" true)) true))))
+
+(deftest union-tests
+  (are [expr etype]
+      (= etype (halite/type-check tenv expr))
+
+    '(union #{1 2 3} #{3 4 5}) [:Set :Integer]
+    '(union #{} #{"foo"}) [:Set :String]
+    '(union #{1} #{"foo"}) [:Set :Any]
+    '(union) :EmptySet
+    '(union #{1}) [:Set :Integer]
+    '(union #{[]} #{#{}}) [:Set :Coll]
+    '(union #{1} #{2} #{3} #{4}) [:Set :Integer])
+
+  (are [expr err-msg]
+      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+    '(union #{1} [2]) #"must be sets")
+
+  (let [env (assoc tenv :bindings {} :refinesTo {})]
+    (are [expr v]
+        (= v (halite/eval-expr env expr))
+
+      '(union #{1 2 3} #{3 4 5}) #{1 2 3 4 5}
+      '(union #{} #{"foo"}) #{"foo"}
+      '(union #{1} #{"foo"}) #{1 "foo"}
+      '(union) #{}
+      '(union #{1}) #{1}
+      '(union #{[]} #{#{}}) #{[] #{}}
+      '(union #{1} #{2} #{3} #{4}) #{1 2 3 4})))

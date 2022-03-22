@@ -313,6 +313,13 @@
                             {:form expr})))
           m)))))
 
+(s/defn ^:private type-check-union :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (let [arg-types (mapv (partial type-check tenv) (rest expr))]
+    (when-not (every? #(subtype? % [:Set :Any]) arg-types)
+      (throw (ex-info "Arguments to 'union' must be sets" {:form expr})))
+    (reduce meet :EmptySet arg-types)))
+
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
@@ -332,6 +339,7 @@
                    'if (type-check-if tenv expr)
                    'let (type-check-let tenv expr)
                    'if-value- (type-check-if-value tenv expr)
+                   'union (type-check-union tenv expr)
                    (type-check-fn-application tenv expr))
     (coll? expr) (type-check-coll tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -393,6 +401,7 @@
                                 (if (= :Unset (eval-expr env sym))
                                   (eval-expr env else)
                                   (eval-expr env then)))
+                   'union (reduce set/union (map (partial eval-expr env) (rest expr)))
                    (apply (:impl (get builtins (first expr)))
                           (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)
