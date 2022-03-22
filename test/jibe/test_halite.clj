@@ -71,23 +71,32 @@
       [1 2 3]
       [{:$type :ws2/B$v1 :s "bar"}])))
 
-(deftest application-type-checking-tests
+(deftest application-tests
   (are [expr etype]
       (= etype (halite/type-check tenv expr))
 
     '(+ 1 2) :Integer
     '(+ (- 3 2) (* 4 5)) :Integer
     '(and (< 1 2) (> (+ 5 6) 90) (or true (<= 1 4))) :Boolean
-    '(Cardinality [true true false]) :Integer)
+    '(Cardinality [true true false]) :Integer
+    '(contains? #{1 2 3} 2) :Boolean
+    '(contains? #{1 2 3} "foo") :Boolean
+    '(dec 12) :Integer
+    '(div 14 3) :Integer
+    '(mod* 5 2) :Integer
+    '(expt 2 8) :Integer
+    '(str) :String
+    '(str "foo" (str) (str "bar")) :String
+    '(subset? #{} #{1 2 3}) :Boolean
+    '(subset? #{"nope"} #{1 2 3}) :Boolean)
 
   (are [expr err-msg]
       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
 
     '(foo) #"function 'foo' not found"
     '(+ 1 "two") #"no matching signature for '\+'"
-    '(+ 1) #"no matching signature for '\+'"))
+    '(+ 1) #"no matching signature for '\+'")
 
-(deftest application-eval-tests
   (let [env (assoc tenv :bindings {} :refinesTo {})]
     (are [expr v]
         (= v (halite/eval-expr env expr))
@@ -104,7 +113,15 @@
       '(and true false true) false
       '(or true false false) true
       '(or false false) false
-      '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (Cardinality #{1 2}) 3))) true)))
+      '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (Cardinality #{1 2}) 3))) true
+      '(contains? #{1 2 3} 2) true
+      '(dec 12) 11
+      '(div 14 3) 4
+      '(mod* 5 3) 2
+      '(expt 2 8) 256
+      '(str "foo" (str) (str "bar")) "foobar"
+      '(subset? #{} #{1 2 3}) true
+      '(subset? #{"nope"} #{1 2 3}) false)))
 
 (deftest get*-type-checking-tests
   (let [tenv {:specs {:ws/A$v1 {:x :Integer}
@@ -156,9 +173,8 @@
         (= v (halite/eval-expr env expr))
       'c c
       '(get* c :bs) (get c :bs)
-      ;; TODO: vector indexing is 1-based!
-      '(get* (get* c :bs) 2) (get-in c [:bs 2])
-      '(get* (get* (get* c :bs) 2) :a) (get-in c [:bs 2 :a]))))
+      '(get* (get* c :bs) 3) (get-in c [:bs 2])
+      '(get* (get* (get* c :bs) 3) :a) (get-in c [:bs 2 :a]))))
 
 (deftest equality-tests
   (are [expr etype]
@@ -166,20 +182,25 @@
 
     '(= 1 (+ 2 3)) :Boolean
     '(= [#{}] [#{1} #{2}]) :Boolean
-    '(= [#{12}] [#{}]) :Boolean)
+    '(= [#{12}] [#{}]) :Boolean
+    '(not= [#{12}] [#{}]) :Boolean)
 
   (are [expr err-msg]
       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
 
     '(= 1 "two") #"incompatible types"
-    '(= [] #{}) #"incompatible types")
+    '(= [] #{}) #"incompatible types"
+    '(not= 1 "two") #"incompatible types"
+    '(not= [] #{}) #"incompatible types")
 
   (let [env (assoc tenv :bindings {} :refinesTo {})]
     (are [expr v]
         (= v (halite/eval-expr env expr))
 
       '(= (* 2 3) (+ 2 4)) true
-      '(= [1 2 3] [2 1 3]) false)))
+      '(= [1 2 3] [2 1 3]) false
+      '(not= (* 2 3) (+ 2 4)) false
+      '(not= [1 2 3] [2 1 3]) true)))
 
 (deftest if-tests
   (are [expr etype]

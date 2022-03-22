@@ -4,7 +4,8 @@
 (ns jibe.halite
   "Expression language for resource spec constraints and refinements that is almost, but
   not quite, a drop-in replacement for salt."
-  (:require [clojure.set :as set]
+  (:require [clojure.math.numeric-tower :refer [expt]]
+            [clojure.set :as set]
             [clojure.string :as str]
             [schema.core :as s]))
 
@@ -107,10 +108,18 @@
      '> (mk-builtin > [:Integer :Integer] :Boolean)
      '>= (mk-builtin >= [:Integer :Integer] :Boolean)
      'Cardinality (mk-builtin count [:Coll] :Integer)
+     'count (mk-builtin count [:Coll] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean )
      'or (mk-builtin (fn [& args] (true? (some true? args)))
                      [:Boolean & :Boolean] :Boolean)
+     'contains? (mk-builtin contains? [[:Set :Any] :Any] :Boolean)
+     'dec (mk-builtin dec [:Integer] :Integer)
+     'div (mk-builtin quot [:Integer :Integer] :Integer)
+     'mod* (mk-builtin mod [:Integer :Integer] :Integer)
+     'expt (mk-builtin expt [:Integer :Integer] :Integer)
+     'str (mk-builtin str [& :String] :String)
+     'subset? (mk-builtin set/subset? [[:Set :Any] [:Set :Any]] :Boolean)
      }))
 
 (declare type-check)
@@ -247,7 +256,7 @@
      (fn [s t]
        (let [m (meet s t)]
          (when (and (not= m s) (not= m t))
-           (throw (ex-info "Arguments to '=' have incompatible types" {:form expr})))
+           (throw (ex-info (format "Arguments to '%s' have incompatible types" (first expr)) {:form expr})))
          m))
      arg-types))
   :Boolean)
@@ -319,6 +328,7 @@
     (list? expr) (condp = (first expr)
                    'get* (type-check-get* tenv expr)
                    '= (type-check-equals tenv expr)
+                   'not= (type-check-equals tenv expr) ; = and not= have same typing rule
                    'if (type-check-if tenv expr)
                    'let (type-check-let tenv expr)
                    'if-value- (type-check-if-value tenv expr)
@@ -345,7 +355,7 @@
   [env target-expr index]
   (let [target (eval-expr env target-expr)]
     (if (vector? target)
-      (nth target (eval-expr env index))
+      (nth target (dec (eval-expr env index)))
       (get target index :Unset))))
 
 (s/defn ^:private eval-let :- s/Any
@@ -373,6 +383,7 @@
     (list? expr) (condp = (first expr)
                    'get* (apply eval-get* env (rest expr))
                    '= (apply = (map (partial eval-expr env) (rest expr)))
+                   'not= (apply not= (map (partial eval-expr env) (rest expr)))
                    'if (let [[pred then else] (rest expr)]
                          (if (eval-expr env pred)
                            (eval-expr env then)
