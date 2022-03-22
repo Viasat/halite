@@ -156,6 +156,7 @@
         (= v (halite/eval-expr env expr))
       'c c
       '(get* c :bs) (get c :bs)
+      ;; TODO: vector indexing is 1-based!
       '(get* (get* c :bs) 2) (get-in c [:bs 2])
       '(get* (get* (get* c :bs) 2) :a) (get-in c [:bs 2 :a]))))
 
@@ -231,3 +232,41 @@
       '(let [x 1] (let [x "foo"] x)) "foo" 
       '(let [x "foo", y (let [x 1] (+ x 2))] y) 3
       )))
+
+(deftest maybe-tests
+  (let [tenv (-> tenv
+                 (assoc-in [:specs :ws/Maybe$v1]
+                           {:x [:Maybe :Integer]})
+                 (assoc-in [:vars 'm] :ws/Maybe$v1)
+                 (assoc-in [:vars 'x] [:Maybe :Integer]))]
+    (are [expr etype]
+        (= etype (halite/type-check tenv expr))
+
+      'UNSET :Unset
+      {:$type :ws/Maybe$v1} :ws/Maybe$v1
+      {:$type :ws/Maybe$v1 :x 1} :ws/Maybe$v1
+      {:$type :ws/Maybe$v1 :x 'UNSET} :ws/Maybe$v1
+      '(get* m :x) [:Maybe :Integer]
+      '(if-value- x (+ x 1) 1) :Integer
+      '(let [x UNSET] (if-value- x x 1)) :Integer
+      '(if-value- UNSET 42 "foo") :String)
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+      '(let [UNSET 12] "ha") #"reserved word"
+      '(if-value- 12 true false) #"must be a bare symbol"
+      '(let [y 22] (if-value- y true false)) #"must have an optional type"
+      '(if-value- x "foo" true) #"incompatible types")
+
+    (let [env (assoc tenv
+                     :bindings {'m {:$type :ws/Maybe$v1}
+                                'x :Unset}
+                     :refinesTo {})]
+      (are [expr v]
+          (= v (halite/eval-expr env expr))
+
+        'UNSET :Unset
+        '(get* m :x) :Unset
+        '(if-value- x x 12) 12
+        '(let [y UNSET] (if-value- y "foo" true)) true))))

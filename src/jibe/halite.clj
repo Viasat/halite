@@ -15,6 +15,8 @@
 (s/defschema ^:private NamespacedKeyword (s/constrained s/Keyword namespaced?))
 (s/defschema ^:private BareSymbol (s/constrained s/Symbol bare?))
 
+(def reserved-words #{'UNSET})
+
 (defn- spec-type? [t] (and (keyword? t) (namespaced? t)))
 
 (s/defschema TypeAtom
@@ -22,13 +24,17 @@
   Unqualified keywords identify built-in scalar types."
   (s/conditional
    spec-type? NamespacedKeyword
-   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Coll :Any)))
+   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Coll :Any :Unset)))
 
 (s/defschema HaliteType
   "A Halite type is either a type atom (keyword), or a collection type."
   (s/cond-pre
    TypeAtom
-   [(s/one (s/enum :Set :Vec) "coll-type") (s/one (s/recursive #'HaliteType) "elem-type")]))
+   [(s/one (s/enum :Set :Vec :Maybe) "coll-type") (s/one (s/recursive #'HaliteType) "elem-type")]))
+
+(defn- maybe-type? [t]
+  (or (= :Unset t)
+      (and (vector? t) (= :Maybe (first t)))))
 
 (s/defn ^:private subtype? :- s/Bool
   [s :- HaliteType, t :- HaliteType]
@@ -38,8 +44,10 @@
     (and (= t :Coll) (boolean (#{:EmptyVec :EmptySet} s)))
     (and (= s :EmptyVec) (vector? t) (= :Vec (first t)))
     (and (= s :EmptySet) (vector? t) (= :Set (first t)))
+    (and (= s :Unset) (vector? t) (= :Maybe (first t)))
+    (and (vector? t) (= :Maybe (first t)) (subtype? s (second t)))
     (and (vector? s) (vector? t) (= (first s) (first t)) (subtype? (second s) (second t)))
-    (and (vector? s) (= t :Coll))))
+    (and (vector? s) (boolean (#{:Set :Vec} (first s))) (= t :Coll))))
 
 (s/defn ^:private meet :- HaliteType
   "The 'least' supertype of m and t. Formally, return the type m such that all are true:
@@ -147,10 +155,14 @@
     (when (nil? field-types)
       (throw (ex-info (str "resource spec not found: " t) {:form inst})))
 
-    (let [required-fields (set (keys field-types))
+    (let [fields (set (keys field-types))
+          required-fields (->> field-types
+                               (remove (comp maybe-type? second))
+                               (map first)
+                               set)
           supplied-fields (disj (set (keys inst)) :$type)
           missing-fields (set/difference required-fields supplied-fields)
-          invalid-fields (set/difference supplied-fields required-fields)]
+          invalid-fields (set/difference supplied-fields fields)]
       (when (seq missing-fields)
         (throw (ex-info (str "missing required variables: " (str/join "," missing-fields))
                         {:form inst :missing-vars missing-fields})))
@@ -158,8 +170,8 @@
         (throw (ex-info (str "variables not defined on spec: " (str/join "," invalid-fields))
                         {:form inst :invalid-vars invalid-fields}))))
 
-    (doseq [[field-kw field-type] field-types]
-      (let [field-val (get inst field-kw)
+    (doseq [[field-kw field-val] (dissoc inst :$type)]
+      (let [field-type (get field-types field-kw)
             actual-type (type-check tenv field-val)]
         (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
@@ -262,10 +274,35 @@
       (fn [tenv [sym body]]
         (when-not (symbol? sym)
           (throw (ex-info "even-numbered forms in let binding vector must be symbols" {:form expr})))
+        (when (contains? reserved-words sym)
+          (throw (ex-info (format "cannot bind value to reserved word '%s'" sym) {:form expr})))
         (assoc-in tenv [:vars sym] (type-check tenv body)))
       tenv
       (partition 2 bindings))
      body)))
+
+(s/defn ^:private type-check-if-value :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-exactly 3 expr)
+  (let [[sym set-expr unset-expr] (rest expr)]
+    (when-not (and (symbol? sym) (bare? sym))
+      (throw (ex-info (str "First argument to 'if-value-' must be a bare symbol") {:form expr})))
+    (let [sym-type (type-check tenv sym)
+          unset-type (type-check tenv unset-expr)]
+      (when-not (maybe-type? sym-type)
+        (throw (ex-info (str "First argument to 'if-value-' must have an optional type")
+                        {:form sym :expected [:Maybe :Any] :actual sym-type})))
+      (if (= :Unset sym-type)
+        (do
+          (type-check (assoc-in tenv [:vars sym] :Any) set-expr)
+          unset-type)
+        (let [inner-type (second sym-type)
+              set-type (type-check (assoc-in tenv [:vars sym] inner-type) set-expr)
+              m (meet set-type unset-type)]
+          (when (and (not= m set-type) (not= m unset-type))
+            (throw (ex-info (str "then and else branches to 'if-value-' have incompatible types")
+                            {:form expr})))
+          m)))))
 
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
@@ -275,13 +312,16 @@
     (boolean? expr) :Boolean
     (integer? expr) :Integer
     (string? expr) :String
-    (symbol? expr) (type-check-symbol tenv expr)
+    (symbol? expr) (if (= 'UNSET expr)
+                     :Unset
+                     (type-check-symbol tenv expr))
     (map? expr) (type-check-instance tenv expr)
     (list? expr) (condp = (first expr)
                    'get* (type-check-get* tenv expr)
                    '= (type-check-equals tenv expr)
                    'if (type-check-if tenv expr)
                    'let (type-check-let tenv expr)
+                   'if-value- (type-check-if-value tenv expr)
                    (type-check-fn-application tenv expr))
     (coll? expr) (type-check-coll tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -306,7 +346,7 @@
   (let [target (eval-expr env target-expr)]
     (if (vector? target)
       (nth target (eval-expr env index))
-      (get target index))))
+      (get target index :Unset))))
 
 (s/defn ^:private eval-let :- s/Any
   [env bindings body]
@@ -324,7 +364,9 @@
     (or (boolean? expr)
         (integer? expr)
         (string? expr)) expr
-    (symbol? expr) (get-in env [:bindings expr])
+    (symbol? expr) (if (= 'UNSET expr)
+                     :Unset
+                     (get-in env [:bindings expr]))
     (map? expr) (->> (dissoc expr :$type)
                      (map (fn [[k v]] [k (eval-expr env v)]))
                      (into (select-keys expr [:$type])))
@@ -336,6 +378,10 @@
                            (eval-expr env then)
                            (eval-expr env else)))
                    'let (apply eval-let env (rest expr))
+                   'if-value- (let [[sym then else] (rest expr)]
+                                (if (= :Unset (eval-expr env sym))
+                                  (eval-expr env else)
+                                  (eval-expr env then)))
                    (apply (:impl (get builtins (first expr)))
                           (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)
