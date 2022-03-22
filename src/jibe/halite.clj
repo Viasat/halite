@@ -15,7 +15,7 @@
 (s/defschema ^:private NamespacedKeyword (s/constrained s/Keyword namespaced?))
 (s/defschema ^:private BareSymbol (s/constrained s/Symbol bare?))
 
-(def reserved-words #{'UNSET})
+(def reserved-words #{'no-value-})
 
 (defn- spec-type? [t] (and (keyword? t) (namespaced? t)))
 
@@ -312,7 +312,7 @@
     (boolean? expr) :Boolean
     (integer? expr) :Integer
     (string? expr) :String
-    (symbol? expr) (if (= 'UNSET expr)
+    (symbol? expr) (if (= 'no-value- expr)
                      :Unset
                      (type-check-symbol tenv expr))
     (map? expr) (type-check-instance tenv expr)
@@ -364,7 +364,7 @@
     (or (boolean? expr)
         (integer? expr)
         (string? expr)) expr
-    (symbol? expr) (if (= 'UNSET expr)
+    (symbol? expr) (if (= 'no-value- expr)
                      :Unset
                      (get-in env [:bindings expr]))
     (map? expr) (->> (dissoc expr :$type)

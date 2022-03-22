@@ -242,19 +242,19 @@
     (are [expr etype]
         (= etype (halite/type-check tenv expr))
 
-      'UNSET :Unset
+      'no-value- :Unset
       {:$type :ws/Maybe$v1} :ws/Maybe$v1
       {:$type :ws/Maybe$v1 :x 1} :ws/Maybe$v1
-      {:$type :ws/Maybe$v1 :x 'UNSET} :ws/Maybe$v1
+      {:$type :ws/Maybe$v1 :x 'no-value-} :ws/Maybe$v1
       '(get* m :x) [:Maybe :Integer]
       '(if-value- x (+ x 1) 1) :Integer
-      '(let [x UNSET] (if-value- x x 1)) :Integer
-      '(if-value- UNSET 42 "foo") :String)
+      '(let [x no-value-] (if-value- x x 1)) :Integer
+      '(if-value- no-value- 42 "foo") :String)
 
     (are [expr err-msg]
         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
 
-      '(let [UNSET 12] "ha") #"reserved word"
+      '(let [no-value- 12] "ha") #"reserved word"
       '(if-value- 12 true false) #"must be a bare symbol"
       '(let [y 22] (if-value- y true false)) #"must have an optional type"
       '(if-value- x "foo" true) #"incompatible types")
@@ -266,7 +266,7 @@
       (are [expr v]
           (= v (halite/eval-expr env expr))
 
-        'UNSET :Unset
+        'no-value- :Unset
         '(get* m :x) :Unset
         '(if-value- x x 12) 12
-        '(let [y UNSET] (if-value- y "foo" true)) true))))
+        '(let [y no-value-] (if-value- y "foo" true)) true))))
