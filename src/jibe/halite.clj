@@ -350,6 +350,13 @@
       :EmptySet
       (reduce join arg-types))))
 
+(s/defn ^:private type-check-difference :- HaliteType
+  [tenv :- TypeEnv, expr :- s/Any]
+  (arg-count-exactly 2 expr)
+  (let [arg-types (mapv (partial type-check tenv) (rest expr))]
+    (check-all-sets expr arg-types)
+    (first arg-types)))
+
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
@@ -371,6 +378,7 @@
                    'if-value- (type-check-if-value tenv expr)
                    'union (type-check-union tenv expr)
                    'intersection (type-check-intersection tenv expr)
+                   'difference (type-check-difference tenv expr)
                    (type-check-fn-application tenv expr))
     (coll? expr) (type-check-coll tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -434,6 +442,7 @@
                                   (eval-expr env then)))
                    'union (reduce set/union (map (partial eval-expr env) (rest expr)))
                    'intersection (reduce set/intersection (map (partial eval-expr env) (rest expr)))
+                   'difference (apply set/difference (map (partial eval-expr env) (rest expr)))
                    (apply (:impl (get builtins (first expr)))
                           (map (partial eval-expr env) (rest expr))))
     (vector? expr) (mapv (partial eval-expr env) expr)

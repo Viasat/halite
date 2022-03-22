@@ -347,3 +347,24 @@
     '(intersection #{1 2} #{}) #{}
     '(intersection #{1 2} (union #{1} #{"two"})) #{1}
     '(intersection #{no-value- 3} #{12}) #{})))
+
+(deftest difference-tests
+  (are [expr etype]
+      (= etype (halite/type-check tenv expr))
+
+    '(difference #{1 2} #{}) [:Set :Integer]
+    '(difference #{1 2} #{"three" true}) [:Set :Integer])
+
+  (are [expr err-msg]
+      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
+
+    '(difference #{1}) #"Wrong number of arguments"
+    '(difference #{1} #{2} #{3}) #"Wrong number of arguments"
+    '(difference #{1} 1) #"must be sets")
+
+  (let [env (assoc tenv :bindings {} :refinesTo {})]
+    (are [expr v]
+        (= v (halite/eval-expr env expr))
+
+      '(difference #{} #{1}) #{}
+      '(difference #{1 2 3} #{2}) #{1 3})))
