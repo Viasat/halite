@@ -291,6 +291,7 @@
           (= v (halite/eval-expr env expr))
 
         'no-value- :Unset
+        {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
         '(get* m :x) :Unset
         '(if-value- x x 12) 12
         '(let [y no-value-] (if-value- y "foo" true)) true))))

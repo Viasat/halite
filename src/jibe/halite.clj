@@ -479,6 +479,7 @@
                      (get-in env [:bindings expr]))
     (map? expr) (->> (dissoc expr :$type)
                      (map (fn [[k v]] [k (eval-expr env v)]))
+                     (remove (fn [[k v]] (= :Unset v)))
                      (into (select-keys expr [:$type])))
     (list? expr) (condp = (first expr)
                    'get* (apply eval-get* env (rest expr))
