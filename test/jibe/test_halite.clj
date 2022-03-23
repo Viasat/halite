@@ -367,7 +367,7 @@
     '(intersection #{1 2} #{"three"}) #{}
     '(intersection #{1 2} #{}) #{}
     '(intersection #{1 2} (union #{1} #{"two"})) #{1}
-    '(intersection #{no-value- 3} #{12}) #{})))
+    '(intersection #{3} #{12}) #{})))
 
 (deftest difference-tests
   (are [expr etype]

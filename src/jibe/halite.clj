@@ -95,6 +95,77 @@
    :vars {BareSymbol HaliteType}
    :refinesTo* {NamespacedKeyword #{NamespacedKeyword}}})
 
+(s/defn ^:private check-instance :- NamespacedKeyword
+  [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, tenv :- TypeEnv, inst :- {s/Keyword s/Any}]
+  (let [t (:$type inst)
+        field-types (-> tenv :specs (get t))]
+    (when (nil? t)
+      (throw (ex-info "instance literal must have :$type field" {error-key inst})))
+
+    (when-not (and (keyword? t) (namespaced? t))
+      (throw (ex-info "expected namespaced keyword as value of :$type" {error-key inst})))
+
+    (when (nil? field-types)
+      (throw (ex-info (str "resource spec not found: " t) {error-key inst})))
+
+    (let [fields (set (keys field-types))
+          required-fields (->> field-types
+                               (remove (comp maybe-type? second))
+                               (map first)
+                               set)
+          supplied-fields (disj (set (keys inst)) :$type)
+          missing-fields (set/difference required-fields supplied-fields)
+          invalid-fields (set/difference supplied-fields fields)]
+      (when (seq missing-fields)
+        (throw (ex-info (str "missing required variables: " (str/join "," missing-fields))
+                        {error-key inst :missing-vars missing-fields})))
+      (when (seq invalid-fields)
+        (throw (ex-info (str "variables not defined on spec: " (str/join "," invalid-fields))
+                        {error-key inst :invalid-vars invalid-fields}))))
+
+    (doseq [[field-kw field-val] (dissoc inst :$type)]
+      (let [field-type (get field-types field-kw)
+            actual-type (check-fn tenv field-val)]
+        (when-not (subtype? actual-type field-type)
+          (throw (ex-info (str "value of " field-kw " has wrong type")
+                          {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
+    t))
+
+(s/defn ^:private check-coll :- HaliteType
+  [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, tenv :- TypeEnv, coll]
+  (cond
+    (= [] coll) :EmptyVec
+    (= #{} coll) :EmptySet
+    :else (let [elem-types (map (partial check-fn tenv) coll)
+                coll-type (cond
+                            (vector? coll) :Vec
+                            (set? coll) :Set
+                            :else (throw (ex-info "Invalid value" {error-key coll})))]
+            (doseq [[elem elem-type] (map vector coll elem-types)]
+              (when (maybe-type? elem-type)
+                (throw (ex-info (format "%s literal element may not always evaluate to a value" ({:Vec "vector" :Set "set"} coll-type))
+                                {error-key elem}))))
+            [coll-type
+             (condp = (count coll)
+               0 nil
+               1 (first elem-types)
+               (reduce meet elem-types))])))
+
+
+(declare type-of)
+
+(s/defn type-of :- HaliteType
+  "Return the type of the given runtime value, or throw an error if the value is invalid and cannot be typed."
+  [tenv :- TypeEnv, value :- s/Any]
+  (cond
+    (boolean? value) :Boolean
+    (integer? value) :Integer
+    (string? value) :String
+    (= :Unset value) :Unset
+    (map? value) (check-instance type-of :value tenv value)
+    (coll? value) (check-coll type-of :value tenv value)
+    :else (throw (ex-info "Invalid value" {:value value}))))
+
 (s/defschema FnSignature
   {:arg-types [HaliteType]
    (s/optional-key :variadic-tail) HaliteType
@@ -177,62 +248,6 @@
                                    {:form form}))
         (matches-signature? sig actual-types) (:return-type sig)
         :else (recur signatures)))))
-
-(s/defn ^:private type-check-instance :- NamespacedKeyword
-  [tenv :- TypeEnv, inst :- {s/Keyword s/Any}]
-  (let [t (:$type inst)
-        field-types (-> tenv :specs (get t))]
-    (when (nil? t)
-      (throw (ex-info "instance literal must have :$type field" {:form inst})))
-
-    (when-not (and (keyword? t) (namespaced? t))
-      (throw (ex-info "expected namespaced keyword as value of :$type" {:form inst})))
-
-    (when (nil? field-types)
-      (throw (ex-info (str "resource spec not found: " t) {:form inst})))
-
-    (let [fields (set (keys field-types))
-          required-fields (->> field-types
-                               (remove (comp maybe-type? second))
-                               (map first)
-                               set)
-          supplied-fields (disj (set (keys inst)) :$type)
-          missing-fields (set/difference required-fields supplied-fields)
-          invalid-fields (set/difference supplied-fields fields)]
-      (when (seq missing-fields)
-        (throw (ex-info (str "missing required variables: " (str/join "," missing-fields))
-                        {:form inst :missing-vars missing-fields})))
-      (when (seq invalid-fields)
-        (throw (ex-info (str "variables not defined on spec: " (str/join "," invalid-fields))
-                        {:form inst :invalid-vars invalid-fields}))))
-
-    (doseq [[field-kw field-val] (dissoc inst :$type)]
-      (let [field-type (get field-types field-kw)
-            actual-type (type-check tenv field-val)]
-        (when-not (subtype? actual-type field-type)
-          (throw (ex-info (str "value of " field-kw " has wrong type")
-                          {:form inst :variable field-kw :expected field-type :actual actual-type})))))
-    t))
-
-(s/defn ^:private type-check-coll :- HaliteType
-  [tenv :- TypeEnv, coll]
-  (cond
-    (= [] coll) :EmptyVec
-    (= #{} coll) :EmptySet
-    :else (let [elem-types (map (partial type-check tenv) coll)
-                coll-type (cond
-                            (vector? coll) :Vec
-                            (set? coll) :Set
-                            :else (throw (ex-info "Invalid value" {:form coll})))]
-            (doseq [[elem elem-type] (map vector coll elem-types)]
-              (when (maybe-type? elem-type)
-                (throw (ex-info (format "%s literal element may not always evaluate to a value" ({:Vec "vector" :Set "set"} coll-type))
-                                {:form elem}))))
-            [coll-type
-             (condp = (count coll)
-               0 nil
-               1 (first elem-types)
-               (reduce meet elem-types))])))
 
 (s/defn ^:private type-check-symbol :- HaliteType
   [tenv :- TypeEnv, sym]
@@ -430,7 +445,7 @@
     (symbol? expr) (if (= 'no-value- expr)
                      :Unset
                      (type-check-symbol tenv expr))
-    (map? expr) (type-check-instance tenv expr)
+    (map? expr) (check-instance type-check :form tenv expr)
     (list? expr) (condp = (first expr)
                    'get* (type-check-get* tenv expr)
                    '= (type-check-equals tenv expr)
@@ -446,7 +461,7 @@
                    'conj (type-check-conj tenv expr)
                    'into (type-check-into tenv expr)
                    (type-check-fn-application tenv expr))
-    (coll? expr) (type-check-coll tenv expr)
+    (coll? expr) (check-coll type-check :form tenv expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
 
 (def Env
