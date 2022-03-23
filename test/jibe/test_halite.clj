@@ -85,6 +85,7 @@
     '(+ 1 2) :Integer
     '(+ (- 3 2) (* 4 5)) :Integer
     '(and (< 1 2) (> (+ 5 6) 90) (or true (<= 1 4))) :Boolean
+    '(=> true false) :Boolean
     '(not true) :Boolean
     '(Cardinality [true true false]) :Integer
     '(contains? #{1 2 3} 2) :Boolean
@@ -116,6 +117,10 @@
     '(> 2 1) true
     '(<= 1 1) true
     '(>= 1 1) true
+    '(=> true false) false
+    '(=> true true) true
+    '(=> false false) true
+    '(=> false true) true
     '(Cardinality [1 2 3 1]) 4
     '(and true false true) false
     '(or true false false) true
