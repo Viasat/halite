@@ -230,6 +230,8 @@
                        [:EmptySet] :EmptyVec
                        [[:Set :Integer]] [:Vec :Integer]
                        [[:Vec :Integer]] [:Vec :Integer])
+     'some? (mk-builtin (fn [v] (not= :Unset v))
+                        [[:Maybe :Any]] :Boolean)
      }))
 
 (declare type-check)

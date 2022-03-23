@@ -275,7 +275,9 @@
       '(get* m :x) [:Maybe :Integer]
       '(if-value- x (+ x 1) 1) :Integer
       '(let [x no-value-] (if-value- x x 1)) :Integer
-      '(if-value- no-value- 42 "foo") :String)
+      '(if-value- no-value- 42 "foo") :String
+      '(some? no-value-) :Boolean
+      '(some? x) :Boolean)
 
     (are [expr err-msg]
         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
@@ -295,7 +297,9 @@
         {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
         '(get* m :x) :Unset
         '(if-value- x x 12) 12
-        '(let [y no-value-] (if-value- y "foo" true)) true))))
+        '(let [y no-value-] (if-value- y "foo" true)) true
+        '(some? x) false
+        '(some? m) true))))
 
 (deftest no-value-restrictions
   ;; We want to limit the ways in which [:Maybe <T>] can be used.
