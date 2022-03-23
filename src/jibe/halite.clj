@@ -281,7 +281,7 @@
       :else (throw (ex-info "First argument to get* must be an instance or non-empty vector"
                             {:form form})))))
 
-(s/defn type-check-equals :- HaliteType
+(s/defn ^:private type-check-equals :- HaliteType
   [tenv :- TypeEnv, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [arg-types (mapv (partial type-check tenv) (rest expr))]
@@ -372,7 +372,7 @@
     (check-all-sets expr arg-types)
     (first arg-types)))
 
-(s/defn type-check-first :- HaliteType
+(s/defn ^:private type-check-first :- HaliteType
   [tenv :- TypeEnv, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check tenv (second expr))]
@@ -382,7 +382,7 @@
       (throw (ex-info "argument to first is always empty" {:form expr})))
     (second arg-type)))
 
-(s/defn type-check-rest :- HaliteType
+(s/defn ^:private type-check-rest :- HaliteType
   [tenv :- TypeEnv, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check tenv (second expr))]
@@ -390,7 +390,7 @@
       (throw (ex-info "Argument to 'rest' must be a vector" {:form expr})))
     arg-type))
 
-(s/defn type-check-conj :- HaliteType
+(s/defn ^:private type-check-conj :- HaliteType
   [tenv :- TypeEnv, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check tenv) (rest expr))]
@@ -403,7 +403,7 @@
                           {:form elem}))))
       (reduce meet base-type (map #(vector col-type %) elem-types)))))
 
-(s/defn type-check-into :- HaliteType
+(s/defn ^:private type-check-into :- HaliteType
   [tenv :- TypeEnv, expr :- s/Any]
   (arg-count-exactly 2 expr)
   (let [[s t] (mapv (partial type-check tenv) (rest expr))]
