@@ -9,14 +9,20 @@
 
 (clojure.test/use-fixtures :once validate-schemas)
 
-(def tenv {:specs {:ws/A$v1 {:x :Integer
-                             :y :Boolean
-                             :c :ws2/B$v1}
-                   :ws2/B$v1 {:s :String}
-                   :ws/C$v1 {:xs [:Vec :Integer]}
-                   :ws/D$v1 {:xss [:Vec [:Vec :Integer]]}}
-           :vars {}
-           :refinesTo* {}})
+(defrecord TestTypeEnv [specs vars]
+  halite/TypeEnv
+  (lookup-spec* [self spec-id] (get specs spec-id))
+  (scope* [self] vars)
+  (extend-scope* [self sym t] (assoc-in self [:vars sym] t)))
+
+(def tenv (map->TestTypeEnv
+           {:specs {:ws/A$v1 {:spec-vars {:x :Integer
+                                          :y :Boolean
+                                          :c :ws2/B$v1}}
+                    :ws2/B$v1 {:spec-vars {:s :String}}
+                    :ws/C$v1 {:spec-vars {:xs [:Vec :Integer]}}
+                    :ws/D$v1 {:spec-vars {:xss [:Vec [:Vec :Integer]]}}}
+            :vars {}}))
 
 (def empty-env {:bindings {} :refinesTo {}})
 
@@ -127,14 +133,14 @@
     '(subset? #{"nope"} #{1 2 3}) false))
 
 (deftest get*-type-checking-tests
-  (let [tenv {:specs {:ws/A$v1 {:x :Integer}
-                      :ws/B$v1 {:a :ws/A$v1}
-                      :ws/C$v1 {:bs [:Vec :ws/B$v1]}}
-              :vars {'a :ws/A$v1
-                     'b :ws/B$v1
-                     'c :ws/C$v1
-                     'xs [:Vec :String]}
-              :refinesTo* {}}]
+  (let [tenv (map->TestTypeEnv
+              {:specs {:ws/A$v1 {:spec-vars {:x :Integer}}
+                       :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
+                       :ws/C$v1 {:spec-vars {:bs [:Vec :ws/B$v1]}}}
+               :vars {'a :ws/A$v1
+                      'b :ws/B$v1
+                      'c :ws/C$v1
+                      'xs [:Vec :String]}})]
     (are [expr etype]
         (= etype (halite/type-check tenv expr))
       
@@ -165,11 +171,11 @@
                         :a {:$type :ws/A$v1
                             :x x}})
                      (range 5))}
-        tenv {:specs {:ws/A$v1 {:x :Integer}
-                      :ws/B$v1 {:a :ws/A$v1}
-                      :ws/C$v1 {:bs [:Vec :ws/B$v1]}}
-              :vars {'c :ws/C$v1}
-              :refinesTo* {}}
+        tenv (map->TestTypeEnv
+              {:specs {:ws/A$v1 {:spec-vars {:x :Integer}}
+                       :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
+                       :ws/C$v1 {:spec-vars {:bs [:Vec :ws/B$v1]}}}
+               :vars {'c :ws/C$v1}})
         env {:bindings {'c c}
              :refinesTo {}}]
     (are [expr v]
@@ -256,10 +262,9 @@
 
 (deftest maybe-tests
   (let [tenv (-> tenv
-                 (assoc-in [:specs :ws/Maybe$v1]
-                           {:x [:Maybe :Integer]})
-                 (assoc-in [:vars 'm] :ws/Maybe$v1)
-                 (assoc-in [:vars 'x] [:Maybe :Integer]))]
+                 (assoc-in [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
+                 (halite/extend-scope 'm :ws/Maybe$v1)
+                 (halite/extend-scope 'x [:Maybe :Integer]))]
     (are [expr etype]
         (= etype (halite/type-check tenv expr))
 
