@@ -465,73 +465,90 @@
     :else (throw (ex-info "Syntax error" {:form expr}))))
 
 (def Env
-  "An environment in which expressions may be evaluated.
-  Compreses a type environment together with
+  "An environment in which expressions may be evaluated. Includes
 
   a :bindings entry that maps variables to values
   a :refinesTo entry representing a refinement graph"
-  (merge TypeEnv
-         {:bindings {BareSymbol s/Any}
-          :refinesTo {NamespacedKeyword
-                      {NamespacedKeyword
-                       [{:guard s/Any
-                         :expr s/Any}]}}}))
+  {:bindings {BareSymbol s/Any}
+   :refinesTo {NamespacedKeyword
+               {NamespacedKeyword
+                [{:guard s/Any
+                  :expr s/Any}]}}})
 
-(declare eval-expr)
+(declare eval-expr*)
 
 (s/defn ^:private eval-get* :- s/Any
   [env :- Env, target-expr index]
-  (let [target (eval-expr env target-expr)]
+  (let [target (eval-expr* env target-expr)]
     (if (vector? target)
-      (nth target (dec (eval-expr env index)))
+      (nth target (dec (eval-expr* env index)))
       (get target index :Unset))))
 
 (s/defn ^:private eval-let :- s/Any
   [env :- Env, bindings body]
-  (eval-expr
+  (eval-expr*
    (reduce
     (fn [env [sym body]]
-      (assoc-in env [:bindings sym] (eval-expr env body)))
+      (assoc-in env [:bindings sym] (eval-expr* env body)))
     env
     (partition 2 bindings))
    body))
 
-(s/defn eval-expr :- s/Any
+(s/defn ^:private eval-expr* :- s/Any
   [env :- Env, expr]
-  (cond
-    (or (boolean? expr)
-        (integer? expr)
-        (string? expr)) expr
-    (symbol? expr) (if (= 'no-value- expr)
-                     :Unset
-                     (get-in env [:bindings expr]))
-    (map? expr) (->> (dissoc expr :$type)
-                     (map (fn [[k v]] [k (eval-expr env v)]))
-                     (remove (fn [[k v]] (= :Unset v)))
-                     (into (select-keys expr [:$type])))
-    (list? expr) (condp = (first expr)
-                   'get* (apply eval-get* env (rest expr))
-                   '= (apply = (map (partial eval-expr env) (rest expr)))
-                   'not= (apply not= (map (partial eval-expr env) (rest expr)))
-                   'if (let [[pred then else] (rest expr)]
-                         (if (eval-expr env pred)
-                           (eval-expr env then)
-                           (eval-expr env else)))
-                   'let (apply eval-let env (rest expr))
-                   'if-value- (let [[sym then else] (rest expr)]
-                                (if (= :Unset (eval-expr env sym))
-                                  (eval-expr env else)
-                                  (eval-expr env then)))
-                   'union (reduce set/union (map (partial eval-expr env) (rest expr)))
-                   'intersection (reduce set/intersection (map (partial eval-expr env) (rest expr)))
-                   'difference (apply set/difference (map (partial eval-expr env) (rest expr)))
-                   'first (or (first (eval-expr env (second expr)))
-                              (throw (ex-info "empty vector has no first element" {:form expr})))
-                   'rest (let [arg (eval-expr env (second expr))]
-                           (if (empty? arg) [] (subvec arg 1)))
-                   'conj (apply conj (map (partial eval-expr env) (rest expr)))
-                   'into (apply into (map (partial eval-expr env) (rest expr)))
-                   (apply (:impl (get builtins (first expr)))
-                          (map (partial eval-expr env) (rest expr))))
-    (vector? expr) (mapv (partial eval-expr env) expr)
-    (set? expr) (set (map (partial eval-expr env) expr))))
+  (let [eval-in-env (partial eval-expr* env)]
+    (cond
+      (or (boolean? expr)
+          (integer? expr)
+          (string? expr)) expr
+      (symbol? expr) (if (= 'no-value- expr)
+                       :Unset
+                       (get-in env [:bindings expr]))
+      (map? expr) (->> (dissoc expr :$type)
+                       (map (fn [[k v]] [k (eval-in-env v)]))
+                       (remove (fn [[k v]] (= :Unset v)))
+                       (into (select-keys expr [:$type])))
+      (list? expr) (condp = (first expr)
+                     'get* (apply eval-get* env (rest expr))
+                     '= (apply = (map eval-in-env (rest expr)))
+                     'not= (apply not= (map eval-in-env (rest expr)))
+                     'if (let [[pred then else] (rest expr)]
+                           (eval-in-env (if (eval-in-env pred) then else)))
+                     'let (apply eval-let env (rest expr))
+                     'if-value- (let [[sym then else] (rest expr)]
+                                  (if (= :Unset (eval-in-env sym))
+                                    (eval-in-env else)
+                                    (eval-in-env then)))
+                     'union (reduce set/union (map eval-in-env (rest expr)))
+                     'intersection (reduce set/intersection (map eval-in-env (rest expr)))
+                     'difference (apply set/difference (map eval-in-env (rest expr)))
+                     'first (or (first (eval-in-env (second expr)))
+                                (throw (ex-info "empty vector has no first element" {:form expr})))
+                     'rest (let [arg (eval-in-env (second expr))]
+                             (if (empty? arg) [] (subvec arg 1)))
+                     'conj (apply conj (map eval-in-env (rest expr)))
+                     'into (apply into (map eval-in-env (rest expr)))
+                     (apply (:impl (get builtins (first expr)))
+                            (map eval-in-env (rest expr))))
+      (vector? expr) (mapv eval-in-env expr)
+      (set? expr) (set (map eval-in-env expr)))))
+
+(s/defn eval-expr :- s/Any
+  "Type check a halite expression against the given type environment,
+  evaluate it in the given environment, and return the result. The bindings
+  in the environment are checked against the type environment before evaluation."
+  [tenv :- TypeEnv, env :- Env, expr]
+  (type-check tenv expr)
+  (let [declared-symbols (set (keys (:vars tenv)))
+        bound-symbols (set (keys (:bindings env)))
+        unbound-symbols (set/difference declared-symbols bound-symbols)]
+    (when (seq unbound-symbols)
+      (throw (ex-info (str "symbols in type environment are not bound: " (str/join " ", unbound-symbols)) {:tenv tenv :env env})))
+    (doseq [sym declared-symbols]
+      (let [declared-type (get-in tenv [:vars sym])
+            value (get-in env [:bindings sym])
+            actual-type (type-of tenv value)]
+        (when-not (subtype? actual-type declared-type)
+          (throw (ex-info (format "Supplied value of '%s' has wrong type" (name sym))
+                          {:value value :expected declared-type :actual actual-type})))))
+    (eval-expr* env expr)))

@@ -18,6 +18,8 @@
            :vars {}
            :refinesTo* {}})
 
+(def empty-env {:bindings {} :refinesTo {}})
+
 (deftest literal-type-tests
   (are [expr etype]
       (= etype (halite/type-check tenv expr))
@@ -57,19 +59,18 @@
     {:$type :ws/C$v1 :xs [1 "two"]} #"value of :xs has wrong type"))
 
 (deftest literal-eval-tests
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr]
-        (= expr (halite/eval-expr env expr))
+  (are [expr]
+      (= expr (halite/eval-expr tenv empty-env expr))
 
-      true
-      false
-      1
-      "two"
-      {:$type :ws2/B$v1 :s "foo"}
-      []
-      #{}
-      [1 2 3]
-      [{:$type :ws2/B$v1 :s "bar"}])))
+    true
+    false
+    1
+    "two"
+    {:$type :ws2/B$v1 :s "foo"}
+    []
+    #{}
+    [1 2 3]
+    [{:$type :ws2/B$v1 :s "bar"}]))
 
 (deftest application-tests
   (are [expr etype]
@@ -98,33 +99,32 @@
     '(+ 1 "two") #"no matching signature for '\+'"
     '(+ 1) #"no matching signature for '\+'")
 
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr v]
-        (= v (halite/eval-expr env expr))
+  (are [expr v]
+      (= v (halite/eval-expr tenv empty-env expr))
 
-      '(+ 1 2) 3
-      '(- 5 3) 2
-      '(< 1 2) true
-      '(< 2 1) false
-      '(> 1 2) false
-      '(> 2 1) true
-      '(<= 1 1) true
-      '(>= 1 1) true
-      '(Cardinality [1 2 3 1]) 4
-      '(and true false true) false
-      '(or true false false) true
-      '(or false false) false
-      '(not false) true
-      '(not true) false
-      '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (Cardinality #{1 2}) 3))) true
-      '(contains? #{1 2 3} 2) true
-      '(dec 12) 11
-      '(div 14 3) 4
-      '(mod* 5 3) 2
-      '(expt 2 8) 256
-      '(str "foo" (str) (str "bar")) "foobar"
-      '(subset? #{} #{1 2 3}) true
-      '(subset? #{"nope"} #{1 2 3}) false)))
+    '(+ 1 2) 3
+    '(- 5 3) 2
+    '(< 1 2) true
+    '(< 2 1) false
+    '(> 1 2) false
+    '(> 2 1) true
+    '(<= 1 1) true
+    '(>= 1 1) true
+    '(Cardinality [1 2 3 1]) 4
+    '(and true false true) false
+    '(or true false false) true
+    '(or false false) false
+    '(not false) true
+    '(not true) false
+    '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (Cardinality #{1 2}) 3))) true
+    '(contains? #{1 2 3} 2) true
+    '(dec 12) 11
+    '(div 14 3) 4
+    '(mod* 5 3) 2
+    '(expt 2 8) 256
+    '(str "foo" (str) (str "bar")) "foobar"
+    '(subset? #{} #{1 2 3}) true
+    '(subset? #{"nope"} #{1 2 3}) false))
 
 (deftest get*-type-checking-tests
   (let [tenv {:specs {:ws/A$v1 {:x :Integer}
@@ -165,15 +165,15 @@
                         :a {:$type :ws/A$v1
                             :x x}})
                      (range 5))}
-        env {:specs {:ws/A$v1 {:x :Integer}
-                     :ws/B$v1 {:a :ws/A$v1}
-                     :ws/C$v1 {:bs [:Vec :ws/B$v1]}}
-             :vars {'c :ws/C$v1}
-             :refinesTo* {}
-             :bindings {'c c}
+        tenv {:specs {:ws/A$v1 {:x :Integer}
+                      :ws/B$v1 {:a :ws/A$v1}
+                      :ws/C$v1 {:bs [:Vec :ws/B$v1]}}
+              :vars {'c :ws/C$v1}
+              :refinesTo* {}}
+        env {:bindings {'c c}
              :refinesTo {}}]
     (are [expr v]
-        (= v (halite/eval-expr env expr))
+        (= v (halite/eval-expr tenv env expr))
       'c c
       '(get* c :bs) (get c :bs)
       '(get* (get* c :bs) 3) (get-in c [:bs 2])
@@ -196,14 +196,13 @@
     '(not= 1 "two") #"incompatible types"
     '(not= [] #{}) #"incompatible types")
 
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr v]
-        (= v (halite/eval-expr env expr))
+  (are [expr v]
+      (= v (halite/eval-expr tenv empty-env expr))
 
-      '(= (* 2 3) (+ 2 4)) true
-      '(= [1 2 3] [2 1 3]) false
-      '(not= (* 2 3) (+ 2 4)) false
-      '(not= [1 2 3] [2 1 3]) true)))
+    '(= (* 2 3) (+ 2 4)) true
+    '(= [1 2 3] [2 1 3]) false
+    '(not= (* 2 3) (+ 2 4)) false
+    '(not= [1 2 3] [2 1 3]) true))
 
 (deftest if-tests
   (are [expr etype]
@@ -218,12 +217,11 @@
     '(if 1 2 3) #"must be boolean"
     '(if true 1 "two") #"incompatible types")
 
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr v]
-        (= v (halite/eval-expr env expr))
+  (are [expr v]
+      (= v (halite/eval-expr tenv empty-env expr))
 
-      '(if true 1 2) 1
-      '(if (< 1 (Cardinality [])) 12 (+ 2 3)) 5)))
+    '(if true 1 2) 1
+    '(if (< 1 (Cardinality [])) 12 (+ 2 3)) 5))
 
 (deftest let-tests
   (are [expr etype]
@@ -247,15 +245,14 @@
     '(let [1 2] 1) #"must be symbols"
     '(let [x "foo"] (+ x 1)) #"no matching signature")
 
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr v]
-        (= v (halite/eval-expr env expr))
+  (are [expr v]
+      (= v (halite/eval-expr tenv empty-env expr))
 
-      '(let [] 1) 1
-      '(let [x (+ 1 2), y [x]] y) [3]
-      '(let [x 1] (let [x "foo"] x)) "foo" 
-      '(let [x "foo", y (let [x 1] (+ x 2))] y) 3
-      )))
+    '(let [] 1) 1
+    '(let [x (+ 1 2), y [x]] y) [3]
+    '(let [x 1] (let [x "foo"] x)) "foo" 
+    '(let [x "foo", y (let [x 1] (+ x 2))] y) 3
+    ))
 
 (deftest maybe-tests
   (let [tenv (-> tenv
@@ -283,12 +280,11 @@
       '(let [y 22] (if-value- y true false)) #"must have an optional type"
       '(if-value- x "foo" true) #"incompatible types")
 
-    (let [env (assoc tenv
-                     :bindings {'m {:$type :ws/Maybe$v1}
-                                'x :Unset}
-                     :refinesTo {})]
+    (let [env {:bindings {'m {:$type :ws/Maybe$v1}
+                          'x :Unset}
+               :refinesTo {}}]
       (are [expr v]
-          (= v (halite/eval-expr env expr))
+          (= v (halite/eval-expr tenv env expr))
 
         'no-value- :Unset
         {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
@@ -303,9 +299,7 @@
   ;;    We want `no-value-` to represent the absence of a value, and you
   ;;    can't put a value you don't have in a collection!
   ;; 2) [:Maybe [:Maybe <T>]] is not a valid type!
-  (let [tenv (-> tenv
-                 (assoc-in [:vars 'x] [:Maybe :Integer]))
-        env (assoc tenv :bindings {'x :Unset})]
+  (let [tenv (assoc-in tenv [:vars 'x] [:Maybe :Integer])]
     (are [expr err-msg]
         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check tenv expr))
 
@@ -331,17 +325,16 @@
 
     '(union #{1} [2]) #"must be sets")
 
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr v]
-        (= v (halite/eval-expr env expr))
+  (are [expr v]
+      (= v (halite/eval-expr tenv empty-env expr))
 
-      '(union #{1 2 3} #{3 4 5}) #{1 2 3 4 5}
-      '(union #{} #{"foo"}) #{"foo"}
-      '(union #{1} #{"foo"}) #{1 "foo"}
-      '(union) #{}
-      '(union #{1}) #{1}
-      '(union #{[]} #{#{}}) #{[] #{}}
-      '(union #{1} #{2} #{3} #{4}) #{1 2 3 4})))
+    '(union #{1 2 3} #{3 4 5}) #{1 2 3 4 5}
+    '(union #{} #{"foo"}) #{"foo"}
+    '(union #{1} #{"foo"}) #{1 "foo"}
+    '(union) #{}
+    '(union #{1}) #{1}
+    '(union #{[]} #{#{}}) #{[] #{}}
+    '(union #{1} #{2} #{3} #{4}) #{1 2 3 4}))
 
 (deftest intersection-tests
   (are [expr etype]
@@ -359,15 +352,14 @@
     '(intersection) #"Wrong number of arguments"
     '(intersection #{1} [2]) #"must be sets")
 
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr v]
-        (= v (halite/eval-expr env expr))
+  (are [expr v]
+      (= v (halite/eval-expr tenv empty-env expr))
 
     '(intersection #{1 2}) #{1 2}
     '(intersection #{1 2} #{"three"}) #{}
     '(intersection #{1 2} #{}) #{}
     '(intersection #{1 2} (union #{1} #{"two"})) #{1}
-    '(intersection #{3} #{12}) #{})))
+    '(intersection #{3} #{12}) #{}))
 
 (deftest difference-tests
   (are [expr etype]
@@ -383,12 +375,11 @@
     '(difference #{1} #{2} #{3}) #"Wrong number of arguments"
     '(difference #{1} 1) #"must be sets")
 
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr v]
-        (= v (halite/eval-expr env expr))
+  (are [expr v]
+      (= v (halite/eval-expr tenv empty-env expr))
 
-      '(difference #{} #{1}) #{}
-      '(difference #{1 2 3} #{2}) #{1 3})))
+    '(difference #{} #{1}) #{}
+    '(difference #{1 2 3} #{2}) #{1 3}))
 
 (deftest vector-tests
   (are [expr etype]
@@ -430,25 +421,20 @@
     '(sort) #"no matching signature"
     '(sort 1) #"no matching signature")
 
-  (let [env (assoc tenv :bindings {} :refinesTo {})]
-    (are [expr v]
-        (= v (halite/eval-expr env expr))
+  (are [expr v]
+      (= v (halite/eval-expr tenv empty-env expr))
 
-      '(first [1 2 3]) 1
-      '(rest []) []
-      '(rest [1]) []
-      '(rest [1 2 3]) [2 3]
-      '(conj [] 1) [1]
-      '(conj [1] 2) [1 2]
-      '(conj [1] "two") [1 "two"]
-      '(conj [1] 2 3 4) [1 2 3 4]
-      '(conj #{1} 2 3 2 4) #{1 2 3 4}
-      '(into [] []) []
-      '(into [1 2] [1 2]) [1 2 1 2]
-      '(into #{} #{}) #{}
-      '(into #{} []) #{}
-      '(into #{1 2} [1 2 3]) #{1 2 3})
-
-    (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr env expr))
-      '(first (rest [1])) #"empty vector has no first element")))
+    '(first [1 2 3]) 1
+    '(rest []) []
+    '(rest [1]) []
+    '(rest [1 2 3]) [2 3]
+    '(conj [] 1) [1]
+    '(conj [1] 2) [1 2]
+    '(conj [1] "two") [1 "two"]
+    '(conj [1] 2 3 4) [1 2 3 4]
+    '(conj #{1} 2 3 2 4) #{1 2 3 4}
+    '(into [] []) []
+    '(into [1 2] [1 2]) [1 2 1 2]
+    '(into #{} #{}) #{}
+    '(into #{} []) #{}
+    '(into #{1 2} [1 2 3]) #{1 2 3}))
