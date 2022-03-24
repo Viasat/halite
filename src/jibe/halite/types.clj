@@ -8,9 +8,9 @@
 
   The subtype graph looks like this:
 
-                         +---->  :Any  <-------+--------------------+-----------------+
-                         |                     |                    |                 |
-         +---->  [:Maybe :Coll] <-+        [:Maybe :Integer]  [:Maybe :String]  [:Maybe Boolean]
+                         +---->  :Any  <-------+--------------------+-----------------+----------------+
+                         |                     |                    |                 |                |
+         +---->  [:Maybe :Coll] <-+        [:Maybe :Integer]  [:Maybe :String]  [:Maybe Boolean]  <spec-id kw>
          |           ^            |           ^        ^         ^        ^       ^         ^
   [:Maybe [:Set T]]  |  [:Maybe [:Vec T]]     |        |         |        |       |         |
    ^    ^            |        ^     ^         |        |         |        |       |         |
