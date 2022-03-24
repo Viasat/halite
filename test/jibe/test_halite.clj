@@ -454,3 +454,38 @@
     '(into #{} #{}) #{}
     '(into #{} []) #{}
     '(into #{1 2} [1 2 3]) #{1 2 3}))
+
+(deftest test-constraint-validation
+  (let [senv (update senv :specs merge
+                     {:ws/E$v1 {:spec-vars {:x [:Maybe :Integer]
+                                            :y :Boolean}
+                                :constraints [["x-if-y" '(=> y (some? x))]]}
+                      :ws/Invalid$v1 {:spec-vars {}
+                                      :constraints [["broken" '(or y true)]]}})]
+    ;; type-check cannot detect constraint violations, because that would often involve
+    ;; actually evaluating forms
+    (are [expr etype]
+        (= etype (halite/type-check senv tenv expr))
+
+      {:$type :ws/E$v1, :y false} :ws/E$v1
+      {:$type :ws/E$v1, :y true} :ws/E$v1
+      {:$type :ws/Invalid$v1} :ws/Invalid$v1)
+
+    ;; type-of, on the other hand, only works with values, and *does* check constraints
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/type-of senv tenv expr))
+
+      {:$type :ws/E$v1, :y true} #"invalid instance"
+      {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")
+
+    ;; eval-expr also must check constraints
+    (are [expr v]
+        (= v (halite/eval-expr senv tenv empty-env expr))
+      {:$type :ws/E$v1, :y false} {:$type :ws/E$v1, :y false})
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
+
+      {:$type :ws/E$v1, :y true} #"invalid instance"
+      {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")
+    ))

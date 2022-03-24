@@ -20,6 +20,28 @@
 
 (s/defschema ^:private TypeContext {:senv (s/protocol SpecEnv) :tenv (s/protocol TypeEnv)})
 
+(s/defn ^:private validate-instance :- s/Any
+  "Check that an instance satisfies all applicable constraints.
+  Return the instance if so, throw an exception if not.
+  Assumes that the instance has been type-checked successfully against the given type environment."
+  [senv :- (s/protocol SpecEnv), inst :- s/Any]
+  (let [spec-id (:$type inst)
+        spec-info (lookup-spec senv spec-id)
+        spec-tenv (type-env-from-spec spec-info)
+        env (env-from-inst spec-info inst)
+        satisfied? (fn [[cname expr]]
+                     (try (true? (eval-expr senv spec-tenv env expr))
+                          (catch ExceptionInfo ex
+                            (throw (ex-info (format "invalid constraint '%s' of spec '%s'" cname (symbol spec-id))
+                                            {:form expr}
+                                            ex)))))
+        violated-constraints (->> spec-info :constraints (remove satisfied?))]
+    (when (seq violated-constraints)
+      (throw (ex-info (format "invalid instance of '%s', violates constraints %s"
+                              (symbol spec-id) (str/join ", " (map first violated-constraints)))
+                      {:value inst})))
+    inst))
+
 (s/defn ^:private check-instance :- NamespacedKeyword
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
@@ -48,7 +70,7 @@
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
       (let [field-type (get field-types field-kw)
-            actual-type (check-fn ctx field-val)]
+            actual-type (check-fn  ctx field-val)]
         (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
                           {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
@@ -82,7 +104,9 @@
     (integer? value) :Integer
     (string? value) :String
     (= :Unset value) :Unset
-    (map? value) (check-instance type-of* :value ctx value)
+    (map? value) (let [t (check-instance type-of* :value ctx value)]
+                   (validate-instance (:senv ctx) value)
+                   t)
     (coll? value) (check-coll type-of* :value ctx value)
     :else (throw (ex-info "Invalid value" {:value value}))))
 
@@ -430,7 +454,8 @@
       (map? expr) (->> (dissoc expr :$type)
                        (map (fn [[k v]] [k (eval-in-env v)]))
                        (remove (fn [[k v]] (= :Unset v)))
-                       (into (select-keys expr [:$type])))
+                       (into (select-keys expr [:$type]))
+                       (validate-instance (:senv ctx)))
       (list? expr) (condp = (first expr)
                      'get* (apply eval-get* ctx (rest expr))
                      '= (apply = (map eval-in-env (rest expr)))
