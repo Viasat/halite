@@ -7,82 +7,11 @@
   (:require [clojure.math.numeric-tower :refer [expt]]
             [clojure.set :as set]
             [clojure.string :as str]
-            [schema.core :as s]))
-
-(defn- bare? [sym-or-kw] (nil? (namespace sym-or-kw)))
-(def ^:private namespaced? (complement bare?))
-
-(s/defschema ^:private BareKeyword (s/constrained s/Keyword bare?))
-(s/defschema ^:private NamespacedKeyword (s/constrained s/Keyword namespaced?))
-(s/defschema ^:private BareSymbol (s/constrained s/Symbol bare?))
+            [jibe.halite.types :refer :all]
+            [schema.core :as s])
+  (:import [clojure.lang ExceptionInfo]))
 
 (def reserved-words #{'no-value-})
-
-(defn- spec-type? [t] (and (keyword? t) (namespaced? t)))
-
-(s/defschema TypeAtom
-  "Type atoms are always keywords. Namespace-qualified keywords are interpreted as spec ids.
-  Unqualified keywords identify built-in scalar types."
-  (s/conditional
-   spec-type? NamespacedKeyword
-   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Coll :Any :Unset)))
-
-(defn- maybe-type? [t]
-  (or (= :Unset t)
-      (and (vector? t) (= :Maybe (first t)))))
-
-(s/defschema HaliteType
-  "A Halite type is either a type atom (keyword), or a collection type."
-  (s/cond-pre
-   TypeAtom
-   (s/constrained
-    [(s/one (s/enum :Set :Vec :Maybe) "coll-type") (s/one (s/recursive #'HaliteType) "elem-type")]
-    (fn [[col-type elem-type]]
-      (not (maybe-type? elem-type)))
-    :no-maybe-in-collection)))
-
-(s/defn ^:private subtype? :- s/Bool
-  [s :- HaliteType, t :- HaliteType]
-  (or
-    (= s t) ; the subtyping relation is reflexive
-    (= t :Any) ; :Any is the 'top' type
-    (and (= t :Coll) (boolean (#{:EmptyVec :EmptySet} s)))
-    (and (= s :EmptyVec) (vector? t) (= :Vec (first t)))
-    (and (= s :EmptySet) (vector? t) (= :Set (first t)))
-    (and (= s :Unset) (vector? t) (= :Maybe (first t)))
-    (and (vector? t) (= :Maybe (first t)) (subtype? s (second t)))
-    (and (vector? s) (vector? t) (= (first s) (first t)) (subtype? (second s) (second t)))
-    (and (vector? s) (boolean (#{:Set :Vec} (first s))) (= t :Coll))))
-
-(s/defn ^:private meet :- HaliteType
-  "The 'least' supertype of s and t. Formally, return the type m such that all are true:
-    (subtype? s m)
-    (subtype? t m)
-    For all types l, (implies (and (subtype? s l) (subtype? t l)) (subtype? l m))"
-  [s :- HaliteType, t :- HaliteType]
-  (cond
-    (subtype? s t) t
-    (subtype? t s) s
-    (and (vector? s) (vector? t) (= (first s) (first t))) [(first s) (meet (second s) (second t))]
-    (and (subtype? s :Coll) (subtype? t :Coll)) :Coll
-    :else :Any))
-
-(s/defn ^:private join :- (s/maybe HaliteType)
-  "The 'greatest' subtype of s and t. Formally, return the type m such that all are true:
-    (subtype? m s)
-    (subtype? m t)
-    For all types l, (implies (and (subtype? l s) (subtype? l t)) (subtype? l m))
-
-   The Halite type system has no 'bottom' type, so this function may return nil in the case where
-   s and t have no common subtype (e.g. :String and :Integer)."
-  [s :- HaliteType, t :- HaliteType]
-  (cond
-    (subtype? s t) s
-    (subtype? t s) t
-    (and (vector? s) (vector? t) (= (first s) (first t))) (if-let [m (join (second s) (second t))]
-                                                            [(first s) m]
-                                                            (if (= :Set (first s)) :EmptySet :EmptyVec))
-    :else nil))
 
 (s/defschema SpecInfo
   {:spec-vars {BareKeyword HaliteType}})
