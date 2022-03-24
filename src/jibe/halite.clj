@@ -8,76 +8,58 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [jibe.halite.types :refer :all]
+            [jibe.halite.envs :refer :all]
             [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]))
 
 (def reserved-words #{'no-value-})
 
-(s/defschema SpecInfo
-  {:spec-vars {BareKeyword HaliteType}})
+(declare eval-expr)
 
-(defprotocol TypeEnv
-  (lookup-spec* [self spec-id])
-  (scope* [self])
-  (extend-scope* [self sym t]))
+(declare type-check*)
 
-(s/defn lookup-spec :- (s/maybe SpecInfo)
-  "Look up the spec with the given id in the given type environment, returning variable type information.
-  Returns nil when the spec is not found."
-  [tenv :- (s/protocol TypeEnv), spec-id :- NamespacedKeyword]
-  (lookup-spec* tenv spec-id))
-
-(s/defn scope :- {BareSymbol HaliteType}
-  "The scope of th current type environment."
-  [tenv :- (s/protocol TypeEnv)]
-  (scope* tenv))
-
-(s/defn extend-scope :- (s/protocol TypeEnv)
-  "Produce a new type environment, extending the current scope by mapping the given symbol to the given type."
-  [tenv :- (s/protocol TypeEnv), sym :- BareSymbol, t :- HaliteType]
-  (extend-scope* tenv sym t))
+(s/defschema ^:private TypeContext {:senv (s/protocol SpecEnv) :tenv (s/protocol TypeEnv)})
 
 (s/defn ^:private check-instance :- NamespacedKeyword
-  [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, tenv :- (s/protocol TypeEnv), inst :- {s/Keyword s/Any}]
-  (let [t (:$type inst)
-        _ (when (nil? t)
-            (throw (ex-info "instance literal must have :$type field" {error-key inst})))
+  [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
+  (let [t (or (:$type inst)
+              (throw (ex-info "instance literal must have :$type field" {error-key inst})))
         _ (when-not (and (keyword? t) (namespaced? t))
             (throw (ex-info "expected namespaced keyword as value of :$type" {error-key inst})))
-        field-types (some->> t (lookup-spec tenv) :spec-vars)]
+        spec-info (or (lookup-spec (:senv ctx) t)
+                   (throw (ex-info (str "resource spec not found: " t) {error-key inst})))
+        field-types (:spec-vars spec-info)
+        fields (set (keys field-types))
+        required-fields (->> field-types
+                             (remove (comp maybe-type? second))
+                             (map first)
+                             set)
+        supplied-fields (disj (set (keys inst)) :$type)
+        missing-fields (set/difference required-fields supplied-fields)
+        invalid-fields (set/difference supplied-fields fields)]
 
-    (when (nil? field-types)
-      (throw (ex-info (str "resource spec not found: " t) {error-key inst})))
+    (when (seq missing-fields)
+      (throw (ex-info (str "missing required variables: " (str/join "," missing-fields))
+                      {error-key inst :missing-vars missing-fields})))
+    (when (seq invalid-fields)
+      (throw (ex-info (str "variables not defined on spec: " (str/join "," invalid-fields))
+                      {error-key inst :invalid-vars invalid-fields})))
 
-    (let [fields (set (keys field-types))
-          required-fields (->> field-types
-                               (remove (comp maybe-type? second))
-                               (map first)
-                               set)
-          supplied-fields (disj (set (keys inst)) :$type)
-          missing-fields (set/difference required-fields supplied-fields)
-          invalid-fields (set/difference supplied-fields fields)]
-      (when (seq missing-fields)
-        (throw (ex-info (str "missing required variables: " (str/join "," missing-fields))
-                        {error-key inst :missing-vars missing-fields})))
-      (when (seq invalid-fields)
-        (throw (ex-info (str "variables not defined on spec: " (str/join "," invalid-fields))
-                        {error-key inst :invalid-vars invalid-fields}))))
-
+    ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
       (let [field-type (get field-types field-kw)
-            actual-type (check-fn tenv field-val)]
+            actual-type (check-fn ctx field-val)]
         (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
                           {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
     t))
 
 (s/defn ^:private check-coll :- HaliteType
-  [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, tenv :- (s/protocol TypeEnv), coll]
+  [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, coll]
   (cond
     (= [] coll) :EmptyVec
     (= #{} coll) :EmptySet
-    :else (let [elem-types (map (partial check-fn tenv) coll)
+    :else (let [elem-types (map (partial check-fn ctx) coll)
                 coll-type (cond
                             (vector? coll) :Vec
                             (set? coll) :Set
@@ -93,19 +75,22 @@
                (reduce meet elem-types))])))
 
 
-(declare type-of)
-
-(s/defn type-of :- HaliteType
-  "Return the type of the given runtime value, or throw an error if the value is invalid and cannot be typed."
-  [tenv :- (s/protocol TypeEnv), value :- s/Any]
+(s/defn ^:private type-of* :- HaliteType
+  [ctx :- TypeContext, value]
   (cond
     (boolean? value) :Boolean
     (integer? value) :Integer
     (string? value) :String
     (= :Unset value) :Unset
-    (map? value) (check-instance type-of :value tenv value)
-    (coll? value) (check-coll type-of :value tenv value)
+    (map? value) (check-instance type-of* :value ctx value)
+    (coll? value) (check-coll type-of* :value ctx value)
     :else (throw (ex-info "Invalid value" {:value value}))))
+
+(s/defn type-of :- HaliteType
+  "Return the type of the given runtime value, or throw an error if the value is invalid and cannot be typed.
+  For instances, this function checks all applicable constraints. Any constraint violations result in a thrown exception."
+  [senv :- (s/protocol SpecEnv), tenv :- (s/protocol TypeEnv), value :- s/Any]
+  (type-of* {:senv senv :tenv tenv} value))
 
 (s/defschema FnSignature
   {:arg-types [HaliteType]
@@ -165,8 +150,6 @@
                         [[:Maybe :Any]] :Boolean)
      }))
 
-(declare type-check)
-
 (s/defn ^:private matches-signature?
   [sig :- FnSignature, actual-types :- [HaliteType]]
   (let [{:keys [arg-types variadic-tail]} sig]
@@ -179,11 +162,11 @@
                             (drop (count arg-types) actual-types)))))))
 
 (s/defn ^:private type-check-fn-application :- HaliteType
-  [tenv :- (s/protocol TypeEnv), form :- [(s/one BareSymbol :op) s/Any]]
+  [ctx :- TypeContext, form :- [(s/one BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
         {:keys [signatures impl] :as builtin} (get builtins op)
-        actual-types (map (partial type-check tenv) args)]
+        actual-types (map (partial type-check* ctx) args)]
     (when (nil? builtin)
       (throw (ex-info (str "function '" op "' not found") {:form form})))
 
@@ -195,8 +178,8 @@
         :else (recur signatures)))))
 
 (s/defn ^:private type-check-symbol :- HaliteType
-  [tenv :- (s/protocol TypeEnv), sym]
-  (or (get (scope tenv) sym)
+  [ctx :- TypeContext, sym]
+  (or (get (scope (:tenv ctx)) sym)
       (throw (ex-info (str "Undefined: '" (name sym) "'") {:form sym}))))
 
 (defn- arg-count-exactly
@@ -214,13 +197,13 @@
                     {:form form}))))
 
 (s/defn ^:private type-check-get* :- HaliteType
-  [tenv :- (s/protocol TypeEnv), form]
+  [ctx :- TypeContext, form]
   (arg-count-exactly 2 form)
   (let [[_ subexpr index] form
-        subexpr-type (type-check tenv subexpr)]
+        subexpr-type (type-check* ctx subexpr)]
     (cond
       (subtype? subexpr-type [:Vec :Any])
-      (let [index-type (type-check tenv index)]
+      (let [index-type (type-check* ctx index)]
         (when (= :EmptyVec subexpr-type)
           (throw (ex-info "Cannot index into empty vector" {:form form})))
         (when (not= :Integer index-type)
@@ -229,7 +212,7 @@
         (second subexpr-type))
 
       (spec-type? subexpr-type)
-      (let [field-types (->> subexpr-type (lookup-spec tenv) :spec-vars)]
+      (let [field-types (->> subexpr-type (lookup-spec (:senv ctx)) :spec-vars)]
         (when-not (and (keyword? index) (bare? index))
           (throw (ex-info "Second argument to get* must be a variable name (as a keyword) when first argument is an instance"
                           {:form form})))
@@ -242,9 +225,9 @@
                             {:form form})))))
 
 (s/defn ^:private type-check-equals :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
-  (let [arg-types (mapv (partial type-check tenv) (rest expr))]
+  (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (reduce
      (fn [s t]
        (let [m (meet s t)]
@@ -255,9 +238,9 @@
   :Boolean)
 
 (s/defn ^:private type-check-if :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 3 expr)
-  (let [[pred-type s t] (mapv (partial type-check tenv) (rest expr))
+  (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))
         m (meet s t)]
     (when (not= :Boolean pred-type)
       (throw (ex-info "First argument to 'if' must be boolean" {:form expr})))
@@ -266,40 +249,40 @@
     m))
 
 (s/defn ^:private type-check-let :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
   (let [[bindings body] (rest expr)]
     (when-not (zero? (mod (count bindings) 2))
       (throw (ex-info "let bindings form must have an even number of forms" {:form expr})))
-    (type-check
+    (type-check*
      (reduce
-      (fn [tenv [sym body]]
+      (fn [ctx [sym body]]
         (when-not (symbol? sym)
           (throw (ex-info "even-numbered forms in let binding vector must be symbols" {:form expr})))
         (when (contains? reserved-words sym)
           (throw (ex-info (format "cannot bind value to reserved word '%s'" sym) {:form expr})))
-        (extend-scope tenv sym (type-check tenv body)))
-      tenv
+        (update ctx :tenv extend-scope sym (type-check* ctx body)))
+      ctx
       (partition 2 bindings))
      body)))
 
 (s/defn ^:private type-check-if-value :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 3 expr)
   (let [[sym set-expr unset-expr] (rest expr)]
     (when-not (and (symbol? sym) (bare? sym))
       (throw (ex-info (str "First argument to 'if-value-' must be a bare symbol") {:form expr})))
-    (let [sym-type (type-check tenv sym)
-          unset-type (type-check tenv unset-expr)]
+    (let [sym-type (type-check* ctx sym)
+          unset-type (type-check* ctx unset-expr)]
       (when-not (maybe-type? sym-type)
         (throw (ex-info (str "First argument to 'if-value-' must have an optional type")
                         {:form sym :expected [:Maybe :Any] :actual sym-type})))
       (if (= :Unset sym-type)
         (do
-          (type-check (extend-scope tenv sym :Any) set-expr)
+          (type-check* (update ctx :tenv extend-scope sym :Any) set-expr)
           unset-type)
         (let [inner-type (second sym-type)
-              set-type (type-check (extend-scope tenv sym inner-type) set-expr)
+              set-type (type-check* (update ctx :tenv extend-scope sym inner-type) set-expr)
               m (meet set-type unset-type)]
           (when (and (not= m set-type) (not= m unset-type))
             (throw (ex-info (str "then and else branches to 'if-value-' have incompatible types")
@@ -311,31 +294,31 @@
     (throw (ex-info (format "Arguments to '%s' must be sets" op) {:form expr}))))
 
 (s/defn ^:private type-check-union :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
-  (let [arg-types (mapv (partial type-check tenv) (rest expr))]
+  [ctx :- TypeContext, expr :- s/Any]
+  (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (reduce meet :EmptySet arg-types)))
 
 (s/defn ^:private type-check-intersection :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 1 expr)
-  (let [arg-types (mapv (partial type-check tenv) (rest expr))]
+  (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (if (empty? arg-types)
       :EmptySet
       (reduce join arg-types))))
 
 (s/defn ^:private type-check-difference :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
-  (let [arg-types (mapv (partial type-check tenv) (rest expr))]
+  (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (first arg-types)))
 
 (s/defn ^:private type-check-first :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
-  (let [arg-type (type-check tenv (second expr))]
+  (let [arg-type (type-check* ctx (second expr))]
     (when-not (subtype? arg-type [:Vec :Any])
       (throw (ex-info "Argument to 'first' must be a vector" {:form expr})))
     (when (= :EmptyVec arg-type)
@@ -343,17 +326,17 @@
     (second arg-type)))
 
 (s/defn ^:private type-check-rest :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
-  (let [arg-type (type-check tenv (second expr))]
+  (let [arg-type (type-check* ctx (second expr))]
     (when-not (subtype? arg-type [:Vec :Any])
       (throw (ex-info "Argument to 'rest' must be a vector" {:form expr})))
     arg-type))
 
 (s/defn ^:private type-check-conj :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
-  (let [[base-type & elem-types] (mapv (partial type-check tenv) (rest expr))]
+  (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
     (when-not (subtype? base-type :Coll)
       (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
     (let [col-type (if (or (= :EmptyVec base-type) (and (vector? base-type) (= :Vec (first base-type)))) :Vec :Set)]
@@ -364,9 +347,9 @@
       (reduce meet base-type (map #(vector col-type %) elem-types)))))
 
 (s/defn ^:private type-check-into :- HaliteType
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+  [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
-  (let [[s t] (mapv (partial type-check tenv) (rest expr))]
+  (let [[s t] (mapv (partial type-check* ctx) (rest expr))]
     (when-not (subtype? s :Coll)
       (throw (ex-info "First argument to 'into' must be a set or vector" {:form expr})))
     (when-not (subtype? t :Coll)
@@ -379,87 +362,82 @@
             col-type (if (or (= :EmptyVec s) (and (vector? s) (= :Vec (first s)))) :Vec :Set)]
         (meet s [col-type elem-type])))))
 
-(s/defn type-check :- HaliteType
-  "Return the type of the expression, or throw an error if the form is syntactically invalid,
-  or not well typed in the given typ environment."
-  [tenv :- (s/protocol TypeEnv), expr :- s/Any]
+(s/defn ^:private type-check* :- HaliteType
+  [ctx :- TypeContext, expr]
   (cond
     (boolean? expr) :Boolean
     (integer? expr) :Integer
     (string? expr) :String
     (symbol? expr) (if (= 'no-value- expr)
                      :Unset
-                     (type-check-symbol tenv expr))
-    (map? expr) (check-instance type-check :form tenv expr)
+                     (type-check-symbol ctx expr))
+    (map? expr) (check-instance type-check* :form ctx expr)
     (list? expr) (condp = (first expr)
-                   'get* (type-check-get* tenv expr)
-                   '= (type-check-equals tenv expr)
-                   'not= (type-check-equals tenv expr) ; = and not= have same typing rule
-                   'if (type-check-if tenv expr)
-                   'let (type-check-let tenv expr)
-                   'if-value- (type-check-if-value tenv expr)
-                   'union (type-check-union tenv expr)
-                   'intersection (type-check-intersection tenv expr)
-                   'difference (type-check-difference tenv expr)
-                   'first (type-check-first tenv expr)
-                   'rest (type-check-rest tenv expr)
-                   'conj (type-check-conj tenv expr)
-                   'into (type-check-into tenv expr)
-                   (type-check-fn-application tenv expr))
-    (coll? expr) (check-coll type-check :form tenv expr)
+                   'get* (type-check-get* ctx expr)
+                   '= (type-check-equals ctx expr)
+                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
+                   'if (type-check-if ctx expr)
+                   'let (type-check-let ctx expr)
+                   'if-value- (type-check-if-value ctx expr)
+                   'union (type-check-union ctx expr)
+                   'intersection (type-check-intersection ctx expr)
+                   'difference (type-check-difference ctx expr)
+                   'first (type-check-first ctx expr)
+                   'rest (type-check-rest ctx expr)
+                   'conj (type-check-conj ctx expr)
+                   'into (type-check-into ctx expr)
+                   (type-check-fn-application ctx expr))
+    (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
 
-(def Env
-  "An environment in which expressions may be evaluated. Includes
+(s/defn type-check :- HaliteType
+  "Return the type of the expression, or throw an error if the form is syntactically invalid,
+  or not well typed in the given typ environment."
+  [senv :- (s/protocol SpecEnv,) tenv :- (s/protocol TypeEnv,) expr :- s/Any]
+  (type-check* {:senv senv :tenv tenv} expr))
 
-  a :bindings entry that maps variables to values
-  a :refinesTo entry representing a refinement graph"
-  {:bindings {BareSymbol s/Any}
-   :refinesTo {NamespacedKeyword
-               {NamespacedKeyword
-                [{:guard s/Any
-                  :expr s/Any}]}}})
+(s/defschema ^:private EvalContext {:senv (s/protocol SpecEnv) :env (s/protocol Env)})
 
 (declare eval-expr*)
 
 (s/defn ^:private eval-get* :- s/Any
-  [env :- Env, target-expr index]
-  (let [target (eval-expr* env target-expr)]
+  [ctx :- EvalContext, target-expr index]
+  (let [target (eval-expr* ctx target-expr)]
     (if (vector? target)
-      (nth target (dec (eval-expr* env index)))
+      (nth target (dec (eval-expr* ctx index)))
       (get target index :Unset))))
 
 (s/defn ^:private eval-let :- s/Any
-  [env :- Env, bindings body]
+  [ctx :- EvalContext, bindings body]
   (eval-expr*
    (reduce
-    (fn [env [sym body]]
-      (assoc-in env [:bindings sym] (eval-expr* env body)))
-    env
+    (fn [ctx [sym body]]
+      (update ctx :env bind sym (eval-expr* ctx body)))
+    ctx
     (partition 2 bindings))
    body))
 
 (s/defn ^:private eval-expr* :- s/Any
-  [env :- Env, expr]
-  (let [eval-in-env (partial eval-expr* env)]
+  [ctx :- EvalContext, expr]
+  (let [eval-in-env (partial eval-expr* ctx)]
     (cond
       (or (boolean? expr)
           (integer? expr)
           (string? expr)) expr
       (symbol? expr) (if (= 'no-value- expr)
                        :Unset
-                       (get-in env [:bindings expr]))
+                       (get (bindings (:env ctx)) expr))
       (map? expr) (->> (dissoc expr :$type)
                        (map (fn [[k v]] [k (eval-in-env v)]))
                        (remove (fn [[k v]] (= :Unset v)))
                        (into (select-keys expr [:$type])))
       (list? expr) (condp = (first expr)
-                     'get* (apply eval-get* env (rest expr))
+                     'get* (apply eval-get* ctx (rest expr))
                      '= (apply = (map eval-in-env (rest expr)))
                      'not= (apply not= (map eval-in-env (rest expr)))
                      'if (let [[pred then else] (rest expr)]
                            (eval-in-env (if (eval-in-env pred) then else)))
-                     'let (apply eval-let env (rest expr))
+                     'let (apply eval-let ctx (rest expr))
                      'if-value- (let [[sym then else] (rest expr)]
                                   (if (= :Unset (eval-in-env sym))
                                     (eval-in-env else)
@@ -482,18 +460,18 @@
   "Type check a halite expression against the given type environment,
   evaluate it in the given environment, and return the result. The bindings
   in the environment are checked against the type environment before evaluation."
-  [tenv :- (s/protocol TypeEnv), env :- Env, expr]
-  (type-check tenv expr)
+  [senv :- (s/protocol SpecEnv), tenv :- (s/protocol TypeEnv), env :- (s/protocol Env), expr]
+  (type-check senv tenv expr)
   (let [declared-symbols (set (keys (scope tenv)))
-        bound-symbols (set (keys (:bindings env)))
+        bound-symbols (set (keys (bindings env)))
         unbound-symbols (set/difference declared-symbols bound-symbols)]
     (when (seq unbound-symbols)
       (throw (ex-info (str "symbols in type environment are not bound: " (str/join " ", unbound-symbols)) {:tenv tenv :env env})))
     (doseq [sym declared-symbols]
       (let [declared-type (get (scope tenv) sym)
-            value (get-in env [:bindings sym])
-            actual-type (type-of tenv value)]
+            value (get (bindings env) sym)
+            actual-type (type-of senv tenv value)]
         (when-not (subtype? actual-type declared-type)
           (throw (ex-info (format "Supplied value of '%s' has wrong type" (name sym))
                           {:value value :expected declared-type :actual actual-type})))))
-    (eval-expr* env expr)))
+    (eval-expr* {:env env :senv senv} expr)))
