@@ -20,27 +20,61 @@
 
 (s/defschema ^:private TypeContext {:senv (s/protocol SpecEnv) :tenv (s/protocol TypeEnv)})
 
+(s/defschema ^:private EvalContext {:senv (s/protocol SpecEnv) :env (s/protocol Env)})
+
+(def ^:private ^:dynamic *refinements*)
+
+(s/defn ^:private eval-predicate :- s/Bool
+  [ctx :- EvalContext, tenv :- (s/protocol TypeEnv), err-msg :- s/Str, bool-expr]
+  (try
+    (true? (eval-expr (:senv ctx) tenv (:env ctx) bool-expr))
+    (catch ExceptionInfo ex
+      (throw (ex-info err-msg {:form bool-expr} ex)))))
+
+(s/defn ^:private eval-refinement :- s/Any
+  [ctx :- EvalContext, tenv :- (s/protocol TypeEnv),  spec-id :- NamespacedKeyword, clauses]
+  (let [[clause & clauses] clauses
+        [clause-name mapping] clause]
+    ;; TODO: support for guards
+    (or (*refinements* spec-id)
+        (eval-expr (:senv ctx) tenv (:env ctx)
+                   (assoc mapping :$type spec-id)))))
+
 (s/defn ^:private validate-instance :- s/Any
   "Check that an instance satisfies all applicable constraints.
   Return the instance if so, throw an exception if not.
   Assumes that the instance has been type-checked successfully against the given type environment."
   [senv :- (s/protocol SpecEnv), inst :- s/Any]
   (let [spec-id (:$type inst)
-        spec-info (lookup-spec senv spec-id)
+        {:keys [refines-to] :as spec-info} (lookup-spec senv spec-id)
         spec-tenv (type-env-from-spec spec-info)
         env (env-from-inst spec-info inst)
+        ctx {:senv senv, :env env}
         satisfied? (fn [[cname expr]]
-                     (try (true? (eval-expr senv spec-tenv env expr))
-                          (catch ExceptionInfo ex
-                            (throw (ex-info (format "invalid constraint '%s' of spec '%s'" cname (symbol spec-id))
-                                            {:form expr}
-                                            ex)))))
+                     (eval-predicate ctx spec-tenv (format "invalid constraint '%s' of spec '%s'" cname (symbol spec-id)) expr))
         violated-constraints (->> spec-info :constraints (remove satisfied?))]
     (when (seq violated-constraints)
       (throw (ex-info (format "invalid instance of '%s', violates constraints %s"
                               (symbol spec-id) (str/join ", " (map first violated-constraints)))
-                      {:value inst})))
-    inst))
+                      {:value inst
+                       :halite-error :constraint-violation})))
+    (with-meta
+      inst
+      {:refinements
+       (->> refines-to
+            (sort-by first)
+            (reduce
+             (fn [transitive-refinements [spec-id {:keys [clauses inverted?]}]]
+               (binding [*refinements* transitive-refinements]
+                 (let [inst (try (eval-refinement ctx spec-tenv spec-id clauses)
+                                 (catch ExceptionInfo ex
+                                   (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
+                                     ex
+                                     (throw ex))))]
+                   (-> transitive-refinements
+                       (merge (:refinements (meta inst)))
+                       (assoc spec-id inst)))))
+             {}))})))
 
 (s/defn ^:private check-instance :- NamespacedKeyword
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
@@ -386,6 +420,17 @@
             col-type (if (or (= :EmptyVec s) (and (vector? s) (= :Vec (first s)))) :Vec :Set)]
         (meet s [col-type elem-type])))))
 
+(s/defn ^:private type-check-refine-to :- HaliteType
+  [ctx :- TypeContext, expr]
+  (arg-count-exactly 2 expr)
+  (let [[subexpr kw] (rest expr)
+        s (type-check* ctx subexpr)]
+    (when-not (spec-type? s)
+      (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr})))
+    (when-not (spec-type? kw)
+      (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
+    kw))
+
 (s/defn ^:private type-check* :- HaliteType
   [ctx :- TypeContext, expr]
   (cond
@@ -410,6 +455,7 @@
                    'rest (type-check-rest ctx expr)
                    'conj (type-check-conj ctx expr)
                    'into (type-check-into ctx expr)
+                   'refine-to (type-check-refine-to ctx expr)
                    (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -419,8 +465,6 @@
   or not well typed in the given typ environment."
   [senv :- (s/protocol SpecEnv,) tenv :- (s/protocol TypeEnv,) expr :- s/Any]
   (type-check* {:senv senv :tenv tenv} expr))
-
-(s/defschema ^:private EvalContext {:senv (s/protocol SpecEnv) :env (s/protocol Env)})
 
 (declare eval-expr*)
 
@@ -440,6 +484,20 @@
     ctx
     (partition 2 bindings))
    body))
+
+(s/defn ^:private eval-refine-to :- s/Any
+  [ctx :- EvalContext, expr]
+  (let [[subexp t] (rest expr)
+        inst (eval-expr* ctx subexp)
+        result (-> inst meta :refinements t)]
+    (cond
+      (instance? Exception result) (throw (ex-info (format "Refinement from '%s' failed unexpectedly: %s"
+                                                           (symbol (:$type inst)) (.getMessage result))
+                                                   {:form expr}
+                                                   result))
+      (nil? result) (throw (ex-info (format "No active refinement path from '%s' to '%s'"
+                                            (symbol (:$type inst)) (symbol t)) {:form expr}))
+      :else result)))
 
 (s/defn ^:private eval-expr* :- s/Any
   [ctx :- EvalContext, expr]
@@ -476,6 +534,7 @@
                              (if (empty? arg) [] (subvec arg 1)))
                      'conj (apply conj (map eval-in-env (rest expr)))
                      'into (apply into (map eval-in-env (rest expr)))
+                     'refine-to (eval-refine-to ctx expr)
                      (apply (:impl (get builtins (first expr)))
                             (map eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)

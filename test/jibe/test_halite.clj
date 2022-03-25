@@ -13,9 +13,10 @@
 (defrecord TestSpecEnv [specs]
   halite-envs/SpecEnv
   (lookup-spec* [self spec-id]
-    (when-let [{:keys [constraints] :as spec} (get specs spec-id)]
+    (when-let [{:keys [constraints refines-to] :as spec} (get specs spec-id)]
       (cond-> spec
-        (nil? constraints) (assoc :constraints [])))))
+        (nil? constraints) (assoc :constraints [])
+        (nil? refines-to) (assoc :refines-to {})))))
 
 (def senv (map->TestSpecEnv
            {:specs {:ws/A$v1 {:spec-vars {:x :Integer
@@ -489,3 +490,53 @@
       {:$type :ws/E$v1, :y true} #"invalid instance"
       {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")
     ))
+
+(deftest test-refinement-validation
+  (let [senv (->TestSpecEnv
+              {:ws/A {:spec-vars {:x :Integer}
+                      :refines-to {:ws/B {:clauses '[["asB" {:x x}]]}
+                                   :ws/C {:inverted? true :clauses '[["fromC" {:x x}]]}}}
+               :ws/B {:spec-vars {:x :Integer}
+                      :constraints '[["posX" (< 0 x)]]
+                      :refines-to {:ws/D {:clauses '[["asD" {:x (+ 1 x)}]]}}}
+               :ws/C {:spec-vars {:x :Integer}
+                      :constraints '[["boundedX" (< x 10)]]
+                      :refines-to {:ws/D {:clauses '[["asD" {:x (+ 1 (* 2 x))}]]}}}
+               :ws/D {:spec-vars {:x :Integer}
+                      :constraints '[["xIsOdd" (= 1 (mod* x 2))]]}
+               :ws/E {:spec-vars {}}})]
+
+    (let [invalid-a {:$type :ws/A :x -10}
+          sketchy-a {:$type :ws/A :x 20}]
+      (is (= :ws/A (halite/type-check senv tenv invalid-a)))
+      (is (thrown-with-msg? ExceptionInfo #"invalid instance"
+                            (halite/eval-expr senv tenv empty-env invalid-a)))
+      (let [a (halite/eval-expr senv tenv empty-env sketchy-a)]
+        (is (= a sketchy-a))
+        (is (= {:ws/B {:$type :ws/B :x 20}
+                :ws/D {:$type :ws/D :x 21}}
+               (-> a meta :refinements (dissoc :ws/C)))))
+      
+      (is (thrown-with-msg?
+           ExceptionInfo #"invalid instance"
+           (halite/eval-expr senv
+                             (halite-envs/extend-scope tenv 'a :ws/A)
+                             (halite-envs/bind empty-env 'a invalid-a)
+                             'a)))
+
+      (is (= :ws/B (halite/type-check senv tenv (list 'refine-to sketchy-a :ws/B))))
+      (is (= :ws/E (halite/type-check senv tenv '(refine-to {:$type :ws/D :x 1} :ws/E))))
+      (is (thrown-with-msg?
+           ExceptionInfo #"No active refinement path from 'ws/D' to 'ws/E'"
+           (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/D :x 1} :ws/E))))
+      (is (thrown-with-msg?
+           ExceptionInfo #"First argument to 'refine-to' must be an instance"
+           (halite/eval-expr senv tenv empty-env '(refine-to (+ 1 2) :ws/B))))
+      (is (thrown-with-msg?
+           ExceptionInfo #"Second argument to 'refine-to' must be a spec id"
+           (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/A :x 2} (+ 1 2)))))
+      (is (thrown-with-msg?
+           ExceptionInfo #"Refinement from 'ws/A' failed unexpectedly: invalid instance of 'ws/C'"
+           (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/C))))
+      (is (= {:$type :ws/B :x 20}
+             (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/B)))))))

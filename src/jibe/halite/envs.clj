@@ -8,7 +8,9 @@
 
 (s/defschema SpecInfo
   {:spec-vars {BareKeyword HaliteType}
-   :constraints [[(s/one s/Str :name) (s/one s/Any :expr)]]})
+   :constraints [[(s/one s/Str :name) (s/one s/Any :expr)]]
+   :refines-to {NamespacedKeyword {:clauses [[(s/one s/Str :name) (s/one s/Any :expr)]]
+                                   (s/optional-key :inverted?) s/Bool}}})
 
 (defprotocol SpecEnv
   (lookup-spec* [self spec-id]))
