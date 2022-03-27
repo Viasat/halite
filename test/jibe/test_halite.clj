@@ -530,6 +530,9 @@
            ExceptionInfo #"No active refinement path from 'ws/D' to 'ws/E'"
            (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/D :x 1} :ws/E))))
       (is (thrown-with-msg?
+           ExceptionInfo #"Spec not found: 'foo/Bar'"
+           (halite/type-check senv tenv '(refine-to {:$type :ws/E} :foo/Bar))))
+      (is (thrown-with-msg?
            ExceptionInfo #"First argument to 'refine-to' must be an instance"
            (halite/eval-expr senv tenv empty-env '(refine-to (+ 1 2) :ws/B))))
       (is (thrown-with-msg?
@@ -539,7 +542,8 @@
            ExceptionInfo #"Refinement from 'ws/A' failed unexpectedly: invalid instance of 'ws/C'"
            (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/C))))
       (is (= {:$type :ws/B :x 20}
-             (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/B)))))))
+             (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/B))))
+      (is (= {:$type :ws/E} (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/E} :ws/E)))))))
 
 (deftest test-instance-type
   (let [senv (->TestSpecEnv
@@ -588,3 +592,47 @@
 
       {:$type :ws/A2 :a 7 :b 8} #"invalid instance"
       '(refine-to (get* {:$type :ws/B :a {:$type :ws/D}} :a) :ws/A) #"No active refinement path from 'ws/D' to 'ws/A'")))
+
+(deftest test-refines-to?
+  (let [senv (->TestSpecEnv
+              {:ws/A {:spec-vars {:x :Integer}
+                      :constraints '[["posX" (< 0 x)]
+                                     ["boundedX" (< x 10)]]}
+               :ws/A1 {:spec-vars {}
+                       :refines-to {:ws/A {:clauses '[["asA" {:x 5}]]}}}
+               :ws/A2 {:spec-vars {:a :Integer
+                                   :b :Integer}
+                       :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
+               :ws/B {:spec-vars {:a :Instance}}
+               :ws/C {:spec-vars {:as [:Vec :Instance]}}
+               :ws/D {:spec-vars {}}})
+        tenv2 (-> tenv
+                  (halite-envs/extend-scope 'ax :Instance)
+                  (halite-envs/extend-scope 'ay :Instance)
+                  (halite-envs/extend-scope 'b1 :ws/B))
+        env2 (-> empty-env
+                 (halite-envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
+                 (halite-envs/bind 'ay {:$type :ws/A1})
+                 (halite-envs/bind 'b1 {:$type :ws/B :a {:$type :ws/A1}}))]
+
+    (are [expr etype]
+        (= etype (halite/type-check senv tenv2 expr))
+
+      '(refines-to? ax :ws/A) :Boolean
+      '(refines-to? {:$type :ws/D} :ws/A) :Boolean)
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv2 expr))
+
+      '(refines-to? ax) #"Wrong number of arguments"
+      '(refines-to? ax :foo/Bar) #"Spec not found: 'foo/Bar'"
+      '(refines-to? (+ 1 2) :ws/A) #"First argument to 'refines-to\?' must be an instance"
+      '(refines-to? ax "foo") #"Second argument to 'refines-to\?' must be a spec id")
+
+    (are [expr v]
+        (= v (halite/eval-expr senv tenv2 env2 expr))
+
+      '(refines-to? ax :ws/A) true
+      '(refines-to? ax :ws/A2) true
+      '(refines-to? ax :ws/A1) false
+      )))

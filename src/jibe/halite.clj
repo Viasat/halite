@@ -429,7 +429,22 @@
       (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr})))
     (when-not (spec-type? kw)
       (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
+    (when-not (lookup-spec (:senv ctx) kw)
+      (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
     kw))
+
+(s/defn ^:private type-check-refines-to? :- HaliteType
+  [ctx :- TypeContext, expr]
+  (arg-count-exactly 2 expr)
+  (let [[subexpr kw] (rest expr)
+        s (type-check* ctx subexpr)]
+    (when-not (subtype? s :Instance)
+      (throw (ex-info "First argument to 'refines-to?' must be an instance" {:form expr})))
+    (when-not (spec-type? kw)
+      (throw (ex-info "Second argument to 'refines-to?' must be a spec id" {:form expr})))
+    (when-not (lookup-spec (:senv ctx) kw)
+      (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
+    :Boolean))
 
 (s/defn ^:private type-check* :- HaliteType
   [ctx :- TypeContext, expr]
@@ -456,6 +471,7 @@
                    'conj (type-check-conj ctx expr)
                    'into (type-check-into ctx expr)
                    'refine-to (type-check-refine-to ctx expr)
+                   'refines-to? (type-check-refines-to? ctx expr)
                    (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -489,7 +505,8 @@
   [ctx :- EvalContext, expr]
   (let [[subexp t] (rest expr)
         inst (eval-expr* ctx subexp)
-        result (-> inst meta :refinements t)]
+        result (cond-> inst
+                 (not= t (:$type inst)) (-> meta :refinements t))]
     (cond
       (instance? Exception result) (throw (ex-info (format "Refinement from '%s' failed unexpectedly: %s"
                                                            (symbol (:$type inst)) (.getMessage result))
@@ -535,6 +552,10 @@
                      'conj (apply conj (map eval-in-env (rest expr)))
                      'into (apply into (map eval-in-env (rest expr)))
                      'refine-to (eval-refine-to ctx expr)
+                     'refines-to? (let [[subexpr kw] (rest expr)
+                                        inst (eval-in-env subexpr)]
+                                    (or (= kw (:$type inst))
+                                        (contains? (:refinements (meta inst)) kw)))
                      (apply (:impl (get builtins (first expr)))
                             (map eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)
