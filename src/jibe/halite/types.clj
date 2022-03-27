@@ -10,10 +10,10 @@
 
                          +---->  :Any  <-------+--------------------+-----------------+----------------+
                          |                     |                    |                 |                |
-         +---->  [:Maybe :Coll] <-+        [:Maybe :Integer]  [:Maybe :String]  [:Maybe Boolean]  <spec-id kw>
-         |           ^            |           ^        ^         ^        ^       ^         ^
-  [:Maybe [:Set T]]  |  [:Maybe [:Vec T]]     |        |         |        |       |         |
-   ^    ^            |        ^     ^         |        |         |        |       |         |
+         +---->  [:Maybe :Coll] <-+        [:Maybe :Integer]  [:Maybe :String]  [:Maybe Boolean]   :Instance
+         |           ^            |           ^        ^         ^        ^       ^         ^          ^
+  [:Maybe [:Set T]]  |  [:Maybe [:Vec T]]     |        |         |        |       |         |          |
+   ^    ^            |        ^     ^         |        |         |        |       |         |     <spec-id kw>
    |    |  +----> :Coll <---+ |     |       :Integer   |       :String    |      :Boolean   |
    |    |  |                | |     |                  |                  |                 |
    |   [:Set T]           [:Vec T]  |                  |                  |                 |
@@ -53,7 +53,7 @@
   Unqualified keywords identify built-in scalar types."
   (s/conditional
    spec-type? NamespacedKeyword
-   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Coll :Any :Unset)))
+   :else (s/enum :Integer :String :Boolean :EmptySet :EmptyVec :Coll :Any :Unset :Instance)))
 
 (declare maybe-type?)
 
@@ -89,7 +89,8 @@
     (and (= s :Unset) (vector? t) (= :Maybe (first t)))
     (and (vector? t) (= :Maybe (first t)) (subtype? s (second t)))
     (and (vector? s) (vector? t) (= (first s) (first t)) (subtype? (second s) (second t)))
-    (and (vector? s) (boolean (#{:Set :Vec} (first s))) (= t :Coll))))
+    (and (vector? s) (boolean (#{:Set :Vec} (first s))) (= t :Coll))
+    (and (= :Instance t) (spec-type? s))))
 
 (s/defn meet :- HaliteType
   "The 'least' supertype of s and t. Formally, return the type m such that all are true:
@@ -102,6 +103,7 @@
     (subtype? t s) s
     (and (vector? s) (vector? t) (= (first s) (first t))) [(first s) (meet (second s) (second t))]
     (and (subtype? s :Coll) (subtype? t :Coll)) :Coll
+    (and (spec-type? s) (spec-type? t)) :Instance
     :else :Any))
 
 (s/defn join :- (s/maybe HaliteType)

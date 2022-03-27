@@ -8,7 +8,7 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [jibe.halite.types :refer :all]
-            [jibe.halite.envs :refer :all]
+            [jibe.halite.envs :as halite-envs :refer :all]
             [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]))
 
@@ -425,7 +425,7 @@
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
-    (when-not (spec-type? s)
+    (when-not (subtype? s :Instance)
       (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr})))
     (when-not (spec-type? kw)
       (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
@@ -548,12 +548,20 @@
   (type-check senv tenv expr)
   (let [declared-symbols (set (keys (scope tenv)))
         bound-symbols (set (keys (bindings env)))
-        unbound-symbols (set/difference declared-symbols bound-symbols)]
+        unbound-symbols (set/difference declared-symbols bound-symbols)
+        empty-env (halite-envs/env {})
+        ;; All runtime values are homoiconic. We eval them in an empty environment
+        ;; to initialize refinements for all instances.
+        env (reduce
+             (fn [env [k v]]
+               (bind env k (eval-expr* {:env empty-env :senv senv} v)))
+             empty-env
+             (bindings env))]
     (when (seq unbound-symbols)
       (throw (ex-info (str "symbols in type environment are not bound: " (str/join " ", unbound-symbols)) {:tenv tenv :env env})))
     (doseq [sym declared-symbols]
       (let [declared-type (get (scope tenv) sym)
-            value (get (bindings env) sym)
+            value (eval-expr* {:env empty-env :senv senv} (get (bindings env) sym))
             actual-type (type-of senv tenv value)]
         (when-not (subtype? actual-type declared-type)
           (throw (ex-info (format "Supplied value of '%s' has wrong type" (name sym))

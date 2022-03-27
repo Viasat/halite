@@ -540,3 +540,51 @@
            (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/C))))
       (is (= {:$type :ws/B :x 20}
              (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/B)))))))
+
+(deftest test-instance-type
+  (let [senv (->TestSpecEnv
+              {:ws/A {:spec-vars {:x :Integer}
+                      :constraints '[["posX" (< 0 x)]
+                                     ["boundedX" (< x 10)]]}
+               :ws/A1 {:spec-vars {}
+                       :refines-to {:ws/A {:clauses '[["asA" {:x 5}]]}}}
+               :ws/A2 {:spec-vars {:a :Integer
+                                   :b :Integer}
+                       :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
+               :ws/B {:spec-vars {:a :Instance}}
+               :ws/C {:spec-vars {:as [:Vec :Instance]}}
+               :ws/D {:spec-vars {}}})
+        tenv2 (-> tenv
+                  (halite-envs/extend-scope 'ax :Instance)
+                  (halite-envs/extend-scope 'ay :Instance)
+                  (halite-envs/extend-scope 'b1 :ws/B))
+        env2 (-> empty-env
+                 (halite-envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
+                 (halite-envs/bind 'ay {:$type :ws/A1})
+                 (halite-envs/bind 'b1 {:$type :ws/B :a {:$type :ws/A1}}))]
+
+    (are [expr etype]
+        (= etype (halite/type-check senv tenv2 expr))
+
+      {:$type :ws/A1} :ws/A1
+      {:$type :ws/A2 :a 1 :b 2} :ws/A2
+      {:$type :ws/B :a {:$type :ws/A1}} :ws/B
+      {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :ws/B
+      '(get* {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :a) :Instance
+      'ax :Instance
+      '(= ax ay) :Boolean
+      '(= b1 ax) :Boolean
+      {:$type :ws/B :a {:$type :ws/D}} :ws/B
+      '(refine-to ax :ws/A) :ws/A
+      '(union #{{:$type :ws/A1}} #{{:$type :ws/A2 :a 3 :b 3}}) [:Set :Instance])
+
+    (are [expr v]
+        (= v (halite/eval-expr senv tenv2 env2 expr))
+
+      '(refine-to ax :ws/A) {:$type :ws/A :x 7})
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
+
+      {:$type :ws/A2 :a 7 :b 8} #"invalid instance"
+      '(refine-to (get* {:$type :ws/B :a {:$type :ws/D}} :a) :ws/A) #"No active refinement path from 'ws/D' to 'ws/A'")))
