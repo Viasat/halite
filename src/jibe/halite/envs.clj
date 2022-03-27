@@ -3,14 +3,15 @@
 
 (ns jibe.halite.envs
   "Halite spec, type, and eval environment abstractions."
-  (:require [jibe.halite.types :refer [BareKeyword BareSymbol NamespacedKeyword HaliteType]]
+  (:require [jibe.halite.types :refer [BareKeyword BareSymbol NamespacedKeyword HaliteType spec-type?]]
             [schema.core :as s]))
 
 (s/defschema SpecInfo
   {:spec-vars {BareKeyword HaliteType}
    :constraints [[(s/one s/Str :name) (s/one s/Any :expr)]]
    :refines-to {NamespacedKeyword {:clauses [[(s/one s/Str :name) (s/one s/Any :expr)]]
-                                   (s/optional-key :inverted?) s/Bool}}})
+                                   (s/optional-key :inverted?) s/Bool}}
+   (s/optional-key :abstract?) s/Bool})
 
 (defprotocol SpecEnv
   (lookup-spec* [self spec-id]))
@@ -59,14 +60,27 @@
   [scope :- {BareSymbol HaliteType}]
   (->TypeEnvImpl scope))
 
+(s/defn substitute-instance-type :- HaliteType
+  "Return the type obtained by substituting :Instance for any occurrence of a spec-id that is abstract in the given spec environment."
+  [senv :- (s/protocol SpecEnv), declared-type :- HaliteType]
+  (cond
+    (spec-type? declared-type) (let [spec-info (lookup-spec senv declared-type)]
+                                 (when (nil? spec-info)
+                                   (throw (ex-info (format "resource spec not found: '%s'" (symbol declared-type)) {:type declared-type})))
+                                 (if (:abstract? spec-info)
+                                   :Instance
+                                   declared-type))
+    (vector? declared-type) [(first declared-type) (substitute-instance-type senv (second declared-type))]
+    :else declared-type))
+
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
-  [spec :- SpecInfo]
+  [senv :- (s/protocol SpecEnv), spec :- SpecInfo]
   (let [{:keys [spec-vars]} spec]
     (->TypeEnvImpl
      (zipmap (map symbol (keys spec-vars))
-             (vals spec-vars)))))
+             (map (partial substitute-instance-type senv) (vals spec-vars))))))
 
 (deftype EnvImpl [bindings]
   Env

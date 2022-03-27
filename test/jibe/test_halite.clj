@@ -172,7 +172,7 @@
       '(get* a :foo/bar) #"must be a variable name"
       '(get* a 12) #"must be a variable name"
       '(get* a :b) #"No such variable"
-      '(get* #{} 1) #"must be an instance or non-empty vector")))
+      '(get* #{} 1) #"must be an instance of known type or non-empty vector")))
 
 (deftest get*-eval-tests
   (let [c {:$type :ws/C$v1
@@ -634,5 +634,102 @@
 
       '(refines-to? ax :ws/A) true
       '(refines-to? ax :ws/A2) true
-      '(refines-to? ax :ws/A1) false
-      )))
+      '(refines-to? ax :ws/A1) false)))
+
+(deftest test-concrete?
+  (let [senv (->TestSpecEnv
+              {:ws/A {:spec-vars {:x :Integer}
+                      :constraints '[["posX" (< 0 x)]
+                                     ["boundedX" (< x 10)]]
+                      :abstract? true}
+               :ws/A1 {:spec-vars {}
+                       :refines-to {:ws/A {:clauses '[["asA" {:x 5}]]}}}
+               :ws/A2 {:spec-vars {:a :Integer
+                                   :b :Integer}
+                       :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
+               :ws/B {:spec-vars {:a :ws/A}}
+               :ws/C {:spec-vars {:as [:Vec :ws/A]}}
+               :ws/D {:spec-vars {}}})]
+
+    (are [expr etype]
+        (= etype (halite/type-check senv tenv expr))
+
+      '(concrete? 1) :Boolean
+      '(concrete? true) :Boolean
+      '(concrete? "foo") :Boolean
+      '(concrete? {:$type :ws/A :x 1}) :Boolean
+      '(concrete? [{:$type :ws/A :x 1}]) :Boolean)
+
+    (are [expr v]
+        (= v (halite/eval-expr senv tenv empty-env expr))
+
+      '(concrete? 1) true
+      '(concrete? true) true
+      '(concrete? "foo") true
+      '(concrete? {:$type :ws/A :x 1}) false
+      '(concrete? {:$type :ws/A1}) true
+      '(concrete? (refine-to {:$type :ws/A1} :ws/A)) false
+      '(concrete? [{:$type :ws/A :x 1}]) false
+      '(concrete? [{:$type :ws/A1}]) true)))
+
+(deftest abstract-specs
+  (let [senv (->TestSpecEnv
+              {:ws/A {:spec-vars {:x :Integer}
+                      :constraints '[["posX" (< 0 x)]
+                                     ["boundedX" (< x 10)]]
+                      :abstract? true}
+               :ws/A1 {:spec-vars {}
+                       :refines-to {:ws/A {:clauses '[["asA" {:x 6}]]}}}
+               :ws/A2 {:spec-vars {:a :Integer
+                                   :b :Integer}
+                       :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
+               :ws/B {:spec-vars {:a :ws/A}
+                      :constraints '[["notFive" (not= 5 (get* (refine-to a :ws/A) :x))]]}
+               :ws/C {:spec-vars {:as [:Vec :ws/A]}}
+               :ws/D {:spec-vars {}}
+               :ws/Invalid {:spec-vars {:a :ws/A}
+                            ;; a is typed as :Instance, so (get* a :x) doesn't type check
+                            :constraints '[["notFive" (not= 5 (get* a :x))]]}})
+        tenv2 (-> tenv
+                  (halite-envs/extend-scope 'ax :Instance)
+                  (halite-envs/extend-scope 'ay :Instance)
+                  (halite-envs/extend-scope 'b1 :ws/B)
+                  (halite-envs/extend-scope 'c :ws/C))
+        env2 (-> empty-env
+                 (halite-envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
+                 (halite-envs/bind 'ay {:$type :ws/A1})
+                 (halite-envs/bind 'b1 {:$type :ws/B :a {:$type :ws/A1}})
+                 (halite-envs/bind 'c {:$type :ws/C :as [{:$type :ws/A1} {:$type :ws/A2 :a 2 :b 7}]}))]
+
+    (are [expr etype]
+        (= etype (halite/type-check senv tenv2 expr))
+
+      {:$type :ws/A :x 5} :ws/A
+      '(get* b1 :a) :Instance
+      '(get* c :as) [:Vec :Instance]
+      {:$type :ws/B :a {:$type :ws/A1}} :ws/B
+      {:$type :ws/B :a {:$type :ws/D}} :ws/B
+      {:$type :ws/C :as [{:$type :ws/D} {:$type :ws/A1}]} :ws/C
+      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/D})} :ws/C
+      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/A :x 9})} :ws/C
+      )
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
+
+      {:$type :ws/Invalid :a {:$type :ws/A1}} #"invalid constraint")
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
+
+      {:$type :ws/B :a {:$type :ws/A :x 4}} #"cannot contain abstract value"
+      {:$type :ws/B :a {:$type :ws/D}} #"No active refinement path from 'ws/D' to 'ws/A'"
+      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/D})} #"No active refinement path from 'ws/D' to 'ws/A'"
+      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/A :x 9})} #"instance cannot contain abstract value"
+      )
+
+    (are [expr v]
+        (= v (halite/eval-expr senv tenv2 env2 expr))
+
+      '(conj (get* c :as) {:$type :ws/D}) [{:$type :ws/A1} {:$type :ws/A2 :a 2 :b 7} {:$type :ws/D}]
+      {:$type :ws/B :a {:$type :ws/A1}} {:$type :ws/B :a {:$type :ws/A1}})))

@@ -40,24 +40,71 @@
         (eval-expr (:senv ctx) tenv (:env ctx)
                    (assoc mapping :$type spec-id)))))
 
+(s/defn ^:private refines-to? :- s/Bool
+  [inst spec-id]
+  (or (= spec-id (:$type inst))
+      (contains? (:refinements (meta inst)) spec-id)))
+
+(s/defn ^:private concrete? :- s/Bool
+  "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
+  [senv :- (s/protocol SpecEnv), v]
+  (cond
+    (or (integer? v) (boolean? v) (string? v)) true
+    (map? v) (let [spec-id (:$type v)
+                   spec-info (or (lookup-spec senv spec-id)
+                                 (throw (ex-info (str "resource spec not found: " spec-id) {:spec-id spec-id})))]
+               (and (not (:abstract? spec-info))
+                    (every? (partial concrete? senv) (vals (dissoc v :$type)))))
+    (coll? v) (every? (partial concrete? senv) v)
+    :else (throw (ex-info (format "BUG! Not a value: %s" (pr-str v)) {:value v}))))
+
+(s/defn ^:private check-against-declared-type
+  "Runtime check that v conforms to the given type, which is the type of v as declared in a resource spec.
+  This function supports the semantics of abstract specs. A declared type of :foo/Bar is replaced by :Instance
+  during type checking when the spec foo/Bar is abstract. The type system ensures that v is some instance,
+  but at runtime, we need to confirm that v actually refines to the expected type. This function does,
+  and recursively deals with collection types."
+  [declared-type :- HaliteType, v]
+  (cond
+    (spec-type? declared-type) (when-not (refines-to? v declared-type)
+                                 (throw (ex-info (format "No active refinement path from '%s' to '%s'" (symbol (:$type v)) (symbol declared-type))
+                                                 {:value v})))
+    (vector? declared-type) (if (= :Maybe (first declared-type))
+                              (check-against-declared-type (second declared-type) v)
+                              (dorun (map (partial check-against-declared-type (second declared-type)) v)))
+    :else nil))
+
 (s/defn ^:private validate-instance :- s/Any
   "Check that an instance satisfies all applicable constraints.
   Return the instance if so, throw an exception if not.
   Assumes that the instance has been type-checked successfully against the given type environment."
   [senv :- (s/protocol SpecEnv), inst :- s/Any]
   (let [spec-id (:$type inst)
-        {:keys [refines-to] :as spec-info} (lookup-spec senv spec-id)
-        spec-tenv (type-env-from-spec spec-info)
+        {:keys [spec-vars refines-to] :as spec-info} (lookup-spec senv spec-id)
+        spec-tenv (type-env-from-spec senv spec-info)
         env (env-from-inst spec-info inst)
         ctx {:senv senv, :env env}
         satisfied? (fn [[cname expr]]
-                     (eval-predicate ctx spec-tenv (format "invalid constraint '%s' of spec '%s'" cname (symbol spec-id)) expr))
-        violated-constraints (->> spec-info :constraints (remove satisfied?))]
-    (when (seq violated-constraints)
-      (throw (ex-info (format "invalid instance of '%s', violates constraints %s"
-                              (symbol spec-id) (str/join ", " (map first violated-constraints)))
-                      {:value inst
-                       :halite-error :constraint-violation})))
+                     (eval-predicate ctx spec-tenv (format "invalid constraint '%s' of spec '%s'" cname (symbol spec-id)) expr))]
+
+    ;; check that all variables have values that are concrete and that conform to the
+    ;; types declared in the parent resource spec
+    (doseq [[kw v] (dissoc inst :$type)
+            :let [declared-type (spec-vars kw)]]
+      ;; TODO: consider letting instances of abstract spec contain abstract values
+      (when-not (concrete? senv v)
+        (throw (ex-info "instance cannot contain abstract value" {:value v})))
+      (check-against-declared-type declared-type v))
+
+    ;; check all constraints
+    (let [violated-constraints (->> spec-info :constraints (remove satisfied?))]
+      (when (seq violated-constraints)
+        (throw (ex-info (format "invalid instance of '%s', violates constraints %s"
+                                (symbol spec-id) (str/join ", " (map first violated-constraints)))
+                        {:value inst
+                         :halite-error :constraint-violation}))))
+
+    ;; fully explore all active refinement paths, and store the results
     (with-meta
       inst
       {:refinements
@@ -103,7 +150,7 @@
 
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
-      (let [field-type (get field-types field-kw)
+      (let [field-type (substitute-instance-type (:senv ctx) (get field-types field-kw))
             actual-type (check-fn  ctx field-val)]
         (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
@@ -205,8 +252,7 @@
                        [[:Set :Integer]] [:Vec :Integer]
                        [[:Vec :Integer]] [:Vec :Integer])
      'some? (mk-builtin (fn [v] (not= :Unset v))
-                        [[:Maybe :Any]] :Boolean)
-     }))
+                        [[:Maybe :Any]] :Boolean)}))
 
 (s/defn ^:private matches-signature?
   [sig :- FnSignature, actual-types :- [HaliteType]]
@@ -277,9 +323,9 @@
         (when-not (contains? field-types index)
           (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) subexpr-type)
                           {:form form})))
-        (get field-types index))
+        (substitute-instance-type (:senv ctx) (get field-types index)))
 
-      :else (throw (ex-info "First argument to get* must be an instance or non-empty vector"
+      :else (throw (ex-info "First argument to get* must be an instance of known type or non-empty vector"
                             {:form form})))))
 
 (s/defn ^:private type-check-equals :- HaliteType
@@ -446,6 +492,11 @@
       (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
     :Boolean))
 
+(s/defn ^:private type-check-concrete? :- HaliteType
+  [ctx :- TypeContext, expr]
+  (arg-count-exactly 1 expr)
+  :Boolean)
+
 (s/defn ^:private type-check* :- HaliteType
   [ctx :- TypeContext, expr]
   (cond
@@ -472,6 +523,7 @@
                    'into (type-check-into ctx expr)
                    'refine-to (type-check-refine-to ctx expr)
                    'refines-to? (type-check-refines-to? ctx expr)
+                   'concrete? (type-check-concrete? ctx expr)
                    (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -554,12 +606,14 @@
                      'refine-to (eval-refine-to ctx expr)
                      'refines-to? (let [[subexpr kw] (rest expr)
                                         inst (eval-in-env subexpr)]
-                                    (or (= kw (:$type inst))
-                                        (contains? (:refinements (meta inst)) kw)))
+                                    (refines-to? inst kw))
+                     'concrete? (concrete? (:senv ctx) (eval-in-env (second expr)))
                      (apply (:impl (get builtins (first expr)))
                             (map eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)
-      (set? expr) (set (map eval-in-env expr)))))
+      (set? expr) (set (map eval-in-env expr))
+      (= :Unset expr) :Unset
+      :else (throw (ex-info "Invalid expression" {:form expr})))))
 
 (s/defn eval-expr :- s/Any
   "Type check a halite expression against the given type environment,
