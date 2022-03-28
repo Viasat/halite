@@ -22,6 +22,14 @@
   [senv :- (s/protocol SpecEnv), spec-id :- NamespacedKeyword]
   (lookup-spec* senv spec-id))
 
+(deftype SpecEnvImpl [spec-info-map]
+  SpecEnv
+  (lookup-spec* [self spec-id] (spec-info-map spec-id)))
+
+(s/defn spec-env :- (s/protocol SpecEnv)
+  [spec-info-map :- {NamespacedKeyword SpecInfo}]
+  (->SpecEnvImpl spec-info-map))
+
 (defprotocol TypeEnv
   (scope* [self])
   (extend-scope* [self sym t]))
