@@ -735,38 +735,3 @@
       '(conj (get* c :as) {:$type :ws/D}) [{:$type :ws/A1} {:$type :ws/A2 :a 2 :b 7} {:$type :ws/D}]
       {:$type :ws/B :a {:$type :ws/A1}} {:$type :ws/B :a {:$type :ws/A1}})))
 
-(deftest beaker-example
-  (let [senv (->TestSpecEnv
-              {:ws/Thing {:spec-vars {:mass :Integer}
-                          :constraints [["positive mass" '(> mass 0)]]}
-
-               :ws/Fluid {:spec-vars {:name :String, :density :Integer}
-                          :abstract? true}
-
-               :ws/Beaker {:spec-vars {:volume :Integer
-                                       :emptyMass :Integer
-                                       :contents [:Maybe :ws/Fluid]}
-                           :refines-to {:ws/Thing
-                                        {:clauses '[["asThing"
-                                                     {:mass (+ emptyMass
-                                                               (if-value- contents
-                                                                 (* volume (get* (refine-to contents :ws/Fluid) :density))
-                                                                 0))}]]}}}
-               :ws/Water {:refines-to {:ws/Fluid {:clauses '[["asFluid" {:name "H20", :density 1}]]}}}
-               :ws/Unobtanium {:refines-to {:ws/Fluid {:clauses '[["asFluid" {:name "Tachyon Sauce", :density -10}]]}}}})
-        tenv (halite-envs/type-env '{empty-beaker :ws/Beaker})
-        env (halite-envs/env '{empty-beaker {:$type :ws/Beaker, :emptyMass 1, :volume 1}})]
-    (are [expr v]
-        (= v (halite/eval-expr senv tenv env expr))
-
-      '(get* (refine-to empty-beaker :ws/Thing) :mass) 1
-      '(get* (refine-to {:$type :ws/Beaker :volume 1 :emptyMass 1
-                         :contents {:$type :ws/Water}}
-                        :ws/Thing)
-             :mass) 2)
-
-    (is (thrown-with-msg? ExceptionInfo #"positive mass"
-                 (halite/eval-expr senv tenv env
-                                   '(get* (refine-to {:$type :ws/Beaker :volume 1 :emptyMass 1
-                                                      :contents {:$type :ws/Unobtanium}}
-                                                     :ws/Thing) :mass))))))
