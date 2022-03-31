@@ -130,7 +130,7 @@
         _ (when-not (and (keyword? t) (namespaced? t))
             (throw (ex-info "expected namespaced keyword as value of :$type" {error-key inst})))
         spec-info (or (lookup-spec (:senv ctx) t)
-                   (throw (ex-info (str "resource spec not found: " t) {error-key inst})))
+                      (throw (ex-info (str "resource spec not found: " t) {error-key inst})))
         field-types (:spec-vars spec-info)
         fields (set (keys field-types))
         required-fields (->> field-types
@@ -176,7 +176,6 @@
                0 nil
                1 (first elem-types)
                (reduce meet elem-types))])))
-
 
 (s/defn ^:private type-of* :- HaliteType
   [ctx :- TypeContext, value]
@@ -233,7 +232,7 @@
      'Cardinality (mk-builtin count [:Coll] :Integer)
      'count (mk-builtin count [:Coll] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
-                      [:Boolean & :Boolean] :Boolean )
+                      [:Boolean & :Boolean] :Boolean)
      'or (mk-builtin (fn [& args] (true? (some true? args)))
                      [:Boolean & :Boolean] :Boolean)
      'not (mk-builtin not [:Boolean] :Boolean)
@@ -531,7 +530,7 @@
 (s/defn type-check :- HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
-  [senv :- (s/protocol SpecEnv,) tenv :- (s/protocol TypeEnv,) expr :- s/Any]
+  [senv :- (s/protocol SpecEnv) tenv :- (s/protocol TypeEnv) expr :- s/Any]
   (type-check* {:senv senv :tenv tenv} expr))
 
 (declare eval-expr*)

@@ -81,16 +81,16 @@
   "True if s is a subtype of t, and false otherwise."
   [s :- HaliteType, t :- HaliteType]
   (or
-    (= s t) ; the subtyping relation is reflexive
-    (= t :Any) ; :Any is the 'top' type
-    (and (= t :Coll) (boolean (#{:EmptyVec :EmptySet} s)))
-    (and (= s :EmptyVec) (vector? t) (= :Vec (first t)))
-    (and (= s :EmptySet) (vector? t) (= :Set (first t)))
-    (and (= s :Unset) (vector? t) (= :Maybe (first t)))
-    (and (vector? t) (= :Maybe (first t)) (subtype? s (second t)))
-    (and (vector? s) (vector? t) (= (first s) (first t)) (subtype? (second s) (second t)))
-    (and (vector? s) (boolean (#{:Set :Vec} (first s))) (= t :Coll))
-    (and (= :Instance t) (spec-type? s))))
+   (= s t) ; the subtyping relation is reflexive
+   (= t :Any) ; :Any is the 'top' type
+   (and (= t :Coll) (boolean (#{:EmptyVec :EmptySet} s)))
+   (and (= s :EmptyVec) (vector? t) (= :Vec (first t)))
+   (and (= s :EmptySet) (vector? t) (= :Set (first t)))
+   (and (= s :Unset) (vector? t) (= :Maybe (first t)))
+   (and (vector? t) (= :Maybe (first t)) (subtype? s (second t)))
+   (and (vector? s) (vector? t) (= (first s) (first t)) (subtype? (second s) (second t)))
+   (and (vector? s) (boolean (#{:Set :Vec} (first s))) (= t :Coll))
+   (and (= :Instance t) (spec-type? s))))
 
 (s/defn meet :- HaliteType
   "The 'least' supertype of s and t. Formally, return the type m such that all are true:

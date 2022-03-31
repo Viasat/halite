@@ -33,7 +33,7 @@
 
 (deftest literal-type-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
 
     true :Boolean
     false :Boolean
@@ -54,11 +54,10 @@
     {:$type :ws/C$v1 :xs []} :ws/C$v1
     {:$type :ws/C$v1 :xs [1 2 3]} :ws/C$v1
     [{:$type :ws2/B$v1 :s "bar"}] [:Vec :ws2/B$v1]
-    {:$type :ws/D$v1 :xss [[]]} :ws/D$v1
-    )
+    {:$type :ws/D$v1 :xss [[]]} :ws/D$v1)
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     {} #"instance literal must have :\$type field"
     {:$type "foo"} #"expected namespaced keyword as value of :\$type"
@@ -72,7 +71,7 @@
 
 (deftest literal-eval-tests
   (are [expr]
-      (= expr (halite/eval-expr senv tenv empty-env expr))
+       (= expr (halite/eval-expr senv tenv empty-env expr))
 
     true
     false
@@ -86,7 +85,7 @@
 
 (deftest application-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
 
     '(+ 1 2) :Integer
     '(+ (- 3 2) (* 4 5)) :Integer
@@ -106,14 +105,14 @@
     '(subset? #{"nope"} #{1 2 3}) :Boolean)
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(foo) #"function 'foo' not found"
     '(+ 1 "two") #"no matching signature for '\+'"
     '(+ 1) #"no matching signature for '\+'")
 
   (are [expr v]
-      (= v (halite/eval-expr senv tenv empty-env expr))
+       (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(+ 1 2) 3
     '(- 5 3) 2
@@ -154,8 +153,8 @@
                'c :ws/C$v1
                'xs [:Vec :String]})]
     (are [expr etype]
-        (= etype (halite/type-check senv tenv expr))
-      
+         (= etype (halite/type-check senv tenv expr))
+
       'a :ws/A$v1   ; warm-up: symbol lookup
       '(get* a :x) :Integer
       '(get* b :a) :ws/A$v1
@@ -164,7 +163,7 @@
       '(get* (get* (get* (get* c :bs) 2) :a) :x) :Integer)
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
       'foo #"Undefined"
       '(get*) #"Wrong number of arguments"
@@ -189,7 +188,7 @@
         tenv (halite-envs/type-env {'c :ws/C$v1})
         env (halite-envs/env {'c c})]
     (are [expr v]
-        (= v (halite/eval-expr senv tenv env expr))
+         (= v (halite/eval-expr senv tenv env expr))
       'c c
       '(get* c :bs) (get c :bs)
       '(get* (get* c :bs) 3) (get-in c [:bs 2])
@@ -197,7 +196,7 @@
 
 (deftest equality-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
 
     '(= 1 (+ 2 3)) :Boolean
     '(= [#{}] [#{1} #{2}]) :Boolean
@@ -205,7 +204,7 @@
     '(not= [#{12}] [#{}]) :Boolean)
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(= 1 "two") #"incompatible types"
     '(= [] #{}) #"incompatible types"
@@ -213,7 +212,7 @@
     '(not= [] #{}) #"incompatible types")
 
   (are [expr v]
-      (= v (halite/eval-expr senv tenv empty-env expr))
+       (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(= (* 2 3) (+ 2 4)) true
     '(= [1 2 3] [2 1 3]) false
@@ -222,26 +221,26 @@
 
 (deftest if-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
     '(if true 1 2) :Integer
     '(if false [[]] [[1]]) [:Vec [:Vec :Integer]])
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(if true 2) #"Wrong number of arguments"
     '(if 1 2 3) #"must be boolean"
     '(if true 1 "two") #"incompatible types")
 
   (are [expr v]
-      (= v (halite/eval-expr senv tenv empty-env expr))
+       (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(if true 1 2) 1
     '(if (< 1 (Cardinality [])) 12 (+ 2 3)) 5))
 
 (deftest let-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
 
     '(let [] 1) :Integer
     '(let [x (+ 1 2)
@@ -253,7 +252,7 @@
        y) :Integer)
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(let) #"Wrong number of arguments"
     '(let [x] x) #"must have an even number of forms"
@@ -262,13 +261,12 @@
     '(let [x "foo"] (+ x 1)) #"no matching signature")
 
   (are [expr v]
-      (= v (halite/eval-expr senv tenv empty-env expr))
+       (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(let [] 1) 1
     '(let [x (+ 1 2), y [x]] y) [3]
-    '(let [x 1] (let [x "foo"] x)) "foo" 
-    '(let [x "foo", y (let [x 1] (+ x 2))] y) 3
-    ))
+    '(let [x 1] (let [x "foo"] x)) "foo"
+    '(let [x "foo", y (let [x 1] (+ x 2))] y) 3))
 
 (deftest maybe-tests
   (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
@@ -276,7 +274,7 @@
                  (halite-envs/extend-scope 'm :ws/Maybe$v1)
                  (halite-envs/extend-scope 'x [:Maybe :Integer]))]
     (are [expr etype]
-        (= etype (halite/type-check senv tenv expr))
+         (= etype (halite/type-check senv tenv expr))
 
       'no-value- :Unset
       {:$type :ws/Maybe$v1} :ws/Maybe$v1
@@ -290,7 +288,7 @@
       '(some? x) :Boolean)
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
       '(let [no-value- 12] "ha") #"reserved word"
       '(if-value- 12 true false) #"must be a bare symbol"
@@ -300,7 +298,7 @@
     (let [env (halite-envs/env {'m {:$type :ws/Maybe$v1}
                                 'x :Unset})]
       (are [expr v]
-          (= v (halite/eval-expr senv tenv env expr))
+           (= v (halite/eval-expr senv tenv env expr))
 
         'no-value- :Unset
         {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
@@ -319,7 +317,7 @@
   ;; 2) [:Maybe [:Maybe <T>]] is not a valid type!
   (let [tenv (halite-envs/extend-scope tenv 'x [:Maybe :Integer])]
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
       '[x] #"vector literal element may not always evaluate to a value"
       '#{x} #"set literal element may not always evaluate to a value"
@@ -327,7 +325,7 @@
 
 (deftest union-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
 
     '(union #{1 2 3} #{3 4 5}) [:Set :Integer]
     '(union #{} #{"foo"}) [:Set :String]
@@ -339,12 +337,12 @@
     '(union #{#{}} #{#{3}}) [:Set [:Set :Integer]])
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(union #{1} [2]) #"must be sets")
 
   (are [expr v]
-      (= v (halite/eval-expr senv tenv empty-env expr))
+       (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(union #{1 2 3} #{3 4 5}) #{1 2 3 4 5}
     '(union #{} #{"foo"}) #{"foo"}
@@ -356,7 +354,7 @@
 
 (deftest intersection-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
 
     '(intersection #{1 2}) [:Set :Integer]
     '(intersection #{1 2} #{"three"}) :EmptySet
@@ -365,13 +363,13 @@
     '(intersection #{"two" 3} #{12}) [:Set :Integer])
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(intersection) #"Wrong number of arguments"
     '(intersection #{1} [2]) #"must be sets")
 
   (are [expr v]
-      (= v (halite/eval-expr senv tenv empty-env expr))
+       (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(intersection #{1 2}) #{1 2}
     '(intersection #{1 2} #{"three"}) #{}
@@ -381,27 +379,27 @@
 
 (deftest difference-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
 
     '(difference #{1 2} #{}) [:Set :Integer]
     '(difference #{1 2} #{"three" true}) [:Set :Integer])
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(difference #{1}) #"Wrong number of arguments"
     '(difference #{1} #{2} #{3}) #"Wrong number of arguments"
     '(difference #{1} 1) #"must be sets")
 
   (are [expr v]
-      (= v (halite/eval-expr senv tenv empty-env expr))
+       (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(difference #{} #{1}) #{}
     '(difference #{1 2 3} #{2}) #{1 3}))
 
 (deftest vector-tests
   (are [expr etype]
-      (= etype (halite/type-check senv tenv expr))
+       (= etype (halite/type-check senv tenv expr))
     '(first [1]) :Integer
     '(rest []) :EmptyVec
     '(rest [1 2]) [:Vec :Integer]
@@ -422,7 +420,7 @@
     '(sort #{1 2}) [:Vec :Integer])
 
   (are [expr err-msg]
-      (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
     '(first) #"Wrong number of arguments"
     '(first [] []) #"Wrong number of arguments"
     '(first []) #"argument to first is always empty"
@@ -440,7 +438,7 @@
     '(sort 1) #"no matching signature")
 
   (are [expr v]
-      (= v (halite/eval-expr senv tenv empty-env expr))
+       (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(first [1 2 3]) 1
     '(rest []) []
@@ -467,7 +465,7 @@
     ;; type-check cannot detect constraint violations, because that would often involve
     ;; actually evaluating forms
     (are [expr etype]
-        (= etype (halite/type-check senv tenv expr))
+         (= etype (halite/type-check senv tenv expr))
 
       {:$type :ws/E$v1, :y false} :ws/E$v1
       {:$type :ws/E$v1, :y true} :ws/E$v1
@@ -475,22 +473,21 @@
 
     ;; type-of, on the other hand, only works with values, and *does* check constraints
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/type-of senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/type-of senv tenv expr))
 
       {:$type :ws/E$v1, :y true} #"invalid instance"
       {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")
 
     ;; eval-expr also must check constraints
     (are [expr v]
-        (= v (halite/eval-expr senv tenv empty-env expr))
+         (= v (halite/eval-expr senv tenv empty-env expr))
       {:$type :ws/E$v1, :y false} {:$type :ws/E$v1, :y false})
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
 
       {:$type :ws/E$v1, :y true} #"invalid instance"
-      {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")
-    ))
+      {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")))
 
 (deftest test-refinement-validation
   (let [senv (->TestSpecEnv
@@ -517,7 +514,7 @@
         (is (= {:ws/B {:$type :ws/B :x 20}
                 :ws/D {:$type :ws/D :x 21}}
                (-> a meta :refinements (dissoc :ws/C)))))
-      
+
       (is (thrown-with-msg?
            ExceptionInfo #"invalid instance"
            (halite/eval-expr senv
@@ -569,7 +566,7 @@
                  (halite-envs/bind 'b1 {:$type :ws/B :a {:$type :ws/A1}}))]
 
     (are [expr etype]
-        (= etype (halite/type-check senv tenv2 expr))
+         (= etype (halite/type-check senv tenv2 expr))
 
       {:$type :ws/A1} :ws/A1
       {:$type :ws/A2 :a 1 :b 2} :ws/A2
@@ -584,12 +581,12 @@
       '(union #{{:$type :ws/A1}} #{{:$type :ws/A2 :a 3 :b 3}}) [:Set :Instance])
 
     (are [expr v]
-        (= v (halite/eval-expr senv tenv2 env2 expr))
+         (= v (halite/eval-expr senv tenv2 env2 expr))
 
       '(refine-to ax :ws/A) {:$type :ws/A :x 7})
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
 
       {:$type :ws/A2 :a 7 :b 8} #"invalid instance"
       '(refine-to (get* {:$type :ws/B :a {:$type :ws/D}} :a) :ws/A) #"No active refinement path from 'ws/D' to 'ws/A'")))
@@ -617,13 +614,13 @@
                  (halite-envs/bind 'b1 {:$type :ws/B :a {:$type :ws/A1}}))]
 
     (are [expr etype]
-        (= etype (halite/type-check senv tenv2 expr))
+         (= etype (halite/type-check senv tenv2 expr))
 
       '(refines-to? ax :ws/A) :Boolean
       '(refines-to? {:$type :ws/D} :ws/A) :Boolean)
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv2 expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv2 expr))
 
       '(refines-to? ax) #"Wrong number of arguments"
       '(refines-to? ax :foo/Bar) #"Spec not found: 'foo/Bar'"
@@ -631,7 +628,7 @@
       '(refines-to? ax "foo") #"Second argument to 'refines-to\?' must be a spec id")
 
     (are [expr v]
-        (= v (halite/eval-expr senv tenv2 env2 expr))
+         (= v (halite/eval-expr senv tenv2 env2 expr))
 
       '(refines-to? ax :ws/A) true
       '(refines-to? ax :ws/A2) true
@@ -653,7 +650,7 @@
                :ws/D {:spec-vars {}}})]
 
     (are [expr etype]
-        (= etype (halite/type-check senv tenv expr))
+         (= etype (halite/type-check senv tenv expr))
 
       '(concrete? 1) :Boolean
       '(concrete? true) :Boolean
@@ -662,7 +659,7 @@
       '(concrete? [{:$type :ws/A :x 1}]) :Boolean)
 
     (are [expr v]
-        (= v (halite/eval-expr senv tenv empty-env expr))
+         (= v (halite/eval-expr senv tenv empty-env expr))
 
       '(concrete? 1) true
       '(concrete? true) true
@@ -703,7 +700,7 @@
                  (halite-envs/bind 'c {:$type :ws/C :as [{:$type :ws/A1} {:$type :ws/A2 :a 2 :b 7}]}))]
 
     (are [expr etype]
-        (= etype (halite/type-check senv tenv2 expr))
+         (= etype (halite/type-check senv tenv2 expr))
 
       {:$type :ws/A :x 5} :ws/A
       '(get* b1 :a) :Instance
@@ -712,25 +709,23 @@
       {:$type :ws/B :a {:$type :ws/D}} :ws/B
       {:$type :ws/C :as [{:$type :ws/D} {:$type :ws/A1}]} :ws/C
       '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/D})} :ws/C
-      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/A :x 9})} :ws/C
-      )
+      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/A :x 9})} :ws/C)
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
 
       {:$type :ws/Invalid :a {:$type :ws/A1}} #"invalid constraint")
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
 
       {:$type :ws/B :a {:$type :ws/A :x 4}} #"cannot contain abstract value"
       {:$type :ws/B :a {:$type :ws/D}} #"No active refinement path from 'ws/D' to 'ws/A'"
       '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/D})} #"No active refinement path from 'ws/D' to 'ws/A'"
-      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/A :x 9})} #"instance cannot contain abstract value"
-      )
+      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/A :x 9})} #"instance cannot contain abstract value")
 
     (are [expr v]
-        (= v (halite/eval-expr senv tenv2 env2 expr))
+         (= v (halite/eval-expr senv tenv2 env2 expr))
 
       '(conj (get* c :as) {:$type :ws/D}) [{:$type :ws/A1} {:$type :ws/A2 :a 2 :b 7} {:$type :ws/D}]
       {:$type :ws/B :a {:$type :ws/A1}} {:$type :ws/B :a {:$type :ws/A1}})))

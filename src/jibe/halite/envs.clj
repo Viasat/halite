@@ -58,7 +58,6 @@
   [env :- (s/protocol Env), sym :- BareSymbol, value :- s/Any]
   (bind* env sym value))
 
-
 (deftype TypeEnvImpl [scope]
   TypeEnv
   (scope* [self] scope)
