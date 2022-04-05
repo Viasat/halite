@@ -12,6 +12,8 @@
             [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]))
 
+(set! *warn-on-reflection* true)
+
 (def reserved-words #{'no-value-})
 
 (declare eval-expr)
@@ -560,7 +562,7 @@
                  (not= t (:$type inst)) (-> meta :refinements t))]
     (cond
       (instance? Exception result) (throw (ex-info (format "Refinement from '%s' failed unexpectedly: %s"
-                                                           (symbol (:$type inst)) (.getMessage result))
+                                                           (symbol (:$type inst)) (.getMessage ^Exception result))
                                                    {:form expr}
                                                    result))
       (nil? result) (throw (ex-info (format "No active refinement path from '%s' to '%s'"

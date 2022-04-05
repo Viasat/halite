@@ -6,6 +6,8 @@
   (:require [jibe.halite.types :refer [BareKeyword BareSymbol NamespacedKeyword HaliteType spec-type?]]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (s/defschema SpecInfo
   {:spec-vars {BareKeyword HaliteType}
    :constraints [[(s/one s/Str :name) (s/one s/Any :expr)]]

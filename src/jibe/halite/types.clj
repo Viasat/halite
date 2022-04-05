@@ -32,6 +32,8 @@
   "
   (:require [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (s/defn bare? :- s/Bool
   "true if the symbol or keyword lacks a namespace component, false otherwise"
   [sym-or-kw :- (s/cond-pre s/Keyword s/Symbol)] (nil? (namespace sym-or-kw)))
