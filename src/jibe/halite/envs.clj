@@ -8,11 +8,14 @@
 
 (set! *warn-on-reflection* true)
 
+(s/defschema Refinement
+  {:clauses [[(s/one s/Str :name) (s/one s/Any :expr)]]
+   (s/optional-key :inverted?) s/Bool})
+
 (s/defschema SpecInfo
   {:spec-vars {BareKeyword HaliteType}
    :constraints [[(s/one s/Str :name) (s/one s/Any :expr)]]
-   :refines-to {NamespacedKeyword {:clauses [[(s/one s/Str :name) (s/one s/Any :expr)]]
-                                   (s/optional-key :inverted?) s/Bool}}
+   :refines-to {NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
 (defprotocol SpecEnv
