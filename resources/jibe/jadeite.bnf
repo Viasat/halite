@@ -1,4 +1,6 @@
-expr = conditional
+expr = lambda
+lambda = conditional | params <'->'> expr
+params = symbol | <'('> (symbol (<','> symbol)*)? <')'>
 conditional = or | or '?' expr ':' conditional | or '=>' conditional
 or = and | or '||' and
 and = equality | and '&&' equality
