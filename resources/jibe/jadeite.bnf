@@ -1,7 +1,8 @@
 expr = lambda
 lambda = conditional | params <'->'> expr
 params = symbol | <'('> (symbol (<','> symbol)*)? <')'>
-conditional = or | or '?' expr ':' conditional | or '=>' conditional
+conditional = implication | <'if'> <'('> conditional <')'> conditional <'else'> conditional
+implication = or | or <'=>'> conditional
 or = and | or '||' and
 and = equality | and '&&' equality
 equality = relational | relational ('==' | '!=') relational

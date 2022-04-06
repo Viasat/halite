@@ -28,8 +28,8 @@
   (flatten-variadics
    (match [tree]
      [[:lambda [:params & params] body]]        (list 'fn (mapv toh params) (toh body))
-     [[:conditional a "?" b ":" c]] (list 'if (toh a) (toh b) (toh c))
-     [[:conditional a "=>" b]]      (list '=> (toh a) (toh b))
+     [[:conditional a b c]]         (list 'if (toh a) (toh b) (toh c))
+     [[:implication a b]]           (list '=> (toh a) (toh b))
      [[:or  a "||" b]]              (list 'or (toh a) (toh b))
      [[:and a "&&" b]]              (list 'and (toh a) (toh b))
      [[:equality a "==" b]]         (list '= (toh a) (toh b))
@@ -66,7 +66,9 @@
                                (map (fn [[[_ key-string] val-tree]]
                                         [(keyword key-string) (toh val-tree)]))
                                (into {}))
-     [[:let & args]]      (list 'let (mapv toh (drop-last args)) (toh (last args)))
+     [[:let & args]]      (if (next args)
+                            (list 'let (mapv toh (drop-last args)) (toh (last args)))
+                            (toh (last args)))
      [[:int i]]           (parse-long i)
      [[:symbol "true"]]   true
      [[:symbol "false"]]  false
@@ -140,9 +142,9 @@
                  get* (if (keyword? a1)
                         (str (toj a0) '. (name a1))
                         (str (toj a0) [a1]))
-                 if (str "(" (toj a0)
-                         " ? " (toj a1)
-                         " : " (toj a2) ")")
+                 if (str "(if(" (toj a0)
+                         ") {" (toj a1)
+                         "} else {" (toj a2) "})")
                  inc (str "(" (toj a0) " + 1)")
                  let (let [[bindings expr] args]
                        (str "{"
