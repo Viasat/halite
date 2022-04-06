@@ -83,7 +83,7 @@
 (def whitespace-or-comments
   (insta/parser
    "ws-or-comments = #'\\s+' | comment+
-    comment = #'\\s*#.*$'"))
+    comment = #'\\s*//.*(\\n\\s*|$)'"))
 
 (def parse
   (insta/parser (io/resource "jibe/jadeite.bnf")
