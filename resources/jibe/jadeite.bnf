@@ -12,19 +12,21 @@ add          = mult        | add ('+' | '-') mult
 mult         = prefix      | mult ('*' | '/' | '%') prefix
 prefix       = postfix     | '!' prefix
 
-<postfix>    = primary | get-field | get-index | AE | call-fn | call-method
+<postfix>    = primary | get-field | get-index | AE | call-fn | type-method | call-method
 get-field    = postfix <'.'> symbol
 get-index    = postfix <'['> expr <']'>
 AE           = ('A' | 'E') <'('> symbol <'in'> expr <')'> expr
 call-fn      = symbol <'('> (expr (<','> expr)* )? <')'>
+type-method  = postfix <'.'> ( 'refineTo' | 'refinesTo?' ) <'('> typename <')'>
 call-method  = postfix <'.'> symbol <'('> (expr (<','> expr)* )? <')'>
 
-<primary>    = int | symbol | string | typename | map | set | list | let | <'('> expr <')'>
-map          = <'{'> ( symbol <':'> expr ( <','> symbol <':'> expr )* )? <'}'>
+<primary>    = int | symbol | string | map | set | list | let | <'('> expr <')'>
+map          = <'{'> ( map-entry ( <','> map-entry )* )? <'}'>
+map-entry    = '$type' <':'> typename | symbol <':'> expr
 set          = <'#{'> ( expr ( <','> expr )* )? <'}'>
 list         = <'['> ( expr ( <','> expr )* )? <']'>
 let          = <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
 int          = "-"? #"\d+"
-symbol       = #"[a-zA-Z$][a-zA-Z0-9_$?]*" | #"<\S+>"
-typename     = <"<"> #"[a-zA-Z0-9./$]+" <">">
+symbol       = #"[a-zA-Z][a-zA-Z0-9_$?]*" | #"<\S+>"
+typename     = #"[a-zA-Z0-9./$]+" | symbol
 string       = #"\"([^\"\\]|\\.)*\""

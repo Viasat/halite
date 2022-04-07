@@ -13,7 +13,7 @@
 ;;;;
 ;; From Jadeite to Halite
 
-(defn flatten-variadics [h]
+(defn- flatten-variadics [h]
   (if-not (and (seq? h) (seq? (second h)))
     h
     (let [[op2 [op1 & args1] & args2] h]
@@ -22,12 +22,17 @@
         h
         (concat [op2] args1 args2)))))
 
+(defn- unwrap-symbol [s]
+  (if-let [[_ weird-s] (re-matches #"<(\S+)>" s)]
+    (symbol weird-s)
+    (symbol s)))
+
 (defn toh
   "Translate from tree of expression objects created by instaparse (hiccup) into halite"
   [tree]
   (flatten-variadics
    (match [tree]
-     [[:lambda [:params & params] body]]        (list 'fn (mapv toh params) (toh body))
+     [[:lambda [:params & params] body]]  (list 'fn (mapv toh params) (toh body))
      [[:conditional a b c]]         (list 'if (toh a) (toh b) (toh c))
      [[:implication a b]]           (list '=> (toh a) (toh b))
      [[:or  a "||" b]]              (list 'or (toh a) (toh b))
@@ -44,35 +49,32 @@
      [[:mult a "/" b]]            (list 'div (toh a) (toh b))
      [[:mult a "%" b]]            (list 'mod* (toh a) (toh b))
      [[:prefix "!" a]]            (list 'not (toh a))
-     [[:get-field a [:symbol b]]] (list 'get* (toh a) (keyword b))
+     [[:get-field a [:symbol b]]] (list 'get* (toh a) (keyword (unwrap-symbol b)))
      [[:get-index a b]]           (list 'get* (toh a) (toh b))
      [[:AE op s bind pred]]       (list (symbol op) [(toh s) (toh bind)] (toh pred))
-     [[:call-fn [:symbol s] & args]] (list* (symbol s) (map toh args))
-     [[:call-method a [:symbol "into"] b]]            (list 'into (toh b) (toh a))
-     [[:call-method a [:symbol "map"] b]]             (list 'map* (toh b) (toh a))
-     [[:call-method a [:symbol "reduce"] & args]]     (concat ['reduce-] (map toh args) [(toh a)])
-     [[:call-method a [:symbol "refineTo"] & args]]   (list* 'refine-to (toh a) (map toh args))
-     [[:call-method a [:symbol "refinesTo?"] & args]] (list* 'refines-to? (toh a) (map toh args))
-     [[:call-method a [:symbol "select"] b]]          (list 'select (toh b) (toh a))
-     [[:call-method a [:symbol op] & args]]           (list* (symbol op) (toh a) (map toh args))
-     [[:map & args]]      (->> args
-                               (partition 2)
-                               (map (fn [[[_ key-string] val-tree]]
-                                      [(keyword key-string) (toh val-tree)]))
-                               (into {}))
-     [[:set & args]]      (set (map toh args))
-     [[:list & args]]     (vec (map toh args))
-     [[:let & args]]      (if (next args)
-                            (list 'let (mapv toh (drop-last args)) (toh (last args)))
-                            (toh (last args)))
-     [[:int & strs]]      (parse-long (apply str strs))
-     [[:symbol "true"]]   true
-     [[:symbol "false"]]  false
-     [[:symbol s]]        (if-let [[_ weird-s] (re-matches #"<(\S+)>" s)]
-                            (symbol weird-s)
-                            (symbol s))
-     [[:typename s]]      (keyword s)
-     [[:string s]]        (edn/read-string s)
+     [[:call-fn s & args]]        (list* (toh s) (map toh args))
+     [[:call-method a [:symbol "into"] b]]        (list 'into (toh b) (toh a))
+     [[:call-method a [:symbol "map"] b]]         (list 'map* (toh b) (toh a))
+     [[:call-method a [:symbol "reduce"] & args]] (concat ['reduce-] (map toh args) [(toh a)])
+     [[:call-method a [:symbol "select"] b]]      (list 'select (toh b) (toh a))
+     [[:call-method a op & args]]                 (list* (toh op) (toh a) (map toh args))
+     [[:type-method a "refineTo" & args]]         (list* 'refine-to (toh a) (map toh args))
+     [[:type-method a "refinesTo?" & args]]       (list* 'refines-to? (toh a) (map toh args))
+     [[:map & args]]          (into {} (map toh) args)
+     [[:map-entry "$type" v]] [:$type (toh v)]
+     [[:map-entry [_ k] v]]   [(keyword k) (toh v)]
+     [[:set & args]]          (set (map toh args))
+     [[:list & args]]         (vec (map toh args))
+     [[:let & args]]          (if (next args)
+                                (list 'let (mapv toh (drop-last args)) (toh (last args)))
+                                (toh (last args)))
+     [[:int & strs]]          (parse-long (apply str strs))
+     [[:symbol "true"]]       true
+     [[:symbol "false"]]      false
+     [[:symbol s]]            (unwrap-symbol s)
+     [[:typename [_ s]]]      (keyword (unwrap-symbol s))
+     [[:typename s]]          (keyword s)
+     [[:string s]]            (edn/read-string s)
 
      ;; Default to descending through intermediate grammar nodes
      [[(_ :guard keyword?) (kid :guard vector?)]] (toh kid)
@@ -107,7 +109,10 @@
                                          [post]))))
 
 (defn typename [kw]
-  (str "<" (subs (str kw) 1) ">"))
+  (let [without-colon (subs (str kw) 1)]
+    (if (re-find #"[^a-zA-Z0-9./$]" without-colon)
+      (str "<" without-colon ">")
+      without-colon)))
 
 (defn call-method [method-name [target & args]]
   (str (toj target) "." method-name (infix args)))
@@ -120,12 +125,17 @@
     (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
                   (str "<" x ">")
                   (str x))
-    (set? x) (apply str (concat ["#{"]
-                                (interpose ", " (sort (map toj x)))
+    (set? x) (apply str (concat ["#{"] (->> x (map toj) sort (interpose ", "))
                                 ["}"]))
-    (map? x) (apply str (concat ["{"]
-                                (interpose ", " (sort (map #(str (name (key %)) ": " (toj (val %))) x)))
-                                ["}"]))
+    (map? x) (str "{" (->> (for [[k v] x]
+                             (str (name k) ": "
+                                  (if (= :$type k)
+                                    (typename v)
+                                    (toj v))))
+                           sort
+                           (interpose ", ")
+                           (apply str))
+                  "}")
     (seq? x) (let [[op & [a0 a1 a2 :as args]] x]
                (case op
                  (< <= > >= + - * =>) (infix (str " " op " ") args)
