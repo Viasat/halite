@@ -47,10 +47,7 @@
      [[:get-field a [:symbol b]]] (list 'get* (toh a) (keyword b))
      [[:get-index a b]]           (list 'get* (toh a) (toh b))
      [[:AE op s bind pred]]       (list (symbol op) [(toh s) (toh bind)] (toh pred))
-     [[:call-fn [:symbol "set"] & args]]   (set (map toh args))
-     [[:call-fn [:symbol "list"] & args]]  (vec (map toh args))
-     [[:call-fn [:symbol "expt"] & args]]  (list* 'expt (map toh args))
-     [[:call-fn [:symbol "str"] & args]]   (list* 'str (map toh args))
+     [[:call-fn [:symbol s] & args]] (list* (symbol s) (map toh args))
      [[:call-method a [:symbol "contains"] & args]]  (list* 'contains? (toh a) (map toh args))
      [[:call-method a [:symbol "containsAll"] b]]    (list 'subset? (toh b) (toh a))
      [[:call-method a [:symbol "isConcrete"]]]       (list 'concrete? (toh a))
@@ -65,6 +62,8 @@
                                (map (fn [[[_ key-string] val-tree]]
                                         [(keyword key-string) (toh val-tree)]))
                                (into {}))
+     [[:set & args]]      (set (map toh args))
+     [[:list & args]]     (vec (map toh args))
      [[:let & args]]      (if (next args)
                             (list 'let (mapv toh (drop-last args)) (toh (last args)))
                             (toh (last args)))
@@ -118,14 +117,14 @@
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
-    (vector? x) (str "list" (infix x))
+    (vector? x) (infix "[" ", " "]" x)
     (keyword? x) (typename x)
     (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
                   (str "<" x ">")
                   (str x))
-    (set? x) (apply str (concat ["set("]
+    (set? x) (apply str (concat ["#{"]
                                 (interpose ", " (sort (map toj x)))
-                                [")"]))
+                                ["}"]))
     (map? x) (apply str (concat ["{"]
                                 (interpose ", " (sort (map #(str (name (key %)) ": " (toj (val %))) x)))
                                 ["}"]))
