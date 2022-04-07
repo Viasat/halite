@@ -68,7 +68,7 @@
      [[:let & args]]      (if (next args)
                             (list 'let (mapv toh (drop-last args)) (toh (last args)))
                             (toh (last args)))
-     [[:int i]]           (parse-long i)
+     [[:int & strs]]      (parse-long (apply str strs))
      [[:symbol "true"]]   true
      [[:symbol "false"]]  false
      [[:symbol s]]        (if-let [[_ weird-s] (re-matches #"<(\S+)>" s)]
