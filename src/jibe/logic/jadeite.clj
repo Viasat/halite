@@ -72,10 +72,13 @@
      [[:int i]]           (parse-long i)
      [[:symbol "true"]]   true
      [[:symbol "false"]]  false
-     [[:symbol s]]        (symbol s)
+     [[:symbol s]]        (if-let [[_ weird-s] (re-matches #"<(\S+)>" s)]
+                            (symbol weird-s)
+                            (symbol s))
      [[:typename s]]      (keyword s)
      [[:string s]]        (edn/read-string s)
 
+     ;; Default to descending through intermediate grammar nodes
      [[(_ :guard keyword?) (kid :guard vector?)]] (toh kid)
      :else (throw (ex-info (str "Unhandled parse tree:\n" (pr-str tree))
                            {:tree tree})))))
@@ -118,6 +121,9 @@
     (string? x) (pr-str x)
     (vector? x) (str "list" (infix x))
     (keyword? x) (typename x)
+    (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
+                  (str "<" x ">")
+                  (str x))
     (set? x) (apply str (concat ["set("]
                                 (interpose ", " (sort (map toj x)))
                                 [")"]))
@@ -147,14 +153,14 @@
                          "} else {" (toj a2) "})")
                  inc (str "(" (toj a0) " + 1)")
                  let (let [[bindings expr] args]
-                       (str "{"
+                       (str "{ "
                             (->> bindings
                                  (partition 2)
                                  (mapcat (fn [[k v]]
-                                           [k " = " (toj v) ";"]))
+                                           [(toj k) " = " (toj v) "; "]))
                                  (apply str))
                             (toj expr)
-                            "}"))
+                            " }"))
                  intersection (call-method "intersection" args)
                  into (call-method "into" args)
                  map* (str (toj a1) ".map(" (toj a0) ")")

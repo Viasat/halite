@@ -21,6 +21,6 @@ primary = int | symbol | string | typename | map | let | <'('> expr <')'>
 map = <'{'> ( symbol <':'> expr ( <','> symbol <':'> expr )* )? <'}'>
 let = <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
 int = "-"? #"\d+"
-symbol = #"[a-zA-Z$][a-zA-Z0-9_$]*"
+symbol = #"[a-zA-Z$][a-zA-Z0-9_$]*" | #"<\S+>"
 typename = <"<"> #"[a-zA-Z0-9./$]+" <">">
 string = #"\"([^\"\\]|\\.)*\""
