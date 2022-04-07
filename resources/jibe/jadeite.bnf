@@ -1,29 +1,30 @@
-expr = lambda
-lambda = conditional | params <'->'> expr
-params = symbol | <'('> (symbol (<','> symbol)*)? <')'>
-conditional = implication | <'if'> <'('> conditional <')'> conditional <'else'> conditional
-implication = or | or <'=>'> conditional
-or = and | or '||' and
-and = equality | and '&&' equality
-equality = relational | relational ('==' | '!=') relational
-relational = add | relational ('<' | '<=' | '>=' | '>') add
-add = mult | add ('+' | '-') mult
-mult = prefix | mult ('*' | '/' | '%') prefix
-prefix = postfix | '!' prefix
+expr         = lambda
+lambda       = conditional | params <'->'> expr
+params       = symbol      | <'('> (symbol (<','> symbol)*)? <')'>
 
-<postfix> = primary | get-field | get-index | AE | call-fn | call-method
-get-field = postfix <'.'> symbol
-get-index = postfix <'['> expr <']'>
-AE = ('A' | 'E') <'('> symbol <'in'> expr <')'> expr
-call-fn = symbol <'('> (expr (<','> expr)* )? <')'>
-call-method = postfix <'.'> symbol <'('> (expr (<','> expr)* )? <')'>
+conditional  = implication | <'if'> <'('> conditional <')'> conditional <'else'> conditional
+implication  = or          | or <'=>'> conditional
+or           = and         | or '||' and
+and          = equality    | and '&&' equality
+equality     = relational  | relational ('==' | '!=') relational
+relational   = add         | relational ('<' | '<=' | '>=' | '>') add
+add          = mult        | add ('+' | '-') mult
+mult         = prefix      | mult ('*' | '/' | '%') prefix
+prefix       = postfix     | '!' prefix
 
-<primary> = int | symbol | string | typename | map | set | list | let | <'('> expr <')'>
-map = <'{'> ( symbol <':'> expr ( <','> symbol <':'> expr )* )? <'}'>
-set = <'#{'> ( expr ( <','> expr )* )? <'}'>
-list = <'['> ( expr ( <','> expr )* )? <']'>
-let = <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
-int = "-"? #"\d+"
-symbol = #"[a-zA-Z$][a-zA-Z0-9_$?]*" | #"<\S+>"
-typename = <"<"> #"[a-zA-Z0-9./$]+" <">">
-string = #"\"([^\"\\]|\\.)*\""
+<postfix>    = primary | get-field | get-index | AE | call-fn | call-method
+get-field    = postfix <'.'> symbol
+get-index    = postfix <'['> expr <']'>
+AE           = ('A' | 'E') <'('> symbol <'in'> expr <')'> expr
+call-fn      = symbol <'('> (expr (<','> expr)* )? <')'>
+call-method  = postfix <'.'> symbol <'('> (expr (<','> expr)* )? <')'>
+
+<primary>    = int | symbol | string | typename | map | set | list | let | <'('> expr <')'>
+map          = <'{'> ( symbol <':'> expr ( <','> symbol <':'> expr )* )? <'}'>
+set          = <'#{'> ( expr ( <','> expr )* )? <'}'>
+list         = <'['> ( expr ( <','> expr )* )? <']'>
+let          = <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
+int          = "-"? #"\d+"
+symbol       = #"[a-zA-Z$][a-zA-Z0-9_$?]*" | #"<\S+>"
+typename     = <"<"> #"[a-zA-Z0-9./$]+" <">">
+string       = #"\"([^\"\\]|\\.)*\""

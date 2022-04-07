@@ -37,9 +37,9 @@
      [[:relational a op b]]         (list (symbol op) (toh a) (toh b))
      [[:add a op b]] (let [hb (toh b)]
                        (match [op hb]
-                              ["+" 1] (list 'inc (toh a))
-                              ["-" 1] (list 'dec (toh a))
-                              :else (list (symbol op) (toh a) hb)))
+                         ["+" 1] (list 'inc (toh a))
+                         ["-" 1] (list 'dec (toh a))
+                         :else (list (symbol op) (toh a) hb)))
      [[:mult a "*" b]]            (list '* (toh a) (toh b))
      [[:mult a "/" b]]            (list 'div (toh a) (toh b))
      [[:mult a "%" b]]            (list 'mod* (toh a) (toh b))
@@ -58,7 +58,7 @@
      [[:map & args]]      (->> args
                                (partition 2)
                                (map (fn [[[_ key-string] val-tree]]
-                                        [(keyword key-string) (toh val-tree)]))
+                                      [(keyword key-string) (toh val-tree)]))
                                (into {}))
      [[:set & args]]      (set (map toh args))
      [[:list & args]]     (vec (map toh args))
