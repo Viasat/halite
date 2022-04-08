@@ -33,7 +33,7 @@
   (flatten-variadics
    (match [tree]
      [[:lambda [:params & params] body]]  (list 'fn (mapv toh params) (toh body))
-     [[:conditional a b c]]         (list 'if (toh a) (toh b) (toh c))
+     [[:conditional op a b c]]      (list (if (= "if" op) 'if 'if-value-) (toh a) (toh b) (toh c))
      [[:implication a b]]           (list '=> (toh a) (toh b))
      [[:or  a "||" b]]              (list 'or (toh a) (toh b))
      [[:and a "&&" b]]              (list 'and (toh a) (toh b))
@@ -152,6 +152,9 @@
                  if (str "(if(" (toj a0)
                          ") {" (toj a1)
                          "} else {" (toj a2) "})")
+                 if-value- (str "(ifValue(" (toj a0)
+                                ") {" (toj a1)
+                                "} else {" (toj a2) "})")
                  inc (str "(" (toj a0) " + 1)")
                  into (call-method "into" (reverse args))
                  let (let [[bindings expr] args]
