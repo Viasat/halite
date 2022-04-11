@@ -53,7 +53,7 @@
      [[:get-index a b]]           (list 'get* (toh a) (toh b))
      [[:AE op s bind pred]]       (list (symbol op) [(toh s) (toh bind)] (toh pred))
      [[:call-fn s & args]]        (list* (toh s) (map toh args))
-     [[:call-method a [:symbol "into"] b]]        (list 'into (toh b) (toh a))
+     [[:call-method a [:symbol "concat"] b]]      (list 'into (toh a) (toh b))
      [[:call-method a [:symbol "map"] b]]         (list 'map* (toh b) (toh a))
      [[:call-method a [:symbol "reduce"] & args]] (concat ['reduce-] (map toh args) [(toh a)])
      [[:call-method a [:symbol "select"] b]]      (list 'select (toh b) (toh a))
@@ -166,7 +166,7 @@
                                 ") {" (toj a1)
                                 "} else {" (toj a2) "})")
                  inc (str "(" (toj a0) " + 1)")
-                 into (call-method "into" (reverse args))
+                 into (call-method "concat" args)
                  let (let [[bindings expr] args]
                        (str "{ "
                             (->> bindings
