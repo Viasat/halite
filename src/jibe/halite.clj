@@ -256,6 +256,7 @@
      'mod* (mk-builtin mod [:Integer :Integer] :Integer) ;; deprecated
      'mod (mk-builtin mod [:Integer :Integer] :Integer)
      'expt (mk-builtin expt [:Integer :Integer] :Integer)
+     'abs (mk-builtin abs [:Integer] :Integer)
      'str (mk-builtin str [& :String] :String)
      'subset? (mk-builtin set/subset? [[:Set :Any] [:Set :Any]] :Boolean)
      'sort (mk-builtin sort

@@ -106,7 +106,8 @@
     '(subset? #{"nope"} #{1 2 3}) :Boolean
     '(every? [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
     '(any? [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
-    '(any? [x #{}] true) :Boolean)
+    '(any? [x #{}] true) :Boolean
+    '(abs -10) :Integer)
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
@@ -152,7 +153,9 @@
     '(every? [x #{2 4 6}] (> x 1)) true
     '(every? [x #{2 4 6}] (> x 3)) false
     '(any? [x #{2 4 6}] (> x 5)) true
-    '(any? [x #{2 4 6}] (> x 7)) false))
+    '(any? [x #{2 4 6}] (> x 7)) false
+    '(abs 10) 10
+    '(abs -10) 10))
 
 (deftest get-type-checking-tests
   (let [senv (->TestSpecEnv
