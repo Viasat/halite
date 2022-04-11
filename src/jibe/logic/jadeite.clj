@@ -101,41 +101,51 @@
 
 (declare toj)
 
+(def ^:dynamic *pprint* false)
+
 (defn infix
   ([args] (infix "(" ", " ")" args))
   ([op args] (infix "(" op ")" args))
-  ([pre op post args] (apply str (concat [pre]
-                                         (interpose op (map toj args))
-                                         [post]))))
+  ([pre op post args & {:keys [sort?]}]
+   (let [parts (map toj args)
+         ordered-parts (if sort? (sort parts) parts)]
+     (if (and *pprint*
+              (or (some #(re-find #"\n" %) parts)
+                  (< 70 (reduce + (map count parts)))))
+       (apply str (concat [pre "\n"]
+                          (interpose (str op "\n")
+                                     (map #(string/replace % #"\n" "\n  ")
+                                          ordered-parts))
+                          [post]))
+       (apply str (concat [pre] (interpose op ordered-parts) [post]))))))
 
 (defn typename [kw]
   (let [without-colon (subs (str kw) 1)]
-    (if (re-find #"[^a-zA-Z0-9./$]" without-colon)
+    (if (and *pprint* (re-find #"[^a-zA-Z0-9./$]" without-colon))
       (str "<" without-colon ">")
       without-colon)))
 
 (defn call-method [method-name [target & args]]
-  (str (toj target) "." method-name (infix args)))
+  (let [args-str (infix args)]
+    (if (re-find #"\n" args-str)
+      (str (toj target) "\n." method-name (string/replace args-str #"\n" "\n  "))
+      (str (toj target) "." method-name args-str))))
 
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
-    (vector? x) (infix "[" ", " "]" x)
     (keyword? x) (typename x)
     (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
                   (str "<" x ">")
                   (str x))
-    (set? x) (apply str (concat ["#{"] (->> x (map toj) sort (interpose ", "))
-                                ["}"]))
-    (map? x) (str "{" (->> (for [[k v] x]
-                             (str (name k) ": "
-                                  (if (= :$type k)
-                                    (typename v)
-                                    (toj v))))
-                           sort
-                           (interpose ", ")
-                           (apply str))
-                  "}")
+    (set? x) (infix "#{" ", " "}" x :sort? true)
+    (map? x) (infix "{" ", " "}" x :sort? true)
+    (map-entry? x) (let [[k v] x]
+                     (str (name k) ": "
+                          (if (= :$type k)
+                            (typename v)
+                            (toj v))))
+    (vector? x) (infix "[" ", " "]" x)
     (seq? x) (let [[op & [a0 a1 a2 :as args]] x]
                (case op
                  (< <= > >= + - * =>) (infix (str " " op " ") args)
