@@ -64,7 +64,7 @@
      [[:map-entry "$type" v]] [:$type (toh v)]
      [[:map-entry [_ k] v]]   [(keyword k) (toh v)]
      [[:set & args]]          (set (map toh args))
-     [[:list & args]]         (vec (map toh args))
+     [[:vec & args]]          (vec (map toh args))
      [[:let & args]]          (if (next args)
                                 (list 'let (mapv toh (drop-last args)) (toh (last args)))
                                 (toh (last args)))
