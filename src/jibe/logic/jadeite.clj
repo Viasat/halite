@@ -2,11 +2,12 @@
 ;; Licensed under the MIT license
 
 (ns jibe.logic.jadeite
-  (:require [clojure.string :as string]
-            [clojure.core.match :as match :refer [match]]
+  (:require [clojure.core.match :as match :refer [match]]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [instaparse.core :as insta]
-            [clojure.edn :as edn]))
+            [jibe.logic.expression :as expression]))
 
 (set! *warn-on-reflection* true)
 
@@ -193,3 +194,17 @@
 (def to-jadeite
   "Translate halite form into jadeite string"
   toj)
+
+;; Implement jibe expression multimethods
+
+(defmethod expression/parse-text* :jadeite
+  [_ text]
+  (to-halite text))
+
+(defmethod expression/format-text* :jadeite
+  [_ tree]
+  (to-jadeite tree))
+
+(defn init
+  "This is here to have a hook to call to get the multimethods loaded"
+  [])
