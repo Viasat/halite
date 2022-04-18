@@ -241,6 +241,7 @@
      '=> (mk-builtin (fn [a b] (if a b true))
                      [:Boolean :Boolean] :Boolean)
      'contains? (mk-builtin contains? [[:Set :Any] :Any] :Boolean)
+     'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (mk-builtin quot [:Integer :Integer] :Integer)
      'mod* (mk-builtin mod [:Integer :Integer] :Integer)

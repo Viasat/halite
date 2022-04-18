@@ -95,6 +95,7 @@
     '(Cardinality [true true false]) :Integer
     '(contains? #{1 2 3} 2) :Boolean
     '(contains? #{1 2 3} "foo") :Boolean
+    '(inc 12) :Integer
     '(dec 12) :Integer
     '(div 14 3) :Integer
     '(mod* 5 2) :Integer
@@ -134,6 +135,7 @@
     '(not true) false
     '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (Cardinality #{1 2}) 3))) true
     '(contains? #{1 2 3} 2) true
+    '(inc 12) 13
     '(dec 12) 11
     '(div 14 3) 4
     '(mod* 5 3) 2
