@@ -103,14 +103,20 @@
     '(str) :String
     '(str "foo" (str) (str "bar")) :String
     '(subset? #{} #{1 2 3}) :Boolean
-    '(subset? #{"nope"} #{1 2 3}) :Boolean)
+    '(subset? #{"nope"} #{1 2 3}) :Boolean
+    '(A [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
+    '(E [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
+    '(E [x #{}] true) :Boolean)
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(foo) #"function 'foo' not found"
     '(+ 1 "two") #"no matching signature for '\+'"
-    '(+ 1) #"no matching signature for '\+'")
+    '(+ 1) #"no matching signature for '\+'"
+    '(E [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
+    '(E [x #{}] x) #"must be boolean"
+    '(E [x #{}] (< x 5)) #"no matching signature for '<'")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -142,7 +148,11 @@
     '(expt 2 8) 256
     '(str "foo" (str) (str "bar")) "foobar"
     '(subset? #{} #{1 2 3}) true
-    '(subset? #{"nope"} #{1 2 3}) false))
+    '(subset? #{"nope"} #{1 2 3}) false
+    '(A [x #{2 4 6}] (> x 1)) true
+    '(A [x #{2 4 6}] (> x 3)) false
+    '(E [x #{2 4 6}] (> x 5)) true
+    '(E [x #{2 4 6}] (> x 7)) false))
 
 (deftest get*-type-checking-tests
   (let [senv (->TestSpecEnv
@@ -585,7 +595,8 @@
     (are [expr v]
          (= v (halite/eval-expr senv tenv2 env2 expr))
 
-      '(refine-to ax :ws/A) {:$type :ws/A :x 7})
+      '(refine-to ax :ws/A) {:$type :ws/A :x 7}
+      '(= ax (refine-to ax :ws/A2)) true)
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))

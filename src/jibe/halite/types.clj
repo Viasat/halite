@@ -124,3 +124,14 @@
                                                             [(first s) m]
                                                             (if (= :Set (first s)) :EmptySet :EmptyVec))
     :else nil))
+
+(s/defn elem-type :- (s/maybe HaliteType)
+  "Return the type of the element in the collection type given, if it is known.
+  Otherwise, or if the given type is not a collection, return nil."
+  [t]
+  (cond
+    (vector? t) (let [[x y] t]
+                  (when (or (= :Set x) (= :Vec x))
+                    y))
+    (or (= :EmptySet t) (= :EmptyVec t)) :Unset
+    :else nil))

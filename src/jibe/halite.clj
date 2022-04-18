@@ -372,6 +372,21 @@
       (partition 2 bindings))
      body)))
 
+(s/defn ^:private type-check-quantifier :- HaliteType
+  [ctx :- TypeContext, expr]
+  (arg-count-exactly 2 expr)
+  (let [[[sym expr :as bindings] body] (rest expr)]
+    (when-not (= 2 (count bindings))
+      (throw (ex-info "quantifier binding form must have one variable and one collection"
+                      {:form expr})))
+    (let [et (elem-type (type-check* ctx expr))]
+      (when-not et
+        (throw (ex-info "unsupported collection type" {:form expr})))
+      (let [pred-type (type-check* (update ctx :tenv extend-scope sym et) body)]
+        (when (not= :Boolean pred-type)
+          (throw (ex-info "Body expression in A and E must be boolean" {:form expr}))))))
+  :Boolean)
+
 (s/defn ^:private type-check-if-value :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 3 expr)
@@ -526,6 +541,8 @@
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)
                   'concrete? (type-check-concrete? ctx expr)
+                  'A (type-check-quantifier ctx expr)
+                  'E (type-check-quantifier ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -554,6 +571,12 @@
     ctx
     (partition 2 bindings))
    body))
+
+(s/defn ^:private eval-quantifier-bools :- [s/Bool]
+  [ctx :- EvalContext,
+   [[sym coll] pred]]
+  (map #(eval-expr* (update ctx :env bind sym %) pred)
+       (eval-expr* ctx coll)))
 
 (s/defn ^:private eval-refine-to :- s/Any
   [ctx :- EvalContext, expr]
@@ -610,6 +633,8 @@
                                        inst (eval-in-env subexpr)]
                                    (refines-to? inst kw))
                     'concrete? (concrete? (:senv ctx) (eval-in-env (second expr)))
+                    'E (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
+                    'A (every? identity (eval-quantifier-bools ctx (rest expr)))
                     (apply (:impl (get builtins (first expr)))
                            (map eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)
