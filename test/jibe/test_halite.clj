@@ -787,3 +787,61 @@
       '(conj (get c :as) {:$type :ws/D}) [{:$type :ws/A1} {:$type :ws/A2 :a 2 :b 7} {:$type :ws/D}]
       {:$type :ws/B :a {:$type :ws/A1}} {:$type :ws/B :a {:$type :ws/A1}})))
 
+(deftest test-json-spec
+  ;; This test doesn't cover any functionality not already covered above, but it
+  ;; illustrates that 'recursive' data structures can be defined.
+  (letfn [(to-json [arg]
+            (cond
+              (string? arg) {:$type :ws/JsonStr :s arg}
+              (boolean? arg) {:$type :ws/JsonBool :b arg}
+              (int? arg) {:$type :ws/JsonInt :n arg}
+              (vector? arg) {:$type :ws/JsonVec :entries (mapv to-json arg)}
+              (map? arg) {:$type :ws/JsonObj
+                          :entries (set (map (fn [[k v]] {:$type :ws/JsonObjEntry :key k :val (to-json v)}) arg))}
+              :else (throw (ex-info "Not convertable to json" {:value arg}))))]
+    (let [senv (->TestSpecEnv
+                {:ws/JsonVal
+                 {:abstract? true, :spec-vars {}, :constraints [], :refines-to {}}
+
+                 :ws/JsonStr
+                 {:spec-vars {:s :String}
+                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}
+
+                 :ws/JsonBool
+                 {:spec-vars {:b :Boolean}
+                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}
+
+                 :ws/JsonInt
+                 {:spec-vars {:n :Integer}
+                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}
+
+                 :ws/JsonVec
+                 {:spec-vars {:entries [:Vec :ws/JsonVal]}
+                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}
+
+                 :ws/JsonObjEntry
+                 {:spec-vars {:key :String, :val :ws/JsonVal}}
+
+                 :ws/JsonObj
+                 {:spec-vars {:entries [:Set :ws/JsonObjEntry]}
+                  :constraints [["uniqueKeys" true
+                                 ;; TODO: each key shows up once
+                                 #_(= (count entries) (count (for [entry entries] (get* entry :key))))]]
+                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}})
+
+          ]
+      (are [v expected]
+          (= expected (halite/eval-expr senv tenv empty-env (to-json v)))
+
+        1 {:$type :ws/JsonInt :n 1}
+        true {:$type :ws/JsonBool :b true}
+        "foo" {:$type :ws/JsonStr :s "foo"}
+        [1 true "foo"] {:$type :ws/JsonVec :entries
+                        [{:$type :ws/JsonInt :n 1}
+                         {:$type :ws/JsonBool :b true}
+                         {:$type :ws/JsonStr :s "foo"}]}
+        {"hi" "there"} {:$type :ws/JsonObj :entries
+                        #{{:$type :ws/JsonObjEntry :key "hi" :val
+                           {:$type :ws/JsonStr :s "there"}}}}
+        )
+      )))
