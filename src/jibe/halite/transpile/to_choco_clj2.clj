@@ -3,7 +3,9 @@
 
 (ns jibe.halite.transpile.to-choco-clj2
   "Another attempt at transpiling halite to choco-clj."
-  (:require [jibe.halite.envs :as halite-envs]
+  (:require [clojure.set :as set]
+            [weavejester.dependency :as dep]
+            [jibe.halite.envs :as halite-envs]
             [jibe.halite.types :as halite-types]
             [schema.core :as s]
             [viasat.choco-clj :as choco-clj]))
@@ -26,23 +28,33 @@
    s/Bool
    s/Symbol))
 
+(s/defschema SSAOp (apply s/enum (disj supported-halite-ops 'let)))
+
 (s/defschema SSAForm
   (s/cond-pre
    SSATerm
    ;;#{SSATerm}
    ;;{s/Keyword SSATerm}
-   [(s/cond-pre SSATerm s/Keyword)]))
+   [(s/one SSAOp :op) DerivationName]))
 
 (s/defschema Derivation
   [(s/one SSAForm :form) (s/one halite-types/HaliteType :type)])
 
+(s/defn ^:private referenced-derivations :- [DerivationName]
+  [[form htype :as deriv] :- Derivation]
+  (cond
+    (seq? form) (rest form)
+    :else []))
+
 (s/defschema Derivations
-  {:next-id s/Int
-   DerivationName Derivation})
+  {DerivationName Derivation
+   ;; this representation has been really frustrating to work with, I want to refactor it
+   (s/optional-key :next-id) s/Int})
 
 (s/defschema SpecInfo
   (assoc halite-envs/SpecInfo
-         (s/optional-key :derivations) Derivations))
+         (s/optional-key :derivations) Derivations
+         :constraints [[(s/one s/Str :cname) (s/one DerivationName :deriv)]]))
 
 (s/defschema SpecCtx
   {halite-types/NamespacedKeyword SpecInfo})
@@ -135,22 +147,100 @@
     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                           {:form form}))))
 
-(s/defn ^:private constraint-to-ssa :- SpecInfo
-  [tenv :- (s/protocol halite-envs/TypeEnv), {:keys [derivations] :as spec-info} :- SpecInfo [cname constraint-form]]
-  (let [[derivations id] (form-to-ssa tenv {} derivations constraint-form)]
-    (-> spec-info
-        (assoc :derivations derivations)
-        (update :constraints conj [cname id]))))
+(s/defn ^:private constraint-to-ssa :- [(s/one Derivations :dgraph), [(s/one s/Str :cname) (s/one DerivationName :form)]]
+  [tenv :- (s/protocol halite-envs/TypeEnv), derivations :- Derivations, [cname constraint-form]]
+  (let [[derivations id ] (form-to-ssa tenv {} derivations constraint-form)]
+    [derivations [cname id]]))
 
 (s/defn ^:private to-ssa :- SpecInfo
   [tenv :- (s/protocol halite-envs/TypeEnv), spec-info :- halite-envs/SpecInfo]
-  (reduce
-   (partial constraint-to-ssa tenv)
-   (assoc spec-info
-          :derivations {:next-id 1}
-          :constraints [])
-   (:constraints spec-info)))
+  (let [[derivations constraints]
+        ,,(reduce
+           (fn [[derivations constraints] constraint]
+             (let [[derivations constraint] (constraint-to-ssa tenv derivations constraint)]
+               [derivations (conj constraints constraint)]))
+           [{:next-id 1} []]
+           (:constraints spec-info))]
+    (assoc spec-info
+           :derivations (dissoc derivations :next-id)
+           :constraints constraints)))
 
+;;;;;;;;; Converting from SSA back into a more readable form ;;;;;;;;
+
+(s/defn ^:private topo-sort :- [DerivationName]
+  [derivations :- Derivations]
+  (->> derivations
+       (reduce
+        (fn [g [id d]]
+          (reduce #(dep/depend %1 id %2) g (referenced-derivations d)))
+        (dep/graph))
+       (dep/topo-sort)))
+
+(s/defn ^:private mk-junct :- s/Any
+  [op :- (s/enum 'and 'or), clauses :- [s/Any]]
+  (condp = (count clauses)
+    0 ({'and true, 'or false} op)
+    1 (first clauses)
+    (apply list op clauses)))
+
+(s/defn ^:private form-from-ssa
+  [dgraph :- Derivations, bound? :- #{s/Symbol} id]
+  (if (bound? id)
+    id
+    (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
+      (cond
+        (or (integer? form) (boolean? form) (symbol? form)) form
+        (seq? form) (apply list (first form) (map (partial form-from-ssa dgraph bound?) (rest form)))))))
+
+(s/defn ^:private from-ssa :- halite-envs/SpecInfo
+  [{:keys [derivations constraints spec-vars] :as spec-info} :- SpecInfo]
+  ;; count usages of each derivation
+  ;; a derivation goes into a top-level let iff
+  ;;   it has multiple usages and is not a symbol/integer/boolean
+  ;; the let form is orderd via topological sort
+  ;; then we reconstitute the let bindings and constraints,
+  ;; and assemble into the final form
+  (let [usage-counts (->> derivations vals (mapcat (comp referenced-derivations)) frequencies)
+        ordering (zipmap (topo-sort derivations) (range))
+        spec-var-syms (->> spec-vars keys (map symbol) set)
+        to-bind (->> derivations
+                     (remove
+                      (fn [[id [form htype]]]
+                        (or (contains? spec-var-syms form)
+                            (integer? form)
+                            (boolean? form)
+                            (<= (get usage-counts id 0) 1))))
+                     (map first)
+                     set)
+        bound (set/union to-bind spec-var-syms)
+        bindings (->> to-bind
+                      (sort-by ordering)
+                      (reduce
+                       (fn [[bound-set bindings] id]
+                         [(conj bound-set id)
+                          (conj bindings id (form-from-ssa derivations bound-set id))])
+                       [#{} []])
+                      second
+                      vec)
+        constraint (->> constraints (map (comp (partial form-from-ssa derivations bound) second)) (mk-junct 'and))
+        constraint (cond->> constraint
+                     (seq bindings) (list 'let bindings))]
+    (-> spec-info
+        (dissoc :derivations)
+        (assoc :constraints [["$all" constraint]]))))
+
+(s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
+  [var-type :- halite-types/HaliteType]
+  (cond
+    (= :Integer var-type) :Int
+    (= :Boolean var-type) :Bool
+    :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type}))))
+
+(s/defn ^:private to-choco-spec :- choco-clj/ChocoSpec
+  "Convert an L0 resource spec to a Choco spec"
+  [spec-info :- halite-envs/SpecInfo]
+  {:vars (-> spec-info :spec-vars (update-keys symbol) (update-vals to-choco-type))
+   :constraints (->> spec-info :constraints (map second) set)})
 
 ;;;;;;;;;;;;;;; Main API ;;;;;;;;;;;;;;;;;
 
@@ -182,6 +272,11 @@
   ([senv :- (s/protocol halite-envs/SpecEnv), assignment :- Assignment]
    (transpile senv assignment default-options))
   ([senv :- (s/protocol halite-envs/SpecEnv), assignment :- Assignment, opts :- Opts]
-   ;; SSA pass
-   ;; make choco model
-   (throw (ex-info "Not implemented" {}))))
+   (let [spec-id (:$type assignment)
+         spec-info (halite-envs/lookup-spec senv spec-id)
+         tenv (halite-envs/type-env-from-spec senv spec-info)]
+     (->> spec-info
+          (to-ssa tenv)
+          (from-ssa)
+          (to-choco-spec))
+     )))

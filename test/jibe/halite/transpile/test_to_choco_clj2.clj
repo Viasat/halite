@@ -86,6 +86,69 @@
       '[$6]
       )))
 
+(def from-ssa #'h2c/from-ssa)
+
+(deftest test-from-ssa
+  (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
+                   :constraints []
+                   :refines-to {}}]
+
+    (are [constraints derivations new-constraint]
+        (= [["$all" new-constraint]]
+           (-> spec-info
+               (assoc :derivations derivations
+                      :constraints
+                      (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
+               (from-ssa)
+               :constraints))
+
+      [] {} true
+
+      '[$1] '{$1 [b :Boolean]} 'b
+
+      '[$3 $5]
+      '{$1 [x :Integer]
+        $2 [1 :Integer]
+        $3 [(< $2 $1) :Boolean]
+        $4 [10 :Integer]
+        $5 [(< $1 $4) :Boolean]}
+      '(and (< 1 x) (< x 10))
+
+      '[$7 $8]
+      '{$1 [(+ $2 $3) :Integer]
+        $2 [x :Integer]
+        $3 [y :Integer]
+        $4 [z :Integer]
+        $5 [10 :Integer]
+        $6 [2 :Integer]
+        $7 [(< $1 $5) :Boolean]
+        $8 [(= $9 $10) :Boolean]
+        $9 [(+ $3 $4) :Integer]
+        $10 [(* $6 $1) :Integer]}
+      '(let [$1 (+ x y)]
+         (and (< $1 10)
+              (= (+ y z) (* 2 $1))))
+      )))
+
+(deftest test-transpile-l0
+  ;; l0: only integer and boolean valued variables and expressions
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:x :Integer, :y :Integer, :b :Boolean}
+                 :constraints [["c1" (let [delta (abs (- x y))]
+                                       (and (< 5 delta)
+                                            (< delta 10)))]
+                               ["c2" (= b (< x y))]]
+                 :refines-to {}}})]
+    (is (= '{:vars {x :Int, y :Int, b :Bool}
+             :constraints
+             #{(let [$4 (abs (- x y))]
+                 (and (and (< 5 $4)
+                           (< $4 10))
+                      (= b (< x y))))}}
+           (h2c/transpile senv {:$type :ws/A}))))
+  )
+
 
 ;;; Illustrate composition elimination
 
