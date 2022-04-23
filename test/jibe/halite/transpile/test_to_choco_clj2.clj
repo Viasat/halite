@@ -148,6 +148,39 @@
       '(get* {:$type :ws/Foo :foo b} :foo)
       )))
 
+(def build-spec-ctx #'h2c/build-spec-ctx)
+(def lower-instance-comparisons #'h2c/lower-instance-comparisons)
+
+(deftest test-lower-instance-comparisons
+  (binding [h2c/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:an :Integer}
+                   :constraints [["a1" (let [b {:$type :ws/B :bn 12 :bb true}]
+                                         (and
+                                          (= b {:$type :ws/B :bn an :bb true})
+                                          (not= {:$type :ws/B :bn 4 :bb false} b)
+                                          (= an 45)))]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:bn :Integer :bb :Boolean}
+                   :constraints []
+                   :refines-to {}}})
+          sctx (build-spec-ctx senv :ws/A)]
+      (is (= '[["$all" (let [$3 {:$type :ws/B :bn 12 :bb true}
+                             $5 {:$type :ws/B :bn an :bb true}
+                             $18 (get* $3 :bn)
+                             $9 {:$type :ws/B :bn 4 :bb false}
+                             $15 (get* $3 :bb)]
+                         (and
+                          (and (= $15 (get* $5 :bb))
+                               (= $18 (get* $5 :bn)))
+                          (or (not= (get* $9 :bb) $15)
+                              (not= (get* $9 :bn) $18))
+                          (= an 45)))]]
+             (-> sctx lower-instance-comparisons :ws/A spec-from-ssa :constraints)))
+      )))
+
 (deftest test-transpile-l0
   ;; l0: only integer and boolean valued variables and expressions
   (let [senv (halite-envs/spec-env

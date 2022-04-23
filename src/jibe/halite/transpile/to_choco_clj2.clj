@@ -172,22 +172,29 @@
     (add-derivation dgraph [inst spec-id])))
 
 (s/defn ^:private form-to-ssa :- DerivResult
-  [{:keys [dgraph] :as ctx} :- SSACtx, form]
-  (cond
-    (int? form) (add-derivation dgraph [form :Integer])
-    (boolean? form) (add-derivation dgraph [form :Boolean])
-    (symbol? form) (symbol-to-ssa ctx form)
-    (seq? form) (let [[op & args] form]
-                  (when-not (contains? supported-halite-ops op)
-                    (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
-                  (condp = op
-                    'let (let-to-ssa ctx form)
-                    'if (if-to-ssa ctx form)
-                    'get* (get-to-ssa ctx form)
-                    (app-to-ssa ctx form)))
-    (map? form) (inst-literal-to-ssa ctx form)
-    :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
-                          {:form form}))))
+  ([{:keys [dgraph] :as ctx} :- SSACtx, form]
+   (cond
+     (int? form) (add-derivation dgraph [form :Integer])
+     (boolean? form) (add-derivation dgraph [form :Boolean])
+     (symbol? form) (symbol-to-ssa ctx form)
+     (seq? form) (let [[op & args] form]
+                   (when-not (contains? supported-halite-ops op)
+                     (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
+                   (condp = op
+                     'let (let-to-ssa ctx form)
+                     'if (if-to-ssa ctx form)
+                     'get* (get-to-ssa ctx form)
+                     (app-to-ssa ctx form)))
+     (map? form) (inst-literal-to-ssa ctx form)
+     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
+                           {:form form}))))
+  ([{:keys [dgraph] :as ctx} :- SSACtx, replace-id :- DerivationName, form]
+   (let [[dgraph id] (form-to-ssa ctx form)
+         [new-form htype] (dgraph id)]
+     [(-> dgraph
+          (assoc-in [replace-id 0] new-form)
+          (dissoc id))
+      replace-id])))
 
 (s/defn ^:private constraint-to-ssa :- [(s/one Derivations :dgraph), [(s/one s/Str :cname) (s/one DerivationName :form)]]
   [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), derivations :- Derivations, [cname constraint-form]]
@@ -221,8 +228,33 @@
     (vector? htype) (recur (second htype))
     :else nil))
 
-(defn- spec-refs [{:keys [spec-vars refines-to] :as spec-info}]
-  (->> spec-vars vals (map spec-ref-from-type) (remove nil?) (concat (keys refines-to))))
+(defn- spec-refs-from-expr
+  [expr]
+  (cond
+    (integer? expr) #{}
+    (boolean? expr) #{}
+    (symbol? expr) #{}
+    (map? expr) (->> (dissoc expr :$type) vals (map spec-refs-from-expr) (apply set/union #{(:$type expr)}))
+    (seq? expr) (let [[op & args] expr]
+                  (condp = op
+                    'let (let [[bindings body] args]
+                           (->> bindings (partition 2) (map (comp spec-refs-from-expr second))
+                                (apply set/union (spec-refs-from-expr body))))
+                    'get (spec-refs-from-expr (first args))
+                    (apply set/union (map spec-refs-from-expr args))))
+    :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
+
+(defn- spec-refs [{:keys [spec-vars refines-to constraints] :as spec-info}]
+  (->> spec-vars
+       vals
+       (map spec-ref-from-type)
+       (remove nil?)
+       (concat (keys refines-to))
+       set
+       (set/union
+        (->> constraints (map (comp spec-refs-from-expr second)) (apply set/union)))
+       ;; TODO: refinement exprs
+       ))
 
 (defn- reachable-specs [senv root-spec-id]
   (loop [specs {}
@@ -241,6 +273,63 @@
   (-> root-spec-id
       (->> (reachable-specs senv))
       (update-vals #(spec-to-ssa senv (halite-envs/type-env-from-spec senv %) %))))
+
+;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
+
+(s/defn ^:private mk-junct :- s/Any
+  [op :- (s/enum 'and 'or), clauses :- [s/Any]]
+  (condp = (count clauses)
+    0 ({'and true, 'or false} op)
+    1 (first clauses)
+    (apply list op clauses)))
+
+;; Assumes abstract expressions and optional vars have been lowered.
+
+(s/defn ^:private lower-instance-comparisons-in-spec :- SpecInfo
+  [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
+  (let [senv (as-spec-env sctx)
+        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
+        ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]
+    (->> derivations
+         (reduce
+          (fn [dgraph [id [form type]]]
+            (if (and (seq? form) (#{'= 'not=} (first form)))
+              (let [comparison-op (first form)
+                    logical-op (if (= comparison-op '=) 'and 'or)
+                    arg-ids (rest form)
+                    arg-types (set (map (comp second dgraph) arg-ids))]
+                (if (some halite-types/spec-type? arg-types)
+                  (first
+                   (form-to-ssa
+                    (assoc ctx :dgraph dgraph)
+                    id
+                    (if (not= 1 (count arg-types))
+                      (= comparison-op 'not=)
+                      (let [arg-type (first arg-types)
+                            var-kws (-> arg-type sctx :spec-vars keys sort)]
+                        (->> var-kws
+                             (map (fn [var-kw]
+                                    (apply list comparison-op
+                                           (map #(list 'get* %1 var-kw) arg-ids))))
+                             (mk-junct logical-op))))))
+                  dgraph))
+              dgraph))
+          derivations)
+         (assoc spec-info :derivations))))
+
+(s/defn ^:private lower-instance-comparisons :- SpecCtx
+  [sctx :- SpecCtx]
+  (update-vals sctx (partial lower-instance-comparisons-in-spec sctx)))
+
+;;;;;;;;; Instance Literal Lowering ;;;;;;;;;;;
+
+;; Eliminate all instance literals, inlining implied constraints.
+;; Note that a spec with a constraint containing an instance literal of that spec
+;; would be self-referential in a way that I don't know how to handle.
+
+;; * Constraint inlining
+;; * Replace instance literal expression with sub-expressions, and
+;;   all get* forms that reference the replaced instance literals with their sub-expressions.
 
 ;;;;;;;;; Assignment Spec-ification ;;;;;;;;;;;;;;;;
 
@@ -271,23 +360,6 @@
              :derivations derivations
              :refines-to {}})))))
 
-;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
-
-;; TODO Next!
-
-;; * [x] Support instance literals, get* in SSA pass.
-;; * Replace all (dis-)equality nodes with instance-valued inputs.
-
-;;;;;;;;; Instance Literal Lowering ;;;;;;;;;;;
-
-;; Eliminate all instance literals, inlining implied constraints.
-;; Note that a spec with a constraint containing an instance literal of that spec
-;; would be self-referential in a way that I don't know how to handle.
-
-;; * Constraint inlining
-;; * Replace instance literal expression with sub-expressions, and
-;;   all get* forms that reference the replaced instance literals with their sub-expressions.
-
 ;;;;;;;;; Converting from SSA back into a more readable form ;;;;;;;;
 
 (s/defn ^:private topo-sort :- [DerivationName]
@@ -298,13 +370,6 @@
           (reduce #(dep/depend %1 id %2) g (referenced-derivations d)))
         (dep/graph))
        (dep/topo-sort)))
-
-(s/defn ^:private mk-junct :- s/Any
-  [op :- (s/enum 'and 'or), clauses :- [s/Any]]
-  (condp = (count clauses)
-    0 ({'and true, 'or false} op)
-    1 (first clauses)
-    (apply list op clauses)))
 
 (s/defn ^:private form-from-ssa
   [dgraph :- Derivations, bound? :- #{s/Symbol} id]
