@@ -16,6 +16,7 @@
   (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
                    :constraints []
                    :refines-to {}}
+        bar-info {:spec-vars {:a :Integer, :b :Boolean}, :constraints [], :refines-to {}}
         tenv (halite-envs/type-env-from-spec
               (halite-envs/spec-env {})
               spec-info)]
@@ -25,7 +26,7 @@
              (let [spec-info (->> constraints
                                   (map-indexed #(vector (str "c" %1) %2))
                                   (update spec-info :constraints into))
-                   senv (halite-envs/spec-env {:ws/A spec-info})
+                   senv (halite-envs/spec-env {:ws/A spec-info, :foo/Bar bar-info})
                    tenv (halite-envs/type-env-from-spec senv spec-info)]
                (->> spec-info
                     (spec-to-ssa senv tenv)
@@ -88,6 +89,13 @@
         $5 [(if $2 $3 $4) :Integer]
         $6 [(= $1 $5) :Boolean]}
       '[$6]
+
+      '[(get* {:$type :foo/Bar :a 10 :b false} :b)]
+      '{$1 [10 :Integer]
+        $2 [false :Boolean]
+        $3 [{:$type :foo/Bar :a $1 :b $2} :foo/Bar]
+        $4 [(get* $3 :b) :Boolean]}
+      '[$4]
       )))
 
 (def spec-from-ssa #'h2c/spec-from-ssa)
@@ -132,6 +140,12 @@
       '(let [$1 (+ x y)]
          (and (< $1 10)
               (= (+ y z) (* 2 $1))))
+
+      '[$1]
+      '{$1 [(get* $2 :foo) :Boolean]
+        $3 [b :Boolean]
+        $2 [{:$type :ws/Foo :foo $3} :ws/Foo]}
+      '(get* {:$type :ws/Foo :foo b} :foo)
       )))
 
 (deftest test-transpile-l0

@@ -28,7 +28,7 @@
   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let})
 
 (def ^:private supported-halite-ops
-  (into choco-ops '#{#_get* #_refine-to}))
+  (into choco-ops '#{get* #_refine-to}))
 
 (s/defschema DerivationName
   (s/constrained s/Symbol #(re-matches #"\$[1-9][0-9]*" (name %))))
@@ -45,8 +45,9 @@
   (s/cond-pre
    SSATerm
    ;;#{SSATerm}
-   ;;{s/Keyword SSATerm}
-   [(s/one SSAOp :op) DerivationName]))
+   {:$type halite-types/NamespacedKeyword
+    s/Keyword SSATerm}
+   [(s/one SSAOp :op) (s/cond-pre DerivationName s/Keyword)]))
 
 (s/defschema Derivation
   [(s/one SSAForm :form) (s/one halite-types/HaliteType :type)])
@@ -54,7 +55,8 @@
 (s/defn ^:private referenced-derivations :- [DerivationName]
   [[form htype :as deriv] :- Derivation]
   (cond
-    (seq? form) (rest form)
+    (seq? form) (->> form rest (filter symbol?))
+    (map? form) (-> form (dissoc :$type) vals)
     :else []))
 
 (s/defschema Derivations
@@ -149,6 +151,26 @@
         htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
     (add-derivation dgraph [(list 'if pred-id then-id else-id) htype])))
 
+(s/defn ^:private get-to-ssa :- DerivResult
+  [{:keys [dgraph senv] :as ctx} :- SSACtx, [_ subexpr var-kw :as form]]
+  (let [[dgraph id] (form-to-ssa ctx subexpr)
+        spec-id (->> id dgraph second)
+        htype (or (->> spec-id (halite-envs/lookup-spec senv) :spec-vars var-kw)
+                  (throw (ex-info (format "BUG! Couldn't determine type of field '%s' of spec '%s'" var-kw spec-id)
+                                  {:form form})))]
+    (add-derivation dgraph [(list 'get* id var-kw) htype])))
+
+(s/defn ^:private inst-literal-to-ssa :- DerivResult
+  [ctx :- SSACtx, form]
+  (let [spec-id (:$type form)
+        [dgraph inst] (reduce
+                       (fn [[dgraph inst] var-kw]
+                         (let [[dgraph id] (form-to-ssa (assoc ctx :dgraph dgraph) (get form var-kw))]
+                           [dgraph (assoc inst var-kw id)]))
+                       [(:dgraph ctx) {:$type spec-id}]
+                       (-> form (dissoc :$type) keys sort))]
+    (add-derivation dgraph [inst spec-id])))
+
 (s/defn ^:private form-to-ssa :- DerivResult
   [{:keys [dgraph] :as ctx} :- SSACtx, form]
   (cond
@@ -161,7 +183,9 @@
                   (condp = op
                     'let (let-to-ssa ctx form)
                     'if (if-to-ssa ctx form)
+                    'get* (get-to-ssa ctx form)
                     (app-to-ssa ctx form)))
+    (map? form) (inst-literal-to-ssa ctx form)
     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                           {:form form}))))
 
@@ -251,7 +275,7 @@
 
 ;; TODO Next!
 
-;; * Support instance literals, get* in SSA pass.
+;; * [x] Support instance literals, get* in SSA pass.
 ;; * Replace all (dis-)equality nodes with instance-valued inputs.
 
 ;;;;;;;;; Instance Literal Lowering ;;;;;;;;;;;
@@ -289,7 +313,11 @@
     (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
       (cond
         (or (integer? form) (boolean? form) (symbol? form)) form
-        (seq? form) (apply list (first form) (map (partial form-from-ssa dgraph bound?) (rest form)))))))
+        (seq? form) (cond
+                      (= 'get* (first form)) (list 'get* (form-from-ssa dgraph bound? (second form)) (last form))
+                      :else (apply list (first form) (map (partial form-from-ssa dgraph bound?) (rest form))))
+        (map? form) (-> form (dissoc :$type) (update-vals (partial form-from-ssa dgraph bound?)) (assoc :$type (:$type form)))
+        :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation" {:id id :form form :derivations dgraph}))))))
 
 (s/defn ^:private spec-from-ssa :- halite-envs/SpecInfo
   [{:keys [derivations constraints spec-vars] :as spec-info} :- SpecInfo]
