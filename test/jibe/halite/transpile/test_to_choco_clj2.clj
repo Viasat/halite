@@ -22,12 +22,15 @@
     (are [constraints derivations new-constraints]
         (= [derivations new-constraints]
            (binding [h2c/*next-id* (atom 0)]
-             (->> constraints
-                  (map-indexed #(vector (str "c" %1) %2))
-                  (update spec-info :constraints into)
-                  (spec-to-ssa tenv)
-                  ((juxt #(-> % :derivations)
-                         #(->> % :constraints (map second)))))))
+             (let [spec-info (->> constraints
+                                  (map-indexed #(vector (str "c" %1) %2))
+                                  (update spec-info :constraints into))
+                   senv (halite-envs/spec-env {:ws/A spec-info})
+                   tenv (halite-envs/type-env-from-spec senv spec-info)]
+               (->> spec-info
+                    (spec-to-ssa senv tenv)
+                    ((juxt #(-> % :derivations)
+                           #(->> % :constraints (map second))))))))
 
       [] {} []
 

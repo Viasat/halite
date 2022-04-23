@@ -102,30 +102,38 @@
 
 (declare form-to-ssa)
 
+(s/defschema SSACtx
+  {:senv (s/protocol halite-envs/SpecEnv)
+   :tenv (s/protocol halite-envs/TypeEnv)
+   :env {s/Symbol DerivationName}
+   :dgraph Derivations})
+
 (s/defn ^:private let-to-ssa :- DerivResult
-  [tenv :- (s/protocol halite-envs/TypeEnv), env :- {s/Symbol DerivationName}, dgraph :- Derivations, [_ bindings body :as form]]
-  (let [[tenv env dgraph] (reduce
-                           (fn [[tenv env dgraph] [var-sym subexpr]]
-                             (let [[dgraph id] (form-to-ssa tenv env dgraph subexpr)
-                                   htype (get-in dgraph [id 1])]
-                               [(halite-envs/extend-scope tenv var-sym htype)
-                                (assoc env var-sym id)
-                                dgraph]))
-                           [tenv env dgraph]
-                           (partition 2 bindings))]
-    (form-to-ssa tenv env dgraph body)))
+  [ctx :- SSACtx, [_ bindings body :as form]]
+  (as-> ctx ctx
+    (reduce
+     (fn [ctx [var-sym subexpr]]
+       (let [[dgraph id] (form-to-ssa ctx subexpr)
+             htype (get-in dgraph [id 1])]
+         (assoc ctx
+                :tenv (halite-envs/extend-scope (:tenv ctx) var-sym htype)
+                :env (assoc (:env ctx) var-sym id)
+                :dgraph dgraph)))
+     ctx
+     (partition 2 bindings))
+    (form-to-ssa ctx body)))
 
 (s/defn ^:private app-to-ssa :- DerivResult
-  [tenv :- (s/protocol halite-envs/TypeEnv), env :- {s/Symbol DerivationName}, dgraph :- Derivations, [op & args :as form]]
+  [ctx :- SSACtx, [op & args :as form]]
   (let [[dgraph args] (reduce (fn [[dgraph args] arg]
-                                (let [[dgraph id] (form-to-ssa tenv env dgraph arg)]
+                                (let [[dgraph id] (form-to-ssa (assoc ctx :dgraph dgraph) arg)]
                                   [dgraph (conj args id)]))
-                              [dgraph []]
+                              [(:dgraph ctx) []]
                               args)]
     (add-derivation-for-app dgraph (apply list op args))))
 
 (s/defn ^:private symbol-to-ssa :- DerivResult
-  [tenv :- (s/protocol halite-envs/TypeEnv), env :- {s/Symbol DerivationName}, dgraph :- Derivations, form]
+  [{:keys [dgraph tenv env]} :- SSACtx, form]
   (cond
     (contains? dgraph form) [dgraph form]
     (contains? env form) [dgraph (env form)]
@@ -134,40 +142,40 @@
             (add-derivation dgraph [form htype]))))
 
 (s/defn ^:private if-to-ssa :- DerivResult
-  [tenv :- (s/protocol halite-envs/TypeEnv), env :- {s/Symbol DerivationName}, dgraph :- Derivations, [_ pred then else :as form]]
-  (let [[dgraph pred-id] (form-to-ssa tenv env dgraph pred)
-        [dgraph then-id] (form-to-ssa tenv env dgraph then)
-        [dgraph else-id] (form-to-ssa tenv env dgraph else)
+  [ctx :- SSACtx, [_ pred then else :as form]]
+  (let [[dgraph pred-id] (form-to-ssa ctx pred)
+        [dgraph then-id] (form-to-ssa (assoc ctx :dgraph dgraph) then)
+        [dgraph else-id] (form-to-ssa (assoc ctx :dgraph dgraph) else)
         htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
     (add-derivation dgraph [(list 'if pred-id then-id else-id) htype])))
 
 (s/defn ^:private form-to-ssa :- DerivResult
-  [tenv :- (s/protocol halite-envs/TypeEnv), env :- {s/Symbol DerivationName}, dgraph :- Derivations, form]
+  [{:keys [dgraph] :as ctx} :- SSACtx, form]
   (cond
     (int? form) (add-derivation dgraph [form :Integer])
     (boolean? form) (add-derivation dgraph [form :Boolean])
-    (symbol? form) (symbol-to-ssa tenv env dgraph form)
+    (symbol? form) (symbol-to-ssa ctx form)
     (seq? form) (let [[op & args] form]
                   (when-not (contains? supported-halite-ops op)
                     (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
                   (condp = op
-                    'let (let-to-ssa tenv env dgraph form)
-                    'if (if-to-ssa tenv env dgraph form)
-                    (app-to-ssa tenv env dgraph form)))
+                    'let (let-to-ssa ctx form)
+                    'if (if-to-ssa ctx form)
+                    (app-to-ssa ctx form)))
     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                           {:form form}))))
 
 (s/defn ^:private constraint-to-ssa :- [(s/one Derivations :dgraph), [(s/one s/Str :cname) (s/one DerivationName :form)]]
-  [tenv :- (s/protocol halite-envs/TypeEnv), derivations :- Derivations, [cname constraint-form]]
-  (let [[derivations id ] (form-to-ssa tenv {} derivations constraint-form)]
+  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), derivations :- Derivations, [cname constraint-form]]
+  (let [[derivations id ] (form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} constraint-form)]
     [derivations [cname id]]))
 
 (s/defn ^:private spec-to-ssa :- SpecInfo
-  [tenv :- (s/protocol halite-envs/TypeEnv), spec-info :- halite-envs/SpecInfo]
+  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), spec-info :- halite-envs/SpecInfo]
   (let [[derivations constraints]
         ,,(reduce
            (fn [[derivations constraints] constraint]
-             (let [[derivations constraint] (constraint-to-ssa tenv derivations constraint)]
+             (let [[derivations constraint] (constraint-to-ssa senv tenv derivations constraint)]
                [derivations (conj constraints constraint)]))
            [{} []]
            (:constraints spec-info))]
@@ -208,7 +216,7 @@
   [senv :- (s/protocol halite-envs/SpecEnv), root-spec-id :- halite-types/NamespacedKeyword]
   (-> root-spec-id
       (->> (reachable-specs senv))
-      (update-vals #(spec-to-ssa (halite-envs/type-env-from-spec senv %) %))))
+      (update-vals #(spec-to-ssa senv (halite-envs/type-env-from-spec senv %) %))))
 
 ;;;;;;;;; Assignment Spec-ification ;;;;;;;;;;;;;;;;
 
@@ -230,7 +238,7 @@
            (map (fn [[var-kw v]] [(str "$" (name var-kw)) (list '= (symbol var-kw) v)]))
            (reduce
             (fn [{:keys [derivations] :as spec-info} constraint]
-              (let [[derivations constraint] (constraint-to-ssa tenv derivations constraint)]
+              (let [[derivations constraint] (constraint-to-ssa (as-spec-env sctx) tenv derivations constraint)]
                 (-> spec-info
                     (assoc :derivations derivations)
                     (update :constraints conj constraint))))
@@ -255,11 +263,6 @@
 ;; * Constraint inlining
 ;; * Replace instance literal expression with sub-expressions, and
 ;;   all get* forms that reference the replaced instance literals with their sub-expressions.
-
-;;;;;;;;; Instance Expression Lowering ;;;;;;;;;;
-
-;; For a spec that has only primitive vars, no refinements, and no instance literals, we can
-;; rewrite all expressions such that no expression is ever instance-valued.
 
 ;;;;;;;;; Converting from SSA back into a more readable form ;;;;;;;;
 
