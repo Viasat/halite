@@ -146,6 +146,13 @@
         $3 [b :Boolean]
         $2 [{:$type :ws/Foo :foo $3} :ws/Foo]}
       '(get* {:$type :ws/Foo :foo b} :foo)
+
+      '[$4]
+      '{$1 [12 :Integer]
+        $2 [$1 :Integer]
+        $3 [x :Integer]
+        $4 [(< $3 $2) :Boolean]}
+      '(< x 12)
       )))
 
 (def build-spec-ctx #'h2c/build-spec-ctx)
@@ -181,6 +188,53 @@
              (-> sctx lower-instance-comparisons :ws/A spec-from-ssa :constraints)))
       )))
 
+(def lower-implicit-constraints #'h2c/lower-implicit-constraints)
+
+(deftest test-lower-implicit-constraints
+  (binding [h2c/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:an :Integer}
+                   :constraints [["a1" (< an 10)]
+                                 ["a2" (= an (get* {:$type :ws/B :bn (+ 1 an)} :bn))]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:bn :Integer}
+                   :constraints [["b1" (> 0 (get* {:$type :ws/C :cn bn} :cn))]]
+                   :refines-to {}}
+                  :ws/C
+                  {:spec-vars {:cn :Integer}
+                   :constraints [["c1" (= 0 (mod cn 2))]]
+                   :refines-to {}}})
+          sctx (build-spec-ctx senv :ws/A)]
+      (is (= '[["$all" (let [$5 (+ 1 an)]
+                         (and
+                          (< an 10)
+                          (= an (get* {:$type :ws/B, :bn $5} :bn))
+                          (and (> 0 (get* {:$type :ws/C, :cn $5} :cn))
+                               (= 0 (mod $5 2)))))]]
+             (-> sctx lower-implicit-constraints :ws/A spec-from-ssa :constraints))))))
+
+(def lower-instance-literals-in-spec #'h2c/lower-instance-literals-in-spec)
+
+(deftest test-lower-instance-literals-in-spec
+  (binding [h2c/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:an :Integer}
+                   :constraints [["a1" (< an (get* (get* {:$type :ws/B :c {:$type :ws/C :cn (get* {:$type :ws/C :cn (+ 1 an)} :cn)}} :c) :cn))]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:c :ws/C}
+                   :constraints [] :refines-to {}}
+                  :ws/C
+                  {:spec-vars {:cn :Integer}
+                   :constraints [] :refines-to {}}})
+          sctx (build-spec-ctx senv :ws/A)]
+      (is (= '[["$all" (< an (+ 1 an))]]
+             (->> sctx :ws/A lower-instance-literals-in-spec spec-from-ssa :constraints)))
+      )))
+
 (deftest test-transpile-l0
   ;; l0: only integer and boolean valued variables and expressions
   (let [senv (halite-envs/spec-env
@@ -210,6 +264,30 @@
                       (= x 12)))}}
            (h2c/transpile senv {:$type :ws/A :x 12 :b false})))))
 
+(deftest test-transpile-l1
+  ;; l1: only integer and boolean valued variables, but expressions may be instance valued
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:an :Integer}
+                 :constraints [["a1" (< an 10)]
+                               ["a2" (< an (get* {:$type :ws/B :bn (+ 1 an)} :bn))]]
+                 :refines-to {}}
+                :ws/B
+                {:spec-vars {:bn :Integer}
+                 :constraints [["b1" (< 0 (get* {:$type :ws/C :cn bn} :cn))]]
+                 :refines-to {}}
+                :ws/C
+                {:spec-vars {:cn :Integer}
+                 :constraints [["c1" (= 0 (mod cn 2))]]
+                 :refines-to {}}})]
+    (is (= '{:vars {an :Int}
+             :constraints
+             #{(let [$5 (+ 1 an)]
+                 (and (< an 10)                  ; a1
+                      (< an $5)                  ; a2
+                      (and (< 0 $5)              ; b1
+                           (= 0 (mod $5 2)))))}} ; c1
+           (h2c/transpile senv {:$type :ws/A})))))
 
 ;;; Illustrate composition elimination
 

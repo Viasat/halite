@@ -240,7 +240,7 @@
                     'let (let [[bindings body] args]
                            (->> bindings (partition 2) (map (comp spec-refs-from-expr second))
                                 (apply set/union (spec-refs-from-expr body))))
-                    'get (spec-refs-from-expr (first args))
+                    'get* (spec-refs-from-expr (first args))
                     (apply set/union (map spec-refs-from-expr args))))
     :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
 
@@ -323,13 +323,93 @@
 
 ;;;;;;;;; Instance Literal Lowering ;;;;;;;;;;;
 
-;; Eliminate all instance literals, inlining implied constraints.
-;; Note that a spec with a constraint containing an instance literal of that spec
-;; would be self-referential in a way that I don't know how to handle.
+(declare spec-from-ssa)
 
-;; * Constraint inlining
-;; * Replace instance literal expression with sub-expressions, and
-;;   all get* forms that reference the replaced instance literals with their sub-expressions.
+(s/defn ^:private lower-implicit-constraints-in-spec :- SpecInfo
+  [sctx :- SpecCtx, spec-info :- SpecInfo]
+  (let [inst-literals (->> spec-info
+                           :derivations
+                           vals
+                           (filter (fn [[form htype]] (map? form)))
+                           (map first))
+        senv (as-spec-env sctx)
+        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))]
+    (reduce
+     (fn [{:keys [derivations] :as spec-info} inst-literal]
+       (let [spec-id (:$type inst-literal)
+             constraints (->> spec-id sctx spec-from-ssa :constraints (map second))
+             constraint-expr (list 'let (vec (mapcat (fn [[var-kw id]] [(symbol var-kw) id]) (dissoc inst-literal :$type)))
+                                   (mk-junct 'and constraints))
+             [derivations id] (form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} constraint-expr)]
+         (-> spec-info
+             (assoc :derivations derivations)
+             (update :constraints conj ["$inst" id]))))
+     spec-info
+     inst-literals)))
+
+(s/defn ^:private lower-implicit-constraints :- SpecCtx
+  "Make constraints implied by the presence of instance literals explicit.
+  Specs are lowered in an order that respects a spec dependency graph where spec S has an arc to T
+  iff S has an instance literal of type T. If a cycle is detected, the phase will throw."
+  [sctx :- SpecCtx]
+  (let [dg (reduce
+            (fn [dg [spec-id spec]]
+              (reduce
+               (fn [dg [id [form htype]]]
+                 (cond-> dg
+                   (map? form) (dep/depend spec-id (:$type form))))
+               dg
+               (:derivations spec)))
+            ;; ensure that everything is in the dependency graph, depending on :nothing
+            (reduce #(dep/depend %1 %2 :nothing) (dep/graph) (keys sctx))
+            sctx)]
+    (reduce
+     (fn [sctx' spec-id]
+       (assoc sctx' spec-id (lower-implicit-constraints-in-spec sctx' (sctx spec-id))))
+     {}
+     (->> dg (dep/topo-sort) (remove #(= :nothing %))))))
+
+(s/defn ^:private lower-instance-literals-in-spec :- SpecInfo
+  "Remove instance literals entirely. Assumes the only instance-valued expressions are
+  instance literals and get* forms. 'Inlines' chains of get* forms. All instance literals should
+  thus be unreferenced, and are pruned."
+  [spec-info :- SpecInfo]
+  ;; double-check that all instance-valued expressions are literals or get* forms.
+  (doseq [[form htype] (->> spec-info :derivations vals)]
+    (when-not (#{:Integer :Boolean} htype)
+      (when-not (halite-types/spec-type? htype)
+        (throw (ex-info (format "BUG! lower-instance-literals-in-spec assumes no expressions of type '%s'" htype)
+                        {:form form :type htype})))
+      (when-not (or (map? form) (and (seq? form) (= 'get* (first form))))
+        (throw (ex-info "BUG! lower-instance-literals-in-spec assumes all instance-valued expressions are literals or get* forms"
+                        {:form form})))))
+  ;; inline all primitive-valued get* forms, following chains when necessary
+  ;; (get* (get* {:$foo :bar {:$bar :x 12}} :bar) :x)
+  ;; $1 12
+  ;; $2 {:$bar :x $1}
+  ;; $3 {:$foo :bar $2}
+  ;; $4 (get* $3 :bar)
+  ;; $5 (get* $4 :x)
+  (let [id-to-inline (fn [dgraph id stack]
+                       (if (empty? stack)
+                         id
+                         (let [[form htype] (dgraph id)]
+                           (cond
+                             (map? form) (recur dgraph (get form (peek stack)) (pop stack))
+                             (and (seq? form) (= 'get* (first form))) (recur dgraph (second form) (conj stack (last form)))
+                             :else (throw (ex-info "BUG! Unexpected expression while lowering instance literals"
+                                                   {:form form :type htype :stack stack}))))))]
+    (->> spec-info
+         :derivations
+         (filter (fn [[id [form htype]]]
+                   (and (seq? form) (= 'get* (first form)) (#{:Integer :Boolean} htype))))
+         (reduce
+          (fn [dgraph [id [form htype]]]
+            (assoc dgraph id [(id-to-inline dgraph (second form) [(last form)]) htype]))
+          (:derivations spec-info))
+         (assoc spec-info :derivations))
+    )
+  )
 
 ;;;;;;;;; Assignment Spec-ification ;;;;;;;;;;;;;;;;
 
@@ -377,7 +457,10 @@
     id
     (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
       (cond
-        (or (integer? form) (boolean? form) (symbol? form)) form
+        (or (integer? form) (boolean? form)) form
+        (symbol? form) (if (bound? form)
+                         form
+                         (form-from-ssa dgraph bound? form))
         (seq? form) (cond
                       (= 'get* (first form)) (list 'get* (form-from-ssa dgraph bound? (second form)) (last form))
                       :else (apply list (first form) (map (partial form-from-ssa dgraph bound?) (rest form))))
@@ -411,7 +494,7 @@
                        (fn [[bound-set bindings] id]
                          [(conj bound-set id)
                           (conj bindings id (form-from-ssa derivations bound-set id))])
-                       [#{} []])
+                       [spec-var-syms []])
                       second
                       vec)
         constraint (->> constraints (map (comp (partial form-from-ssa derivations bound) second)) (mk-junct 'and))
@@ -458,9 +541,10 @@
      (let [spec-id (:$type assignment)
            sctx (->> spec-id
                      (build-spec-ctx senv)
-                     ;; lowering phases go here
-                     )]
+                     (lower-instance-comparisons)
+                     (lower-implicit-constraints))]
        (->> assignment
             (spec-ify-assignment sctx)
+            (lower-instance-literals-in-spec)
             (spec-from-ssa)
             (to-choco-spec))))))
