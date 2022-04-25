@@ -215,6 +215,25 @@
                                (= 0 (mod $5 2)))))]]
              (-> sctx lower-implicit-constraints :ws/A spec-from-ssa :constraints))))))
 
+(def push-gets-into-ifs #'h2c/push-gets-into-ifs)
+
+(deftest test-push-gets-into-ifs
+  (binding [h2c/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:ab :Boolean}
+                   :constraints [["a1" (not= 1 (get* (if ab {:$type :ws/B :bn 2} {:$type :ws/B :bn 1}) :bn))]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:bn :Integer}
+                   :constraints []
+                   :refines-to {}}})
+          sctx (build-spec-ctx senv :ws/A)]
+      (is (= '[["$all" (not= 1 (if ab
+                                 (get* {:$type :ws/B :bn 2} :bn)
+                                 (get* {:$type :ws/B :bn 1} :bn)))]]
+             (-> sctx push-gets-into-ifs :ws/A spec-from-ssa :constraints))))))
+
 (def lower-instance-literals-in-spec #'h2c/lower-instance-literals-in-spec)
 
 (deftest test-lower-instance-literals-in-spec
@@ -232,8 +251,7 @@
                    :constraints [] :refines-to {}}})
           sctx (build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (< an (+ 1 an))]]
-             (->> sctx :ws/A lower-instance-literals-in-spec spec-from-ssa :constraints)))
-      )))
+             (->> sctx :ws/A lower-instance-literals-in-spec spec-from-ssa :constraints))))))
 
 (deftest test-transpile-l0
   ;; l0: only integer and boolean valued variables and expressions

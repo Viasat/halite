@@ -62,6 +62,17 @@
 (s/defschema Derivations
   {DerivationName Derivation})
 
+(s/defn ^:private reachable-derivations :- #{DerivationName}
+  ([dgraph :- Derivations, id :- DerivationName]
+   (reachable-derivations dgraph #{} id))
+  ([dgraph :- Derivations, reached :- #{DerivationName}, id :- DerivationName]
+   (loop [[next-id & ids] [id]
+          reached reached]
+     (cond
+       (nil? next-id) reached
+       (reached next-id) (recur ids reached)
+       :else (recur (into ids (referenced-derivations (dgraph next-id))) (conj reached next-id))))))
+
 (s/defschema SpecInfo
   (assoc halite-envs/SpecInfo
          :derivations Derivations
@@ -274,6 +285,26 @@
       (->> (reachable-specs senv))
       (update-vals #(spec-to-ssa senv (halite-envs/type-env-from-spec senv %) %))))
 
+;;;;;;;;; Pruning unreachable expressions ;;;;;
+
+;; Expression rewriting in the lowering passes may end up making expression nodes
+;; unreachable from the 'roots' of the derivations graph. This shouldn't affect semantics,
+;; but it may produce unnecessary let bindings when the graph is turned back into expressions.
+;; To avoid this, we prune unreachable expressions from the graph after lowering phases that might
+;; introduce them.
+
+(s/defn ^:private prune-derivations :- SpecInfo
+  [{:keys [derivations constraints] :as spec-info} :- SpecInfo]
+  (let [reachable (reduce
+                   (fn [reachable [cname id]]
+                     (reachable-derivations derivations reachable id))
+                   #{}
+                   constraints)]
+    (->> derivations
+         (filter #(reachable (first %)))
+         (into {})
+         (assoc spec-info :derivations))))
+
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
 (s/defn ^:private mk-junct :- s/Any
@@ -287,6 +318,7 @@
 
 (s/defn ^:private lower-instance-comparisons-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
+  ;; TODO: Make this work in the presence of composition
   (let [senv (as-spec-env sctx)
         tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
         ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]
@@ -320,6 +352,39 @@
 (s/defn ^:private lower-instance-comparisons :- SpecCtx
   [sctx :- SpecCtx]
   (update-vals sctx (partial lower-instance-comparisons-in-spec sctx)))
+
+;;;;;;;;; Push gets inside instance-valued ifs ;;;;;;;;;;;
+
+(s/defn ^:private push-gets-into-ifs-in-spec :- SpecInfo
+  [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
+  ;; TODO: Make this work in the presence of composition
+  (let [senv (as-spec-env sctx)
+        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
+        ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]
+    (->> derivations
+         (filter (fn [[id [form htype]]]
+                   (when (and (seq? form) (= 'get* (first form)))
+                     (let [[subform htype] (derivations (second form))]
+                       (and (seq? subform)
+                            (= 'if (first subform))
+                            (halite-types/spec-type? htype))))))
+         (reduce
+          (fn [dgraph [get-id [[_get subexp-id var-kw] htype]]]
+            (let [[[_if pred-id then-id else-id]] (derivations subexp-id)]
+              (first
+               (form-to-ssa
+                (assoc ctx :dgraph dgraph)
+                get-id
+                (list 'if pred-id
+                      (list 'get* then-id var-kw)
+                      (list 'get* else-id var-kw))))))
+          derivations)
+         (assoc spec-info :derivations)
+         (prune-derivations))))
+
+(s/defn ^:private push-gets-into-ifs :- SpecCtx
+  [sctx :- SpecCtx]
+  (update-vals sctx (partial push-gets-into-ifs-in-spec sctx)))
 
 ;;;;;;;;; Instance Literal Lowering ;;;;;;;;;;;
 
@@ -542,6 +607,7 @@
            sctx (->> spec-id
                      (build-spec-ctx senv)
                      (lower-instance-comparisons)
+                     (push-gets-into-ifs)
                      (lower-implicit-constraints))]
        (->> assignment
             (spec-ify-assignment sctx)
