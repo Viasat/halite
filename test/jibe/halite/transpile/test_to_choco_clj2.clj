@@ -38,30 +38,94 @@
       '[(= x 1)]
       '{$1 [x :Integer]
         $2 [1 :Integer]
-        $3 [(= $1 $2) :Boolean]}
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
       '[$3]
+
+      '[(not= x 1)]
+      '{$1 [x :Integer]
+        $2 [1 :Integer]
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
+      '[$4]
+
+      '[(not (= x 1))]
+      '{$1 [x :Integer]
+        $2 [1 :Integer]
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
+      '[$4]
+
+      '[(not (not= x 1))]
+      '{$1 [x :Integer]
+        $2 [1 :Integer]
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
+      '[$3]
+
+      '[(< x y)]
+      '{$1 [x :Integer]
+        $2 [y :Integer]
+        $3 [(< $1 $2) :Boolean $4]
+        $4 [(<= $2 $1) :Boolean $3]}
+      '[$3]
+
+      '[(> x y)]
+      '{$1 [x :Integer]
+        $2 [y :Integer]
+        $3 [(< $2 $1) :Boolean $4]
+        $4 [(<= $1 $2) :Boolean $3]}
+      '[$3]
+
+      '[(<= x y)]
+      '{$1 [x :Integer]
+        $2 [y :Integer]
+        $3 [(< $2 $1) :Boolean $4]
+        $4 [(<= $1 $2) :Boolean $3]}
+      '[$4]
+
+      '[(>= x y)]
+      '{$1 [x :Integer]
+        $2 [y :Integer]
+        $3 [(< $1 $2) :Boolean $4]
+        $4 [(<= $2 $1) :Boolean $3]}
+      '[$4]
+
+      '[(< x y) (not (>= x y))]
+      '{$1 [x :Integer]
+        $2 [y :Integer]
+        $3 [(< $1 $2) :Boolean $4]
+        $4 [(<= $2 $1) :Boolean $3]}
+      '[$3 $3]
 
       '[(or (< x y) (and b (= z (* x y))))]
       '{$1 [x :Integer]
         $2 [y :Integer]
-        $3 [(< $1 $2) :Boolean]
-        $4 [b :Boolean]
-        $5 [z :Integer]
-        $6 [(* $1 $2) :Integer]
-        $7 [(= $5 $6) :Boolean]
-        $8 [(and $4 $7) :Boolean]
-        $9 [(or $3 $8) :Boolean]}
-      '[$9]
+        $3 [(< $1 $2) :Boolean $4]
+        $4 [(<= $2 $1) :Boolean $3]
+        $5 [b :Boolean $6]
+        $6 [(not $5) :Boolean $5]
+        $7 [z :Integer]
+        $8 [(* $1 $2) :Integer]
+        $9 [(= $7 $8) :Boolean $10]
+        $10 [(not= $7 $8) :Boolean $9]
+        $11 [(and $5 $9) :Boolean $12]
+        $12 [(not $11) :Boolean $11]
+        $13 [(or $3 $11) :Boolean $14]
+        $14 [(not $13) :Boolean $13]}
+      '[$13]
 
       '[(< x (+ y 1)) (< (+ y 1) z)] ; IDEA: lexically sort terms to +|*|and|or|etc. where order doesn't matter
       '{$1 [x :Integer]
         $2 [y :Integer]
         $3 [1 :Integer]
         $4 [(+ $2 $3) :Integer]
-        $5 [(< $1 $4) :Boolean]
-        $6 [z :Integer]
-        $7 [(< $4 $6) :Boolean]}
-      '[$5 $7]
+        $5 [(< $1 $4) :Boolean $6]
+        $6 [(<= $4 $1) :Boolean $5]
+        $7 [z :Integer]
+        $8 [(< $4 $7) :Boolean $9]
+        $9 [(<= $7 $4) :Boolean $8]}
+      '[$5 $8]
 
       '[(let [x (+ 1 x y)] (< z x))]
       '{$1 [1 :Integer]
@@ -69,33 +133,42 @@
         $3 [y :Integer]
         $4 [(+ $1 $2 $3) :Integer]
         $5 [z :Integer]
-        $6 [(< $5 $4) :Boolean]}
+        $6 [(< $5 $4) :Boolean $7]
+        $7 [(<= $4 $5) :Boolean $6]}
       '[$6]
 
       '[(if (< x y) b false)]
       '{$1 [x :Integer]
         $2 [y :Integer]
-        $3 [(< $1 $2) :Boolean]
-        $4 [b :Boolean]
-        $5 [false :Boolean]
-        $6 [(if $3 $4 $5) :Boolean]}
-      '[$6]
+        $3 [(< $1 $2) :Boolean $4]
+        $4 [(<= $2 $1) :Boolean $3]
+        $5 [b :Boolean $6]
+        $6 [(not $5) :Boolean $5]
+        $7 [true :Boolean $8]
+        $8 [false :Boolean $7]
+        $9 [(if $3 $5 $8) :Boolean $10]
+        $10 [(not $9) :Boolean $9]}
+      '[$9]
 
       '[(= 5 (if b x y))]
       '{$1 [5 :Integer]
-        $2 [b :Boolean]
-        $3 [x :Integer]
-        $4 [y :Integer]
-        $5 [(if $2 $3 $4) :Integer]
-        $6 [(= $1 $5) :Boolean]}
-      '[$6]
+        $2 [b :Boolean $3]
+        $3 [(not $2) :Boolean $2]
+        $4 [x :Integer]
+        $5 [y :Integer]
+        $6 [(if $2 $4 $5) :Integer]
+        $7 [(= $1 $6) :Boolean $8]
+        $8 [(not= $1 $6) :Boolean $7]}
+      '[$7]
 
       '[(get* {:$type :foo/Bar :a 10 :b false} :b)]
       '{$1 [10 :Integer]
-        $2 [false :Boolean]
-        $3 [{:$type :foo/Bar :a $1 :b $2} :foo/Bar]
-        $4 [(get* $3 :b) :Boolean]}
-      '[$4]
+        $2 [true :Boolean $3]
+        $3 [false :Boolean $2]
+        $4 [{:$type :foo/Bar :a $1 :b $3} :foo/Bar]
+        $5 [(get* $4 :b) :Boolean $6]
+        $6 [(not $5) :Boolean $5]}
+      '[$5]
       )))
 
 (def spec-from-ssa #'h2c/spec-from-ssa)
@@ -174,16 +247,16 @@
                    :constraints []
                    :refines-to {}}})
           sctx (build-spec-ctx senv :ws/A)]
-      (is (= '[["$all" (let [$3 {:$type :ws/B :bn 12 :bb true}
-                             $5 {:$type :ws/B :bn an :bb true}
-                             $18 (get* $3 :bn)
-                             $9 {:$type :ws/B :bn 4 :bb false}
-                             $15 (get* $3 :bb)]
+      (is (= '[["$all" (let [$4 {:$type :ws/B :bn 12 :bb true}
+                             $24 (get* $4 :bn)
+                             $6 {:$type :ws/B :bn an :bb true}
+                             $18 (get* $4 :bb)
+                             $10 {:$type :ws/B :bn 4 :bb false}]
                          (and
-                          (and (= $15 (get* $5 :bb))
-                               (= $18 (get* $5 :bn)))
-                          (or (not= (get* $9 :bb) $15)
-                              (not= (get* $9 :bn) $18))
+                          (and (= $18 (get* $6 :bb))
+                               (= $24 (get* $6 :bn)))
+                          (or (not= (get* $10 :bb) $18)
+                              (not= (get* $10 :bn) $24))
                           (= an 45)))]]
              (-> sctx lower-instance-comparisons :ws/A spec-from-ssa :constraints)))
       )))
@@ -207,12 +280,12 @@
                    :constraints [["c1" (= 0 (mod cn 2))]]
                    :refines-to {}}})
           sctx (build-spec-ctx senv :ws/A)]
-      (is (= '[["$all" (let [$5 (+ 1 an)]
+      (is (= '[["$all" (let [$6 (+ 1 an)]
                          (and
                           (< an 10)
-                          (= an (get* {:$type :ws/B, :bn $5} :bn))
-                          (and (> 0 (get* {:$type :ws/C, :cn $5} :cn))
-                               (= 0 (mod $5 2)))))]]
+                          (= an (get* {:$type :ws/B, :bn $6} :bn))
+                          (and (< (get* {:$type :ws/C, :cn $6} :cn) 0)
+                               (= 0 (mod $6 2)))))]]
              (-> sctx lower-implicit-constraints :ws/A spec-from-ssa :constraints))))))
 
 (def push-gets-into-ifs #'h2c/push-gets-into-ifs)
@@ -300,11 +373,11 @@
                  :refines-to {}}})]
     (is (= '{:vars {an :Int}
              :constraints
-             #{(let [$5 (+ 1 an)]
+             #{(let [$6 (+ 1 an)]
                  (and (< an 10)                  ; a1
-                      (< an $5)                  ; a2
-                      (and (< 0 $5)              ; b1
-                           (= 0 (mod $5 2)))))}} ; c1
+                      (< an $6)                  ; a2
+                      (and (< 0 $6)              ; b1
+                           (= 0 (mod $6 2)))))}} ; c1
            (h2c/transpile senv {:$type :ws/A})))))
 
 ;;; Illustrate composition elimination

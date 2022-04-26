@@ -50,13 +50,15 @@
    [(s/one SSAOp :op) (s/cond-pre DerivationName s/Keyword)]))
 
 (s/defschema Derivation
-  [(s/one SSAForm :form) (s/one halite-types/HaliteType :type)])
+  [(s/one SSAForm :form) (s/one halite-types/HaliteType :type) (s/optional DerivationName :negation)])
 
 (s/defn ^:private referenced-derivations :- [DerivationName]
   [[form htype :as deriv] :- Derivation]
   (cond
     (seq? form) (->> form rest (filter symbol?))
     (map? form) (-> form (dissoc :$type) vals)
+    ;; this is a bit of a hack
+    (nil? (s/check DerivationName form)) [form]
     :else []))
 
 (s/defschema Derivations
@@ -88,9 +90,78 @@
         id
         (recur entries)))))
 
+(s/defn ^:private negated :- DerivationName
+  [dgraph :- Derivations, id :- DerivationName]
+  (when-not (contains? dgraph id)
+    (throw (ex-info "BUG! Asked for negation of expression not in derivation graph"
+                    {:dgraph dgraph :id id})))
+  (let [[form htype neg-id] (dgraph id)]
+    (when (not= htype :Boolean)
+      (throw (ex-info "BUG! Asked for negation of a non-boolean expression"
+                      {:dgraph dgraph :id id})))
+    neg-id))
+
 (def ^:dynamic *next-id*
   "During transpilation, holds an atom whose value is the next globally unique derivation id."
   nil)
+
+(defn- fresh-id! [] (symbol (str "$" (swap! *next-id* inc))))
+
+(declare add-derivation)
+
+(s/defn ^:private add-boolean-derivation :- DerivResult
+  "Ensure that ssa-form and its negation is present in dgraph, and that they refer to one another.
+  In the process, we can do some normalization of expressions, so that what would otherwise be distinct but
+  equivalent nodes in the graph become the same node.
+
+  In particular, we always rewrite
+
+     (not (= ...))  (not= ..)
+     (not (< a b))  (<= b a)
+     (not (<= a b)) (< b a)
+     (> a b)        (< b a)
+     (>= a b)       (<= b a)"
+  [dgraph :- Derivations, [ssa-form htype :as d] :- Derivation]
+  (let [op (when (seq? ssa-form) (first ssa-form))]
+    (condp = op
+      '= (let [[id neg-id ] (repeatedly 2 fresh-id!)]
+           [(assoc dgraph
+                   id (conj d neg-id)
+                   neg-id [(apply list 'not= (rest ssa-form)) :Boolean id])
+            id])
+
+      'not= (let [[dgraph id] (add-derivation dgraph [(apply list '= (rest ssa-form)) :Boolean])]
+              [dgraph (negated dgraph id)])
+
+      'not [dgraph (negated dgraph (second ssa-form))]
+
+      '< (let [[id neg-id] (repeatedly 2 fresh-id!)]
+           [(assoc dgraph
+                   id (conj d neg-id)
+                   neg-id [(apply list '<= (reverse (rest ssa-form))) :Boolean id])
+            id])
+
+      '> (add-derivation dgraph [(apply list '< (reverse (rest ssa-form))) :Boolean])
+
+      '<= (let [[dgraph id] (add-derivation dgraph [(apply list '> (rest ssa-form)) :Boolean])]
+            [dgraph (negated dgraph id)])
+
+      '>= (add-derivation dgraph [(apply list '<= (reverse (rest ssa-form))) :Boolean])
+
+      (condp = ssa-form
+        true (let [[id neg-id] (repeatedly 2 fresh-id!)]
+               [(assoc dgraph
+                       id (conj d neg-id)
+                       neg-id [false :Boolean id])
+                id])
+        false (let [[dgraph id ] (add-derivation dgraph [true :Boolean])]
+                [dgraph (negated dgraph id)])
+        
+        (let [[id neg-id] (repeatedly 2 fresh-id!)]
+          [(assoc dgraph
+                  id (conj d neg-id)
+                  neg-id [(list 'not id) :Boolean id])
+           id])))))
 
 (s/defn ^:private add-derivation :- DerivResult
   [dgraph :- Derivations, [ssa-form htype :as d] :- Derivation]
@@ -99,8 +170,10 @@
       (throw (ex-info (format "BUG! Tried to add derivation %s, but that form already recorded as %s" d (dgraph id))
                       {:derivation d :dgraph dgraph}))
       [dgraph id])
-    (let [id (symbol (str "$" (swap! *next-id* inc)))]
-      [(assoc dgraph id d) id])))
+    (if (= :Boolean htype)
+      (add-boolean-derivation dgraph d)
+      (let [id (fresh-id!)]
+        [(assoc dgraph id d) id]))))
 
 (s/defn ^:private add-derivation-for-app :- DerivResult
   [dgraph :- Derivations [op & args :as form]]
@@ -483,7 +556,7 @@
 
 (s/defn ^:private spec-ify-assignment :- SpecInfo
   [sctx :- SpecCtx, assignment :- Assignment]
-  (let [{:keys [spec-vars constraints refines-to derivations] :as spec-info} (sctx (:$type assignment))]
+  (let [{:keys [spec-vars constraints refines-to derivations] :as spec-info} (-> assignment :$type sctx prune-derivations)]
     (doseq [[var-sym htype] spec-vars]
       (when-not (#{:Integer :Boolean} htype)
         (throw (ex-info (format "BUG! Assignments of type '%' not supported yet" htype)
@@ -533,14 +606,15 @@
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation" {:id id :form form :derivations dgraph}))))))
 
 (s/defn ^:private spec-from-ssa :- halite-envs/SpecInfo
-  [{:keys [derivations constraints spec-vars] :as spec-info} :- SpecInfo]
+  [spec-info :- SpecInfo]
   ;; count usages of each derivation
   ;; a derivation goes into a top-level let iff
   ;;   it has multiple usages and is not a symbol/integer/boolean
   ;; the let form is orderd via topological sort
   ;; then we reconstitute the let bindings and constraints,
   ;; and assemble into the final form
-  (let [usage-counts (->> derivations vals (mapcat (comp referenced-derivations)) frequencies)
+  (let [{:keys [derivations constraints spec-vars] :as spec-info} (prune-derivations spec-info)
+        usage-counts (->> derivations vals (mapcat (comp referenced-derivations)) frequencies)
         ordering (zipmap (topo-sort derivations) (range))
         spec-var-syms (->> spec-vars keys (map symbol) set)
         to-bind (->> derivations
