@@ -350,19 +350,20 @@
                    :refines-to {}}
                   :ws/B
                   {:spec-vars {:bn :Integer}
-                   :constraints [["b1" (> 0 (get* {:$type :ws/C :cn bn} :cn))]]
+                   :constraints [["b1" (> 0 (if (<= bn 5) (get* {:$type :ws/C :cn bn} :cn) 6))]]
                    :refines-to {}}
                   :ws/C
                   {:spec-vars {:cn :Integer}
                    :constraints [["c1" (= 0 (mod cn 2))]]
                    :refines-to {}}})
           sctx (build-spec-ctx senv :ws/A)]
-      (is (= '[["$all" (let [$6 (+ 1 an)]
+      (is (= '[["$all" (let [$6 (+ 1 an)
+                             $38 (<= $6 5)]
                          (and
                           (< an 10)
                           (= an (get* {:$type :ws/B, :bn $6} :bn))
-                          (and (< (get* {:$type :ws/C, :cn $6} :cn) 0)
-                               (= 0 (mod $6 2)))))]]
+                          (and (< (if $38 (get* {:$type :ws/C, :cn $6} :cn) 6) 0)
+                               (if $38 (= 0 (mod $6 2)) true))))]]
              (-> sctx lower-implicit-constraints :ws/A spec-from-ssa :constraints))))))
 
 (def push-gets-into-ifs #'h2c/push-gets-into-ifs)
@@ -455,6 +456,30 @@
                       (< an $6)                  ; a2
                       (and (< 0 $6)              ; b1
                            (= 0 (mod $6 2)))))}} ; c1
+           (h2c/transpile senv {:$type :ws/A})))))
+
+(deftest test-transpile-ifs-and-instance-literals
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:an :Integer, :ab :Boolean}
+                 :constraints [["a1" (not=
+                                      (if ab
+                                        {:$type :ws/B :bn an}
+                                        {:$type :ws/B :bn 12})
+                                      {:$type :ws/B :bn (+ an 1)})]]
+                 :refines-to {}}
+                :ws/B
+                {:spec-vars {:bn :Integer}
+                 :constraints [["b1" (<= (div 10 bn) 10)]]
+                 :refines-to {}}})]
+    (is (= '{:vars {an :Int ab :Bool}
+             :constraints
+             #{(let [$9 (+ an 1)]
+                 (and
+                  (not= (if ab an 12) $9)
+                  (if ab (<= (div 10 an) 10) true)
+                  (<= (div 10 $9) 10)
+                  (if (not ab) (<= (div 10 12) 10) true)))}}
            (h2c/transpile senv {:$type :ws/A})))))
 
 ;;; Illustrate composition elimination

@@ -501,19 +501,22 @@
 
 (s/defn ^:private lower-implicit-constraints-in-spec :- SpecInfo
   [sctx :- SpecCtx, spec-info :- SpecInfo]
-  (let [inst-literals (->> spec-info
+  (let [guards (compute-guards spec-info)
+        inst-literals (->> spec-info
                            :derivations
-                           vals
-                           (filter (fn [[form htype]] (map? form)))
-                           (map first))
+                           (filter (fn [[id [form htype]]] (map? form))))
         senv (as-spec-env sctx)
         tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))]
     (reduce
-     (fn [{:keys [derivations] :as spec-info} inst-literal]
+     (fn [{:keys [derivations] :as spec-info} [id [inst-literal htype]]]
        (let [spec-id (:$type inst-literal)
+             guard-form (->> id guards (map #(mk-junct 'and (sort %))) (mk-junct 'or))
              constraints (->> spec-id sctx spec-from-ssa :constraints (map second))
              constraint-expr (list 'let (vec (mapcat (fn [[var-kw id]] [(symbol var-kw) id]) (dissoc inst-literal :$type)))
                                    (mk-junct 'and constraints))
+             constraint-expr (if (not= true guard-form)
+                               (list 'if guard-form constraint-expr true)
+                               constraint-expr)
              [derivations id] (form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} constraint-expr)]
          (-> spec-info
              (assoc :derivations derivations)
