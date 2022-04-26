@@ -358,25 +358,62 @@
       (->> (reachable-specs senv))
       (update-vals #(spec-to-ssa senv (halite-envs/type-env-from-spec senv %) %))))
 
-;;;;;;;;; Pruning unreachable expressions ;;;;;
+;;;;;;;; Guards ;;;;;;;;;;;;;;
 
-;; Expression rewriting in the lowering passes may end up making expression nodes
-;; unreachable from the 'roots' of the derivations graph. This shouldn't affect semantics,
-;; but it may produce unnecessary let bindings when the graph is turned back into expressions.
-;; To avoid this, we prune unreachable expressions from the graph after lowering phases that might
-;; introduce them.
+(s/defschema ^:private Guards
+  "For every derivation, a representation in disjunctive normal form of what must be true for that
+  derivation to get 'evaluated'."
+  {DerivationName #{#{DerivationName}}})
 
-(s/defn ^:private prune-derivations :- SpecInfo
+(s/defn ^:private update-guards :- #{#{DerivationName}}
+  [current :- #{#{DerivationName}}, guard :- #{DerivationName}]
+  (as-> current guards
+    ;; Any existing conjuncts that are supersets of guard may be eliminated.
+    (->> guards (remove (partial set/subset? guard)) set)
+
+    ;; If any existing conjunct is a subset of guard, guard may be ignored.
+    (cond-> guards
+      (not (some #(set/subset? % guard) guards)) (conj guard))))
+
+(s/defn ^:private compute-guards* :- Guards
+  [dgraph :- Derivations, current :- #{DerivationName}, result :- Guards, id :- DerivationName]
+  (let [[form htype] (dgraph id)
+        result (update result id update-guards current)]
+    (cond
+      (or (integer? form) (boolean? form) (symbol? form)) result
+      (seq? form) (let [[op & args] form]
+                    (condp = op
+                      'get* (compute-guards* dgraph current result (first args))
+                      'if (let [[pred-id then-id else-id] args
+                                not-pred-id (negated dgraph pred-id)]
+                            (as-> result result
+                              (compute-guards* dgraph current result pred-id)
+                              (compute-guards* dgraph (conj current pred-id) result then-id)
+                              (compute-guards* dgraph (conj current not-pred-id) result else-id)))
+                      (reduce (partial compute-guards* dgraph current) result args)))
+      (map? form) (->> (dissoc form :$type) vals (reduce (partial compute-guards* dgraph current) result))
+      :else (throw (ex-info "BUG! Could not compute guards for form"
+                            {:id id :form form :dgraph dgraph :current current :result result})))))
+
+(s/defn ^:private simplify-guards :- #{#{DerivationName}}
+  [dgraph :- Derivations, guards :- #{#{DerivationName}}]
+  ;; guards is in disjunctive normal form... if a conjunct and
+  ;; its negation are both in guards, then the whole expression collapses to 'true'
+  ;; This is just a heuristic intended primarily to catch when an expression shows up
+  ;; in both branches of an if. This problem is in general co-NP-hard.
+  ;; https://en.wikipedia.org/wiki/Disjunctive_normal_form
+  (let [negated-clauses (->> guards (map #(->> % (map (partial negated dgraph)) set)))]
+    (if (some (fn [negated-terms] (every? #(contains? guards #{%}) negated-terms)) negated-clauses)
+      #{#{}} ; true
+      guards)))
+
+(s/defn ^:private compute-guards :- Guards
   [{:keys [derivations constraints] :as spec-info} :- SpecInfo]
-  (let [reachable (reduce
-                   (fn [reachable [cname id]]
-                     (reachable-derivations derivations reachable id))
-                   #{}
-                   constraints)]
-    (->> derivations
-         (filter #(reachable (first %)))
-         (into {})
-         (assoc spec-info :derivations))))
+  (-> (reduce
+       (partial compute-guards* derivations #{})
+       (zipmap (keys derivations) (repeat #{}))
+       (map second constraints))
+      (update-vals (partial simplify-guards derivations))))
 
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
@@ -452,8 +489,7 @@
                       (list 'get* then-id var-kw)
                       (list 'get* else-id var-kw))))))
           derivations)
-         (assoc spec-info :derivations)
-         (prune-derivations))))
+         (assoc spec-info :derivations))))
 
 (s/defn ^:private push-gets-into-ifs :- SpecCtx
   [sctx :- SpecCtx]
@@ -549,6 +585,28 @@
     )
   )
 
+;;;;;;;;;; Pruning unreachable expressions ;;;;;;;;;;;
+
+;; Expression rewriting in the lowering passes may end up making expression nodes
+;; unreachable from the 'roots' of the derivations graph. This shouldn't affect semantics,
+;; but it may produce unnecessary let bindings when the graph is turned back into expressions.
+;; To avoid this, we prune unreachable expressions from the graph after lowering phases that might
+;; introduce them.
+;; HOWEVER! When a form is put into SSA, (possibly unreachable) nodes representing the negation of
+;; each boolean expression are added, and pruning will remove them! So, don't prune until you're "done".
+
+(s/defn ^:private prune-derivations :- SpecInfo
+  [{:keys [derivations constraints] :as spec-info} :- SpecInfo]
+  (let [reachable (reduce
+                   (fn [reachable [cname id]]
+                     (reachable-derivations derivations reachable id))
+                   #{}
+                   constraints)]
+    (->> derivations
+         (filter #(reachable (first %)))
+         (into {})
+         (assoc spec-info :derivations))))
+
 ;;;;;;;;; Assignment Spec-ification ;;;;;;;;;;;;;;;;
 
 ;; TODO: Composition, but only after instance literal lowering
@@ -604,6 +662,19 @@
                       :else (apply list (first form) (map (partial form-from-ssa dgraph bound?) (rest form))))
         (map? form) (-> form (dissoc :$type) (update-vals (partial form-from-ssa dgraph bound?)) (assoc :$type (:$type form)))
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation" {:id id :form form :derivations dgraph}))))))
+
+(s/defn ^:private guards-from-ssa :- {s/Any s/Any}
+  "To facilitate testing"
+  [dgraph :- Derivations, bound :- #{s/Symbol}, guards :- Guards]
+  (-> guards
+      (update-keys (partial form-from-ssa dgraph bound))
+      (update-vals
+       (fn [guards]
+         (if (seq guards)
+           (->> guards
+                (map #(->> % (map (partial form-from-ssa dgraph bound)) (mk-junct 'and)))
+                (mk-junct 'or))
+           true)))))
 
 (s/defn ^:private spec-from-ssa :- halite-envs/SpecInfo
   [spec-info :- SpecInfo]

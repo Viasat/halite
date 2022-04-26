@@ -12,6 +12,10 @@
 
 (def spec-to-ssa #'h2c/spec-to-ssa)
 
+;; TODO: We need to rewrite 'div forms in the case where the quotient is a variable,
+;; to ensure that choco doesn't force the variable to be zero even when the div might not
+;; be evaluated.
+
 (deftest test-spec-to-ssa
   (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
                    :constraints []
@@ -259,6 +263,79 @@
                               (not= (get* $10 :bn) $24))
                           (= an 45)))]]
              (-> sctx lower-instance-comparisons :ws/A spec-from-ssa :constraints)))
+      )))
+
+(def compute-guards #'h2c/compute-guards)
+(def guards-from-ssa #'h2c/guards-from-ssa)
+
+(deftest test-compute-guards
+  (let [senv '{:ws/A
+               {:spec-vars {:x :Integer, :y :Integer, :b1 :Boolean, :b2 :Boolean}
+                :constraints []
+                :refines-to {}}
+               :ws/Foo
+               {:spec-vars {:x :Integer, :y :Integer}
+                :constraints []
+                :refines-to {}}}]
+    (are [constraints guards]
+      (= guards
+         (binding [h2c/*next-id* (atom 0)]
+           (let [spec-info (-> senv
+                               (update-in [:ws/A :constraints] into
+                                          (map-indexed #(vector (str "c" %1) %2) constraints))
+                               (halite-envs/spec-env)
+                               (build-spec-ctx :ws/A)
+                               :ws/A)]
+             (-> spec-info
+                 (compute-guards)
+                 (->> (guards-from-ssa
+                       (:derivations spec-info)
+                       (->> spec-info :spec-vars keys (map symbol) set))
+                      (remove (comp true? val))
+                      (into {}))))))
+
+      []
+      {}
+
+      '[b1 true]
+      {}
+
+      '[(< x y)]
+      {}
+
+      '[(if (< x y)
+          (< x 10)
+          (> x 10))]
+      '{(< x 10) (< x y)
+        (< 10 x) (<= y x)}
+
+      '[(if (< x y) (<= (div 10 x) 10) true)
+        (if (>= x y) (<= (div 10 x) 10) true)]
+      '{}
+
+      '[(not= 1 (if b1 (if b2 1 2) 3))]
+      '{b2 b1
+        2 (and b1 (not b2))
+        3 (not b1)
+        (if b2 1 2) b1}
+
+      '[(not= 1 (if b1 (if b2 1 2) 3))
+        (not= 3 (if (not b2) 2 4))]
+      '{4 b2
+        (if b2 1 2) b1
+        2 (not b2)}
+
+      '[(if b1 {:$type :ws/Foo :x 1 :y 2} {:$type :ws/Foo :x 2 :y 3})]
+      '{1 b1
+        3 (not b1)
+        {:$type :ws/Foo :x 1 :y 2} b1
+        {:$type :ws/Foo :x 2 :y 3} (not b1)}
+
+      '[(= 1 (if b1 (get* {:$type :ws/Foo :x 1 :y 2} :x) 3))]
+      '{2 b1
+        3 (not b1)
+        {:$type :ws/Foo :x 1 :y 2} b1
+        (get* {:$type :ws/Foo :x 1 :y 2} :x) b1}
       )))
 
 (def lower-implicit-constraints #'h2c/lower-implicit-constraints)
