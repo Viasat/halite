@@ -358,6 +358,16 @@
       (->> (reachable-specs senv))
       (update-vals #(spec-to-ssa senv (halite-envs/type-env-from-spec senv %) %))))
 
+;;;;;;;; Fixpoint ;;;;;;;;;;;;
+
+;; Some passes need to be run repeatedly, until there is no change.
+
+(defn- fixpoint
+  [f input]
+  (loop [x input]
+    (let [x' (f x)]
+      (cond-> x' (not= x' x) recur))))
+
 ;;;;;;;; Guards ;;;;;;;;;;;;;;
 
 (s/defschema ^:private Guards
@@ -428,7 +438,6 @@
 
 (s/defn ^:private lower-instance-comparisons-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  ;; TODO: Make this work in the presence of composition
   (let [senv (as-spec-env sctx)
         tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
         ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]

@@ -265,6 +265,39 @@
              (-> sctx lower-instance-comparisons :ws/A spec-from-ssa :constraints)))
       )))
 
+(def fixpoint #'h2c/fixpoint)
+
+(deftest test-lower-instance-comparisons-for-composition
+  (binding [h2c/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:b1 :ws/B, :b2 :ws/B}
+                   :constraints [["a1" (not= b1 b2)]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:c1 :ws/C, :c2 :ws/C}
+                   :constraints []
+                   :refines-to {}}
+                  :ws/C
+                  {:spec-vars {:x :Integer :y :Integer}
+                   :constraints []
+                   :refines-to {}}})
+          sctx (build-spec-ctx senv :ws/A)]
+      (is (= '[["$all" (let [$6 (get* b2 :c1)
+                             $5 (get* b1 :c1)
+                             $9 (get* b1 :c2)
+                             $10 (get* b2 :c2)]
+                         (or
+                          (or
+                           (not= (get* $5 :x) (get* $6 :x))
+                           (not= (get* $5 :y) (get* $6 :y)))
+                          (or
+                           (not= (get* $9 :x) (get* $10 :x))
+                           (not= (get* $9 :y) (get* $10 :y)))))]]
+             (->> sctx
+                  (fixpoint lower-instance-comparisons)
+                  :ws/A spec-from-ssa :constraints))))))
+
 (def compute-guards #'h2c/compute-guards)
 (def guards-from-ssa #'h2c/guards-from-ssa)
 
