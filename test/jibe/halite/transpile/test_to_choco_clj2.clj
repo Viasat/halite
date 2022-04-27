@@ -453,6 +453,75 @@
       (is (= '[["$all" (< an (+ 1 an))]]
              (->> sctx :ws/A lower-instance-literals-in-spec spec-from-ssa :constraints))))))
 
+(def spec-ify-assignment #'h2c/spec-ify-assignment)
+
+(deftest test-spec-ify-assignment
+  (binding [h2c/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:b :ws/B :c :ws/C}
+                   :constraints [["a1" (= (get* b :bn) (get* c :cn))]
+                                 ["a2" (if (> (get* b :bn) 0)
+                                         (< (get* b :bn)
+                                            (get* (get* (get* c :a) :b) :bn))
+                                         true)]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:bn :Integer :bp :Boolean}
+                   :constraints [["b1" (if bp (<= bn 10) (>= bn 10))]]
+                   :refines-to {}}
+                  :ws/C
+                  {:spec-vars {:a :ws/A :cn :Integer}
+                   :constraints []
+                   :refines-to {}}})
+          sctx (build-spec-ctx senv :ws/A)]
+
+      (are [b-assignment constraint]
+          (= {:spec-vars {:bn :Integer, :bp :Boolean}
+              :constraints
+              [["$all" constraint]]
+              :refines-to {}}
+             (->> b-assignment (spec-ify-assignment sctx) spec-from-ssa))
+
+        {:$type :ws/B} '(if bp (<= bn 10) (<= 10 bn))
+        {:$type :ws/B :bn 12} '(and (if bp (<= bn 10) (<= 10 bn))
+                                    (= bn 12)))
+
+      (is (= '{:spec-vars {:b|bn :Integer :b|bp :Boolean
+                           :c|cn :Integer}
+               :constraints
+               [["$all" (and
+                         (= b|bn c|cn)
+                         (if b|bp
+                           (<= b|bn 10)
+                           (<= 10 b|bn)))]]
+               :refines-to {}}
+             (->> {:$type :ws/A} (spec-ify-assignment sctx) spec-from-ssa)))
+
+      (is (= '{:spec-vars {:b|bn :Integer :b|bp :Boolean
+                           :c|cn :Integer
+                           :c|a|b|bn :Integer :c|a|b|bp :Boolean}
+               :constraints
+               [["$all" (and
+                         (= b|bn c|cn)
+                         (if (< 0 b|bn)
+                           (< b|bn c|a|b|bn)
+                           true)
+                         (if b|bp
+                           (<= b|bn 10)
+                           (<= 10 b|bn))
+                         (= b|bp true)
+                         (if c|a|b|bp
+                           (<= c|a|b|bn 10)
+                           (<= 10 c|a|b|bn)))]]
+               :refines-to {}}
+             (->> '{:$type :ws/A
+                    :b {:$type :ws/B :bp true}
+                    :c {:$type :ws/C :a {:$type :ws/A}}}
+                  (spec-ify-assignment sctx)
+                  spec-from-ssa)))
+      )))
+
 (deftest test-transpile-l0
   ;; l0: only integer and boolean valued variables and expressions
   (let [senv (halite-envs/spec-env
@@ -466,20 +535,20 @@
 
     (is (= '{:vars {x :Int, y :Int, b :Bool}
              :constraints
-             #{(let [$4 (abs (- x y))]
-                 (and (and (< 5 $4)
-                           (< $4 10))
+             #{(let [$22 (abs (- x y))]
+                 (and (and (< 5 $22)
+                           (< $22 10))
                       (= b (< x y))))}}
            (h2c/transpile senv {:$type :ws/A})))
 
     (is (= '{:vars {x :Int, y :Int, b :Bool}
              :constraints
-             #{(let [$4 (abs (- x y))]
-                 (and (and (< 5 $4)
-                           (< $4 10))
+             #{(let [$22 (abs (- x y))]
+                 (and (and (< 5 $22)
+                           (< $22 10))
                       (= b (< x y))
-                      (= b false)
-                      (= x 12)))}}
+                      (= x 12)
+                      (= b false)))}}
            (h2c/transpile senv {:$type :ws/A :x 12 :b false})))))
 
 (deftest test-transpile-l1
@@ -500,11 +569,11 @@
                  :refines-to {}}})]
     (is (= '{:vars {an :Int}
              :constraints
-             #{(let [$6 (+ 1 an)]
+             #{(let [$43 (+ 1 an)]
                  (and (< an 10)                  ; a1
-                      (< an $6)                  ; a2
-                      (and (< 0 $6)              ; b1
-                           (= 0 (mod $6 2)))))}} ; c1
+                      (< an $43)                  ; a2
+                      (and (< 0 $43)              ; b1
+                           (= 0 (mod $43 2)))))}} ; c1
            (h2c/transpile senv {:$type :ws/A})))))
 
 (deftest test-transpile-ifs-and-instance-literals
@@ -523,11 +592,11 @@
                  :refines-to {}}})]
     (is (= '{:vars {an :Int ab :Bool}
              :constraints
-             #{(let [$9 (+ an 1)]
+             #{(let [$47 (+ an 1)]
                  (and
-                  (not= (if ab an 12) $9)
+                  (not= (if ab an 12) $47)
                   (if ab (<= (div 10 an) 10) true)
-                  (<= (div 10 $9) 10)
+                  (<= (div 10 $47) 10)
                   (if (not ab) (<= (div 10 12) 10) true)))}}
            (h2c/transpile senv {:$type :ws/A})))))
 

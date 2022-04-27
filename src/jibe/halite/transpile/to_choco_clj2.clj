@@ -16,7 +16,7 @@
   (s/cond-pre
    s/Int
    s/Bool
-   #_(s/recursive #'Assignment)))
+   (s/recursive #'Assignment)))
 
 (s/defschema Assignment
   {:$type halite-types/NamespacedKeyword
@@ -53,6 +53,8 @@
   [(s/one SSAForm :form) (s/one halite-types/HaliteType :type) (s/optional DerivationName :negation)])
 
 (s/defn ^:private referenced-derivations :- [DerivationName]
+  "Return the derivation nodes directly referenced by a given derivation.
+  When the derivation is boolean, its negation node is NOT included."
   [[form htype :as deriv] :- Derivation]
   (cond
     (seq? form) (->> form rest (filter symbol?))
@@ -65,15 +67,21 @@
   {DerivationName Derivation})
 
 (s/defn ^:private reachable-derivations :- #{DerivationName}
-  ([dgraph :- Derivations, id :- DerivationName]
-   (reachable-derivations dgraph #{} id))
-  ([dgraph :- Derivations, reached :- #{DerivationName}, id :- DerivationName]
+  "Return the set of derivation nodes transitively reachable from the given id. For reachable boolean
+  nodes, their negation nodes are included when include-negations? is true."
+  ([dgraph :- Derivations, include-negations? :- s/Bool, id :- DerivationName]
+   (reachable-derivations dgraph include-negations? #{} id))
+  ([dgraph :- Derivations, include-negations? :- s/Bool, reached :- #{DerivationName}, id :- DerivationName]
    (loop [[next-id & ids] [id]
           reached reached]
      (cond
        (nil? next-id) reached
        (reached next-id) (recur ids reached)
-       :else (recur (into ids (referenced-derivations (dgraph next-id))) (conj reached next-id))))))
+       :else (let [[form htype neg-id :as d] (dgraph next-id)]
+               (recur
+                (into ids (referenced-derivations d))
+                (cond-> (conj reached next-id)
+                  (and include-negations? neg-id) (conj neg-id))))))))
 
 (s/defschema SpecInfo
   (assoc halite-envs/SpecInfo
@@ -474,30 +482,34 @@
 
 ;;;;;;;;; Push gets inside instance-valued ifs ;;;;;;;;;;;
 
+(declare prune-derivations)
+
 (s/defn ^:private push-gets-into-ifs-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
   (let [senv (as-spec-env sctx)
         tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
         ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]
-    (->> derivations
-         (filter (fn [[id [form htype]]]
-                   (when (and (seq? form) (= 'get* (first form)))
-                     (let [[subform htype] (derivations (second form))]
-                       (and (seq? subform)
-                            (= 'if (first subform))
-                            (halite-types/spec-type? htype))))))
-         (reduce
-          (fn [dgraph [get-id [[_get subexp-id var-kw] htype]]]
-            (let [[[_if pred-id then-id else-id]] (derivations subexp-id)]
-              (first
-               (form-to-ssa
-                (assoc ctx :dgraph dgraph)
-                get-id
-                (list 'if pred-id
-                      (list 'get* then-id var-kw)
-                      (list 'get* else-id var-kw))))))
-          derivations)
-         (assoc spec-info :derivations))))
+    (->
+     (->> derivations
+          (filter (fn [[id [form htype]]]
+                    (when (and (seq? form) (= 'get* (first form)))
+                      (let [[subform htype] (derivations (second form))]
+                        (and (seq? subform)
+                             (= 'if (first subform))
+                             (halite-types/spec-type? htype))))))
+          (reduce
+           (fn [dgraph [get-id [[_get subexp-id var-kw] htype]]]
+             (let [[[_if pred-id then-id else-id]] (derivations subexp-id)]
+               (first
+                (form-to-ssa
+                 (assoc ctx :dgraph dgraph)
+                 get-id
+                 (list 'if pred-id
+                       (list 'get* then-id var-kw)
+                       (list 'get* else-id var-kw))))))
+           derivations)
+          (assoc spec-info :derivations))
+     (prune-derivations false))))
 
 (s/defn ^:private push-gets-into-ifs :- SpecCtx
   [sctx :- SpecCtx]
@@ -596,6 +608,10 @@
     )
   )
 
+(s/defn ^:private lower-instance-literals :- SpecCtx
+  [sctx :- SpecCtx]
+  (update-vals sctx lower-instance-literals-in-spec))
+
 ;;;;;;;;;; Pruning unreachable expressions ;;;;;;;;;;;
 
 ;; Expression rewriting in the lowering passes may end up making expression nodes
@@ -606,46 +622,173 @@
 ;; HOWEVER! When a form is put into SSA, (possibly unreachable) nodes representing the negation of
 ;; each boolean expression are added, and pruning will remove them! So, don't prune until you're "done".
 
-(s/defn ^:private prune-derivations :- SpecInfo
-  [{:keys [derivations constraints] :as spec-info} :- SpecInfo]
+(s/defn ^:private prune-dgraph :- Derivations
+  [dgraph :- Derivations, roots :- #{DerivationName}, prune-negations? :- s/Bool]
   (let [reachable (reduce
-                   (fn [reachable [cname id]]
-                     (reachable-derivations derivations reachable id))
+                   (fn [reachable id]
+                     (reachable-derivations dgraph (not prune-negations?) reachable id))
                    #{}
-                   constraints)]
-    (->> derivations
+                   roots)]
+    (->> dgraph
          (filter #(reachable (first %)))
-         (into {})
-         (assoc spec-info :derivations))))
+         (into {}))))
+
+(s/defn ^:private prune-derivations :- SpecInfo
+  [{:keys [constraints] :as spec-info} :- SpecInfo, prune-negations? :- s/Bool]
+  (let [roots (->> constraints (map second) set)]
+    (update spec-info :derivations prune-dgraph roots prune-negations?)))
 
 ;;;;;;;;; Assignment Spec-ification ;;;;;;;;;;;;;;;;
 
-;; TODO: Composition, but only after instance literal lowering
-;; We want to handle recursive specifications right off the bat.
+(s/defschema ^:private FlattenedVar
+  [(s/one halite-types/BareKeyword :var-kw) (s/one (s/enum :Boolean :Integer) :type)])
+
+(s/defschema ^:private FlattenedVars
+  {halite-types/BareKeyword (s/cond-pre FlattenedVar (s/recursive #'FlattenedVars))})
+
+(s/defn ^:private flatten-vars :- FlattenedVars
+  ([sctx :- SpecCtx, assignment :- Assignment]
+   (flatten-vars sctx [] "" assignment))
+  ([sctx :- SpecCtx, parent-spec-ids :- [halite-types/NamespacedKeyword], prefix :- s/Str, assignment :- Assignment]
+   (reduce
+    (fn [vars [var-kw htype]]
+      (cond
+        (#{:Integer :Boolean} htype)
+        (assoc vars var-kw
+               [(keyword (str prefix (name var-kw))) htype])
+
+        (halite-types/spec-type? htype)
+        (cond-> vars
+          (or (contains? assignment var-kw)
+              (every? #(not= % htype) parent-spec-ids))
+          (assoc var-kw
+                 (flatten-vars sctx (conj parent-spec-ids (:$type assignment)) (str prefix (name var-kw) "|")
+                               (get assignment var-kw {:$type htype}))))
+
+        :else (throw (ex-info (format "BUG! Assignments of type '%' not supported yet" htype)
+                              {:var-kw var-kw :type htype}))))
+    {}
+    (-> assignment :$type sctx :spec-vars))))
+
+(defn- leaves [m]
+  (if (map? m)
+    (mapcat leaves (vals m))
+    [m]))
+
+(declare form-from-ssa)
+
+(s/defn ^:private flatten-get-chain :- s/Symbol
+  [rename-scope :- FlattenedVars var-kw-stack :- [s/Keyword] expr]
+  (cond
+    (seq? expr)
+    (let [[_get subexpr var-kw] expr]
+      (recur rename-scope (cons var-kw var-kw-stack) subexpr))
+
+    (symbol? expr)
+    (let [var-kw-stack (vec (cons (keyword expr) var-kw-stack))
+          new-var-kw (get-in rename-scope var-kw-stack)]
+      (if (nil? new-var-kw)
+        (throw (ex-info "Skip constraint, specs didn't unfold sufficiently"
+                        {:skip-constraint? true :form expr :rename-scope rename-scope :var-kw-stack var-kw-stack}))
+        (symbol (first new-var-kw))))
+
+    :else
+    (throw (ex-info "BUG! Not a get chain!"
+                    {:form expr :rename-scope rename-scope :var-kw-stack var-kw-stack}))))
+
+(s/defn ^:private flatten-expression
+  [rename-scope :- FlattenedVars expr]
+  (cond
+    (or (integer? expr) (boolean? expr)) expr
+    (symbol? expr) (if-let [[var-kw htype] (rename-scope (keyword expr))]
+                     (if (#{:Integer :Boolean} htype)
+                       (symbol var-kw)
+                       (throw (ex-info "BUG! Found 'naked' instance-valued variable reference"
+                                       {:expr expr :rename-scope rename-scope})))
+                     expr)
+    (seq? expr) (let [[op & args] expr]
+                  (condp = op
+                    'get* (flatten-get-chain rename-scope [] expr)
+                    'let (let [[_let bindings body] expr
+                               [rename-scope bindings] (reduce
+                                                        (fn [[rename-scope bindings] [var-sym expr]]
+                                                          [(dissoc rename-scope (keyword var-sym))
+                                                           (conj bindings var-sym (flatten-expression rename-scope expr))])
+                                                        [rename-scope []]
+                                                        (partition 2 bindings))]
+                           (list 'let bindings (flatten-expression rename-scope body)))
+                    (->> args (map (partial flatten-expression rename-scope)) (apply list op))))
+    :else (throw (ex-info "BUG! Cannot flatten expression" {:form expr :rename-scope rename-scope}))))
+
+(s/defn ^:private flatten-spec-constraints
+  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, assignment :- Assignment, spec-info :- SpecInfo]
+  (let [senv (as-spec-env sctx)
+        spec-to-inline (-> assignment :$type sctx)
+        old-scope (->> spec-to-inline :spec-vars keys (map symbol) set)]
+    (reduce
+     (fn [{:keys [derivations] :as spec-info} [cname id]]
+       (let [expr (form-from-ssa old-scope (prune-dgraph (:derivations spec-to-inline) #{id} true) id)
+             fexpr (try (flatten-expression vars expr)
+                        (catch clojure.lang.ExceptionInfo ex
+                          (if (:skip-constraint? (ex-data ex))
+                            nil
+                            (throw ex))))]
+         (if fexpr
+           (let [[dgraph id] (form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} fexpr)]
+             (-> spec-info
+                 (assoc :derivations dgraph)
+                 (update :constraints conj [cname id])))
+           spec-info)))
+     spec-info
+     (:constraints spec-to-inline))))
+
+(s/defn ^:private flatten-assignment :- SpecInfo
+  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, assignment :- Assignment, spec-info :- SpecInfo]
+  (let [senv (as-spec-env sctx)
+        spec-vars (-> assignment :$type sctx :spec-vars)]
+    (reduce
+     (fn [{:keys [derivations] :as spec-info} [var-kw v]]
+       (cond
+         (= v ::skip) spec-info
+         
+         (or (integer? v) (boolean? v))
+         (let [var-sym (->> var-kw vars first symbol)
+               [dgraph constraint] (constraint-to-ssa senv tenv derivations ["$=" (list '= var-sym v)])]
+           (-> spec-info
+               (assoc :derivations dgraph)
+               (update :constraints conj constraint)))
+
+         (map? v)
+         (flatten-assignment sctx tenv (vars var-kw) v spec-info)
+
+         :else (throw (ex-info "BUG! Unrecognized assignment type" {:assignment assignment :var-kw var-kw :v v}))))
+     (flatten-spec-constraints sctx tenv vars assignment spec-info)
+     (map (fn [[var-kw v]]
+            [var-kw
+             (if (map? v)
+               (get assignment var-kw {:$type (get spec-vars var-kw)})
+               (get assignment var-kw ::skip))])
+          vars))))
+
+(s/defn ^:private flatten-constraints :- SpecInfo
+  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, assignment :- Assignment, spec-info :- SpecInfo]
+  (->> spec-info
+       ;;(flatten-spec-constraints sctx tenv vars assignment)
+       (flatten-assignment sctx tenv vars assignment)))
 
 (s/defn ^:private spec-ify-assignment :- SpecInfo
   [sctx :- SpecCtx, assignment :- Assignment]
-  (let [{:keys [spec-vars constraints refines-to derivations] :as spec-info} (-> assignment :$type sctx prune-derivations)]
-    (doseq [[var-sym htype] spec-vars]
-      (when-not (#{:Integer :Boolean} htype)
-        (throw (ex-info (format "BUG! Assignments of type '%' not supported yet" htype)
-                        {:var-sym var-sym :type htype}))))
+  (let [{:keys [spec-vars constraints refines-to derivations] :as spec-info} (-> assignment :$type sctx)]
     (when (seq refines-to)
       (throw (ex-info (format "BUG! Cannot spec-ify refinements") {:spec-info spec-info})))
-    (let [tenv (halite-envs/type-env-from-spec (as-spec-env sctx) (dissoc spec-info :derivations))]
-      (->> (dissoc assignment :$type)
-           (sort-by key)
-           (map (fn [[var-kw v]] [(str "$" (name var-kw)) (list '= (symbol var-kw) v)]))
-           (reduce
-            (fn [{:keys [derivations] :as spec-info} constraint]
-              (let [[derivations constraint] (constraint-to-ssa (as-spec-env sctx) tenv derivations constraint)]
-                (-> spec-info
-                    (assoc :derivations derivations)
-                    (update :constraints conj constraint))))
-            {:spec-vars spec-vars
-             :constraints constraints
-             :derivations derivations
-             :refines-to {}})))))
+    (let [senv (as-spec-env sctx)
+          flattened-vars (flatten-vars sctx assignment)
+          new-spec {:spec-vars (->> flattened-vars leaves (into {}))
+                    :constraints []
+                    :refines-to {}
+                    :derivations {}}
+          tenv (halite-envs/type-env-from-spec (as-spec-env sctx) (dissoc new-spec :derivations))]
+      (flatten-constraints sctx tenv flattened-vars assignment new-spec))))
 
 ;;;;;;;;; Converting from SSA back into a more readable form ;;;;;;;;
 
@@ -658,7 +801,7 @@
         (dep/graph))
        (dep/topo-sort)))
 
-(s/defn ^:private form-from-ssa
+(s/defn ^:private form-from-ssa*
   [dgraph :- Derivations, bound? :- #{s/Symbol} id]
   (if (bound? id)
     id
@@ -667,25 +810,51 @@
         (or (integer? form) (boolean? form)) form
         (symbol? form) (if (bound? form)
                          form
-                         (form-from-ssa dgraph bound? form))
+                         (form-from-ssa* dgraph bound? form))
         (seq? form) (cond
-                      (= 'get* (first form)) (list 'get* (form-from-ssa dgraph bound? (second form)) (last form))
-                      :else (apply list (first form) (map (partial form-from-ssa dgraph bound?) (rest form))))
-        (map? form) (-> form (dissoc :$type) (update-vals (partial form-from-ssa dgraph bound?)) (assoc :$type (:$type form)))
+                      (= 'get* (first form)) (list 'get* (form-from-ssa* dgraph bound? (second form)) (last form))
+                      :else (apply list (first form) (map (partial form-from-ssa* dgraph bound?) (rest form))))
+        (map? form) (-> form (dissoc :$type) (update-vals (partial form-from-ssa* dgraph bound?)) (assoc :$type (:$type form)))
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation" {:id id :form form :derivations dgraph}))))))
 
 (s/defn ^:private guards-from-ssa :- {s/Any s/Any}
   "To facilitate testing"
   [dgraph :- Derivations, bound :- #{s/Symbol}, guards :- Guards]
   (-> guards
-      (update-keys (partial form-from-ssa dgraph bound))
+      (update-keys (partial form-from-ssa* dgraph bound))
       (update-vals
        (fn [guards]
          (if (seq guards)
            (->> guards
-                (map #(->> % (map (partial form-from-ssa dgraph bound)) (mk-junct 'and)))
+                (map #(->> % (map (partial form-from-ssa* dgraph bound)) (mk-junct 'and)))
                 (mk-junct 'or))
            true)))))
+
+(s/defn ^:private form-from-ssa
+  [scope :- #{s/Symbol}, derivations :- Derivations id]
+  (let [usage-counts (->> derivations vals (mapcat (comp referenced-derivations)) frequencies)
+        ordering (zipmap (topo-sort derivations) (range))
+        to-bind (->> derivations
+                     (remove
+                      (fn [[id [form htype]]]
+                        (or (contains? scope form)
+                            (integer? form)
+                            (boolean? form)
+                            (<= (get usage-counts id 0) 1))))
+                     (map first)
+                     set)]
+    (cond->> (form-from-ssa* derivations (set/union to-bind scope) id)
+      (seq to-bind)
+      (list 'let
+            (->> to-bind
+                 (sort-by ordering)
+                 (reduce
+                  (fn [[bound-set bindings] id]
+                    [(conj bound-set id)
+                     (conj bindings id (form-from-ssa* derivations bound-set id))])
+                  [scope []])
+                 second
+                 vec)))))
 
 (s/defn ^:private spec-from-ssa :- halite-envs/SpecInfo
   [spec-info :- SpecInfo]
@@ -695,7 +864,7 @@
   ;; the let form is orderd via topological sort
   ;; then we reconstitute the let bindings and constraints,
   ;; and assemble into the final form
-  (let [{:keys [derivations constraints spec-vars] :as spec-info} (prune-derivations spec-info)
+  (let [{:keys [derivations constraints spec-vars] :as spec-info} (prune-derivations spec-info true)
         usage-counts (->> derivations vals (mapcat (comp referenced-derivations)) frequencies)
         ordering (zipmap (topo-sort derivations) (range))
         spec-var-syms (->> spec-vars keys (map symbol) set)
@@ -714,11 +883,11 @@
                       (reduce
                        (fn [[bound-set bindings] id]
                          [(conj bound-set id)
-                          (conj bindings id (form-from-ssa derivations bound-set id))])
+                          (conj bindings id (form-from-ssa* derivations bound-set id))])
                        [spec-var-syms []])
                       second
                       vec)
-        constraint (->> constraints (map (comp (partial form-from-ssa derivations bound) second)) (mk-junct 'and))
+        constraint (->> constraints (map (comp (partial form-from-ssa* derivations bound) second)) (mk-junct 'and))
         constraint (cond->> constraint
                      (seq bindings) (list 'let bindings))]
     (-> spec-info
@@ -764,9 +933,10 @@
                      (build-spec-ctx senv)
                      (fixpoint lower-instance-comparisons)
                      (fixpoint push-gets-into-ifs)
-                     (lower-implicit-constraints))]
+                     (lower-implicit-constraints)
+                     (lower-instance-literals))]
        (->> assignment
             (spec-ify-assignment sctx)
-            (lower-instance-literals-in-spec)
+            ;;(lower-instance-literals-in-spec)
             (spec-from-ssa)
             (to-choco-spec))))))
