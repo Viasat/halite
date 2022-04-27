@@ -385,7 +385,7 @@
         (throw (ex-info "unsupported collection type" {:form expr})))
       (let [pred-type (type-check* (update ctx :tenv extend-scope sym et) body)]
         (when (not= :Boolean pred-type)
-          (throw (ex-info "Body expression in A and E must be boolean" {:form expr}))))))
+          (throw (ex-info "Body expression in 'every?' and 'any?' must be boolean" {:form expr}))))))
   :Boolean)
 
 (s/defn ^:private type-check-if-value :- HaliteType
@@ -543,8 +543,8 @@
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)
                   'concrete? (type-check-concrete? ctx expr)
-                  'A (type-check-quantifier ctx expr)
-                  'E (type-check-quantifier ctx expr)
+                  'every? (type-check-quantifier ctx expr)
+                  'any? (type-check-quantifier ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -643,8 +643,8 @@
                                        inst (eval-in-env subexpr)]
                                    (refines-to? inst kw))
                     'concrete? (concrete? (:senv ctx) (eval-in-env (second expr)))
-                    'E (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
-                    'A (every? identity (eval-quantifier-bools ctx (rest expr)))
+                    'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
+                    'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
                     (apply (:impl (get builtins (first expr)))
                            (map eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)

@@ -12,10 +12,10 @@ add          = mult        | add ('+' | '-') mult
 mult         = prefix      | mult ('*' | '/' | '%') prefix
 prefix       = postfix     | '!' prefix
 
-<postfix>    = primary | get-field | get-index | AE | call-fn | type-method | call-method
+<postfix>    = primary | get-field | get-index | comprehend | call-fn | type-method | call-method
 get-field    = postfix <'.'> symbol
 get-index    = postfix <'['> expr <']'>
-AE           = ('A' | 'E') <'('> symbol <'in'> expr <')'> expr
+comprehend   = ('every?' | 'any?') <'('> symbol <'in'> expr <')'> expr
 call-fn      = symbol <'('> (expr (<','> expr)* <','>? )? <')'>
 type-method  = postfix <'.'> ( 'refineTo' | 'refinesTo?' ) <'('> typename <')'>
 call-method  = postfix <'.'> symbol <'('> (expr (<','> expr)* <','>? )? <')'>

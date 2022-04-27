@@ -104,9 +104,9 @@
     '(str "foo" (str) (str "bar")) :String
     '(subset? #{} #{1 2 3}) :Boolean
     '(subset? #{"nope"} #{1 2 3}) :Boolean
-    '(A [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
-    '(E [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
-    '(E [x #{}] true) :Boolean)
+    '(every? [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
+    '(any? [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
+    '(any? [x #{}] true) :Boolean)
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
@@ -114,9 +114,9 @@
     '(foo) #"function 'foo' not found"
     '(+ 1 "two") #"no matching signature for '\+'"
     '(+ 1) #"no matching signature for '\+'"
-    '(E [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
-    '(E [x #{}] x) #"must be boolean"
-    '(E [x #{}] (< x 5)) #"no matching signature for '<'")
+    '(any? [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
+    '(any? [x #{}] x) #"must be boolean"
+    '(any? [x #{}] (< x 5)) #"no matching signature for '<'")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -149,10 +149,10 @@
     '(str "foo" (str) (str "bar")) "foobar"
     '(subset? #{} #{1 2 3}) true
     '(subset? #{"nope"} #{1 2 3}) false
-    '(A [x #{2 4 6}] (> x 1)) true
-    '(A [x #{2 4 6}] (> x 3)) false
-    '(E [x #{2 4 6}] (> x 5)) true
-    '(E [x #{2 4 6}] (> x 7)) false))
+    '(every? [x #{2 4 6}] (> x 1)) true
+    '(every? [x #{2 4 6}] (> x 3)) false
+    '(any? [x #{2 4 6}] (> x 5)) true
+    '(any? [x #{2 4 6}] (> x 7)) false))
 
 (deftest get-type-checking-tests
   (let [senv (->TestSpecEnv
