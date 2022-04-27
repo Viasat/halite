@@ -244,7 +244,8 @@
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (mk-builtin quot [:Integer :Integer] :Integer)
-     'mod* (mk-builtin mod [:Integer :Integer] :Integer)
+     'mod* (mk-builtin mod [:Integer :Integer] :Integer) ;; deprecated
+     'mod (mk-builtin mod [:Integer :Integer] :Integer)
      'expt (mk-builtin expt [:Integer :Integer] :Integer)
      'str (mk-builtin str [& :String] :String)
      'subset? (mk-builtin set/subset? [[:Set :Any] [:Set :Any]] :Boolean)
@@ -302,7 +303,7 @@
                             (name (first form)) n (count (rest form)))
                     {:form form}))))
 
-(s/defn ^:private type-check-get* :- HaliteType
+(s/defn ^:private type-check-get :- HaliteType
   [ctx :- TypeContext, form]
   (arg-count-exactly 2 form)
   (let [[_ subexpr index] form
@@ -313,21 +314,21 @@
         (when (= :EmptyVec subexpr-type)
           (throw (ex-info "Cannot index into empty vector" {:form form})))
         (when (not= :Integer index-type)
-          (throw (ex-info "Second argument to get* must be an integer when first argument is a vector"
+          (throw (ex-info "Second argument to get must be an integer when first argument is a vector"
                           {:form index :expected :Integer :actual-type index-type})))
         (second subexpr-type))
 
       (spec-type? subexpr-type)
       (let [field-types (->> subexpr-type (lookup-spec (:senv ctx)) :spec-vars)]
         (when-not (and (keyword? index) (bare? index))
-          (throw (ex-info "Second argument to get* must be a variable name (as a keyword) when first argument is an instance"
+          (throw (ex-info "Second argument to get must be a variable name (as a keyword) when first argument is an instance"
                           {:form form})))
         (when-not (contains? field-types index)
           (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) subexpr-type)
                           {:form form})))
         (substitute-instance-type (:senv ctx) (get field-types index)))
 
-      :else (throw (ex-info "First argument to get* must be an instance of known type or non-empty vector"
+      :else (throw (ex-info "First argument to get must be an instance of known type or non-empty vector"
                             {:form form})))))
 
 (s/defn ^:private type-check-equals :- HaliteType
@@ -489,7 +490,7 @@
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     (when-not (subtype? s :Instance)
-      (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr})))
+      (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr :actual s})))
     (when-not (spec-type? kw)
       (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
     (when-not (lookup-spec (:senv ctx) kw)
@@ -525,7 +526,8 @@
                      (type-check-symbol ctx expr))
     (map? expr) (check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
-                  'get* (type-check-get* ctx expr)
+                  'get (type-check-get ctx expr)
+                  'get* (type-check-get ctx expr) ;; deprecated
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
                   'if (type-check-if ctx expr)
@@ -555,7 +557,7 @@
 
 (declare eval-expr*)
 
-(s/defn ^:private eval-get* :- s/Any
+(s/defn ^:private eval-get :- s/Any
   [ctx :- EvalContext, target-expr index]
   (let [target (eval-expr* ctx target-expr)]
     (if (vector? target)
@@ -609,7 +611,8 @@
                        (into (select-keys expr [:$type]))
                        (validate-instance (:senv ctx)))
       (seq? expr) (condp = (first expr)
-                    'get* (apply eval-get* ctx (rest expr))
+                    'get (apply eval-get ctx (rest expr))
+                    'get* (apply eval-get ctx (rest expr)) ;; deprecated
                     '= (apply = (map eval-in-env (rest expr)))
                     'not= (apply not= (map eval-in-env (rest expr)))
                     'if (let [[pred then else] (rest expr)]

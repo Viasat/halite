@@ -98,7 +98,7 @@
     '(inc 12) :Integer
     '(dec 12) :Integer
     '(div 14 3) :Integer
-    '(mod* 5 2) :Integer
+    '(mod 5 2) :Integer
     '(expt 2 8) :Integer
     '(str) :String
     '(str "foo" (str) (str "bar")) :String
@@ -144,7 +144,7 @@
     '(inc 12) 13
     '(dec 12) 11
     '(div 14 3) 4
-    '(mod* 5 3) 2
+    '(mod 5 3) 2
     '(expt 2 8) 256
     '(str "foo" (str) (str "bar")) "foobar"
     '(subset? #{} #{1 2 3}) true
@@ -154,7 +154,7 @@
     '(E [x #{2 4 6}] (> x 5)) true
     '(E [x #{2 4 6}] (> x 7)) false))
 
-(deftest get*-type-checking-tests
+(deftest get-type-checking-tests
   (let [senv (->TestSpecEnv
               {:ws/A$v1 {:spec-vars {:x :Integer}}
                :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
@@ -168,25 +168,26 @@
          (= etype (halite/type-check senv tenv expr))
 
       'a :ws/A$v1   ; warm-up: symbol lookup
-      '(get* a :x) :Integer
-      '(get* b :a) :ws/A$v1
-      '(get* (get* b :a) :x) :Integer
-      '(get* xs (+ 1 2)) :String
-      '(get* (get* (get* (get* c :bs) 2) :a) :x) :Integer)
+      '(get a :x) :Integer
+      '(get b :a) :ws/A$v1
+      '(get (get b :a) :x) :Integer
+      '(get xs (+ 1 2)) :String
+      '(get (get (get (get c :bs) 2) :a) :x) :Integer
+      '(get* xs (+ 1 2)) :String) ;; deprecated
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
       'foo #"Undefined"
-      '(get*) #"Wrong number of arguments"
-      '(get* [] 1) #"Cannot index into empty vector"
-      '(get* xs (< 1 2)) #"Second argument to get\* must be an integer"
-      '(get* a :foo/bar) #"must be a variable name"
-      '(get* a 12) #"must be a variable name"
-      '(get* a :b) #"No such variable"
-      '(get* #{} 1) #"must be an instance of known type or non-empty vector")))
+      '(get) #"Wrong number of arguments"
+      '(get [] 1) #"Cannot index into empty vector"
+      '(get xs (< 1 2)) #"Second argument to get must be an integer"
+      '(get a :foo/bar) #"must be a variable name"
+      '(get a 12) #"must be a variable name"
+      '(get a :b) #"No such variable"
+      '(get #{} 1) #"must be an instance of known type or non-empty vector")))
 
-(deftest get*-eval-tests
+(deftest get-eval-tests
   (let [c {:$type :ws/C$v1
            :bs (mapv (fn [x]
                        {:$type :ws/B$v1
@@ -202,9 +203,10 @@
     (are [expr v]
          (= v (halite/eval-expr senv tenv env expr))
       'c c
-      '(get* c :bs) (get c :bs)
-      '(get* (get* c :bs) 3) (get-in c [:bs 2])
-      '(get* (get* (get* c :bs) 3) :a) (get-in c [:bs 2 :a]))))
+      '(get c :bs) (get c :bs)
+      '(get* c :bs) (get c :bs) ;; deprecated
+      '(get (get c :bs) 3) (get-in c [:bs 2])
+      '(get (get (get c :bs) 3) :a) (get-in c [:bs 2 :a]))))
 
 (deftest equality-tests
   (are [expr etype]
@@ -292,7 +294,7 @@
       {:$type :ws/Maybe$v1} :ws/Maybe$v1
       {:$type :ws/Maybe$v1 :x 1} :ws/Maybe$v1
       {:$type :ws/Maybe$v1 :x 'no-value-} :ws/Maybe$v1
-      '(get* m :x) [:Maybe :Integer]
+      '(get m :x) [:Maybe :Integer]
       '(if-value- x (+ x 1) 1) :Integer
       '(let [x no-value-] (if-value- x x 1)) :Integer
       '(if-value- no-value- 42 "foo") :String
@@ -314,7 +316,7 @@
 
         'no-value- :Unset
         {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
-        '(get* m :x) :Unset
+        '(get m :x) :Unset
         '(if-value- x x 12) 12
         '(let [y no-value-] (if-value- y "foo" true)) true
         '(some? x) false
@@ -513,7 +515,7 @@
                       :constraints '[["boundedX" (< x 10)]]
                       :refines-to {:ws/D {:clauses '[["asD" {:x (+ 1 (* 2 x))}]]}}}
                :ws/D {:spec-vars {:x :Integer}
-                      :constraints '[["xIsOdd" (= 1 (mod* x 2))]]}
+                      :constraints '[["xIsOdd" (= 1 (mod x 2))]]}
                :ws/E {:spec-vars {}}})]
 
     (let [invalid-a {:$type :ws/A :x -10}
@@ -584,7 +586,7 @@
       {:$type :ws/A2 :a 1 :b 2} :ws/A2
       {:$type :ws/B :a {:$type :ws/A1}} :ws/B
       {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :ws/B
-      '(get* {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :a) :Instance
+      '(get {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :a) :Instance
       'ax :Instance
       '(= ax ay) :Boolean
       '(= b1 ax) :Boolean
@@ -602,7 +604,7 @@
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
 
       {:$type :ws/A2 :a 7 :b 8} #"invalid instance"
-      '(refine-to (get* {:$type :ws/B :a {:$type :ws/D}} :a) :ws/A) #"No active refinement path from 'ws/D' to 'ws/A'")))
+      '(refine-to (get {:$type :ws/B :a {:$type :ws/D}} :a) :ws/A) #"No active refinement path from 'ws/D' to 'ws/A'")))
 
 (deftest test-refines-to?
   (let [senv (->TestSpecEnv
@@ -695,12 +697,12 @@
                                    :b :Integer}
                        :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
                :ws/B {:spec-vars {:a :ws/A}
-                      :constraints '[["notFive" (not= 5 (get* (refine-to a :ws/A) :x))]]}
+                      :constraints '[["notFive" (not= 5 (get (refine-to a :ws/A) :x))]]}
                :ws/C {:spec-vars {:as [:Vec :ws/A]}}
                :ws/D {:spec-vars {}}
                :ws/Invalid {:spec-vars {:a :ws/A}
-                            ;; a is typed as :Instance, so (get* a :x) doesn't type check
-                            :constraints '[["notFive" (not= 5 (get* a :x))]]}})
+                            ;; a is typed as :Instance, so (get a :x) doesn't type check
+                            :constraints '[["notFive" (not= 5 (get a :x))]]}})
         tenv2 (-> tenv
                   (halite-envs/extend-scope 'ax :Instance)
                   (halite-envs/extend-scope 'ay :Instance)
@@ -716,13 +718,13 @@
          (= etype (halite/type-check senv tenv2 expr))
 
       {:$type :ws/A :x 5} :ws/A
-      '(get* b1 :a) :Instance
-      '(get* c :as) [:Vec :Instance]
+      '(get b1 :a) :Instance
+      '(get c :as) [:Vec :Instance]
       {:$type :ws/B :a {:$type :ws/A1}} :ws/B
       {:$type :ws/B :a {:$type :ws/D}} :ws/B
       {:$type :ws/C :as [{:$type :ws/D} {:$type :ws/A1}]} :ws/C
-      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/D})} :ws/C
-      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/A :x 9})} :ws/C)
+      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/D})} :ws/C
+      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/A :x 9})} :ws/C)
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
@@ -734,12 +736,12 @@
 
       {:$type :ws/B :a {:$type :ws/A :x 4}} #"cannot contain abstract value"
       {:$type :ws/B :a {:$type :ws/D}} #"No active refinement path from 'ws/D' to 'ws/A'"
-      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/D})} #"No active refinement path from 'ws/D' to 'ws/A'"
-      '{:$type :ws/C :as (conj (get* c :as) {:$type :ws/A :x 9})} #"instance cannot contain abstract value")
+      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/D})} #"No active refinement path from 'ws/D' to 'ws/A'"
+      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/A :x 9})} #"instance cannot contain abstract value")
 
     (are [expr v]
          (= v (halite/eval-expr senv tenv2 env2 expr))
 
-      '(conj (get* c :as) {:$type :ws/D}) [{:$type :ws/A1} {:$type :ws/A2 :a 2 :b 7} {:$type :ws/D}]
+      '(conj (get c :as) {:$type :ws/D}) [{:$type :ws/A1} {:$type :ws/A2 :a 2 :b 7} {:$type :ws/D}]
       {:$type :ws/B :a {:$type :ws/A1}} {:$type :ws/B :a {:$type :ws/A1}})))
 
