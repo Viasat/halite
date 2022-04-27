@@ -418,6 +418,22 @@
                                  (get* {:$type :ws/B :bn 1} :bn)))]]
              (-> sctx push-gets-into-ifs :ws/A spec-from-ssa :constraints))))))
 
+(deftest test-push-gets-into-nested-ifs
+  (binding [h2c/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:b1 :ws/B, :b2 :ws/B, :b3 :ws/B, :b4 :ws/B, :a :Boolean, :b :Boolean}
+                   :constraints [["a1" (= 12 (get* (if a (if b b1 b2) (if b b3 b4)) :n))]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:n :Integer}
+                   :constraints []
+                   :refines-to {}}})
+          sctx (build-spec-ctx senv :ws/A)]
+      (is (= '[["$all" (= 12 (if a (if b (get* b1 :n) (get* b2 :n)) (if b (get* b3 :n) (get* b4 :n))))]]
+             (->> sctx (fixpoint push-gets-into-ifs)
+                 :ws/A spec-from-ssa :constraints))))))
+
 (def lower-instance-literals-in-spec #'h2c/lower-instance-literals-in-spec)
 
 (deftest test-lower-instance-literals-in-spec

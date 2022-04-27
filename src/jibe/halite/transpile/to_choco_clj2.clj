@@ -476,7 +476,6 @@
 
 (s/defn ^:private push-gets-into-ifs-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  ;; TODO: Make this work in the presence of composition
   (let [senv (as-spec-env sctx)
         tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
         ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]
@@ -763,8 +762,8 @@
      (let [spec-id (:$type assignment)
            sctx (->> spec-id
                      (build-spec-ctx senv)
-                     (lower-instance-comparisons)
-                     (push-gets-into-ifs)
+                     (fixpoint lower-instance-comparisons)
+                     (fixpoint push-gets-into-ifs)
                      (lower-implicit-constraints))]
        (->> assignment
             (spec-ify-assignment sctx)
