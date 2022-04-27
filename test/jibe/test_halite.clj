@@ -205,8 +205,9 @@
       'c c
       '(get c :bs) (get c :bs)
       '(get* c :bs) (get c :bs) ;; deprecated
-      '(get (get c :bs) 3) (get-in c [:bs 2])
-      '(get (get (get c :bs) 3) :a) (get-in c [:bs 2 :a]))))
+      '(get (get c :bs) 2) (get-in c [:bs 2])
+      '(get* (get* c :bs) 3) (get-in c [:bs 2]) ;; deprecated
+      '(get (get (get c :bs) 2) :a) (get-in c [:bs 2 :a]))))
 
 (deftest equality-tests
   (are [expr etype]

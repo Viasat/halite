@@ -561,7 +561,14 @@
   [ctx :- EvalContext, target-expr index]
   (let [target (eval-expr* ctx target-expr)]
     (if (vector? target)
-      (nth target (dec (eval-expr* ctx index)))
+      (nth target (eval-expr* ctx index))
+      (get target index :Unset))))
+
+(s/defn ^:private eval-get* :- s/Any ;; deprecated
+  [ctx :- EvalContext, target-expr index]
+  (let [target (eval-expr* ctx target-expr)]
+    (if (vector? target)
+      (nth target (dec (eval-expr* ctx index))) ;; 1-based index
       (get target index :Unset))))
 
 (s/defn ^:private eval-let :- s/Any
@@ -612,7 +619,7 @@
                        (validate-instance (:senv ctx)))
       (seq? expr) (condp = (first expr)
                     'get (apply eval-get ctx (rest expr))
-                    'get* (apply eval-get ctx (rest expr)) ;; deprecated
+                    'get* (apply eval-get* ctx (rest expr)) ;; deprecated
                     '= (apply = (map eval-in-env (rest expr)))
                     'not= (apply not= (map eval-in-env (rest expr)))
                     'if (let [[pred then else] (rest expr)]
