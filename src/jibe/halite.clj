@@ -468,16 +468,18 @@
                           {:form elem}))))
       (reduce meet base-type (map #(vector col-type %) elem-types)))))
 
-(s/defn ^:private type-check-into :- HaliteType
+(s/defn ^:private type-check-concat :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
-  (let [[s t] (mapv (partial type-check* ctx) (rest expr))]
+  (let [op (first expr)
+        [s t] (mapv (partial type-check* ctx) (rest expr))]
     (when-not (subtype? s :Coll)
-      (throw (ex-info "First argument to 'into' must be a set or vector" {:form expr})))
+      (throw (ex-info (format "First argument to '%s' must be a set or vector" op) {:form expr})))
     (when-not (subtype? t :Coll)
-      (throw (ex-info "Second argument to 'into' must be a set or vector" {:form expr})))
+      (throw (ex-info (format "Second argument to '%s' must be a set or vector" op) {:form expr})))
     (when (and (subtype? s [:Vec :Any]) (not (subtype? t [:Vec :Any])))
-      (throw (ex-info "When first argument to 'into' is a vector, second argument must also be a vector" {:form expr})))
+      (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
+                      {:form expr})))
     (if (#{:EmptySet :EmptyVec} t)
       s
       (let [elem-type (second t)
@@ -539,7 +541,8 @@
                   'first (type-check-first ctx expr)
                   'rest (type-check-rest ctx expr)
                   'conj (type-check-conj ctx expr)
-                  'into (type-check-into ctx expr)
+                  'into (type-check-concat ctx expr) ;; deprecated
+                  'concat (type-check-concat ctx expr)
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)
                   'concrete? (type-check-concrete? ctx expr)
@@ -637,7 +640,8 @@
                     'rest (let [arg (eval-in-env (second expr))]
                             (if (empty? arg) [] (subvec arg 1)))
                     'conj (apply conj (map eval-in-env (rest expr)))
-                    'into (apply into (map eval-in-env (rest expr)))
+                    'concat (apply into (map eval-in-env (rest expr)))
+                    'into (apply into (map eval-in-env (rest expr))) ;; deprecated
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]

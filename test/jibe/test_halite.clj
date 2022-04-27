@@ -424,11 +424,12 @@
     '(conj [] "one" "two") [:Vec :String]
     '(conj [1] "two") [:Vec :Any]
     '(conj #{} "one") [:Set :String]
-    '(into [] []) :EmptyVec
-    '(into [1 2] [3]) [:Vec :Integer]
-    '(into #{} []) :EmptySet
-    '(into #{} #{}) :EmptySet
-    '(into #{"foo"} ["bar"]) [:Set :String]
+    '(concat [] []) :EmptyVec
+    '(concat [1 2] [3]) [:Vec :Integer]
+    '(into [1 2] [3]) [:Vec :Integer] ;; deprecated
+    '(concat #{} []) :EmptySet
+    '(concat #{} #{}) :EmptySet
+    '(concat #{"foo"} ["bar"]) [:Set :String]
     '(sort []) :EmptyVec
     '(sort #{}) :EmptyVec
     '(sort [1 2]) [:Vec :Integer]
@@ -445,10 +446,11 @@
     '(conj) #"Wrong number of arguments"
     '(conj []) #"Wrong number of arguments"
     '(conj 1 2) #"must be a set or vector"
-    '(into) #"Wrong number of arguments"
-    '(into 1) #"Wrong number of arguments"
-    '(into 1 2) #"must be a set or vector"
-    '(into [] #{}) #"second argument must also be a vector"
+    '(concat) #"Wrong number of arguments"
+    '(concat 1) #"Wrong number of arguments"
+    '(concat 1 2) #"must be a set or vector"
+    '(concat [] #{}) #"second argument must also be a vector"
+    '(into [] #{}) #"second argument must also be a vector" ;; deprecated
     '(sort) #"no matching signature"
     '(sort 1) #"no matching signature")
 
@@ -464,11 +466,12 @@
     '(conj [1] "two") [1 "two"]
     '(conj [1] 2 3 4) [1 2 3 4]
     '(conj #{1} 2 3 2 4) #{1 2 3 4}
-    '(into [] []) []
-    '(into [1 2] [1 2]) [1 2 1 2]
-    '(into #{} #{}) #{}
-    '(into #{} []) #{}
-    '(into #{1 2} [1 2 3]) #{1 2 3}))
+    '(concat [] []) []
+    '(concat [1 2] [1 2]) [1 2 1 2]
+    '(concat #{} #{}) #{}
+    '(concat #{} []) #{}
+    '(concat #{1 2} [1 2 3]) #{1 2 3}
+    '(into #{1 2} [1 2 3]) #{1 2 3})) ;; deprecated
 
 (deftest test-constraint-validation
   (let [senv (update senv :specs merge
