@@ -10,17 +10,25 @@
             [schema.core :as s]
             [viasat.choco-clj :as choco-clj]))
 
-(declare Assignment)
+(declare Bound)
 
-(s/defschema AssignmentVal
+(s/defschema SpecBound
+  {:$type halite-types/NamespacedKeyword
+   halite-types/BareKeyword (s/recursive #'Bound)})
+
+(s/defschema AtomBound
   (s/cond-pre
    s/Int
    s/Bool
-   (s/recursive #'Assignment)))
+   {:$in (s/cond-pre
+          #{(s/cond-pre s/Int s/Bool)}
+          [(s/one s/Int :lower) (s/one s/Int :upper)])}))
 
-(s/defschema Assignment
-  {:$type halite-types/NamespacedKeyword
-   halite-types/BareKeyword AssignmentVal})
+(s/defschema Bound
+  (s/conditional
+   :$type SpecBound
+   :else AtomBound))
+
 
 ;;;;;;;;;;;;;;;; SSA Pass ;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -631,37 +639,43 @@
   (let [roots (->> constraints (map second) set)]
     (update spec-info :derivations prune-dgraph roots prune-negations?)))
 
-;;;;;;;;; Assignment Spec-ification ;;;;;;;;;;;;;;;;
+;;;;;;;;; Bound Spec-ification ;;;;;;;;;;;;;;;;
 
 (s/defschema ^:private FlattenedVar
-  [(s/one halite-types/BareKeyword :var-kw) (s/one (s/enum :Boolean :Integer) :type)])
+  [(s/one halite-types/BareKeyword :var-kw)
+   (s/one (s/enum :Boolean :Integer) :type)])
 
 (s/defschema ^:private FlattenedVars
   {halite-types/BareKeyword (s/cond-pre FlattenedVar (s/recursive #'FlattenedVars))})
 
 (s/defn ^:private flatten-vars :- FlattenedVars
-  ([sctx :- SpecCtx, assignment :- Assignment]
-   (flatten-vars sctx [] "" assignment))
-  ([sctx :- SpecCtx, parent-spec-ids :- [halite-types/NamespacedKeyword], prefix :- s/Str, assignment :- Assignment]
+  ([sctx :- SpecCtx, spec-bound :- SpecBound]
+   (flatten-vars sctx [] "" spec-bound))
+  ([sctx :- SpecCtx, parent-spec-ids :- [halite-types/NamespacedKeyword], prefix :- s/Str, spec-bound :- SpecBound]
    (reduce
     (fn [vars [var-kw htype]]
       (cond
         (#{:Integer :Boolean} htype)
         (assoc vars var-kw
-               [(keyword (str prefix (name var-kw))) htype])
+               [(keyword (str prefix (name var-kw)))
+                (if-let [val-bound (some-> spec-bound var-kw :$in)]
+                  (if (and (set? val-bound) (= :Integer htype) (< 1 (count val-bound)))
+                    (throw (ex-info "TODO: enumerated bounds" {:val-bound val-bound :var-kw var-kw})) #_val-bound
+                    htype)
+                  htype)])
 
         (halite-types/spec-type? htype)
         (cond-> vars
-          (or (contains? assignment var-kw)
+          (or (contains? spec-bound var-kw)
               (every? #(not= % htype) parent-spec-ids))
           (assoc var-kw
-                 (flatten-vars sctx (conj parent-spec-ids (:$type assignment)) (str prefix (name var-kw) "|")
-                               (get assignment var-kw {:$type htype}))))
+                 (flatten-vars sctx (conj parent-spec-ids (:$type spec-bound)) (str prefix (name var-kw) "|")
+                               (get spec-bound var-kw {:$type htype}))))
 
-        :else (throw (ex-info (format "BUG! Assignments of type '%' not supported yet" htype)
+        :else (throw (ex-info (format "BUG! Variables of type '%' not supported yet" htype)
                               {:var-kw var-kw :type htype}))))
     {}
-    (-> assignment :$type sctx :spec-vars))))
+    (-> spec-bound :$type sctx :spec-vars))))
 
 (defn- leaves [m]
   (if (map? m)
@@ -714,9 +728,9 @@
     :else (throw (ex-info "BUG! Cannot flatten expression" {:form expr :rename-scope rename-scope}))))
 
 (s/defn ^:private flatten-spec-constraints
-  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, assignment :- Assignment, spec-info :- SpecInfo]
+  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, spec-bound :- SpecBound, spec-info :- SpecInfo]
   (let [senv (as-spec-env sctx)
-        spec-to-inline (-> assignment :$type sctx)
+        spec-to-inline (-> spec-bound :$type sctx)
         old-scope (->> spec-to-inline :spec-vars keys (map symbol) set)]
     (reduce
      (fn [{:keys [derivations] :as spec-info} [cname id]]
@@ -735,53 +749,74 @@
      spec-info
      (:constraints spec-to-inline))))
 
-(s/defn ^:private flatten-assignment :- SpecInfo
-  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, assignment :- Assignment, spec-info :- SpecInfo]
+(s/defn ^:private flatten-spec-bound :- SpecInfo
+  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, spec-bound :- SpecBound, spec-info :- SpecInfo]
   (let [senv (as-spec-env sctx)
-        spec-vars (-> assignment :$type sctx :spec-vars)]
+        spec-vars (-> spec-bound :$type sctx :spec-vars)
+        add-equality-constraint
+        ,,(fn [{:keys [derivations] :as spec-info} var-kw v]
+            (let [var-sym (->> var-kw vars first symbol)
+                  [dgraph constraint] (constraint-to-ssa senv tenv derivations ["$=" (list '= var-sym v)])]
+              (-> spec-info
+                  (assoc :derivations dgraph)
+                  (update :constraints conj constraint))))]
     (reduce
      (fn [{:keys [derivations] :as spec-info} [var-kw v]]
        (cond
          (= v ::skip) spec-info
          
          (or (integer? v) (boolean? v))
-         (let [var-sym (->> var-kw vars first symbol)
-               [dgraph constraint] (constraint-to-ssa senv tenv derivations ["$=" (list '= var-sym v)])]
-           (-> spec-info
-               (assoc :derivations dgraph)
-               (update :constraints conj constraint)))
+         (add-equality-constraint spec-info var-kw v)
 
          (map? v)
-         (flatten-assignment sctx tenv (vars var-kw) v spec-info)
+         (condp #(contains? %2 %1) v
+           :$type (flatten-spec-bound sctx tenv (vars var-kw) v spec-info)
+           :$in (let [val-bound (:$in v)]
+                  (cond
+                    (set? val-bound)
+                    (cond-> spec-info
+                      (= 1 (count val-bound)) (add-equality-constraint var-kw (first val-bound)))
 
-         :else (throw (ex-info "BUG! Unrecognized assignment type" {:assignment assignment :var-kw var-kw :v v}))))
-     (flatten-spec-constraints sctx tenv vars assignment spec-info)
+                    (vector? val-bound) 
+                    (let [[lower upper] val-bound
+                          var-sym (->> var-kw vars first symbol)
+                          [dgraph constraint] (constraint-to-ssa
+                                               senv tenv derivations
+                                               ["$range" (list 'and
+                                                               (list '<= lower var-sym)
+                                                               (list '<= var-sym upper))])]
+                      (-> spec-info
+                          (assoc :derivations dgraph)
+                          (update :constraints conj constraint)))
+                    :else (throw (ex-info "Not a valid bound" {:bound v}))))
+           :else (throw (ex-info "Not a valid bound" {:bound v})))
+
+         :else (throw (ex-info "BUG! Unrecognized spec-bound type" {:spec-bound spec-bound :var-kw var-kw :v v}))))
+     (flatten-spec-constraints sctx tenv vars spec-bound spec-info)
      (map (fn [[var-kw v]]
             [var-kw
              (if (map? v)
-               (get assignment var-kw {:$type (get spec-vars var-kw)})
-               (get assignment var-kw ::skip))])
+               (get spec-bound var-kw {:$type (get spec-vars var-kw)})
+               (get spec-bound var-kw ::skip))])
           vars))))
 
 (s/defn ^:private flatten-constraints :- SpecInfo
-  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, assignment :- Assignment, spec-info :- SpecInfo]
-  (->> spec-info
-       ;;(flatten-spec-constraints sctx tenv vars assignment)
-       (flatten-assignment sctx tenv vars assignment)))
+  [sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, spec-bound :- SpecBound, spec-info :- SpecInfo]
+  (flatten-spec-bound sctx tenv vars spec-bound spec-info))
 
-(s/defn ^:private spec-ify-assignment :- SpecInfo
-  [sctx :- SpecCtx, assignment :- Assignment]
-  (let [{:keys [spec-vars constraints refines-to derivations] :as spec-info} (-> assignment :$type sctx)]
+(s/defn ^:private spec-ify-bound :- SpecInfo
+  [sctx :- SpecCtx, spec-bound :- SpecBound]
+  (let [{:keys [spec-vars constraints refines-to derivations] :as spec-info} (-> spec-bound :$type sctx)]
     (when (seq refines-to)
       (throw (ex-info (format "BUG! Cannot spec-ify refinements") {:spec-info spec-info})))
     (let [senv (as-spec-env sctx)
-          flattened-vars (flatten-vars sctx assignment)
+          flattened-vars (flatten-vars sctx spec-bound)
           new-spec {:spec-vars (->> flattened-vars leaves (into {}))
                     :constraints []
                     :refines-to {}
                     :derivations {}}
           tenv (halite-envs/type-env-from-spec (as-spec-env sctx) (dissoc new-spec :derivations))]
-      (flatten-constraints sctx tenv flattened-vars assignment new-spec))))
+      (flatten-constraints sctx tenv flattened-vars spec-bound new-spec))))
 
 ;;;;;;;;; Converting from SSA back into a more readable form ;;;;;;;;
 
@@ -913,22 +948,19 @@
    {:default-int-bounds [-1000 1000]}))
 
 (s/defn transpile :- choco-clj/ChocoSpec
-  "Transpile the assignment into a choco-clj spec that encodes constraints that must
-  hold for any valid completion of the assignment, according to the specification.
-  The choco-clj spec will describe conditions that are necessary for validity, but may not describe
-  conditions that are sufficient to guarantee validity."
-  ([senv :- (s/protocol halite-envs/SpecEnv), assignment :- Assignment]
-   (transpile senv assignment default-options))
-  ([senv :- (s/protocol halite-envs/SpecEnv), assignment :- Assignment, opts :- Opts]
+  "Transpile the spec-bound into a semantically equivalent choco-clj spec."
+  ([senv :- (s/protocol halite-envs/SpecEnv), spec-bound :- SpecBound]
+   (transpile senv spec-bound default-options))
+  ([senv :- (s/protocol halite-envs/SpecEnv), spec-bound :- SpecBound, opts :- Opts]
    (binding [*next-id* (atom 0)]
-     (let [spec-id (:$type assignment)
+     (let [spec-id (:$type spec-bound)
            sctx (->> spec-id
                      (build-spec-ctx senv)
                      (fixpoint lower-instance-comparisons)
                      (fixpoint push-gets-into-ifs)
                      (lower-implicit-constraints)
                      (fixpoint cancel-get-of-instance-literal))]
-       (->> assignment
-            (spec-ify-assignment sctx)
+       (->> spec-bound
+            (spec-ify-bound sctx)
             (spec-from-ssa)
             (to-choco-spec))))))

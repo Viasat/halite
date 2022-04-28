@@ -10,25 +10,6 @@
             [schema.core :as s]
             [viasat.choco-clj :as choco-clj]))
 
-(declare Bound)
-
-(s/defschema SpecBound
-  {:$type halite-types/NamespacedKeyword
-   halite-types/BareKeyword (s/recursive #'Bound)})
-
-(s/defschema AtomBound
-  (s/cond-pre
-   s/Int
-   s/Bool
-   {:$in (s/cond-pre
-          #{(s/cond-pre s/Int s/Bool)}
-          [(s/one s/Int :lower) (s/one s/Int :upper)])}))
-
-(s/defschema Bound
-  (s/conditional
-   :$type SpecBound
-   :else AtomBound))
-
 (s/defschema ^:private UnflattenedChocoBounds
   {halite-types/BareKeyword (s/cond-pre choco-clj/VarBound (s/recursive #'UnflattenedChocoBounds))})
 
@@ -49,13 +30,13 @@
 (defn- decompose-var-name [sym]
   (-> sym name (str/split #"\|") (->> (map keyword))))
 
-(s/defn ^:private atom-bound :- AtomBound
+(s/defn ^:private atom-bound :- h2c/AtomBound
   [choco-bound :- choco-clj/VarBound]
   (if (or (vector? choco-bound) (set? choco-bound))
     {:$in choco-bound}
     choco-bound))
 
-(s/defn ^:private spec-bound* :- SpecBound
+(s/defn ^:private spec-bound* :- h2c/SpecBound
   [senv :- (s/protocol halite-envs/SpecEnv), spec-id :- halite-types/NamespacedKeyword, unflattened-bounds :- UnflattenedChocoBounds]
   (let [{:keys [spec-vars]} (halite-envs/lookup-spec senv spec-id)]
     (reduce
@@ -72,7 +53,7 @@
      {:$type spec-id}
      spec-vars)))
 
-(s/defn ^:private spec-bound :- SpecBound
+(s/defn ^:private spec-bound :- h2c/SpecBound
   [senv :- (s/protocol halite-envs/SpecEnv), spec-id :- halite-types/NamespacedKeyword, choco-bounds :- choco-clj/VarBounds]
   (-> choco-bounds
       (update-keys decompose-var-name)
@@ -82,9 +63,10 @@
 (s/defschema Opts
   {:default-int-bounds [(s/one s/Int :lower) (s/one s/Int :upper)]})
 
-(s/defn propagate :- SpecBound
-  [senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, assignment :- h2c/Assignment]
-  (let [choco-spec (h2c/transpile senv assignment)
-        bound (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
-                (choco-clj/propagate choco-spec))]
-    (spec-bound senv (:$type assignment) bound)))
+(s/defn propagate :- h2c/SpecBound
+  [senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, initial-bound :- h2c/SpecBound]
+  (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
+    (->> initial-bound
+         (h2c/transpile senv)
+         (choco-clj/propagate)
+         (spec-bound senv (:$type initial-bound)))))

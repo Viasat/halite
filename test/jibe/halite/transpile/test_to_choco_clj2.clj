@@ -457,9 +457,9 @@
                         (= (get* (get* b :c) :cn) 12))]]
              (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A spec-from-ssa :constraints))))))
 
-(def spec-ify-assignment #'h2c/spec-ify-assignment)
+(def spec-ify-bound #'h2c/spec-ify-bound)
 
-(deftest test-spec-ify-assignment
+(deftest test-spec-ify-bound
   (binding [h2c/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
@@ -480,12 +480,12 @@
                    :refines-to {}}})
           sctx (build-spec-ctx senv :ws/A)]
 
-      (are [b-assignment constraint]
+      (are [b-bound constraint]
           (= {:spec-vars {:bn :Integer, :bp :Boolean}
               :constraints
               [["$all" constraint]]
               :refines-to {}}
-             (->> b-assignment (spec-ify-assignment sctx) spec-from-ssa))
+             (->> b-bound (spec-ify-bound sctx) spec-from-ssa))
 
         {:$type :ws/B} '(if bp (<= bn 10) (<= 10 bn))
         {:$type :ws/B :bn 12} '(and (if bp (<= bn 10) (<= 10 bn))
@@ -500,7 +500,7 @@
                            (<= b|bn 10)
                            (<= 10 b|bn)))]]
                :refines-to {}}
-             (->> {:$type :ws/A} (spec-ify-assignment sctx) spec-from-ssa)))
+             (->> {:$type :ws/A} (spec-ify-bound sctx) spec-from-ssa)))
 
       (is (= '{:spec-vars {:b|bn :Integer :b|bp :Boolean
                            :c|cn :Integer
@@ -522,7 +522,7 @@
              (->> '{:$type :ws/A
                     :b {:$type :ws/B :bp true}
                     :c {:$type :ws/C :a {:$type :ws/A}}}
-                  (spec-ify-assignment sctx)
+                  (spec-ify-bound sctx)
                   spec-from-ssa)))
       )))
 
@@ -604,7 +604,7 @@
                   (if (not ab) (<= (div 10 12) 10) true)))}}
            (h2c/transpile senv {:$type :ws/A})))))
 
-(deftest test-transpile-assignment-with-composition
+(deftest test-transpile-bound-with-composition
   (testing "simple composition"
     (let [senv (halite-envs/spec-env
                 '{:ws/A {:spec-vars {:x :Integer, :y :Integer}
@@ -650,7 +650,7 @@
 
   (testing "composition of recursive specs"
     ;; Note that due to unconditional recursion there are no finite valid instances of A or C!
-    ;; That doesn't prevent us from making the idea of an assignment completion finite and
+    ;; That doesn't prevent us from making the idea of a bound on a recursive spec finite and
     ;; well-defined.
     (let [senv (halite-envs/spec-env
                 '{:ws/A
@@ -669,14 +669,27 @@
                   {:spec-vars {:a :ws/A :cn :Integer}
                    :constraints []
                    :refines-to {}}})]
-      (are [assignment choco-spec]
-          (= choco-spec (h2c/transpile senv assignment))
+      (are [bound choco-spec]
+          (= choco-spec (h2c/transpile senv bound))
 
         {:$type :ws/A}
         '{:vars {b|bn :Int, b|bp :Bool, c|cn :Int}
           :constraints
           #{(and (= b|bn c|cn)
                  (if b|bp (<= b|bn 10) (<= 10 b|bn)))}}
+
+        {:$type :ws/A :b {:$type :ws/B :bn {:$in [2 8]}}}
+        '{:vars {b|bn :Int, b|bp :Bool, c|cn :Int}
+          :constraints
+          #{(and
+             (= b|bn c|cn)
+             (if b|bp (<= b|bn 10) (<= 10 b|bn))
+             (and (<= 2 b|bn) (<= b|bn 8)))}}
+
+        #_{:$type :ws/A :b {:$type :ws/B :bn {:$in #{3 4 5}}}}
+        #_'{:vars {b|bn :Int, b|bp :Bool, c|cn :Int}
+          :constraints
+          nil}
 
         {:$type :ws/A
          :c {:$type :ws/C :cn 14}}
@@ -735,14 +748,14 @@
                 $74 (- $63 2)]
             (and
              true
-             (and (< 0 $63) (= false (= (mod* $63 2) 1)))
-             (and (< 0 $74) (= true (= (mod* $74 2) 1)))
-             (and (< 0 12) (= true (= (mod* 12 2) 1)))))}}
+             (and (< 0 $63) (= false (= (mod $63 2) 1)))
+             (and (< 0 $74) (= true (= (mod $74 2) 1)))
+             (and (< 0 12) (= true (= (mod 12 2) 1)))))}}
 
       '(get* {:$type :ws/Simpler :x (get* {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
       '{:vars {}
         :constraints
-        #{(let [$52 (= (mod* 14 2) 1)
+        #{(let [$52 (= (mod 14 2) 1)
                 $47 (< 0 14)]
             (and true
                  (and $47 (= false $52))
@@ -755,4 +768,4 @@
            (not= 10 12)
            (and (= 12 12)
                 (and (< 0 12)
-                     (= false (= (mod* 12 2) 1)))))}})))
+                     (= false (= (mod 12 2) 1)))))}})))
