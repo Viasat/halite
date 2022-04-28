@@ -69,6 +69,15 @@
 (s/defschema Derivations
   {DerivationName Derivation})
 
+(s/defn ^:private deref-id :- Derivation
+  "Return the derivation in dgraph referenced by id, possibly
+  indirectly."
+  [dgraph :- Derivations id]
+  (loop [[form :as d] (dgraph id)]
+    (if (nil? (s/check DerivationName form))
+      (recur (dgraph form))
+      d)))
+
 (s/defn ^:private reachable-derivations :- #{DerivationName}
   "Return the set of derivation nodes transitively reachable from the given id. For reachable boolean
   nodes, their negation nodes are included when include-negations? is true."
@@ -567,54 +576,34 @@
     (reduce
      (fn [sctx' spec-id]
        (assoc sctx' spec-id (lower-implicit-constraints-in-spec sctx' (sctx spec-id))))
-     {}
+     ;; We start with the original spec context, but we process specs in an order such that
+     ;; any instance literal getting its implicit constraints inlined is of a spec that has already
+     ;; been processed.
+     sctx
      (->> dg (dep/topo-sort) (remove #(= :nothing %))))))
 
-(s/defn ^:private lower-instance-literals-in-spec :- SpecInfo
-  "Remove instance literals entirely. Assumes the only instance-valued expressions are
-  instance literals and get* forms. 'Inlines' chains of get* forms. All instance literals should
-  thus be unreferenced, and are pruned."
-  [spec-info :- SpecInfo]
-  ;; double-check that all instance-valued expressions are literals or get* forms.
-  (doseq [[form htype] (->> spec-info :derivations vals)]
-    (when-not (#{:Integer :Boolean} htype)
-      (when-not (halite-types/spec-type? htype)
-        (throw (ex-info (format "BUG! lower-instance-literals-in-spec assumes no expressions of type '%s'" htype)
-                        {:form form :type htype})))
-      (when-not (or (map? form) (and (seq? form) (= 'get* (first form))))
-        (throw (ex-info "BUG! lower-instance-literals-in-spec assumes all instance-valued expressions are literals or get* forms"
-                        {:form form})))))
-  ;; inline all primitive-valued get* forms, following chains when necessary
-  ;; (get* (get* {:$foo :bar {:$bar :x 12}} :bar) :x)
-  ;; $1 12
-  ;; $2 {:$bar :x $1}
-  ;; $3 {:$foo :bar $2}
-  ;; $4 (get* $3 :bar)
-  ;; $5 (get* $4 :x)
-  (let [id-to-inline (fn [dgraph id stack]
-                       (if (empty? stack)
-                         id
-                         (let [[form htype] (dgraph id)]
-                           (cond
-                             (map? form) (recur dgraph (get form (peek stack)) (pop stack))
-                             (and (seq? form) (= 'get* (first form))) (recur dgraph (second form) (conj stack (last form)))
-                             :else (throw (ex-info "BUG! Unexpected expression while lowering instance literals"
-                                                   {:form form :type htype :stack stack}))))))]
-    (->> spec-info
-         :derivations
-         (filter (fn [[id [form htype]]]
-                   (and (seq? form) (= 'get* (first form)) (#{:Integer :Boolean} htype))))
-         (reduce
-          (fn [dgraph [id [form htype]]]
-            (assoc dgraph id [(id-to-inline dgraph (second form) [(last form)]) htype]))
-          (:derivations spec-info))
-         (assoc spec-info :derivations))
-    )
-  )
+(s/defn ^:private cancel-get-of-instance-literal-in-spec :- SpecInfo
+  "Replace (get* {... :k <subexpr>} :k) with <subexpr>."
+  [{:keys [derivations] :as spec-info} :- SpecInfo]
+  (->
+   (->> spec-info
+        :derivations
+        (filter (fn [[id [form htype]]]
+                  (if (and (seq? form) (= 'get* (first form)))
+                    (let [[subform] (deref-id derivations (second form))]
+                      (map? subform)))))
+        (reduce
+         (fn [dgraph [id [[_get subid var-kw] htype]]]
+           (let [[inst-form] (deref-id dgraph subid)
+                 field-node (deref-id dgraph (get inst-form var-kw))]
+             (assoc dgraph id field-node)))
+         derivations)
+        (assoc spec-info :derivations))
+   (prune-derivations false)))
 
-(s/defn ^:private lower-instance-literals :- SpecCtx
+(s/defn ^:private cancel-get-of-instance-literal :- SpecCtx
   [sctx :- SpecCtx]
-  (update-vals sctx lower-instance-literals-in-spec))
+  (update-vals sctx cancel-get-of-instance-literal-in-spec))
 
 ;;;;;;;;;; Pruning unreachable expressions ;;;;;;;;;;;
 
@@ -938,9 +927,8 @@
                      (fixpoint lower-instance-comparisons)
                      (fixpoint push-gets-into-ifs)
                      (lower-implicit-constraints)
-                     (lower-instance-literals))]
+                     (fixpoint cancel-get-of-instance-literal))]
        (->> assignment
             (spec-ify-assignment sctx)
-            ;;(lower-instance-literals-in-spec)
             (spec-from-ssa)
             (to-choco-spec))))))

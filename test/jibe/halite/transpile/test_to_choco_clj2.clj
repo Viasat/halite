@@ -434,14 +434,16 @@
              (->> sctx (fixpoint push-gets-into-ifs)
                  :ws/A spec-from-ssa :constraints))))))
 
-(def lower-instance-literals-in-spec #'h2c/lower-instance-literals-in-spec)
+(def cancel-get-of-instance-literal #'h2c/cancel-get-of-instance-literal)
 
-(deftest test-lower-instance-literals-in-spec
+(deftest test-cancel-get-of-instance-literal
   (binding [h2c/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
-                  {:spec-vars {:an :Integer}
-                   :constraints [["a1" (< an (get* (get* {:$type :ws/B :c {:$type :ws/C :cn (get* {:$type :ws/C :cn (+ 1 an)} :cn)}} :c) :cn))]]
+                  {:spec-vars {:an :Integer :b :ws/B}
+                   :constraints [["a1" (< an (get* (get* {:$type :ws/B :c {:$type :ws/C :cn (get* {:$type :ws/C :cn (+ 1 an)} :cn)}} :c) :cn))]
+                                 ["a2" (= (get* (get* b :c) :cn)
+                                          (get* {:$type :ws/C :cn 12} :cn))]]
                    :refines-to {}}
                   :ws/B
                   {:spec-vars {:c :ws/C}
@@ -450,8 +452,10 @@
                   {:spec-vars {:cn :Integer}
                    :constraints [] :refines-to {}}})
           sctx (build-spec-ctx senv :ws/A)]
-      (is (= '[["$all" (< an (+ 1 an))]]
-             (->> sctx :ws/A lower-instance-literals-in-spec spec-from-ssa :constraints))))))
+      (is (= '[["$all" (and
+                        (< an (+ 1 an))
+                        (= (get* (get* b :c) :cn) 12))]]
+             (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A spec-from-ssa :constraints))))))
 
 (def spec-ify-assignment #'h2c/spec-ify-assignment)
 
@@ -600,354 +604,155 @@
                   (if (not ab) (<= (div 10 12) 10) true)))}}
            (h2c/transpile senv {:$type :ws/A})))))
 
-;;; Illustrate composition elimination
+(deftest test-transpile-assignment-with-composition
+  (testing "simple composition"
+    (let [senv (halite-envs/spec-env
+                '{:ws/A {:spec-vars {:x :Integer, :y :Integer}
+                         :constraints [["pos" (and (< 0 x) (< 0 y))]
+                                       ["boundedSum" (< (+ x y) 20)]]
+                         :refines-to {}}
+                  :ws/B {:spec-vars {:a1 :ws/A, :a2 :ws/A}
+                         :constraints [["a1smaller" (and (< (get* a1 :x) (get* a2 :x))
+                                                         (< (get* a1 :y) (get* a2 :y)))]]
+                         :refines-to {}}})]
+      (is (= '{:vars {a1|x :Int, a1|y :Int, a2|x :Int, a2|y :Int}
+               :constraints
+               #{(and
+                  (and (< a1|x a2|x) (< a1|y a2|y))
+                  (and (< 0 a1|x) (< 0 a1|y))
+                  (< (+ a1|x a1|y) 20)
+                  (and (< 0 a2|x) (< 0 a2|y))
+                  (< (+ a2|x a2|y) 20))}}
+             (h2c/transpile senv {:$type :ws/B})))))
 
-(def sctx
-  '{:ws/A
-    {:spec-vars {:an :Integer :b :ws/B}
-     :derivations {}
-     :constraints [["a1" (and (< 0 an) (< an (get* b :bn)))]
-                   ("a2" (= an (get* (get* b :c) :cn)))]
-     :refines-to {}}
+  (testing "composition and instance literals"
+    (let [senv (halite-envs/spec-env
+                '{:ws/C
+                  {:spec-vars {:m :Integer, :n :Integer}
+                   :constraints [["c1" (>= m n)]]
+                   :refines-to {}}
 
-    :ws/B
-    {:spec-vars {:bn :Integer, c :ws/C}
-     :derivations {}
-     :constraints [["b1" (< bn 10)]]
-     :refines-to {}}
+                  :ws/D
+                  {:spec-vars {:c :ws/C :m :Integer}
+                   :constraints [["c1" (= c (let [a 2
+                                                  c {:$type :ws/C :m (get* c :n) :n (* a m)}
+                                                  b 3] c))]]
+                   :refines-to {}}})]
+      (is (= '{:vars {c|m :Int, c|n :Int, m :Int}
+               :constraints
+               #{(let [$33 (* 2 m)]
+                   (and
+                    (and (= c|m c|n)
+                         (= c|n $33))
+                    (<= $33 c|n)
+                    (<= c|n c|m)))}}
+             (h2c/transpile senv {:$type :ws/D})))))
 
-    :ws/C
-    {:spec-vars {:cn :Integer}
-     :derivations {}
-     :constraints [["c1" (= 0 (mod* cn 2))]]
-     :refines-to {}}
-    })
+  (testing "composition of recursive specs"
+    ;; Note that due to unconditional recursion there are no finite valid instances of A or C!
+    ;; That doesn't prevent us from making the idea of an assignment completion finite and
+    ;; well-defined.
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:b :ws/B :c :ws/C}
+                   :constraints [["a1" (= (get* b :bn) (get* c :cn))]
+                                 ["a2" (if (> (get* b :bn) 0)
+                                         (< (get* b :bn)
+                                            (get* (get* (get* c :a) :b) :bn))
+                                         true)]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:bn :Integer :bp :Boolean}
+                   :constraints [["b1" (if bp (<= bn 10) (>= bn 10))]]
+                   :refines-to {}}
+                  :ws/C
+                  {:spec-vars {:a :ws/A :cn :Integer}
+                   :constraints []
+                   :refines-to {}}})]
+      (are [assignment choco-spec]
+          (= choco-spec (h2c/transpile senv assignment))
 
-(def sctx-ssa1
-  "First SSA pass."
-  '{:ws/A
-    {:spec-vars {:an :Integer :b :ws/B}
-     :derivations {$1 [(< 0 an) :Boolean]
-                   $2 [(get* b :bn) :Integer]
-                   $3 [(< an $2) :Boolean]
-                   $4 [(get* b :c) :ws/C]
-                   $5 [(get* $4 :cn) :Integer]}
-     :constraints [["a1" (and $1 $3)]
-                   ("a2" (= an $5))]
-     :refines-to {}}
+        {:$type :ws/A}
+        '{:vars {b|bn :Int, b|bp :Bool, c|cn :Int}
+          :constraints
+          #{(and (= b|bn c|cn)
+                 (if b|bp (<= b|bn 10) (<= 10 b|bn)))}}
 
-    :ws/B
-    {:spec-vars {:bn :Integer, c :ws/C}
-     :derivations {}
-     :constraints [["b1" (< bn 10)]]
-     :refines-to {}}
+        {:$type :ws/A
+         :c {:$type :ws/C :cn 14}}
+        '{:vars {b|bn :Int, b|bp :Bool, c|cn :Int}
+          :constraints
+          #{(and (= b|bn c|cn)
+                 (if b|bp (<= b|bn 10) (<= 10 b|bn))
+                 (= c|cn 14))}}
 
-    :ws/C
-    {:spec-vars {:cn :Integer}
-     :derivations {$1 [(mod* cn 2) :Integer]}
-     :constraints [["c1" (= 0 $1)]]
-     "refines-to" {}}})
+        {:$type :ws/A
+         :b {:$type :ws/B :bp true}
+         :c {:$type :ws/C
+             :a {:$type :ws/A}}}
+        '{:vars {b|bn :Int, b|bp :Bool, c|a|b|bn :Int, c|a|b|bp :Bool, c|cn :Int}
+          :constraints
+          #{(and
+             (= b|bn c|cn)
+             (if (< 0 b|bn) (< b|bn c|a|b|bn) true)
+             (if b|bp (<= b|bn 10) (<= 10 b|bn))
+             (= b|bp true)
+             (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn)))}}
+        ))))
 
-;;; A Thought! We can probably eliminate equality derivations
-;;; that must be true for all instances by merging nodes.
+(deftest test-transpile-for-various-instance-literal-cases
+  (let [senv '{:ws/Simpler
+               {:spec-vars {:x :Integer, :b :Boolean}
+                :constraints [["posX" (< 0 x)]
+                              ["bIfOddX" (= b (= (mod* x 2) 1))]]
+                :refines-to {}}
 
-;;; At any rate, we ought to collapse redundant nodes after each
-;;; stage.
+               :ws/Simpler2
+               {:spec-vars {:y :Integer}
+                :constraints [["likeSimpler" (= y (get* {:$type :ws/Simpler :x y :b false} :x))]]
+                :refines-to {}}
 
-(def sctx-comp-elim
-  "Composition elimination.
-  Recursively expand each spec-valued variable.
-  Add a derivation for an instance literal that stands for the eliminated variable.
-  Replace all occurrences of eliminated variable w/ introduced derivation.
-    How do we know this won't produce cyclic derivations?
-  Do this bottom-up according to the spec dependency graph.
-  Abstraction elimination can produce recursive specs,
-  so we'll need to detect recursion and/or use the assignment
-  to bound expansion in that case."
-  '{:ws/A
-    {:spec-vars {:an :Integer :b|bn, :Integer, :b|c|cn :Integer}
-     :derivations {$6 [{:$type :ws/C :cn b|c|cn} :ws/C]
-                   $7 [{:$type :ws/B :bn b|bn :c|cn b|c|cn}]
-                   $1 [(< 0 an) :Boolean]
-                   $2 [(get* $7 :bn) :Integer]
-                   $3 [(< an $2) :Boolean]
-                   $4 [$6 :ws/C]
-                   $5 [(get* $4 :cn) :Integer]}
-     :constraints [["a1" (and $1 $3)]
-                   ("a2" (= an $5))]
-     :refines-to {}}
+               :ws/Test
+               {:spec-vars {}
+                :constraints []
+                :refines-to {}}}]
+    (are [constraint choco-spec]
+        (= choco-spec
+           (-> senv
+               (update-in [:ws/Test :constraints] conj ["c1" constraint])
+               (halite-envs/spec-env)
+               (h2c/transpile {:$type :ws/Test})))
 
-    :ws/B
-    {:spec-vars {:bn :Integer, :c|cn :Integer}
-     :derivations {$1 {:$type :ws/C :cn c|cn}}
-     :constraints [["b1" (< bn 10)]]
-     :refines-to {}}
+      '(get*
+        (let [x (+ 1 2)
+              s {:$type :ws/Simpler :x (+ x 1) :b false}
+              s {:$type :ws/Simpler :x (- (get* s :x) 2) :b true}]
+          {:$type :ws/Simpler :x 12 :b (get* s :b)})
+        :b)
+      '{:vars {}
+        :constraints
+        #{(let [$63 (+ (+ 1 2) 1)
+                $74 (- $63 2)]
+            (and
+             true
+             (and (< 0 $63) (= false (= (mod* $63 2) 1)))
+             (and (< 0 $74) (= true (= (mod* $74 2) 1)))
+             (and (< 0 12) (= true (= (mod* 12 2) 1)))))}}
 
-    :ws/C
-    {:spec-vars {:cn :Integer}
-     :derivations {$1 [(mod* cn 2) :Integer]}
-     :constraints [["c1" (= 0 $1)]]
-     :refines-to {}}})
+      '(get* {:$type :ws/Simpler :x (get* {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
+      '{:vars {}
+        :constraints
+        #{(let [$52 (= (mod* 14 2) 1)
+                $47 (< 0 14)]
+            (and true
+                 (and $47 (= false $52))
+                 (and $47 (= true $52))))}}
 
-"You might think we could be pruning 'dead' code between each pass, but
-we've got to be careful with pruning! Every instance literal implies constraints.
-Pruning an instance literal before its implied constraints are brought along
-will impact semantics!"
-
-(def sctx-inline-constraints
-  "Constraint inlining.
-  For every instance literal, re-instantiate all derivations/constraints
-  for the given variable assignment.
-  Do this bottom-up according to the spec dependency graph.
-
-  When we get to cycles e.g. introduced by abstraction elimination,
-  we'll need to figure out how to handle that."
-  '{:ws/A
-    {:spec-vars {:an :Integer :b|bn, :Integer, :b|c|cn :Integer}
-     :derivations {$6 [{:$type :ws/C :cn b|c|cn} :ws/C]
-                   $7 [{:$type :ws/B :bn b|bn :c|cn b|c|cn}]
-                   $1 [(< 0 an) :Boolean]
-                   $2 [(get* $7 :bn) :Integer]
-                   $3 [(< an $2) :Boolean]
-                   $5 [(get* $6 :cn) :Integer]
-
-                   ;; bn -> b|bn, c|cn -> b|c|cn
-                   ;;$6 [{:$type :ws/C :cn b|c|n} :ws/C] ;; redundant!
-                   ;; $1 -> $6
-                   $8 [(mod* cb|c|cn 2) :Integer]
-                   ;; $2 -> $8
-                   }
-     :constraints [["a1" (and $1 $3)]
-                   ["a2" (= an $5)]
-                   ["b1" (< b|bn 10)]
-                   ["c1" (= 0 $8)]]
-     :refines-to {}}
-
-    :ws/B
-    {:spec-vars {:bn :Integer, :c|cn :Integer}
-     :derivations {$1 {:$type :ws/C :cn c|cn}
-                   ;; cn -> c|cn
-                   $2 [(mod* c|cn 2) :Integer]
-                   }
-     :constraints [["b1" (< bn 10)]
-                   ["c1" (= 0 $2)]]
-     :refines-to {}}
-
-    :ws/C
-    {:spec-vars {:cn :Integer}
-     :derivations {$1 [(mod* cn 2) :Integer]}
-     :constraints [["c1" (= 0 $1)]]
-     :refines-to {}}})
-
-(def sctx-prune
-  "Having eliminated all instance-valued spec variables and inlined
-  all implicit constraints, it's time to prune dead code. This is
-  straightforward reachability from constraints."
-  '{:ws/A
-    {:spec-vars {:an :Integer :b|bn, :Integer, :b|c|cn :Integer}
-     :derivations {$6 [{:$type :ws/C :cn b|c|cn} :ws/C]
-                   $7 [{:$type :ws/B :bn b|bn :c|cn b|c|cn}] ;x
-                   $1 [(< 0 an) :Boolean] ;x
-                   $2 [(get* $7 :bn) :Integer] ;x
-                   $3 [(< an $2) :Boolean] ;x
-                   $5 [(get* $6 :cn) :Integer] ;x
-                   $8 [(mod* cb|c|cn 2) :Integer] ;x
-                   }
-     :constraints [["a1" (and $1 $3)]
-                   ["a2" (= an $5)]
-                   ["b1" (< b|bn 10)]
-                   ["c1" (= 0 $8)]]
-     :refines-to {}}
-
-    :ws/B
-    {:spec-vars {:bn :Integer, :c|cn :Integer}
-     :derivations {$2 [(mod* c|cn 2) :Integer] ;x
-                   }
-     :constraints [["b1" (< bn 10)]
-                   ["c1" (= 0 $2)]]
-     :refines-to {}}
-
-    :ws/C
-    {:spec-vars {:cn :Integer}
-     :derivations {$1 [(mod* cn 2) :Integer]}
-     :constraints [["c1" (= 0 $1)]]
-     :refines-to {}}})
-
-(def sctx-elim-instances
-  "Now it's time to eliminate instance-valued variables entirely.
-  I think this needs to be done breadth-first starting from the
-  constraints and working backwards.
-
-  Each primitive-typed derivation with instance-valued arguments needs to be
-  Replaced with a semantically equivalent subgraph of primitive-typed derivations
-  with primitive-typed arguments. Building this new subgraph will require
-  traversing through instance-valued derivations, specifically get* and if.
-  "
-  '{:ws/A
-    {:spec-vars {:an :Integer :b|bn, :Integer, :b|c|cn :Integer}
-     :derivations {$1 [(< 0 an) :Boolean]
-                   $8 [(mod* b|c|cn 2) :Integer]
-                   $9 [(< an b|bn)]
-                   }
-     :constraints [["a1" (and $1 $9)]
-                   ["a2" (= an b|c|cn)]
-                   ["b1" (< b|bn 10)]
-                   ["c1" (= 0 $8)]]
-     :refines-to {}}
-
-    :ws/B
-    {:spec-vars {:bn :Integer, :c|cn :Integer}
-     :derivations {$2 [(mod* c|cn 2) :Integer] ;x
-                   }
-     :constraints [["b1" (< bn 10)]
-                   ["c1" (= 0 $2)]]
-     :refines-to {}}
-
-    :ws/C
-    {:spec-vars {:cn :Integer}
-     :derivations {$1 [(mod* cn 2) :Integer]}
-     :constraints [["c1" (= 0 $1)]]
-     :refines-to {}}}
-  )
-
-(def spec-for-A
-  "Finally, we can translate what remains into a choco-clj spec."
-  '{:vars {an :Int, b|bn :Int, b|c|cn :Int}
-    :constraints
-    #((and
-       (and (< 0 an) (< an b|bn))
-       (= an b|c|cn)
-       (< b|bn 10)
-       (= 0 (mod* b|c|cn))))})
-
-
-;;; The next thing to figure out: Recursive specs!
-;;; We can do that before we get to abstraction elimination.
-;;; We should see if halite works for recursive specs...
-
-
-
-
-(comment 
-  (def sctx
-    '{:a/A
-      {:spec-vars {:v1 :Integer, :v2 :Boolean}
-       :abstract? true
-       :derivations {}
-       :constraints [["v1Bound" (and (<= -100 v1) (<= v1 100))]
-                     ["v2WhenNegV1" (=> (< v1 0) v2)]]
-       :refines-to {:b/A {:clauses [["as b/A" {:v3 v1}]]}}}
-
-      :b/A
-      {:spec-vars {:v3 :Integer}
-       :derivations {}
-       :constraints [["v3" (not (and (< 5 v3) (< v3 10)))]]
-       :refines-to {}}
-
-      :a/B
-      {:spec-vars {:v5 :Integer
-                   :v8 :a/D}
-       :derivations {}
-       :constraints []
-       :refines-to {:a/A {:clauses [["as a/A" {:v1 v5, :v2 false}]]}}}
-
-      :a/C
-      {:spec-vars {:v4 :a/A, :v7 :Integer}
-       :derivations {}
-       :constraints []
-       :refines-to {:a/A {:clauses [["as a/A" {:v1 (let [child-v1 (get* (refine-to v4 :a/A) :v1)]
-                                                     (+ child-v1 v7))
-                                               :v2 true}]]}}}
-
-      :a/D
-      {:spec-vars {:v6 :Integer}
-       :derivations {}
-       :constraints [["v6" (get* {:$type :a/E :v9 (+ v6 2) :v10 true} :v10)]]
-       :refines-to {}}
-
-      :a/E
-      {:spec-vars {:v9 :Integer :v10 :Boolean}
-       :derivations {}
-       :constraints [["e" (= v10 (not= v9 42))]]
-       :refines-to {}}})
-
-
-  (def sctx-ssa
-    '{:a/A
-      {:spec-vars {:v1 :Integer, :v2 :Boolean}
-       :abstract? true
-       :derivations {$1 (<= -100 v1)
-                     $2 (<= v1 100)
-                     $3 (< v1 0)}
-       :constraints [["v1Bound" (and $1 $2)]
-                     ["v2WhenNegV1" (=> $3 v2)]]
-       :refines-to {:b/A {:clauses [["as b/A" {:v3 v1}]]}}}
-
-      :b/A
-      {:spec-vars {:v3 :Integer}
-       :derivations {$1 (< 5 v3)
-                     $2 (< v3 10)
-                     $3 (and $1 $2)}
-       :constraints [["v3" (not $3)]]
-       :refines-to {}}
-
-      :a/B
-      {:spec-vars {:v5 :Integer
-                   :v8 :a/D}
-       :derivations {}
-       :constraints []
-       :refines-to {:a/A {:clauses [["as a/A" {:v1 v5, :v2 false}]]}}}
-
-      :a/C
-      {:spec-vars {:v4 :a/A, :v7 :Integer}
-       :derivations {$1 (refine-to v4 :a/A)
-                     $2 (get* $1 :v1)}
-       :constraints []
-       :refines-to {:a/A {:clauses [["as a/A" {:v1 (+ $2 v7)
-                                               :v2 true}]]}}}
-
-      :a/D
-      {:spec-vars {:v6 :Integer}
-       :derivations {$1 (+ v6 2)
-                     $2 {:$type :a/E :v9 $1 :v10 true}}
-       :constraints [["v6" (get* $2 :v10)]]
-       :refines-to {}}
-
-      :a/E
-      {:spec-vars {:v9 :Integer :v10 :Boolean}
-       :derivations {$1 (not= v9 42)}
-       :constraints [["e" (= v10 $1)]]
-       :refines-to {}}})
-
-  (def sctx-implied-constraints
-    (-> sctx-ssa
-        (assoc
-         :a/D
-         '{:spec-vars {:v6 :Integer}
-           :derivations {$1 (+ v6 2)
-                         $2 {:$type :a/E :v9 $1 :v10 true}
-                         $3 (not= $1 42)}
-           :constraints [["v6" (get* $2 :v10)]
-                         ["e" (= true $3)]]
-           :refines-to {}})))
-
-  (def sctx-elim-abstraction
-    (-> sctx-ssa
-        (assoc
-         :a/C
-         '{:spec-vars {:v4 :a/A
-                       :v4?type :Integer  ; :ws/B -> 0, :ws/C -> 1
-                       :v4?ws.B :ws/B
-                       :v4?ws.C :ws/C
-                       :v7 :Integer}
-           :derivations {$1 (refine-to v4 :a/A)
-                         $2 (get* $1 :v1)}
-           :constraints [["v4?" (and (<= 0 v4!type)
-                                     (< v4!type 2)
-                                     (=> (= 0 v4!type)
-                                         (= v4 {:$type :ws/A :v1 (get* v4?ws.B :v5) :v2 false}))
-                                     (=> (= 1 v4!type)
-                                         (= v4 {:$type :ws/A :v1 (+ (get*))})))]
-                         ]
-           :refines-to {:a/A {:clauses [["as a/A" {:v1 (+ $2 v7)
-                                                   :v2 true}]]}}}))))
+      '(not= 10 (get* {:$type :ws/Simpler2 :y 12} :y))
+      '{:vars {}
+        :constraints
+        #{(and
+           (not= 10 12)
+           (and (= 12 12)
+                (and (< 0 12)
+                     (= false (= (mod* 12 2) 1)))))}})))
