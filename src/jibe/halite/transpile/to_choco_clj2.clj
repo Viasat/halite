@@ -27,8 +27,11 @@
 (def ^:private choco-ops
   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let})
 
+(def ^:private renamed-ops
+  '{mod* mod})
+
 (def ^:private supported-halite-ops
-  (into choco-ops '#{get* #_refine-to}))
+  (into choco-ops (concat (keys renamed-ops) '#{get* #_refine-to})))
 
 (s/defschema DerivationName
   (s/constrained s/Symbol #(re-matches #"\$[1-9][0-9]*" (name %))))
@@ -185,14 +188,15 @@
 
 (s/defn ^:private add-derivation-for-app :- DerivResult
   [dgraph :- Derivations [op & args :as form]]
-  (add-derivation
-   dgraph
-   [form
-    (cond
-      ('#{+ - * div mod expt abs} op) :Integer
-      ('#{< <= > >= and or not => = not=} op) :Boolean
-      :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
-                            {:form form})))]))
+  (let [op (get renamed-ops op op)]
+    (add-derivation
+     dgraph
+     [(apply list op args)
+      (cond
+        ('#{+ - * div mod expt abs} op) :Integer
+        ('#{< <= > >= and or not => = not=} op) :Boolean
+        :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
+                              {:form form})))])))
 
 (declare form-to-ssa)
 
