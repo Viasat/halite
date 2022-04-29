@@ -10,9 +10,9 @@
 
 (use-fixtures :once schema.test/validate-schemas)
 
-(def to-ssa #'h2c/to-ssa)
+(def spec-to-ssa #'h2c/spec-to-ssa)
 
-(deftest test-to-ssa
+(deftest test-spec-to-ssa
   (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
                    :constraints []
                    :refines-to {}}
@@ -21,12 +21,13 @@
               spec-info)]
     (are [constraints derivations new-constraints]
         (= [derivations new-constraints]
-           (->> constraints
-                (map-indexed #(vector (str "c" %1) %2))
-                (update spec-info :constraints into)
-                (to-ssa tenv)
-                ((juxt #(-> % :derivations (dissoc :next-id))
-                       #(->> % :constraints (map second))))))
+           (binding [h2c/*next-id* (atom 0)]
+             (->> constraints
+                  (map-indexed #(vector (str "c" %1) %2))
+                  (update spec-info :constraints into)
+                  (spec-to-ssa tenv)
+                  ((juxt #(-> % :derivations)
+                         #(->> % :constraints (map second)))))))
 
       [] {} []
 
@@ -86,9 +87,9 @@
       '[$6]
       )))
 
-(def from-ssa #'h2c/from-ssa)
+(def spec-from-ssa #'h2c/spec-from-ssa)
 
-(deftest test-from-ssa
+(deftest test-spec-from-ssa
   (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
                    :constraints []
                    :refines-to {}}]
@@ -99,7 +100,7 @@
                (assoc :derivations derivations
                       :constraints
                       (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
-               (from-ssa)
+               (spec-from-ssa)
                :constraints))
 
       [] {} true
@@ -140,14 +141,24 @@
                                             (< delta 10)))]
                                ["c2" (= b (< x y))]]
                  :refines-to {}}})]
+
     (is (= '{:vars {x :Int, y :Int, b :Bool}
              :constraints
              #{(let [$4 (abs (- x y))]
                  (and (and (< 5 $4)
                            (< $4 10))
                       (= b (< x y))))}}
-           (h2c/transpile senv {:$type :ws/A}))))
-  )
+           (h2c/transpile senv {:$type :ws/A})))
+
+    (is (= '{:vars {x :Int, y :Int, b :Bool}
+             :constraints
+             #{(let [$4 (abs (- x y))]
+                 (and (and (< 5 $4)
+                           (< $4 10))
+                      (= b (< x y))
+                      (= b false)
+                      (= x 12)))}}
+           (h2c/transpile senv {:$type :ws/A :x 12 :b false})))))
 
 
 ;;; Illustrate composition elimination

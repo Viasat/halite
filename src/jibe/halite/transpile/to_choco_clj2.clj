@@ -10,6 +10,17 @@
             [schema.core :as s]
             [viasat.choco-clj :as choco-clj]))
 
+(declare Assignment)
+
+(s/defschema AssignmentVal
+  (s/cond-pre
+   s/Int
+   s/Bool
+   #_(s/recursive #'Assignment)))
+
+(s/defschema Assignment
+  {:$type halite-types/NamespacedKeyword
+   halite-types/BareKeyword AssignmentVal})
 
 ;;;;;;;;;;;;;;;; SSA Pass ;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -47,27 +58,26 @@
     :else []))
 
 (s/defschema Derivations
-  {DerivationName Derivation
-   ;; this representation has been really frustrating to work with, I want to refactor it
-   (s/optional-key :next-id) s/Int})
+  {DerivationName Derivation})
 
 (s/defschema SpecInfo
   (assoc halite-envs/SpecInfo
-         (s/optional-key :derivations) Derivations
+         :derivations Derivations
          :constraints [[(s/one s/Str :cname) (s/one DerivationName :deriv)]]))
-
-(s/defschema SpecCtx
-  {halite-types/NamespacedKeyword SpecInfo})
 
 (s/defschema DerivResult [(s/one Derivations :derivs) (s/one DerivationName :id)])
 
 (s/defn ^:private find-form :- (s/maybe DerivationName)
   [dgraph :- Derivations, ssa-form :- SSAForm]
-  (loop [[[id [form _] :as entry] & entries] (dissoc dgraph :next-id)]
+  (loop [[[id [form _] :as entry] & entries] dgraph]
     (when entry
       (if (= form ssa-form)
         id
         (recur entries)))))
+
+(def ^:dynamic *next-id*
+  "During transpilation, holds an atom whose value is the next globally unique derivation id."
+  nil)
 
 (s/defn ^:private add-derivation :- DerivResult
   [dgraph :- Derivations, [ssa-form htype :as d] :- Derivation]
@@ -76,8 +86,8 @@
       (throw (ex-info (format "BUG! Tried to add derivation %s, but that form already recorded as %s" d (dgraph id))
                       {:derivation d :dgraph dgraph}))
       [dgraph id])
-    (let [id (symbol (str "$" (:next-id dgraph)))]
-      [(-> dgraph (assoc id d) (update :next-id inc)) id])))
+    (let [id (symbol (str "$" (swap! *next-id* inc)))]
+      [(assoc dgraph id d) id])))
 
 (s/defn ^:private add-derivation-for-app :- DerivResult
   [dgraph :- Derivations [op & args :as form]]
@@ -152,18 +162,104 @@
   (let [[derivations id ] (form-to-ssa tenv {} derivations constraint-form)]
     [derivations [cname id]]))
 
-(s/defn ^:private to-ssa :- SpecInfo
+(s/defn ^:private spec-to-ssa :- SpecInfo
   [tenv :- (s/protocol halite-envs/TypeEnv), spec-info :- halite-envs/SpecInfo]
   (let [[derivations constraints]
         ,,(reduce
            (fn [[derivations constraints] constraint]
              (let [[derivations constraint] (constraint-to-ssa tenv derivations constraint)]
                [derivations (conj constraints constraint)]))
-           [{:next-id 1} []]
+           [{} []]
            (:constraints spec-info))]
     (assoc spec-info
-           :derivations (dissoc derivations :next-id)
+           :derivations derivations
            :constraints constraints)))
+
+(s/defschema SpecCtx
+  {halite-types/NamespacedKeyword SpecInfo})
+
+(s/defn ^:private as-spec-env :- (s/protocol halite-envs/SpecEnv)
+  [sctx :- SpecCtx]
+  (reify halite-envs/SpecEnv
+    (lookup-spec* [self spec-id] (some-> sctx spec-id (dissoc :derivations)))))
+
+(defn- spec-ref-from-type [htype]
+  (cond
+    (and (keyword? htype) (namespace htype)) htype
+    (vector? htype) (recur (second htype))
+    :else nil))
+
+(defn- spec-refs [{:keys [spec-vars refines-to] :as spec-info}]
+  (->> spec-vars vals (map spec-ref-from-type) (remove nil?) (concat (keys refines-to))))
+
+(defn- reachable-specs [senv root-spec-id]
+  (loop [specs {}
+         next-spec-ids [root-spec-id]]
+    (if-let [[spec-id & next-spec-ids] next-spec-ids]
+      (if (contains? specs spec-id)
+        (recur specs next-spec-ids)
+        (let [spec-info (halite-envs/lookup-spec senv spec-id)]
+          (recur
+           (assoc specs spec-id spec-info)
+           (into next-spec-ids (spec-refs spec-info)))))
+      specs)))
+
+(s/defn ^:private build-spec-ctx :- SpecCtx
+  [senv :- (s/protocol halite-envs/SpecEnv), root-spec-id :- halite-types/NamespacedKeyword]
+  (-> root-spec-id
+      (->> (reachable-specs senv))
+      (update-vals #(spec-to-ssa (halite-envs/type-env-from-spec senv %) %))))
+
+;;;;;;;;; Assignment Spec-ification ;;;;;;;;;;;;;;;;
+
+;; TODO: Composition, but only after instance literal lowering
+;; We want to handle recursive specifications right off the bat.
+
+(s/defn ^:private spec-ify-assignment :- SpecInfo
+  [sctx :- SpecCtx, assignment :- Assignment]
+  (let [{:keys [spec-vars constraints refines-to derivations] :as spec-info} (sctx (:$type assignment))]
+    (doseq [[var-sym htype] spec-vars]
+      (when-not (#{:Integer :Boolean} htype)
+        (throw (ex-info (format "BUG! Assignments of type '%' not supported yet" htype)
+                        {:var-sym var-sym :type htype}))))
+    (when (seq refines-to)
+      (throw (ex-info (format "BUG! Cannot spec-ify refinements") {:spec-info spec-info})))
+    (let [tenv (halite-envs/type-env-from-spec (as-spec-env sctx) (dissoc spec-info :derivations))]
+      (->> (dissoc assignment :$type)
+           (sort-by key)
+           (map (fn [[var-kw v]] [(str "$" (name var-kw)) (list '= (symbol var-kw) v)]))
+           (reduce
+            (fn [{:keys [derivations] :as spec-info} constraint]
+              (let [[derivations constraint] (constraint-to-ssa tenv derivations constraint)]
+                (-> spec-info
+                    (assoc :derivations derivations)
+                    (update :constraints conj constraint))))
+            {:spec-vars spec-vars
+             :constraints constraints
+             :derivations derivations
+             :refines-to {}})))))
+
+;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
+
+;; TODO Next!
+
+;; * Support instance literals, get* in SSA pass.
+;; * Replace all (dis-)equality nodes with instance-valued inputs.
+
+;;;;;;;;; Instance Literal Lowering ;;;;;;;;;;;
+
+;; Eliminate all instance literals, inlining implied constraints.
+;; Note that a spec with a constraint containing an instance literal of that spec
+;; would be self-referential in a way that I don't know how to handle.
+
+;; * Constraint inlining
+;; * Replace instance literal expression with sub-expressions, and
+;;   all get* forms that reference the replaced instance literals with their sub-expressions.
+
+;;;;;;;;; Instance Expression Lowering ;;;;;;;;;;
+
+;; For a spec that has only primitive vars, no refinements, and no instance literals, we can
+;; rewrite all expressions such that no expression is ever instance-valued.
 
 ;;;;;;;;; Converting from SSA back into a more readable form ;;;;;;;;
 
@@ -192,7 +288,7 @@
         (or (integer? form) (boolean? form) (symbol? form)) form
         (seq? form) (apply list (first form) (map (partial form-from-ssa dgraph bound?) (rest form)))))))
 
-(s/defn ^:private from-ssa :- halite-envs/SpecInfo
+(s/defn ^:private spec-from-ssa :- halite-envs/SpecInfo
   [{:keys [derivations constraints spec-vars] :as spec-info} :- SpecInfo]
   ;; count usages of each derivation
   ;; a derivation goes into a top-level let iff
@@ -229,6 +325,8 @@
         (dissoc :derivations)
         (assoc :constraints [["$all" constraint]]))))
 
+;;;;;;;;;;; Conversion to Choco ;;;;;;;;;
+
 (s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
   [var-type :- halite-types/HaliteType]
   (cond
@@ -243,18 +341,6 @@
    :constraints (->> spec-info :constraints (map second) set)})
 
 ;;;;;;;;;;;;;;; Main API ;;;;;;;;;;;;;;;;;
-
-(declare Assignment)
-
-(s/defschema AssignmentVal
-  (s/cond-pre
-   s/Int
-   s/Bool
-   (s/recursive #'Assignment)))
-
-(s/defschema Assignment
-  {:$type halite-types/NamespacedKeyword
-   halite-types/BareKeyword AssignmentVal})
 
 (s/defschema Opts
   {:default-int-bounds [(s/one s/Int :lower) (s/one s/Int :upper)]})
@@ -272,11 +358,13 @@
   ([senv :- (s/protocol halite-envs/SpecEnv), assignment :- Assignment]
    (transpile senv assignment default-options))
   ([senv :- (s/protocol halite-envs/SpecEnv), assignment :- Assignment, opts :- Opts]
-   (let [spec-id (:$type assignment)
-         spec-info (halite-envs/lookup-spec senv spec-id)
-         tenv (halite-envs/type-env-from-spec senv spec-info)]
-     (->> spec-info
-          (to-ssa tenv)
-          (from-ssa)
-          (to-choco-spec))
-     )))
+   (binding [*next-id* (atom 0)]
+     (let [spec-id (:$type assignment)
+           sctx (->> spec-id
+                     (build-spec-ctx senv)
+                     ;; lowering phases go here
+                     )]
+       (->> assignment
+            (spec-ify-assignment sctx)
+            (spec-from-ssa)
+            (to-choco-spec))))))
