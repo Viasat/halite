@@ -827,11 +827,10 @@
                   :constraints [["uniqueKeys" true
                                  ;; TODO: each key shows up once
                                  #_(= (count entries) (count (for [entry entries] (get* entry :key))))]]
-                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}})
+                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}})]
 
-          ]
       (are [v expected]
-          (= expected (halite/eval-expr senv tenv empty-env (to-json v)))
+           (= expected (halite/eval-expr senv tenv empty-env (to-json v)))
 
         1 {:$type :ws/JsonInt :n 1}
         true {:$type :ws/JsonBool :b true}
@@ -842,6 +841,4 @@
                          {:$type :ws/JsonStr :s "foo"}]}
         {"hi" "there"} {:$type :ws/JsonObj :entries
                         #{{:$type :ws/JsonObjEntry :key "hi" :val
-                           {:$type :ws/JsonStr :s "there"}}}}
-        )
-      )))
+                           {:$type :ws/JsonStr :s "there"}}}}))))

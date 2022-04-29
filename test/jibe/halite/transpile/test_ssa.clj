@@ -16,16 +16,16 @@
                    :refines-to {}}
         bar-info {:spec-vars {:a :Integer, :b :Boolean}, :constraints [], :refines-to {}}]
     (are [constraints derivations new-constraints]
-        (= [derivations new-constraints]
-           (binding [ssa/*next-id* (atom 0)]
-             (let [spec-info (->> constraints
-                                  (map-indexed #(vector (str "c" %1) %2))
-                                  (update spec-info :constraints into))
-                   senv (halite-envs/spec-env {:ws/A spec-info, :foo/Bar bar-info})]
-               (->> spec-info
-                    (ssa/spec-to-ssa senv)
-                    ((juxt #(-> % :derivations)
-                           #(->> % :constraints (map second))))))))
+         (= [derivations new-constraints]
+            (binding [ssa/*next-id* (atom 0)]
+              (let [spec-info (->> constraints
+                                   (map-indexed #(vector (str "c" %1) %2))
+                                   (update spec-info :constraints into))
+                    senv (halite-envs/spec-env {:ws/A spec-info, :foo/Bar bar-info})]
+                (->> spec-info
+                     (ssa/spec-to-ssa senv)
+                     ((juxt #(-> % :derivations)
+                            #(->> % :constraints (map second))))))))
 
       [] {} []
 
@@ -162,8 +162,7 @@
         $4 [{:$type :foo/Bar :a $1 :b $3} :foo/Bar]
         $5 [(get* $4 :b) :Boolean $6]
         $6 [(not $5) :Boolean $5]}
-      '[$5]
-      )))
+      '[$5])))
 
 (deftest test-spec-from-ssa
   (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
@@ -171,13 +170,13 @@
                    :refines-to {}}]
 
     (are [constraints derivations new-constraint]
-        (= [["$all" new-constraint]]
-           (-> spec-info
-               (assoc :derivations derivations
-                      :constraints
-                      (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
-               (ssa/spec-from-ssa)
-               :constraints))
+         (= [["$all" new-constraint]]
+            (-> spec-info
+                (assoc :derivations derivations
+                       :constraints
+                       (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
+                (ssa/spec-from-ssa)
+                :constraints))
 
       [] {} true
 
@@ -217,5 +216,4 @@
         $2 [$1 :Integer]
         $3 [x :Integer]
         $4 [(< $3 $2) :Boolean]}
-      '(< x 12)
-      )))
+      '(< x 12))))

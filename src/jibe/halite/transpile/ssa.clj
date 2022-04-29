@@ -136,7 +136,7 @@
   [dgraph :- Derivations, [ssa-form htype :as d] :- Derivation]
   (let [op (when (seq? ssa-form) (first ssa-form))]
     (condp = op
-      '= (let [[id neg-id ] (repeatedly 2 fresh-id!)]
+      '= (let [[id neg-id] (repeatedly 2 fresh-id!)]
            [(assoc dgraph
                    id (conj d neg-id)
                    neg-id [(apply list 'not= (rest ssa-form)) :Boolean id])
@@ -166,9 +166,9 @@
                        id (conj d neg-id)
                        neg-id [false :Boolean id])
                 id])
-        false (let [[dgraph id ] (add-derivation dgraph [true :Boolean])]
+        false (let [[dgraph id] (add-derivation dgraph [true :Boolean])]
                 [dgraph (negated dgraph id)])
-        
+
         (let [[id neg-id] (repeatedly 2 fresh-id!)]
           [(assoc dgraph
                   id (conj d neg-id)
@@ -301,7 +301,7 @@
 (s/defn constraint-to-ssa :- [(s/one Derivations :dgraph), [(s/one s/Str :cname) (s/one DerivationName :form)]]
   "TODO: Refactor me as add-constraint, taking and returning SpecInfo."
   [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), derivations :- Derivations, [cname constraint-form]]
-  (let [[derivations id ] (form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} constraint-form)]
+  (let [[derivations id] (form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} constraint-form)]
     [derivations [cname id]]))
 
 (s/defn spec-to-ssa :- SpecInfo

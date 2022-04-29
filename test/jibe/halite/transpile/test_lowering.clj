@@ -7,8 +7,7 @@
             [jibe.halite.transpile.ssa :as ssa :refer [Derivations]]
             [jibe.halite.transpile.util :refer [mk-junct]]
             [schema.core :as s]
-            [schema.test]
-            )
+            [schema.test])
   (:use clojure.test))
 
 (use-fixtures :once schema.test/validate-schemas)
@@ -16,7 +15,6 @@
 ;; TODO: We need to rewrite 'div forms in the case where the quotient is a variable,
 ;; to ensure that choco doesn't force the variable to be zero even when the div might not
 ;; be evaluated.
-
 
 (def lower-instance-comparisons #'lowering/lower-instance-comparisons)
 
@@ -47,8 +45,7 @@
                           (or (not= (get* $10 :bb) $18)
                               (not= (get* $10 :bn) $24))
                           (= an 45)))]]
-             (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints)))
-      )))
+             (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints))))))
 
 (def fixpoint #'lowering/fixpoint)
 
@@ -109,21 +106,21 @@
                 :constraints []
                 :refines-to {}}}]
     (are [constraints guards]
-      (= guards
-         (binding [ssa/*next-id* (atom 0)]
-           (let [spec-info (-> senv
-                               (update-in [:ws/A :constraints] into
-                                          (map-indexed #(vector (str "c" %1) %2) constraints))
-                               (halite-envs/spec-env)
-                               (ssa/build-spec-ctx :ws/A)
-                               :ws/A)]
-             (-> spec-info
-                 (compute-guards)
-                 (->> (guards-from-ssa
-                       (:derivations spec-info)
-                       (->> spec-info :spec-vars keys (map symbol) set))
-                      (remove (comp true? val))
-                      (into {}))))))
+         (= guards
+            (binding [ssa/*next-id* (atom 0)]
+              (let [spec-info (-> senv
+                                  (update-in [:ws/A :constraints] into
+                                             (map-indexed #(vector (str "c" %1) %2) constraints))
+                                  (halite-envs/spec-env)
+                                  (ssa/build-spec-ctx :ws/A)
+                                  :ws/A)]
+                (-> spec-info
+                    (compute-guards)
+                    (->> (guards-from-ssa
+                          (:derivations spec-info)
+                          (->> spec-info :spec-vars keys (map symbol) set))
+                         (remove (comp true? val))
+                         (into {}))))))
 
       []
       {}
@@ -166,8 +163,7 @@
       '{2 b1
         3 (not b1)
         {:$type :ws/Foo :x 1 :y 2} b1
-        (get* {:$type :ws/Foo :x 1 :y 2} :x) b1}
-      )))
+        (get* {:$type :ws/Foo :x 1 :y 2} :x) b1})))
 
 (def lower-implicit-constraints #'lowering/lower-implicit-constraints)
 
@@ -230,7 +226,7 @@
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (= 12 (if a (if b (get* b1 :n) (get* b2 :n)) (if b (get* b3 :n) (get* b4 :n))))]]
              (->> sctx (fixpoint push-gets-into-ifs)
-                 :ws/A ssa/spec-from-ssa :constraints))))))
+                  :ws/A ssa/spec-from-ssa :constraints))))))
 
 (def cancel-get-of-instance-literal #'lowering/cancel-get-of-instance-literal)
 

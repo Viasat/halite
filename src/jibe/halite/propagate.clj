@@ -153,7 +153,7 @@
      (fn [{:keys [derivations] :as spec-info} [var-kw v]]
        (cond
          (= v ::skip) spec-info
-         
+
          (or (integer? v) (boolean? v))
          (add-equality-constraint spec-info var-kw v)
 
@@ -166,7 +166,7 @@
                     (cond-> spec-info
                       (= 1 (count val-bound)) (add-equality-constraint var-kw (first val-bound)))
 
-                    (vector? val-bound) 
+                    (vector? val-bound)
                     (let [[lower upper] val-bound
                           var-sym (->> var-kw vars first symbol)
                           [dgraph constraint] (ssa/constraint-to-ssa
@@ -283,7 +283,6 @@
       (update-keys decompose-var-name)
       (unflatten-choco-bounds)
       (->> (spec-bound* senv spec-id))))
-
 
 ;;;;;;;;;;;; Main API ;;;;;;;;;;;;;;;;
 

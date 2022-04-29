@@ -16,8 +16,8 @@
                  (=> (= 2 n) (> x 5))}}]
     (binding [choco-clj/*default-int-bounds* [0 100]]
       (are [extra-constraints bounds]
-          (= bounds (choco-clj/propagate
-                     (update spec :constraints into extra-constraints)))
+           (= bounds (choco-clj/propagate
+                      (update spec :constraints into extra-constraints)))
 
         [] '{n #{1 2}, x [0 100]}
         '[(= x 20)] '{x 20, n 2}))))
@@ -59,8 +59,7 @@
                  (< 2 a?C|c)
                  (let [n a?C|c]
                    (and (<= 0 n) (<= n 10)))
-                 (= x (if (= a?type 1) a?B|b a?C|c))
-                 }}
+                 (= x (if (= a?type 1) a?B|b a?C|c))}}
         alt2 '{:vars {x :Int
                       a?B|b :Int
                       a?C|c :Int
@@ -77,10 +76,9 @@
 
     (binding [choco-clj/*default-int-bounds* [-100 100]]
       (are [extra bounds]
-          (= bounds (select-keys (choco-clj/propagate (update spec :constraints into extra)) (keys bounds)))
+           (= bounds (select-keys (choco-clj/propagate (update spec :constraints into extra)) (keys bounds)))
 
         '[]             '{a?type #{1 2}, x [-100 100]}
         '[(= x 3)]      '{a?type #{1 2}, a?B|b [0 3], a?C|c [3 10]}
         '[(= x 2)]      '{a?type 1, a?B|b 2}
-        '[(= a?type 2)] '{x [3 10]}))
-    ))
+        '[(= a?type 2)] '{x [3 10]}))))

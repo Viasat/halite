@@ -157,6 +157,4 @@
                :constraints [(< (dec y) x)
                              (=> b (< x (+ y 1)))]}]
     (doseq [extra '[[] [(= y 24)] [(= b true)] [(= y 24) (= b true)]]]
-      (prn (propagate (update spec :constraints into extra)))))
-
-  )
+      (prn (propagate (update spec :constraints into extra))))))
