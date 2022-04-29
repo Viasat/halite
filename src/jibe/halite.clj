@@ -33,19 +33,28 @@
     (catch ExceptionInfo ex
       (throw (ex-info err-msg {:form bool-expr} ex)))))
 
-(s/defn ^:private eval-refinement :- s/Any
+(s/defn ^:private eval-refinement :- (s/maybe s/Any)
+  "Returns an instance of type spec-id, projected from the instance vars in ctx,
+  or nil if the guards prevent this projection."
   [ctx :- EvalContext, tenv :- (s/protocol TypeEnv),  spec-id :- NamespacedKeyword, clauses]
-  (let [[clause & clauses] clauses
-        [clause-name mapping] clause]
-    ;; TODO: support for guards
-    (or (*refinements* spec-id)
+  (if (contains? *refinements* spec-id)
+    (*refinements* spec-id) ;; cache hit
+    (let [actives (filter (fn [[_ _ guard]]
+                            (or (nil? guard) ;; no guard is like a guard of true
+                                (eval-expr (:senv ctx) tenv (:env ctx) guard)))
+                          clauses)]
+      (when (< 1 (count actives))
+        (throw (ex-info (str "Only one guard may be active at a time, not: "
+                             (pr-str (map first actives)))
+                        {:active-guards (map first actives)})))
+      (when-let [[_ mapping _] (first actives)]
         (eval-expr (:senv ctx) tenv (:env ctx)
-                   (assoc mapping :$type spec-id)))))
+                   (assoc mapping :$type spec-id))))))
 
 (s/defn ^:private refines-to? :- s/Bool
   [inst spec-id]
   (or (= spec-id (:$type inst))
-      (contains? (:refinements (meta inst)) spec-id)))
+      (boolean (get (:refinements (meta inst)) spec-id))))
 
 (s/defn ^:private concrete? :- s/Bool
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
@@ -277,12 +286,14 @@
     (when (nil? builtin)
       (throw (ex-info (str "function '" op "' not found") {:form form})))
 
-    (loop [[sig & signatures] signatures]
+    (loop [[sig & more] signatures]
       (cond
         (nil? sig) (throw (ex-info (str "no matching signature for '" (name op) "'")
-                                   {:form form}))
+                                   {:form form
+                                    :actual-types actual-types
+                                    :signatures signatures}))
         (matches-signature? sig actual-types) (:return-type sig)
-        :else (recur signatures)))))
+        :else (recur more)))))
 
 (s/defn ^:private type-check-symbol :- HaliteType
   [ctx :- TypeContext, sym]

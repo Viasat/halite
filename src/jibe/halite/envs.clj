@@ -9,7 +9,7 @@
 (set! *warn-on-reflection* true)
 
 (s/defschema Refinement
-  {:clauses [[(s/one s/Str :name) (s/one s/Any :expr)]]
+  {:clauses [[(s/one s/Str :name) (s/one s/Any :expr) (s/optional s/Any :guard)]]
    (s/optional-key :inverted?) s/Bool})
 
 (s/defschema SpecInfo
@@ -78,7 +78,8 @@
   (cond
     (spec-type? declared-type) (let [spec-info (lookup-spec senv declared-type)]
                                  (when (nil? spec-info)
-                                   (throw (ex-info (format "resource spec not found: '%s'" (symbol declared-type)) {:type declared-type})))
+                                   (throw (ex-info (format "resource spec not found: '%s'" (symbol declared-type))
+                                                   {:type declared-type, #_#_:senv (.-spec-info-map senv)})))
                                  (if (:abstract? spec-info)
                                    :Instance
                                    declared-type))

@@ -561,6 +561,41 @@
              (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/B))))
       (is (= {:$type :ws/E} (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/E} :ws/E)))))))
 
+(deftest test-refinement-with-guards
+  (let [senv (->TestSpecEnv
+              {:ws/A {:spec-vars {:x :Integer}
+                      :constraints '[["posX" (< 0 x)]]}
+               :ws/B {:spec-vars {:y :Integer}
+                      :refines-to {:ws/A {:clauses '[["A passthru" {:x y} (< 0 y)]
+                                                     ["A via negation" {:x (- 0 y)} (< y 0)]]}}}})]
+
+    (is (= true (halite/eval-expr senv tenv empty-env
+                                  '(refines-to? {:$type :ws/B, :y 5} :ws/A))))
+    (is (= {:$type :ws/A, :x 5} (halite/eval-expr senv tenv empty-env
+                                                  '(refine-to {:$type :ws/B, :y 5} :ws/A))))
+    (is (= true (halite/eval-expr senv tenv empty-env
+                                  '(refines-to? {:$type :ws/B, :y -5} :ws/A))))
+    (is (= {:$type :ws/A, :x 5} (halite/eval-expr senv tenv empty-env
+                                                  '(refine-to {:$type :ws/B, :y -5} :ws/A))))
+    (is (= false (halite/eval-expr senv tenv empty-env
+                                   '(refines-to? {:$type :ws/B, :y 0} :ws/A))))
+    (is (thrown-with-msg?
+         ExceptionInfo #"No active refinement path"
+         (halite/eval-expr senv tenv empty-env
+                           '(refine-to {:$type :ws/B, :y 0} :ws/A))))))
+
+(deftest test-conflicting-guards
+  (let [senv (->TestSpecEnv
+              {:ws/A {:spec-vars {:x :Integer}
+                      :constraints '[["non-neg x" (<= 0 x)]]}
+               :ws/B {:spec-vars {:y :Integer}
+                      :refines-to {:ws/A {:clauses '[["A passthru" {:x y} (<= 0 y)]
+                                                     ["A via negation" {:x (- 0 y)} (<= y 0)]]}}}})]
+    (is (thrown-with-msg?
+         ExceptionInfo #"Only one guard may be active"
+         (halite/eval-expr senv tenv empty-env
+                           '(refines-to? {:$type :ws/B, :y 0} :ws/A))))))
+
 (deftest test-instance-type
   (let [senv (->TestSpecEnv
               {:ws/A {:spec-vars {:x :Integer}
