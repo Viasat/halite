@@ -385,20 +385,41 @@
       (partition 2 bindings))
      body)))
 
-(s/defn ^:private type-check-quantifier :- HaliteType
+(s/defn ^:private type-check-comprehend
   [ctx :- TypeContext, expr]
   (arg-count-exactly 2 expr)
-  (let [[[sym expr :as bindings] body] (rest expr)]
+  (let [[op [sym expr :as bindings] body] expr]
     (when-not (= 2 (count bindings))
-      (throw (ex-info "quantifier binding form must have one variable and one collection"
+      (throw (ex-info (str "Binding form for '" op "' must have one variable and one collection")
                       {:form expr})))
-    (let [et (elem-type (type-check* ctx expr))]
-      (when-not et
-        (throw (ex-info "unsupported collection type" {:form expr})))
-      (let [pred-type (type-check* (update ctx :tenv extend-scope sym et) body)]
-        (when (not= :Boolean pred-type)
-          (throw (ex-info "Body expression in 'every?' and 'any?' must be boolean" {:form expr}))))))
+    (let [coll-type (type-check* ctx expr)
+          et (elem-type coll-type)
+          _ (when-not et
+              (throw (ex-info "unsupported collection type" {:form expr})))
+          body-type (type-check* (update ctx :tenv extend-scope sym et) body)]
+      {:coll-type coll-type
+       :body-type body-type})))
+
+(s/defn ^:private type-check-quantifier :- HaliteType
+  [ctx :- TypeContext, expr]
+  (when (not= :Boolean (:body-type (type-check-comprehend ctx expr)))
+    (throw (ex-info (str "Body expression in '" (first expr) "' must be boolean")
+                    {:form expr})))
   :Boolean)
+
+(s/defn ^:private type-check-map :- HaliteType
+  [ctx :- TypeContext, expr]
+  (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
+    (if (or (= :EmptySet coll-type) (= :EmptyVec coll-type))
+      coll-type
+      [(first coll-type) body-type])))
+
+(s/defn ^:private type-check-filter :- HaliteType
+  [ctx :- TypeContext, expr]
+  (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
+    (when (not= :Boolean body-type)
+      (throw (ex-info "Body expression in 'filter' must be boolean" {:form expr})))
+    coll-type))
 
 (s/defn ^:private type-check-if-value :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -561,6 +582,8 @@
                   'concrete? (type-check-concrete? ctx expr)
                   'every? (type-check-quantifier ctx expr)
                   'any? (type-check-quantifier ctx expr)
+                  'map (type-check-map ctx expr)
+                  'filter (type-check-filter ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -609,6 +632,13 @@
    [[sym coll] pred]]
   (map #(eval-expr* (update ctx :env bind sym %) pred)
        (eval-expr* ctx coll)))
+
+(s/defn ^:private eval-comprehend :- [s/Any]
+  [ctx :- EvalContext,
+   [[sym coll] expr]]
+  (let [coll-val (eval-expr* ctx coll)]
+    [coll-val
+     (map #(eval-expr* (update ctx :env bind sym %) expr) coll-val)]))
 
 (s/defn ^:private eval-refine-to :- s/Any
   [ctx :- EvalContext, expr]
@@ -667,7 +697,13 @@
                     'concrete? (concrete? (:senv ctx) (eval-in-env (second expr)))
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
-                    (apply (:impl (get builtins (first expr)))
+                    'map (let [[coll result] (eval-comprehend ctx (rest expr))]
+                           (into (empty coll) result))
+                    'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
+                              (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))
+                    (apply (or (:impl (get builtins (first expr)))
+                               (throw (ex-info (str "Undefined operator: " (pr-str (first expr)))
+                                               {:form expr})))
                            (map eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)
       (set? expr) (set (map eval-in-env expr))

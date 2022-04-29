@@ -107,6 +107,14 @@
     '(every? [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
     '(any? [x #{2 4 6}] (and (> x 2) (< x 5))) :Boolean
     '(any? [x #{}] true) :Boolean
+    '(map [x #{3 7}] [x]) [:Set [:Vec :Integer]]
+    '(map [x [3 7]] #{x}) [:Vec [:Set :Integer]]
+    '(map [x #{}] "blue") :EmptySet
+    '(map [x []] "red") :EmptyVec
+    '(filter [x #{3 7}] (< x 5)) [:Set :Integer]
+    '(filter [x [3 7]] (< x 5)) [:Vec :Integer]
+    '(filter [x #{}] true) :EmptySet
+    '(filter [x []] false) :EmptyVec
     '(abs -10) :Integer)
 
   (are [expr err-msg]
@@ -117,7 +125,11 @@
     '(+ 1) #"no matching signature for '\+'"
     '(any? [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
     '(any? [x #{}] x) #"must be boolean"
-    '(any? [x #{}] (< x 5)) #"no matching signature for '<'")
+    '(any? [x #{}] (< x 5)) #"no matching signature for '<'"
+    '(map [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
+    '(map [x #{}] (+ x 10)) #"no matching signature for '\+'"
+    '(filter [x #{"nan"}] (< x 10)) #"no matching signature for '\<'"
+    '(filter [x #{}] (< x 10)) #"no matching signature for '\<'")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -154,6 +166,14 @@
     '(every? [x #{2 4 6}] (> x 3)) false
     '(any? [x #{2 4 6}] (> x 5)) true
     '(any? [x #{2 4 6}] (> x 7)) false
+    '(map [x #{3 7}] [x]) #{[3] [7]}
+    '(map [x [3 7]] #{x}) [#{3} #{7}]
+    '(map [x #{}] "blue") #{}
+    '(map [x []] "red") []
+    '(filter [x #{3 7}] (< x 5)) #{3}
+    '(filter [x [3 7]] (< x 5)) [3]
+    '(filter [x #{}] true) #{}
+    '(filter [x []] false) []
     '(abs 10) 10
     '(abs -10) 10))
 
