@@ -4,239 +4,24 @@
 (ns jibe.halite.transpile.test-to-choco-clj2
   (:require [jibe.halite.envs :as halite-envs]
             [jibe.halite.transpile.to-choco-clj2 :as h2c]
+            [jibe.halite.transpile.util :refer [mk-junct]]
+            [jibe.halite.transpile.ssa :as ssa]
+            [schema.core :as s]
             [schema.test]
             [viasat.choco-clj :as choco-clj])
   (:use clojure.test))
 
 (use-fixtures :once schema.test/validate-schemas)
 
-(def spec-to-ssa #'h2c/spec-to-ssa)
-
 ;; TODO: We need to rewrite 'div forms in the case where the quotient is a variable,
 ;; to ensure that choco doesn't force the variable to be zero even when the div might not
 ;; be evaluated.
 
-(deftest test-spec-to-ssa
-  (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
-                   :constraints []
-                   :refines-to {}}
-        bar-info {:spec-vars {:a :Integer, :b :Boolean}, :constraints [], :refines-to {}}
-        tenv (halite-envs/type-env-from-spec
-              (halite-envs/spec-env {})
-              spec-info)]
-    (are [constraints derivations new-constraints]
-        (= [derivations new-constraints]
-           (binding [h2c/*next-id* (atom 0)]
-             (let [spec-info (->> constraints
-                                  (map-indexed #(vector (str "c" %1) %2))
-                                  (update spec-info :constraints into))
-                   senv (halite-envs/spec-env {:ws/A spec-info, :foo/Bar bar-info})
-                   tenv (halite-envs/type-env-from-spec senv spec-info)]
-               (->> spec-info
-                    (spec-to-ssa senv tenv)
-                    ((juxt #(-> % :derivations)
-                           #(->> % :constraints (map second))))))))
 
-      [] {} []
-
-      '[(= x 1)]
-      '{$1 [x :Integer]
-        $2 [1 :Integer]
-        $3 [(= $1 $2) :Boolean $4]
-        $4 [(not= $1 $2) :Boolean $3]}
-      '[$3]
-
-      '[(not= x 1)]
-      '{$1 [x :Integer]
-        $2 [1 :Integer]
-        $3 [(= $1 $2) :Boolean $4]
-        $4 [(not= $1 $2) :Boolean $3]}
-      '[$4]
-
-      '[(not (= x 1))]
-      '{$1 [x :Integer]
-        $2 [1 :Integer]
-        $3 [(= $1 $2) :Boolean $4]
-        $4 [(not= $1 $2) :Boolean $3]}
-      '[$4]
-
-      '[(not (not= x 1))]
-      '{$1 [x :Integer]
-        $2 [1 :Integer]
-        $3 [(= $1 $2) :Boolean $4]
-        $4 [(not= $1 $2) :Boolean $3]}
-      '[$3]
-
-      '[(< x y)]
-      '{$1 [x :Integer]
-        $2 [y :Integer]
-        $3 [(< $1 $2) :Boolean $4]
-        $4 [(<= $2 $1) :Boolean $3]}
-      '[$3]
-
-      '[(> x y)]
-      '{$1 [x :Integer]
-        $2 [y :Integer]
-        $3 [(< $2 $1) :Boolean $4]
-        $4 [(<= $1 $2) :Boolean $3]}
-      '[$3]
-
-      '[(<= x y)]
-      '{$1 [x :Integer]
-        $2 [y :Integer]
-        $3 [(< $2 $1) :Boolean $4]
-        $4 [(<= $1 $2) :Boolean $3]}
-      '[$4]
-
-      '[(>= x y)]
-      '{$1 [x :Integer]
-        $2 [y :Integer]
-        $3 [(< $1 $2) :Boolean $4]
-        $4 [(<= $2 $1) :Boolean $3]}
-      '[$4]
-
-      '[(< x y) (not (>= x y))]
-      '{$1 [x :Integer]
-        $2 [y :Integer]
-        $3 [(< $1 $2) :Boolean $4]
-        $4 [(<= $2 $1) :Boolean $3]}
-      '[$3 $3]
-
-      '[(or (< x y) (and b (= z (* x y))))]
-      '{$1 [x :Integer]
-        $2 [y :Integer]
-        $3 [(< $1 $2) :Boolean $4]
-        $4 [(<= $2 $1) :Boolean $3]
-        $5 [b :Boolean $6]
-        $6 [(not $5) :Boolean $5]
-        $7 [z :Integer]
-        $8 [(* $1 $2) :Integer]
-        $9 [(= $7 $8) :Boolean $10]
-        $10 [(not= $7 $8) :Boolean $9]
-        $11 [(and $5 $9) :Boolean $12]
-        $12 [(not $11) :Boolean $11]
-        $13 [(or $3 $11) :Boolean $14]
-        $14 [(not $13) :Boolean $13]}
-      '[$13]
-
-      '[(< x (+ y 1)) (< (+ y 1) z)] ; IDEA: lexically sort terms to +|*|and|or|etc. where order doesn't matter
-      '{$1 [x :Integer]
-        $2 [y :Integer]
-        $3 [1 :Integer]
-        $4 [(+ $2 $3) :Integer]
-        $5 [(< $1 $4) :Boolean $6]
-        $6 [(<= $4 $1) :Boolean $5]
-        $7 [z :Integer]
-        $8 [(< $4 $7) :Boolean $9]
-        $9 [(<= $7 $4) :Boolean $8]}
-      '[$5 $8]
-
-      '[(let [x (+ 1 x y)] (< z x))]
-      '{$1 [1 :Integer]
-        $2 [x :Integer]
-        $3 [y :Integer]
-        $4 [(+ $1 $2 $3) :Integer]
-        $5 [z :Integer]
-        $6 [(< $5 $4) :Boolean $7]
-        $7 [(<= $4 $5) :Boolean $6]}
-      '[$6]
-
-      '[(if (< x y) b false)]
-      '{$1 [x :Integer]
-        $2 [y :Integer]
-        $3 [(< $1 $2) :Boolean $4]
-        $4 [(<= $2 $1) :Boolean $3]
-        $5 [b :Boolean $6]
-        $6 [(not $5) :Boolean $5]
-        $7 [true :Boolean $8]
-        $8 [false :Boolean $7]
-        $9 [(if $3 $5 $8) :Boolean $10]
-        $10 [(not $9) :Boolean $9]}
-      '[$9]
-
-      '[(= 5 (if b x y))]
-      '{$1 [5 :Integer]
-        $2 [b :Boolean $3]
-        $3 [(not $2) :Boolean $2]
-        $4 [x :Integer]
-        $5 [y :Integer]
-        $6 [(if $2 $4 $5) :Integer]
-        $7 [(= $1 $6) :Boolean $8]
-        $8 [(not= $1 $6) :Boolean $7]}
-      '[$7]
-
-      '[(get* {:$type :foo/Bar :a 10 :b false} :b)]
-      '{$1 [10 :Integer]
-        $2 [true :Boolean $3]
-        $3 [false :Boolean $2]
-        $4 [{:$type :foo/Bar :a $1 :b $3} :foo/Bar]
-        $5 [(get* $4 :b) :Boolean $6]
-        $6 [(not $5) :Boolean $5]}
-      '[$5]
-      )))
-
-(def spec-from-ssa #'h2c/spec-from-ssa)
-
-(deftest test-spec-from-ssa
-  (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
-                   :constraints []
-                   :refines-to {}}]
-
-    (are [constraints derivations new-constraint]
-        (= [["$all" new-constraint]]
-           (-> spec-info
-               (assoc :derivations derivations
-                      :constraints
-                      (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
-               (spec-from-ssa)
-               :constraints))
-
-      [] {} true
-
-      '[$1] '{$1 [b :Boolean]} 'b
-
-      '[$3 $5]
-      '{$1 [x :Integer]
-        $2 [1 :Integer]
-        $3 [(< $2 $1) :Boolean]
-        $4 [10 :Integer]
-        $5 [(< $1 $4) :Boolean]}
-      '(and (< 1 x) (< x 10))
-
-      '[$7 $8]
-      '{$1 [(+ $2 $3) :Integer]
-        $2 [x :Integer]
-        $3 [y :Integer]
-        $4 [z :Integer]
-        $5 [10 :Integer]
-        $6 [2 :Integer]
-        $7 [(< $1 $5) :Boolean]
-        $8 [(= $9 $10) :Boolean]
-        $9 [(+ $3 $4) :Integer]
-        $10 [(* $6 $1) :Integer]}
-      '(let [$1 (+ x y)]
-         (and (< $1 10)
-              (= (+ y z) (* 2 $1))))
-
-      '[$1]
-      '{$1 [(get* $2 :foo) :Boolean]
-        $3 [b :Boolean]
-        $2 [{:$type :ws/Foo :foo $3} :ws/Foo]}
-      '(get* {:$type :ws/Foo :foo b} :foo)
-
-      '[$4]
-      '{$1 [12 :Integer]
-        $2 [$1 :Integer]
-        $3 [x :Integer]
-        $4 [(< $3 $2) :Boolean]}
-      '(< x 12)
-      )))
-
-(def build-spec-ctx #'h2c/build-spec-ctx)
 (def lower-instance-comparisons #'h2c/lower-instance-comparisons)
 
 (deftest test-lower-instance-comparisons
-  (binding [h2c/*next-id* (atom 0)]
+  (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
                   {:spec-vars {:an :Integer}
@@ -250,7 +35,7 @@
                   {:spec-vars {:bn :Integer :bb :Boolean}
                    :constraints []
                    :refines-to {}}})
-          sctx (build-spec-ctx senv :ws/A)]
+          sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (let [$4 {:$type :ws/B :bn 12 :bb true}
                              $24 (get* $4 :bn)
                              $6 {:$type :ws/B :bn an :bb true}
@@ -262,13 +47,13 @@
                           (or (not= (get* $10 :bb) $18)
                               (not= (get* $10 :bn) $24))
                           (= an 45)))]]
-             (-> sctx lower-instance-comparisons :ws/A spec-from-ssa :constraints)))
+             (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints)))
       )))
 
 (def fixpoint #'h2c/fixpoint)
 
 (deftest test-lower-instance-comparisons-for-composition
-  (binding [h2c/*next-id* (atom 0)]
+  (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
                   {:spec-vars {:b1 :ws/B, :b2 :ws/B}
@@ -282,7 +67,7 @@
                   {:spec-vars {:x :Integer :y :Integer}
                    :constraints []
                    :refines-to {}}})
-          sctx (build-spec-ctx senv :ws/A)]
+          sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (let [$6 (get* b2 :c1)
                              $5 (get* b1 :c1)
                              $9 (get* b1 :c2)
@@ -296,10 +81,23 @@
                            (not= (get* $9 :y) (get* $10 :y)))))]]
              (->> sctx
                   (fixpoint lower-instance-comparisons)
-                  :ws/A spec-from-ssa :constraints))))))
+                  :ws/A ssa/spec-from-ssa :constraints))))))
 
 (def compute-guards #'h2c/compute-guards)
-(def guards-from-ssa #'h2c/guards-from-ssa)
+(def form-from-ssa* #'ssa/form-from-ssa*)
+
+(s/defn ^:private guards-from-ssa :- {s/Any s/Any}
+  "To facilitate testing"
+  [dgraph :- ssa/Derivations, bound :- #{s/Symbol}, guards]
+  (-> guards
+      (update-keys (partial form-from-ssa* dgraph bound))
+      (update-vals
+       (fn [guards]
+         (if (seq guards)
+           (->> guards
+                (map #(->> % (map (partial form-from-ssa* dgraph bound)) (mk-junct 'and)))
+                (mk-junct 'or))
+           true)))))
 
 (deftest test-compute-guards
   (let [senv '{:ws/A
@@ -312,12 +110,12 @@
                 :refines-to {}}}]
     (are [constraints guards]
       (= guards
-         (binding [h2c/*next-id* (atom 0)]
+         (binding [ssa/*next-id* (atom 0)]
            (let [spec-info (-> senv
                                (update-in [:ws/A :constraints] into
                                           (map-indexed #(vector (str "c" %1) %2) constraints))
                                (halite-envs/spec-env)
-                               (build-spec-ctx :ws/A)
+                               (ssa/build-spec-ctx :ws/A)
                                :ws/A)]
              (-> spec-info
                  (compute-guards)
@@ -374,7 +172,7 @@
 (def lower-implicit-constraints #'h2c/lower-implicit-constraints)
 
 (deftest test-lower-implicit-constraints
-  (binding [h2c/*next-id* (atom 0)]
+  (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
                   {:spec-vars {:an :Integer}
@@ -389,7 +187,7 @@
                   {:spec-vars {:cn :Integer}
                    :constraints [["c1" (= 0 (mod cn 2))]]
                    :refines-to {}}})
-          sctx (build-spec-ctx senv :ws/A)]
+          sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (let [$6 (+ 1 an)
                              $38 (<= $6 5)]
                          (and
@@ -397,12 +195,12 @@
                           (= an (get* {:$type :ws/B, :bn $6} :bn))
                           (and (< (if $38 (get* {:$type :ws/C, :cn $6} :cn) 6) 0)
                                (if $38 (= 0 (mod $6 2)) true))))]]
-             (-> sctx lower-implicit-constraints :ws/A spec-from-ssa :constraints))))))
+             (-> sctx lower-implicit-constraints :ws/A ssa/spec-from-ssa :constraints))))))
 
 (def push-gets-into-ifs #'h2c/push-gets-into-ifs)
 
 (deftest test-push-gets-into-ifs
-  (binding [h2c/*next-id* (atom 0)]
+  (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
                   {:spec-vars {:ab :Boolean}
@@ -412,14 +210,14 @@
                   {:spec-vars {:bn :Integer}
                    :constraints []
                    :refines-to {}}})
-          sctx (build-spec-ctx senv :ws/A)]
+          sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (not= 1 (if ab
                                  (get* {:$type :ws/B :bn 2} :bn)
                                  (get* {:$type :ws/B :bn 1} :bn)))]]
-             (-> sctx push-gets-into-ifs :ws/A spec-from-ssa :constraints))))))
+             (-> sctx push-gets-into-ifs :ws/A ssa/spec-from-ssa :constraints))))))
 
 (deftest test-push-gets-into-nested-ifs
-  (binding [h2c/*next-id* (atom 0)]
+  (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
                   {:spec-vars {:b1 :ws/B, :b2 :ws/B, :b3 :ws/B, :b4 :ws/B, :a :Boolean, :b :Boolean}
@@ -429,15 +227,15 @@
                   {:spec-vars {:n :Integer}
                    :constraints []
                    :refines-to {}}})
-          sctx (build-spec-ctx senv :ws/A)]
+          sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (= 12 (if a (if b (get* b1 :n) (get* b2 :n)) (if b (get* b3 :n) (get* b4 :n))))]]
              (->> sctx (fixpoint push-gets-into-ifs)
-                 :ws/A spec-from-ssa :constraints))))))
+                 :ws/A ssa/spec-from-ssa :constraints))))))
 
 (def cancel-get-of-instance-literal #'h2c/cancel-get-of-instance-literal)
 
 (deftest test-cancel-get-of-instance-literal
-  (binding [h2c/*next-id* (atom 0)]
+  (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
                   {:spec-vars {:an :Integer :b :ws/B}
@@ -451,16 +249,16 @@
                   :ws/C
                   {:spec-vars {:cn :Integer}
                    :constraints [] :refines-to {}}})
-          sctx (build-spec-ctx senv :ws/A)]
+          sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (and
                         (< an (+ 1 an))
                         (= (get* (get* b :c) :cn) 12))]]
-             (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A spec-from-ssa :constraints))))))
+             (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A ssa/spec-from-ssa :constraints))))))
 
 (def spec-ify-bound #'h2c/spec-ify-bound)
 
 (deftest test-spec-ify-bound
-  (binding [h2c/*next-id* (atom 0)]
+  (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
                 '{:ws/A
                   {:spec-vars {:b :ws/B :c :ws/C}
@@ -478,14 +276,14 @@
                   {:spec-vars {:a :ws/A :cn :Integer}
                    :constraints []
                    :refines-to {}}})
-          sctx (build-spec-ctx senv :ws/A)]
+          sctx (ssa/build-spec-ctx senv :ws/A)]
 
       (are [b-bound constraint]
           (= {:spec-vars {:bn :Integer, :bp :Boolean}
               :constraints
               [["$all" constraint]]
               :refines-to {}}
-             (->> b-bound (spec-ify-bound sctx) spec-from-ssa))
+             (->> b-bound (spec-ify-bound sctx) ssa/spec-from-ssa))
 
         {:$type :ws/B} '(if bp (<= bn 10) (<= 10 bn))
         {:$type :ws/B :bn 12} '(and (if bp (<= bn 10) (<= 10 bn))
@@ -500,7 +298,7 @@
                            (<= b|bn 10)
                            (<= 10 b|bn)))]]
                :refines-to {}}
-             (->> {:$type :ws/A} (spec-ify-bound sctx) spec-from-ssa)))
+             (->> {:$type :ws/A} (spec-ify-bound sctx) ssa/spec-from-ssa)))
 
       (is (= '{:spec-vars {:b|bn :Integer :b|bp :Boolean
                            :c|cn :Integer
@@ -523,7 +321,7 @@
                     :b {:$type :ws/B :bp true}
                     :c {:$type :ws/C :a {:$type :ws/A}}}
                   (spec-ify-bound sctx)
-                  spec-from-ssa)))
+                  ssa/spec-from-ssa)))
       )))
 
 (deftest test-transpile-l0
