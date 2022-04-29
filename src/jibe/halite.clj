@@ -403,13 +403,13 @@
 (s/defn ^:private type-check-if-value :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 3 expr)
-  (let [[sym set-expr unset-expr] (rest expr)]
+  (let [[op sym set-expr unset-expr] expr]
     (when-not (and (symbol? sym) (bare? sym))
-      (throw (ex-info (str "First argument to 'if-value-' must be a bare symbol") {:form expr})))
+      (throw (ex-info (str "First argument to '" op "' must be a bare symbol") {:form expr})))
     (let [sym-type (type-check* ctx sym)
           unset-type (type-check* ctx unset-expr)]
       (when-not (maybe-type? sym-type)
-        (throw (ex-info (str "First argument to 'if-value-' must have an optional type")
+        (throw (ex-info (str "First argument to '" op "' must have an optional type")
                         {:form sym :expected [:Maybe :Any] :actual sym-type})))
       (if (= :Unset sym-type)
         (do
@@ -419,7 +419,7 @@
               set-type (type-check* (update ctx :tenv extend-scope sym inner-type) set-expr)
               m (meet set-type unset-type)]
           (when (and (not= m set-type) (not= m unset-type))
-            (throw (ex-info (str "then and else branches to 'if-value-' have incompatible types")
+            (throw (ex-info (str "then and else branches to '" op "' have incompatible types")
                             {:form expr})))
           m)))))
 
@@ -546,7 +546,8 @@
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
                   'if (type-check-if ctx expr)
                   'let (type-check-let ctx expr)
-                  'if-value- (type-check-if-value ctx expr)
+                  'if-value (type-check-if-value ctx expr)
+                  'if-value- (type-check-if-value ctx expr) ;; deprecated
                   'union (type-check-union ctx expr)
                   'intersection (type-check-intersection ctx expr)
                   'difference (type-check-difference ctx expr)
@@ -596,6 +597,13 @@
     (partition 2 bindings))
    body))
 
+(s/defn ^:private eval-if-value :- s/Any
+  [ctx :- EvalContext, expr]
+  (let [[sym then else] (rest expr)]
+    (if (not= :Unset (eval-expr* ctx sym))
+      (eval-expr* ctx then)
+      (eval-expr* ctx else))))
+
 (s/defn ^:private eval-quantifier-bools :- [s/Bool]
   [ctx :- EvalContext,
    [[sym coll] pred]]
@@ -640,10 +648,8 @@
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
                     'let (apply eval-let ctx (rest expr))
-                    'if-value- (let [[sym then else] (rest expr)]
-                                 (if (= :Unset (eval-in-env sym))
-                                   (eval-in-env else)
-                                   (eval-in-env then)))
+                    'if-value (eval-if-value ctx expr)
+                    'if-value- (eval-if-value ctx expr) ;; deprecated
                     'union (reduce set/union (map eval-in-env (rest expr)))
                     'intersection (reduce set/intersection (map eval-in-env (rest expr)))
                     'difference (apply set/difference (map eval-in-env (rest expr)))
