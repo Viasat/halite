@@ -13,11 +13,12 @@
             [weavejester.dependency :as dep]))
 
 (def ^:private renamed-ops
-  '{mod* mod})
+  ;; TODO: When we support vectors, we'll need to remove this as an alias and have separate implementations, since get* is 1-based for vectors.
+  '{mod* mod, get* get})
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get*}
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get}
    (keys renamed-ops)))
 
 (s/defschema DerivationName
@@ -255,7 +256,7 @@
         htype (or (->> spec-id (halite-envs/lookup-spec senv) :spec-vars var-kw)
                   (throw (ex-info (format "BUG! Couldn't determine type of field '%s' of spec '%s'" var-kw spec-id)
                                   {:form form})))]
-    (add-derivation dgraph [(list 'get* id var-kw) htype])))
+    (add-derivation dgraph [(list 'get id var-kw) htype])))
 
 (s/defn ^:private inst-literal-to-ssa :- DerivResult
   [ctx :- SSACtx, form]
@@ -285,6 +286,7 @@
                    (condp = op
                      'let (let-to-ssa ctx form)
                      'if (if-to-ssa ctx form)
+                     'get (get-to-ssa ctx form)
                      'get* (get-to-ssa ctx form)
                      (app-to-ssa ctx form)))
      (map? form) (inst-literal-to-ssa ctx form)
@@ -347,7 +349,7 @@
                     'let (let [[bindings body] args]
                            (->> bindings (partition 2) (map (comp spec-refs-from-expr second))
                                 (apply set/union (spec-refs-from-expr body))))
-                    'get* (spec-refs-from-expr (first args))
+                    'get (spec-refs-from-expr (first args))
                     (apply set/union (map spec-refs-from-expr args))))
     :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
 
@@ -435,7 +437,7 @@
                          form
                          (form-from-ssa* dgraph bound? form))
         (seq? form) (cond
-                      (= 'get* (first form)) (list 'get* (form-from-ssa* dgraph bound? (second form)) (last form))
+                      (= 'get (first form)) (list 'get (form-from-ssa* dgraph bound? (second form)) (last form))
                       :else (apply list (first form) (map (partial form-from-ssa* dgraph bound?) (rest form))))
         (map? form) (-> form (dissoc :$type) (update-vals (partial form-from-ssa* dgraph bound?)) (assoc :$type (:$type form)))
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation" {:id id :form form :derivations dgraph}))))))

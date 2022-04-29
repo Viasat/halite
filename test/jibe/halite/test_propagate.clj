@@ -45,11 +45,11 @@
               '{:ws/A
                 {:spec-vars {:an :Integer}
                  :constraints [["a1" (< an 10)]
-                               ["a2" (< an (get* {:$type :ws/B :bn (+ 1 an)} :bn))]]
+                               ["a2" (< an (get {:$type :ws/B :bn (+ 1 an)} :bn))]]
                  :refines-to {}}
                 :ws/B
                 {:spec-vars {:bn :Integer}
-                 :constraints [["b1" (< 0 (get* {:$type :ws/C :cn bn} :cn))]]
+                 :constraints [["b1" (< 0 (get {:$type :ws/C :cn bn} :cn))]]
                  :refines-to {}}
                 :ws/C
                 {:spec-vars {:cn :Integer}
@@ -98,8 +98,8 @@
                                        ["boundedSum" (< (+ x y) 20)]]
                          :refines-to {}}
                   :ws/B {:spec-vars {:a1 :ws/A, :a2 :ws/A}
-                         :constraints [["a1smaller" (and (< (get* a1 :x) (get* a2 :x))
-                                                         (< (get* a1 :y) (get* a2 :y)))]]
+                         :constraints [["a1smaller" (and (< (get a1 :x) (get a2 :x))
+                                                         (< (get a1 :y) (get a2 :y)))]]
                          :refines-to {}}})]
       (is (= '{:spec-vars {:a1|x :Integer, :a1|y :Integer, :a2|x :Integer, :a2|y :Integer}
                :refines-to {}
@@ -122,7 +122,7 @@
                   :ws/D
                   {:spec-vars {:c :ws/C :m :Integer}
                    :constraints [["c1" (= c (let [a 2
-                                                  c {:$type :ws/C :m (get* c :n) :n (* a m)}
+                                                  c {:$type :ws/C :m (get c :n) :n (* a m)}
                                                   b 3] c))]]
                    :refines-to {}}})]
       (is (= '{:spec-vars {:c|m :Integer, :c|n :Integer, :m :Integer}
@@ -143,10 +143,10 @@
     (let [senv (halite-envs/spec-env
                 '{:ws/A
                   {:spec-vars {:b :ws/B :c :ws/C}
-                   :constraints [["a1" (= (get* b :bn) (get* c :cn))]
-                                 ["a2" (if (> (get* b :bn) 0)
-                                         (< (get* b :bn)
-                                            (get* (get* (get* c :a) :b) :bn))
+                   :constraints [["a1" (= (get b :bn) (get c :cn))]
+                                 ["a2" (if (> (get b :bn) 0)
+                                         (< (get b :bn)
+                                            (get (get (get c :a) :b) :bn))
                                          true)]]
                    :refines-to {}}
                   :ws/B
@@ -208,10 +208,10 @@
   (let [senv (halite-envs/spec-env
               '{:ws/A
                 {:spec-vars {:b :ws/B :c :ws/C}
-                 :constraints [["a1" (= (get* b :bn) (get* c :cn))]
-                               ["a2" (if (> (get* b :bn) 0)
-                                       (< (get* b :bn)
-                                          (get* (get* (get* c :a) :b) :bn))
+                 :constraints [["a1" (= (get b :bn) (get c :cn))]
+                               ["a2" (if (> (get b :bn) 0)
+                                       (< (get b :bn)
+                                          (get (get (get c :a) :b) :bn))
                                        true)]]
                  :refines-to {}}
                 :ws/B
@@ -297,8 +297,8 @@
                                      ["boundedSum" (< (+ x y) 20)]]
                        :refines-to {}}
                 :ws/B {:spec-vars {:a1 :ws/A, :a2 :ws/A}
-                       :constraints [["a1smaller" (and (< (get* a1 :x) (get* a2 :x))
-                                                       (< (get* a1 :y) (get* a2 :y)))]]
+                       :constraints [["a1smaller" (and (< (get a1 :x) (get a2 :x))
+                                                       (< (get a1 :y) (get a2 :y)))]]
                        :refines-to {}}})
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
@@ -328,10 +328,10 @@
   (let [senv (halite-envs/spec-env
               '{:ws/A
                 {:spec-vars {:b :ws/B :c :ws/C}
-                 :constraints [["a1" (= (get* b :bn) (get* c :cn))]
-                               ["a2" (if (> (get* b :bn) 0)
-                                       (< (get* b :bn)
-                                          (get* (get* (get* c :a) :b) :bn))
+                 :constraints [["a1" (= (get b :bn) (get c :cn))]
+                               ["a2" (if (> (get b :bn) 0)
+                                       (< (get b :bn)
+                                          (get (get (get c :a) :b) :bn))
                                        (= 1 1) #_true)]]
                  :refines-to {}}
                 :ws/B
@@ -394,13 +394,13 @@
                 :ws/B
                 {:spec-vars {:by :Integer, :bz :Integer}
                  :constraints [["c2" (let [a {:$type :ws/A :ax (* 2 by)}
-                                           x (get* {:$type :ws/A :ax (+ bz bz)} :ax)]
-                                       (= x (get* {:$type :ws/C :cx (get* a :ax)} :cx)))]]
+                                           x (get {:$type :ws/A :ax (+ bz bz)} :ax)]
+                                       (= x (get {:$type :ws/C :cx (get a :ax)} :cx)))]]
                  :refines-to {}}
 
                 :ws/C
                 {:spec-vars {:cx :Integer}
-                 :constraints [["c3" (= cx (get* {:$type :ws/A :ax cx} :ax))]]
+                 :constraints [["c3" (= cx (get {:$type :ws/A :ax cx} :ax))]]
                  :refines-to {}}})
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
@@ -419,7 +419,7 @@
 
                :ws/Simpler2
                {:spec-vars {:y :Integer}
-                :constraints [["likeSimpler" (= y (get* {:$type :ws/Simpler :x y :b false} :x))]]
+                :constraints [["likeSimpler" (= y (get {:$type :ws/Simpler :x y :b false} :x))]]
                 :refines-to {}}
 
                :ws/Test
@@ -433,11 +433,11 @@
                 (halite-envs/spec-env)
                 (hp/spec-ify-bound {:$type :ws/Test})))
 
-      '(get*
+      '(get
         (let [x (+ 1 2)
               s {:$type :ws/Simpler :x (+ x 1) :b false}
-              s {:$type :ws/Simpler :x (- (get* s :x) 2) :b true}]
-          {:$type :ws/Simpler :x 12 :b (get* s :b)})
+              s {:$type :ws/Simpler :x (- (get s :x) 2) :b true}]
+          {:$type :ws/Simpler :x 12 :b (get s :b)})
         :b)
       '{:spec-vars {}
         :refines-to {}
@@ -450,7 +450,7 @@
                     (and (< 0 $74) (= true (= (mod $74 2) 1)))
                     (and (< 0 12) (= true (= (mod 12 2) 1)))))]]}
 
-      '(get* {:$type :ws/Simpler :x (get* {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
+      '(get {:$type :ws/Simpler :x (get {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
       '{:spec-vars {}
         :refines-to {}
         :constraints
@@ -460,7 +460,7 @@
                         (and $47 (= false $52))
                         (and $47 (= true $52))))]]}
 
-      '(not= 10 (get* {:$type :ws/Simpler2 :y 12} :y))
+      '(not= 10 (get {:$type :ws/Simpler2 :y 12} :y))
       '{:spec-vars {}
         :refines-to {}
         :constraints

@@ -155,12 +155,21 @@
         $8 [(not= $1 $6) :Boolean $7]}
       '[$7]
 
+      '[(get {:$type :foo/Bar :a 10 :b false} :b)]
+      '{$1 [10 :Integer]
+        $2 [true :Boolean $3]
+        $3 [false :Boolean $2]
+        $4 [{:$type :foo/Bar :a $1 :b $3} :foo/Bar]
+        $5 [(get $4 :b) :Boolean $6]
+        $6 [(not $5) :Boolean $5]}
+      '[$5]
+
       '[(get* {:$type :foo/Bar :a 10 :b false} :b)]
       '{$1 [10 :Integer]
         $2 [true :Boolean $3]
         $3 [false :Boolean $2]
         $4 [{:$type :foo/Bar :a $1 :b $3} :foo/Bar]
-        $5 [(get* $4 :b) :Boolean $6]
+        $5 [(get $4 :b) :Boolean $6]
         $6 [(not $5) :Boolean $5]}
       '[$5])))
 
@@ -206,10 +215,10 @@
               (= (+ y z) (* 2 $1))))
 
       '[$1]
-      '{$1 [(get* $2 :foo) :Boolean]
+      '{$1 [(get $2 :foo) :Boolean]
         $3 [b :Boolean]
         $2 [{:$type :ws/Foo :foo $3} :ws/Foo]}
-      '(get* {:$type :ws/Foo :foo b} :foo)
+      '(get {:$type :ws/Foo :foo b} :foo)
 
       '[$4]
       '{$1 [12 :Integer]

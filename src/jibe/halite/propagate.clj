@@ -104,7 +104,7 @@
                      expr)
     (seq? expr) (let [[op & args] expr]
                   (condp = op
-                    'get* (flatten-get-chain rename-scope [] expr)
+                    'get (flatten-get-chain rename-scope [] expr)
                     'let (let [[_let bindings body] expr
                                [rename-scope bindings] (reduce
                                                         (fn [[rename-scope bindings] [var-sym expr]]

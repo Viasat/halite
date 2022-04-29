@@ -48,7 +48,7 @@
       (or (integer? form) (boolean? form) (symbol? form)) result
       (seq? form) (let [[op & args] form]
                     (condp = op
-                      'get* (compute-guards* dgraph current result (first args))
+                      'get (compute-guards* dgraph current result (first args))
                       'if (let [[pred-id then-id else-id] args
                                 not-pred-id (ssa/negated dgraph pred-id)]
                             (as-> result result
@@ -109,7 +109,7 @@
                         (->> var-kws
                              (map (fn [var-kw]
                                     (apply list comparison-op
-                                           (map #(list 'get* %1 var-kw) arg-ids))))
+                                           (map #(list 'get %1 var-kw) arg-ids))))
                              (mk-junct logical-op))))))
                   dgraph))
               dgraph))
@@ -130,7 +130,7 @@
     (->
      (->> derivations
           (filter (fn [[id [form htype]]]
-                    (when (and (seq? form) (= 'get* (first form)))
+                    (when (and (seq? form) (= 'get (first form)))
                       (let [[subform htype] (derivations (second form))]
                         (and (seq? subform)
                              (= 'if (first subform))
@@ -143,8 +143,8 @@
                  (assoc ctx :dgraph dgraph)
                  get-id
                  (list 'if pred-id
-                       (list 'get* then-id var-kw)
-                       (list 'get* else-id var-kw))))))
+                       (list 'get then-id var-kw)
+                       (list 'get else-id var-kw))))))
            derivations)
           (assoc spec-info :derivations))
      (ssa/prune-derivations false))))
@@ -206,13 +206,13 @@
      (->> dg (dep/topo-sort) (remove #(= :nothing %))))))
 
 (s/defn ^:private cancel-get-of-instance-literal-in-spec :- SpecInfo
-  "Replace (get* {... :k <subexpr>} :k) with <subexpr>."
+  "Replace (get {... :k <subexpr>} :k) with <subexpr>."
   [{:keys [derivations] :as spec-info} :- SpecInfo]
   (->
    (->> spec-info
         :derivations
         (filter (fn [[id [form htype]]]
-                  (if (and (seq? form) (= 'get* (first form)))
+                  (if (and (seq? form) (= 'get (first form)))
                     (let [[subform] (ssa/deref-id derivations (second form))]
                       (map? subform)))))
         (reduce
