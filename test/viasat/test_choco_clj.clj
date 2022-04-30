@@ -43,10 +43,10 @@
 
                :B {:spec-vars {:b :Integer}
                    :constraints [["b1" (< b 4)]]
-                   :refines-to {:A {:clauses [["" {:n b}]]}}}
+                   :refines-to {:A {:expr {:$type :A, :n b}}}}
                :C {:spec-vars {:c :Integer}
                    :constraints [["c1" (< 2 c)]]
-                   :refines-to {:A {:clauses [["" {:n c}]]}}}}
+                   :refines-to {:A {:expr {:$type :A, :n c}}}}}
 
         alt1 '{:vars {x :Int
                       a?B|b :Int
