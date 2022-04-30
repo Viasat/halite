@@ -570,14 +570,14 @@
 (deftest test-refinement-validation
   (let [senv (->TestSpecEnv
               {:ws/A {:spec-vars {:x :Integer}
-                      :refines-to {:ws/B {:clauses '[["asB" {:x x}]]}
-                                   :ws/C {:inverted? true :clauses '[["fromC" {:x x}]]}}}
+                      :refines-to {:ws/B {:expr '{:$type :ws/B :x x}}
+                                   :ws/C {:inverted? true :expr '{:$type :ws/C :x x}}}}
                :ws/B {:spec-vars {:x :Integer}
                       :constraints '[["posX" (< 0 x)]]
-                      :refines-to {:ws/D {:clauses '[["asD" {:x (+ 1 x)}]]}}}
+                      :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 x)}}}}
                :ws/C {:spec-vars {:x :Integer}
                       :constraints '[["boundedX" (< x 10)]]
-                      :refines-to {:ws/D {:clauses '[["asD" {:x (+ 1 (* 2 x))}]]}}}
+                      :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 (* 2 x))}}}}
                :ws/D {:spec-vars {:x :Integer}
                       :constraints '[["xIsOdd" (= 1 (mod x 2))]]}
                :ws/E {:spec-vars {}}})]
@@ -626,8 +626,10 @@
               {:ws/A {:spec-vars {:x :Integer}
                       :constraints '[["posX" (< 0 x)]]}
                :ws/B {:spec-vars {:y :Integer}
-                      :refines-to {:ws/A {:clauses '[["A passthru" {:x y} (< 0 y)]
-                                                     ["A via negation" {:x (- 0 y)} (< y 0)]]}}}})]
+                      :refines-to {:ws/A {:expr '(if (< 0 y) ; A passthru
+                                                   {:$type :ws/A, :x y}
+                                                   (when (< y 0) ; A via negation
+                                                     {:$type :ws/A, :x (- 0 y)}))}}}})]
 
     (is (= true (halite/eval-expr senv tenv empty-env
                                   '(refines-to? {:$type :ws/B, :y 5} :ws/A))))
@@ -644,28 +646,16 @@
          (halite/eval-expr senv tenv empty-env
                            '(refine-to {:$type :ws/B, :y 0} :ws/A))))))
 
-(deftest test-conflicting-guards
-  (let [senv (->TestSpecEnv
-              {:ws/A {:spec-vars {:x :Integer}
-                      :constraints '[["non-neg x" (<= 0 x)]]}
-               :ws/B {:spec-vars {:y :Integer}
-                      :refines-to {:ws/A {:clauses '[["A passthru" {:x y} (<= 0 y)]
-                                                     ["A via negation" {:x (- 0 y)} (<= y 0)]]}}}})]
-    (is (thrown-with-msg?
-         ExceptionInfo #"Only one guard may be active"
-         (halite/eval-expr senv tenv empty-env
-                           '(refines-to? {:$type :ws/B, :y 0} :ws/A))))))
-
 (deftest test-instance-type
   (let [senv (->TestSpecEnv
               {:ws/A {:spec-vars {:x :Integer}
                       :constraints '[["posX" (< 0 x)]
                                      ["boundedX" (< x 10)]]}
                :ws/A1 {:spec-vars {}
-                       :refines-to {:ws/A {:clauses '[["asA" {:x 5}]]}}}
+                       :refines-to {:ws/A {:expr '{:$type :ws/A :x 5}}}}
                :ws/A2 {:spec-vars {:a :Integer
                                    :b :Integer}
-                       :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
+                       :refines-to {:ws/A {:expr '{:$type :ws/A :x (+ a b)}}}}
                :ws/B {:spec-vars {:a :Instance}}
                :ws/C {:spec-vars {:as [:Vec :Instance]}}
                :ws/D {:spec-vars {}}})
@@ -711,10 +701,10 @@
                       :constraints '[["posX" (< 0 x)]
                                      ["boundedX" (< x 10)]]}
                :ws/A1 {:spec-vars {}
-                       :refines-to {:ws/A {:clauses '[["asA" {:x 5}]]}}}
+                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
                :ws/A2 {:spec-vars {:a :Integer
                                    :b :Integer}
-                       :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
+                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
                :ws/B {:spec-vars {:a :Instance}}
                :ws/C {:spec-vars {:as [:Vec :Instance]}}
                :ws/D {:spec-vars {}}})
@@ -755,10 +745,10 @@
                                      ["boundedX" (< x 10)]]
                       :abstract? true}
                :ws/A1 {:spec-vars {}
-                       :refines-to {:ws/A {:clauses '[["asA" {:x 5}]]}}}
+                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
                :ws/A2 {:spec-vars {:a :Integer
                                    :b :Integer}
-                       :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
+                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
                :ws/B {:spec-vars {:a :ws/A}}
                :ws/C {:spec-vars {:as [:Vec :ws/A]}}
                :ws/D {:spec-vars {}}})]
@@ -791,10 +781,10 @@
                                      ["boundedX" (< x 10)]]
                       :abstract? true}
                :ws/A1 {:spec-vars {}
-                       :refines-to {:ws/A {:clauses '[["asA" {:x 6}]]}}}
+                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x 6}}}}
                :ws/A2 {:spec-vars {:a :Integer
                                    :b :Integer}
-                       :refines-to {:ws/A {:clauses '[["asA" {:x (+ a b)}]]}}}
+                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
                :ws/B {:spec-vars {:a :ws/A}
                       :constraints '[["notFive" (not= 5 (get (refine-to a :ws/A) :x))]]}
                :ws/C {:spec-vars {:as [:Vec :ws/A]}}
@@ -862,19 +852,19 @@
 
                  :ws/JsonStr
                  {:spec-vars {:s :String}
-                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}
+                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonBool
                  {:spec-vars {:b :Boolean}
-                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}
+                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonInt
                  {:spec-vars {:n :Integer}
-                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}
+                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonVec
                  {:spec-vars {:entries [:Vec :ws/JsonVal]}
-                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}
+                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonObjEntry
                  {:spec-vars {:key :String, :val :ws/JsonVal}}
@@ -884,7 +874,7 @@
                   :constraints [["uniqueKeys" true
                                  ;; TODO: each key shows up once
                                  #_(= (count entries) (count (for [entry entries] (get* entry :key))))]]
-                  :refines-to {:ws/JsonVal {:clauses [["asJsonVal" {}]]}}}})]
+                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}})]
 
       (are [v expected]
            (= expected (halite/eval-expr senv tenv empty-env (to-json v)))

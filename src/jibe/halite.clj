@@ -36,20 +36,10 @@
 (s/defn ^:private eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
-  [ctx :- EvalContext, tenv :- (s/protocol TypeEnv),  spec-id :- NamespacedKeyword, clauses]
+  [ctx :- EvalContext, tenv :- (s/protocol TypeEnv),  spec-id :- NamespacedKeyword, expr]
   (if (contains? *refinements* spec-id)
     (*refinements* spec-id) ;; cache hit
-    (let [actives (filter (fn [[_ _ guard]]
-                            (or (nil? guard) ;; no guard is like a guard of true
-                                (eval-expr (:senv ctx) tenv (:env ctx) guard)))
-                          clauses)]
-      (when (< 1 (count actives))
-        (throw (ex-info (str "Only one guard may be active at a time, not: "
-                             (pr-str (map first actives)))
-                        {:active-guards (map first actives)})))
-      (when-let [[_ mapping _] (first actives)]
-        (eval-expr (:senv ctx) tenv (:env ctx)
-                   (assoc mapping :$type spec-id))))))
+    (eval-expr (:senv ctx) tenv (:env ctx) expr)))
 
 (s/defn ^:private refines-to? :- s/Bool
   [inst spec-id]
@@ -122,16 +112,17 @@
        (->> refines-to
             (sort-by first)
             (reduce
-             (fn [transitive-refinements [spec-id {:keys [clauses inverted?]}]]
+             (fn [transitive-refinements [spec-id {:keys [expr inverted?]}]]
                (binding [*refinements* transitive-refinements]
-                 (let [inst (try (eval-refinement ctx spec-tenv spec-id clauses)
+                 (let [inst (try (eval-refinement ctx spec-tenv spec-id expr)
                                  (catch ExceptionInfo ex
                                    (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
                                      ex
                                      (throw ex))))]
-                   (-> transitive-refinements
-                       (merge (:refinements (meta inst)))
-                       (assoc spec-id inst)))))
+                   (cond-> transitive-refinements
+                     (not= :Unset inst) (->
+                                         (merge (:refinements (meta inst)))
+                                         (assoc spec-id inst))))))
              {}))})))
 
 (s/defn ^:private check-instance :- NamespacedKeyword

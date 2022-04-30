@@ -9,7 +9,7 @@
 (set! *warn-on-reflection* true)
 
 (s/defschema Refinement
-  {:clauses [[(s/one s/Str :name) (s/one s/Any :expr) (s/optional s/Any :guard)]]
+  {:expr s/Any
    (s/optional-key :inverted?) s/Bool})
 
 (s/defschema SpecInfo
