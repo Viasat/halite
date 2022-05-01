@@ -774,6 +774,49 @@
       '(concrete? [{:$type :ws/A :x 1}]) false
       '(concrete? [{:$type :ws/A1}]) true)))
 
+(deftest test-valid
+  (let [senv (->TestSpecEnv
+              '{:ws/A {:spec-vars {:x :Integer, :y :Integer}
+                       :constraints [["xLTy" (< x y)]]
+                       :refines-to {:ws/B {:expr {:$type :ws/B :z (+ x y)}}}}
+                :ws/B {:spec-vars {:z :Integer}
+                       :constraints [["posZ" (< 0 z)]]}
+                :ws/C {:spec-vars {:a :ws/A}
+                       :constraints [["maxSum" (< (+ (get a :x) (get a :y)) 10)]]}})]
+    (are [expr etype]
+        (= etype (halite/type-check senv tenv expr))
+
+      '(valid {:$type :ws/A, :x 1, :y 0}) [:Maybe :ws/A]
+      '(let [a (valid {:$type :ws/A :x 1 :y 0})] (if-value- a 1 2)) :Integer
+      '(valid {:$type :ws/C :a {:$type :ws/A :x 1 :y 0}}) [:Maybe :ws/C]
+      '(let [a {:$type :ws/A :x 1 :y 0}] (valid a)) [:Maybe :ws/A]
+      '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) [:Maybe :ws/A]
+      '(valid? {:$type :ws/A, :x 1, :y 0}) :Boolean
+      ;; These are questionable... 
+      ;;'(valid (valid {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
+      ;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
+      )
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+
+      '(valid 1) #"must be instance-valued"
+      '(valid? 1) #"must be instance-valued")
+
+    (are [expr v]
+        (= v (halite/eval-expr senv tenv empty-env expr))
+
+      '(valid {:$type :ws/A :x 2 :y 1}) :Unset
+      '(valid {:$type :ws/A, :x -2, :y 0}) :Unset
+      '(valid {:$type :ws/A, :x 1 :y 2}) {:$type :ws/A, :x 1, :y 2}
+      '(valid {:$type :ws/C :a {:$type :ws/A :x 6 :y 7}}) :Unset
+      '(valid {:$type :ws/C :a {:$type :ws/A :x 2 :y 1}}) :Unset
+      '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) :Unset
+      '(valid? {:$type :ws/A :x 2 :y 1}) false
+      '(valid? {:$type :ws/A :x 1 :y 2}) true
+      ;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 2})) :Unset
+      )))
+
 (deftest abstract-specs
   (let [senv (->TestSpecEnv
               {:ws/A {:spec-vars {:x :Integer}

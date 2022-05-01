@@ -551,6 +551,24 @@
   (arg-count-exactly 1 expr)
   :Boolean)
 
+(s/defn ^:private type-check-valid :- HaliteType
+  [ctx :- TypeContext, [_valid subexpr :as expr]]
+  (let [t (type-check* ctx subexpr)]
+    (cond
+      (spec-type? t) [:Maybe t]
+      ;; questionable...
+      ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) t
+      :else (throw (ex-info "Argument to 'valid' must be instance-valued" {:form expr})))))
+
+(s/defn ^:private type-check-valid? :- HaliteType
+  [ctx :- TypeContext, [_valid? subexpr :as expr]]
+  (let [t (type-check* ctx subexpr)]
+    (cond
+      (spec-type? t) :Boolean
+      ;; questionable...
+      ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
+      :else (throw (ex-info "Argument to 'valid?' must be instance-valued" {:form expr})))))
+
 (s/defn ^:private type-check* :- HaliteType
   [ctx :- TypeContext, expr]
   (cond
@@ -586,6 +604,8 @@
                   'any? (type-check-quantifier ctx expr)
                   'map (type-check-map ctx expr)
                   'filter (type-check-filter ctx expr)
+                  'valid (type-check-valid ctx expr)
+                  'valid? (type-check-valid? ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -707,6 +727,13 @@
                            (into (empty coll) result))
                     'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
                               (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))
+                    'valid (try
+                             (eval-in-env (second expr))
+                             (catch ExceptionInfo ex
+                               (if (= :constraint-violation (:halite-error (ex-data ex)))
+                                 :Unset
+                                 (throw ex))))
+                    'valid? (not= :Unset (eval-in-env (list 'valid (second expr))))
                     (apply (or (:impl (get builtins (first expr)))
                                (throw (ex-info (str "Undefined operator: " (pr-str (first expr)))
                                                {:form expr})))
