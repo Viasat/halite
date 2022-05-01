@@ -364,6 +364,40 @@
       '#{x} #"set literal element may not always evaluate to a value"
       '(conj [] x) #"cannot conj possibly unset value to vector")))
 
+(deftest when-tests
+  (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
+        tenv (-> tenv
+                 (halite-envs/extend-scope 'm :ws/Maybe$v1)
+                 (halite-envs/extend-scope 'x [:Maybe :Integer])
+                 (halite-envs/extend-scope 'b :Boolean))]
+    (are [expr etype]
+        (= etype (halite/type-check senv tenv expr))
+
+      '(when b 1) [:Maybe :Integer]
+      '(when b x) [:Maybe :Integer]
+      '(when b (when (if-value- x true false) "Foo")) [:Maybe :String]
+      '{:$type :ws/Maybe$v1 :x (when b 12)} :ws/Maybe$v1)
+
+    (are [expr err-msg]
+        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+
+      '[(when b 1)] #"may not always evaluate to a value"
+      '#{(when b 1)} #"may not always evaluate to a value"
+      '(when 1 2) #"must be boolean"
+      '(when) #"Wrong number of arguments"
+      '(when b 1 2) #"Wrong number of arguments")
+
+    (let [env (-> empty-env
+                  (halite-envs/bind 'm {:$type :ws/Maybe$v1})
+                  (halite-envs/bind 'x :Unset)
+                  (halite-envs/bind 'b false))]
+      (are [expr v]
+          (= v (halite/eval-expr senv tenv env expr))
+
+        '(when b 1) :Unset
+        '(when (= 1 1) 1) 1
+        '{:$type :ws/Maybe$v1 :x (when b 12)} {:$type :ws/Maybe$v1}))))
+
 (deftest union-tests
   (are [expr etype]
        (= etype (halite/type-check senv tenv expr))

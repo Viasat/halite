@@ -367,6 +367,16 @@
       (throw (ex-info "then and else branches to 'if' have incompatible types" {:form expr})))
     m))
 
+(s/defn ^:private type-check-when :- HaliteType
+  [ctx :- TypeContext, expr]
+  (arg-count-exactly 2 expr)
+  (let [[pred-type body-type] (map (partial type-check* ctx) (rest expr))]
+    (when (not= :Boolean pred-type)
+      (throw (ex-info "First argument to 'when' must be boolean" {:form expr})))
+    (if (and (vector? body-type) (= :Maybe (first body-type)))
+      body-type
+      [:Maybe body-type])))
+
 (s/defn ^:private type-check-let :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
@@ -566,6 +576,7 @@
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
                   'if (type-check-if ctx expr)
+                  'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
                   'if-value (type-check-if-value ctx expr)
                   'if-value- (type-check-if-value ctx expr) ;; deprecated
@@ -677,6 +688,10 @@
                     'not= (apply not= (map eval-in-env (rest expr)))
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
+                    'when (let [[pred body] (rest expr)]
+                            (if (eval-in-env pred)
+                              (eval-in-env body)
+                              :Unset))
                     'let (apply eval-let ctx (rest expr))
                     'if-value (eval-if-value ctx expr)
                     'if-value- (eval-if-value ctx expr) ;; deprecated

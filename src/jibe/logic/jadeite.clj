@@ -35,6 +35,7 @@
    (match [tree]
      [[:lambda [:params & params] body]]  (list 'fn (mapv toh params) (toh body))
      [[:conditional op a b c]]      (list (if (= "if" op) 'if 'if-value) (toh a) (toh b) (toh c))
+     [[:optional pred body]]        (list 'when (toh pred) (toh body))
      [[:implication a b]]           (list '=> (toh a) (toh b))
      [[:or  a "||" b]]              (list 'or (toh a) (toh b))
      [[:and a "&&" b]]              (list 'and (toh a) (toh b))
@@ -160,6 +161,7 @@
                  if (str "(if(" (toj a0)
                          ") {" (toj a1)
                          "} else {" (toj a2) "})")
+                 when (str "(when(" (toj a0) ") {" (toj a1) "})") ; WAT
                  (if-value if-value-) (str "(ifValue(" (toj a0)
                                            ") {" (toj a1)
                                            "} else {" (toj a2) "})")

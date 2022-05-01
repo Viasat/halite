@@ -2,7 +2,8 @@ expr         = lambda
 lambda       = conditional | params <'->'> expr
 params       = symbol      | <'('> (symbol (<','> symbol)* <','>? )? <')'>
 
-conditional  = implication | ('if' | 'ifValue') <'('> conditional <')'> conditional <'else'> conditional
+conditional  = optional    | ('if' | 'ifValue' ) <'('> conditional <')'> conditional <'else'> conditional
+optional     = implication | <'when'> <'('> conditional <')'> conditional
 implication  = or          | or <'=>'> conditional
 or           = and         | or '||' and
 and          = equality    | and '&&' equality
