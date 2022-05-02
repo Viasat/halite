@@ -330,3 +330,27 @@
                             (if q true (let [$5 (div 10 0)] (and (< 1 $5) (< $5 1))))
                             (if (not q) (< 1 (div 10 0)) true))]]
              (-> sctx (ssa/build-spec-env) (halite-envs/lookup-spec :ws/A) :constraints))))))
+
+(deftest test-semantics-preservation
+  ;; Test that this spec has the same interpretation after round-tripping through SSA representation.
+  (let [senv (halite-envs/spec-env
+              {:ws/A
+               '{:spec-vars {:x :Integer, :y :Integer, :p :Boolean, :q :Boolean}
+                 :constraints [["a1" (< x y)]
+                               ["a2" (if p (< (div 15 x) 10) true)]
+                               ["a3" (if q (< 1 (div 15 x)) true)]
+                               ["a3" (and (<= 0 x) (< x 10))]
+                               ["a4" (and (<= 0 y) (< y 10))]]
+                 :refines-to {}}})
+        senv' (binding [ssa/*next-id* (atom 0)]
+                (-> senv (ssa/build-spec-ctx :ws/A) (ssa/build-spec-env)))
+        tenv (halite-envs/type-env {})
+        env (halite-envs/env {})
+        check (fn [senv inst]
+                (try (halite/eval-expr senv tenv env (list 'valid? inst))
+                     (catch Exception ex
+                       :runtime-error)))]
+    (doseq [x (range -1 11), y (range -1 11), p [true false], q [true false]]
+      (let [inst {:$type :ws/A :x x :y y :p p :q q}]
+        (testing (pr-str inst)
+          (is (= (check senv inst) (check senv' inst))))))))

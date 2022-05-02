@@ -652,8 +652,8 @@
 (s/defn ^:private eval-quantifier-bools :- [s/Bool]
   [ctx :- EvalContext,
    [[sym coll] pred]]
-  (map #(eval-expr* (update ctx :env bind sym %) pred)
-       (eval-expr* ctx coll)))
+  (mapv #(eval-expr* (update ctx :env bind sym %) pred)
+        (eval-expr* ctx coll)))
 
 (s/defn ^:private eval-comprehend :- [s/Any]
   [ctx :- EvalContext,
@@ -695,8 +695,8 @@
       (seq? expr) (condp = (first expr)
                     'get (apply eval-get ctx (rest expr))
                     'get* (apply eval-get* ctx (rest expr)) ;; deprecated
-                    '= (apply = (map eval-in-env (rest expr)))
-                    'not= (apply not= (map eval-in-env (rest expr)))
+                    '= (apply = (mapv eval-in-env (rest expr)))
+                    'not= (apply not= (mapv eval-in-env (rest expr)))
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
                     'when (let [[pred body] (rest expr)]
@@ -737,7 +737,7 @@
                     (apply (or (:impl (get builtins (first expr)))
                                (throw (ex-info (str "Undefined operator: " (pr-str (first expr)))
                                                {:form expr})))
-                           (map eval-in-env (rest expr))))
+                           (mapv eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)
       (set? expr) (set (map eval-in-env expr))
       (= :Unset expr) :Unset
