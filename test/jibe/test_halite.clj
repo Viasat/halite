@@ -371,7 +371,7 @@
                  (halite-envs/extend-scope 'x [:Maybe :Integer])
                  (halite-envs/extend-scope 'b :Boolean))]
     (are [expr etype]
-        (= etype (halite/type-check senv tenv expr))
+         (= etype (halite/type-check senv tenv expr))
 
       '(when b 1) [:Maybe :Integer]
       '(when b x) [:Maybe :Integer]
@@ -379,7 +379,7 @@
       '{:$type :ws/Maybe$v1 :x (when b 12)} :ws/Maybe$v1)
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
       '[(when b 1)] #"may not always evaluate to a value"
       '#{(when b 1)} #"may not always evaluate to a value"
@@ -392,7 +392,7 @@
                   (halite-envs/bind 'x :Unset)
                   (halite-envs/bind 'b false))]
       (are [expr v]
-          (= v (halite/eval-expr senv tenv env expr))
+           (= v (halite/eval-expr senv tenv env expr))
 
         '(when b 1) :Unset
         '(when (= 1 1) 1) 1
