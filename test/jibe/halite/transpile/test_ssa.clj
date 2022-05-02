@@ -2,9 +2,12 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.transpile.test-ssa
-  (:require [jibe.halite.envs :as halite-envs]
+  (:require [jibe.halite :as halite]
+            [jibe.halite.envs :as halite-envs]
             [jibe.halite.types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa]
+            [jibe.halite.transpile.util :refer [mk-junct]]
+            [schema.core :as s]
             [schema.test])
   (:use clojure.test))
 
@@ -172,6 +175,91 @@
         $5 [(get $4 :b) :Boolean $6]
         $6 [(not $5) :Boolean $5]}
       '[$5])))
+
+(def form-from-ssa* #'ssa/form-from-ssa*)
+
+(s/defn ^:private guards-from-ssa :- {s/Any s/Any}
+  "To facilitate testing"
+  [dgraph :- ssa/Derivations, bound :- #{s/Symbol}, guards]
+  (-> guards
+      (update-keys (partial form-from-ssa* dgraph bound))
+      (update-vals
+       (fn [guards]
+         (if (seq guards)
+           (->> guards
+                (map #(->> % (map (partial form-from-ssa* dgraph bound)) (mk-junct 'and)))
+                (mk-junct 'or))
+           true)))))
+
+(deftest test-compute-guards
+  (let [senv '{:ws/A
+               {:spec-vars {:x :Integer, :y :Integer, :b1 :Boolean, :b2 :Boolean}
+                :constraints []
+                :refines-to {}}
+               :ws/Foo
+               {:spec-vars {:x :Integer, :y :Integer}
+                :constraints []
+                :refines-to {}}}]
+    (are [constraints guards]
+         (= guards
+            (binding [ssa/*next-id* (atom 0)]
+              (let [spec-info (-> senv
+                                  (update-in [:ws/A :constraints] into
+                                             (map-indexed #(vector (str "c" %1) %2) constraints))
+                                  (halite-envs/spec-env)
+                                  (ssa/build-spec-ctx :ws/A)
+                                  :ws/A)]
+                (-> spec-info
+                    :derivations
+                    (ssa/compute-guards (->> spec-info :constraints (map second) set))
+                    (->> (guards-from-ssa
+                          (:derivations spec-info)
+                          (->> spec-info :spec-vars keys (map symbol) set))
+                         (remove (comp true? val))
+                         (into {}))))))
+
+      []
+      {}
+
+      '[b1 true]
+      {}
+
+      '[(< x y)]
+      {}
+
+      '[(if (< x y)
+          (< x 10)
+          (> x 10))]
+      '{(< x 10) (< x y)
+        (< 10 x) (<= y x)}
+
+      '[(if (< x y) (<= (div 10 x) 10) true)
+        (if (>= x y) (<= (div 10 x) 10) true)]
+      '{}
+
+      '[(not= 1 (if b1 (if b2 1 2) 3))]
+      '{b2 b1
+        2 (and b1 (not b2))
+        3 (not b1)
+        (if b2 1 2) b1}
+
+      '[(not= 1 (if b1 (if b2 1 2) 3))
+        (not= 3 (if (not b2) 2 4))]
+      '{4 b2
+        (if b2 1 2) b1
+        2 (not b2)}
+
+      '[(if b1 {:$type :ws/Foo :x 1 :y 2} {:$type :ws/Foo :x 2 :y 3})]
+      '{1 b1
+        3 (not b1)
+        {:$type :ws/Foo :x 1 :y 2} b1
+        {:$type :ws/Foo :x 2 :y 3} (not b1)}
+
+      '[(= 1 (if b1 (get {:$type :ws/Foo :x 1 :y 2} :x) 3))]
+      '{2 b1
+        3 (not b1)
+        {:$type :ws/Foo :x 1 :y 2} b1
+        (get {:$type :ws/Foo :x 1 :y 2} :x) b1})))
 
 (deftest test-spec-from-ssa
   (let [spec-info {:spec-vars {:x :Integer, :y :Integer, :z :Integer, :b :Boolean}
