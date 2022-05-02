@@ -396,7 +396,8 @@
     (let [coll-type (type-check* ctx expr)
           et (elem-type coll-type)
           _ (when-not et
-              (throw (ex-info "unsupported collection type" {:form expr})))
+              (throw (ex-info (str "collection required for '" op "', not " (pr-str coll-type))
+                              {:form expr, :expr-type coll-type})))
           body-type (type-check* (update ctx :tenv extend-scope sym et) body)]
       {:coll-type coll-type
        :body-type body-type})))
@@ -421,6 +422,17 @@
     (when (not= :Boolean body-type)
       (throw (ex-info "Body expression in 'filter' must be boolean" {:form expr})))
     coll-type))
+
+(s/defn ^:private type-check-sort-by :- HaliteType
+  [ctx :- TypeContext, expr]
+  (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
+    (when (not= :Integer body-type)
+      (throw (ex-info (str "Body expression in 'sort-by' must be Integer, not "
+                           (pr-str body-type))
+                      {:form expr})))
+    (if (or (= :EmptySet coll-type) (= :EmptyVec coll-type))
+      :EmptyVec
+      [:Vec (second coll-type)])))
 
 (s/defn ^:private type-check-if-value :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -606,6 +618,7 @@
                   'filter (type-check-filter ctx expr)
                   'valid (type-check-valid ctx expr)
                   'valid? (type-check-valid? ctx expr)
+                  'sort-by (type-check-sort-by ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -727,6 +740,7 @@
                            (into (empty coll) result))
                     'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
                               (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))
+<<<<<<< HEAD
                     'valid (try
                              (eval-in-env (second expr))
                              (catch ExceptionInfo ex
@@ -734,6 +748,10 @@
                                  :Unset
                                  (throw ex))))
                     'valid? (not= :Unset (eval-in-env (list 'valid (second expr))))
+=======
+                    'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
+                               (mapv #(nth % 1) (sort (map vector indexes coll))))
+>>>>>>> 404f1958 (halite/jadeite: add sort-by/sortBy)
                     (apply (or (:impl (get builtins (first expr)))
                                (throw (ex-info (str "Undefined operator: " (pr-str (first expr)))
                                                {:form expr})))

@@ -115,6 +115,11 @@
     '(filter [x [3 7]] (< x 5)) [:Vec :Integer]
     '(filter [x #{}] true) :EmptySet
     '(filter [x []] false) :EmptyVec
+    '(sort-by [x #{3 1 2}] x) [:Vec :Integer]
+    '(sort-by [x #{[3] [1] [2]}] (get x 0)) [:Vec [:Vec :Integer]]
+    '(sort-by [x [[1 3] [2 1] [3 2]]] (get x 1)) [:Vec [:Vec :Integer]]
+    '(sort-by [x #{}] 1) :EmptyVec
+    '(sort-by [x []] 2) :EmptyVec
     '(abs -10) :Integer)
 
   (are [expr err-msg]
@@ -129,7 +134,9 @@
     '(map [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
     '(map [x #{}] (+ x 10)) #"no matching signature for '\+'"
     '(filter [x #{"nan"}] (< x 10)) #"no matching signature for '\<'"
-    '(filter [x #{}] (< x 10)) #"no matching signature for '\<'")
+    '(filter [x #{}] (< x 10)) #"no matching signature for '\<'"
+    '(sort-by [x []] x) #"must be Integer"
+    '(sort-by [x 5] 1) #"collection required")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -174,6 +181,11 @@
     '(filter [x [3 7]] (< x 5)) [3]
     '(filter [x #{}] true) #{}
     '(filter [x []] false) []
+    '(sort-by [x #{3 1 2}] x) [1 2 3]
+    '(sort-by [x #{[3] [1] [2]}] (get x 0)) [[1] [2] [3]]
+    '(sort-by [x [[1 3] [2 1] [3 2]]] (get x 1)) [[2 1] [3 2] [1 3]]
+    '(sort-by [x #{}] 1) []
+    '(sort-by [x []] 2) []
     '(abs 10) 10
     '(abs -10) 10))
 
@@ -230,7 +242,9 @@
       '(get* c :bs) (get c :bs) ;; deprecated
       '(get (get c :bs) 2) (get-in c [:bs 2])
       '(get* (get* c :bs) 3) (get-in c [:bs 2]) ;; deprecated
-      '(get (get (get c :bs) 2) :a) (get-in c [:bs 2 :a]))))
+      '(get (get (get c :bs) 2) :a) (get-in c [:bs 2 :a]))
+    (is (thrown? IndexOutOfBoundsException
+                 (halite/eval-expr senv tenv env '(get (get c :bs) 10))))))
 
 (deftest equality-tests
   (are [expr etype]
