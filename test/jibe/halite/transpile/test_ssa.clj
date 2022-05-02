@@ -179,13 +179,14 @@
                    :refines-to {}}]
 
     (are [constraints derivations new-constraint]
-         (= [["$all" new-constraint]]
-            (-> spec-info
-                (assoc :derivations derivations
-                       :constraints
-                       (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
-                (ssa/spec-from-ssa)
-                :constraints))
+        (= [["$all" new-constraint]]
+           (binding [ssa/*next-id* (atom 1000)]
+             (-> spec-info
+                 (assoc :derivations derivations
+                        :constraints
+                        (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
+                 (ssa/spec-from-ssa)
+                 :constraints)))
 
       [] {} true
 

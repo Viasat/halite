@@ -58,11 +58,11 @@
     (is (= '{:spec-vars {:an :Integer}
              :refines-to {}
              :constraints
-             [["$all" (let [$43 (+ 1 an)]
+             [["$all" (let [$45 (+ 1 an)]
                         (and (< an 10)                ; a1
-                             (< an $43)               ; a2
-                             (and (< 0 $43)           ; b1
-                                  (= 0 (mod $43 2)))))]]} ; c1
+                             (< an $45)               ; a2
+                             (and (< 0 $45)           ; b1
+                                  (= 0 (mod $45 2)))))]]} ; c1
            (hp/spec-ify-bound senv {:$type :ws/A})))))
 
 (deftest test-spec-ify-bound-on-ifs-and-instance-literals
@@ -442,23 +442,23 @@
       '{:spec-vars {}
         :refines-to {}
         :constraints
-        [["$all" (let [$63 (+ (+ 1 2) 1)
-                       $74 (- $63 2)]
+        [["$all" (let [$69 (+ (+ 1 2) 1)
+                       $80 (- $69 2)]
                    (and
                     true
-                    (and (< 0 $63) (= false (= (mod $63 2) 1)))
-                    (and (< 0 $74) (= true (= (mod $74 2) 1)))
+                    (and (< 0 $69) (= false (= (mod $69 2) 1)))
+                    (and (< 0 $80) (= true (= (mod $80 2) 1)))
                     (and (< 0 12) (= true (= (mod 12 2) 1)))))]]}
 
       '(get {:$type :ws/Simpler :x (get {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
       '{:spec-vars {}
         :refines-to {}
         :constraints
-        [["$all" (let [$52 (= (mod 14 2) 1)
-                       $47 (< 0 14)]
+        [["$all" (let [$51 (< 0 14)
+                       $56 (= (mod 14 2) 1)]
                    (and true
-                        (and $47 (= false $52))
-                        (and $47 (= true $52))))]]}
+                        (and $51 (= false $56))
+                        (and $51 (= true $56))))]]}
 
       '(not= 10 (get {:$type :ws/Simpler2 :y 12} :y))
       '{:spec-vars {}

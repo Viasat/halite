@@ -185,12 +185,12 @@
                    :refines-to {}}})
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (let [$6 (+ 1 an)
-                             $38 (<= $6 5)]
+                             $40 (<= $6 5)]
                          (and
                           (< an 10)
                           (= an (get {:$type :ws/B, :bn $6} :bn))
-                          (and (< (if $38 (get {:$type :ws/C, :cn $6} :cn) 6) 0)
-                               (if $38 (= 0 (mod $6 2)) true))))]]
+                          (and (< (if $40 (get {:$type :ws/C, :cn $6} :cn) 6) 0)
+                               (if $40 (= 0 (mod $6 2)) true))))]]
              (-> sctx lower-implicit-constraints :ws/A ssa/spec-from-ssa :constraints))))))
 
 (def push-gets-into-ifs #'lowering/push-gets-into-ifs)

@@ -326,7 +326,10 @@
   {halite-types/NamespacedKeyword SpecInfo})
 
 (s/defn as-spec-env :- (s/protocol halite-envs/SpecEnv)
-  "Adapt a SpecCtx to a SpecEnv."
+  "Adapt a SpecCtx to a SpecEnv. WARNING! The resulting spec env does NOT return
+  specs with meaningful constraints or refinements! Only the spec vars are correct.
+  This function is a hack to allow using a spec context to construct type environments.
+  It ought to be refactored away in favor of something less likely to lead to errors!"
   [sctx :- SpecCtx]
   (reify halite-envs/SpecEnv
     (lookup-spec* [self spec-id] (some-> sctx spec-id (dissoc :derivations)))))
@@ -471,38 +474,14 @@
 (s/defn spec-from-ssa :- halite-envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
   [spec-info :- SpecInfo]
-  ;; count usages of each derivation
-  ;; a derivation goes into a top-level let iff
-  ;;   it has multiple usages and is not a symbol/integer/boolean
-  ;; the let form is orderd via topological sort
-  ;; then we reconstitute the let bindings and constraints,
-  ;; and assemble into the final form
   (let [{:keys [derivations constraints spec-vars] :as spec-info} (prune-derivations spec-info true)
-        usage-counts (->> derivations vals (mapcat (comp referenced-derivations)) frequencies)
-        ordering (zipmap (topo-sort derivations) (range))
-        spec-var-syms (->> spec-vars keys (map symbol) set)
-        to-bind (->> derivations
-                     (remove
-                      (fn [[id [form htype]]]
-                        (or (contains? spec-var-syms form)
-                            (integer? form)
-                            (boolean? form)
-                            (<= (get usage-counts id 0) 1))))
-                     (map first)
-                     set)
-        bound (set/union to-bind spec-var-syms)
-        bindings (->> to-bind
-                      (sort-by ordering)
-                      (reduce
-                       (fn [[bound-set bindings] id]
-                         [(conj bound-set id)
-                          (conj bindings id (form-from-ssa* derivations bound-set id))])
-                       [spec-var-syms []])
-                      second
-                      vec)
-        constraint (->> constraints (map (comp (partial form-from-ssa* derivations bound) second)) (mk-junct 'and))
-        constraint (cond->> constraint
-                     (seq bindings) (list 'let bindings))]
+        scope (->> spec-vars keys (map symbol) set)
+        constraint (mk-junct 'and constraints)
+        ssa-ctx {:senv (halite-envs/spec-env {})
+                 :tenv (halite-envs/type-env {})
+                 :env {}
+                 :dgraph derivations}
+        [dgraph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
     (-> spec-info
         (dissoc :derivations)
-        (assoc :constraints [["$all" constraint]]))))
+        (assoc :constraints [["$all" (form-from-ssa scope dgraph id)]]))))
