@@ -182,12 +182,12 @@
   "To facilitate testing"
   [dgraph :- ssa/Derivations, bound :- #{s/Symbol}, guards]
   (-> guards
-      (update-keys (partial form-from-ssa* dgraph bound))
+      (update-keys (partial form-from-ssa* dgraph {} bound #{}))
       (update-vals
        (fn [guards]
          (if (seq guards)
            (->> guards
-                (map #(->> % (map (partial form-from-ssa* dgraph bound)) (mk-junct 'and)))
+                (map #(->> % (map (partial form-from-ssa* dgraph {} bound #{})) (mk-junct 'and)))
                 (mk-junct 'or))
            true)))))
 
@@ -315,3 +315,18 @@
         $3 [x :Integer]
         $4 [(< $3 $2) :Boolean]}
       '(< x 12))))
+
+(deftest test-spec-from-ssa-preserves-guards
+  (binding [ssa/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:p :Boolean, :q :Boolean}
+                   :constraints [["c1" (if p (< (div 10 0) 1) true)]
+                                 ["c2" (if q true (and (< 1 (div 10 0)) (< (div 10 0) 1)))]
+                                 ["c3" (if (not q) (< 1 (div 10 0)) true)]]
+                   :refines-to {}}})
+          sctx (ssa/build-spec-ctx senv :ws/A)]
+      (is (= '[["$all" (and (if p (< (div 10 0) 1) true)
+                            (if q true (let [$5 (div 10 0)] (and (< 1 $5) (< $5 1))))
+                            (if (not q) (< 1 (div 10 0)) true))]]
+             (-> sctx (ssa/build-spec-env) (halite-envs/lookup-spec :ws/A) :constraints))))))

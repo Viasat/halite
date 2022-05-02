@@ -123,7 +123,7 @@
         old-scope (->> spec-to-inline :spec-vars keys (map symbol) set)]
     (reduce
      (fn [{:keys [derivations] :as spec-info} [cname id]]
-       (let [expr (ssa/form-from-ssa old-scope (ssa/prune-dgraph (:derivations spec-to-inline) #{id} true) id)
+       (let [expr (ssa/form-from-ssa old-scope (:derivations spec-to-inline) id)
              fexpr (try (flatten-expression vars expr)
                         (catch clojure.lang.ExceptionInfo ex
                           (if (:skip-constraint? (ex-data ex))

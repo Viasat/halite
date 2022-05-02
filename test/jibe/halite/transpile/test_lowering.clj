@@ -35,9 +35,9 @@
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (let [$4 {:$type :ws/B :bn 12 :bb true}
                              $24 (get $4 :bn)
+                             $10 {:$type :ws/B :bn 4 :bb false}
                              $6 {:$type :ws/B :bn an :bb true}
-                             $18 (get $4 :bb)
-                             $10 {:$type :ws/B :bn 4 :bb false}]
+                             $18 (get $4 :bb)]
                          (and
                           (and (= $18 (get $6 :bb))
                                (= $24 (get $6 :bn)))

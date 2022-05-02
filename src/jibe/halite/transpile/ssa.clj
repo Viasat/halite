@@ -486,8 +486,10 @@
         (dep/graph))
        (dep/topo-sort)))
 
+(declare let-bindable-exprs)
+
 (s/defn ^:private form-from-ssa*
-  [dgraph :- Derivations, bound? :- #{s/Symbol} id]
+  [dgraph :- Derivations, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
   (if (bound? id)
     id
     (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
@@ -495,43 +497,68 @@
         (or (integer? form) (boolean? form)) form
         (symbol? form) (if (bound? form)
                          form
-                         (form-from-ssa* dgraph bound? form))
+                         (form-from-ssa* dgraph guards bound? curr-guard form))
         (seq? form) (cond
-                      (= 'get (first form)) (list 'get (form-from-ssa* dgraph bound? (second form)) (last form))
-                      :else (apply list (first form) (map (partial form-from-ssa* dgraph bound?) (rest form))))
-        (map? form) (-> form (dissoc :$type) (update-vals (partial form-from-ssa* dgraph bound?)) (assoc :$type (:$type form)))
-        :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation" {:id id :form form :derivations dgraph}))))))
+                      (= 'get (first form))
+                      (list 'get (form-from-ssa* dgraph guards bound? curr-guard (second form)) (last form))
+
+                      (= 'if (first form))
+                      (let [[_if pred-id then-id else-id] form]
+                        (list 'if
+                              (form-from-ssa* dgraph guards bound? curr-guard pred-id)
+                              (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)
+                              (let-bindable-exprs dgraph guards bound? (conj curr-guard (negated dgraph pred-id)) else-id)))
+
+                      :else
+                      (apply list (first form) (map (partial form-from-ssa* dgraph guards bound? curr-guard) (rest form))))
+        (map? form) (-> form (dissoc :$type) (update-vals (partial form-from-ssa* dgraph guards bound? curr-guard)) (assoc :$type (:$type form)))
+        :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation"
+                              {:id id :form form :dgraph dgraph :guards guards :bound? bound? :curr-guard curr-guard}))))))
+
+(s/defn ^:private let-bindable-exprs
+  "We want to avoid as much expression duplication as possible without changing
+  semantics. Expressions are side effect free, so we can generally avoid multiple occurrences
+  of an expression by introducing a 'let' form higher up in the AST.
+  However, expressions can evaluate to runtime errors, and 'if' forms only evaluate one of
+  their branches depending on the value of the predicate.
+  We need to ensure that our rewritten expressions never evaluate a form when the original
+  expressions would not have evaluated it."
+  [dgraph :- Derivations, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
+  (let [subdgraph (select-keys dgraph (reachable-derivations dgraph true id))
+        usage-counts (->> id
+                          (reachable-derivations subdgraph false)
+                          (select-keys subdgraph)
+                          vals
+                          (mapcat referenced-derivations)
+                          frequencies)
+        ordering (zipmap (topo-sort subdgraph) (range))
+        [bound? bindings] (->> subdgraph
+                               (remove
+                                (fn [[id [form htype]]]
+                                  (or (bound? form)
+                                      (integer? form)
+                                      (boolean? form)
+                                      (<= (get usage-counts id 0) 1)
+                                      ;; safe to bind if current guard implies some conjunct
+                                      (not (some #(set/superset? curr-guard %1) (guards id))))))
+                               (map first)
+                               (sort-by ordering)
+                               (reduce
+                                (fn [[bound-set bindings] id]
+                                  [(conj bound-set id)
+                                   (conj bindings id (form-from-ssa* subdgraph guards bound-set curr-guard id))])
+                                [bound? []]))]
+    (cond->> (form-from-ssa* subdgraph guards bound? curr-guard id)
+      (seq bindings) (list 'let bindings))))
 
 (s/defn form-from-ssa
-  [scope :- #{s/Symbol}, derivations :- Derivations, id :- DerivationName]
-  (let [usage-counts (->> derivations vals (mapcat (comp referenced-derivations)) frequencies)
-        ordering (zipmap (topo-sort derivations) (range))
-        to-bind (->> derivations
-                     (remove
-                      (fn [[id [form htype]]]
-                        (or (contains? scope form)
-                            (integer? form)
-                            (boolean? form)
-                            (<= (get usage-counts id 0) 1))))
-                     (map first)
-                     set)]
-    (cond->> (form-from-ssa* derivations (set/union to-bind scope) id)
-      (seq to-bind)
-      (list 'let
-            (->> to-bind
-                 (sort-by ordering)
-                 (reduce
-                  (fn [[bound-set bindings] id]
-                    [(conj bound-set id)
-                     (conj bindings id (form-from-ssa* derivations bound-set id))])
-                  [scope []])
-                 second
-                 vec)))))
+  [scope :- #{s/Symbol}, dgraph :- Derivations, id :- DerivationName]
+  (let-bindable-exprs dgraph (compute-guards dgraph #{id}) scope #{} id))
 
 (s/defn spec-from-ssa :- halite-envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
   [spec-info :- SpecInfo]
-  (let [{:keys [derivations constraints spec-vars] :as spec-info} (prune-derivations spec-info true)
+  (let [{:keys [derivations constraints spec-vars] :as spec-info} (prune-derivations spec-info false)
         scope (->> spec-vars keys (map symbol) set)
         constraint (mk-junct 'and constraints)
         ssa-ctx {:senv (halite-envs/spec-env {})
@@ -542,3 +569,7 @@
     (-> spec-info
         (dissoc :derivations)
         (assoc :constraints [["$all" (form-from-ssa scope dgraph id)]]))))
+
+(s/defn build-spec-env :- (s/protocol halite-envs/SpecEnv)
+  [sctx :- SpecCtx]
+  (-> sctx (update-vals spec-from-ssa) (halite-envs/spec-env)))
