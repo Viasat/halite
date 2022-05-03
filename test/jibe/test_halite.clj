@@ -115,6 +115,10 @@
     '(filter [x [3 7]] (< x 5)) [:Vec :Integer]
     '(filter [x #{}] true) :EmptySet
     '(filter [x []] false) :EmptyVec
+    '(sort #{3 1 2}) [:Vec :Integer]
+    '(sort [3 1 2]) [:Vec :Integer]
+    '(sort #{}) :EmptyVec
+    '(sort []) :EmptyVec
     '(sort-by [x #{3 1 2}] x) [:Vec :Integer]
     '(sort-by [x #{[3] [1] [2]}] (get x 0)) [:Vec [:Vec :Integer]]
     '(sort-by [x [[1 3] [2 1] [3 2]]] (get x 1)) [:Vec [:Vec :Integer]]
@@ -139,6 +143,7 @@
     '(map [x #{}] (+ x 10)) #"no matching signature for '\+'"
     '(filter [x #{"nan"}] (< x 10)) #"no matching signature for '\<'"
     '(filter [x #{}] (< x 10)) #"no matching signature for '\<'"
+    '(sort 5) #"no matching signature"
     '(sort-by [x []] x) #"must be Integer"
     '(sort-by [x 5] 1) #"collection required"
     '(sort-by [1 5] 1) #"must be a bare symbol"
@@ -191,6 +196,9 @@
     '(filter [x [3 7]] (< x 5)) [3]
     '(filter [x #{}] true) #{}
     '(filter [x []] false) []
+    '(sort #{3 1 2}) [1 2 3]
+    '(sort [3 1 2]) [1 2 3]
+    '(sort []) []
     '(sort-by [x #{3 1 2}] x) [1 2 3]
     '(sort-by [x #{[3] [1] [2]}] (get x 0)) [[1] [2] [3]]
     '(sort-by [x [[1 3] [2 1] [3 2]]] (get x 1)) [[2 1] [3 2] [1 3]]
