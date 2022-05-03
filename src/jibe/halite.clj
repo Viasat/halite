@@ -256,7 +256,11 @@
                        [[:Set :Integer]] [:Vec :Integer]
                        [[:Vec :Integer]] [:Vec :Integer])
      'some? (mk-builtin (fn [v] (not= :Unset v))
-                        [[:Maybe :Any]] :Boolean)}))
+                        [[:Maybe :Any]] :Boolean)
+     'range (mk-builtin (comp vec range)
+                        [:Integer :Integer :Integer] [:Vec :Integer]
+                        [:Integer :Integer] [:Vec :Integer]
+                        [:Integer] [:Vec :Integer])}))
 
 (s/defn ^:private matches-signature?
   [sig :- FnSignature, actual-types :- [HaliteType]]

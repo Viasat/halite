@@ -184,6 +184,9 @@
     '(str "foo" (str) (str "bar")) "foobar"
     '(subset? #{} #{1 2 3}) true
     '(subset? #{"nope"} #{1 2 3}) false
+    '(range 5) [0 1 2 3 4]
+    '(range 2 5) [2 3 4]
+    '(range 2 5 2) [2 4]
     '(every? [x #{2 4 6}] (> x 1)) true
     '(every? [x #{2 4 6}] (> x 3)) false
     '(any? [x #{2 4 6}] (> x 5)) true
