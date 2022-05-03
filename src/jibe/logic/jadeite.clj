@@ -56,6 +56,8 @@
      [[:get-index a b]]           (list 'get (toh a) (toh b))
      [[:comprehend [:symbol "sortBy"] s bind pred]] (list 'sort-by [(toh s) (toh bind)] (toh pred))
      [[:comprehend [:symbol op] s bind pred]] (list (symbol op) [(toh s) (toh bind)] (toh pred))
+     [[:reduce acc init elem coll body]] (list 'reduce [(toh acc) (toh init)]
+                                               [(toh elem) (toh coll)] (toh body))
      [[:call-fn s & args]]          (list* (toh s) (map toh args))
      [[:call-method a [:symbol "concat"] b]]      (list 'concat (toh a) (toh b))
      [[:call-method a [:symbol "reduce"] & args]] (concat ['reduce-] (map toh args) [(toh a)])
@@ -154,6 +156,9 @@
                  = (infix " == " args)
                  (every? any? map filter) (str op (infix " in " a0) (toj a1))
                  sort-by (str "sortBy" (infix " in " a0) (toj a1))
+                 reduce (let [[[acc init] [elem coll] body] args]
+                          (str "reduce( " (toj acc) " = " (toj init) "; " (toj elem) " in " (toj coll)
+                               " ) { " (toj body) " }"))
                  and (infix " && " args)
                  dec (str "(" (toj a0) " - 1)")
                  div (infix " / " args)

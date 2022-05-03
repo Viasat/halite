@@ -393,6 +393,9 @@
     (when-not (= 2 (count bindings))
       (throw (ex-info (str "Binding form for '" op "' must have one variable and one collection")
                       {:form expr})))
+    (when-not (and (symbol? sym) (bare? sym))
+      (throw (ex-info (str "Binding target for '" op "' must be a bare symbol, not: " (pr-str sym))
+                      {:form expr})))
     (let [coll-type (type-check* ctx expr)
           et (elem-type coll-type)
           _ (when-not et
@@ -433,6 +436,29 @@
     (if (or (= :EmptySet coll-type) (= :EmptyVec coll-type))
       :EmptyVec
       [:Vec (second coll-type)])))
+
+(s/defn ^:private type-check-reduce :- HaliteType
+  [ctx :- TypeContext, expr]
+  (arg-count-exactly 3 expr)
+  (let [[op [acc init] [elem coll] body] expr]
+    (when-not (and (symbol? acc) (bare? acc))
+      (throw (ex-info (str "Accumulator binding target for '"op"' must be a bare symbol, not: "
+                           (pr-str acc))
+                      {:form expr :accumulator acc})))
+    (when-not (and (symbol? elem) (bare? elem))
+      (throw (ex-info (str "Element binding target for '"op"' must be a bare symbol, not: "
+                           (pr-str elem))
+                      {:form expr :element elem})))
+    (let [init-type (type-check* ctx init)
+          coll-type (type-check* ctx coll)
+          et (elem-type coll-type)]
+      (when-not (subtype? coll-type [:Vec :Any])
+        (throw (ex-info (str "Second binding expression to 'reduce' must be a vector.")
+                        {:form expr, :actual-coll-type coll-type})))
+      (type-check* (update ctx :tenv #(-> %
+                                          (extend-scope acc init-type)
+                                          (extend-scope elem et)))
+                   body))))
 
 (s/defn ^:private type-check-if-value :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -619,6 +645,7 @@
                   'valid (type-check-valid ctx expr)
                   'valid? (type-check-valid? ctx expr)
                   'sort-by (type-check-sort-by ctx expr)
+                  'reduce (type-check-reduce ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw (ex-info "Syntax error" {:form expr}))))
@@ -674,6 +701,16 @@
   (let [coll-val (eval-expr* ctx coll)]
     [coll-val
      (map #(eval-expr* (update ctx :env bind sym %) expr) coll-val)]))
+
+(s/defn ^:private eval-reduce :- s/Any
+  [ctx :- EvalContext,
+   [op [acc init] [elem coll] body]]
+  (reduce (fn [a b]
+            (eval-expr* (update ctx :env
+                                #(-> % (bind acc a) (bind elem b)))
+                        body))
+          (eval-expr* ctx init)
+          (eval-expr* ctx coll)))
 
 (s/defn ^:private eval-refine-to :- s/Any
   [ctx :- EvalContext, expr]
@@ -740,7 +777,6 @@
                            (into (empty coll) result))
                     'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
                               (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))
-<<<<<<< HEAD
                     'valid (try
                              (eval-in-env (second expr))
                              (catch ExceptionInfo ex
@@ -748,10 +784,9 @@
                                  :Unset
                                  (throw ex))))
                     'valid? (not= :Unset (eval-in-env (list 'valid (second expr))))
-=======
                     'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
                                (mapv #(nth % 1) (sort (map vector indexes coll))))
->>>>>>> 404f1958 (halite/jadeite: add sort-by/sortBy)
+                    'reduce (eval-reduce ctx expr)
                     (apply (or (:impl (get builtins (first expr)))
                                (throw (ex-info (str "Undefined operator: " (pr-str (first expr)))
                                                {:form expr})))

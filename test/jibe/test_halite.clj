@@ -120,6 +120,10 @@
     '(sort-by [x [[1 3] [2 1] [3 2]]] (get x 1)) [:Vec [:Vec :Integer]]
     '(sort-by [x #{}] 1) :EmptyVec
     '(sort-by [x []] 2) :EmptyVec
+    '(sort-by [x []] 2) :EmptyVec
+    '(reduce [acc 0] [x [1 2 3]] (+ (* 10 acc) x)) :Integer
+    '(reduce [acc [0]] [x [1 2 3]] (concat [x] acc)) [:Vec :Integer]
+    '(reduce [a [[1]]] [x []] a) [:Vec [:Vec :Integer]]
     '(abs -10) :Integer)
 
   (are [expr err-msg]
@@ -136,7 +140,13 @@
     '(filter [x #{"nan"}] (< x 10)) #"no matching signature for '\<'"
     '(filter [x #{}] (< x 10)) #"no matching signature for '\<'"
     '(sort-by [x []] x) #"must be Integer"
-    '(sort-by [x 5] 1) #"collection required")
+    '(sort-by [x 5] 1) #"collection required"
+    '(sort-by [1 5] 1) #"must be a bare symbol"
+    '(reduce [0 1] [x []] 2) #"must be a bare symbol"
+    '(reduce [a 1] [2 []] 3) #"must be a bare symbol"
+    '(reduce [a 1] [x 2] 3) #"must be a vector"
+    '(reduce [a 1] [x #{1 2}] 3) #"must be a vector"
+    '(reduce [a 1] [x []] (+ a x)) #"no matching signature for '\+'")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -186,6 +196,8 @@
     '(sort-by [x [[1 3] [2 1] [3 2]]] (get x 1)) [[2 1] [3 2] [1 3]]
     '(sort-by [x #{}] 1) []
     '(sort-by [x []] 2) []
+    '(reduce [acc 0] [x [1 2 3]] (+ (* 10 acc) x)) 123
+    '(reduce [acc [0]] [x [1 2 3]] (concat [x] acc)) [3 2 1 0]
     '(abs 10) 10
     '(abs -10) 10))
 
