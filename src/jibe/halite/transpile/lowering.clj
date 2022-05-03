@@ -97,6 +97,26 @@
   [sctx :- SpecCtx]
   (update-vals sctx (partial push-gets-into-ifs-in-spec sctx)))
 
+(s/defn ^:private rewrite-in-dependency-order :- SpecCtx
+  [sctx :- SpecCtx, deps-fn, rewrite-fn]
+  (as-> (dep/graph) dg
+    ;; ensure that everything is in the dependency graph, depending on :nothing
+    (reduce #(dep/depend %1 %2 :nothing) dg (keys sctx))
+    ;; add the deps for each spec
+    (reduce
+     (fn [dg [spec-id spec]]
+       (reduce #(dep/depend %1 spec-id %2) dg (deps-fn spec)))
+     dg
+     sctx)
+    ;; rewrite in the correct order
+    (->> dg
+         (dep/topo-sort)
+         (remove #(= :nothing %))
+         (reduce
+          (fn [sctx spec-id]
+            (->> spec-id (sctx) (rewrite-fn sctx) (assoc sctx spec-id)))
+          sctx))))
+
 ;;;;;;;;; Instance Literal Lowering ;;;;;;;;;;;
 
 (s/defn ^:private lower-implicit-constraints-in-spec :- SpecInfo
@@ -129,25 +149,16 @@
   Specs are lowered in an order that respects a spec dependency graph where spec S has an arc to T
   iff S has an instance literal of type T. If a cycle is detected, the phase will throw."
   [sctx :- SpecCtx]
-  (let [dg (reduce
-            (fn [dg [spec-id spec]]
-              (reduce
-               (fn [dg [id [form htype]]]
-                 (cond-> dg
-                   (map? form) (dep/depend spec-id (:$type form))))
-               dg
-               (:derivations spec)))
-            ;; ensure that everything is in the dependency graph, depending on :nothing
-            (reduce #(dep/depend %1 %2 :nothing) (dep/graph) (keys sctx))
-            sctx)]
-    (reduce
-     (fn [sctx' spec-id]
-       (assoc sctx' spec-id (lower-implicit-constraints-in-spec sctx' (sctx spec-id))))
-     ;; We start with the original spec context, but we process specs in an order such that
-     ;; any instance literal getting its implicit constraints inlined is of a spec that has already
-     ;; been processed.
-     sctx
-     (->> dg (dep/topo-sort) (remove #(= :nothing %))))))
+  (rewrite-in-dependency-order
+   sctx
+   (fn deps-of [spec-info]
+     (->> spec-info
+         :derivations
+         vals
+         (map (fn [[form htype]] (when (map? form) (:$type form))))
+         (remove nil?)
+         (set)))
+   lower-implicit-constraints-in-spec))
 
 (s/defn ^:private cancel-get-of-instance-literal-in-spec :- SpecInfo
   "Replace (get {... :k <subexpr>} :k) with <subexpr>."
