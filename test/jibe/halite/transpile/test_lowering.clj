@@ -79,6 +79,120 @@
                   (fixpoint lower-instance-comparisons)
                   :ws/A ssa/spec-from-ssa :constraints))))))
 
+(def lower-valid? #'lowering/lower-valid?)
+
+(deftest test-lower-valid?
+  (let [senv '{:ws/A
+               {:spec-vars {:an :Integer}
+                :constraints []
+                :refines-to {}}
+               :ws/B
+               {:spec-vars {:bn :Integer, :bp :Boolean}
+                :constraints [["b1" (<= bn 10)]
+                              ("b2" (=> bp (<= 0 bn)))]
+                :refines-to {}}
+               :ws/C
+               {:spec-vars {:b :ws/B}
+                :constraints [["c1" (not= (get* b :bn) 4)]]
+                :refines-to {}}}]
+    (are [expr lowered-expr]
+        (= lowered-expr
+           (binding [ssa/*next-id* (atom 0)]
+             (-> senv
+                 (update-in [:ws/A :constraints] conj ["c" expr])
+                 (halite-envs/spec-env)
+                 (ssa/build-spec-ctx :ws/A)
+                 (lower-valid?)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints
+                 first second)))
+      ;; The commented out forms below are hand-simplified versions
+      ;; of the 'expected' values.
+
+      true true
+
+      '(valid? {:$type :ws/B :bn 1 :bp true})
+      '(if (and true true)
+         (and (<= 1 10) (=> true (<= 0 1)))
+         false)
+      #_(and (<= 1 10) (=> true (<= 0 1)))
+      ;; -----------
+      '(and (valid? {:$type :ws/B :bn an :bp false})
+            (valid? {:$type :ws/B :bn 12 :bp (= an 1)}))
+      '(and
+        (if (and true true) (and (<= an 10) (=> false (<= 0 an))) false)
+        (if (and true (and true true)) (and (<= 12 10) (=> (= an 1) (<= 0 12))) false))
+      #_(and
+         (and (<= an 10) (=> false (<= 0 an)))
+         (and (<= 12 10) (=> (= an 1) (<= 0 12))))
+      ;; -----------
+      '(if (valid? {:$type :ws/B :bn an :bp false})
+         {:$type :ws/B :bn an, :bp true}
+         {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)})
+      '(if (if (and true true)
+             (and (<= an 10) (=> false (<= 0 an)))
+             false)
+         {:$type :ws/B, :bn an, :bp true}
+         {:$type :ws/B, :bn (+ 1 an), :bp (< 5 an)})
+      ;; -----------
+      '(if (valid? {:$type :ws/B :bn an :bp false})
+         (valid? {:$type :ws/B :bn an, :bp true})
+         (valid? {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
+      '(if (if (and true true) (and (<= an 10) (=> false (<= 0 an))) false)
+         (if (and true true)
+           (and (<= an 10) (=> true (<= 0 an)))
+           false)
+         (if (and (and true true) (and true true))
+           (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an))))
+           false))
+      #_(if (and (<= an 10) (=> false (<= 0 an)))
+          (and (<= an 10) (=> true (<= 0 an)))
+          (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an)))))
+      ;; -----------
+      '(valid? (if (valid? {:$type :ws/B :bn an :bp false})
+                 {:$type :ws/B :bn an, :bp true}
+                 {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
+      '(if (if (and true true)
+             (if (and true true)
+               (and (and true true) (and true (and true true)))
+               true)
+             false)
+         (if (if (and true true)
+               (and (<= an 10) (=> false (<= 0 an)))
+               false)
+           (if (and true true)
+             (and (<= an 10) (=> true (<= 0 an)))
+             false)
+           (if (and (and true true) (and true true))
+             (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an))))
+             false))
+         false)
+      #_(if (and (<= an 10) (=> false (<= 0 an)))
+          (and (<= an 10) (=> true (<= 0 an)))
+          (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an)))))
+      ;; -----------
+      '(valid? {:$type :ws/C :b {:$type :ws/B :bn an :bp (< an 15)}})
+      '(if (if (and true (and true true))
+             (and (<= an 10) (=> (< an 15) (<= 0 an)))
+             false)
+         (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
+         false)
+      #_(if (and (<= an 10) (=> (< an 15) (<= 0 an)))
+          (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
+          false)
+      ;; -----------
+      '(valid? (get {:$type :ws/C :b {:$type :ws/B :bn an :bp (< an 15)}} :b))
+      '(if (if (and true (and true true))
+             (and (<= an 10) (=> (< an 15) (<= 0 an)))
+             false)
+         (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
+         false)
+      #_(if (and (<= an 10) (=> (< an 15) (<= 0 an)))
+          (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
+          false)
+      )))
+
 (def lower-implicit-constraints #'lowering/lower-implicit-constraints)
 
 (deftest test-lower-implicit-constraints

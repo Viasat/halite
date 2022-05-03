@@ -18,7 +18,7 @@
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get}
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid?}
    (keys renamed-ops)))
 
 (s/defschema DerivationName
@@ -109,6 +109,9 @@
     (when (not= htype :Boolean)
       (throw (ex-info "BUG! Asked for negation of a non-boolean expression"
                       {:dgraph dgraph :id id})))
+    (when-not (contains? dgraph neg-id)
+      (throw (ex-info "BUG! dgraph does not contain negation"
+                      {:dgraph dgraph :id id :neg-id neg-id})))
     neg-id))
 
 (def ^:dynamic *next-id*
@@ -196,7 +199,7 @@
      [(apply list op args)
       (cond
         ('#{+ - * div mod expt abs} op) :Integer
-        ('#{< <= > >= and or not => = not=} op) :Boolean
+        ('#{< <= > >= and or not => = not= valid?} op) :Boolean
         :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
                               {:form form})))])))
 
@@ -353,6 +356,7 @@
                            (->> bindings (partition 2) (map (comp spec-refs-from-expr second))
                                 (apply set/union (spec-refs-from-expr body))))
                     'get (spec-refs-from-expr (first args))
+                    'get* (spec-refs-from-expr (first args))
                     (apply set/union (map spec-refs-from-expr args))))
     :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
 
