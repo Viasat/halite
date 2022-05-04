@@ -299,3 +299,35 @@
        (lower-valid?)
        (lower-implicit-constraints) ; TODO: remove me! I'm not semantics-preserving!
        (fixpoint cancel-get-of-instance-literal)))
+
+(s/defn ^:private eliminate-runtime-constraint-violations-in-spec :- SpecInfo
+  [sctx :- SpecCtx, {:keys [derivations constraints] :as spec-info} :- SpecInfo]
+  (let [senv (ssa/as-spec-env sctx)
+        ctx {:senv senv
+             :tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
+             :env {}
+             :dgraph derivations}]
+    (->> constraints
+         (reduce
+          (fn [acc [cname cid]]
+            (let [[dgraph guard-id] (validity-guard sctx (assoc ctx :dgraph (:derivations acc)) cid)
+                  [dgraph id] (->> (list 'if guard-id cid false)
+                                   (ssa/form-to-ssa (assoc ctx :dgraph dgraph)))]
+              (-> acc
+                  (assoc :derivations dgraph)
+                  (update :constraints conj [cname id]))))
+          {:derivations derivations
+           :constraints []})
+         (merge spec-info))))
+
+(s/defn eliminate-runtime-constraint-violations :- SpecCtx
+  "Rewrite the constraints of every spec to eliminate the possibility of runtime constraint
+  violations (but NOT runtime errors in general!). This is not a semantics-preserving operation.
+
+  Every constraint expression <expr> is rewritten as (if <(validity-guard expr)> <expr> false)."
+  [sctx :- SpecCtx]
+  (rewrite-in-dependency-order
+   sctx deps-via-instance-literal
+   eliminate-runtime-constraint-violations-in-spec))
+
+

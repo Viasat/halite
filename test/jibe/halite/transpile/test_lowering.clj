@@ -4,6 +4,7 @@
 (ns jibe.halite.transpile.test-lowering
   (:require [jibe.halite.envs :as halite-envs]
             [jibe.halite.transpile.lowering :as lowering]
+            [jibe.halite.transpile.simplify :refer [simplify]]
             [jibe.halite.transpile.ssa :as ssa :refer [Derivations]]
             [jibe.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
@@ -279,3 +280,34 @@
                         (< an (+ 1 an))
                         (= (get (get b :c) :cn) 12))]]
              (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A ssa/spec-from-ssa :constraints))))))
+
+(deftest test-eliminate-runtime-constraint-violations
+  (binding [ssa/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:an :Integer}
+                   :constraints [["a1" (< an 10)]
+                                 ["a2" (< an (get {:$type :ws/B :bn (+ 1 an)} :bn))]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:bn :Integer}
+                   :constraints [["b1" (< 0 (get {:$type :ws/C :cn bn} :cn))]]
+                   :refines-to {}}
+                  :ws/C
+                  {:spec-vars {:cn :Integer}
+                   :constraints [["c1" (= 0 (mod cn 2))]]
+                   :refines-to {}}})
+          sctx (ssa/build-spec-ctx senv :ws/A)]
+      (is (= '(let [$6 (+ 1 an)]
+                (and (< an 10)
+                     (if (if (= 0 (mod $6 2))
+                           (< 0 (get {:$type :ws/C, :cn $6} :cn))
+                           false)
+                       (< an (get {:$type :ws/B, :bn $6} :bn))
+                       false)))
+             (-> sctx
+                 (lowering/eliminate-runtime-constraint-violations)
+                 (simplify)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints first second))))))
