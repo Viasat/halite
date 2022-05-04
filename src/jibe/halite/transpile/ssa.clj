@@ -79,9 +79,10 @@
        (reached next-id) (recur ids reached)
        :else (let [[form htype neg-id :as d] (dgraph next-id)]
                (recur
-                (into ids (referenced-derivations d))
-                (cond-> (conj reached next-id)
-                  (and include-negations? neg-id) (conj neg-id))))))))
+                (cond->
+                    (into ids (referenced-derivations d))
+                  (and include-negations? neg-id) (conj neg-id))
+                (conj reached next-id)))))))
 
 (s/defschema SpecInfo
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
@@ -272,6 +273,15 @@
                        (-> form (dissoc :$type) keys sort))]
     (add-derivation dgraph [inst spec-id])))
 
+(s/defn rewrite-node :- Derivations
+  "Rewrite id node in place to be an alias of aliased-id"
+  [dgraph :- Derivations, id :- DerivationName, aliased-id :- DerivationName]
+  (let [[form htype neg-id] (dgraph aliased-id)]
+    (-> dgraph
+        (assoc-in [id 0] aliased-id)
+        (cond->
+            neg-id (assoc-in [id 2] neg-id)))))
+
 (s/defn form-to-ssa :- DerivResult
   "Add the SSA representation of form (an arbitrary halite expression) to the given directed graph,
   returning a tuple of the resulting graph and the id of the node for form.
@@ -296,12 +306,8 @@
      :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                            {:form form}))))
   ([{:keys [dgraph] :as ctx} :- SSACtx, replace-id :- DerivationName, form]
-   (let [[dgraph id] (form-to-ssa ctx form)
-         [new-form htype] (dgraph id)]
-     [(-> dgraph
-          (assoc-in [replace-id 0] new-form)
-          (dissoc id))
-      replace-id])))
+   (let [[dgraph id] (form-to-ssa ctx form)]
+     [(rewrite-node dgraph replace-id id) id])))
 
 (s/defn constraint-to-ssa :- [(s/one Derivations :dgraph), [(s/one s/Str :cname) (s/one DerivationName :form)]]
   "TODO: Refactor me as add-constraint, taking and returning SpecInfo."
@@ -444,7 +450,9 @@
   (let [[form htype] (dgraph id)
         result (update result id update-guards current)]
     (cond
-      (or (integer? form) (boolean? form) (symbol? form)) result
+      (or (integer? form) (boolean? form)) result
+      (and (symbol? form) (nil? (s/check DerivationName form))) (compute-guards* dgraph current result form)
+      (symbol? form) result
       (seq? form) (let [[op & args] form]
                     (condp = op
                       'get (compute-guards* dgraph current result (first args))
@@ -519,6 +527,21 @@
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation"
                               {:id id :form form :dgraph dgraph :guards guards :bound? bound? :curr-guard curr-guard}))))))
 
+(s/defn ^:private aliases :- {DerivationName DerivationName}
+  [dgraph]
+  (let [follow-alias (fn [aliased-id]
+                       (let [[form] (dgraph aliased-id)]
+                         (if (nil? (s/check DerivationName form))
+                           (recur form)
+                           aliased-id)))]
+    (reduce
+     (fn [aliases [id [form]]]
+       (if (nil? (s/check DerivationName form))
+         (assoc aliases id (follow-alias form))
+         aliases))
+     {}
+     dgraph)))
+
 (s/defn ^:private let-bindable-exprs
   "We want to avoid as much expression duplication as possible without changing
   semantics. Expressions are side effect free, so we can generally avoid multiple occurrences
@@ -529,17 +552,26 @@
   expressions would not have evaluated it."
   [dgraph :- Derivations, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
   (let [subdgraph (select-keys dgraph (reachable-derivations dgraph true id))
-        usage-counts (->> id
-                          (reachable-derivations subdgraph false)
-                          (select-keys subdgraph)
+        reachable-subdgraph (->> id
+                                 (reachable-derivations subdgraph false)
+                                 (select-keys subdgraph))
+        amap (aliases reachable-subdgraph)
+        usage-counts (->> reachable-subdgraph
                           vals
                           (mapcat referenced-derivations)
                           frequencies)
+        usage-counts (reduce
+                      (fn [uc [aliasing-id id]]
+                        (-> uc
+                            (update id + (dec (get usage-counts aliasing-id 0)))
+                            (assoc aliasing-id 0)))
+                      usage-counts
+                      amap)
         ordering (zipmap (topo-sort subdgraph) (range))
         [bound? bindings] (->> subdgraph
                                (remove
                                 (fn [[id [form htype]]]
-                                  (or (bound? form)
+                                  (or (bound? form) (bound? id)
                                       (integer? form)
                                       (boolean? form)
                                       (<= (get usage-counts id 0) 1)

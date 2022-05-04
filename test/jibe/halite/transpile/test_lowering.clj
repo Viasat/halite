@@ -115,9 +115,10 @@
       ;; -----------
       '(and (valid? {:$type :ws/B :bn an :bp false})
             (valid? {:$type :ws/B :bn 12 :bp (= an 1)}))
-      '(and
-        (if (and true true) (and (<= an 10) (=> false (<= 0 an))) false)
-        (if (and true (and true true)) (and (<= 12 10) (=> (= an 1) (<= 0 12))) false))
+      '(let [$27 (and true true)]
+         (and
+          (if $27 (and (<= an 10) (=> false (<= 0 an))) false)
+          (if (and true $27) (and (<= 12 10) (=> (= an 1) (<= 0 12))) false)))
       #_(and
          (and (<= an 10) (=> false (<= 0 an)))
          (and (<= 12 10) (=> (= an 1) (<= 0 12))))
@@ -134,13 +135,17 @@
       '(if (valid? {:$type :ws/B :bn an :bp false})
          (valid? {:$type :ws/B :bn an, :bp true})
          (valid? {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
-      '(if (if (and true true) (and (<= an 10) (=> false (<= 0 an))) false)
-         (if (and true true)
-           (and (<= an 10) (=> true (<= 0 an)))
-           false)
-         (if (and (and true true) (and true true))
-           (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an))))
-           false))
+      '(let [$31 (and true true)]
+         (if (if $31
+               (and (<= an 10) (=> false (<= 0 an)))
+               false)
+           (if $31
+             (and (<= an 10) (=> true (<= 0 an)))
+             false)
+           (if (and $31 $31)
+             (let [$11 (+ 1 an)]
+               (and (<= $11 10) (=> (< 5 an) (<= 0 $11))))
+             false)))
       #_(if (and (<= an 10) (=> false (<= 0 an)))
           (and (<= an 10) (=> true (<= 0 an)))
           (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an)))))
@@ -148,21 +153,22 @@
       '(valid? (if (valid? {:$type :ws/B :bn an :bp false})
                  {:$type :ws/B :bn an, :bp true}
                  {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
-      '(if (if (and true true)
-             (if (and true true)
-               (and (and true true) (and true (and true true)))
-               true)
-             false)
-         (if (if (and true true)
-               (and (<= an 10) (=> false (<= 0 an)))
+      '(let [$28 (and true true)]
+         (if (if $28 (if $28
+                       (and $28 (and true $28))
+                       true)
+                 false)
+           (if (if $28
+                 (and (<= an 10) (=> false (<= 0 an)))
+                 false)
+             (if $28
+               (and (<= an 10) (=> true (<= 0 an)))
                false)
-           (if (and true true)
-             (and (<= an 10) (=> true (<= 0 an)))
-             false)
-           (if (and (and true true) (and true true))
-             (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an))))
-             false))
-         false)
+             (if (and $28 $28)
+               (let [$9 (+ 1 an)]
+                 (and (<= $9 10) (=> (< 5 an) (<= 0 $9))))
+               false))
+           false))
       #_(if (and (<= an 10) (=> false (<= 0 an)))
           (and (<= an 10) (=> true (<= 0 an)))
           (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an)))))
