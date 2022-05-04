@@ -18,12 +18,34 @@
        (filter (fn [[id [form]]]
                  (and (seq? form)
                       (= 'and (first form))
-                      (every? boolean?
-                              (map (partial deref-form dgraph) (rest form))))))
+                      ;; if are boolean literals, then maybe we can improve things
+                      ;;(seq (filter (comp boolean? (partial deref-form dgraph)) (rest form)))
+                      )))
        (reduce
         (fn [dgraph [id [form htype :as d]]]
-          (let [child-terms (map (partial deref-form dgraph) (rest form))]
-            (first (ssa/form-to-ssa (assoc ctx :dgraph dgraph) id (every? true? child-terms)))))
+          (let [child-terms (->> (rest form)
+                                 (map #(vector % (deref-form dgraph %)))
+                                 (remove (comp true? second)))
+                ctx (assoc ctx :dgraph dgraph)]
+            (cond
+              ;; every term was literal true -- collapse to literal true
+              (empty? child-terms)
+              (first (ssa/form-to-ssa ctx id true))
+
+              ;; every term that isn't literal true is literal false -- collapse to literal false
+              (every? false? (map second child-terms))
+              (first (ssa/form-to-ssa ctx id false))
+
+              ;; there's just a single term that wasn't literal true
+              (= 1 (count child-terms))
+              (ssa/rewrite-node dgraph id (ffirst child-terms))
+
+              ;; there are multiple literal false terms (and at least one non-false term)
+              (< 1 (count (filter false? (map second child-terms))))
+              (first (ssa/form-to-ssa ctx id (apply list 'and false (map first (remove (comp false? second) child-terms)))))
+
+              ;; there was nothing to do
+              :else dgraph)))
         dgraph)
        (assoc ctx :dgraph)))
 
@@ -70,5 +92,6 @@
          (assoc spec-info :derivations))))
 
 (s/defn simplify :- ssa/SpecCtx
+  "Perform semantics-preserving simplifications on the expressions in the specs."
   [sctx :- ssa/SpecCtx]
   (fixpoint #(update-vals % (partial simplify-step %)) sctx))

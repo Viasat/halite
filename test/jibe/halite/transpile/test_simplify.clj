@@ -34,6 +34,10 @@
       '(and true false) false
       '(and (and true true) true) true
       '(and (and false true) true) false
+      '(and true ap) 'ap
+      '(and true) true
+      '(and ap) 'ap
+      '(and false ap false) '(and false ap)
 
       '(if ap true false) '(if ap true false)
       '(if true 1 2) 1
