@@ -283,3 +283,40 @@
                  :ws/A
                  (ssa/spec-from-ssa)
                  :constraints first second))))))
+
+(def lower-refinement-constraints #'lowering/lower-refinement-constraints)
+
+(deftest test-lower-refinement-constraints
+  (binding [ssa/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:an :Integer}
+                   :constraints [["a1" (< an 10)]]
+                   :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
+                  :ws/B
+                  {:spec-vars {:bn :Integer}
+                   :constraints [["b1" (< 0 bn)]]
+                   :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
+                  :ws/C
+                  {:spec-vars {:cn :Integer}
+                   :constraints [["c1" (= 0 (mod cn 2))]]
+                   :refines-to {}}})
+          sctx (ssa/build-spec-ctx senv :ws/A)]
+
+      (is (= '(and (< an 10)
+                   (valid? {:$type :ws/B, :bn (+ 1 an)}))
+             (-> sctx
+                 (lower-refinement-constraints)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints first second)))
+
+      (is (= '(let [$26 (+ 1 an)]
+                (and (< an 10)
+                     (and (< 0 $26)
+                          (= 0 (mod $26 2)))))
+             (-> sctx
+                 (lowering/lower)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints first second))))))

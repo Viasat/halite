@@ -232,6 +232,30 @@
   [sctx :- SpecCtx]
   (rewrite-in-dependency-order sctx deps-via-instance-literal lower-valid?-in-spec))
 
+;;;;;;;;;; Lower Refinement Constraints ;;;;;;;;;;;;;;;
+
+(s/defn ^:private lower-refinement-constraints-in-spec :- SpecInfo
+  [sctx :- SpecCtx, {:keys [refines-to derivations] :as spec-info} :- SpecInfo]
+  (let [senv (ssa/as-spec-env sctx)
+        ctx {:senv senv
+             :tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
+             :env {}
+             :dgraph derivations}]
+    (->> refines-to
+         (reduce
+          (fn [{:keys [derivations] :as spec-info} [target-id {:keys [expr inverted?]}]]
+            (when inverted?
+              (throw (ex-info "BUG! Lowering inverted refinements not yet supported" {:spec-info spec-info})))
+            (let [[dgraph id] (ssa/form-to-ssa (assoc ctx :dgraph derivations) (list 'valid? expr))]
+              (-> spec-info
+                  (assoc :derivations dgraph)
+                  (update :constraints conj [(str target-id) id]))))
+          spec-info))))
+
+(s/defn ^:private lower-refinement-constraints :- SpecCtx
+  [sctx :- SpecCtx]
+  (update-vals sctx (partial lower-refinement-constraints-in-spec sctx)))
+
 ;;;;;;;;;; Combine semantics-preserving passes ;;;;;;;;;;;;;
 
 (s/defn lower :- SpecCtx
@@ -241,6 +265,7 @@
   (->> sctx
        (fixpoint lower-instance-comparisons)
        (fixpoint push-gets-into-ifs)
+       (lower-refinement-constraints)
        (lower-valid?)
        (simplify)))
 
