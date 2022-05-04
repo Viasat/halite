@@ -44,10 +44,10 @@
 
 (defn- make-expr [^Model m vars form]
   (cond
-    (true? form) (ArExpression$IntPrimitive. 1 m)
-    (false? form) (ArExpression$IntPrimitive. 0 m)
+    (true? form) (.boolVar m true)
+    (false? form) (.boolVar m false)
     (symbol? form) (get vars form)
-    (int? form) (ArExpression$IntPrimitive. form m)
+    (int? form) (.intVar m (int form))
     (list? form) (let [op (first form)]
                    (cond
                      ;; (- x y z) => (- (- x y) z)

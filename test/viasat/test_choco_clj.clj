@@ -25,6 +25,16 @@
 (deftest test-int-var-does-not-get-bool-bounds
   (is (= '{n #{0 1}} (choco-clj/propagate '{:vars {n #{0 1}} :constraints #{}}))))
 
+(deftest test-literal-true-and-false
+  (let [spec '{:vars {n :Int, m :Int, p :Bool}
+               :constraints #{}}]
+    (binding [choco-clj/*default-int-bounds* [0 10]]
+      (are [constraint bound]
+          (= bound (choco-clj/propagate
+                    (update spec :constraints conj constraint)))
+
+        true '{n [0 10], m [0 10], p #{true false}}))))
+
 (deftest test-abstract-translation-strategy
   ;; An abstract variable expands into a type variable and variables for each
   ;; concrete spec; for each concrete spec, the variables
