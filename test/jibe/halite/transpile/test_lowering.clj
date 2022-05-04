@@ -5,15 +5,12 @@
   (:require [jibe.halite.envs :as halite-envs]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.ssa :as ssa :refer [Derivations]]
+            [jibe.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
             [schema.test])
   (:use clojure.test))
 
 (use-fixtures :once schema.test/validate-schemas)
-
-;; TODO: We need to rewrite 'div forms in the case where the quotient is a variable,
-;; to ensure that choco doesn't force the variable to be zero even when the div might not
-;; be evaluated.
 
 (def lower-instance-comparisons #'lowering/lower-instance-comparisons)
 
@@ -45,8 +42,6 @@
                               (not= (get $10 :bn) $24))
                           (= an 45)))]]
              (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints))))))
-
-(def fixpoint #'lowering/fixpoint)
 
 (deftest test-lower-instance-comparisons-for-composition
   (binding [ssa/*next-id* (atom 0)]

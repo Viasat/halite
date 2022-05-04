@@ -9,6 +9,10 @@
 
 (use-fixtures :once schema.test/validate-schemas)
 
+;; TODO: We need to rewrite 'div forms in the case where the quotient is a variable,
+;; to ensure that choco doesn't force the variable to be zero even when the div might not
+;; be evaluated.
+
 (deftest test-spec-ify-bound-on-simple-spec
   (let [senv (halite-envs/spec-env
               '{:ws/A

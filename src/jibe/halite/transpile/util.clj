@@ -11,3 +11,10 @@
     0 ({'and true, 'or false} op)
     1 (first clauses)
     (apply list op clauses)))
+
+(defn fixpoint
+  "Iterate f on input until (= x (f x))."
+  [f input]
+  (loop [x input]
+    (let [x' (f x)]
+      (cond-> x' (not= x' x) recur))))

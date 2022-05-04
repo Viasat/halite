@@ -9,20 +9,10 @@
             [jibe.halite.types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
              :refer [DerivationName Derivations SpecInfo SpecCtx]]
+            [jibe.halite.transpile.util :refer [fixpoint]]
             [jibe.halite.transpile.util :refer [mk-junct]]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
-
-;;;;;;;; Fixpoint ;;;;;;;;;;;;
-
-;; Some passes need to be run repeatedly, until there is no change.
-
-(defn- fixpoint
-  [f input]
-  (loop [x input]
-    (let [x' (f x)]
-      (cond-> x' (not= x' x) recur))))
-
 
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
