@@ -8,6 +8,8 @@
             [jibe.halite.types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
             [jibe.halite.transpile.lowering :as lowering]
+            [jibe.halite.transpile.util :refer [fixpoint]]
+            [jibe.halite.transpile.simplify :refer [simplify]]
             [schema.core :as s]
             [viasat.choco-clj :as choco-clj]))
 
@@ -206,7 +208,13 @@
   [senv :- (s/protocol halite-envs/SpecEnv), spec-bound :- SpecBound]
   (binding [ssa/*next-id* (atom 0)]
     (let [spec-id (:$type spec-bound)
-          sctx (->> spec-id (ssa/build-spec-ctx senv) (lowering/lower))
+          sctx (->> spec-id
+                    (ssa/build-spec-ctx senv)
+                    (lowering/lower)
+                    ;; below this line, we're changing semantics
+                    (lowering/eliminate-runtime-constraint-violations)
+                    (simplify)
+                    (fixpoint lowering/cancel-get-of-instance-literal))
           flattened-vars (flatten-vars sctx spec-bound)
           new-spec {:spec-vars (->> flattened-vars leaves (into {}))
                     :constraints []

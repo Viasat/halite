@@ -9,8 +9,8 @@
             [jibe.halite.types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
              :refer [DerivationName Derivations SpecInfo SpecCtx]]
-            [jibe.halite.transpile.util :refer [fixpoint]]
-            [jibe.halite.transpile.util :refer [mk-junct]]
+            [jibe.halite.transpile.simplify :refer [simplify]]
+            [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 
@@ -232,62 +232,7 @@
   [sctx :- SpecCtx]
   (rewrite-in-dependency-order sctx deps-via-instance-literal lower-valid?-in-spec))
 
-;;;;;;;;; Instance Literal Lowering ;;;;;;;;;;;
-
-(s/defn ^:private lower-implicit-constraints-in-spec :- SpecInfo
-  [sctx :- SpecCtx, spec-info :- SpecInfo]
-  (let [guards (ssa/compute-guards (:derivations spec-info) (->> spec-info :constraints (map second) set))
-        inst-literals (->> spec-info
-                           :derivations
-                           (filter (fn [[id [form htype]]] (map? form))))
-        senv (ssa/as-spec-env sctx)
-        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))]
-    (reduce
-     (fn [{:keys [derivations] :as spec-info} [id [inst-literal htype]]]
-       (let [spec-id (:$type inst-literal)
-             guard-form (->> id guards (map #(mk-junct 'and (sort %))) (mk-junct 'or))
-             constraints (->> spec-id sctx ssa/spec-from-ssa :constraints (map second))
-             constraint-expr (list 'let (vec (mapcat (fn [[var-kw id]] [(symbol var-kw) id]) (dissoc inst-literal :$type)))
-                                   (mk-junct 'and constraints))
-             constraint-expr (if (not= true guard-form)
-                               (list 'if guard-form constraint-expr true)
-                               constraint-expr)
-             [derivations id] (ssa/form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} constraint-expr)]
-         (-> spec-info
-             (assoc :derivations derivations)
-             (update :constraints conj ["$inst" id]))))
-     spec-info
-     inst-literals)))
-
-(s/defn ^:private lower-implicit-constraints :- SpecCtx
-  "Make constraints implied by the presence of instance literals explicit.
-  Specs are lowered in an order that respects a spec dependency graph where spec S has an arc to T
-  iff S has an instance literal of type T. If a cycle is detected, the phase will throw."
-  [sctx :- SpecCtx]
-  (rewrite-in-dependency-order sctx deps-via-instance-literal lower-implicit-constraints-in-spec))
-
-(s/defn ^:private cancel-get-of-instance-literal-in-spec :- SpecInfo
-  "Replace (get {... :k <subexpr>} :k) with <subexpr>."
-  [{:keys [derivations] :as spec-info} :- SpecInfo]
-  (->
-   (->> spec-info
-        :derivations
-        (filter (fn [[id [form htype]]]
-                  (if (and (seq? form) (= 'get (first form)))
-                    (let [[subform] (ssa/deref-id derivations (second form))]
-                      (map? subform)))))
-        (reduce
-         (fn [dgraph [id [[_get subid var-kw] htype]]]
-           (let [[inst-form] (ssa/deref-id dgraph subid)
-                 field-node (ssa/deref-id dgraph (get inst-form var-kw))]
-             (assoc dgraph id field-node)))
-         derivations)
-        (assoc spec-info :derivations))
-   (ssa/prune-derivations false)))
-
-(s/defn ^:private cancel-get-of-instance-literal :- SpecCtx
-  [sctx :- SpecCtx]
-  (update-vals sctx cancel-get-of-instance-literal-in-spec))
+;;;;;;;;;; Combine semantics-preserving passes ;;;;;;;;;;;;;
 
 (s/defn lower :- SpecCtx
   "Return a semantically equivalent spec context containing specs that have been reduced to
@@ -297,8 +242,9 @@
        (fixpoint lower-instance-comparisons)
        (fixpoint push-gets-into-ifs)
        (lower-valid?)
-       (lower-implicit-constraints) ; TODO: remove me! I'm not semantics-preserving!
-       (fixpoint cancel-get-of-instance-literal)))
+       (simplify)))
+
+;;;;;;;;;; Semantics-modifying passes ;;;;;;;;;;;;;;;;
 
 (s/defn ^:private eliminate-runtime-constraint-violations-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations constraints] :as spec-info} :- SpecInfo]
@@ -326,8 +272,29 @@
 
   Every constraint expression <expr> is rewritten as (if <(validity-guard expr)> <expr> false)."
   [sctx :- SpecCtx]
-  (rewrite-in-dependency-order
-   sctx deps-via-instance-literal
-   eliminate-runtime-constraint-violations-in-spec))
+  (rewrite-in-dependency-order sctx deps-via-instance-literal eliminate-runtime-constraint-violations-in-spec))
 
+(s/defn ^:private cancel-get-of-instance-literal-in-spec :- SpecInfo
+  "Replace (get {... :k <subexpr>} :k) with <subexpr>."
+  [{:keys [derivations] :as spec-info} :- SpecInfo]
+  (->
+   (->> spec-info
+        :derivations
+        (filter (fn [[id [form htype]]]
+                  (if (and (seq? form) (= 'get (first form)))
+                    (let [[subform] (ssa/deref-id derivations (second form))]
+                      (map? subform)))))
+        (reduce
+         (fn [dgraph [id [[_get subid var-kw] htype]]]
+           (let [[inst-form] (ssa/deref-id dgraph subid)
+                 field-node (ssa/deref-id dgraph (get inst-form var-kw))]
+             (assoc dgraph id field-node)))
+         derivations)
+        (assoc spec-info :derivations))
+   (ssa/prune-derivations false)))
 
+(s/defn cancel-get-of-instance-literal :- SpecCtx
+  "Replace (get {... :k <subexpr>} :k) with <subexpr>. Not semantics preserving, in that
+  the possible runtime constraint violations of the instance literal are eliminated."
+  [sctx :- SpecCtx]
+  (update-vals sctx cancel-get-of-instance-literal-in-spec))

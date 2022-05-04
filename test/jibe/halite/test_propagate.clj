@@ -25,18 +25,18 @@
 
     (is (= '{:spec-vars {:x :Integer, :y :Integer, :b :Boolean}
              :constraints
-             [["$all" (let [$22 (abs (- x y))]
-                        (and (and (< 5 $22)
-                                  (< $22 10))
+             [["$all" (let [$36 (abs (- x y))]
+                        (and (and (< 5 $36)
+                                  (< $36 10))
                              (= b (< x y))))]]
              :refines-to {}}
            (hp/spec-ify-bound senv {:$type :ws/A})))
 
     (is (= '{:spec-vars {:x :Integer, :y :Integer, :b :Boolean}
              :constraints
-             [["$all" (let [$22 (abs (- x y))]
-                        (and (and (< 5 $22)
-                                  (< $22 10))
+             [["$all" (let [$36 (abs (- x y))]
+                        (and (and (< 5 $36)
+                                  (< $36 10))
                              (= b (< x y))
                              (= x 12)
                              (= b false)))]]
@@ -62,11 +62,13 @@
     (is (= '{:spec-vars {:an :Integer}
              :refines-to {}
              :constraints
-             [["$all" (let [$45 (+ 1 an)]
-                        (and (< an 10)                ; a1
-                             (< an $45)               ; a2
-                             (and (< 0 $45)           ; b1
-                                  (= 0 (mod $45 2)))))]]} ; c1
+             [["$all" (let [$86 (+ 1 an)]
+                        (and (< an 10)
+                             (if (if (= 0 (mod $86 2))
+                                   (< 0 $86)
+                                   false)
+                               (< an $86)
+                               false)))]]}
            (hp/spec-ify-bound senv {:$type :ws/A})))))
 
 (deftest test-spec-ify-bound-on-ifs-and-instance-literals
@@ -86,12 +88,13 @@
     (is (= '{:spec-vars {:an :Integer :ab :Boolean}
              :refines-to {}
              :constraints
-             [["$all" (let [$47 (+ an 1)]
-                        (and
-                         (not= (if ab an 12) $47)
-                         (if ab (<= (div 10 an) 10) true)
-                         (<= (div 10 $47) 10)
-                         (if (not ab) (<= (div 10 12) 10) true)))]]}
+             [["$all" (let [$83 (+ an 1)]
+                        (if (and (if ab
+                                   (<= (div 10 an) 10)
+                                   (<= (div 10 12) 10))
+                                 (<= (div 10 $83) 10))
+                          (not= (if ab an 12) $83)
+                          false))]]}
            (hp/spec-ify-bound senv {:$type :ws/A})))))
 
 (deftest test-spec-ify-bound-with-composite-specs
@@ -132,12 +135,12 @@
       (is (= '{:spec-vars {:c|m :Integer, :c|n :Integer, :m :Integer}
                :refines-to {}
                :constraints
-               [["$all" (let [$33 (* 2 m)]
-                          (and
-                           (and (= c|m c|n)
-                                (= c|n $33))
-                           (<= $33 c|n)
-                           (<= c|n c|m)))]]}
+               [["$all" (let [$52 (* 2 m)]
+                          (and (if (<= $52 c|n)
+                                 (and (= c|m c|n)
+                                      (= c|n $52))
+                                 false)
+                               (<= c|n c|m)))]]}
              (hp/spec-ify-bound senv {:$type :ws/D})))))
 
   (testing "composition of recursive specs"
@@ -168,8 +171,9 @@
         '{:spec-vars {:b|bn :Integer, :b|bp :Boolean, :c|cn :Integer}
           :refines-to {}
           :constraints
-          [["$all" (and (= b|bn c|cn)
-                        (if b|bp (<= b|bn 10) (<= 10 b|bn)))]]}
+          [["$all" (and
+                    (= b|bn c|cn)
+                    (if b|bp (<= b|bn 10) (<= 10 b|bn)))]]}
 
         {:$type :ws/A :b {:$type :ws/B :bn {:$in [2 8]}}}
         '{:spec-vars {:b|bn :Integer, :b|bp :Boolean, :c|cn :Integer}
@@ -190,9 +194,10 @@
         '{:spec-vars {:b|bn :Integer, :b|bp :Boolean, :c|cn :Integer}
           :refines-to {}
           :constraints
-          [["$all" (and (= b|bn c|cn)
-                        (if b|bp (<= b|bn 10) (<= 10 b|bn))
-                        (= c|cn 14))]]}
+          [["$all" (and
+                    (= b|bn c|cn)
+                    (if b|bp (<= b|bn 10) (<= 10 b|bn))
+                    (= c|cn 14))]]}
 
         {:$type :ws/A
          :b {:$type :ws/B :bp true}
@@ -201,12 +206,14 @@
         '{:spec-vars {:b|bn :Integer, :b|bp :Boolean, :c|a|b|bn :Integer, :c|a|b|bp :Boolean, :c|cn :Integer}
           :refines-to {}
           :constraints
-          [["$all" (and
-                    (= b|bn c|cn)
-                    (if (< 0 b|bn) (< b|bn c|a|b|bn) true)
-                    (if b|bp (<= b|bn 10) (<= 10 b|bn))
-                    (= b|bp true)
-                    (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn)))]]}))))
+          [["$all" (let [$54 (< 0 b|bn)]
+                     (and
+                      (= b|bn c|cn)
+                      (if (if $54 true true) (if $54 (< b|bn c|a|b|bn) true) false)
+                      (if b|bp (<= b|bn 10) (<= 10 b|bn))
+                      (= b|bp true)
+                      (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]}
+        ))))
 
 (deftest test-spec-ify-bound-on-recursive-composition
   (let [senv (halite-envs/spec-env
@@ -254,18 +261,13 @@
                          :c|cn :Integer
                          :c|a|b|bn :Integer :c|a|b|bp :Boolean}
              :constraints
-             [["$all" (and
-                       (= b|bn c|cn)
-                       (if (< 0 b|bn)
-                         (< b|bn c|a|b|bn)
-                         true)
-                       (if b|bp
-                         (<= b|bn 10)
-                         (<= 10 b|bn))
-                       (= b|bp true)
-                       (if c|a|b|bp
-                         (<= c|a|b|bn 10)
-                         (<= 10 c|a|b|bn)))]]
+             [["$all" (let [$54 (< 0 b|bn)]
+                    (and
+                     (= b|bn c|cn)
+                     (if (if $54 true true) (if $54 (< b|bn c|a|b|bn) true) false)
+                     (if b|bp (<= b|bn 10) (<= 10 b|bn))
+                     (= b|bp true)
+                     (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]
              :refines-to {}}
            (->> '{:$type :ws/A
                   :b {:$type :ws/B :bp true}
@@ -305,6 +307,17 @@
                                                        (< (get a1 :y) (get a2 :y)))]]
                        :refines-to {}}})
         opts {:default-int-bounds [-100 100]}]
+    (is (= '{:spec-vars {:a1|x :Integer, :a1|y :Integer, :a2|x :Integer, :a2|y :Integer}
+             :constraints [["$all"
+                            (and
+                             (and (< a1|x a2|x) (< a1|y a2|y))
+                             (and (< 0 a1|x) (< 0 a1|y))
+                             (< (+ a1|x a1|y) 20)
+                             (and (< 0 a2|x) (< 0 a2|y))
+                             (< (+ a2|x a2|y) 20))]]
+             :refines-to {}}
+           (hp/spec-ify-bound senv {:$type :ws/B})))
+
     (are [in out]
          (= out (hp/propagate senv opts in))
 
@@ -336,7 +349,7 @@
                                ["a2" (if (> (get b :bn) 0)
                                        (< (get b :bn)
                                           (get (get (get c :a) :b) :bn))
-                                       (= 1 1) #_true)]]
+                                       true)]]
                  :refines-to {}}
                 :ws/B
                 {:spec-vars {:bn :Integer :bp :Boolean}
@@ -435,7 +448,8 @@
             (-> senv
                 (update-in [:ws/Test :constraints] conj ["c1" constraint])
                 (halite-envs/spec-env)
-                (hp/spec-ify-bound {:$type :ws/Test})))
+                (hp/spec-ify-bound {:$type :ws/Test})
+                :constraints first second))
 
       '(get
         (let [x (+ 1 2)
@@ -443,33 +457,28 @@
               s {:$type :ws/Simpler :x (- (get s :x) 2) :b true}]
           {:$type :ws/Simpler :x 12 :b (get s :b)})
         :b)
-      '{:spec-vars {}
-        :refines-to {}
-        :constraints
-        [["$all" (let [$69 (+ (+ 1 2) 1)
-                       $80 (- $69 2)]
-                   (and
-                    true
-                    (and (< 0 $69) (= false (= (mod $69 2) 1)))
-                    (and (< 0 $80) (= true (= (mod $80 2) 1)))
-                    (and (< 0 12) (= true (= (mod 12 2) 1)))))]]}
+      '(let [$105 (+ (+ 1 2) 1)]
+         (if (if (if (and (< 0 $105) (= false (= (mod $105 2) 1)))
+                   (let [$118 (- $105 2)]
+                     (and (< 0 $118) (= true (= (mod $118 2) 1))))
+                   false)
+               (and (< 0 12) (= true (= (mod 12 2) 1)))
+               false)
+           true
+           false))
 
       '(get {:$type :ws/Simpler :x (get {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
-      '{:spec-vars {}
-        :refines-to {}
-        :constraints
-        [["$all" (let [$51 (< 0 14)
-                       $56 (= (mod 14 2) 1)]
-                   (and true
-                        (and $51 (= false $56))
-                        (and $51 (= true $56))))]]}
+      '(let [$79 (< 0 14)
+             $86 (= (mod 14 2) 1)]
+         (if (if (and $79 (= false $86))
+               (and $79 (= true $86))
+               false)
+           true
+           false))
 
       '(not= 10 (get {:$type :ws/Simpler2 :y 12} :y))
-      '{:spec-vars {}
-        :refines-to {}
-        :constraints
-        [["$all" (and
-                  (not= 10 12)
-                  (and (= 12 12)
-                       (and (< 0 12)
-                            (= false (= (mod 12 2) 1)))))]]})))
+      '(if (if (and (< 0 12) (= false (= (mod 12 2) 1)))
+             (= 12 12)
+             false)
+         (not= 10 12)
+         false))))

@@ -195,34 +195,6 @@
           false)
       )))
 
-(def lower-implicit-constraints #'lowering/lower-implicit-constraints)
-
-(deftest test-lower-implicit-constraints
-  (binding [ssa/*next-id* (atom 0)]
-    (let [senv (halite-envs/spec-env
-                '{:ws/A
-                  {:spec-vars {:an :Integer}
-                   :constraints [["a1" (< an 10)]
-                                 ["a2" (= an (get {:$type :ws/B :bn (+ 1 an)} :bn))]]
-                   :refines-to {}}
-                  :ws/B
-                  {:spec-vars {:bn :Integer}
-                   :constraints [["b1" (> 0 (if (<= bn 5) (get {:$type :ws/C :cn bn} :cn) 6))]]
-                   :refines-to {}}
-                  :ws/C
-                  {:spec-vars {:cn :Integer}
-                   :constraints [["c1" (= 0 (mod cn 2))]]
-                   :refines-to {}}})
-          sctx (ssa/build-spec-ctx senv :ws/A)]
-      (is (= '[["$all" (let [$6 (+ 1 an)
-                             $40 (<= $6 5)]
-                         (and
-                          (< an 10)
-                          (= an (get {:$type :ws/B, :bn $6} :bn))
-                          (and (< (if $40 (get {:$type :ws/C, :cn $6} :cn) 6) 0)
-                               (if $40 (= 0 (mod $6 2)) true))))]]
-             (-> sctx lower-implicit-constraints :ws/A ssa/spec-from-ssa :constraints))))))
-
 (def push-gets-into-ifs #'lowering/push-gets-into-ifs)
 
 (deftest test-push-gets-into-ifs
