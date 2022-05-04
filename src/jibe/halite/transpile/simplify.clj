@@ -37,7 +37,7 @@
               (first (ssa/form-to-ssa ctx id false))
 
               ;; there's just a single term that wasn't literal true
-              (= 1 (count child-terms))
+              (= 1 (count (set child-terms)))
               (ssa/rewrite-node dgraph id (ffirst child-terms))
 
               ;; there are multiple literal false terms (and at least one non-false term)
@@ -62,7 +62,7 @@
         dgraph)
        (assoc ctx :dgraph)))
 
-(s/defn ^:private simplify-if :- ssa/SSACtx
+(s/defn ^:private simplify-if-static-pred :- ssa/SSACtx
   [{:keys [dgraph] :as ctx} :- ssa/SSACtx]
   (->> dgraph
        (filter (fn [[id [form]]]
@@ -77,6 +77,43 @@
         dgraph)
        (assoc ctx :dgraph)))
 
+(defn- eliminatable?
+  "True if the given form can be safely eliminated without changing semantics"
+  [form]
+  (or
+   (integer? form)
+   (boolean? form)
+   (symbol? form)))
+
+(s/defn ^:private simplify-if-static-branches :- ssa/SSACtx
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx]
+  (->> dgraph
+       (filter (fn [[id [form]]]
+                 (and (seq? form)
+                      (= 'if (first form))
+                      (let [[_ pred-id then-id else-id] form]
+                        (eliminatable? (deref-form dgraph pred-id))))))
+       (reduce
+        (fn [dgraph [id [[_ pred-id then-id else-id]]]]
+          (let [then (deref-form dgraph then-id)
+                else (deref-form dgraph else-id)
+                new-form (cond
+                           (and (true? then) (true? else)) true
+                           (and (false? then) (false? else)) false
+                           (and (true? then) (false? else)) pred-id
+                           (and (false? then) (true? else)) (ssa/negated dgraph pred-id)
+                           (= then else) then-id
+                           :else id)]
+            (if (not= id new-form)
+              (first
+               (ssa/form-to-ssa
+                (assoc ctx :dgraph dgraph)
+                id
+                new-form))
+              dgraph)))
+        dgraph)
+       (assoc ctx :dgraph)))
+
 (s/defn ^:private simplify-step :- ssa/SpecInfo
   [sctx :- ssa/SpecCtx, {:keys [derivations] :as spec-info} :- ssa/SpecInfo]
   (let [senv (ssa/as-spec-env sctx)]
@@ -87,7 +124,8 @@
           :dgraph derivations}
          (simplify-and)
          (simplify-not)
-         (simplify-if)
+         (simplify-if-static-pred)
+         (simplify-if-static-branches)
          :dgraph
          (assoc spec-info :derivations))))
 

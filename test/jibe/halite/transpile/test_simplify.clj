@@ -38,11 +38,17 @@
       '(and true) true
       '(and ap) 'ap
       '(and false ap false) '(and false ap)
+      '(and ap ap) 'ap
 
-      '(if ap true false) '(if ap true false)
+      '(if ap 1 2) '(if ap 1 2)
       '(if true 1 2) 1
       '(if false 1 2) 2
       '(if (and true true) 1 2) 1
+      '(if ap true true) true
+      '(if ap false false) false
+      '(if ap true false) 'ap
+      '(if ap false true) '(not ap)
+      '(if ap 1 1) 1
 
       '(not true) false
       '(not false) true
