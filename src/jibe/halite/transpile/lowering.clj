@@ -207,11 +207,10 @@
                           'get (validity-guard sctx ctx (first args))
                           'valid? (validity-guard sctx ctx (first args))
                           (validity-guard-app sctx ctx deriv)))
-      :else (throw (ex-info "BUG! Cannot compute validity-guard" {:dgraph dgraph :id id :deriv deriv}))
-      )))
+      :else (throw (ex-info "BUG! Cannot compute validity-guard" {:dgraph dgraph :id id :deriv deriv})))))
 
 (s/defn ^:private lower-valid?-in-spec :- SpecInfo
- "We can trivially lower (valid? <expr>) forms as <(validity-guard expr)>."
+  "We can trivially lower (valid? <expr>) forms as <(validity-guard expr)>."
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
   (let [senv (ssa/as-spec-env sctx)
         tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))

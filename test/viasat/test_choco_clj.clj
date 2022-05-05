@@ -30,8 +30,8 @@
                :constraints #{}}]
     (binding [choco-clj/*default-int-bounds* [0 10]]
       (are [constraint bound]
-          (= bound (choco-clj/propagate
-                    (update spec :constraints conj constraint)))
+           (= bound (choco-clj/propagate
+                     (update spec :constraints conj constraint)))
 
         true '{n [0 10], m [0 10], p #{true false}}))))
 

@@ -92,17 +92,17 @@
                 :constraints [["c1" (not= (get* b :bn) 4)]]
                 :refines-to {}}}]
     (are [expr lowered-expr]
-        (= lowered-expr
-           (binding [ssa/*next-id* (atom 0)]
-             (-> senv
-                 (update-in [:ws/A :constraints] conj ["c" expr])
-                 (halite-envs/spec-env)
-                 (ssa/build-spec-ctx :ws/A)
-                 (lower-valid?)
-                 :ws/A
-                 (ssa/spec-from-ssa)
-                 :constraints
-                 first second)))
+         (= lowered-expr
+            (binding [ssa/*next-id* (atom 0)]
+              (-> senv
+                  (update-in [:ws/A :constraints] conj ["c" expr])
+                  (halite-envs/spec-env)
+                  (ssa/build-spec-ctx :ws/A)
+                  (lower-valid?)
+                  :ws/A
+                  (ssa/spec-from-ssa)
+                  :constraints
+                  first second)))
       ;; The commented out forms below are hand-simplified versions
       ;; of the 'expected' values.
 
@@ -192,8 +192,7 @@
          false)
       #_(if (and (<= an 10) (=> (< an 15) (<= 0 an)))
           (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
-          false)
-      )))
+          false))))
 
 (def push-gets-into-ifs #'lowering/push-gets-into-ifs)
 

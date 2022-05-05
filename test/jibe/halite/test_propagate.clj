@@ -212,8 +212,7 @@
                       (if (if $54 true true) (if $54 (< b|bn c|a|b|bn) true) false)
                       (if b|bp (<= b|bn 10) (<= 10 b|bn))
                       (= b|bp true)
-                      (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]}
-        ))))
+                      (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]}))))
 
 (deftest test-spec-ify-bound-on-recursive-composition
   (let [senv (halite-envs/spec-env
@@ -262,12 +261,12 @@
                          :c|a|b|bn :Integer :c|a|b|bp :Boolean}
              :constraints
              [["$all" (let [$54 (< 0 b|bn)]
-                    (and
-                     (= b|bn c|cn)
-                     (if (if $54 true true) (if $54 (< b|bn c|a|b|bn) true) false)
-                     (if b|bp (<= b|bn 10) (<= 10 b|bn))
-                     (= b|bp true)
-                     (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]
+                        (and
+                         (= b|bn c|cn)
+                         (if (if $54 true true) (if $54 (< b|bn c|a|b|bn) true) false)
+                         (if b|bp (<= b|bn 10) (<= 10 b|bn))
+                         (= b|bp true)
+                         (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]
              :refines-to {}}
            (->> '{:$type :ws/A
                   :b {:$type :ws/B :bp true}
@@ -451,7 +450,7 @@
                  :refines-to {}}})]
 
     (are [spec-id spec]
-        (= spec (hp/spec-ify-bound senv {:$type spec-id}))
+         (= spec (hp/spec-ify-bound senv {:$type spec-id}))
 
       :ws/C '{:spec-vars {:cn :Integer}
               :constraints [["$all" (= 0 (mod cn 2))]]
@@ -503,8 +502,7 @@
                    (= 0 (mod (+ 1 a|an) 2)) ; c1 as instantiated on a thru A->B->C
                    (= (+ 1 dn) (+ 1 a|an))  ; d2 itself
                    (< a|an 10))]]           ; a1 as instantiated on a thru A->B->C
-              :refines-to {}})
-    ))
+              :refines-to {}})))
 
 (deftest test-spec-ify-for-various-instance-literal-cases
   (let [senv '{:ws/Simpler

@@ -80,7 +80,7 @@
        :else (let [[form htype neg-id :as d] (dgraph next-id)]
                (recur
                 (cond->
-                    (into ids (referenced-derivations d))
+                 (into ids (referenced-derivations d))
                   (and include-negations? neg-id) (conj neg-id))
                 (conj reached next-id)))))))
 
@@ -288,7 +288,7 @@
     (-> dgraph
         (assoc-in [id 0] aliased-id)
         (cond->
-            neg-id (assoc-in [id 2] neg-id)))))
+         neg-id (assoc-in [id 2] neg-id)))))
 
 (s/defn dup-node :- DerivResult
   "Create a copy of the given node, and return its id."
@@ -534,7 +534,7 @@
 
                       (= 'refine-to (first form))
                       (list 'refine-to (form-from-ssa* dgraph guards bound? curr-guard (second form)) (last form))
-                      
+
                       (= 'if (first form))
                       (let [[_if pred-id then-id else-id] form]
                         (list 'if

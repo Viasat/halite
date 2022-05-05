@@ -784,7 +784,7 @@
                 :ws/C {:spec-vars {:a :ws/A}
                        :constraints [["maxSum" (< (+ (get a :x) (get a :y)) 10)]]}})]
     (are [expr etype]
-        (= etype (halite/type-check senv tenv expr))
+         (= etype (halite/type-check senv tenv expr))
 
       '(valid {:$type :ws/A, :x 1, :y 0}) [:Maybe :ws/A]
       '(let [a (valid {:$type :ws/A :x 1 :y 0})] (if-value- a 1 2)) :Integer
@@ -798,13 +798,13 @@
       )
 
     (are [expr err-msg]
-        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
       '(valid 1) #"must be instance-valued"
       '(valid? 1) #"must be instance-valued")
 
     (are [expr v]
-        (= v (halite/eval-expr senv tenv empty-env expr))
+         (= v (halite/eval-expr senv tenv empty-env expr))
 
       '(valid {:$type :ws/A :x 2 :y 1}) :Unset
       '(valid {:$type :ws/A, :x -2, :y 0}) :Unset
