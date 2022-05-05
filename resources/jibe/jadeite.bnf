@@ -1,5 +1,4 @@
-expr         = lambda
-lambda       = conditional | params <'->'> expr
+expr         = conditional
 params       = symbol      | <'('> (symbol (<','> symbol)* <','>? )? <')'>
 
 conditional  = optional    | ('if' | 'ifValue' ) <'('> conditional <')'> conditional <'else'> conditional
