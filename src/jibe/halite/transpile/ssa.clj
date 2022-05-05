@@ -18,7 +18,7 @@
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid?}
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to}
    (keys renamed-ops)))
 
 (s/defschema DerivationName
@@ -262,6 +262,14 @@
                                   {:form form})))]
     (add-derivation dgraph [(list 'get id var-kw) htype])))
 
+(s/defn ^:private refine-to-to-ssa :- DerivResult
+  [ctx :- SSACtx, [_ subexpr spec-id :as form]]
+  (let [[dgraph id] (form-to-ssa ctx subexpr)]
+    (when (nil? (halite-envs/lookup-spec (:senv ctx) spec-id))
+      (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
+                      {:form form :spec-id spec-id})))
+    (add-derivation dgraph [(list 'refine-to id spec-id) spec-id])))
+
 (s/defn ^:private inst-literal-to-ssa :- DerivResult
   [ctx :- SSACtx, form]
   (let [spec-id (:$type form)
@@ -282,6 +290,13 @@
         (cond->
             neg-id (assoc-in [id 2] neg-id)))))
 
+(s/defn dup-node :- DerivResult
+  "Create a copy of the given node, and return its id."
+  [dgraph :- Derivations, id :- DerivationName]
+  (let [node (dgraph id)
+        new-id (fresh-id!)]
+    [(assoc dgraph new-id node) new-id]))
+
 (s/defn form-to-ssa :- DerivResult
   "Add the SSA representation of form (an arbitrary halite expression) to the given directed graph,
   returning a tuple of the resulting graph and the id of the node for form.
@@ -301,6 +316,7 @@
                      'if (if-to-ssa ctx form)
                      'get (get-to-ssa ctx form)
                      'get* (get-to-ssa ctx form)
+                     'refine-to (refine-to-to-ssa ctx form)
                      (app-to-ssa ctx form)))
      (map? form) (inst-literal-to-ssa ctx form)
      :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
@@ -363,6 +379,7 @@
                                 (apply set/union (spec-refs-from-expr body))))
                     'get (spec-refs-from-expr (first args))
                     'get* (spec-refs-from-expr (first args))
+                    'refine-to (spec-refs-from-expr (first args))
                     (apply set/union (map spec-refs-from-expr args))))
     :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
 
@@ -456,6 +473,7 @@
       (seq? form) (let [[op & args] form]
                     (condp = op
                       'get (compute-guards* dgraph current result (first args))
+                      'refine-to (compute-guards* dgraph current result (first args))
                       'if (let [[pred-id then-id else-id] args
                                 not-pred-id (negated dgraph pred-id)]
                             (as-> result result
@@ -514,6 +532,9 @@
                       (= 'get (first form))
                       (list 'get (form-from-ssa* dgraph guards bound? curr-guard (second form)) (last form))
 
+                      (= 'refine-to (first form))
+                      (list 'refine-to (form-from-ssa* dgraph guards bound? curr-guard (second form)) (last form))
+                      
                       (= 'if (first form))
                       (let [[_if pred-id then-id else-id] form]
                         (list 'if

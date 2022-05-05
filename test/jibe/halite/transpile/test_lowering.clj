@@ -320,3 +320,44 @@
                  :ws/A
                  (ssa/spec-from-ssa)
                  :constraints first second))))))
+
+(def lower-refine-to #'lowering/lower-refine-to)
+
+(deftest test-lower-refine-to
+  (binding [ssa/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:an :Integer}
+                   :constraints [["a1" (< an 10)]]
+                   :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
+                  :ws/B
+                  {:spec-vars {:bn :Integer}
+                   :constraints [["b1" (< 0 bn)]]
+                   :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
+                  :ws/C
+                  {:spec-vars {:cn :Integer}
+                   :constraints [["c1" (= 0 (mod cn 2))]]
+                   :refines-to {}}
+                  :ws/D
+                  {:spec-vars {:dm :Integer, :dn :Integer}
+                   :constraints [["d1" (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))]
+                                 ["d2" (= dn (get (refine-to {:$type :ws/B :bn dn} :ws/B) :bn))]]
+                   :refines-to {}}})
+          sctx (ssa/build-spec-ctx senv :ws/D)]
+      (is (= '(and
+               (= dm (get {:$type :ws/C :cn (get {:$type :ws/B :bn (+ 1 (get {:$type :ws/A :an dn} :an))} :bn)} :cn))
+               (= dn (get {:$type :ws/B :bn dn} :bn)))
+             (-> sctx
+                 (lower-refine-to)
+                 :ws/D
+                 (ssa/spec-from-ssa)
+                 :constraints first second)))
+
+      (is (= '(and
+               (= dm (get {:$type :ws/C, :cn (get {:$type :ws/B, :bn (+ 1 (get {:$type :ws/A, :an dn} :an))} :bn)} :cn))
+               (= dn (get {:$type :ws/B, :bn dn} :bn)))
+             (-> sctx
+                 (lowering/lower)
+                 :ws/D
+                 (ssa/spec-from-ssa)
+                 :constraints first second))))))

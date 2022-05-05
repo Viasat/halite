@@ -232,6 +232,73 @@
   [sctx :- SpecCtx]
   (rewrite-in-dependency-order sctx deps-via-instance-literal lower-valid?-in-spec))
 
+;;;;;;;;;; Lower refine-to ;;;;;;;;;;;;;;;
+
+(defn- refn-paths*
+  [refn-graph curr-id target-id]
+  (if (= curr-id target-id)
+    [[target-id]]
+    (let [paths (mapcat #(refn-paths* refn-graph % target-id) (refn-graph curr-id))]
+      (mapv (partial cons curr-id) paths))))
+
+(s/defn ^:private refn-paths :- [[halite-types/NamespacedKeyword]]
+  [sctx :- SpecCtx, from-spec-id :- halite-types/NamespacedKeyword, to-spec-id :- halite-types/NamespacedKeyword]
+  ;; NOTE! This function *assumes* the refinement graph is acyclic, and will not terminate otherwise.
+  (let [refn-graph (-> (->> sctx
+                            (mapcat (fn [[from-id {:keys [refines-to]}]]
+                                      (for [to-id (keys refines-to)]
+                                        [from-id to-id])))
+                            (group-by first))
+                       (update-vals (partial mapv second)))]
+    (refn-paths* refn-graph from-spec-id to-spec-id)))
+
+(s/defn ^:private lower-refine-to-expr :- ssa/DerivResult
+  [{:keys [dgraph senv] :as ctx} :- ssa/SSACtx
+   expr-id :- DerivationName
+   from-spec-id :- halite-types/NamespacedKeyword
+   path :- [halite-types/NamespacedKeyword]]
+  (if (empty? path)
+    [dgraph expr-id]
+    (let [{:keys [spec-vars refines-to]} (halite-envs/lookup-spec senv from-spec-id)
+          to-spec-id (first path)
+          [dgraph new-expr-id] (ssa/dup-node dgraph expr-id)
+          bindings (vec (mapcat (fn [var-kw] [(symbol var-kw) (list 'get new-expr-id var-kw)]) (keys spec-vars)))
+          refn-expr (-> refines-to to-spec-id :expr)
+          new-form (list 'let bindings refn-expr)
+          [dgraph id] (ssa/form-to-ssa (assoc ctx :dgraph dgraph) expr-id new-form)]
+      (recur (assoc ctx :dgraph dgraph) id to-spec-id (rest path)))))
+
+(s/defn ^:private lower-refine-to-in-spec :- SpecInfo
+  [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
+  (let [senv (ssa/as-spec-env sctx)
+        ctx {:senv senv
+             :tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
+             :env {}
+             :dgraph derivations}]
+    (->> derivations
+         (filter
+          (fn [[id [form]]] (and (seq? form) (= 'refine-to (first form)))))
+         (reduce
+          (fn [dgraph [id [[_refine-to expr-id to-spec-id]] :as deriv]]
+            (let [[_ from-spec-id] (ssa/deref-id dgraph expr-id)]
+              (if (= from-spec-id to-spec-id)
+                (ssa/rewrite-node dgraph id expr-id)
+                (let [paths (refn-paths sctx from-spec-id to-spec-id)
+                      npaths (count paths)]
+                  (condp = npaths
+                    0 (throw (ex-info (format "BUG! No refinement path from '%s' to '%s'" from-spec-id to-spec-id)
+                                      {:dgraph derivations :id id :deriv deriv}))
+                    1 (let [[dgraph new-id] (lower-refine-to-expr (assoc ctx :dgraph dgraph) expr-id from-spec-id (drop 1 (first paths)))]
+                        (ssa/rewrite-node dgraph id new-id))
+                    (throw (ex-info (format "BUG! Multiple refinement paths from '%s' to '%s'" from-spec-id to-spec-id)
+                                    {:dgraph derivations :id id :deriv deriv :paths paths})))))))
+          derivations)
+         (assoc spec-info :derivations))))
+
+(s/defn ^:private lower-refine-to :- SpecCtx
+  [sctx :- SpecCtx]
+  (update-vals sctx (partial lower-refine-to-in-spec sctx)))
+
 ;;;;;;;;;; Lower Refinement Constraints ;;;;;;;;;;;;;;;
 
 (s/defn ^:private lower-refinement-constraints-in-spec :- SpecInfo
@@ -265,6 +332,7 @@
   (->> sctx
        (fixpoint lower-instance-comparisons)
        (fixpoint push-gets-into-ifs)
+       (lower-refine-to)
        (lower-refinement-constraints)
        (lower-valid?)
        (simplify)))
