@@ -14,26 +14,69 @@
 
 (set! *warn-on-reflection* true)
 
+(s/defschema IntRange
+  [(s/one s/Int :lower) (s/one s/Int :upper)])
+
+(s/defschema VarBound
+  (s/cond-pre
+   s/Int
+   s/Bool
+   #{(s/cond-pre s/Int s/Bool)}
+   IntRange))
+
+(s/defschema VarBounds
+  {s/Symbol VarBound})
+
 (s/defschema ChocoVarType
   (s/cond-pre
    (s/enum :Int :Bool)
-   #{s/Int}))
+   VarBound))
 
-(defn- bool-type? [var-type] (= var-type :Bool))
-(defn- int-type? [var-type] (or (= var-type :Int) (set? var-type)))
+(defn- bool-type? [var-type]
+  (or (= var-type :Bool)
+      (boolean? var-type)
+      (and (set? var-type) (boolean? (first var-type)))))
+
+(defn- int-type? [var-type]
+  (or (= var-type :Int)
+      (int? var-type)
+      (and (set? var-type) (int? (first var-type)))
+      (vector? var-type)))
 
 (s/defschema ChocoSpec
   {:vars {s/Symbol ChocoVarType}
    :constraints #{s/Any}})
 
-(defn- make-var [^Model m [lb ub] [var var-type]]
-  [var
-   [(cond
-      (= var-type :Int) (.intVar m (name var) lb ub true)
-      (= var-type :Bool) (.boolVar m (name var))
-      (set? var-type) (.intVar m (int-array var-type))
-      :else (throw (ex-info (format "Unrecognized var type: '%s'" (pr-str var-type)) {:var-type var-type})))
-    var-type]])
+(def ^:dynamic *default-int-bounds* [-1000 1000])
+
+(defn- make-var [^Model m [var var-type]]
+  (let [[default-lb default-ub] *default-int-bounds*]
+    [var
+     [(cond
+        (= var-type :Int) (.intVar m (name var) (int default-lb) (int default-ub) true)
+        (= var-type :Bool) (.boolVar m (name var))
+        (int? var-type) (.intVar m (name var) (int var-type))
+        (boolean? var-type) (.boolVar m (name var) (boolean var-type))
+        (set? var-type) (cond
+                          (empty? var-type)
+                          (throw (ex-info (format "Invalid spec: var '%s' has empty domain" var)
+                                          {:var var :var-type var-type}))
+
+                          (= 1 (count var-type))
+                          (first (second (make-var m [var (first var-type)])))
+
+                          (every? boolean? var-type)
+                          (.boolVar m (name var))
+
+                          (every? integer? var-type)
+                          (.intVar m (name var) (int-array var-type))
+
+                          :else (throw (ex-info (format "Invalid spec: var '%s' has invalid domain" var)
+                                                {:var var :var-type var-type})))
+        (vector? var-type) (let [[lb ub] var-type]
+                             (.intVar m (name var) (int lb) (int ub) true))
+        :else (throw (ex-info (format "Unrecognized var type: '%s'" (pr-str var-type)) {:var-type var-type})))
+      var-type]]))
 
 (defn- arithmetic ^"[Lorg.chocosolver.solver.expression.discrete.arithmetic.ArExpression;"
   [args]
@@ -97,7 +140,7 @@
 (defn- bool-var-as-expr ^ReExpression
   [^ReExpression expr]
   (if (instance? BoolVar expr)
-    (.eq ^BoolVar expr (ArExpression$IntPrimitive. 1 (.getModel expr)))
+    (.eq ^BoolVar expr (.boolVar (.getModel expr) true))
     expr))
 
 (defn- make-constraint [^Model m vars form]
@@ -112,27 +155,39 @@
    :constraints [{:form s/Any
                   :constraint Constraint}]})
 
-(def ^:dynamic *default-int-bounds* [-1000 1000])
-
 (s/defn ^:private make-model :- ChocoModel
   [spec :- ChocoSpec]
   (let [{:keys [default-int-bounds]} spec
         m (Model.)
-        vars (->> spec :vars (map (partial make-var m *default-int-bounds*)) (into {}))
+        vars (->> spec :vars (map (partial make-var m)) (into {}))
         vars' (update-vals vars first)]
     {:model m
      :vars vars
      :constraints (->> spec :constraints (mapv (partial make-constraint m vars')))}))
 
-(s/defschema VarBound
-  (s/cond-pre
-   s/Int
-   s/Bool
-   #{(s/cond-pre s/Int s/Bool)}
-   [(s/one s/Int :lower) (s/one s/Int :upper)]))
+(defn- intersect-int-bounds*
+  [a b]
+  (cond
+    (= :Int a) b
+    (= :Int b) a
+    (int? a) (recur #{a} b)
+    (int? b) (recur a #{b})
+    (and (set? a) (set? b)) (set/intersection a b)
+    (and (set? a) (vector? b)) (let [[lb ub] b]
+                                 (set (filter #(<= lb % ub) a)))
+    (and (vector? a) (set? b)) (recur b a)
+    (and (vector? a) (vector? b)) (let [[lba uba] a, [lbb ubb] b]
+                                    [(max lba lbb) (min uba ubb)])
+    :else (throw (ex-info (format "Cannot intersect integer bounds '%s' and '%s'" a b)
+                          {:a a :b b}))))
 
-(s/defschema VarBounds
-  {s/Symbol VarBound})
+(defn intersect-int-bounds
+  [a b]
+  (let [r (intersect-int-bounds* a b)]
+    (cond
+      (and (set? r) (= 1 (count r))) (first r)
+      (and (vector? r) (let [[lb ub] r] (< ub lb))) #{}
+      :else r)))
 
 (defn- fold-in-bound
   [spec [var-sym bound]]
@@ -140,18 +195,9 @@
     (or (int? bound) (boolean? bound))
     (update spec :constraints conj (list '= var-sym bound))
 
-    (set? bound)
-    (let [curr-type (get-in spec [:vars var-sym])]
-      (assoc-in spec [:vars var-sym]
-                (if (set? curr-type)
-                  (set/intersection curr-type bound)
-                  bound)))
-
-    (vector? bound)
-    (let [[lb ub] bound]
-      (update spec :constraints conj
-              (list '<= lb var-sym)
-              (list '<= var-sym ub)))
+    (or (set? bound) (vector? bound))
+    (update-in spec [:vars var-sym] intersect-int-bounds bound)
+    
 
     :else (throw (ex-info (format "Unrecognized bound on var '%s'" var-sym)
                           {:var var-sym :bound bound}))))

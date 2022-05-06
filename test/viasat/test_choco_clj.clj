@@ -35,6 +35,58 @@
 
         true '{n [0 10], m [0 10], p #{true false}}))))
 
+(deftest test-bounds-as-var-types
+  (binding [choco-clj/*default-int-bounds* [0 100]]
+    (are [bound expected]
+        (= expected
+           (-> {:vars {'v bound}, :constraints #{}}
+               (choco-clj/propagate)
+               (get 'v)))
+
+      :Int choco-clj/*default-int-bounds*
+      :Bool #{true false}
+      [1 90] [1 90]
+      [2 6] [2 6]
+      #{1 2} #{1 2}
+      [1 1] 1
+      #{1} 1
+      true true
+      false false
+      1 1
+      #{true} true
+      #{true false} #{true false})))
+
+(deftest test-intersect-int-bounds
+  (are [a b _ result]
+      (= result (choco-clj/intersect-int-bounds a b))
+
+    :Int :Int => :Int
+    :Int 1 => 1
+    :Int #{1 2 3} => #{1 2 3}
+    :Int [2 5] => [2 5]
+
+    1 :Int => 1
+    1 1 => 1
+    1 2 => #{}
+    1 #{1 2} => 1
+    1 #{2 3} => #{}
+    1 [0 2] => 1
+    1 [3 5] => #{}
+
+    #{1 2 3} :Int => #{1 2 3}
+    #{1 2 3} 1 => 1
+    #{1 2 3} 4 => #{}
+    #{1 2 3} #{2 3 4} => #{2 3}
+    #{1 2 3} [2 5] => #{2 3}
+
+    [1 4] :Int => [1 4]
+    [1 4] 2 => 2
+    [1 4] 5 => #{}
+    [1 4] #{3 4 5} => #{3 4}
+    [1 4] #{5 6} => #{}
+    [1 4] [3 5] => [3 4]
+    [1 4] [5 7] => #{}))
+
 (deftest test-initial-bounds
   (let [spec '{:vars {m :Int, n :Int, p :Bool}
                :constraints #{(if p (< n m) (> n m))}}]
