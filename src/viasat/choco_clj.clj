@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns viasat.choco-clj
-  (:require [schema.core :as s])
+  (:require [clojure.set :as set]
+            [schema.core :as s])
   (:import [org.chocosolver.solver Model Solver]
            [org.chocosolver.solver.variables Variable BoolVar IntVar]
            [org.chocosolver.solver.constraints Constraint]
@@ -133,6 +134,31 @@
 (s/defschema VarBounds
   {s/Symbol VarBound})
 
+(defn- fold-in-bound
+  [spec [var-sym bound]]
+  (cond
+    (or (int? bound) (boolean? bound))
+    (update spec :constraints conj (list '= var-sym bound))
+
+    (set? bound)
+    (let [curr-type (get-in spec [:vars var-sym])]
+      (assoc-in spec [:vars var-sym]
+                (if (set? curr-type)
+                  (set/intersection curr-type bound)
+                  bound)))
+
+    (vector? bound)
+    (let [[lb ub] bound]
+      (update spec :constraints conj
+              (list '<= lb var-sym)
+              (list '<= var-sym ub)))
+
+    :else (throw (ex-info (format "Unrecognized bound on var '%s'" var-sym)
+                          {:var var-sym :bound bound}))))
+
+(defn- fold-in-bounds [spec bounds]
+  (reduce fold-in-bound spec bounds))
+
 (defn- extract-bound
   [[^Variable v var-type]]
   (cond
@@ -146,15 +172,8 @@
                              [(.getLB ^IntVar v) (.getUB ^IntVar v)]))))
 
 (s/defn propagate :- VarBounds
-  [spec :- ChocoSpec]
-  (let [{:keys [^Model model vars]} (make-model spec)]
-    (.. model getSolver propagate)
-    (update-vals vars extract-bound)))
-
-(comment
-
-  (let [spec '{:vars {x :Int, y :Int, b :Bool}
-               :constraints [(< (dec y) x)
-                             (=> b (< x (+ y 1)))]}]
-    (doseq [extra '[[] [(= y 24)] [(= b true)] [(= y 24) (= b true)]]]
-      (prn (propagate (update spec :constraints into extra))))))
+  ([spec :- ChocoSpec] (propagate spec {}))
+  ([spec :- ChocoSpec, initial-bounds :- VarBounds]
+   (let [{:keys [^Model model vars]} (-> spec (fold-in-bounds initial-bounds) (make-model))]
+     (.. model getSolver propagate)
+     (update-vals vars extract-bound))))

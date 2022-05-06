@@ -35,60 +35,14 @@
 
         true '{n [0 10], m [0 10], p #{true false}}))))
 
-(deftest test-abstract-translation-strategy
-  ;; An abstract variable expands into a type variable and variables for each
-  ;; concrete spec; for each concrete spec, the variables
-  ;; must be satisfied unconditionally.
-  ;; References to the abstract variable should be conditional on
-  ;; the type var.
-  ;; A stand-alone propagation pass should be done for each spec,
-  ;; and specs that are obviously unsatisfiable should be excluded
-  ;; from the analysis.
-  (let [senv '{:A {:spec-vars {:n :Integer}
-                   :abstract? true
-                   :constraints [["a1" (and (<= 0 n) (<= n 10))]]}
+(deftest test-initial-bounds
+  (let [spec '{:vars {m :Int, n :Int, p :Bool}
+               :constraints #{(if p (< n m) (> n m))}}]
+    (binding [choco-clj/*default-int-bounds* [-10 10]]
+      (are [in out]
+          (= out (choco-clj/propagate spec in))
 
-               :X {:spec-vars {:a :A :x :Int}
-                   :constraints [["x1" (= x (get* (refine-to a :A) :n))]]}
-
-               :B {:spec-vars {:b :Integer}
-                   :constraints [["b1" (< b 4)]]
-                   :refines-to {:A {:expr {:$type :A, :n b}}}}
-               :C {:spec-vars {:c :Integer}
-                   :constraints [["c1" (< 2 c)]]
-                   :refines-to {:A {:expr {:$type :A, :n c}}}}}
-
-        alt1 '{:vars {x :Int
-                      a?B|b :Int
-                      a?C|c :Int
-                      a?type #{1 2}}
-               :constraints
-               #{(< a?B|b 4)
-                 (let [n a?B|b]
-                   (and (<= 0 n) (<= n 10)))
-                 (< 2 a?C|c)
-                 (let [n a?C|c]
-                   (and (<= 0 n) (<= n 10)))
-                 (= x (if (= a?type 1) a?B|b a?C|c))}}
-        alt2 '{:vars {x :Int
-                      a?B|b :Int
-                      a?C|c :Int
-                      a?type #{1 2}}
-               :constraints
-               #{(let [$1 (= a?type 1)
-                       $2 (if $1 a?B|b a?C|c)]
-                   (and (< a?B|b 4)
-                        (and (<= 0 a?B|b) (<= a?B|b 10))
-                        (< 2 a?C|c)
-                        (and (<= 0 a?C|c) (<= a?C|c 10))
-                        (= x $2)))}}
-        spec alt2]
-
-    (binding [choco-clj/*default-int-bounds* [-100 100]]
-      (are [extra bounds]
-           (= bounds (select-keys (choco-clj/propagate (update spec :constraints into extra)) (keys bounds)))
-
-        '[]             '{a?type #{1 2}, x [-100 100]}
-        '[(= x 3)]      '{a?type #{1 2}, a?B|b [0 3], a?C|c [3 10]}
-        '[(= x 2)]      '{a?type 1, a?B|b 2}
-        '[(= a?type 2)] '{x [3 10]}))))
+        '{}                                     '{m [-10 10], n [-10 10], p #{true false}}
+        '{m 1}                                  '{m 1, n [-10 10], p #{true false}}
+        '{m [0 10], p false}                    '{m [0 9], n [1 10], p false}
+        '{m 0, n #{-2 -1 0 1 2}, p true}        '{m 0, n #{-2 -1}, p true}))))
