@@ -56,14 +56,32 @@
       #{true} true
       #{true false} #{true false})))
 
-(deftest test-intersect-int-bounds
+(deftest test-intersect-bound
   (are [a b _ result]
-      (= result (choco-clj/intersect-int-bounds a b))
+      (= result (choco-clj/intersect-bound a b))
 
     :Int :Int => :Int
     :Int 1 => 1
     :Int #{1 2 3} => #{1 2 3}
     :Int [2 5] => [2 5]
+
+    :Bool :Bool => :Bool
+    :Bool true => true
+    :Bool #{true false} => #{true false}
+    :Bool #{true} => true
+
+    true false => #{}
+    true true => true
+    false false => false
+    false #{false} => false
+    false #{true} => #{}
+
+    #{true} :Bool => true
+    #{true false} :Bool => #{true false}
+    #{true false} true => true
+    #{true} false => #{}
+    #{true false} #{false} => false
+    #{true} #{false} => #{}
 
     1 :Int => 1
     1 1 => 1
@@ -86,6 +104,55 @@
     [1 4] #{5 6} => #{}
     [1 4] [3 5] => [3 4]
     [1 4] [5 7] => #{}))
+
+(deftest test-union-bound
+  (are [a b _ result]
+      (= result (choco-clj/union-bound a b))
+
+    :Int :Int => :Int
+    :Int 1 => :Int
+    :Int #{1 2 3} => :Int
+    :Int [2 5] => :Int
+
+    :Bool :Bool => :Bool
+    :Bool true => :Bool
+    :Bool #{true false} => :Bool
+    :Bool #{true} => :Bool
+
+    true false => #{true false}
+    true true => true
+    false false => false
+    false #{false} => false
+    false #{true} => #{true false}
+
+    #{true} :Bool => :Bool
+    #{true false} :Bool => :Bool
+    #{true false} true => #{true false}
+    #{true} false => #{true false}
+    #{true false} #{false} => #{true false}
+    #{true} #{false} => #{true false}
+
+    1 :Int => :Int
+    1 1 => 1
+    1 2 => #{1 2}
+    1 #{1 2} => #{1 2}
+    1 #{2 3} => #{1 2 3}
+    1 [0 2] => [0 2]
+    1 [3 5] => [1 5]
+
+    #{1 2 3} :Int => :Int
+    #{1 2 3} 1 => #{1 2 3}
+    #{1 2 3} 4 => #{1 2 3 4}
+    #{1 2 3} #{2 3 4} => #{1 2 3 4}
+    #{1 2 3} [2 5] => [1 5]
+
+    [1 4] :Int => :Int
+    [1 4] 2 => [1 4]
+    [1 4] 5 => [1 5]
+    [1 4] #{3 4 5} => [1 5]
+    [1 4] #{5 6} => [1 6]
+    [1 4] [3 5] => [1 5]
+    [1 4] [5 7] => [1 7]))
 
 (deftest test-initial-bounds
   (let [spec '{:vars {m :Int, n :Int, p :Bool}

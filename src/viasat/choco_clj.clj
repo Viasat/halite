@@ -32,6 +32,9 @@
    (s/enum :Int :Bool)
    VarBound))
 
+(s/defschema VarTypes
+  {s/Symbol ChocoVarType})
+
 (defn- bool-type? [var-type]
   (or (= var-type :Bool)
       (boolean? var-type)
@@ -44,7 +47,7 @@
       (vector? var-type)))
 
 (s/defschema ChocoSpec
-  {:vars {s/Symbol ChocoVarType}
+  {:vars VarTypes
    :constraints #{s/Any}})
 
 (def ^:dynamic *default-int-bounds* [-1000 1000])
@@ -165,45 +168,94 @@
      :vars vars
      :constraints (->> spec :constraints (mapv (partial make-constraint m vars')))}))
 
-(defn- intersect-int-bounds*
-  [a b]
+(s/defn ^:private intersect-bound* :- ChocoVarType
+  [a :- ChocoVarType, b :- ChocoVarType]
   (cond
     (= :Int a) b
     (= :Int b) a
-    (int? a) (recur #{a} b)
-    (int? b) (recur a #{b})
+
+    (= :Bool a) b
+    (= :Bool b) a
+
+    (or (int? a) (boolean? a)) (recur #{a} b)
+    (or (int? b) (boolean? b)) (recur a #{b})
+
     (and (set? a) (set? b)) (set/intersection a b)
     (and (set? a) (vector? b)) (let [[lb ub] b]
                                  (set (filter #(<= lb % ub) a)))
     (and (vector? a) (set? b)) (recur b a)
     (and (vector? a) (vector? b)) (let [[lba uba] a, [lbb ubb] b]
                                     [(max lba lbb) (min uba ubb)])
-    :else (throw (ex-info (format "Cannot intersect integer bounds '%s' and '%s'" a b)
+    :else (throw (ex-info (format "Cannot intersect bounds '%s' and '%s'" a b)
                           {:a a :b b}))))
 
-(defn intersect-int-bounds
-  [a b]
-  (let [r (intersect-int-bounds* a b)]
-    (cond
-      (and (set? r) (= 1 (count r))) (first r)
-      (and (vector? r) (let [[lb ub] r] (< ub lb))) #{}
-      :else r)))
+(s/defn ^:private simplify-bound :- ChocoVarType
+  [bound :- ChocoVarType]
+  (cond
+    (and (set? bound) (= 1 (count bound))) (first bound)
+    (vector? bound) (let [[lb ub] bound]
+                  (cond
+                    (= lb ub) lb
+                    (< ub lb) #{}
+                    :else bound))
+    :else bound))
+
+(s/defn intersect-bound :- ChocoVarType
+  [a :- ChocoVarType, b :- ChocoVarType]
+  (simplify-bound (intersect-bound* a b)))
+
+(defn- ensure-compatibility [a b]
+  (when-not (= (set (keys a)) (set (keys b)))
+    (throw (ex-info "Cannot intersect bounds with different sets of variables"
+                    {:a a :b b}))))
+
+(s/defn intersect-bounds :- VarTypes
+  [a :- VarTypes, b :- VarTypes]
+  (ensure-compatibility a b)
+  (->> (keys a)
+       (map #(intersect-bound (a %) (b %)))
+       (zipmap (keys a))))
+
+(s/defn ^:private union-bound* :- ChocoVarType
+  [a :- ChocoVarType, b :- ChocoVarType]
+  (cond
+    (= :Int a) a
+    (= :Int b) b
+
+    (= :Bool a) a
+    (= :Bool b) b
+
+    (or (int? a) (boolean? a)) (recur #{a} b)
+    (or (int? b) (boolean? b)) (recur a #{b})
+
+    (and (set? a) (set? b)) (set/union a b)
+    (and (set? a) (vector? b)) (let [[lb ub] b, lb' (apply min a), ub' (apply max a)]
+                                 [(min lb lb') (max ub ub')])
+    (and (vector? a) (set? b)) (recur b a)
+    (and (vector? a) (vector? b)) (let [[lba uba] a, [lbb ubb] b]
+                                    [(min lba lbb) (max uba ubb)])
+    :else (throw (ex-info (format "Cannot intersect bounds '%s' and '%s'" a b)
+                          {:a a :b b}))))
+
+(s/defn union-bound :- ChocoVarType
+  [a :- ChocoVarType, b :- ChocoVarType]
+  (simplify-bound (union-bound* a b)))
+
+(s/defn union-bounds :- VarTypes
+  [a :- VarTypes, b :- VarTypes]
+  (ensure-compatibility a b)
+  (->> (keys a)
+       (map #(union-bound (a %) (b %)))
+       (zipmap (keys a))))
 
 (defn- fold-in-bound
-  [spec [var-sym bound]]
-  (cond
-    (or (int? bound) (boolean? bound))
-    (update spec :constraints conj (list '= var-sym bound))
-
-    (or (set? bound) (vector? bound))
-    (update-in spec [:vars var-sym] intersect-int-bounds bound)
-    
-
-    :else (throw (ex-info (format "Unrecognized bound on var '%s'" var-sym)
-                          {:var var-sym :bound bound}))))
+  [bounds [var-sym bound]]
+  (if (contains? bounds var-sym)
+    (update bounds var-sym intersect-bound bound)
+    (assoc bounds var-sym bound)))
 
 (defn- fold-in-bounds [spec bounds]
-  (reduce fold-in-bound spec bounds))
+  (update spec :vars #(reduce fold-in-bound % bounds)))
 
 (defn- extract-bound
   [[^Variable v var-type]]
