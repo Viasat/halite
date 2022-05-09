@@ -332,6 +332,7 @@
       '(let [no-value- 12] "ha") #"reserved word"
       '(if-value 12 true false) #"must be a bare symbol"
       '(let [y 22] (if-value y true false)) #"must have an optional type"
+      '(= "foo" x) #"incompatible types"
       '(if-value x "foo" true) #"incompatible types"
       '(if-value- x "foo" true) #"incompatible types") ;; deprecated
 
@@ -346,6 +347,8 @@
         '(if-value x x 12) 12
         '(let [y no-value-] (if-value y "foo" true)) true
         '(let [y no-value-] (if-value- y "foo" true)) true ;; deprecated
+        '(= x (get m :x)) true
+        '(= 5 (get m :x)) false
         '(some? x) false
         '(some? m) true))))
 
