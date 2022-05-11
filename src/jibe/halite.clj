@@ -46,11 +46,14 @@
   (or (= spec-id (:$type inst))
       (boolean (get (:refinements (meta inst)) spec-id))))
 
+(defn- long? [value]
+  (= java.lang.Long (class value)))
+
 (s/defn ^:private concrete? :- s/Bool
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
   [senv :- (s/protocol SpecEnv), v]
   (cond
-    (or (integer? v) (boolean? v) (string? v)) true
+    (or (long? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
                    spec-info (or (lookup-spec senv spec-id)
                                  (throw (ex-info (str "resource spec not found: " spec-id) {:spec-id spec-id})))]
@@ -183,7 +186,7 @@
   [ctx :- TypeContext, value]
   (cond
     (boolean? value) :Boolean
-    (integer? value) :Integer
+    (long? value) :Integer
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
@@ -615,7 +618,7 @@
   [ctx :- TypeContext, expr]
   (cond
     (boolean? expr) :Boolean
-    (integer? expr) :Integer
+    (long? expr) :Integer
     (string? expr) :String
     (symbol? expr) (if (= 'no-value- expr)
                      :Unset
@@ -736,7 +739,7 @@
   (let [eval-in-env (partial eval-expr* ctx)]
     (cond
       (or (boolean? expr)
-          (integer? expr)
+          (long? expr)
           (string? expr)) expr
       (symbol? expr) (if (= 'no-value- expr)
                        :Unset
