@@ -197,6 +197,12 @@
                  str (str "str" (infix ", " args))
                  ;; default:
                  (call-method op args)))
+    (or (and (integer? x)
+             (not (= java.lang.Long (class x))))
+        (double? x)
+        (= java.math.BigDecimal (class x))
+        (= clojure.lang.Ratio (class x))) (throw (ex-info "Invalid numeric type" {:x x
+                                                                                  :class (class x)}))
     :else (str x)))
 
 (def to-jadeite

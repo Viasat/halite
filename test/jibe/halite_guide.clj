@@ -13,14 +13,20 @@
     `(let [senv# (halite-envs/spec-env {})
            tenv# (halite-envs/type-env {})
            env# (halite-envs/env {})
-           j-expr# (jadeite/to-jadeite ~expr)
+           j-expr# (try (jadeite/to-jadeite ~expr)
+                        (catch RuntimeException e#
+                          [:throws (.getMessage e#)]))
            t# (try (halite/type-check senv# tenv# ~expr)
                    (catch RuntimeException e#
                      [:throws (.getMessage e#)]))
            h-result# (try (halite/eval-expr senv# tenv# env# ~expr)
                           (catch RuntimeException e#
                             [:throws (.getMessage e#)]))
-           jh-expr# (jadeite/to-halite j-expr#)
+           jh-expr# (when (string? j-expr#)
+                      (try
+                        (jadeite/to-halite j-expr#)
+                        (catch RuntimeException e#
+                          [:throws (.getMessage e#)])))
 
            jh-result# (try
                         (halite/eval-expr senv# tenv# env# jh-expr#)
@@ -32,9 +38,11 @@
                          [:throws (.getMessage e#)]))]
        (is (= ~expected-t t#))
        (is (= ~result-expected h-result#))
-       (is (= ~result-expected jh-result#))
+       (when (string? j-expr#)
+         (is (= ~result-expected jh-result#)))
        (is (= ~j-expr-expected j-expr#))
-       (is (= ~j-result-expected j-result#))
+       (when (string? j-expr#)
+         (is (= ~j-result-expected j-result#)))
 
        (list (quote ~'h)
              ~expr
@@ -80,9 +88,9 @@
 
   (h 9223372036854775807 :Integer 9223372036854775807 "9223372036854775807" "9223372036854775807")
 
-  (h 9223372036854775808 [:throws "Syntax error"] [:throws "Syntax error"] "9223372036854775808" [:throws "Syntax error"])
+  (h 9223372036854775808 [:throws "Syntax error"] [:throws "Syntax error"] [:throws "Invalid numeric type"] [:throws "Syntax error"])
 
-  (h '(+ 9223372036854775808 0) [:throws "Syntax error"] [:throws "Syntax error"] "(9223372036854775808 + 0)" [:throws "Syntax error"])
+  (h '(+ 9223372036854775808 0) [:throws "Syntax error"] [:throws "Syntax error"] [:throws "Invalid numeric type"] [:throws "Syntax error"])
 
   (h -9223372036854775808 :Integer -9223372036854775808 "-9223372036854775808" "-9223372036854775808")
 
@@ -98,10 +106,21 @@
 
   (h '(- -9223372036854775808 1) :Integer [:throws "long overflow"] "(-9223372036854775808 - 1)" [:throws "long overflow"])
 
-  (h -9223372036854775809 [:throws "Syntax error"] [:throws "Syntax error"] "-9223372036854775809" [:throws "Syntax error"])
+  (h -9223372036854775809 [:throws "Syntax error"] [:throws "Syntax error"] [:throws "Invalid numeric type"] [:throws "Syntax error"])
 
   (h '(+ -9223372036854775808 -1) :Integer [:throws "long overflow"] "(-9223372036854775808 + -1)" [:throws "long overflow"])
 
-  (h '(+ -9223372036854775808 1) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807"))
+  (h '(+ -9223372036854775808 1) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807")
+
+  (h (short 1) [:throws "Syntax error"] [:throws "Syntax error"] [:throws "Invalid numeric type"])
+
+  (h 1N [:throws "Syntax error"] [:throws "Syntax error"] [:throws "Invalid numeric type"] [:throws "Syntax error"])
+
+  (h 1.1 [:throws "Syntax error"] [:throws "Syntax error"] [:throws "Invalid numeric type"] [:throws "Syntax error"])
+
+  (h 1.1M [:throws "Syntax error"] [:throws "Syntax error"] [:throws "Invalid numeric type"] [:throws "Syntax error"])
+
+  (h 1/2 [:throws "Syntax error"] [:throws "Syntax error"] [:throws "Invalid numeric type"] [:throws "Syntax error"]))
 
 ;; (run-tests)
+
