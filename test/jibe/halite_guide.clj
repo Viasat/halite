@@ -663,11 +663,11 @@
   (h (every? [? #{true}] ?) :Boolean true "every?(<?> in #{true})<?>" "true"))
 
 (deftest test-every?-other
-  (h (every? [x true] false) [:throws "unsupported collection type"])
+  (h (every? [x true] false) [:throws "collection required for 'every?', not :Boolean"])
 
-  (h (every? [19 true] false) [:throws "Binding form for 'every?' must have symbol on left"])
+  (h (every? [19 true] false) [:throws "Binding target for 'every?' must be a bare symbol, not: 19"])
 
-  (h (every? [19 #{"a"}] true) [:throws "Binding form for 'every?' must have symbol on left"])
+  (h (every? [19 #{"a"}] true) [:throws "Binding target for 'every?' must be a bare symbol, not: 19"])
 
   (h (every? [if +] true) [:throws "Undefined: '+'"])
 
@@ -675,7 +675,7 @@
 
   (h (every? [if if] (> 0 if)) [:throws "Undefined: 'if'"])
 
-  (h (every? [x "ab"] (= x x)) [:throws "unsupported collection type"]))
+  (h (every? [x "ab"] (= x x)) [:throws "collection required for 'every?', not :String"]))
 
 (deftest test-set-any?
   (h (any? [x #{}] (> x 1)) [:throws "no matching signature for '>'"])
@@ -684,7 +684,7 @@
 
   (h (any? [x #{1 3 2}] (= x 1)) :Boolean true "any?(x in #{1, 2, 3})(x == 1)" "true")
 
-  (h (any? ["a" #{1 3 2}] true) [:throws "Binding form for 'any?' must have symbol on left"])
+  (h (any? ["a" #{1 3 2}] true) [:throws "Binding target for 'any?' must be a bare symbol, not: \"a\""])
 
   (h (any?) [:throws "Wrong number of arguments to 'any?': expected 2, but got 0"])
 
@@ -695,7 +695,7 @@
   (h (any? [x #{1 3 2}] (every? [y #{1 2}] (< y x))) :Boolean true "any?(x in #{1, 2, 3})every?(y in #{1, 2})(y < x)" "true"))
 
 (deftest test-any?-other
-  (h (any? [x "test"] true) [:throws "unsupported collection type"]))
+  (h (any? [x "test"] true) [:throws "collection required for 'any?', not :String"]))
 
 (deftest test-vector
   (h [] :EmptyVec [] "[]" "[]")
@@ -740,13 +740,14 @@
 
   (h (sort) [:throws "no matching signature for 'sort'"])
 
-  ;; TODO
+  (h (range) [:throws "no matching signature for 'range'"])
 
-  (h (range) [:throws "function 'range' not found"])
+  (h (range 1) [:Vec :Integer] [0] "1.range()" "[0]")
 
-  (h (range 1) [:throws "function 'range' not found"])
+  (h (range 1 2) [:Vec :Integer] [1] "1.range(2)" "[1]")
 
-  (h (range 1 2) [:throws "function 'range' not found"])
+  ;;TODO
+  (h (range 1 2 3) [:Vec :Integer] [1] "1.range(2, 3)" "[1]")
 
   (h (conj [10 20] 30) [:Vec :Integer] [10 20 30] "[10, 20].conj(30)" "[10, 20, 30]")
 
