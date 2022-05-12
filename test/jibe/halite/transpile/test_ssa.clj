@@ -603,3 +603,28 @@
       (let [inst {:$type :ws/A :x x :y y :p p :q q}]
         (testing (pr-str inst)
           (is (= (check senv inst) (check senv' inst))))))))
+
+(deftest test-replace-in-expr
+  (binding [ssa/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}})
+          tenv (halite-envs/type-env '{x :Integer, y :Integer, p :Boolean})
+          ctx {:senv senv, :tenv tenv, :env {}, :dgraph {}}
+          [dgraph1 orig-id] (ssa/form-to-ssa ctx '(let [foo (+ x (- 0 y))]
+                                                    (or p
+                                                        (< foo 24)
+                                                        (<= 0 (get {:$type :ws/A :an (* foo 2)} :an)))))
+          old-add-id (->> dgraph1
+                          (filter (fn [[id [form]]] (and (seq? form) (= '+ (first form)))))
+                          ffirst)
+          [dgraph2 add-id] (ssa/form-to-ssa
+                            (assoc ctx :dgraph dgraph1)
+                            '(+ x y))
+          ;;_ (clojure.pprint/pprint (sort-by #(Integer/parseInt (subs (name (first %)) 1)) dgraph2))
+          [dgraph3 new-id] (ssa/replace-in-expr
+                            dgraph2 orig-id {old-add-id add-id})]
+      (is (= '(let [$21 (+ x y)]
+                (or p
+                    (< $21 24)
+                    (<= 0 (get {:$type :ws/A, :an (* $21 2)} :an))))
+             (ssa/form-from-ssa '#{x y p} dgraph3 new-id))))))

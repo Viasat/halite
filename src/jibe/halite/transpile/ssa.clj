@@ -333,6 +333,36 @@
         (cond->
          neg-id (assoc-in [id 2] neg-id)))))
 
+(s/defn replace-in-expr :- DerivResult
+  [dgraph :- Derivations, id, replacements :- {DerivationName DerivationName}]
+  (let [[form htype :as d] (deref-id dgraph id)]
+    (if-let [new-id (replacements id)]
+      [dgraph new-id]
+      (cond
+        (or (int? form) (boolean? form)) [dgraph id]
+        (symbol? form) (if-let [replacement (replacements form)]
+                         (add-derivation dgraph [(assoc d 0 replacement) htype])
+                         [dgraph id])
+        (seq? form) (let [[op & args] form
+                          [dgraph new-args] (reduce
+                                             (fn [[dgraph args] term]
+                                               (if (symbol? term)
+                                                 (let [[dgraph id] (replace-in-expr dgraph term replacements)]
+                                                   [dgraph (conj args id)])
+                                                 [dgraph (conj args term)]))
+                                             [dgraph []]
+                                             args)]
+                      (add-derivation dgraph [(apply list op new-args) htype]))
+        (map? form) (let [spec-id (:$type form)
+                          [dgraph inst] (reduce
+                                         (fn [[dgraph inst] [var-kw var-id]]
+                                           (let [[dgraph id] (replace-in-expr dgraph var-id replacements)]
+                                             [dgraph (assoc inst var-kw id)]))
+                                         [dgraph {:$type (:$type form)}]
+                                         (dissoc form :$type))]
+                      (add-derivation dgraph [inst htype]))
+        :else (throw (ex-info "Unrecognized derivation" {:dgraph dgraph :form form}))))))
+
 (s/defn dup-node :- DerivResult
   "Create a copy of the given node, and return its id."
   [dgraph :- Derivations, id :- DerivationName]
