@@ -219,6 +219,10 @@
 
   (h (div 1 2) :Integer 0 "(1 / 2)" "0")
 
+  (h (div 1 9223372036854775808) [:throws "Syntax error"])
+
+  (h (div 1 9223372036854775807) :Integer 0 "(1 / 9223372036854775807)" "0")
+
   (h (mod 3 2) :Integer 1 "(3 % 2)" "1")
 
   (h (mod 3) [:throws "no matching signature for 'mod'"])
@@ -235,7 +239,15 @@
 
   (h (mod 3 0) :Integer [:throws "Divide by zero"] "(3 % 0)" [:throws "Divide by zero"])
 
+  (h (mod 9223372036854775807 9223372036854775806) :Integer 1 "(9223372036854775807 % 9223372036854775806)" "1")
+
+  (h (mod 1 9223372036854775808) [:throws "Syntax error"])
+
   (h (expt 2 3) :Integer 8 "2.expt(3)" "8")
+
+  (h (expt 1 9223372036854775807) :Integer 1 "1.expt(9223372036854775807)" "1")
+
+  (h (expt 1 9223372036854775808N) [:throws "Syntax error"])
 
   (h (expt 2 3 4) [:throws "no matching signature for 'expt'"])
 
