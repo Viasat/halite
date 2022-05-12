@@ -482,7 +482,13 @@
 
   (h (contains? "ab" "a") [:throws "no matching signature for 'contains?'"])
 
-  (h (union "" "a") [:throws "Arguments to 'union' must be sets"]))
+  (h (union "" "a") [:throws "Arguments to 'union' must be sets"])
+
+  ;; TODO:
+
+  (h (get "" 0) [:throws "First argument to get must be an instance of known type or non-empty vector"])
+
+  (h (get "ab" 1) [:throws "First argument to get must be an instance of known type or non-empty vector"]))
 
 (deftest test-string-bool
   (h (and "true" false) [:throws "no matching signature for 'and'"])
@@ -507,8 +513,9 @@
 
   (h #{"☺" "a"} [:Set :String] #{"☺" "a"} "#{\"a\", \"☺\"}" "#{\"a\", \"☺\"}")
 
-  ;; TODO: ??
   (h #{1 "a"} [:Set :Any] #{1 "a"} "#{\"a\", 1}" "#{\"a\", 1}")
+
+  (h (count #{1 true "a"}) :Integer 3 "#{\"a\", 1, true}.count()" "3")
 
   (h (count #{}) :Integer 0 "#{}.count()" "0")
 
@@ -566,7 +573,7 @@
 
   (h (= #{1} #{}) :Boolean false "(#{1} == #{})" "false")
 
-  ;; TODO (h (= #{1} #{} #{2}) :Boolean false "(#{1} == #{} == #{2})" [:throws "Syntax error"])
+  ;; TODO: (h (= #{1} #{} #{2}) :Boolean false "(#{1} == #{} == #{2})" [:throws "Syntax error"])
 
   (h (not= #{} #{}) :Boolean false "(#{} != #{})" "false")
 
@@ -574,11 +581,11 @@
 
   (h (intersection #{} #{}) :EmptySet #{} "#{}.intersection(#{})" "#{}")
 
-  (h (intersection #{}) :EmptySet #{} "#{}.intersection()" "#{}")
+  (h (intersection #{}) [:throws "Wrong number of arguments to 'intersection': expected at least 2, but got 1"])
 
-  (h (intersection #{1 2}) [:Set :Integer] #{1 2} "#{1, 2}.intersection()" "#{1, 2}")
+  (h (intersection #{1 2}) [:throws "Wrong number of arguments to 'intersection': expected at least 2, but got 1"])
 
-  (h (intersection) [:throws "Wrong number of arguments to 'intersection': expected at least 1, but got 0"])
+  (h (intersection) [:throws "Wrong number of arguments to 'intersection': expected at least 2, but got 0"])
 
   (h (intersection #{1 2} #{3 2}) [:Set :Integer] #{2} "#{1, 2}.intersection(#{2, 3})" "#{2}")
 
@@ -586,9 +593,9 @@
 
   (h (union #{} #{}) :EmptySet #{} "#{}.union(#{})" "#{}")
 
-  (h (union #{2}) [:Set :Integer] #{2} "#{2}.union()" "#{2}")
+  (h (union #{2}) [:throws "Wrong number of arguments to 'union': expected at least 2, but got 1"])
 
-  ;; TODO  (h (union) :EmptySet #{} ".union()" [:throws "Syntax error"])
+  ;; TODO: (h (union) :EmptySet #{} ".union()" [:throws "Syntax error"])
 
   (h (union #{1} #{}) [:Set :Integer] #{1} "#{1}.union(#{})" "#{1}")
 
@@ -600,7 +607,23 @@
 
   (h (difference #{1 2}) [:throws "Wrong number of arguments to 'difference': expected 2, but got 1"])
 
-  (h (difference) [:throws "Wrong number of arguments to 'difference': expected 2, but got 0"]))
+  (h (difference) [:throws "Wrong number of arguments to 'difference': expected 2, but got 0"])
+
+  (h (first #{}) [:throws "Argument to 'first' must be a vector"])
+
+  (h (first #{1}) [:throws "Argument to 'first' must be a vector"])
+
+  (h (rest #{}) [:throws "Argument to 'rest' must be a vector"])
+
+  (h (rest #{1 2}) [:throws "Argument to 'rest' must be a vector"])
+
+  (h (conj #{}) [:throws "Wrong number of arguments to 'conj': expected at least 2, but got 1"])
+
+  (h (conj #{} 1 2) [:Set :Integer] #{1 2} "#{}.conj(1, 2)" "#{1, 2}")
+
+  (h (conj #{} 1) [:Set :Integer] #{1} "#{}.conj(1)" "#{1}")
+
+  (h (conj #{} 1 #{3 2}) [:Set :Any] #{1 #{3 2}} "#{}.conj(1, #{2, 3})" "#{#{2, 3}, 1}"))
 
 (deftest test-set-every?
   (h (every? [x #{1 2}] (> x 0)) :Boolean true "every?(x in #{1, 2})(x > 0)" "true")
@@ -642,18 +665,26 @@
 (deftest test-every?-other
   (h (every? [x true] false) [:throws "unsupported collection type"])
 
-  (h (every? [19 true] false) [:throws "unsupported collection type"])
+  (h (every? [19 true] false) [:throws "Binding form for 'every?' must have symbol on left"])
 
-  ;; TODO: (h (every? [19 #{"a"}] true) :Boolean true "every?(19 in #{\"a\"})true" [:throws "Syntax error"])
+  (h (every? [19 #{"a"}] true) [:throws "Binding form for 'every?' must have symbol on left"])
+
+  (h (every? [if +] true) [:throws "Undefined: '+'"])
+
+  (h (every? [if #{1 2}] (> 0 if)) :Boolean false "every?(if in #{1, 2})(0 > if)" "false")
+
+  (h (every? [if if] (> 0 if)) [:throws "Undefined: 'if'"])
 
   (h (every? [x "ab"] (= x x)) [:throws "unsupported collection type"]))
 
-(deftest test-any?
+(deftest test-set-any?
   (h (any? [x #{}] (> x 1)) [:throws "no matching signature for '>'"])
 
   (h (any? [x #{1 2}] (> x 1)) :Boolean true "any?(x in #{1, 2})(x > 1)" "true")
 
   (h (any? [x #{1 3 2}] (= x 1)) :Boolean true "any?(x in #{1, 2, 3})(x == 1)" "true")
+
+  (h (any? ["a" #{1 3 2}] true) [:throws "Binding form for 'any?' must have symbol on left"])
 
   (h (any?) [:throws "Wrong number of arguments to 'any?': expected 2, but got 0"])
 
@@ -665,5 +696,88 @@
 
 (deftest test-any?-other
   (h (any? [x "test"] true) [:throws "unsupported collection type"]))
+
+(deftest test-vector
+  (h [] :EmptyVec [] "[]" "[]")
+
+  (h [1 2] [:Vec :Integer] [1 2] "[1, 2]" "[1, 2]")
+
+  (h [[] [1] ["a" true]] [:Vec [:Vec :Any]] [[] [1] ["a" true]] "[[], [1], [\"a\", true]]" "[[], [1], [\"a\", true]]")
+
+  (h [[1] []] [:Vec [:Vec :Integer]] [[1] []] "[[1], []]" "[[1], []]")
+
+  (h (first []) [:throws "argument to first is always empty"])
+
+  (h (first) [:throws "Wrong number of arguments to 'first': expected 1, but got 0"])
+
+  (h (first [0] [1]) [:throws "Wrong number of arguments to 'first': expected 1, but got 2"])
+
+  (h (first [10]) :Integer 10 "[10].first()" "10")
+
+  (h (first [10 true "b"]) :Any 10 "[10, true, \"b\"].first()" "10")
+
+  (h (rest [10 true "b"]) [:Vec :Any] [true "b"] "[10, true, \"b\"].rest()" "[true, \"b\"]")
+
+  (h (concat [] []) :EmptyVec [] "[].concat([])" "[]")
+
+  (h (concat [] [1]) [:Vec :Integer] [1] "[].concat([1])" "[1]")
+
+  (h (concat [1 2] [3] [4 5 6]) [:throws "Wrong number of arguments to 'concat': expected 2, but got 3"])
+
+  (h (concat [1]) [:throws "Wrong number of arguments to 'concat': expected 2, but got 1"])
+
+  (h (concat) [:throws "Wrong number of arguments to 'concat': expected 2, but got 0"])
+
+  (h (sort [2 1 3]) [:Vec :Integer] [1 2 3] "[2, 1, 3].sort()" "[1, 2, 3]")
+
+  (h (first (sort [2 1 3])) :Integer 1 "[2, 1, 3].sort().first()" "1")
+
+  (h (sort (quote (3 1 2))) [:throws "function 'quote' not found"])
+
+  (h (sort []) :EmptyVec [] "[].sort()" "[]")
+
+  (h (sort [1] [2 3]) [:throws "no matching signature for 'sort'"])
+
+  (h (sort) [:throws "no matching signature for 'sort'"])
+
+  ;; TODO
+
+  (h (range) [:throws "function 'range' not found"])
+
+  (h (range 1) [:throws "function 'range' not found"])
+
+  (h (range 1 2) [:throws "function 'range' not found"])
+
+  (h (conj [10 20] 30) [:Vec :Integer] [10 20 30] "[10, 20].conj(30)" "[10, 20, 30]")
+
+  (h (conj [] 30) [:Vec :Integer] [30] "[].conj(30)" "[30]")
+
+  (h (conj [10 20] []) [:Vec :Any] [10 20 []] "[10, 20].conj([])" "[10, 20, []]")
+
+  (h (conj [10]) [:throws "Wrong number of arguments to 'conj': expected at least 2, but got 1"])
+
+  (h (conj) [:throws "Wrong number of arguments to 'conj': expected at least 2, but got 0"])
+
+  (h (conj [] 1 2 3) [:Vec :Integer] [1 2 3] "[].conj(1, 2, 3)" "[1, 2, 3]")
+
+  (h (conj [10] 1 2 3) [:Vec :Integer] [10 1 2 3] "[10].conj(1, 2, 3)" "[10, 1, 2, 3]")
+
+  (h (get [10 20] 0) :Integer 10 "[10, 20][0]" "10")
+
+  (h (get [] 0) [:throws "Cannot index into empty vector"])
+
+  (h (get [10 20 30] 1) :Integer 20 "[10, 20, 30][1]" "20")
+
+  (h (get (get (get [[10 20 [300 302]] [30 40]] 0) 2) 1) [:throws "First argument to get must be an instance of known type or non-empty vector"])
+
+  (h (get (get (get [[[10] [20] [300 302]] [[30] [40]]] 0) 2) 1) :Integer 302 "[[[10], [20], [300, 302]], [[30], [40]]][0][2][1]" "302")
+
+  (h (count []) :Integer 0 "[].count()" "0")
+
+  (h (count [10 20 30]) :Integer 3 "[10, 20, 30].count()" "3")
+
+  (h (count (get [[10 20] [30] [40 50 60]] 2)) :Integer 3 "[[10, 20], [30], [40, 50, 60]][2].count()" "3")
+
+  (h (count (get [[10 20] "hi" [40 50 60]] 2)) [:throws "no matching signature for 'count'"]))
 
 ;; (run-tests)

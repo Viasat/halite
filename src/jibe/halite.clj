@@ -256,7 +256,7 @@
      'abs (mk-builtin abs [:Integer] :Integer)
      'str (mk-builtin str [& :String] :String)
      'subset? (mk-builtin set/subset? [[:Set :Any] [:Set :Any]] :Boolean)
-     'sort (mk-builtin sort
+     'sort (mk-builtin (comp vec sort)
                        [:EmptyVec] :EmptyVec
                        [:EmptySet] :EmptyVec
                        [[:Set :Integer]] [:Vec :Integer]
@@ -499,13 +499,14 @@
 
 (s/defn ^:private type-check-union :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
+  (arg-count-at-least 2 expr)
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (reduce meet :EmptySet arg-types)))
 
 (s/defn ^:private type-check-intersection :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
-  (arg-count-at-least 1 expr)
+  (arg-count-at-least 2 expr)
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (if (empty? arg-types)

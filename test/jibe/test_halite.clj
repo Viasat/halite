@@ -445,8 +445,6 @@
     '(union #{1 2 3} #{3 4 5}) [:Set :Integer]
     '(union #{} #{"foo"}) [:Set :String]
     '(union #{1} #{"foo"}) [:Set :Any]
-    '(union) :EmptySet
-    '(union #{1}) [:Set :Integer]
     '(union #{[]} #{#{}}) [:Set :Coll]
     '(union #{1} #{2} #{3} #{4}) [:Set :Integer]
     '(union #{#{}} #{#{3}}) [:Set [:Set :Integer]])
@@ -462,8 +460,6 @@
     '(union #{1 2 3} #{3 4 5}) #{1 2 3 4 5}
     '(union #{} #{"foo"}) #{"foo"}
     '(union #{1} #{"foo"}) #{1 "foo"}
-    '(union) #{}
-    '(union #{1}) #{1}
     '(union #{[]} #{#{}}) #{[] #{}}
     '(union #{1} #{2} #{3} #{4}) #{1 2 3 4}))
 
@@ -471,7 +467,6 @@
   (are [expr etype]
        (= etype (halite/type-check senv tenv expr))
 
-    '(intersection #{1 2}) [:Set :Integer]
     '(intersection #{1 2} #{"three"}) :EmptySet
     '(intersection #{1 2} #{}) :EmptySet
     '(intersection #{1 2} (union #{1} #{"two"})) [:Set :Integer]
@@ -486,7 +481,6 @@
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
 
-    '(intersection #{1 2}) #{1 2}
     '(intersection #{1 2} #{"three"}) #{}
     '(intersection #{1 2} #{}) #{}
     '(intersection #{1 2} (union #{1} #{"two"})) #{1}
@@ -972,3 +966,5 @@
         {"hi" "there"} {:$type :ws/JsonObj :entries
                         #{{:$type :ws/JsonObjEntry :key "hi" :val
                            {:$type :ws/JsonStr :s "there"}}}}))))
+
+;; (clojure.test/run-tests)
