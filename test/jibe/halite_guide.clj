@@ -496,4 +496,174 @@
 
   (h (concat "" false) [:throws "First argument to 'concat' must be a set or vector"]))
 
+(deftest test-sets
+  (h #{1 2} [:Set :Integer] #{1 2} "#{1, 2}" "#{1, 2}")
+
+  (h #{1} [:Set :Integer] #{1} "#{1}" "#{1}")
+
+  (h #{} :EmptySet #{} "#{}" "#{}")
+
+  (h #{"a"} [:Set :String] #{"a"} "#{\"a\"}" "#{\"a\"}")
+
+  (h #{"☺" "a"} [:Set :String] #{"☺" "a"} "#{\"a\", \"☺\"}" "#{\"a\", \"☺\"}")
+
+  ;; TODO: ??
+  (h #{1 "a"} [:Set :Any] #{1 "a"} "#{\"a\", 1}" "#{\"a\", 1}")
+
+  (h (count #{}) :Integer 0 "#{}.count()" "0")
+
+  (h (count) [:throws "no matching signature for 'count'"])
+
+  (h (count #{10 20 30}) :Integer 3 "#{10, 20, 30}.count()" "3")
+
+  (h (count #{} #{2}) [:throws "no matching signature for 'count'"])
+
+  (h (contains? #{"a" "b"} "a") :Boolean true "#{\"a\", \"b\"}.contains?(\"a\")" "true")
+
+  (h (contains? #{"a" "b"}) [:throws "no matching signature for 'contains?'"])
+
+  (h (contains?) [:throws "no matching signature for 'contains?'"])
+
+  (h (contains? #{1 2} "b") :Boolean false "#{1, 2}.contains?(\"b\")" "false")
+
+  (h (contains? #{1 2} "b" "c") [:throws "no matching signature for 'contains?'"])
+
+  (h (concat #{1}) [:throws "Wrong number of arguments to 'concat': expected 2, but got 1"])
+
+  (h (concat #{1} #{2}) [:Set :Integer] #{1 2} "#{1}.concat(#{2})" "#{1, 2}")
+
+  (h (concat #{1} #{2} #{3}) [:throws "Wrong number of arguments to 'concat': expected 2, but got 3"])
+
+  (h (concat) [:throws "Wrong number of arguments to 'concat': expected 2, but got 0"])
+
+  (h (concat #{} #{}) :EmptySet #{} "#{}.concat(#{})" "#{}")
+
+  (h (concat #{"a" "b"} #{1 2}) [:Set :Any] #{1 "a" 2 "b"} "#{\"a\", \"b\"}.concat(#{1, 2})" "#{\"a\", \"b\", 1, 2}")
+
+  (h #{#{4 3} #{1}} [:Set [:Set :Integer]] #{#{4 3} #{1}} "#{#{1}, #{3, 4}}" "#{#{1}, #{3, 4}}")
+
+  (h (contains? #{#{4 3} #{1}} #{2}) :Boolean false "#{#{1}, #{3, 4}}.contains?(#{2})" "false")
+
+  (h (contains? #{#{4 3} #{1}} #{4 3}) :Boolean true "#{#{1}, #{3, 4}}.contains?(#{3, 4})" "true")
+
+  (h (subset? #{1 2} #{1 4 3 2}) :Boolean true "#{1, 2}.subset?(#{1, 2, 3, 4})" "true")
+
+  (h (subset? #{1 2}) [:throws "no matching signature for 'subset?'"])
+
+  (h (subset?) [:throws "no matching signature for 'subset?'"])
+
+  (h (subset? #{1 2} #{1 4 3 2}) :Boolean true "#{1, 2}.subset?(#{1, 2, 3, 4})" "true")
+
+  (h (subset? #{} #{1 4 3 2}) :Boolean true "#{}.subset?(#{1, 2, 3, 4})" "true")
+
+  (h (subset? #{1 "a"} #{1 "a"}) :Boolean true "#{\"a\", 1}.subset?(#{\"a\", 1})" "true")
+
+  (h (= #{} #{}) :Boolean true "(#{} == #{})" "true")
+
+  (h (= #{1 2} #{2 1}) :Boolean true "(#{1, 2} == #{1, 2})" "true")
+
+  (h (= #{1} #{2}) :Boolean false "(#{1} == #{2})" "false")
+
+  (h (= #{1} #{}) :Boolean false "(#{1} == #{})" "false")
+
+  ;; TODO (h (= #{1} #{} #{2}) :Boolean false "(#{1} == #{} == #{2})" [:throws "Syntax error"])
+
+  (h (not= #{} #{}) :Boolean false "(#{} != #{})" "false")
+
+  (h (not= #{1} #{}) :Boolean true "(#{1} != #{})" "true")
+
+  (h (intersection #{} #{}) :EmptySet #{} "#{}.intersection(#{})" "#{}")
+
+  (h (intersection #{}) :EmptySet #{} "#{}.intersection()" "#{}")
+
+  (h (intersection #{1 2}) [:Set :Integer] #{1 2} "#{1, 2}.intersection()" "#{1, 2}")
+
+  (h (intersection) [:throws "Wrong number of arguments to 'intersection': expected at least 1, but got 0"])
+
+  (h (intersection #{1 2} #{3 2}) [:Set :Integer] #{2} "#{1, 2}.intersection(#{2, 3})" "#{2}")
+
+  (h (intersection #{} #{3 2}) :EmptySet #{} "#{}.intersection(#{2, 3})" "#{}")
+
+  (h (union #{} #{}) :EmptySet #{} "#{}.union(#{})" "#{}")
+
+  (h (union #{2}) [:Set :Integer] #{2} "#{2}.union()" "#{2}")
+
+  ;; TODO  (h (union) :EmptySet #{} ".union()" [:throws "Syntax error"])
+
+  (h (union #{1} #{}) [:Set :Integer] #{1} "#{1}.union(#{})" "#{1}")
+
+  (h (union #{1} #{3 2} #{4}) [:Set :Integer] #{1 4 3 2} "#{1}.union(#{2, 3}, #{4})" "#{1, 2, 3, 4}")
+
+  (h (difference #{} #{}) :EmptySet #{} "#{}.difference(#{})" "#{}")
+
+  (h (difference #{1 3 2} #{1 2}) [:Set :Integer] #{3} "#{1, 2, 3}.difference(#{1, 2})" "#{3}")
+
+  (h (difference #{1 2}) [:throws "Wrong number of arguments to 'difference': expected 2, but got 1"])
+
+  (h (difference) [:throws "Wrong number of arguments to 'difference': expected 2, but got 0"]))
+
+(deftest test-set-every?
+  (h (every? [x #{1 2}] (> x 0)) :Boolean true "every?(x in #{1, 2})(x > 0)" "true")
+
+  (h (every? [x #{1 2}] (> x 10)) :Boolean false "every?(x in #{1, 2})(x > 10)" "false")
+
+  (h (every? [x #{1 2}] (> x 1)) :Boolean false "every?(x in #{1, 2})(x > 1)" "false")
+
+  (h (every? [x #{3 2}] (> (count x) 1)) [:throws "no matching signature for 'count'"])
+
+  (h (every? [] true) [:throws "Binding form for 'every?' must have one variable and one collection"])
+
+  (h (every? [#{1 2}] true) [:throws "Binding form for 'every?' must have one variable and one collection"])
+
+  (h (every? [x #{} y #{1}] (> x y)) [:throws "Binding form for 'every?' must have one variable and one collection"])
+
+  (h (every? [x #{4 3}] (every? [y #{1 2}] (< y x))) :Boolean true "every?(x in #{3, 4})every?(y in #{1, 2})(y < x)" "true")
+
+  (h (every? [x #{4 3}] false) :Boolean false "every?(x in #{3, 4})false" "false")
+
+  (h (every?) [:throws "Wrong number of arguments to 'every?': expected 2, but got 0"])
+
+  (h (every? [x #{}] true false) [:throws "Wrong number of arguments to 'every?': expected 2, but got 3"])
+
+  (h (every? [x #{} 1] false) [:throws "Binding form for 'every?' must have one variable and one collection"])
+
+  (h (every? [_ #{}] false) :Boolean true "every?(<_> in #{})false" "true")
+
+  (h (every? [_ #{}] _) [:throws "Body expression in 'every?' must be boolean"])
+
+  (h (every? [_ #{true}] _) :Boolean true "every?(<_> in #{true})<_>" "true")
+
+  (h (every? [h19 #{true}] h19) :Boolean true "every?(h19 in #{true})h19" "true")
+
+  (h (every? [☺ #{true}] ☺) :Boolean true "every?(<☺> in #{true})<☺>" "true")
+
+  (h (every? [? #{true}] ?) :Boolean true "every?(<?> in #{true})<?>" "true"))
+
+(deftest test-every?-other
+  (h (every? [x true] false) [:throws "unsupported collection type"])
+
+  (h (every? [19 true] false) [:throws "unsupported collection type"])
+
+  ;; TODO: (h (every? [19 #{"a"}] true) :Boolean true "every?(19 in #{\"a\"})true" [:throws "Syntax error"])
+
+  (h (every? [x "ab"] (= x x)) [:throws "unsupported collection type"]))
+
+(deftest test-any?
+  (h (any? [x #{}] (> x 1)) [:throws "no matching signature for '>'"])
+
+  (h (any? [x #{1 2}] (> x 1)) :Boolean true "any?(x in #{1, 2})(x > 1)" "true")
+
+  (h (any? [x #{1 3 2}] (= x 1)) :Boolean true "any?(x in #{1, 2, 3})(x == 1)" "true")
+
+  (h (any?) [:throws "Wrong number of arguments to 'any?': expected 2, but got 0"])
+
+  (h (any? [x #{1 2} y #{4 3}] (= x y)) [:throws "Binding form for 'any?' must have one variable and one collection"])
+
+  (h (any? [x #{1 3 2}] (any? [y #{4 6 2}] (= x y))) :Boolean true "any?(x in #{1, 2, 3})any?(y in #{2, 4, 6})(x == y)" "true")
+
+  (h (any? [x #{1 3 2}] (every? [y #{1 2}] (< y x))) :Boolean true "any?(x in #{1, 2, 3})every?(y in #{1, 2})(y < x)" "true"))
+
+(deftest test-any?-other
+  (h (any? [x "test"] true) [:throws "unsupported collection type"]))
+
 ;; (run-tests)
