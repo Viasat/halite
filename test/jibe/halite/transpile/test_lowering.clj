@@ -53,6 +53,40 @@
          (troubleshoot* (get (deref traces#) ~spec-id))
          (throw ex#)))))
 
+(def flatten-do-expr #'lowering/flatten-do-expr)
+
+(defn- rewrite-expr
+  [ctx rewrite-fn form]
+  (binding [ssa/*next-id* (atom 0), ssa/*hide-non-halite-ops* false]
+    (let [[dgraph id] (ssa/form-to-ssa ctx form)
+          new-expr (rewrite-fn (assoc ctx :dgraph dgraph) id (ssa/deref-id dgraph id))
+          [dgraph id] (if (not= nil new-expr) (ssa/form-to-ssa (assoc ctx :dgraph dgraph) id new-expr) [dgraph id])
+          scope (set (keys (halite-envs/scope (:tenv ctx))))]
+      (ssa/form-from-ssa scope dgraph id))))
+
+(defn- make-empty-ssa-ctx []
+  {:senv (halite-envs/spec-env {}) :tenv (halite-envs/type-env {}) :env {} :dgraph {}})
+
+(deftest test-flatten-do
+  (let [ctx (make-empty-ssa-ctx)]
+    (are [expr result]
+        (= result (rewrite-expr ctx flatten-do-expr expr))
+
+      '($do! 1 ($do! 2 3 4) 5) '($do! 1 2 3 4 5)
+      '($do! 1 2 ($do! 3 4 5)) '($do! 1 2 3 4 5))))
+
+(def bubble-up-do-expr #'lowering/bubble-up-do-expr)
+
+(deftest test-bubble-up-do
+  (let [ctx (make-empty-ssa-ctx)]
+    (are [expr result]
+        (= result (rewrite-expr ctx bubble-up-do-expr expr))
+
+      '(+ 1 ($do! (div 1 0) 2) 3) '($do! (div 1 0) (+ 1 2 3))
+      '(if true ($do! 1 2) 3) '(if true ($do! 1 2) 3)
+      '(if ($do! 1 2 true) ($do! 9 8 3) 4) '($do! 1 2 (if true ($do! 9 8 3) 4))
+      '{:$type :ws/A :an ($do! 1 2 3) :bn ($do! 4 5 6)} '($do! 1 2 4 5 {:$type :ws/A :an 3 :bn 6}))))
+
 (def lower-instance-comparisons #'lowering/lower-instance-comparisons)
 
 (deftest test-lower-instance-comparisons
@@ -72,15 +106,15 @@
                    :refines-to {}}})
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (let [$4 {:$type :ws/B :bn 12 :bb true}
-                             $24 (get $4 :bn)
-                             $10 {:$type :ws/B :bn 4 :bb false}
+                             $20 (get $4 :bb)
                              $6 {:$type :ws/B :bn an :bb true}
-                             $18 (get $4 :bb)]
+                             $10 {:$type :ws/B :bn 4 :bb false}
+                             $26 (get $4 :bn)]
                          (and
-                          (and (= $18 (get $6 :bb))
-                               (= $24 (get $6 :bn)))
-                          (or (not= (get $10 :bb) $18)
-                              (not= (get $10 :bn) $24))
+                          (and (= $20 (get $6 :bb))
+                               (= $26 (get $6 :bn)))
+                          (or (not= (get $10 :bb) $20)
+                              (not= (get $10 :bn) $26))
                           (= an 45)))]]
              (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints))))))
 
@@ -158,7 +192,9 @@
 
       '(valid? {:$type :ws/B :bn 1 :bp true})
       '(if (and true true)
-         (and (<= 1 10) (=> true (<= 0 1)))
+         (let [$1 1 $2 true]
+           (and (<= $1 10)
+                (=> $2 (<= 0 $1))))
          false)
       #_(and (<= 1 10) (=> true (<= 0 1)))
       ;; -----------
@@ -166,8 +202,15 @@
             (valid? {:$type :ws/B :bn 12 :bp (= an 1)}))
       '(let [$27 (and true true)]
          (and
-          (if $27 (and (<= an 10) (=> false (<= 0 an))) false)
-          (if (and true $27) (and (<= 12 10) (=> (= an 1) (<= 0 12))) false)))
+          (if $27
+            (let [$1 an, $3 false]
+              (and (<= $1 10) (=> $3 (<= 0 $1))))
+            false)
+          (if (and true $27)
+            (let [$9 (= an 1)]
+              (let [$7 12]
+                (and (<= $7 10) (=> $9 (<= 0 $7)))))
+            false)))
       #_(and
          (and (<= an 10) (=> false (<= 0 an)))
          (and (<= 12 10) (=> (= an 1) (<= 0 12))))
@@ -176,7 +219,8 @@
          {:$type :ws/B :bn an, :bp true}
          {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)})
       '(if (if (and true true)
-             (and (<= an 10) (=> false (<= 0 an)))
+             (let [$1 an, $3 false]
+               (and (<= $1 10) (=> $3 (<= 0 $1))))
              false)
          {:$type :ws/B, :bn an, :bp true}
          {:$type :ws/B, :bn (+ 1 an), :bp (< 5 an)})
@@ -186,14 +230,16 @@
          (valid? {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
       '(let [$31 (and true true)]
          (if (if $31
-               (and (<= an 10) (=> false (<= 0 an)))
+               (let [$1 an, $3 false]
+                 (and (<= $1 10) (=> $3 (<= 0 $1))))
                false)
            (if $31
-             (and (<= an 10) (=> true (<= 0 an)))
+             (let [$1 an, $2 true]
+               (and (<= $1 10) (=> $2 (<= 0 $1))))
              false)
            (if (and $31 $31)
-             (let [$11 (+ 1 an)]
-               (and (<= $11 10) (=> (< 5 an) (<= 0 $11))))
+             (let [$11 (+ 1 an), $13 (< 5 an)]
+               (and (<= $11 10) (=> $13 (<= 0 $11))))
              false)))
       #_(if (and (<= an 10) (=> false (<= 0 an)))
           (and (<= an 10) (=> true (<= 0 an)))
@@ -203,20 +249,10 @@
                  {:$type :ws/B :bn an, :bp true}
                  {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
       '(let [$28 (and true true)]
-         (if (if $28 (if $28
-                       (and $28 (and true $28))
-                       true)
-                 false)
-           (if (if $28
-                 (and (<= an 10) (=> false (<= 0 an)))
-                 false)
-             (if $28
-               (and (<= an 10) (=> true (<= 0 an)))
-               false)
-             (if (and $28 $28)
-               (let [$9 (+ 1 an)]
-                 (and (<= $9 10) (=> (< 5 an) (<= 0 $9))))
-               false))
+         (if (if $28 (if $28 (and true true (and $28 (and true $28))) true) false)
+           (if (if $28 (let [$1 an $3 false] (and (<= $1 10) (=> $3 (<= 0 $1)))) false)
+             (if $28 (let [$1 an $2 true] (and (<= $1 10) (=> $2 (<= 0 $1)))) false)
+             (if (and $28 $28) (let [$9 (+ 1 an) $11 (< 5 an)] (and (<= $9 10) (=> $11 (<= 0 $9)))) false))
            false))
       #_(if (and (<= an 10) (=> false (<= 0 an)))
           (and (<= an 10) (=> true (<= 0 an)))
@@ -224,9 +260,11 @@
       ;; -----------
       '(valid? {:$type :ws/C :b {:$type :ws/B :bn an :bp (< an 15)}})
       '(if (if (and true (and true true))
-             (and (<= an 10) (=> (< an 15) (<= 0 an)))
+             (let [$3 (< an 15)]
+               (let [$1 an] (and (<= $1 10) (=> $3 (<= 0 $1)))))
              false)
-         (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
+         (let [$5 {:$type :ws/B, :bn an, :bp (< an 15)}]
+           (not= (get $5 :bn) 4))
          false)
       #_(if (and (<= an 10) (=> (< an 15) (<= 0 an)))
           (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
@@ -234,9 +272,12 @@
       ;; -----------
       '(valid? (get {:$type :ws/C :b {:$type :ws/B :bn an :bp (< an 15)}} :b))
       '(if (if (and true (and true true))
-             (and (<= an 10) (=> (< an 15) (<= 0 an)))
+             (let [$3 (< an 15)]
+               (let [$1 an]
+                 (and (<= $1 10) (=> $3 (<= 0 $1)))))
              false)
-         (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
+         (let [$5 {:$type :ws/B, :bn an, :bp (< an 15)}]
+           (not= (get $5 :bn) 4))
          false)
       #_(if (and (<= an 10) (=> (< an 15) (<= 0 an)))
           (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
@@ -391,18 +432,20 @@
                                  ["d2" (= dn (get (refine-to {:$type :ws/B :bn dn} :ws/B) :bn))]]
                    :refines-to {}}})
           sctx (ssa/build-spec-ctx senv :ws/D)]
-      (is (= '(and
-               (= dm (get {:$type :ws/C :cn (get {:$type :ws/B :bn (+ 1 (get {:$type :ws/A :an dn} :an))} :bn)} :cn))
-               (= dn (get {:$type :ws/B :bn dn} :bn)))
+      (is (= '(let [$28 (get {:$type :ws/A, :an dn} :an)
+                    $34 (get {:$type :ws/B, :bn (+ 1 $28)} :bn)]
+                (and (= dm (get {:$type :ws/C, :cn $34} :cn))
+                     (= dn (get {:$type :ws/B, :bn dn} :bn))))
              (-> sctx
                  (lower-refine-to)
                  :ws/D
                  (ssa/spec-from-ssa)
                  :constraints first second)))
 
-      (is (= '(and
-               (= dm (get {:$type :ws/C, :cn (get {:$type :ws/B, :bn (+ 1 (get {:$type :ws/A, :an dn} :an))} :bn)} :cn))
-               (= dn (get {:$type :ws/B, :bn dn} :bn)))
+      (is (= '(let [$40 (get {:$type :ws/A, :an dn} :an)
+                    $88 (get {:$type :ws/B, :bn (+ 1 $40)} :bn)]
+                (and (= dm (get {:$type :ws/C, :cn $88} :cn))
+                     (= dn (get {:$type :ws/B, :bn dn} :bn))))
              (-> sctx
                  (lowering/lower)
                  :ws/D

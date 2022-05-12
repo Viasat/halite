@@ -217,7 +217,8 @@
                     ;; below this line, we're changing semantics
                     (lowering/eliminate-runtime-constraint-violations)
                     (simplify)
-                    (fixpoint lowering/cancel-get-of-instance-literal))
+                    (fixpoint lowering/cancel-get-of-instance-literal)
+                    (lowering/eliminate-dos))
           flattened-vars (flatten-vars sctx spec-bound)
           new-spec {:spec-vars (->> flattened-vars leaves (into {}))
                     :constraints []

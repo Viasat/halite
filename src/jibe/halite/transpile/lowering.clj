@@ -17,6 +17,72 @@
 
 
 
+;;;;;;;;; Bubble up and Flatten $do! ;;;;;;;;;;;;
+
+(defn- make-do
+  [side-effects body]
+  `(~'$do! ~@side-effects ~body))
+
+;; We don't generally want to have to invent rewrite rules for
+;; all the various forms as combined with $do!, so we'll write
+;; some rules that move and combine $do! forms so as to minimize
+;; the number of things we need to handle.
+
+;; Here are some rules for 'bubbling up' dos:
+
+;; For any of the halite 'builtins', along with get, =, not=, refine-to, valid?,
+;; we can 'pull out' a $do! form.
+
+(defn- do-form? [form] (and (seq? form) (= '$do! (first form))))
+
+(def do!-fence-ops
+  "The set of ops that a $do! form cannot bubble up out of without changing semantics."
+  '#{if valid?})
+
+(s/defn ^:private first-nested-do :- (s/maybe [(s/one s/Int :index) (s/one ssa/Derivation :deriv)])
+  [{:keys [dgraph] :as ctx}, form]
+  (->> (rest form)
+       (map-indexed #(vector (inc %1) (when (symbol? %2) (ssa/deref-id dgraph %2))))
+       (remove (comp nil? second))
+       (filter (comp do-form? first second))
+       first))
+
+(s/defn ^:private bubble-up-do-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (cond
+    (map? form)
+    (let [[match? done-ids inst]
+          ,,(reduce
+             (fn [[match? done-ids inst] [var-kw val-id]]
+               (let [[val-form] (ssa/deref-id dgraph val-id)]
+                 (if (do-form? val-form)
+                   [true (into done-ids (butlast (rest val-form))) (assoc inst var-kw (last val-form))]
+                   [match? done-ids (assoc inst var-kw val-id)])))
+             [false [] (select-keys form [:$type])]
+             (sort-by key (dissoc form :$type)))]
+      (when match?
+        (make-do done-ids inst)))
+
+    ;; We *cannot* pull $do! forms out of valid? or the branches of if, but we can
+    ;; pull it out of the predicates of ifs.
+    (and (seq? form) (= 'if (first form)) (do-form? (first (ssa/deref-id dgraph (second form)))))
+    (let [[_if pred-id then-id else-id] form
+          [pred-do-form] (ssa/deref-id dgraph (second form))]
+      (make-do (butlast (rest pred-do-form))
+               (list 'if (last pred-do-form) then-id else-id)))
+
+    (and (seq? form) (not (contains? do!-fence-ops (first form))))
+    (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
+      (make-do (->> nested-do-form rest butlast) (seq (assoc (vec form) i (last nested-do-form)))))))
+
+;; Finally, we can 'flatten' $do! forms.
+
+(s/defn ^:private flatten-do-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (when (do-form? form)
+    (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
+      (concat (take i form) (rest nested-do-form) (drop (inc i) form)))))
+
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
 (s/defn ^:private lower-instance-comparison-expr
@@ -289,11 +355,15 @@
   a minimal subset of halite."
   [sctx :- SpecCtx]
   (->> sctx
-       (fixpoint lower-instance-comparisons)
-       (fixpoint push-gets-into-ifs)
        (lower-refine-to)
        (lower-refinement-constraints)
        (lower-valid?)
+       (fixpoint
+        #(-> %
+             (rewrite-sctx bubble-up-do-expr)
+             (rewrite-sctx flatten-do-expr)
+             (lower-instance-comparisons)
+             (push-gets-into-ifs)))
        (simplify)))
 
 ;;;;;;;;;; Semantics-modifying passes ;;;;;;;;;;;;;;;;
@@ -346,3 +416,13 @@
   the possible runtime constraint violations of the instance literal are eliminated."
   [sctx :- SpecCtx]
   (update-vals sctx cancel-get-of-instance-literal-in-spec))
+
+(s/defn ^:private eliminate-do-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (when (and (seq? form) (= '$do! (first form)))
+    (let [tail-id (last form)]
+      (first (ssa/deref-id dgraph tail-id)))))
+
+(s/defn eliminate-dos :- SpecCtx
+  [sctx :- SpecCtx]
+  (rewrite-sctx sctx eliminate-do-expr))

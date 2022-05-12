@@ -39,6 +39,17 @@
         $4 [(not= $1 $2) :Boolean $3]}
       '[$3]
 
+      '[(let [n (div 1 0)]
+          true)]
+      '{$1 [1 :Integer]
+        $2 [0 :Integer]
+        $3 [(div $1 $2) :Integer]
+        $4 [true :Boolean $5]
+        $5 [false :Boolean $4]
+        $6 [($do! $3 $4) :Boolean $7]
+        $7 [(not $6) :Boolean $6]}
+      '[$6]
+
       '[(not= x 1)]
       '{$1 [x :Integer]
         $2 [1 :Integer]
@@ -125,14 +136,16 @@
       '[$5 $8]
 
       '[(let [x (+ 1 x y)] (< z x))]
-      '{$1 [1 :Integer]
-        $2 [x :Integer]
-        $3 [y :Integer]
-        $4 [(+ $1 $2 $3) :Integer]
-        $5 [z :Integer]
-        $6 [(< $5 $4) :Boolean $7]
-        $7 [(<= $4 $5) :Boolean $6]}
-      '[$6]
+      '{$1 [1 :Integer],
+        $2 [x :Integer],
+        $3 [y :Integer],
+        $4 [(+ $1 $2 $3) :Integer],
+        $5 [z :Integer],
+        $6 [(< $5 $4) :Boolean $7],
+        $7 [(<= $4 $5) :Boolean $6],
+        $8 [($do! $4 $6) :Boolean $9],
+        $9 [(not $8) :Boolean $8]}
+      '[$8]
 
       '[(if (< x y) b false)]
       '{$1 [x :Integer]
@@ -287,6 +300,17 @@
         $4 [10 :Integer]
         $5 [(< $1 $4) :Boolean]}
       '(and (< 1 x) (< x 10))
+
+      '[$6]
+      '{$1 [1 :Integer]
+        $2 [0 :Integer]
+        $3 [(div $1 $2) :Integer]
+        $4 [true :Boolean $5]
+        $5 [false :Boolean $4]
+        $6 [($do! $3 $4) :Boolean $7]
+        $7 [(not $6) :Boolean $6]}
+      '(let [$3 (div 1 0)]
+         true)
 
       '[$7 $8]
       '{$1 [(+ $2 $3) :Integer]

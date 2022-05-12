@@ -17,7 +17,8 @@
                 :refines-to {}}}]
     (are [expr simplified]
         (= simplified
-           (binding [ssa/*next-id* (atom 0)]
+           (binding [ssa/*next-id* (atom 0)
+                     ssa/*hide-non-halite-ops* false]
              (-> senv
                  (update-in [:ws/A :constraints] conj ["c" expr])
                  (halite-envs/spec-env)
@@ -54,4 +55,7 @@
       '(not false) true
       '(not (and true false)) true
       '(not (if true false true)) true
-      )))
+
+      '($do! (= an 1)) '(= an 1)
+      '($do! 1 true (div 120 an) false 42) '($do! (div 120 an) 42)
+      '($do! 1 2 3) 3)))

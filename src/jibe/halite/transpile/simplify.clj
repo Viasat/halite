@@ -74,6 +74,14 @@
             (and (false? then) (true? else)) (ssa/negated dgraph pred-id)
             (= then else) then-id))))))
 
+(s/defn ^:private simplify-do
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (when (and (seq? form) (= '$do! (first form)))
+    (let [side-effects (->> form (rest) (butlast)
+                            (remove (comp always-evaluates? (partial deref-form dgraph))))]
+      (cond
+        (empty? side-effects) (last form)
+        (< (count side-effects) (- (count form) 2)) `(~'$do! ~@side-effects ~(last form))))))
 
 (s/defn ^:private simplify-step :- ssa/SpecCtx
   [sctx :- ssa/SpecCtx]
@@ -81,7 +89,8 @@
       (rewriting/rewrite-sctx simplify-and)
       (rewriting/rewrite-sctx simplify-not)
       (rewriting/rewrite-sctx simplify-if-static-pred)
-      (rewriting/rewrite-sctx simplify-if-static-branches)))
+      (rewriting/rewrite-sctx simplify-if-static-branches)
+      (rewriting/rewrite-sctx simplify-do)))
 
 (s/defn simplify :- ssa/SpecCtx
   "Perform semantics-preserving simplifications on the expressions in the specs."
