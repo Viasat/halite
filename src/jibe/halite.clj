@@ -446,11 +446,11 @@
   (arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
     (when-not (and (symbol? acc) (bare? acc))
-      (throw (ex-info (str "Accumulator binding target for '"op"' must be a bare symbol, not: "
+      (throw (ex-info (str "Accumulator binding target for '" op "' must be a bare symbol, not: "
                            (pr-str acc))
                       {:form expr :accumulator acc})))
     (when-not (and (symbol? elem) (bare? elem))
-      (throw (ex-info (str "Element binding target for '"op"' must be a bare symbol, not: "
+      (throw (ex-info (str "Element binding target for '" op "' must be a bare symbol, not: "
                            (pr-str elem))
                       {:form expr :element elem})))
     (let [init-type (type-check* ctx init)
