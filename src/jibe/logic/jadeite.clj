@@ -58,7 +58,9 @@
      [[:comprehend [:symbol op] s bind pred]] (list (symbol op) [(toh s) (toh bind)] (toh pred))
      [[:reduce acc init elem coll body]] (list 'reduce [(toh acc) (toh init)]
                                                [(toh elem) (toh coll)] (toh body))
-     [[:call-fn s & args]]          (list* (toh s) (map toh args))
+     [[:call-fn [:symbol "equalTo"] & args]]    (list* '= (map toh args))
+     [[:call-fn [:symbol "notEqualTo"] & args]] (list* 'not= (map toh args))
+     [[:call-fn s & args]]                      (list* (toh s) (map toh args))
      [[:call-method a [:symbol "concat"] b]]      (list 'concat (toh a) (toh b))
      [[:call-method a [:symbol "reduce"] & args]] (concat ['reduce-] (map toh args) [(toh a)])
      [[:call-method a op & args]]                 (list* (toh op) (toh a) (map toh args))
@@ -153,7 +155,9 @@
     (seq? x) (let [[op & [a0 a1 a2 :as args]] x]
                (case op
                  (< <= > >= + - * =>) (infix (str " " op " ") args)
-                 = (infix " == " args)
+                 = (if (> (count args) 2)
+                     (str "equalTo" (infix ", " args))
+                     (infix " == " args))
                  (every? any? map filter) (str op (infix " in " a0) (toj a1))
                  sort-by (str "sortBy" (infix " in " a0) (toj a1))
                  reduce (let [[[acc init] [elem coll] body] args]
@@ -188,7 +192,9 @@
                             " }"))
                  mod (infix " % " args)
                  not (str "!" (toj a0))
-                 not= (infix " != " args)
+                 not= (if (> (count args) 2)
+                        (str "notEqualTo" (infix ", " args))
+                        (infix " != " args))
                  or (infix " || " args)
                  reduce- (str (toj (last args)) ".reduce" (infix (drop-last args)))
                  refine-to (str (toj a0) ".refineTo( " (typename a1) " )")

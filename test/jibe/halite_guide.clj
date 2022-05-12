@@ -158,7 +158,7 @@
 
   (h (= true) [:throws "Wrong number of arguments to '=': expected at least 2, but got 1"])
 
-  ;; TODO: (h (= true false false) :Boolean false "(true == false == false)" [:throws "Syntax error"])
+  (h (= true false false) :Boolean false "equalTo(true, false, false)" "false")
 
   (h (not= true) [:throws "Wrong number of arguments to 'not=': expected at least 2, but got 1"])
 
@@ -302,7 +302,7 @@
 
   (h (= 1 true) [:throws "Arguments to '=' have incompatible types"])
 
-  ;; TODO: (h (= 1 1 1) :Boolean true "(1 == 1 == 1)" [:throws "Syntax error"])
+  (h (= 1 1 1) :Boolean true "equalTo(1, 1, 1)" "true")
 
   (h (not= 1 2) :Boolean true "(1 != 2)" "true")
 
@@ -312,9 +312,9 @@
 
   (h (not= false 3) [:throws "Arguments to 'not=' have incompatible types"])
 
-  ;; TODO: (h (not= 1 2 3) :Boolean true "(1 != 2 != 3)" [:throws "Syntax error"])
+  (h (not= 1 2 3) :Boolean true "notEqualTo(1, 2, 3)" "true")
 
-  ;; TODO: (h (not= 1 1 1) :Boolean false "(1 != 1 != 1)" [:throws "Syntax error"])
+  (h (not= 1 1 1) :Boolean false "notEqualTo(1, 1, 1)" "false")
 
   (h (> 1 0) :Boolean true "(1 > 0)" "true")
 
@@ -345,6 +345,8 @@
   (h (<=) [:throws "no matching signature for '<='"])
 
   (h (<= true 3) [:throws "no matching signature for '<='"])
+
+  (h (<= 1 2 3) [:throws "no matching signature for '<='"])
 
   (h (>= 1 1) :Boolean true "(1 >= 1)" "true")
 
@@ -585,7 +587,9 @@
 
   (h (= #{1} #{}) :Boolean false "(#{1} == #{})" "false")
 
-  ;; TODO: (h (= #{1} #{} #{2}) :Boolean false "(#{1} == #{} == #{2})" [:throws "Syntax error"])
+  (h (= #{1} #{} #{2}) :Boolean false "equalTo(#{1}, #{}, #{2})" "false")
+
+  (h (not= #{1} #{} #{2}) :Boolean true "notEqualTo(#{1}, #{}, #{2})" "true")
 
   (h (not= #{} #{}) :Boolean false "(#{} != #{})" "false")
 
@@ -606,8 +610,6 @@
   (h (union #{} #{}) :EmptySet #{} "#{}.union(#{})" "#{}")
 
   (h (union #{2}) [:throws "Wrong number of arguments to 'union': expected at least 2, but got 1"])
-
-  ;; TODO: (h (union) :EmptySet #{} ".union()" [:throws "Syntax error"])
 
   (h (union #{1} #{}) [:Set :Integer] #{1} "#{1}.union(#{})" "#{1}")
 
@@ -758,7 +760,6 @@
 
   (h (range 1 2) [:Vec :Integer] [1] "1.range(2)" "[1]")
 
-  ;;TODO
   (h (range 1 2 3) [:Vec :Integer] [1] "1.range(2, 3)" "[1]")
 
   (h (conj [10 20] 30) [:Vec :Integer] [10 20 30] "[10, 20].conj(30)" "[10, 20, 30]")
@@ -791,7 +792,11 @@
 
   (h (count (get [[10 20] [30] [40 50 60]] 2)) :Integer 3 "[[10, 20], [30], [40, 50, 60]][2].count()" "3")
 
-  (h (count (get [[10 20] "hi" [40 50 60]] 2)) [:throws "no matching signature for 'count'"]))
+  (h (count (get [[10 20] "hi" [40 50 60]] 2)) [:throws "no matching signature for 'count'"])
+
+  (h (= [1] [1] [1]) :Boolean true "equalTo([1], [1], [1])" "true")
+
+  (h (not= [1] [1] [1]) :Boolean false "notEqualTo([1], [1], [1])" "false"))
 
 (deftest test-vector-every?
   (h (every? [_x [10 20 30]] (= (mod _x 3) 1)) :Boolean false "every?(<_x> in [10, 20, 30])((<_x> % 3) == 1)" "false")
@@ -822,5 +827,7 @@
   (h (count (get [#{[3 4] [1 2]} #{#{9 8} #{7} [5 6]}] 1)) :Integer 3 "[#{[1, 2], [3, 4]}, #{#{7}, #{8, 9}, [5, 6]}][1].count()" "3")
 
   (h #{#{[#{[true false] [true true]}] [#{[false]}]} #{[#{[true false] [true true]}] [#{[false]} #{[true]}]}} [:Set [:Set [:Vec [:Set [:Vec :Boolean]]]]] #{#{[#{[true false] [true true]}] [#{[false]}]} #{[#{[true false] [true true]}] [#{[false]} #{[true]}]}} "#{#{[#{[false]}, #{[true]}], [#{[true, false], [true, true]}]}, #{[#{[false]}], [#{[true, false], [true, true]}]}}" "#{#{[#{[false]}, #{[true]}], [#{[true, false], [true, true]}]}, #{[#{[false]}], [#{[true, false], [true, true]}]}}"))
+
+(deftest test-)
 
 ;; (run-tests)
