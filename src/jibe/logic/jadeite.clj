@@ -135,6 +135,16 @@
       (str (toj target) "\n." method-name (string/replace args-str #"\n" "\n  "))
       (str (toj target) "." method-name args-str))))
 
+(defn arg-limit [args n v]
+  (when (not= (count args) n)
+    (throw (ex-info "Unexpected arg count" {:args args})))
+  v)
+
+(defn arg-min [args n v]
+  (when (not (>= (count args) n))
+    (throw (ex-info "Too few args" {:args args})))
+  v)
+
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
@@ -152,15 +162,16 @@
     (vector? x) (infix "[" ", " "]" x)
     (seq? x) (let [[op & [a0 a1 a2 :as args]] x]
                (case op
-                 (< <= > >= + - * =>) (infix (str " " op " ") args)
-                 = (infix " == " args)
+                 + (arg-min args 1 (infix (str " " op " ") args))
+                 (< <= > >= - * =>) (infix (str " " op " ") args)
+                 = (arg-min args 2 (infix " == " args))
                  (every? any? map filter) (str op (infix " in " a0) (toj a1))
                  sort-by (str "sortBy" (infix " in " a0) (toj a1))
                  reduce (let [[[acc init] [elem coll] body] args]
                           (str "reduce( " (toj acc) " = " (toj init) "; " (toj elem) " in " (toj coll)
                                " ) { " (toj body) " }"))
                  and (infix " && " args)
-                 dec (str "(" (toj a0) " - 1)")
+                 dec (arg-limit args 1 (str "(" (toj a0) " - 1)"))
                  div (infix " / " args)
                  fn (str (infix a0) " -> " (toj a1))
                  get (if (keyword? a1)
@@ -175,7 +186,7 @@
                  (if-value if-value-) (str "(ifValue(" (toj a0)
                                            ") {" (toj a1)
                                            "} else {" (toj a2) "})")
-                 inc (str "(" (toj a0) " + 1)")
+                 inc (arg-limit args 1 (str "(" (toj a0) " + 1)"))
                  concat (call-method "concat" args)
                  let (let [[bindings expr] args]
                        (str "{ "
@@ -186,7 +197,7 @@
                                  (apply str))
                             (toj expr)
                             " }"))
-                 mod (infix " % " args)
+                 mod (arg-limit args 2 (infix " % " args))
                  not (str "!" (toj a0))
                  not= (infix " != " args)
                  or (infix " || " args)

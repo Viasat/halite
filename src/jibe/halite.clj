@@ -249,7 +249,10 @@
      'div (mk-builtin quot [:Integer :Integer] :Integer)
      'mod* (mk-builtin mod [:Integer :Integer] :Integer) ;; deprecated
      'mod (mk-builtin mod [:Integer :Integer] :Integer)
-     'expt (mk-builtin expt [:Integer :Integer] :Integer)
+     'expt (mk-builtin (fn [x p]
+                         (when (neg? p)
+                           (throw (ex-info "Invalid exponent" {:p p})))
+                         (expt x p)) [:Integer :Integer] :Integer)
      'abs (mk-builtin abs [:Integer] :Integer)
      'str (mk-builtin str [& :String] :String)
      'subset? (mk-builtin set/subset? [[:Set :Any] [:Set :Any]] :Boolean)
