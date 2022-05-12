@@ -8,19 +8,18 @@
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
-             :refer [DerivationName Derivations SpecInfo SpecCtx]]
+             :refer [DerivationName Derivations SpecInfo SpecCtx make-ssa-ctx]]
             [jibe.halite.transpile.simplify :refer [simplify]]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 
+
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
 (s/defn ^:private lower-instance-comparisons-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  (let [senv (ssa/as-spec-env sctx)
-        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
-        ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]
+  (let [ctx (make-ssa-ctx sctx spec-info)]
     (->> derivations
          (reduce
           (fn [dgraph [id [form type]]]
@@ -56,9 +55,7 @@
 
 (s/defn ^:private push-gets-into-ifs-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  (let [senv (ssa/as-spec-env sctx)
-        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
-        ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]
+  (let [ctx (make-ssa-ctx sctx spec-info)]
     (->
      (->> derivations
           (filter (fn [[id [form htype]]]
@@ -210,9 +207,7 @@
 (s/defn ^:private lower-valid?-in-spec :- SpecInfo
   "We can trivially lower (valid? <expr>) forms as <(validity-guard expr)>."
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  (let [senv (ssa/as-spec-env sctx)
-        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
-        ctx {:senv senv :tenv tenv :env {} :dgraph derivations}]
+  (let [ctx (make-ssa-ctx sctx spec-info)]
     (->> derivations
          (filter
           (fn [[id [form htype]]]
@@ -267,11 +262,7 @@
 
 (s/defn ^:private lower-refine-to-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  (let [senv (ssa/as-spec-env sctx)
-        ctx {:senv senv
-             :tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
-             :env {}
-             :dgraph derivations}]
+  (let [ctx (make-ssa-ctx sctx spec-info)]
     (->> derivations
          (filter
           (fn [[id [form]]] (and (seq? form) (= 'refine-to (first form)))))
@@ -301,11 +292,7 @@
 
 (s/defn ^:private lower-refinement-constraints-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [refines-to derivations] :as spec-info} :- SpecInfo]
-  (let [senv (ssa/as-spec-env sctx)
-        ctx {:senv senv
-             :tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
-             :env {}
-             :dgraph derivations}]
+  (let [ctx (make-ssa-ctx sctx spec-info)]
     (->> refines-to
          (reduce
           (fn [{:keys [derivations] :as spec-info} [target-id {:keys [expr inverted?]}]]
@@ -339,11 +326,7 @@
 
 (s/defn ^:private eliminate-runtime-constraint-violations-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations constraints] :as spec-info} :- SpecInfo]
-  (let [senv (ssa/as-spec-env sctx)
-        ctx {:senv senv
-             :tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))
-             :env {}
-             :dgraph derivations}]
+  (let [ctx (make-ssa-ctx sctx spec-info)]
     (->> constraints
          (reduce
           (fn [acc [cname cid]]

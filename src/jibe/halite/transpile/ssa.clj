@@ -625,6 +625,12 @@
         (dissoc :derivations)
         (assoc :constraints [["$all" (form-from-ssa scope dgraph id)]]))))
 
+(s/defn make-ssa-ctx :- SSACtx
+  [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
+  (let [senv (as-spec-env sctx)
+        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))]
+    {:senv senv :tenv tenv :env {} :dgraph derivations}))
+
 (s/defn build-spec-env :- (s/protocol halite-envs/SpecEnv)
   [sctx :- SpecCtx]
   (-> sctx (update-vals spec-from-ssa) (halite-envs/spec-env)))
