@@ -162,7 +162,13 @@
 
   (h (not= true) [:throws "Wrong number of arguments to 'not=': expected at least 2, but got 1"])
 
-  (h (not= true false) :Boolean true "(true != false)" "true"))
+  (h (not= true false) :Boolean true "(true != false)" "true")
+
+  (h (if true false true) :Boolean false "(if(true) {false} else {true})" "false")
+
+  (h (if true false) [:throws "Wrong number of arguments to 'if': expected 3, but got 2"])
+
+  (h (if-value true false true) [:throws "First argument to 'if-value' must be a bare symbol"]))
 
 (deftest test-int
   (h 1 :Integer 1 "1" "1")
@@ -428,6 +434,66 @@
 
   (h (inc false) [:throws "no matching signature for 'inc'"])
 
-  (h (dec true) [:throws "no matching signature for 'dec'"]))
+  (h (dec true) [:throws "no matching signature for 'dec'"])
+
+  (h (if true 1 3) :Integer 1 "(if(true) {1} else {3})" "1")
+
+  (h (if-value 3 1 2) [:throws "First argument to 'if-value' must be a bare symbol"])
+
+  (h (if (> 2 1) false true) :Boolean false "(if((2 > 1)) {false} else {true})" "false")
+
+  (h (if (> 2 1) 9 true) [:throws "then and else branches to 'if' have incompatible types"])
+
+  (h (if (or (> 2 1) (= 4 5)) (+ 1 2) 99) :Integer 3 "(if(((2 > 1) || (4 == 5))) {(1 + 2)} else {99})" "3"))
+
+(deftest test-string
+  (h "hello" :String "hello" "\"hello\"" "\"hello\"")
+
+  (h "" :String "" "\"\"" "\"\"")
+
+  (h "a" :String "a" "\"a\"" "\"a\"")
+
+  (h "☺" :String "☺" "\"☺\"" "\"☺\"")
+
+  (h "\t\n" :String "\t\n" "\"\\t\\n\"" "\"\\t\\n\"")
+
+  ;; TODO
+  (h (concat "" "") [:throws "First argument to 'concat' must be a set or vector"])
+
+  ;; TODO
+  (h (count "") [:throws "no matching signature for 'count'"])
+
+  (h (count "a") [:throws "no matching signature for 'count'"])
+
+  (h (= "" "") :Boolean true "(\"\" == \"\")" "true")
+
+  (h (= "a" "") :Boolean false "(\"a\" == \"\")" "false")
+
+  (h (= "a" "b") :Boolean false "(\"a\" == \"b\")" "false")
+
+  (h (= "a" "a") :Boolean true "(\"a\" == \"a\")" "true")
+
+  ;; TODO: confirm expected
+  (h (first "") [:throws "Argument to 'first' must be a vector"])
+
+  (h (first "a") [:throws "Argument to 'first' must be a vector"])
+
+  (h (rest "ab") [:throws "Argument to 'rest' must be a vector"])
+
+  (h (contains? "ab" "a") [:throws "no matching signature for 'contains?'"])
+
+  (h (union "" "a") [:throws "Arguments to 'union' must be sets"]))
+
+(deftest test-string-bool
+  (h (and "true" false) [:throws "no matching signature for 'and'"])
+
+  (h (=> true "hi") [:throws "no matching signature for '=>'"])
+
+  (h (if (= "a" "b") (= (+ 1 3) 5) false) :Boolean false "(if((\"a\" == \"b\")) {((1 + 3) == 5)} else {false})" "false"))
+
+(deftest test-bool-string
+  (h (count true) [:throws "no matching signature for 'count'"])
+
+  (h (concat "" false) [:throws "First argument to 'concat' must be a set or vector"]))
 
 ;; (run-tests)
