@@ -47,7 +47,7 @@
       (boolean (get (:refinements (meta inst)) spec-id))))
 
 (defn- long? [value]
-  (= java.lang.Long (class value)))
+  (instance? Long value))
 
 (s/defn ^:private concrete? :- s/Bool
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
