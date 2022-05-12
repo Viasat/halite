@@ -15,13 +15,15 @@
 
 (def ^:private renamed-ops
   ;; TODO: When we support vectors, we'll need to remove this as an alias and have separate implementations, since get* is 1-based for vectors.
-  '{mod* mod, get* get})
+  '{mod* mod, get* get, if-value- if-value})
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
-      $do!}
+      $do!
+      ;; These are not available to halite users; they serve as the internal representation of if-value forms.
+      $value? $value!}
    (keys renamed-ops)))
 
 (s/defschema DerivationName
@@ -204,7 +206,7 @@
      [(apply list op args)
       (cond
         ('#{+ - * div mod expt abs} op) :Integer
-        ('#{< <= > >= and or not => = not= valid?} op) :Boolean
+        ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
         :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
                               {:form form})))])))
 
@@ -257,6 +259,23 @@
         htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
     (add-derivation dgraph [(list 'if pred-id then-id else-id) htype])))
 
+(s/defn ^:private if-value-to-ssa :- DerivResult
+  [ctx :- SSACtx, [_ var-sym then else :as form]]
+  (when-not (symbol? var-sym)
+    (throw (ex-info "BUG! if-value form's predicate is not a symbol" {:form form})))
+  (let [[dgraph unguarded-id] (symbol-to-ssa ctx var-sym)
+        [dgraph guard-id] (add-derivation dgraph [(list '$value? unguarded-id) :Boolean])
+        inner-type (get-in dgraph [unguarded-id 1 1])
+        [dgraph value-id] (add-derivation dgraph [(list '$value! unguarded-id) inner-type])
+        [dgraph then-id] (-> ctx
+                             (update :tenv halite-envs/extend-scope var-sym inner-type)
+                             (update :env assoc var-sym value-id)
+                             (assoc :dgraph dgraph)
+                             (form-to-ssa then))
+        [dgraph else-id] (form-to-ssa (assoc ctx :dgraph dgraph) else)
+        htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
+    (add-derivation dgraph [(list 'if guard-id then-id else-id) htype])))
+
 (s/defn ^:private get-to-ssa :- DerivResult
   [{:keys [dgraph senv] :as ctx} :- SSACtx, [_ subexpr var-kw :as form]]
   (let [[dgraph id] (form-to-ssa ctx subexpr)
@@ -296,6 +315,15 @@
         [_ htype] (deref-id dgraph (last arg-ids))]
     (add-derivation dgraph [(apply list '$do! arg-ids) htype])))
 
+(s/defn ^:private value!-to-ssa :- DerivResult
+  [{:keys [dgraph] :as ctx} :- SSACtx, form]
+  (let [[dgraph arg-id] (form-to-ssa ctx (second form))
+        [subform htype] (deref-id dgraph arg-id)]
+    (when (or (not (halite-types/maybe-type? htype)) (not (vector? htype)))
+      (throw (ex-info "Invalid $value! form: type of inner expression is not [:Maybe T]"
+                      {:dgraph dgraph :form form})))
+    (add-derivation dgraph [(list '$value! arg-id) (second htype)])))
+
 (s/defn rewrite-node :- Derivations
   "Rewrite id node in place to be an alias of aliased-id"
   [dgraph :- Derivations, id :- DerivationName, aliased-id :- DerivationName]
@@ -334,6 +362,8 @@
                      'get (get-to-ssa ctx form)
                      'refine-to (refine-to-to-ssa ctx form)
                      '$do! (do!-to-ssa ctx form)
+                     'if-value (if-value-to-ssa ctx form)
+                     '$value! (value!-to-ssa ctx form)
                      (app-to-ssa ctx form)))
      (map? form) (inst-literal-to-ssa ctx form)
      :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
@@ -568,12 +598,27 @@
                             (cond->>
                                 (seq unbound) (list 'let bindings))))
 
+                      (and (= '$value! (first form)) *hide-non-halite-ops*)
+                      (form-from-ssa* dgraph guards bound? curr-guard (second form))
+
                       (= 'if (first form))
-                      (let [[_if pred-id then-id else-id] form]
-                        (list 'if
-                              (form-from-ssa* dgraph guards bound? curr-guard pred-id)
-                              (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)
-                              (let-bindable-exprs dgraph guards bound? (conj curr-guard (negated dgraph pred-id)) else-id)))
+                      (let [[_if pred-id then-id else-id] form
+                            [pred] (deref-id dgraph pred-id)
+                            [then] (deref-id dgraph then-id)]
+                        (if (and (seq? pred) (= '$value? (first pred)) *hide-non-halite-ops*)
+                          (let [value-arg-id (second pred)
+                                [value-arg] (deref-id dgraph value-arg-id)]
+                            (if (and (not (bound? value-arg-id)) (not (symbol? value-arg)))
+                              (list 'let [value-arg-id (form-from-ssa* dgraph guards bound? curr-guard value-arg-id)]
+                                    (form-from-ssa* dgraph guards (conj bound? (second pred)) curr-guard id))
+                              (list 'if-value
+                                    (form-from-ssa* dgraph guards bound? curr-guard (second pred))
+                                    (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)
+                                    (let-bindable-exprs dgraph guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
+                          (list 'if
+                                (form-from-ssa* dgraph guards bound? curr-guard pred-id)
+                                (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)
+                                (let-bindable-exprs dgraph guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
 
                       :else
                       (apply list (first form) (map (partial form-from-ssa* dgraph guards bound? curr-guard) (rest form))))
@@ -636,7 +681,10 @@
                                       (= :Unset form)
                                       (<= (get usage-counts id 0) 1)
                                       ;; safe to bind if current guard implies some conjunct
-                                      (not (some #(set/superset? curr-guard %1) (guards id))))))
+                                      (not (some #(set/superset? curr-guard %1) (guards id)))
+                                      ;; don't bind non-halite forms to vars
+                                      (and (seq? form)
+                                           (contains? #{'$value? '$value!} (first form))))))
                                (map first)
                                (sort-by ordering)
                                (reduce

@@ -14,21 +14,23 @@
 (use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-spec-to-ssa
-  (let [spec-info {:spec-vars {:x "Integer", :y "Integer", :z "Integer", :b "Boolean"}
-                   :constraints []
-                   :refines-to {}}
-        bar-info {:spec-vars {:a "Integer", :b "Boolean"}, :constraints [], :refines-to {}}]
+  (let [senv '{:ws/A
+               {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}
+                :constraints []
+                :refines-to {}}
+               :foo/Bar
+               {:spec-vars {:a "Integer", :b "Boolean"}, :constraints [], :refines-to {}}
+               :ws/C
+               {:spec-vars {:cn [:Maybe "Integer"]} :constraints [] :refines-to {}}}]
     (are [constraints derivations new-constraints]
          (= [derivations new-constraints]
             (binding [ssa/*next-id* (atom 0)]
-              (let [spec-info (->> constraints
-                                   (map-indexed #(vector (str "c" %1) %2))
-                                   (update spec-info :constraints into))
-                    senv (halite-envs/spec-env {:ws/A spec-info, :foo/Bar bar-info})]
-                (->> spec-info
-                     (ssa/spec-to-ssa senv)
-                     ((juxt #(-> % :derivations)
-                            #(->> % :constraints (map second))))))))
+              (-> senv
+                  (assoc-in [:ws/A :constraints] (map-indexed #(vector (str "c" %1) %2) constraints))
+                  (halite-envs/spec-env)
+                  (#(ssa/spec-to-ssa % (halite-envs/lookup-spec % :ws/A)))
+                  (#(vector (:derivations %)
+                            (map second (:constraints %)))))))
 
       [] {} []
 
@@ -56,6 +58,24 @@
         $3 [(= $1 $2) :Boolean $4]
         $4 [(not= $1 $2) :Boolean $3]}
       '[$3]
+
+      '[($value? no-value-)]
+      '{$1 [:Unset :Unset]
+        $2 [($value? $1) :Boolean $3]
+        $3 [(not $2) :Boolean $2]}
+      '[$2]
+
+      '[($value? no-value)]
+      '{$1 [:Unset :Unset]
+        $2 [($value? $1) :Boolean $3]
+        $3 [(not $2) :Boolean $2]}
+      '[$2]
+
+      '[($value? :Unset)]
+      '{$1 [:Unset :Unset]
+        $2 [($value? $1) :Boolean $3]
+        $3 [(not $2) :Boolean $2]}
+      '[$2]
 
       '[(not= x 1)]
       '{$1 [x :Integer]
@@ -194,26 +214,128 @@
         $4 [{:$type :foo/Bar :a $1 :b $3} [:Instance :foo/Bar]]
         $5 [(get $4 :b) :Boolean $6]
         $6 [(not $5) :Boolean $5]}
-      '[$5])))
+      '[$5]
+
+      '[(= 1 (mod* x 2))]
+      '{$1 [1 :Integer]
+        $2 [x :Integer]
+        $3 [2 :Integer]
+        $4 [(mod $2 $3) :Integer]
+        $5 [(= $1 $4) :Boolean $6]
+        $6 [(not= $1 $4) :Boolean $5]}
+      '[$5]
+
+      ;; if-value produces if, value? and value! nodes to facilitate semantics-preserving rewrites.
+      ;; form-from-ssa must always collapse these back to an if-value form.
+      '[(if-value w w 1)]  ; (if ($value? w) ($value! w) 1)
+      '{$1 [w [:Maybe :Integer]]
+        $2 [($value? $1) :Boolean $3]
+        $3 [(not $2) :Boolean $2]
+        $4 [($value! $1) :Integer]
+        $5 [1 :Integer]
+        $6 [(if $2 $4 $5) :Integer]}
+      '[$6]
+
+      '[(if-value- w w 1)]  ; deprecated
+      '{$1 [w [:Maybe :Integer]]
+        $2 [($value? $1) :Boolean $3]
+        $3 [(not $2) :Boolean $2]
+        $4 [($value! $1) :Integer]
+        $5 [1 :Integer]
+        $6 [(if $2 $4 $5) :Integer]}
+      '[$6]
+
+      ;; We also need to be able to accept the internal nodes, which
+      ;; may be produced by rewrite rules.
+      '[(if ($value? w) ($value! w) 1)]
+      '{$1 [w [:Maybe :Integer]]
+        $2 [($value? $1) :Boolean $3]
+        $3 [(not $2) :Boolean $2]
+        $4 [($value! $1) :Integer]
+        $5 [1 :Integer]
+        $6 [(if $2 $4 $5) :Integer]}
+      '[$6]
+
+      '[(= v w)]
+      '{$1 [v [:Maybe :Integer]]
+        $2 [w [:Maybe :Integer]]
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
+      '[$3]
+
+      '[(= x (if b v w))]
+      '{$1 [x :Integer]
+        $2 [b :Boolean $3]
+        $3 [(not $2) :Boolean $2]
+        $4 [v [:Maybe :Integer]]
+        $5 [w [:Maybe :Integer]]
+        $6 [(if $2 $4 $5) [:Maybe :Integer]]
+        $7 [(= $1 $6) :Boolean $8]
+        $8 [(not= $1 $6) :Boolean $7]}
+      '[$7]
+
+      '[(let [u (if b v w)]
+          (if-value u (< u 10) true))]
+      '{$1 [b :Boolean $2],
+        $2 [(not $1) :Boolean $1],
+        $3 [v [:Maybe :Integer]],
+        $4 [w [:Maybe :Integer]],
+        $5 [(if $1 $3 $4) [:Maybe :Integer]],
+        $6 [($value? $5) :Boolean $7],
+        $7 [(not $6) :Boolean $6],
+        $8 [($value! $5) :Integer],
+        $9 [10 :Integer]
+        $10 [(< $8 $9) :Boolean $11],
+        $11 [(<= $9 $8) :Boolean $10],
+        $12 [true :Boolean $13],
+        $13 [false :Boolean $12],
+        $14 [(if $6 $10 $12) :Boolean $15],
+        $15 [(not $14) :Boolean $14],
+        $16 [($do! $5 $14) :Boolean $17],
+        $17 [(not $16) :Boolean $16]}
+      '[$16]
+
+      '[(if-value v
+          (let [u (get c :cn)]
+            (if-value u (+ u 1) 0))
+          1)]
+      '{$1 [v [:Maybe :Integer]],
+        $2 [($value? $1) :Boolean $3],
+        $3 [(not $2) :Boolean $2],
+        $4 [($value! $1) :Integer],
+        $5 [c [:Instance :ws/C]],
+        $6 [(get $5 :cn) [:Maybe :Integer]],
+        $7 [($value? $6) :Boolean $8],
+        $8 [(not $7) :Boolean $7],
+        $9 [($value! $6) :Integer]
+        $10 [1 :Integer],
+        $11 [(+ $9 $10) :Integer],
+        $12 [0 :Integer],
+        $13 [(if $7 $11 $12) :Integer],
+        $14 [($do! $6 $13) :Integer],
+        $15 [(if $2 $14 $10) :Integer]}
+      '[$15]
+      )))
 
 (def form-from-ssa* #'ssa/form-from-ssa*)
 
 (s/defn ^:private guards-from-ssa :- {s/Any s/Any}
   "To facilitate testing"
   [dgraph :- ssa/Derivations, bound :- #{s/Symbol}, guards]
-  (-> guards
-      (update-keys (partial form-from-ssa* dgraph {} bound #{}))
-      (update-vals
-       (fn [guards]
-         (if (seq guards)
-           (->> guards
-                (map #(->> % (map (partial form-from-ssa* dgraph {} bound #{})) (mk-junct 'and)))
-                (mk-junct 'or))
-           true)))))
+  (binding [ssa/*hide-non-halite-ops* false]
+    (-> guards
+        (update-keys (partial form-from-ssa* dgraph {} bound #{}))
+        (update-vals
+         (fn [guards]
+           (if (seq guards)
+             (->> guards
+                  (map #(->> % (map (partial form-from-ssa* dgraph {} bound #{})) (mk-junct 'and)))
+                  (mk-junct 'or))
+             true))))))
 
 (deftest test-compute-guards
   (let [senv '{:ws/A
-               {:spec-vars {:x "Integer", :y "Integer", :b1 "Boolean", :b2 "Boolean"}
+               {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :b1 "Boolean", :b2 "Boolean"}
                 :constraints []
                 :refines-to {}}
                :ws/Foo
@@ -279,10 +401,27 @@
       '{2 b1
         3 (not b1)
         {:$type :ws/Foo :x 1 :y 2} b1
-        (get {:$type :ws/Foo :x 1 :y 2} :x) b1})))
+        (get {:$type :ws/Foo :x 1 :y 2} :x) b1}
+
+      '[(if b1 (= w v) true)]
+      '{w b1
+        v b1
+        (= w v) b1
+        true (not b1)}
+
+      '[(if b1 (not= 0 (if-value w (+ w 1) 0)) true)]
+      '{0 b1
+        ($value? w) b1
+        ($value! w) (and ($value? w) b1)
+        w b1
+        (+ ($value! w) 1) (and ($value? w) b1)
+        1 (and ($value? w) b1)
+        true (not b1)
+        (if ($value? w) (+ ($value! w) 1) 0) b1
+        (not= 0 (if ($value? w) (+ ($value! w) 1) 0)) b1})))
 
 (deftest test-spec-from-ssa
-  (let [spec-info {:spec-vars {:x "Integer", :y "Integer", :z "Integer", :b "Boolean"}
+  (let [spec-info {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}
                    :constraints []
                    :refines-to {}}]
 
@@ -358,7 +497,73 @@
       '{$1 [(= $3 $3) :Boolean $2]
         $2 [(not= $3 $3) :Boolean $1]
         $3 [:Unset :Unset]}
-      '(= no-value no-value))))
+      '(= no-value no-value)
+
+      '[$6]
+      '{$1 [w [:Maybe :Integer]]
+        $2 [($value? $1) :Boolean $3]
+        $3 [(not $2) :Boolean $2]
+        $4 [($value! $1) :Integer]
+        $5 [1 :Integer]
+        $6 [(if $2 $4 $5) :Integer]}
+      '(if-value w w 1)
+
+      '[$14]
+      '{$1 [b :Boolean $2]
+        $2 [(not $1) :Boolean $1]
+        $3 [v [:Maybe :Integer]]
+        $4 [w [:Maybe :Integer]]
+        $5 [(if $1 $3 $4) [:Maybe :Integer]]
+        $6 [($value? $5) :Boolean $7]
+        $7 [(not $6) :Boolean $6]
+        $8 [($value! $5) :Integer]
+        $9 [10 :Integer]
+        $10 [(< $8 $9) :Boolean $11]
+        $11 ((<= $9 $8) :Boolean $10)
+        $12 [true :Boolean $13]
+        $13 [false :Boolean $12]
+        $14 [(if $6 $10 $12) :Boolean $15]
+        $15 [(not $14) :Boolean $14]}
+      '(let [$5 (if b v w)]
+         (if-value $5 (< $5 10) true))
+
+      '[$14]
+      '{$1 [v [:Maybe :Integer]],
+        $2 [($value? $1) :Boolean $3],
+        $3 [(not $2) :Boolean $2],
+        $4 [($value! $1) :Integer],
+        $5 [c [:Instance :ws/C]],
+        $6 [(get $5 :cn) [:Maybe :Integer]],
+        $7 [($value? $6) :Boolean $8],
+        $8 [(not $7) :Boolean $7],
+        $9 [($value! $6) :Integer]
+        $10 [1 :Integer],
+        $11 [(+ $9 $10) :Integer],
+        $12 [0 :Integer],
+        $13 [(if $7 $11 $12) :Integer],
+        $14 [(if $2 $13 $10) :Integer]}
+      '(if-value v
+         (let [$6 (get c :cn)]
+           (if-value $6 (+ $6 1) 0))
+         1)
+
+      '[$1]
+      '{$1 [(if $2 $3 $4) :Integer]
+        $2 [($value? $5) :Boolean $7]
+        $3 [1 :Integer]
+        $4 [2 :Integer]
+        $5 [(get $6 :foo) [:Maybe :Integer]]
+        $6 [{:$type :ws/C :foo $8} [:Instance :ws/C]]
+        $7 [(not $2) :Boolean $2]
+        $8 [12 :Integer]}
+      '(let [$5 (get {:$type :ws/C :foo 12} :foo)]
+         (if-value $5 1 2))
+
+      '[$2]
+      '{$1 [:Unset :Unset]
+        $2 [($value? $1) :Boolean $3]
+        $3 [(not $2) :Boolean $2]}
+      '($value? no-value))))
 
 (deftest test-spec-from-ssa-preserves-guards
   (binding [ssa/*next-id* (atom 0)]
