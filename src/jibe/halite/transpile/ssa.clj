@@ -311,11 +311,10 @@
      (seq? form) (let [[op & args] form]
                    (when-not (contains? supported-halite-ops op)
                      (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
-                   (condp = op
+                   (condp = (get renamed-ops op op)
                      'let (let-to-ssa ctx form)
                      'if (if-to-ssa ctx form)
                      'get (get-to-ssa ctx form)
-                     'get* (get-to-ssa ctx form)
                      'refine-to (refine-to-to-ssa ctx form)
                      (app-to-ssa ctx form)))
      (map? form) (inst-literal-to-ssa ctx form)
@@ -373,12 +372,11 @@
     (symbol? expr) #{}
     (map? expr) (->> (dissoc expr :$type) vals (map spec-refs-from-expr) (apply set/union #{(:$type expr)}))
     (seq? expr) (let [[op & args] expr]
-                  (condp = op
+                  (condp = (get renamed-ops op op)
                     'let (let [[bindings body] args]
                            (->> bindings (partition 2) (map (comp spec-refs-from-expr second))
                                 (apply set/union (spec-refs-from-expr body))))
                     'get (spec-refs-from-expr (first args))
-                    'get* (spec-refs-from-expr (first args))
                     'refine-to (spec-refs-from-expr (first args))
                     (apply set/union (map spec-refs-from-expr args))))
     :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
