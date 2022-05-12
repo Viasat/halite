@@ -109,7 +109,62 @@
               j-expr
               j-result)))))
 
-(deftest test-all
+(deftest test-bool
+  (h true :Boolean true "true" "true")
+
+  (h false :Boolean false "false" "false")
+
+  (h (and true false) :Boolean false "(true && false)" "false")
+
+  (h (and true true) :Boolean true "(true && true)" "true")
+
+  (h (and true) :Boolean true "(true)" "true")
+
+  (h (and false) :Boolean false "(false)" "false")
+
+  (h (and) [:throws "no matching signature for 'and'"])
+
+  (h (and true false true) :Boolean false "(true && false && true)" "false")
+
+  (h (and true (or false true)) :Boolean true "(true && (false || true))" "true")
+
+  (h (or true true) :Boolean true "(true || true)" "true")
+
+  (h (or true false) :Boolean true "(true || false)" "true")
+
+  (h (or false false) :Boolean false "(false || false)" "false")
+
+  (h (or true) :Boolean true "(true)" "true")
+
+  (h (or) [:throws "no matching signature for 'or'"])
+
+  (h (or true false true) :Boolean true "(true || false || true)" "true")
+
+  (h (=> true false) :Boolean false "(true => false)" "false")
+
+  (h (=> true true) :Boolean true "(true => true)" "true")
+
+  (h (=> false true) :Boolean true "(false => true)" "true")
+
+  (h (=> false false) :Boolean true "(false => false)" "true")
+
+  (h (=>) [:throws "no matching signature for '=>'"])
+
+  (h (=> true) [:throws "no matching signature for '=>'"])
+
+  (h (=> true false true) [:throws "no matching signature for '=>'"])
+
+  (h (= true false) :Boolean false "(true == false)" "false")
+
+  (h (= true) [:throws "Wrong number of arguments to '=': expected at least 2, but got 1"])
+
+  ;; TODO: (h (= true false false) :Boolean false "(true == false == false)" [:throws "Syntax error"])
+
+  (h (not= true) [:throws "Wrong number of arguments to 'not=': expected at least 2, but got 1"])
+
+  (h (not= true false) :Boolean true "(true != false)" "true"))
+
+(deftest test-int
   (h 1 :Integer 1 "1" "1")
 
   (h (+ 1) [:throws "no matching signature for '+'"])
@@ -125,6 +180,8 @@
   (h (- 1) [:throws "no matching signature for '-'"])
 
   (h (-) [:throws "no matching signature for '-'"])
+
+  (h (- 3 false) [:throws "no matching signature for '-'"])
 
   (h (+ 1 -) [:throws "Undefined: '-'"])
 
@@ -198,14 +255,6 @@
 
   (h (dec 1 2) [:throws "no matching signature for 'dec'"])
 
-  (h (inc 9223372036854775807) :Integer [:throws "long overflow"] "(9223372036854775807 + 1)" [:throws "long overflow"])
-
-  (h (dec 9223372036854775807) :Integer 9223372036854775806 "(9223372036854775807 - 1)" "9223372036854775806")
-
-  (h (dec -9223372036854775808) :Integer [:throws "long overflow"] "(-9223372036854775808 - 1)" [:throws "long overflow"])
-
-  (h (inc -9223372036854775808) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807")
-
   (h (abs) [:throws "no matching signature for 'abs'"])
 
   (h (abs 0) :Integer 0 "0.abs()" "0")
@@ -220,6 +269,9 @@
 
   (h (abs -9223372036854775808) :Integer -9223372036854775808 "-9223372036854775808.abs()" "-9223372036854775808")
 
+  (h (abs true) [:throws "no matching signature for 'abs'"]))
+
+(deftest test-int-equality-etc
   (h (= 1) [:throws "Wrong number of arguments to '=': expected at least 2, but got 1"])
 
   (h (= 1 1) :Boolean true "(1 == 1)" "true")
@@ -230,7 +282,99 @@
 
   (h (= 1 0) :Boolean false "(1 == 0)" "false")
 
+  (h (= 1 true) [:throws "Arguments to '=' have incompatible types"])
+
   ;; TODO: (h (= 1 1 1) :Boolean true "(1 == 1 == 1)" [:throws "Syntax error"])
+
+  (h (not= 1 2) :Boolean true "(1 != 2)" "true")
+
+  (h (not= 1) [:throws "Wrong number of arguments to 'not=': expected at least 2, but got 1"])
+
+  (h (not=) [:throws "Wrong number of arguments to 'not=': expected at least 2, but got 0"])
+
+  (h (not= false 3) [:throws "Arguments to 'not=' have incompatible types"])
+
+  ;; TODO: (h (not= 1 2 3) :Boolean true "(1 != 2 != 3)" [:throws "Syntax error"])
+
+  ;; TODO: (h (not= 1 1 1) :Boolean false "(1 != 1 != 1)" [:throws "Syntax error"])
+
+  (h (> 1 0) :Boolean true "(1 > 0)" "true")
+
+  (h (> 1) [:throws "no matching signature for '>'"])
+
+  (h (> 3 2 1) [:throws "no matching signature for '>'"])
+
+  (h (> 1 1) :Boolean false "(1 > 1)" "false")
+
+  (h (>) [:throws "no matching signature for '>'"])
+
+  (h (> 3 true) [:throws "no matching signature for '>'"])
+
+  (h (< 1 0) :Boolean false "(1 < 0)" "false")
+
+  (h (< 0 1) :Boolean true "(0 < 1)" "true")
+
+  (h (< 3 2 1) [:throws "no matching signature for '<'"])
+
+  (h (< 3) [:throws "no matching signature for '<'"])
+
+  (h (<) [:throws "no matching signature for '<'"])
+
+  (h (< 4 false) [:throws "no matching signature for '<'"])
+
+  (h (<= 1) [:throws "no matching signature for '<='"])
+
+  (h (<=) [:throws "no matching signature for '<='"])
+
+  (h (<= true 3) [:throws "no matching signature for '<='"])
+
+  (h (>= 1 1) :Boolean true "(1 >= 1)" "true")
+
+  (h (>=) [:throws "no matching signature for '>='"])
+
+  (h (>= 1) [:throws "no matching signature for '>='"])
+
+  (h (>= 1 2 3) [:throws "no matching signature for '>='"]))
+
+(deftest test-int-other-types
+  (hf (short 1) [:throws "Syntax error"])
+
+  (h 1N [:throws "Syntax error"])
+
+  (h 1.1 [:throws "Syntax error"])
+
+  (h 1.1M [:throws "Syntax error"])
+
+  (h 1/2 [:throws "Syntax error"])
+
+  (hf (byte 1) [:throws "Syntax error"])
+
+  (h ##NaN [:throws "Syntax error"])
+
+  (hf Double/NaN [:throws "Syntax error"])
+
+  (h ##Inf [:throws "Syntax error"])
+
+  (h ##-Inf [:throws "Syntax error"]))
+
+(deftest test-int-overflow
+  (h 2147483647 :Integer 2147483647 "2147483647" "2147483647")
+
+  (h -2147483648 :Integer -2147483648 "-2147483648" "-2147483648")
+
+  (h (inc 9223372036854775807) :Integer [:throws "long overflow"] "(9223372036854775807 + 1)" [:throws "long overflow"])
+
+  (h (dec 9223372036854775807) :Integer 9223372036854775806 "(9223372036854775807 - 1)" "9223372036854775806")
+
+  (h (dec -9223372036854775808) :Integer [:throws "long overflow"] "(-9223372036854775808 - 1)" [:throws "long overflow"])
+
+  (h (inc -9223372036854775808) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807")
+
+  (h (abs -9223372036854775808) :Integer -9223372036854775808 "-9223372036854775808.abs()" "-9223372036854775808")
+
+  (h (= -9223372036854775808 -9223372036854775808) :Boolean true "(-9223372036854775808 == -9223372036854775808)" "true")
+
+  (h (<= -9223372036854775808 9223372036854775807) :Boolean true "(-9223372036854775808 <= 9223372036854775807)" "true")
 
   (h 2147483647 :Integer 2147483647 "2147483647" "2147483647")
 
@@ -262,26 +406,28 @@
 
   (h (+ -9223372036854775808 -1) :Integer [:throws "long overflow"] "(-9223372036854775808 + -1)" [:throws "long overflow"])
 
-  (h (+ -9223372036854775808 1) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807")
+  (h (+ -9223372036854775808 1) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807"))
 
-  (hf (short 1) [:throws "Syntax error"])
+(deftest test-bool-int
+  (h (and 1) [:throws "no matching signature for 'and'"])
 
-  (h 1N [:throws "Syntax error"])
+  (h (or 1) [:throws "no matching signature for 'or'"])
 
-  (h 1.1 [:throws "Syntax error"])
+  (h (=> 1 true) [:throws "no matching signature for '=>'"]))
 
-  (h 1.1M [:throws "Syntax error"])
+(deftest test-int-bool
+  (h (+ true 1) [:throws "no matching signature for '+'"])
 
-  (h 1/2 [:throws "Syntax error"])
+  (h (* true) [:throws "no matching signature for '*'"])
 
-  (hf (byte 1) [:throws "Syntax error"])
+  (h (div 1 false) [:throws "no matching signature for 'div'"])
 
-  (h ##NaN [:throws "Syntax error"])
+  (h (mod true 3) [:throws "no matching signature for 'mod'"])
 
-  (hf Double/NaN [:throws "Syntax error"])
+  (h (expt true false) [:throws "no matching signature for 'expt'"])
 
-  (h ##Inf [:throws "Syntax error"])
+  (h (inc false) [:throws "no matching signature for 'inc'"])
 
-  (h ##-Inf [:throws "Syntax error"]))
+  (h (dec true) [:throws "no matching signature for 'dec'"]))
 
 ;; (run-tests)
