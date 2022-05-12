@@ -58,6 +58,10 @@
                   :ws/C
                   {:spec-vars {:x "Integer" :y "Integer"}
                    :constraints []
+                   :refines-to {}}
+                  :ws/D
+                  {:spec-vars {:b1 :ws/B, :b2 [:Maybe :ws/B]}
+                   :constraints [["d1" (= b1 b2)]]
                    :refines-to {}}})
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (let [$6 (get b2 :c1)
@@ -73,7 +77,11 @@
                            (not= (get $9 :y) (get $10 :y)))))]]
              (->> sctx
                   (fixpoint lower-instance-comparisons)
-                  :ws/A ssa/spec-from-ssa :constraints))))))
+                  :ws/A ssa/spec-from-ssa :constraints)))
+      (is (= '[["$all" (= b1 b2)]]
+             (->> (ssa/build-spec-ctx senv :ws/D)
+                  (fixpoint lower-instance-comparisons)
+                  :ws/D ssa/spec-from-ssa :constraints))))))
 
 (def lower-valid? #'lowering/lower-valid?)
 

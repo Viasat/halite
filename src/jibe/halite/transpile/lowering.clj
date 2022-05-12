@@ -16,8 +16,6 @@
 
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
-;; Assumes abstract expressions and optional vars have been lowered.
-
 (s/defn ^:private lower-instance-comparisons-in-spec :- SpecInfo
   [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
   (let [senv (ssa/as-spec-env sctx)
@@ -31,7 +29,7 @@
                     logical-op (if (= comparison-op '=) 'and 'or)
                     arg-ids (rest form)
                     arg-types (set (map (comp second dgraph) arg-ids))]
-                (if (some halite-types/spec-type? arg-types)
+                (if (every? halite-types/spec-type? arg-types)
                   (first
                    (ssa/form-to-ssa
                     (assoc ctx :dgraph dgraph)
