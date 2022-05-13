@@ -4,6 +4,7 @@
 (ns jibe.halite-guide
   (:require [jibe.halite :as halite]
             [jibe.halite.envs :as halite-envs]
+            [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]
             [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]]
@@ -848,7 +849,31 @@
                                                                   [:o "Integer" :optional])
                                                        (constraints [:pc [:halite "(> p 0)"]]
                                                                     [:pn [:halite "(< n 0)"]])
-                                                       (refinements)))]})
+                                                       (refinements)))]
+                     :basic-2  [(workspace :spec
+                                           {:spec/A [true]
+                                            :spec/B [false]
+                                            :spec/C [true]}
+                                           (spec :A
+                                                 (variables [:p "Integer"]
+                                                            [:n "Integer"]
+                                                            [:o "Integer" :optional])
+                                                 (constraints [:pc [:halite "(> p 0)"]]
+                                                              [:pn [:halite "(< n 0)"]])
+                                                 (refinements [:as_b :to :spec/B$v1 [:halite "{:$type :spec/B$v1, :x (* 10 p), :y n, :z o}"]]))
+
+                                           (spec :B
+                                                 (variables [:x "Integer"]
+                                                            [:y "Integer"]
+                                                            [:z "Integer" :optional])
+                                                 (constraints [:px [:halite "(< x 100)"]]
+                                                              [:py [:halite "(> y -100)"]]
+                                                              [:pz [:halite "(not= z 0)"]])
+                                                 (refinements))
+                                           (spec :C
+                                                 (variables)
+                                                 (constraints)
+                                                 (refinements)))]})
 
 (defmacro hc [workspaces workspace-id raw-args]
   (let [[expr & args] raw-args
@@ -1017,5 +1042,78 @@
   (hc :basic
       :my
       [(if (valid? {:$type :my/Spec$v1, :p 1, :n -1}) "hi" "bye") :String "hi" "(if((valid? {$type: my/Spec$v1, n: -1, p: 1})) {\"hi\"} else {\"bye\"})" "\"hi\""]))
+
+(deftest test-instance-refine
+  (hc :basic
+      :my
+      [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Spec$v1) :Boolean true "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Spec$v1 )" "true"])
+
+  (hc :basic
+      :my
+      [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :other/Spec$v1) [:throws "Spec not found: 'other/Spec$v1'"]])
+
+  (hc :basic-2
+      :spec
+      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1) :Boolean true "{$type: spec/A$v1, n: -1, p: 1}.refinesTo?( spec/B$v1 )" "true"])
+
+  (hc :basic-2
+      :spec
+      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1) :Boolean false "{$type: spec/A$v1, n: -1, p: 1}.refinesTo?( spec/C$v1 )" "false"])
+
+  (hc :basic-2
+      :spec
+      [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1) :spec/B$v1 {:$type :spec/B$v1, :x 10, :y -1} "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )" "{$type: spec/B$v1, x: 10, y: -1}"])
+
+  (hc :basic-2
+      :spec
+      [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1) :spec/C$v1 [:throws "No active refinement path from 'spec/A$v1' to 'spec/C$v1'"] "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 )" [:throws "No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+
+  (hc :basic-2
+      :spec
+      [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)) :Boolean true "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 ))" "true"])
+
+  (hc :basic-2
+      :spec
+      [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1)) :Boolean [:throws "No active refinement path from 'spec/A$v1' to 'spec/C$v1'"] "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))" [:throws "No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+
+  (hc :basic-2
+      :spec
+      [(refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1) :spec/B$v1 [:throws "invalid instance of 'spec/B$v1', violates constraints px"] "{$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )" [:throws "invalid instance of 'spec/B$v1', violates constraints px"]])
+
+  (hc :basic-2
+      :spec
+      [(valid? (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)) :Boolean false "(valid? {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 ))" "false"])
+
+  (hc :basic-2
+      :spec
+      [(valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)) [:Maybe :spec/B$v1] :Unset "(valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 ))" "Unset"])
+
+  (hc :basic-2
+      :spec
+      [(let [v (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)] (if-value v [1] [2])) [:throws "First argument to 'if-value' must have an optional type"]])
+
+  (hc :basic-2
+      :spec
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))] (if-value v [1] [2])) [:Vec :Integer] [2] "{ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[2]}) }" "[2]"])
+
+  (hc :basic-2
+      :spec
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] [2])) [:Vec :Integer] [1] "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[2]}) }" "[1]"])
+
+  (hc :basic-2
+      :spec
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] "no")) [:throws "then and else branches to 'if-value' have incompatible types"]])
+
+  (hc :basic-2
+      :spec
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] ["no"])) [:throws "then and else branches to 'if-value' have incompatible types"]])
+
+  (hc :basic-2
+      :spec
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] [])) [:Vec :Integer] [1] "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) }" "[1]"])
+
+  (hc :basic-2
+      :spec
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))] (if-value v [1] [])) [:Vec :Integer] [] "{ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) }" "[]"]))
 
 ;; (time (run-tests))
