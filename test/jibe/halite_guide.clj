@@ -839,7 +839,16 @@
                                                          [:o "Integer" :optional])
                                               (constraints [:pc [:halite "(> p 0)"]]
                                                            [:pn [:halite "(< n 0)"]])
-                                              (refinements)))]})
+                                              (refinements)))]
+                     :basic-abstract [(workspace :my
+                                                 {:my/Spec [false]}
+                                                 (spec :Spec
+                                                       (variables [:p "Integer"]
+                                                                  [:n "Integer"]
+                                                                  [:o "Integer" :optional])
+                                                       (constraints [:pc [:halite "(> p 0)"]]
+                                                                    [:pn [:halite "(< n 0)"]])
+                                                       (refinements)))]})
 
 (defmacro hc [workspaces workspace-id raw-args]
   (let [[expr & args] raw-args
@@ -873,6 +882,7 @@
                                                      (jadeite/to-jadeite (halite/eval-expr senv# tenv# env# jh-expr#))
                                                      (catch RuntimeException e#
                                                        [:throws (.getMessage e#)]))]
+
                                      (is (= ~expected-t t#))
 
                                      (when (not (and (vector? t#)
@@ -911,6 +921,10 @@
       [{:$type :my/Spec$v1 :p 1 :n -1} :my/Spec$v1 {:$type :my/Spec$v1, :p 1, :n -1} "{$type: my/Spec$v1, n: -1, p: 1}" "{$type: my/Spec$v1, n: -1, p: 1}"])
 
   (hc :basic
+      :other
+      [{:$type :my/Spec$v1, :p 1, :n -1} [:throws "resource spec not found: :my/Spec$v1"]])
+
+  (hc :basic
       :my
       [{:$type :my/Spec$v1, :p 0, :n -1} :my/Spec$v1 [:throws "invalid instance of 'my/Spec$v1', violates constraints pc"] "{$type: my/Spec$v1, n: -1, p: 0}" [:throws "invalid instance of 'my/Spec$v1', violates constraints pc"]])
 
@@ -918,8 +932,90 @@
       :my
       [{:$type :my/Spec$v1, :p "0", :n -1} [:throws "value of :p has wrong type"]])
 
+  (hc :basic-abstract
+      :my
+      [{:$type :my/Spec$v1 :p 1 :n -1} :my/Spec$v1 {:$type :my/Spec$v1, :p 1, :n -1} "{$type: my/Spec$v1, n: -1, p: 1}" "{$type: my/Spec$v1, n: -1, p: 1}"])
+
   (hc :basic
       :my
-      [{:$type :my/Spec$v1, :p 1, :n -1, :o 100} :my/Spec$v1 {:$type :my/Spec$v1, :p 1, :n -1, :o 100} "{$type: my/Spec$v1, n: -1, o: 100, p: 1}" "{$type: my/Spec$v1, n: -1, o: 100, p: 1}"]))
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} :p) :Integer 1 "{$type: my/Spec$v1, n: -1, p: 1}.p" "1"]))
 
-;; (run-tests)
+(deftest test-instances-optionality
+  (hc :basic
+      :my
+      [{:$type :my/Spec$v1, :p 1, :n -1, :o 100} :my/Spec$v1 {:$type :my/Spec$v1, :p 1, :n -1, :o 100} "{$type: my/Spec$v1, n: -1, o: 100, p: 1}" "{$type: my/Spec$v1, n: -1, o: 100, p: 1}"])
+
+  (hc :basic
+      :my
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} :o) [:Maybe :Integer] :Unset "{$type: my/Spec$v1, n: -1, p: 1}.o" "Unset"])
+
+  (hc :basic
+      :my
+      [(inc (get {:$type :my/Spec$v1, :p 1, :n -1} :o)) [:throws "no matching signature for 'inc'"]])
+
+  (hc :basic
+      :my
+      [(if-value (get {:$type :my/Spec$v1, :p 1, :n -1} :o) 19 32) [:throws "First argument to 'if-value' must be a bare symbol"]])
+
+  (hc :basic
+      :my
+      [(let [v (get {:$type :my/Spec$v1, :p 1, :n -1} :o)]
+         (if-value v 19 32))
+       :Integer 32 "{ v = {$type: my/Spec$v1, n: -1, p: 1}.o; (ifValue(v) {19} else {32}) }" "32"])
+
+  (hc :basic
+      :my
+      [(let [v (get {:$type :my/Spec$v1, :p 1, :n -1, :o 0} :o)]
+         (if-value v 19 32))
+       :Integer 19 "{ v = {$type: my/Spec$v1, n: -1, o: 0, p: 1}.o; (ifValue(v) {19} else {32}) }" "19"]))
+
+(deftest test-instances-valid
+  (hc :basic
+      :my
+      [{:$type :my/Spec$v1, :p 1} [:throws "missing required variables: :n"]])
+
+  (hc :basic
+      :my
+      [(valid {:$type :my/Spec$v1, :p 0}) [:throws "missing required variables: :n"]])
+
+  (hc :basic
+      :my
+      [(valid? {:$type :my/Spec$v1, :p 0}) [:throws "missing required variables: :n"]])
+
+  (hc :basic
+      :my
+      [(valid {:$type :my/Spec$v1, :p 1, :n 0}) [:Maybe :my/Spec$v1] :Unset "(valid {$type: my/Spec$v1, n: 0, p: 1})" "Unset"])
+
+  (hc :basic
+      :my
+      [(valid {:$type :my/Spec$v1, :p 1, :n -1}) [:Maybe :my/Spec$v1] {:$type :my/Spec$v1, :p 1, :n -1} "(valid {$type: my/Spec$v1, n: -1, p: 1})" "{$type: my/Spec$v1, n: -1, p: 1}"])
+
+  (hc :basic
+      :my
+      [(valid? {:$type :my/Spec$v1, :p 1, :n 0}) :Boolean false "(valid? {$type: my/Spec$v1, n: 0, p: 1})" "false"])
+
+  (hc :basic
+      :my
+      [(valid? {:$type :my/Spec$v1, :p 1, :n -1}) :Boolean true "(valid? {$type: my/Spec$v1, n: -1, p: 1})" "true"])
+
+  (hc :basic
+      :my
+      [(let [v (valid {:$type :my/Spec$v1, :p 1, :n -1})] (if-value v "hi" "bye")) :String "hi" "{ v = (valid {$type: my/Spec$v1, n: -1, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) }" "\"hi\""])
+
+  (hc :basic
+      :my
+      [(let [v (valid {:$type :my/Spec$v1, :p 1, :n 0})] (if-value v "hi" "bye")) :String "bye" "{ v = (valid {$type: my/Spec$v1, n: 0, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) }" "\"bye\""])
+
+  (hc :basic
+      :my
+      [(let [v (valid {:$type :my/Spec$v1, :p 1, :n -1})] (if-value v "hi" "bye")) :String "hi" "{ v = (valid {$type: my/Spec$v1, n: -1, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) }" "\"hi\""])
+
+  (hc :basic
+      :my
+      [(if (valid? {:$type :my/Spec$v1, :p 1, :n 0}) "hi" "bye") :String "bye" "(if((valid? {$type: my/Spec$v1, n: 0, p: 1})) {\"hi\"} else {\"bye\"})" "\"bye\""])
+
+  (hc :basic
+      :my
+      [(if (valid? {:$type :my/Spec$v1, :p 1, :n -1}) "hi" "bye") :String "hi" "(if((valid? {$type: my/Spec$v1, n: -1, p: 1})) {\"hi\"} else {\"bye\"})" "\"hi\""]))
+
+;; (time (run-tests))
