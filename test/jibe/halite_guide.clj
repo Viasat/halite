@@ -831,40 +831,22 @@
 
   (h #{#{[#{[true false] [true true]}] [#{[false]}]} #{[#{[true false] [true true]}] [#{[false]} #{[true]}]}} [:Set [:Set [:Vec [:Set [:Vec :Boolean]]]]] #{#{[#{[true false] [true true]}] [#{[false]}]} #{[#{[true false] [true true]}] [#{[false]} #{[true]}]}} "#{#{[#{[false]}, #{[true]}], [#{[true, false], [true, true]}]}, #{[#{[false]}], [#{[true, false], [true, true]}]}}" "#{#{[#{[false]}, #{[true]}], [#{[true, false], [true, true]}]}, #{[#{[false]}], [#{[true, false], [true, true]}]}}"))
 
-(defn hc [workspaces workspace-id expr]
-  (test-setup-specs/setup-specs workspaces
-                                (let [senv (spec-env/for-workspace *spec-store* workspace-id)
-                                      tenv (halite-envs/type-env {})
-                                      env (halite-envs/env {})
-                                      j-expr (try (jadeite/to-jadeite expr)
-                                                  (catch RuntimeException e
-                                                    [:throws (.getMessage e)]))
-                                      t (try (halite/type-check senv tenv expr)
-                                             (catch RuntimeException e
-                                               [:throws (.getMessage e)]))
-                                      h-result (try (halite/eval-expr senv tenv env expr)
-                                                    (catch RuntimeException e
-                                                      [:throws (.getMessage e)]))
-                                      jh-expr (when (string? j-expr)
-                                                (try
-                                                  (jadeite/to-halite j-expr)
-                                                  (catch RuntimeException e
-                                                    [:throws (.getMessage e)])))
-
-                                      jh-result (try
-                                                  (halite/eval-expr senv tenv env jh-expr)
-                                                  (catch RuntimeException e
-                                                    [:throws (.getMessage e)]))
-                                      j-result (try
-                                                 (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
-                                                 (catch RuntimeException e
-                                                   [:throws (.getMessage e)]))]
-                                  h-result)))
+(def workspaces-map {:basic [(workspace :my
+                                        {:my/Spec [true]}
+                                        (spec :Spec
+                                              (variables [:p "Integer"]
+                                                         [:n "Integer"]
+                                                         [:o "Integer" :optional])
+                                              (constraints [:pc [:halite "(> p 0)"]]
+                                                           [:pn [:halite "(< n 0)"]])
+                                              (refinements)))]})
 
 (defmacro hc [workspaces workspace-id raw-args]
   (let [[expr & args] raw-args
         [expected-t result-expected j-expr-expected j-result-expected] args]
-    `(test-setup-specs/setup-specs ~workspaces
+    `(test-setup-specs/setup-specs ~(if (keyword? workspaces)
+                                      `'~(workspaces-map workspaces)
+                                      workspaces)
                                    (let [senv# (spec-env/for-workspace *spec-store* ~workspace-id)
                                          tenv# (halite-envs/type-env {})
                                          env# (halite-envs/env {})
@@ -920,62 +902,23 @@
       :my
       [{:$type :my/Spec$v1} :my/Spec$v1 {:$type :my/Spec$v1} "{$type: my/Spec$v1}" "{$type: my/Spec$v1}"])
 
-  (hc [(workspace :my
-                  {:my/Spec [true]}
-                  (spec :Spec
-                        (variables [:p "Integer"]
-                                   [:n "Integer"]
-                                   [:o "Integer" :optional])
-                        (constraints [:pc [:halite "(> p 0)"]]
-                                     [:pn [:halite "(< n 0)"]])
-                        (refinements)))]
+  (hc :basic
       :my
       [{:$type :my/Spec$v1} [:throws "missing required variables: :n,:p"]])
 
-  (hc [(workspace :my
-                  {:my/Spec [true]}
-                  (spec :Spec
-                        (variables [:p "Integer"]
-                                   [:n "Integer"]
-                                   [:o "Integer" :optional])
-                        (constraints [:pc [:halite "(> p 0)"]]
-                                     [:pn [:halite "(< n 0)"]])
-                        (refinements)))]
+  (hc :basic
       :my
       [{:$type :my/Spec$v1 :p 1 :n -1} :my/Spec$v1 {:$type :my/Spec$v1, :p 1, :n -1} "{$type: my/Spec$v1, n: -1, p: 1}" "{$type: my/Spec$v1, n: -1, p: 1}"])
 
-  (hc [(workspace :my
-                  {:my/Spec [true]}
-                  (spec :Spec
-                        (variables [:p "Integer"]
-                                   [:n "Integer"]
-                                   [:o "Integer" :optional])
-                        (constraints [:pc [:halite "(> p 0)"]]
-                                     [:pn [:halite "(< n 0)"]])
-                        (refinements)))]
+  (hc :basic
       :my
       [{:$type :my/Spec$v1, :p 0, :n -1} :my/Spec$v1 [:throws "invalid instance of 'my/Spec$v1', violates constraints pc"] "{$type: my/Spec$v1, n: -1, p: 0}" [:throws "invalid instance of 'my/Spec$v1', violates constraints pc"]])
 
-  (hc [(workspace :my
-                  {:my/Spec [true]}
-                  (spec :Spec
-                        (variables [:p "Integer"]
-                                   [:n "Integer"]
-                                   [:o "Integer" :optional])
-                        (constraints [:pc [:halite "(> p 0)"]]
-                                     [:pn [:halite "(< n 0)"]])
-                        (refinements)))]
+  (hc :basic
       :my
       [{:$type :my/Spec$v1, :p "0", :n -1} [:throws "value of :p has wrong type"]])
 
-  (hc [(workspace :my
-                  {:my/Spec [true]}
-                  (spec :Spec
-                        (variables [:p "Integer"]
-                                   [:n "Integer"]
-                                   [:o "Integer" :optional])
-                        (constraints)
-                        (refinements)))]
+  (hc :basic
       :my
       [{:$type :my/Spec$v1, :p 1, :n -1, :o 100} :my/Spec$v1 {:$type :my/Spec$v1, :p 1, :n -1, :o 100} "{$type: my/Spec$v1, n: -1, o: 100, p: 1}" "{$type: my/Spec$v1, n: -1, o: 100, p: 1}"]))
 
