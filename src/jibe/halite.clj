@@ -164,23 +164,20 @@
 
 (s/defn ^:private check-coll :- HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, coll]
-  (cond
-    (= [] coll) :EmptyVec
-    (= #{} coll) :EmptySet
-    :else (let [elem-types (map (partial check-fn ctx) coll)
-                coll-type (cond
-                            (vector? coll) :Vec
-                            (set? coll) :Set
-                            :else (throw (ex-info "Invalid value" {error-key coll})))]
-            (doseq [[elem elem-type] (map vector coll elem-types)]
-              (when (maybe-type? elem-type)
-                (throw (ex-info (format "%s literal element may not always evaluate to a value" ({:Vec "vector" :Set "set"} coll-type))
-                                {error-key elem}))))
-            [coll-type
-             (condp = (count coll)
-               0 nil
-               1 (first elem-types)
-               (reduce meet elem-types))])))
+  (let [elem-types (map (partial check-fn ctx) coll)
+        coll-type (cond
+                    (vector? coll) :Vec
+                    (set? coll) :Set
+                    :else (throw (ex-info "Invalid value" {error-key coll})))]
+    (doseq [[elem elem-type] (map vector coll elem-types)]
+      (when (maybe-type? elem-type)
+        (throw (ex-info (format "%s literal element may not always evaluate to a value" ({:Vec "vector" :Set "set"} coll-type))
+                        {error-key elem}))))
+    [coll-type
+     (condp = (count coll)
+       0 :Nothing
+       1 (first elem-types)
+       (reduce meet elem-types))]))
 
 (s/defn ^:private type-of* :- HaliteType
   [ctx :- TypeContext, value]
@@ -234,8 +231,8 @@
      '<= (mk-builtin <= [:Integer :Integer] :Boolean)
      '> (mk-builtin > [:Integer :Integer] :Boolean)
      '>= (mk-builtin >= [:Integer :Integer] :Boolean)
-     'Cardinality (mk-builtin count [:Coll] :Integer)
-     'count (mk-builtin count [:Coll] :Integer)
+     'Cardinality (mk-builtin count [[:Coll :Object]] :Integer) ;; deprecated
+     'count (mk-builtin count [[:Coll :Object]] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
      'or (mk-builtin (fn [& args] (true? (some true? args)))
@@ -243,7 +240,7 @@
      'not (mk-builtin not [:Boolean] :Boolean)
      '=> (mk-builtin (fn [a b] (if a b true))
                      [:Boolean :Boolean] :Boolean)
-     'contains? (mk-builtin contains? [[:Set :Any] :Any] :Boolean)
+     'contains? (mk-builtin contains? [[:Set :Object] :Object] :Boolean)
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (mk-builtin quot [:Integer :Integer] :Integer)
@@ -255,14 +252,14 @@
                          (expt x p)) [:Integer :Integer] :Integer)
      'abs (mk-builtin abs [:Integer] :Integer)
      'str (mk-builtin str [& :String] :String)
-     'subset? (mk-builtin set/subset? [[:Set :Any] [:Set :Any]] :Boolean)
+     'subset? (mk-builtin set/subset? [[:Set :Object] [:Set :Object]] :Boolean)
      'sort (mk-builtin (comp vec sort)
-                       [:EmptyVec] :EmptyVec
-                       [:EmptySet] :EmptyVec
+                       [[:Set :Nothing]] [:Vec :Nothing]
+                       [[:Vec :Nothing]] [:Vec :Nothing]
                        [[:Set :Integer]] [:Vec :Integer]
                        [[:Vec :Integer]] [:Vec :Integer])
-     'some? (mk-builtin (fn [v] (not= :Unset v))
-                        [[:Maybe :Any]] :Boolean)
+     'some? (mk-builtin (fn [v] (not= :Unset v)) ;; deprecated
+                        [:Any] :Boolean)
      'range (mk-builtin (comp vec range)
                         [:Integer :Integer :Integer] [:Vec :Integer]
                         [:Integer :Integer] [:Vec :Integer]
@@ -276,7 +273,7 @@
      (every? true? (map #(subtype? %1 %2) actual-types arg-types))
      (or (and (= (count arg-types) (count actual-types))
               (nil? variadic-tail))
-         (every? true? (map #(subtype? %1 variadic-tail)
+         (every? true? (map #(when variadic-tail (subtype? %1 variadic-tail))
                             (drop (count arg-types) actual-types)))))))
 
 (s/defn ^:private type-check-fn-application :- HaliteType
@@ -287,7 +284,11 @@
         actual-types (map (partial type-check* ctx) args)]
     (when (nil? builtin)
       (throw (ex-info (str "function '" op "' not found") {:form form})))
-
+    (doseq [[arg t] (map vector args actual-types)]
+      (when (= :Nothing t)
+        (throw (ex-info (str "Disallowed ':Nothing' expression: " (pr-str arg))
+                        {:form form
+                         :nothing-arg arg}))))
     (loop [[sig & more] signatures]
       (cond
         (nil? sig) (throw (ex-info (str "no matching signature for '" (name op) "'")
@@ -322,9 +323,9 @@
   (let [[_ subexpr index] form
         subexpr-type (type-check* ctx subexpr)]
     (cond
-      (subtype? subexpr-type [:Vec :Any])
+      (subtype? subexpr-type [:Vec :Object])
       (let [index-type (type-check* ctx index)]
-        (when (= :EmptyVec subexpr-type)
+        (when (= [:Vec :Nothing] subexpr-type)
           (throw (ex-info "Cannot index into empty vector" {:form form})))
         (when (not= :Integer index-type)
           (throw (ex-info "Second argument to get must be an integer when first argument is a vector"
@@ -342,7 +343,7 @@
         (substitute-instance-type (:senv ctx) (get field-types index)))
 
       :else (throw (ex-info "First argument to get must be an instance of known type or non-empty vector"
-                            {:form form})))))
+                            {:form form, :actual-type subexpr-type})))))
 
 (s/defn ^:private type-check-equals :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -425,9 +426,9 @@
 (s/defn ^:private type-check-map :- HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
-    (if (or (= :EmptySet coll-type) (= :EmptyVec coll-type))
-      coll-type
-      [(first coll-type) body-type])))
+    [(first coll-type) (if (subtype? coll-type [:Coll :Nothing])
+                         :Nothing
+                         body-type)]))
 
 (s/defn ^:private type-check-filter :- HaliteType
   [ctx :- TypeContext, expr]
@@ -443,9 +444,7 @@
       (throw (ex-info (str "Body expression in 'sort-by' must be Integer, not "
                            (pr-str body-type))
                       {:form expr})))
-    (if (or (= :EmptySet coll-type) (= :EmptyVec coll-type))
-      :EmptyVec
-      [:Vec (second coll-type)])))
+    [:Vec (second coll-type)]))
 
 (s/defn ^:private type-check-reduce :- HaliteType
   [ctx :- TypeContext, expr]
@@ -462,7 +461,7 @@
     (let [init-type (type-check* ctx init)
           coll-type (type-check* ctx coll)
           et (elem-type coll-type)]
-      (when-not (subtype? coll-type [:Vec :Any])
+      (when-not (subtype? coll-type [:Vec :Object])
         (throw (ex-info (str "Second binding expression to 'reduce' must be a vector.")
                         {:form expr, :actual-coll-type coll-type})))
       (type-check* (update ctx :tenv #(-> %
@@ -490,11 +489,11 @@
               m (meet set-type unset-type)]
           (when (and (not= m set-type) (not= m unset-type))
             (throw (ex-info (str "then and else branches to '" op "' have incompatible types")
-                            {:form expr})))
+                            {:form expr, :then-type set-type, :else-type unset-type})))
           m)))))
 
 (defn- check-all-sets [[op :as expr] arg-types]
-  (when-not (every? #(subtype? % [:Set :Any]) arg-types)
+  (when-not (every? #(subtype? % [:Set :Object]) arg-types)
     (throw (ex-info (format "Arguments to '%s' must be sets" op) {:form expr}))))
 
 (s/defn ^:private type-check-union :- HaliteType
@@ -502,7 +501,7 @@
   (arg-count-at-least 2 expr)
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
-    (reduce meet :EmptySet arg-types)))
+    (reduce meet [:Set :Nothing] arg-types)))
 
 (s/defn ^:private type-check-intersection :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -510,7 +509,7 @@
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (if (empty? arg-types)
-      :EmptySet
+      [:Set :Nothing]
       (reduce join arg-types))))
 
 (s/defn ^:private type-check-difference :- HaliteType
@@ -524,9 +523,9 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
-    (when-not (subtype? arg-type [:Vec :Any])
+    (when-not (subtype? arg-type [:Vec :Object])
       (throw (ex-info "Argument to 'first' must be a vector" {:form expr})))
-    (when (= :EmptyVec arg-type)
+    (when (= [:Vec :Nothing] arg-type)
       (throw (ex-info "argument to first is always empty" {:form expr})))
     (second arg-type)))
 
@@ -534,7 +533,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
-    (when-not (subtype? arg-type [:Vec :Any])
+    (when-not (subtype? arg-type [:Vec :Object])
       (throw (ex-info "Argument to 'rest' must be a vector" {:form expr})))
     arg-type))
 
@@ -542,9 +541,9 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (subtype? base-type :Coll)
+    (when-not (subtype? base-type [:Coll :Object])
       (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
-    (let [col-type (if (or (= :EmptyVec base-type) (and (vector? base-type) (= :Vec (first base-type)))) :Vec :Set)]
+    (let [col-type (if (subtype? base-type [:Vec :Object]) :Vec :Set)]
       (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
         (when (maybe-type? elem-type)
           (throw (ex-info (format "cannot conj possibly unset value to %s" ({:Vec "vector" :Set "set"} col-type))
@@ -556,18 +555,16 @@
   (arg-count-exactly 2 expr)
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (subtype? s :Coll)
+    (when-not (subtype? s [:Coll :Object])
       (throw (ex-info (format "First argument to '%s' must be a set or vector" op) {:form expr})))
-    (when-not (subtype? t :Coll)
+    (when-not (subtype? t [:Coll :Object])
       (throw (ex-info (format "Second argument to '%s' must be a set or vector" op) {:form expr})))
-    (when (and (subtype? s [:Vec :Any]) (not (subtype? t [:Vec :Any])))
+    (when (and (subtype? s [:Vec :Object]) (not (subtype? t [:Vec :Object])))
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
                       {:form expr})))
-    (if (#{:EmptySet :EmptyVec} t)
-      s
-      (let [elem-type (second t)
-            col-type (if (or (= :EmptyVec s) (and (vector? s) (= :Vec (first s)))) :Vec :Set)]
-        (meet s [col-type elem-type])))))
+    (let [elem-type (second t)
+          col-type (if (subtype? s [:Vec :Object]) :Vec :Set)]
+      (meet s [col-type elem-type]))))
 
 (s/defn ^:private type-check-refine-to :- HaliteType
   [ctx :- TypeContext, expr]

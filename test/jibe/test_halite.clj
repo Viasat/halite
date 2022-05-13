@@ -42,15 +42,15 @@
     {:$type :ws2/B$v1 :s "foo"} :ws2/B$v1
     {:$type :ws/A$v1 :x 1 :y true
      :c {:$type :ws2/B$v1 :s "bar"}} :ws/A$v1
-    #{} :EmptySet
-    [] :EmptyVec
+    #{} [:Set :Nothing]
+    [] [:Vec :Nothing]
     [1 2 3] [:Vec :Integer]
     #{1 2 3} [:Set :Integer]
-    [[]] [:Vec :EmptyVec]
+    [[]] [:Vec [:Vec :Nothing]]
     [#{} #{"foo"}] [:Vec [:Set :String]]
-    [1 "two"] [:Vec :Any]
-    #{[] #{}} [:Set :Coll]
-    #{[1] #{}} [:Set :Coll]
+    [1 "two"] [:Vec :Object]
+    #{[] #{}} [:Set [:Coll :Nothing]]
+    #{[1] #{}} [:Set [:Coll :Integer]]
     {:$type :ws/C$v1 :xs []} :ws/C$v1
     {:$type :ws/C$v1 :xs [1 2 3]} :ws/C$v1
     [{:$type :ws2/B$v1 :s "bar"}] [:Vec :ws2/B$v1]
@@ -109,22 +109,21 @@
     '(any? [x #{}] true) :Boolean
     '(map [x #{3 7}] [x]) [:Set [:Vec :Integer]]
     '(map [x [3 7]] #{x}) [:Vec [:Set :Integer]]
-    '(map [x #{}] "blue") :EmptySet
-    '(map [x []] "red") :EmptyVec
+    '(map [x #{}] "blue") [:Set :Nothing]
+    '(map [x []] "red") [:Vec :Nothing]
     '(filter [x #{3 7}] (< x 5)) [:Set :Integer]
     '(filter [x [3 7]] (< x 5)) [:Vec :Integer]
-    '(filter [x #{}] true) :EmptySet
-    '(filter [x []] false) :EmptyVec
+    '(filter [x #{}] true) [:Set :Nothing]
+    '(filter [x []] false) [:Vec :Nothing]
     '(sort #{3 1 2}) [:Vec :Integer]
     '(sort [3 1 2]) [:Vec :Integer]
-    '(sort #{}) :EmptyVec
-    '(sort []) :EmptyVec
+    '(sort #{}) [:Vec :Nothing]
+    '(sort []) [:Vec :Nothing]
     '(sort-by [x #{3 1 2}] x) [:Vec :Integer]
     '(sort-by [x #{[3] [1] [2]}] (get x 0)) [:Vec [:Vec :Integer]]
     '(sort-by [x [[1 3] [2 1] [3 2]]] (get x 1)) [:Vec [:Vec :Integer]]
-    '(sort-by [x #{}] 1) :EmptyVec
-    '(sort-by [x []] 2) :EmptyVec
-    '(sort-by [x []] 2) :EmptyVec
+    '(sort-by [x #{}] 1) [:Vec :Nothing]
+    '(sort-by [x []] 2) [:Vec :Nothing]
     '(reduce [acc 0] [x [1 2 3]] (+ (* 10 acc) x)) :Integer
     '(reduce [acc [0]] [x [1 2 3]] (concat [x] acc)) [:Vec :Integer]
     '(reduce [a [[1]]] [x []] a) [:Vec [:Vec :Integer]]
@@ -138,11 +137,11 @@
     '(+ 1) #"no matching signature for '\+'"
     '(any? [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
     '(any? [x #{}] x) #"must be boolean"
-    '(any? [x #{}] (< x 5)) #"no matching signature for '<'"
+    '(any? [x #{}] (< x 5)) #":Nothing"
     '(map [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
-    '(map [x #{}] (+ x 10)) #"no matching signature for '\+'"
+    '(map [x #{}] (+ x 10)) #":Nothing"
     '(filter [x #{"nan"}] (< x 10)) #"no matching signature for '\<'"
-    '(filter [x #{}] (< x 10)) #"no matching signature for '\<'"
+    '(filter [x #{}] (< x 10)) #":Nothing"
     '(sort 5) #"no matching signature"
     '(sort-by [x []] x) #"must be Integer"
     '(sort-by [x 5] 1) #"collection required"
@@ -151,7 +150,7 @@
     '(reduce [a 1] [2 []] 3) #"must be a bare symbol"
     '(reduce [a 1] [x 2] 3) #"must be a vector"
     '(reduce [a 1] [x #{1 2}] 3) #"must be a vector"
-    '(reduce [a 1] [x []] (+ a x)) #"no matching signature for '\+'")
+    '(reduce [a 1] [x []] (+ a x)) #":Nothing")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -444,8 +443,8 @@
 
     '(union #{1 2 3} #{3 4 5}) [:Set :Integer]
     '(union #{} #{"foo"}) [:Set :String]
-    '(union #{1} #{"foo"}) [:Set :Any]
-    '(union #{[]} #{#{}}) [:Set :Coll]
+    '(union #{1} #{"foo"}) [:Set :Object]
+    '(union #{[]} #{#{}}) [:Set [:Coll :Nothing]]
     '(union #{1} #{2} #{3} #{4}) [:Set :Integer]
     '(union #{#{}} #{#{3}}) [:Set [:Set :Integer]])
 
@@ -467,8 +466,8 @@
   (are [expr etype]
        (= etype (halite/type-check senv tenv expr))
 
-    '(intersection #{1 2} #{"three"}) :EmptySet
-    '(intersection #{1 2} #{}) :EmptySet
+    '(intersection #{1 2} #{"three"}) [:Set :Nothing]
+    '(intersection #{1 2} #{}) [:Set :Nothing]
     '(intersection #{1 2} (union #{1} #{"two"})) [:Set :Integer]
     '(intersection #{"two" 3} #{12}) [:Set :Integer])
 
@@ -510,22 +509,22 @@
   (are [expr etype]
        (= etype (halite/type-check senv tenv expr))
     '(first [1]) :Integer
-    '(rest []) :EmptyVec
+    '(rest []) [:Vec :Nothing]
     '(rest [1 2]) [:Vec :Integer]
     '(rest [1]) [:Vec :Integer]
     '(conj [] 1) [:Vec :Integer]
     '(conj [1] 2) [:Vec :Integer]
     '(conj [] "one" "two") [:Vec :String]
-    '(conj [1] "two") [:Vec :Any]
+    '(conj [1] "two") [:Vec :Object]
     '(conj #{} "one") [:Set :String]
-    '(concat [] []) :EmptyVec
+    '(concat [] []) [:Vec :Nothing]
     '(concat [1 2] [3]) [:Vec :Integer]
     '(into [1 2] [3]) [:Vec :Integer] ;; deprecated
-    '(concat #{} []) :EmptySet
-    '(concat #{} #{}) :EmptySet
+    '(concat #{} []) [:Set :Nothing]
+    '(concat #{} #{}) [:Set :Nothing]
     '(concat #{"foo"} ["bar"]) [:Set :String]
-    '(sort []) :EmptyVec
-    '(sort #{}) :EmptyVec
+    '(sort []) [:Vec :Nothing]
+    '(sort #{}) [:Vec :Nothing]
     '(sort [1 2]) [:Vec :Integer]
     '(sort #{1 2}) [:Vec :Integer])
 

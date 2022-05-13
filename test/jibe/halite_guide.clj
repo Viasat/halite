@@ -524,13 +524,13 @@
 
   (h #{1} [:Set :Integer] #{1} "#{1}" "#{1}")
 
-  (h #{} :EmptySet #{} "#{}" "#{}")
+  (h #{} [:Set :Nothing] #{} "#{}" "#{}")
 
   (h #{"a"} [:Set :String] #{"a"} "#{\"a\"}" "#{\"a\"}")
 
   (h #{"☺" "a"} [:Set :String] #{"☺" "a"} "#{\"a\", \"☺\"}" "#{\"a\", \"☺\"}")
 
-  (h #{1 "a"} [:Set :Any] #{1 "a"} "#{\"a\", 1}" "#{\"a\", 1}")
+  (h #{1 "a"} [:Set :Object] #{1 "a"} "#{\"a\", 1}" "#{\"a\", 1}")
 
   (h (count #{1 true "a"}) :Integer 3 "#{\"a\", 1, true}.count()" "3")
 
@@ -560,9 +560,9 @@
 
   (h (concat) [:throws "Wrong number of arguments to 'concat': expected 2, but got 0"])
 
-  (h (concat #{} #{}) :EmptySet #{} "#{}.concat(#{})" "#{}")
+  (h (concat #{} #{}) [:Set :Nothing] #{} "#{}.concat(#{})" "#{}")
 
-  (h (concat #{"a" "b"} #{1 2}) [:Set :Any] #{1 "a" 2 "b"} "#{\"a\", \"b\"}.concat(#{1, 2})" "#{\"a\", \"b\", 1, 2}")
+  (h (concat #{"a" "b"} #{1 2}) [:Set :Object] #{1 "a" 2 "b"} "#{\"a\", \"b\"}.concat(#{1, 2})" "#{\"a\", \"b\", 1, 2}")
 
   (h #{#{4 3} #{1}} [:Set [:Set :Integer]] #{#{4 3} #{1}} "#{#{1}, #{3, 4}}" "#{#{1}, #{3, 4}}")
 
@@ -598,7 +598,7 @@
 
   (h (not= #{1} #{}) :Boolean true "(#{1} != #{})" "true")
 
-  (h (intersection #{} #{}) :EmptySet #{} "#{}.intersection(#{})" "#{}")
+  (h (intersection #{} #{}) [:Set :Nothing] #{} "#{}.intersection(#{})" "#{}")
 
   (h (intersection #{}) [:throws "Wrong number of arguments to 'intersection': expected at least 2, but got 1"])
 
@@ -608,9 +608,9 @@
 
   (h (intersection #{1 2} #{3 2}) [:Set :Integer] #{2} "#{1, 2}.intersection(#{2, 3})" "#{2}")
 
-  (h (intersection #{} #{3 2}) :EmptySet #{} "#{}.intersection(#{2, 3})" "#{}")
+  (h (intersection #{} #{3 2}) [:Set :Nothing] #{} "#{}.intersection(#{2, 3})" "#{}")
 
-  (h (union #{} #{}) :EmptySet #{} "#{}.union(#{})" "#{}")
+  (h (union #{} #{}) [:Set :Nothing] #{} "#{}.union(#{})" "#{}")
 
   (h (union #{2}) [:throws "Wrong number of arguments to 'union': expected at least 2, but got 1"])
 
@@ -618,7 +618,7 @@
 
   (h (union #{1} #{3 2} #{4}) [:Set :Integer] #{1 4 3 2} "#{1}.union(#{2, 3}, #{4})" "#{1, 2, 3, 4}")
 
-  (h (difference #{} #{}) :EmptySet #{} "#{}.difference(#{})" "#{}")
+  (h (difference #{} #{}) [:Set :Nothing] #{} "#{}.difference(#{})" "#{}")
 
   (h (difference #{1 3 2} #{1 2}) [:Set :Integer] #{3} "#{1, 2, 3}.difference(#{1, 2})" "#{3}")
 
@@ -640,7 +640,7 @@
 
   (h (conj #{} 1) [:Set :Integer] #{1} "#{}.conj(1)" "#{1}")
 
-  (h (conj #{} 1 #{3 2}) [:Set :Any] #{1 #{3 2}} "#{}.conj(1, #{2, 3})" "#{#{2, 3}, 1}"))
+  (h (conj #{} 1 #{3 2}) [:Set :Object] #{1 #{3 2}} "#{}.conj(1, #{2, 3})" "#{#{2, 3}, 1}"))
 
 (deftest test-set-every?
   (h (every? [x #{1 2}] (> x 0)) :Boolean true "every?(x in #{1, 2})(x > 0)" "true")
@@ -695,7 +695,7 @@
   (h (every? [x "ab"] (= x x)) [:throws "collection required for 'every?', not :String"]))
 
 (deftest test-set-any?
-  (h (any? [x #{}] (> x 1)) [:throws "no matching signature for '>'"])
+  (h (any? [x #{}] (> x 1)) [:throws "Disallowed ':Nothing' expression: x"])
 
   (h (any? [x #{1 2}] (> x 1)) :Boolean true "any?(x in #{1, 2})(x > 1)" "true")
 
@@ -715,11 +715,11 @@
   (h (any? [x "test"] true) [:throws "collection required for 'any?', not :String"]))
 
 (deftest test-vector
-  (h [] :EmptyVec [] "[]" "[]")
+  (h [] [:Vec :Nothing] [] "[]" "[]")
 
   (h [1 2] [:Vec :Integer] [1 2] "[1, 2]" "[1, 2]")
 
-  (h [[] [1] ["a" true]] [:Vec [:Vec :Any]] [[] [1] ["a" true]] "[[], [1], [\"a\", true]]" "[[], [1], [\"a\", true]]")
+  (h [[] [1] ["a" true]] [:Vec [:Vec :Object]] [[] [1] ["a" true]] "[[], [1], [\"a\", true]]" "[[], [1], [\"a\", true]]")
 
   (h [[1] []] [:Vec [:Vec :Integer]] [[1] []] "[[1], []]" "[[1], []]")
 
@@ -731,11 +731,11 @@
 
   (h (first [10]) :Integer 10 "[10].first()" "10")
 
-  (h (first [10 true "b"]) :Any 10 "[10, true, \"b\"].first()" "10")
+  (h (first [10 true "b"]) :Object 10 "[10, true, \"b\"].first()" "10")
 
-  (h (rest [10 true "b"]) [:Vec :Any] [true "b"] "[10, true, \"b\"].rest()" "[true, \"b\"]")
+  (h (rest [10 true "b"]) [:Vec :Object] [true "b"] "[10, true, \"b\"].rest()" "[true, \"b\"]")
 
-  (h (concat [] []) :EmptyVec [] "[].concat([])" "[]")
+  (h (concat [] []) [:Vec :Nothing] [] "[].concat([])" "[]")
 
   (h (concat [] [1]) [:Vec :Integer] [1] "[].concat([1])" "[1]")
 
@@ -751,7 +751,7 @@
 
   (h (sort (quote (3 1 2))) [:throws "function 'quote' not found"])
 
-  (h (sort []) :EmptyVec [] "[].sort()" "[]")
+  (h (sort []) [:Vec :Nothing] [] "[].sort()" "[]")
 
   (h (sort [1] [2 3]) [:throws "no matching signature for 'sort'"])
 
@@ -769,7 +769,7 @@
 
   (h (conj [] 30) [:Vec :Integer] [30] "[].conj(30)" "[30]")
 
-  (h (conj [10 20] []) [:Vec :Any] [10 20 []] "[10, 20].conj([])" "[10, 20, []]")
+  (h (conj [10 20] []) [:Vec :Object] [10 20 []] "[10, 20].conj([])" "[10, 20, []]")
 
   (h (conj [10]) [:throws "Wrong number of arguments to 'conj': expected at least 2, but got 1"])
 
