@@ -43,34 +43,18 @@
 
 ;;;;;;;;; Push gets inside instance-valued ifs ;;;;;;;;;;;
 
-(s/defn ^:private push-gets-into-ifs-in-spec :- SpecInfo
-  [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  (let [ctx (make-ssa-ctx sctx spec-info)]
-    (->
-     (->> derivations
-          (filter (fn [[id [form htype]]]
-                    (when (and (seq? form) (= 'get (first form)))
-                      (let [[subform htype] (derivations (second form))]
-                        (and (seq? subform)
-                             (= 'if (first subform))
-                             (halite-types/spec-type? htype))))))
-          (reduce
-           (fn [dgraph [get-id [[_get subexp-id var-kw] htype]]]
-             (let [[[_if pred-id then-id else-id]] (derivations subexp-id)]
-               (first
-                (ssa/form-to-ssa
-                 (assoc ctx :dgraph dgraph)
-                 get-id
-                 (list 'if pred-id
-                       (list 'get then-id var-kw)
-                       (list 'get else-id var-kw))))))
-           derivations)
-          (assoc spec-info :derivations))
-     (ssa/prune-derivations false))))
+(s/defn ^:private push-gets-into-ifs-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (when (and (seq? form) (= 'get (first form)))
+    (let [[_get arg-id var-kw] form
+          [subform htype] (ssa/deref-id dgraph (second form))]
+      (when (and (seq? subform) (= 'if (first subform)) (halite-types/spec-type? htype))
+        (let [[_if pred-id then-id else-id] subform]
+          (list 'if pred-id (list 'get then-id var-kw) (list 'get else-id var-kw)))))))
 
 (s/defn ^:private push-gets-into-ifs :- SpecCtx
   [sctx :- SpecCtx]
-  (update-vals sctx (partial push-gets-into-ifs-in-spec sctx)))
+  (rewrite-sctx sctx push-gets-into-ifs-expr))
 
 ;;;;;;;;; Lower valid? ;;;;;;;;;;;;;;;;;
 
