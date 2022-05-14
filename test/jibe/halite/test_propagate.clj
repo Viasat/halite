@@ -427,6 +427,75 @@
       {:$type :ws/B} {:$type :ws/B :by {:$in [1 4]} :bz {:$in [1 4]}}
       {:$type :ws/B :by 2} {:$type :ws/B :by 2 :bz 2})))
 
+(deftest test-propagate-for-refinement
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:an "Integer"}
+                 :constraints [["a1" (< an 10)]]
+                 :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
+
+                :ws/B
+                {:spec-vars {:bn "Integer"}
+                 :constraints [["b1" (< 0 bn)]]
+                 :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
+
+                :ws/C
+                {:spec-vars {:cn "Integer"}
+                 :constraints [["c1" (= 0 (mod cn 2))]]
+                 :refines-to {}}
+
+                :ws/D
+                {:spec-vars {:a :ws/A, :dm "Integer", :dn "Integer"}
+                 :constraints [["d1" (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))]
+                               ["d2" (= (+ 1 dn) (get (refine-to a :ws/B) :bn))]]
+                 :refines-to {}}})]
+
+    (are [spec-id spec]
+         (= spec (hp/spec-ify-bound senv {:$type spec-id}))
+
+      :ws/C '{:spec-vars {:cn "Integer"}
+              :constraints [["$all" (= 0 (mod cn 2))]]
+              :refines-to {}}
+
+      :ws/B '{:spec-vars {:bn "Integer"}
+              :constraints
+              [["$all" (and (< 0 bn)
+                            (= 0 (mod bn 2)))]]
+              :refines-to {}}
+
+      :ws/A '{:spec-vars {:an "Integer"}
+              :constraints
+              [["$all" (let [$87 (+ 1 an)]
+                         (and (< an 10)
+                              (and (< 0 $87)
+                                   (= 0 (mod $87 2)))))]]
+              :refines-to {}}
+
+      :ws/D '{:spec-vars {:a|an "Integer", :dm "Integer", :dn "Integer"}
+              :constraints
+              [["$all"
+                (let [$184 (+ 1 dn)
+                      $193 (= 0 (mod $184 2))
+                      $195 (and (< 0 $184) $193)
+                      $211 (+ 1 a|an)
+                      $217 (and (< 0 $211) (= 0 (mod $211 2)))]
+                  (and
+                   (if (if (if (and (< dn 10) $195) $195 false) $193 false) (= dm $184) false)
+                   (if $217 (= $184 $211) false)
+                   (< a|an 10)
+                   $217))
+                ;; hand simplification of the above, for validation purposes
+                #_(and
+                   (< dn 10)                ; a1 as instantiated from d1
+                   (< 0 (+ 1 dn))           ; b1 as instantiated from d1 thru A->B
+                   (= 0 (mod (+ 1 dn) 2))   ; c1 as instantiated from d1 thru A->B->C
+                   (= dm (+ 1 dn))          ; d1 itself
+                   (< 0 (+ 1 a|an))         ; b1 as instanted on a thru A->B
+                   (= 0 (mod (+ 1 a|an) 2)) ; c1 as instantiated on a thru A->B->C
+                   (= (+ 1 dn) (+ 1 a|an))  ; d2 itself
+                   (< a|an 10))]]           ; a1 as instantiated on a thru A->B->C
+              :refines-to {}})))
+
 (deftest test-spec-ify-for-various-instance-literal-cases
   (let [senv '{:ws/Simpler
                {:spec-vars {:x "Integer", :b "Boolean"}
