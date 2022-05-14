@@ -83,6 +83,11 @@
         (empty? side-effects) (last form)
         (< (count side-effects) (- (count form) 2)) `(~'$do! ~@side-effects ~(last form))))))
 
+(s/defn ^:private simplify-no-value
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  (when (and (seq? form) (= '$value? (first form)) (= :Unset (deref-form dgraph (second form))))
+    false))
+
 (s/defn ^:private simplify-step :- ssa/SpecCtx
   [sctx :- ssa/SpecCtx]
   (-> sctx
@@ -90,7 +95,8 @@
       (rewriting/rewrite-sctx simplify-not)
       (rewriting/rewrite-sctx simplify-if-static-pred)
       (rewriting/rewrite-sctx simplify-if-static-branches)
-      (rewriting/rewrite-sctx simplify-do)))
+      (rewriting/rewrite-sctx simplify-do)
+      (rewriting/rewrite-sctx simplify-no-value)))
 
 (s/defn simplify :- ssa/SpecCtx
   "Perform semantics-preserving simplifications on the expressions in the specs."

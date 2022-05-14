@@ -58,4 +58,6 @@
 
       '($do! (= an 1)) '(= an 1)
       '($do! 1 true (div 120 an) false 42) '($do! (div 120 an) 42)
-      '($do! 1 2 3) 3)))
+      '($do! 1 2 3) 3
+
+      '(if ($value? no-value) 3 4) 4)))
