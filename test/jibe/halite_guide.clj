@@ -929,6 +929,8 @@
                                                j-result#))))))
 
 (deftest test-instances
+  (h {} [:throws "instance literal must have :$type field"])
+
   (h {:$type :my/Spec$v1} [:throws "resource spec not found: :my/Spec$v1"])
 
   (hc [(workspace :my
@@ -1181,12 +1183,20 @@
   (hf (make-array String 1) [:throws "Syntax error"])
   (hf #inst "2018-03-28T10:48:00.000-00:00" [:throws "Syntax error"])
   (hf java.lang.String [:throws "Syntax error"])
+
   ;; ranges are initially accepted as syntactically valid (since they are seqs), but there is no way to use them
   (hf (range 10) [:throws "function '0' not found"])
   (hf `(~'any? [~'x ~(range 10)] true) [:throws "function '0' not found"])
   (hf `(~'count ~(range 10) true) [:throws "function '0' not found"])
+  (hf (filter odd?) [:throws "Syntax error"])
+  (hf (promise) [:throws "Syntax error"])
+  (hf (atom nil) [:throws "Syntax error"])
+  (hf (agent nil) [:throws "Syntax error"])
 
   ;; lazy seqs are accepted
-  (hf (map identity ['+ 1 2]) :Integer 3 "(1 + 2)" "3"))
+  (hf (map identity ['+ 1 2]) :Integer 3 "(1 + 2)" "3")
+  ;; also seqs
+  (hf (vals {:a '+ :b 1 :c 2}) :Integer 3 "(1 + 2)" "3")
+  (hf (cons '+ (cons 2 (cons 3 '()))) :Integer 5 "(2 + 3)" "5"))
 
 ;; (time (run-tests))
