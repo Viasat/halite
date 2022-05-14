@@ -216,7 +216,6 @@
                     (lowering/lower)
                     ;; below this line, we're changing semantics
                     (lowering/eliminate-runtime-constraint-violations)
-                    (simplify)
                     (fixpoint lowering/cancel-get-of-instance-literal)
                     (lowering/eliminate-dos))
           flattened-vars (flatten-vars sctx spec-bound)
@@ -226,7 +225,10 @@
           tenv (halite-envs/type-env-from-spec senv new-spec)]
       (-> new-spec
           (assoc :derivations {})
-          (->> (flatten-constraints sctx tenv flattened-vars spec-bound))
+          (->> (flatten-constraints sctx tenv flattened-vars spec-bound)
+               (assoc {} :new/spec)
+               (simplify)
+               :new/spec)
           (ssa/spec-from-ssa)))))
 
 ;;;;;;;;;;; Conversion to Choco ;;;;;;;;;

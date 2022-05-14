@@ -135,14 +135,8 @@
       (is (= '{:spec-vars {:c|m "Integer", :c|n "Integer", :m "Integer"}
                :refines-to {}
                :constraints
-               [["$all" (let [$73 (* 2 m)
-                              $75 (<= $73 c|n)]
-                          (and
-                           (let [$70 c|n]
-                             (if (and $75 $75)
-                               (and (= c|m $70) (= $70 $73))
-                               false))
-                           (<= c|n c|m)))]]}
+               [["$all" (let [$79 (* 2 m) $81 (<= $79 c|n)]
+                          (and (if $81 (and (= c|m c|n) (= c|n $79)) false) (<= c|n c|m)))]]}
              (hp/spec-ify-bound senv {:$type :ws/D})))))
 
   (testing "composition of recursive specs"
@@ -209,14 +203,12 @@
           :refines-to {}
           :constraints
           [["$all" (let [$54 (< 0 b|bn)]
-                     (and
-                      (= b|bn c|cn)
-                      (let [$49 b|bn]
-                        (if (if $54 true true) (if $54 (< $49 c|a|b|bn) true) false))
-                      (if b|bp (<= b|bn 10) (<= 10 b|bn))
-                      (= b|bp true)
-                      (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]}
-        ))))
+                    (and
+                     (= b|bn c|cn)
+                     (if (if $54 true true) (if $54 (< b|bn c|a|b|bn) true) false)
+                     (if b|bp (<= b|bn 10) (<= 10 b|bn))
+                     (= b|bp true)
+                     (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]}))))
 
 (deftest test-spec-ify-bound-on-recursive-composition
   (let [senv (halite-envs/spec-env
@@ -267,7 +259,7 @@
              [["$all" (let [$54 (< 0 b|bn)]
                         (and
                          (= b|bn c|cn)
-                         (let [$49 b|bn] (if (if $54 true true) (if $54 (< $49 c|a|b|bn) true) false))
+                         (if (if $54 true true) (if $54 (< b|bn c|a|b|bn) true) false)
                          (if b|bp (<= b|bn 10) (<= 10 b|bn))
                          (= b|bp true)
                          (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]
@@ -486,7 +478,7 @@
                       $306 (and (< 0 $300) (= 0 (mod $300 2)))]
                   (and
                    (if (and $280 $280 $286 (if $286 $276 false)) (= dm $267) false)
-                   (let [$299 a|an] (if $306 (= $267 $300) false))
+                   (if $306 (= $267 $300) false)
                    (< a|an 10)
                    $306))
                 ;; hand simplification of the above, for validation purposes
@@ -531,11 +523,11 @@
               s {:$type :ws/Simpler :x (- (get s :x) 2) :b true}]
           {:$type :ws/Simpler :x 12 :b (get s :b)})
         :b)
-      '(let [$125 (+ 1 2)
-             $126 (+ $125 1)
-             $137 (and (< 0 $126) (= false (= (mod $126 2) 1)))
-             $151 (if $137 (let [$139 (- $126 2)] (and (< 0 $139) (= true (= (mod $139 2) 1)))) false)]
-         (if (and true $137 $151 (if $151 (and (< 0 12) (= true (= (mod 12 2) 1))) false)) true false))
+      '(let [$133 (+ 1 2)
+             $134 (+ $133 1)
+             $145 (and (< 0 $134) (= false (= (mod $134 2) 1)))
+             $159 (if $145 (let [$147 (- $134 2)] (and (< 0 $147) (= true (= (mod $147 2) 1)))) false)]
+         (if (and true $145 $159 (if $159 (and (< 0 12) (= true (= (mod 12 2) 1))) false)) true false))
 
       '(get {:$type :ws/Simpler :x (get {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
       '(let [$85 (< 0 14)
