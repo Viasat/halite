@@ -963,7 +963,19 @@
 
   (hc :basic
       :my
-      [(get {:$type :my/Spec$v1, :p 1, :n -1} :p) :Integer 1 "{$type: my/Spec$v1, n: -1, p: 1}.p" "1"]))
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} :p) :Integer 1 "{$type: my/Spec$v1, n: -1, p: 1}.p" "1"])
+
+  (hc :basic
+      :my
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} :q) [:throws "No such variable 'q' on spec ':my/Spec$v1'"]])
+
+  (hc :basic
+      :my
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} 0) [:throws "Second argument to get must be a variable name (as a keyword) when first argument is an instance"]])
+
+  (hc :basic
+      :my
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} "p") [:throws "Second argument to get must be a variable name (as a keyword) when first argument is an instance"]]))
 
 (deftest test-instances-optionality
   (hc :basic
@@ -1150,7 +1162,11 @@
 
   (hc :basic-2
       :spec
-      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/X$v1) [:throws "Spec not found: 'spec/X$v1'"]]))
+      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/X$v1) [:throws "Spec not found: 'spec/X$v1'"]])
+
+  (hc :basic-2
+      :spec
+      [(get {:$type :spec/A$v1, :p 1, :n -1} :$type) [:throws "No such variable '$type' on spec ':spec/A$v1'"]]))
 
 (deftest test-misc-types
   (h #"a" [:throws "Syntax error"])
@@ -1163,6 +1179,14 @@
   (hf (fn []) [:throws "Syntax error"])
   (hf (random-uuid) [:throws "Syntax error"])
   (hf (make-array String 1) [:throws "Syntax error"])
-  (hf #inst "2018-03-28T10:48:00.000-00:00" [:throws "Syntax error"]))
+  (hf #inst "2018-03-28T10:48:00.000-00:00" [:throws "Syntax error"])
+  (hf java.lang.String [:throws "Syntax error"])
+  ;; ranges are initially accepted as syntactically valid (since they are seqs), but there is no way to use them
+  (hf (range 10) [:throws "function '0' not found"])
+  (hf `(~'any? [~'x ~(range 10)] true) [:throws "function '0' not found"])
+  (hf `(~'count ~(range 10) true) [:throws "function '0' not found"])
+
+  ;; lazy seqs are accepted
+  (hf (map identity ['+ 1 2]) :Integer 3 "(1 + 2)" "3"))
 
 ;; (time (run-tests))
