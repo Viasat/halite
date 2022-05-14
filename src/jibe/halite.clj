@@ -14,7 +14,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def reserved-words #{'no-value-})
+(def reserved-words #{'no-value 'no-value-})
 
 (declare eval-expr)
 
@@ -715,7 +715,7 @@
     (boolean? expr) :Boolean
     (long? expr) :Integer
     (string? expr) :String
-    (symbol? expr) (if (= 'no-value- expr)
+    (symbol? expr) (if (or (= 'no-value expr) (= 'no-value- expr))
                      :Unset
                      (type-check-symbol ctx expr))
     (map? expr) (check-instance type-check* :form ctx expr)
@@ -859,7 +859,7 @@
       (or (boolean? expr)
           (long? expr)
           (string? expr)) expr
-      (symbol? expr) (if (= 'no-value- expr)
+      (symbol? expr) (if (or (= 'no-value expr) (= 'no-value- expr))
                        :Unset
                        (get (halite-envs/bindings (:env ctx)) expr))
       (map? expr) (->> (dissoc expr :$type)

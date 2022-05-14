@@ -374,27 +374,29 @@
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
 
-      'no-value- :Unset
+      'no-value- :Unset ; deprecated
+      'no-value :Unset
       {:$type :ws/Maybe$v1} [:Instance :ws/Maybe$v1]
       {:$type :ws/Maybe$v1 :x 1} [:Instance :ws/Maybe$v1]
+      {:$type :ws/Maybe$v1 :x 'no-value} [:Instance :ws/Maybe$v1]
       {:$type :ws/Maybe$v1 :x 'no-value-} [:Instance :ws/Maybe$v1]
       '(get m :x) [:Maybe :Integer]
       '(if-value x (+ x 1) 1) :Integer
-      '(let [x no-value-] (if-value x x 1)) :Integer
-      '(if-value no-value- 42 "foo") :String
-      '(if-value- no-value- 42 "foo") :String ;; deprecated
+      '(let [x no-value] (if-value x x 1)) :Integer
+      '(if-value no-value 42 "foo") :String
+      '(if-value- no-value 42 "foo") :String ;; deprecated
       '(if-value x "foo" true) :Object
       '(if-value- x "foo" true) :Object ;; deprecated
       '(if-value x x (when true "foo")) :Any
       '(when-value x "foo") [:Maybe :String]
       '(when-value x (+ x 1)) [:Maybe :Integer]
-      '(when-value no-value- "foo") :Unset
-      '(some? no-value-) :Boolean
+      '(when-value no-value "foo") :Unset
+      '(some? no-value) :Boolean
       '(some? x) :Boolean
       '(= no-value- x) :Boolean
       '(= 5 x) :Boolean
-      '(if-value-let [y no-value-] 42 "foo") :String
-      '(if-value-let [y no-value-] (if-value y 4 5) "foo") :String
+      '(if-value-let [y no-value] 42 "foo") :String
+      '(if-value-let [y no-value] (if-value y 4 5) "foo") :String
       '(if-value-let [y x] "foo" true) :Object
       '(if-value-let [y (get m :x)] y 5) :Integer)
 
@@ -402,6 +404,7 @@
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
       '(let [no-value- 12] "ha") #"reserved word"
+      '(let [no-value 12] "ha") #"reserved word"
       '(if-value 12 true false) #"must be a bare symbol"
       '(when-value 12 true) #"must be a bare symbol"
       '(+ 10 (if-value x no-value- 5)) #"no matching signature for '\+'"
@@ -418,11 +421,12 @@
            (= v (halite/eval-expr senv tenv env expr))
 
         'no-value- :Unset
+        'no-value :Unset
         {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
         '(get m :x) :Unset
         '(if-value x x 12) 12
-        '(let [y no-value-] (if-value y "foo" true)) true
-        '(let [y no-value-] (if-value- y "foo" true)) true ;; deprecated
+        '(let [y no-value] (if-value y "foo" true)) true
+        '(let [y no-value] (if-value- y "foo" true)) true ;; deprecated
         '(when-value x 12) :Unset
         '(let [y (when true "foo")] (when-value y 12)) 12
         '(= x (get m :x)) true
@@ -439,7 +443,7 @@
   ;; We want to limit the ways in which [:Maybe <T>] can be used.
   ;; Specifically:
   ;; 1) [:Set [:Maybe <T>]] and [:Vec [:Maybe <T>]] are not valid types!
-  ;;    We want `no-value-` to represent the absence of a value, and you
+  ;;    We want `no-value` to represent the absence of a value, and you
   ;;    can't put a value you don't have in a collection!
   ;; 2) [:Maybe [:Maybe <T>]] is not a valid type!
   (let [tenv (halite-envs/extend-scope tenv 'x [:Maybe :Integer])]
