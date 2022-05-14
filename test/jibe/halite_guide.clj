@@ -1114,6 +1114,55 @@
 
   (hc :basic-2
       :spec
-      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))] (if-value v [1] [])) [:Vec :Integer] [] "{ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) }" "[]"]))
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))] (if-value v [1] [])) [:Vec :Integer] [] "{ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) }" "[]"])
+
+  (hc :basic-2
+      :spec
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)) w (if-value v v v)] (if-value w 1 2)) :Integer 2 "{ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); w = (ifValue(v) {v} else {v}); (ifValue(w) {1} else {2}) }" "2"])
+
+  (hc :basic-2
+      :spec
+      [{:$type :spec/A$v1, :p 10, :n -1} :spec/A$v1 [:throws "invalid instance of 'spec/B$v1', violates constraints px"] "{$type: spec/A$v1, n: -1, p: 10}" [:throws "invalid instance of 'spec/B$v1', violates constraints px"]])
+
+  (hc :basic-2
+      :spec
+      [(refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/A$v1) :spec/A$v1 [:throws "invalid instance of 'spec/B$v1', violates constraints px"] "{$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/A$v1 )" [:throws "invalid instance of 'spec/B$v1', violates constraints px"]])
+
+  (hc :basic-2
+      :spec
+      [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/A$v1) :spec/A$v1 {:$type :spec/A$v1, :p 1, :n -1} "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/A$v1 )" "{$type: spec/A$v1, n: -1, p: 1}"])
+
+  (hc :basic-2
+      :spec
+      [(valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1)) [:Maybe :spec/C$v1] [:throws "No active refinement path from 'spec/A$v1' to 'spec/C$v1'"] "(valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))" [:throws "No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+
+  (hc :basic-2
+      :spec
+      [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1)) :Boolean [:throws "No active refinement path from 'spec/A$v1' to 'spec/C$v1'"] "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))" [:throws "No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+
+  (hc :basic-2
+      :spec
+      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1) :Boolean false "{$type: spec/A$v1, n: -1, p: 1}.refinesTo?( spec/C$v1 )" "false"])
+
+  (hc :basic-2
+      :spec
+      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/A$v1) :Boolean true "{$type: spec/A$v1, n: -1, p: 1}.refinesTo?( spec/A$v1 )" "true"])
+
+  (hc :basic-2
+      :spec
+      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/X$v1) [:throws "Spec not found: 'spec/X$v1'"]]))
+
+(deftest test-misc-types
+  (h #"a" [:throws "Syntax error"])
+  (h \a [:throws "Syntax error"])
+  (h :a [:throws "Syntax error"])
+  (h (1 2 3) [:throws "function '1' not found"])
+  (h () [:throws "function '' not found"])
+  (h nil [:throws "Syntax error"])
+  (hf (ex-info "fail" {}) [:throws "Syntax error"])
+  (hf (fn []) [:throws "Syntax error"])
+  (hf (random-uuid) [:throws "Syntax error"])
+  (hf (make-array String 1) [:throws "Syntax error"])
+  (hf #inst "2018-03-28T10:48:00.000-00:00" [:throws "Syntax error"]))
 
 ;; (time (run-tests))
