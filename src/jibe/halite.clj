@@ -26,6 +26,9 @@
 
 (def ^:private ^:dynamic *refinements*)
 
+(defn- long? [value]
+  (instance? Long value))
+
 (s/defn ^:private eval-predicate :- s/Bool
   [ctx :- EvalContext, tenv :- (s/protocol TypeEnv), err-msg :- s/Str, bool-expr]
   (try
@@ -45,9 +48,6 @@
   [inst spec-id]
   (or (= spec-id (:$type inst))
       (boolean (get (:refinements (meta inst)) spec-id))))
-
-(defn- long? [value]
-  (instance? Long value))
 
 (s/defn ^:private concrete? :- s/Bool
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
@@ -156,7 +156,7 @@
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
       (let [field-type (substitute-instance-type (:senv ctx) (get field-types field-kw))
-            actual-type (check-fn  ctx field-val)]
+            actual-type (check-fn ctx field-val)]
         (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
                           {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
@@ -265,6 +265,58 @@
                         [:Integer :Integer] [:Vec :Integer]
                         [:Integer] [:Vec :Integer])}))
 
+(s/defn syntax-check
+  [expr]
+  (cond
+    (boolean? expr) true
+    (long? expr) true
+    (string? expr) true
+    (symbol? expr) true
+    (keyword? expr) true
+    (map? expr) (and (or (:$type expr)
+                         (throw (ex-info "instance literal must have :$type field" {:expr expr})))
+                     (->> expr
+                          (mapcat identity)
+                          (map syntax-check)
+                          dorun))
+    (seq? expr) (and (or (#{'concrete?
+                            'sort-by
+                            'first
+                            'rest
+                            'if
+                            'any?
+                            'valid
+                            'concat
+                            'when
+                            'union
+                            '=
+                            'every?
+                            'if-value-
+                            'refines-to?
+                            'into
+                            'valid?
+                            'let
+                            'map
+                            'reduce
+                            'not=
+                            'get
+                            'difference
+                            'if-value
+                            'refine-to
+                            'conj
+                            'intersection
+                            'get*
+                            'filter} (first expr))
+                         (get builtins (first expr))
+                         (throw (ex-info "unknown function or operator" {:op (first expr)
+                                                                         :expr expr})))
+                     (->> (rest expr)
+                          (map syntax-check)
+                          dorun))
+    (or (vector? expr)
+        (set? expr)) (->> (map syntax-check expr) dorun)
+    :else (throw (ex-info "Syntax error" {:form expr}))))
+
 (s/defn ^:private matches-signature?
   [sig :- FnSignature, actual-types :- [HaliteType]]
   (let [{:keys [arg-types variadic-tail]} sig]
@@ -365,7 +417,7 @@
         m (meet s t)]
     (when (not= :Boolean pred-type)
       (throw (ex-info "First argument to 'if' must be boolean" {:form expr})))
-    (when (and (not= m s) (not= m t))
+    (when (and (not= m :Instance) (not= m s) (not= m t))
       (throw (ex-info "then and else branches to 'if' have incompatible types" {:form expr})))
     m))
 
