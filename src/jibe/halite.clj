@@ -403,23 +403,23 @@
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (reduce
      (fn [s t]
-       (let [m (meet s t)]
-         (when (and (not= m s) (not= m t))
-           (throw (ex-info (format "Arguments to '%s' have incompatible types" (first expr)) {:form expr})))
-         m))
+       (let [j (join s t)]
+         (when (= j :Nothing)
+           (throw (ex-info (format "Result of '%s' would always be %s"
+                                   (first expr)
+                                   (if (= '= (first expr)) "false" "true"))
+                           {:form expr})))
+         j))
      arg-types))
   :Boolean)
 
 (s/defn ^:private type-check-if :- HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 3 expr)
-  (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))
-        m (meet s t)]
+  (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
       (throw (ex-info "First argument to 'if' must be boolean" {:form expr})))
-    (when (and (not= m :Instance) (not= m s) (not= m t))
-      (throw (ex-info "then and else branches to 'if' have incompatible types" {:form expr})))
-    m))
+    (meet s t)))
 
 (s/defn ^:private type-check-when :- HaliteType
   [ctx :- TypeContext, expr]
@@ -537,12 +537,8 @@
           (type-check* (update ctx :tenv extend-scope sym :Any) set-expr)
           unset-type)
         (let [inner-type (second sym-type)
-              set-type (type-check* (update ctx :tenv extend-scope sym inner-type) set-expr)
-              m (meet set-type unset-type)]
-          (when (and (not= m set-type) (not= m unset-type))
-            (throw (ex-info (str "then and else branches to '" op "' have incompatible types")
-                            {:form expr, :then-type set-type, :else-type unset-type})))
-          m)))))
+              set-type (type-check* (update ctx :tenv extend-scope sym inner-type) set-expr)]
+          (meet set-type unset-type))))))
 
 (defn- check-all-sets [[op :as expr] arg-types]
   (when-not (every? #(subtype? % [:Set :Object]) arg-types)

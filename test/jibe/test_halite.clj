@@ -275,15 +275,16 @@
     '(= 1 (+ 2 3)) :Boolean
     '(= [#{}] [#{1} #{2}]) :Boolean
     '(= [#{12}] [#{}]) :Boolean
-    '(not= [#{12}] [#{}]) :Boolean)
+    '(not= [#{12}] [#{}]) :Boolean
+    '(= (when false 5) (when false "foo")) :Boolean)
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
-    '(= 1 "two") #"incompatible types"
-    '(= [] #{}) #"incompatible types"
-    '(not= 1 "two") #"incompatible types"
-    '(not= [] #{}) #"incompatible types")
+    '(= 1 "two") #"would always be false"
+    '(= [] #{}) #"would always be false"
+    '(not= 1 "two") #"would always be true"
+    '(not= [] #{}) #"would always be true")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -291,20 +292,24 @@
     '(= (* 2 3) (+ 2 4)) true
     '(= [1 2 3] [2 1 3]) false
     '(not= (* 2 3) (+ 2 4)) false
-    '(not= [1 2 3] [2 1 3]) true))
+    '(not= [1 2 3] [2 1 3]) true
+    '(= (when false 5) (when false "foo")) true))
 
 (deftest if-tests
   (are [expr etype]
        (= etype (halite/type-check senv tenv expr))
     '(if true 1 2) :Integer
-    '(if false [[]] [[1]]) [:Vec [:Vec :Integer]])
+    '(if false [[]] [[1]]) [:Vec [:Vec :Integer]]
+    '(if true 1 "two") :Object
+    '(conj #{} (if true 1 "two")) [:Set :Object]
+    '(conj (if true #{} []) (if true 1 "two")) [:Coll :Object])
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
+    '(conj #{} (if true (when false 1) 2)) #"possibly unset value"
     '(if true 2) #"Wrong number of arguments"
-    '(if 1 2 3) #"must be boolean"
-    '(if true 1 "two") #"incompatible types")
+    '(if 1 2 3) #"must be boolean")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -359,6 +364,9 @@
       '(let [x no-value-] (if-value x x 1)) :Integer
       '(if-value no-value- 42 "foo") :String
       '(if-value- no-value- 42 "foo") :String ;; deprecated
+      '(if-value x "foo" true) :Object
+      '(if-value- x "foo" true) :Object ;; deprecated
+      '(if-value x x (when true "foo")) :Any
       '(some? no-value-) :Boolean
       '(some? x) :Boolean)
 
@@ -367,10 +375,9 @@
 
       '(let [no-value- 12] "ha") #"reserved word"
       '(if-value 12 true false) #"must be a bare symbol"
+      '(+ 10 (if-value x no-value- 5)) #"no matching signature for '\+'"
       '(let [y 22] (if-value y true false)) #"must have an optional type"
-      '(= "foo" x) #"incompatible types"
-      '(if-value x "foo" true) #"incompatible types"
-      '(if-value- x "foo" true) #"incompatible types") ;; deprecated
+      '(= "foo" x) #"would always be false")
 
     (let [env (halite-envs/env {'m {:$type :ws/Maybe$v1}
                                 'x :Unset})]
@@ -824,11 +831,10 @@
       '(valid {:$type :ws/C :a {:$type :ws/A :x 1 :y 0}}) [:Maybe :ws/C]
       '(let [a {:$type :ws/A :x 1 :y 0}] (valid a)) [:Maybe :ws/A]
       '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) [:Maybe :ws/A]
-      '(valid? {:$type :ws/A, :x 1, :y 0}) :Boolean
+      '(valid? {:$type :ws/A, :x 1, :y 0}) :Boolean)
       ;; These are questionable... 
       ;;'(valid (valid {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
       ;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
-      )
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
@@ -846,9 +852,8 @@
       '(valid {:$type :ws/C :a {:$type :ws/A :x 2 :y 1}}) :Unset
       '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) :Unset
       '(valid? {:$type :ws/A :x 2 :y 1}) false
-      '(valid? {:$type :ws/A :x 1 :y 2}) true
+      '(valid? {:$type :ws/A :x 1 :y 2}) true)))
       ;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 2})) :Unset
-      )))
 
 (deftest abstract-specs
   (let [senv (->TestSpecEnv

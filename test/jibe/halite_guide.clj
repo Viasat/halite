@@ -317,7 +317,7 @@
 
   (h (= 1 0) :Boolean false "(1 == 0)" "false")
 
-  (h (= 1 true) [:throws "Arguments to '=' have incompatible types"])
+  (h (= 1 true) [:throws "Result of '=' would always be false"])
 
   (h (= 1 1 1) :Boolean true "equalTo(1, 1, 1)" "true")
 
@@ -327,7 +327,7 @@
 
   (h (not=) [:throws "Wrong number of arguments to 'not=': expected at least 2, but got 0"])
 
-  (h (not= false 3) [:throws "Arguments to 'not=' have incompatible types"])
+  (h (not= false 3) [:throws "Result of 'not=' would always be true"])
 
   (h (not= 1 2 3) :Boolean true "notEqualTo(1, 2, 3)" "true")
 
@@ -473,7 +473,7 @@
 
   (h (if (> 2 1) false true) :Boolean false "(if((2 > 1)) {false} else {true})" "false")
 
-  (h (if (> 2 1) 9 true) [:throws "then and else branches to 'if' have incompatible types"])
+  (h (if (> 2 1) 9 true) :Object 9 "(if((2 > 1)) {9} else {true})" "9")
 
   (h (if (or (> 2 1) (= 4 5)) (+ 1 2) 99) :Integer 3 "(if(((2 > 1) || (4 == 5))) {(1 + 2)} else {99})" "3"))
 
@@ -1007,13 +1007,13 @@
       [(= {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/A$v1, :p 2, :n -1}) :Boolean false "({$type: spec/A$v1, n: -1, p: 1} == {$type: spec/A$v1, n: -1, p: 2})" "false"])
   (hc :basic-2
       :spec
-      [(= {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}) [:throws "Arguments to '=' have incompatible types"]])
+      [(= {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}) [:throws "Result of '=' would always be false"]])
   (hc :basic-2
       :spec
       [(= (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1) {:$type :spec/B$v1, :x 10, :y -1}) :Boolean true "({$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 ) == {$type: spec/B$v1, x: 10, y: -1})" "true"])
   (hc :basic-2
       :spec
-      [(= {:$type :spec/A$v1, :p 1, :n -1} (get {:$type :spec/B$v1, :x 10, :y -1} :z)) [:throws "Arguments to '=' have incompatible types"]])
+      [(= {:$type :spec/A$v1, :p 1, :n -1} (get {:$type :spec/B$v1, :x 10, :y -1} :z)) [:throws "Result of '=' would always be false"]])
   ;; TODO
   (hc :basic-2
       :spec
@@ -1214,11 +1214,11 @@
 
   (hc :basic-2
       :spec
-      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] "no")) [:throws "then and else branches to 'if-value' have incompatible types"]])
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] "no")) :Object [1] "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {\"no\"}) }" "[1]"])
 
   (hc :basic-2
       :spec
-      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] ["no"])) [:throws "then and else branches to 'if-value' have incompatible types"]])
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] ["no"])) [:Vec :Object] [1] "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[\"no\"]}) }" "[1]"])
 
   (hc :basic-2
       :spec
