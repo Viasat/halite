@@ -9,7 +9,8 @@
             [jibe.logic.jadeite :as jadeite]
             [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]]
             [jibe.logic.test-setup-specs :as test-setup-specs :refer [*spec-store*]]
-            [internal :refer :all]))
+            [internal :refer :all])
+  (:import [clojure.lang ExceptionInfo]))
 
 (defmacro h
   [expr & args]
@@ -488,38 +489,35 @@
 
   (h "\t\n" :String "\t\n" "\"\\t\\n\"" "\"\\t\\n\"")
 
-  ;; TODO
-  (h (concat "" "") [:throws "First argument to 'concat' must be a set or vector"])
+  ;; TODO need to work out what functions work on strings
+  (do
+    (h (concat "" "") [:throws "First argument to 'concat' must be a set or vector"])
 
-  ;; TODO
-  (h (count "") [:throws "no matching signature for 'count'"])
+    (h (count "") [:throws "no matching signature for 'count'"])
 
-  (h (count "a") [:throws "no matching signature for 'count'"])
+    (h (count "a") [:throws "no matching signature for 'count'"])
 
-  (h (= "" "") :Boolean true "(\"\" == \"\")" "true")
+    (h (= "" "") :Boolean true "(\"\" == \"\")" "true")
 
-  (h (= "a" "") :Boolean false "(\"a\" == \"\")" "false")
+    (h (= "a" "") :Boolean false "(\"a\" == \"\")" "false")
 
-  (h (= "a" "b") :Boolean false "(\"a\" == \"b\")" "false")
+    (h (= "a" "b") :Boolean false "(\"a\" == \"b\")" "false")
 
-  (h (= "a" "a") :Boolean true "(\"a\" == \"a\")" "true")
+    (h (= "a" "a") :Boolean true "(\"a\" == \"a\")" "true")
 
-  ;; TODO: confirm expected
-  (h (first "") [:throws "Argument to 'first' must be a vector"])
+    (h (first "") [:throws "Argument to 'first' must be a vector"])
 
-  (h (first "a") [:throws "Argument to 'first' must be a vector"])
+    (h (first "a") [:throws "Argument to 'first' must be a vector"])
 
-  (h (rest "ab") [:throws "Argument to 'rest' must be a vector"])
+    (h (rest "ab") [:throws "Argument to 'rest' must be a vector"])
 
-  (h (contains? "ab" "a") [:throws "no matching signature for 'contains?'"])
+    (h (contains? "ab" "a") [:throws "no matching signature for 'contains?'"])
 
-  (h (union "" "a") [:throws "Arguments to 'union' must be sets"])
+    (h (union "" "a") [:throws "Arguments to 'union' must be sets"])
 
-  ;; TODO:
+    (h (get "" 0) [:throws "First argument to get must be an instance of known type or non-empty vector"])
 
-  (h (get "" 0) [:throws "First argument to get must be an instance of known type or non-empty vector"])
-
-  (h (get "ab" 1) [:throws "First argument to get must be an instance of known type or non-empty vector"]))
+    (h (get "ab" 1) [:throws "First argument to get must be an instance of known type or non-empty vector"])))
 
 (deftest test-string-bool
   (h (and "true" false) [:throws "no matching signature for 'and'"])
@@ -894,8 +892,11 @@
                                                 (constraints)
                                                 (refinements)))]})
 
-(defmacro hc [workspaces workspace-id raw-args]
-  (let [[expr & args] raw-args
+(defmacro hc [workspaces workspace-id comment? & raw-args]
+  (let [raw-args (if (string? comment?)
+                   (first raw-args)
+                   comment?)
+        [expr & args] raw-args
         [expected-t result-expected j-expr-expected j-result-expected] args]
     `(test-setup-specs/setup-specs ~(if (keyword? workspaces)
                                       `'~(workspaces-map workspaces)
@@ -1297,106 +1298,154 @@
   (hf (vals {:a '+ :b 1 :c 2}) :Integer 3 "(1 + 2)" "3")
   (hf (cons '+ (cons 2 (cons 3 '()))) :Integer 5 "(2 + 3)" "5"))
 
-(deftest test-component-construction
-  ;; TODO: since T is concrete, C should not be possible to use in :t
+;; systematically test ways in which instances are created and used
+
+(deftest test-instantiate-use
+  (hc [(workspace :spec
+                  {:spec/T [true]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(get {:$type :spec/T$v1, :n 1} :n) :Integer 1 "{$type: spec/T$v1, n: 1}.n" "1"])
+  (hc [(workspace :spec
+                  {:spec/T [true]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(valid {:$type :spec/T$v1, :n 1}) [:Maybe :spec/T$v1] {:$type :spec/T$v1, :n 1} "(valid {$type: spec/T$v1, n: 1})" "{$type: spec/T$v1, n: 1}"])
+  (hc [(workspace :spec
+                  {:spec/T [true]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(valid? {:$type :spec/T$v1, :n 1}) :Boolean true "(valid? {$type: spec/T$v1, n: 1})" "true"])
+  (hc [(workspace :spec
+                  {:spec/T [true]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1, :n 1} "{$type: spec/T$v1, n: 1}.refineTo( spec/T$v1 )" "{$type: spec/T$v1, n: 1}"])
+
+  (hc [(workspace :spec
+                  {:spec/T [false]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(get {:$type :spec/T$v1, :n 1} :n) :Integer 1 "{$type: spec/T$v1, n: 1}.n" "1"])
+  (hc [(workspace :spec
+                  {:spec/T [false]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(valid {:$type :spec/T$v1, :n 1}) [:Maybe :spec/T$v1] {:$type :spec/T$v1, :n 1} "(valid {$type: spec/T$v1, n: 1})" "{$type: spec/T$v1, n: 1}"])
+  (hc [(workspace :spec
+                  {:spec/T [false]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(valid? {:$type :spec/T$v1, :n 1}) :Boolean true "(valid? {$type: spec/T$v1, n: 1})" "true"])
+  (hc [(workspace :spec
+                  {:spec/T [false]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1, :n 1} "{$type: spec/T$v1, n: 1}.refineTo( spec/T$v1 )" "{$type: spec/T$v1, n: 1}"]))
+
+(deftest test-component-use
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/V [true]}
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements))
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(get {:$type :spec/V$v1, :t {:$type :spec/T$v1, :n 1}} :t) :spec/T$v1 {:$type :spec/T$v1, :n 1} "{$type: spec/V$v1, t: {$type: spec/T$v1, n: 1}}.t" "{$type: spec/T$v1, n: 1}"])
+
   (hc [(workspace :spec
                   {:spec/T [true]
                    :spec/C [true]
-                   :spec/U [true]
                    :spec/V [true]}
-                  (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :U
-                        (variables [:s :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
                   (spec :C
                         (variables)
                         (constraints)
-                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                        (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
                   (spec :T
-                        (variables)
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements))
+                  (spec :V
+                        (variables [:t :spec/T$v1])
                         (constraints)
                         (refinements)))]
       :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
-
-  ;; TODO
-  (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/C [false]
-                   :spec/U [true]
-                   :spec/V [true]}
-                  (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :U
-                        (variables [:s :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
-                  (spec :C
-                        (variables)
-                        (constraints)
-                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
-      :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
-
-  ;; TODO
-  (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/S [false]
-                   :spec/C [false]
-                   :spec/U [true]
-                   :spec/V [true]}
-                  (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
-                  (spec :C
-                        (variables)
-                        (constraints)
-                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
-                                     [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-      :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
+      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of :t has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T [false]
-                   :spec/S [false]
                    :spec/C [false]
-                   :spec/U [true]
                    :spec/V [true]}
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
+                        (refinements))
                   (spec :V
                         (variables [:t :spec/T$v1])
                         (constraints)
+                        (refinements)))]
+      :spec
+      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/V$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/V$v1, t: {$type: spec/C$v1}}" [:throws "instance cannot contain abstract value"]])
+
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [true]}
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
+                  (spec :T
+                        (variables [:n "Integer"])
+                        (constraints)
                         (refinements))
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :Instance {:$type :spec/C$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t" "{$type: spec/C$v1}"]))
+
+(deftest test-instantiate-construction
+  ;; T concrete
+  ;; S != T => S abstract, T refines to S
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/S [false]
+                   :spec/U [true]}
                   (spec :U
                         (variables [:s :spec/S$v1])
                         (constraints)
@@ -1405,22 +1454,119 @@
                         (variables)
                         (constraints)
                         (refinements))
-                  (spec :C
-                        (variables)
-                        (constraints)
-                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
-                                     [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
                   (spec :T
                         (variables)
                         (constraints)
-                        (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
+                        (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} :spec/U$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}" [:throws "instance cannot contain abstract value"]])
+      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} :spec/U$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/U$v1, s: {$type: spec/T$v1}}" [:throws "instance cannot contain abstract value"]])
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/S [true]
+                   :spec/U [true]}
+                  (spec :U
+                        (variables [:s :spec/S$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :S
+                        (variables)
+                        (constraints)
+                        (refinements))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
+      :spec
+      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of :s has wrong type"]])
 
-  ;; TODO
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/S [true]
+                   :spec/U [true]}
+                  (spec :U
+                        (variables [:s :spec/S$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :S
+                        (variables)
+                        (constraints)
+                        (refinements))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
+      :spec
+      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of :s has wrong type"]])
+
   (hc [(workspace :spec
                   {:spec/T [true]
                    :spec/S [false]
+                   :spec/U [true]}
+                  (spec :U
+                        (variables [:s :spec/S$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :S
+                        (variables)
+                        (constraints)
+                        (refinements))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
+      :spec
+      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/T$v1}}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
+
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/U [true]}
+                  (spec :U
+                        (variables [:s :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/T$v1}}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"]))
+
+(deftest test-component-construction
+  ;; S = T => T concrete
+  ;; S != T => (T (concrete) refines to S (abstract)) or (S (concrete) refines to T (abstract)) or (S & T abstract, some type C refines to both of them)
+  
+  ;; C = T => T concrete and S abstract
+  ;; C = S = T => T concrete
+  ;; C = S => S concrete
+  ;; C != S != T => T abstract, S abstract, C concrete, C refines to T, C refines to S
+
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/U [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :U
+                        (variables [:s :spec/C$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :s has wrong type"]])
+
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/S [true]
                    :spec/C [true]
                    :spec/U [true]
                    :spec/V [true]}
@@ -1439,18 +1585,112 @@
                   (spec :C
                         (variables)
                         (constraints)
-                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
-                                     [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      "Since T is concrete, cannot use another type in its place"
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/S [false]
+                   :spec/U [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :U
+                        (variables [:s :spec/S$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :S
+                        (variables)
+                        (constraints)
+                        (refinements))
                   (spec :T
                         (variables)
                         (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
-
-  ;;
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/T$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
   (hc [(workspace :spec
                   {:spec/T [true]
+                   :spec/U [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :U
+                        (variables [:s :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :S
+                        (variables)
+                        (constraints)
+                        (refinements))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      "Since T is concrete, T = C = S"
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/T$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
+
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/C [false]
+                   :spec/U [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :U
+                        (variables [:s :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :S
+                        (variables)
+                        (constraints)
+                        (refinements))
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      "Nonsense to try and use an abstract instance in a place that needs a concrete instance"
+      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of :t has wrong type"]])
+
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [false]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/V$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/V$v1, t: {$type: spec/C$v1}}" [:throws "instance cannot contain abstract value"]])
+
+  ;; TODO
+  (hc [(workspace :spec
+                  {:spec/T [false]
                    :spec/S [true]
                    :spec/C [true]
                    :spec/U [true]
@@ -1477,7 +1717,32 @@
                         (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
+      "This should fail because s is concrete, so it cannot hold a C"
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :s has wrong type"]])
+
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/S [true]
+                   :spec/U [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :U
+                        (variables [:s :spec/S$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :S
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
+      :spec
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/S$v1}} :t)} [:throws "value of :s has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T [false]
@@ -1511,7 +1776,7 @@
 
   (hc [(workspace :spec
                   {:spec/T [false]
-                   :spec/S [true]
+                   :spec/S [false]
                    :spec/C [true]
                    :spec/U [true]
                    :spec/V [true]}
@@ -1535,12 +1800,13 @@
                   (spec :T
                         (variables)
                         (constraints)
-                        (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
+                        (refinements)))]
       :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :s has wrong type"]]))
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/C$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/C$v1}}"])
+  )
 
 (deftest test-refine-to-construction
-  ;; S != T => T must be concrete, T must refine to T, S must be abstract
+  ;; S != T => T must be concrete, S must be abstract
   (hc [(workspace :spec
                   {:spec/T [true]
                    :spec/S [false]
@@ -1699,5 +1965,326 @@
                         (refinements)))]
       :spec
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} :spec/U$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" [:throws "instance cannot contain abstract value"]]))
+
+(deftest test-component-refinement
+  ;; T = C = R & T concrete
+  (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
+                        (hc [(workspace :spec
+                                        {:spec/T [false]
+                                         :spec/C [true]
+                                         :spec/V [true]
+                                         :spec/R [true]}
+                                        (spec :V
+                                              (variables [:t :spec/T$v1])
+                                              (constraints)
+                                              (refinements [:as_r :to :spec/R$v1 [:halite "t"]]))
+                                        (spec :C
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
+                                                           [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
+                                        (spec :T
+                                              (variables)
+                                              (constraints)
+                                              (refinements))
+                                        (spec :R
+                                              (variables)
+                                              (constraints)
+                                              (refinements)))]
+                            :spec
+                            "fails because refinement expression is of type :Instance, but cannot work because R is not C, so the refinement type would not match, even if it knew it was a C in this case"
+                            [(refine-to {:$type :spec/V$v1 :t {:$type :spec/C$v1}} :spec/R$v1)])))
+
+  ;; TODO
+  (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
+                        (hc [(workspace :spec
+                                        {:spec/T [false]
+                                         :spec/C [true]
+                                         :spec/V [true]}
+                                        (spec :V
+                                              (variables [:t :spec/T$v1])
+                                              (constraints)
+                                              (refinements [:as_c :to :spec/C$v1 [:halite "t"]]))
+                                        (spec :C
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                                        (spec :T
+                                              (variables)
+                                              (constraints)
+                                              (refinements)))]
+                            :spec
+                            "fails because refinement expression is of type :Instance. This effectively means that the type of t is C"
+                            [(refine-to {:$type :spec/V$v1 :t {:$type :spec/C$v1}} :spec/C$v1)])))
+
+  (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
+                        (hc [(workspace :spec
+                                        {:spec/T [false]
+                                         :spec/C [true]
+                                         :spec/V [false]}
+                                        (spec :V
+                                              (variables [:t :spec/T$v1])
+                                              (constraints)
+                                              (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
+                                        (spec :C
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                                        (spec :T
+                                              (variables)
+                                              (constraints)
+                                              (refinements)))]
+                            :spec
+                            "fails because refinement expression is of type :Instance"
+                            [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1)])))
+
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
+
+  ;;
+  
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "(refine-to t :spec/T$v1)"]]))
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      "This doesn't count because it has `refine-to` invocation around the field"
+      [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
+  
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/V [true]
+                   :spec/R [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements [:as_r :to :spec/R$v1 [:halite "(refine-to t :spec/R$v1)"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
+                  (spec :R
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      "This doesn't count because it has `refine-to` invocation around the field"
+      [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/R$v1) :spec/R$v1 {:$type :spec/R$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/R$v1 )" "{$type: spec/R$v1}"])
+
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements [:as_c :to :spec/C$v1 [:halite "(refine-to t :spec/C$v1)"]]))
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      "This doesn't count because it has `refine-to` invocation around the field"
+      [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/C$v1) :spec/C$v1 {:$type :spec/C$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/C$v1 )" "{$type: spec/C$v1}"])
+  )
+
+(deftest test-instantiate-refinement
+  (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
+       (hc [(workspace :spec
+                                        {:spec/U [true]
+                                         :spec/T [true]
+                                         :spec/R [true]}
+                                        (spec :U
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/T$v1}"]]))
+                                        (spec :T
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
+                                        (spec :R
+                                              (variables)
+                                              (constraints)
+                                              (refinements)))]
+                            :spec
+                            [(refine-to {:$type :spec/U$v1} :spec/R$v1)])))
+
+  (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
+                        (hc [(workspace :spec
+                                        {:spec/U [true]
+                                         :spec/T [true]
+                                         :spec/C [true]
+                                         :spec/R [true]}
+                                        (spec :U
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_r :to :spec/R$v1 [:halite "(refine-to {:$type :spec/C$v1} :spec/T$v1)"]]))
+                                        (spec :C
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                                        (spec :T
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
+                                        (spec :R
+                                              (variables)
+                                              (constraints)
+                                              (refinements)))]
+                            :spec
+                            [(refine-to {:$type :spec/U$v1} :spec/R$v1)])))
+
+  (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
+                        (hc [(workspace :spec
+                                        {:spec/U [true]
+                                         :spec/T [false]
+                                         :spec/R [true]}
+                                        (spec :U
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/T$v1}"]]))
+                                        (spec :T
+                                              (variables)
+                                              (constraints)
+                                              (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
+                                        (spec :R
+                                              (variables)
+                                              (constraints)
+                                              (refinements)))]
+                            :spec
+                            [(refine-to {:$type :spec/U$v1} :spec/R$v1)])))
+  
+  )
+
+(deftest test-component-refine-to
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
+
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t) :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
+
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [true]
+                   :spec/N [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
+                                     [:as_n :to :spec/N$v1 [:halite "{:$type :spec/N$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements))
+                  (spec :N
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/N$v1) :spec/N$v1 {:$type :spec/N$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )" "{$type: spec/N$v1}"])
+
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [true]
+                   :spec/N [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :C
+                        (variables)
+                        (constraints)
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements))
+                  (spec :N
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/N$v1) :spec/N$v1 [:throws "No active refinement path from 'spec/C$v1' to 'spec/N$v1'"] "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )" [:throws "No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]])
+
+  (hc [(workspace :spec
+                  {:spec/T [true]
+                   :spec/V [true]
+                   :spec/N [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (constraints)
+                        (refinements))
+                  (spec :T
+                        (variables)
+                        (constraints)
+                        (refinements [:as_n :to :spec/N$v1 [:halite "{:$type :spec/N$v1}"]]))
+                  (spec :N
+                        (variables)
+                        (constraints)
+                        (refinements)))]
+      :spec
+      [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t) :spec/N$v1) :spec/N$v1 {:$type :spec/N$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/N$v1 )" "{$type: spec/N$v1}"])
+
+  )
 
 ;; (time (run-tests))
