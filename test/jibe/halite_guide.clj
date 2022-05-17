@@ -1534,7 +1534,7 @@
 (deftest test-component-construction
   ;; S = T => T concrete
   ;; S != T => (T (concrete) refines to S (abstract)) or (S (concrete) refines to T (abstract)) or (S & T abstract, some type C refines to both of them)
-  
+
   ;; C = T => T concrete and S abstract
   ;; C = S = T => T concrete
   ;; C = S => S concrete
@@ -1802,8 +1802,7 @@
                         (constraints)
                         (refinements)))]
       :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/C$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/C$v1}}"])
-  )
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/C$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/C$v1}}"]))
 
 (deftest test-refine-to-construction
   ;; S != T => T must be concrete, S must be abstract
@@ -2053,7 +2052,7 @@
       [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
 
   ;;
-  
+
   (hc [(workspace :spec
                   {:spec/T [false]
                    :spec/C [true]
@@ -2073,7 +2072,7 @@
       :spec
       "This doesn't count because it has `refine-to` invocation around the field"
       [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
-  
+
   (hc [(workspace :spec
                   {:spec/T [true]
                    :spec/V [true]
@@ -2112,12 +2111,11 @@
                         (refinements)))]
       :spec
       "This doesn't count because it has `refine-to` invocation around the field"
-      [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/C$v1) :spec/C$v1 {:$type :spec/C$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/C$v1 )" "{$type: spec/C$v1}"])
-  )
+      [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/C$v1) :spec/C$v1 {:$type :spec/C$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/C$v1 )" "{$type: spec/C$v1}"]))
 
 (deftest test-instantiate-refinement
   (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
-       (hc [(workspace :spec
+                        (hc [(workspace :spec
                                         {:spec/U [true]
                                          :spec/T [true]
                                          :spec/R [true]}
@@ -2179,9 +2177,7 @@
                                               (constraints)
                                               (refinements)))]
                             :spec
-                            [(refine-to {:$type :spec/U$v1} :spec/R$v1)])))
-  
-  )
+                            [(refine-to {:$type :spec/U$v1} :spec/R$v1)]))))
 
 (deftest test-component-refine-to
   (hc [(workspace :spec
@@ -2283,8 +2279,6 @@
                         (constraints)
                         (refinements)))]
       :spec
-      [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t) :spec/N$v1) :spec/N$v1 {:$type :spec/N$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/N$v1 )" "{$type: spec/N$v1}"])
-
-  )
+      [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t) :spec/N$v1) :spec/N$v1 {:$type :spec/N$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/N$v1 )" "{$type: spec/N$v1}"]))
 
 ;; (time (run-tests))

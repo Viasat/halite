@@ -141,7 +141,6 @@
                                [:Maybe t]))
                            s)])))
 
-
 (defspec prop-ptn-round-trip
   {:num-tests 1000}
   (prop/for-all [t gen-type]

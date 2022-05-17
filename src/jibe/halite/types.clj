@@ -89,10 +89,9 @@
       :else t)
     (if maybe? [:Maybe t] t)))
 
-#_
-(defn subtypes-svg []
-  (spit "types.dot" (edges-dot @*edges))
-  (clojure.java.shell/sh "dot" "-Tpng" "-O" "types.dot"))
+#_(defn subtypes-svg []
+    (spit "types.dot" (edges-dot @*edges))
+    (clojure.java.shell/sh "dot" "-Tpng" "-O" "types.dot"))
 
 (s/defn bare? :- s/Bool
   "true if the symbol or keyword lacks a namespace component, false otherwise"
@@ -190,24 +189,24 @@
   "True if s is a subtype of t, and false otherwise."
   [s :- HaliteType, t :- HaliteType]
   (or (= s t)
-    (let [sp (type-ptn s)
-          tp (type-ptn t)
-          gsp (genericize-ptn sp)
-          gtp (genericize-ptn tp)
-          super-ptns (@*ptn-supertypes-set gsp)]
-      (if-not (contains? super-ptns gtp)
-        false ;; t's graph node does not appear in s's supertypes.
-        (if (every? symbol? [(:arg gtp) (:arg gsp)])
+      (let [sp (type-ptn s)
+            tp (type-ptn t)
+            gsp (genericize-ptn sp)
+            gtp (genericize-ptn tp)
+            super-ptns (@*ptn-supertypes-set gsp)]
+        (if-not (contains? super-ptns gtp)
+          false ;; t's graph node does not appear in s's supertypes.
+          (if (every? symbol? [(:arg gtp) (:arg gsp)])
           ;; If both nodes have type params, those params must be compared
-          (do
-            (assert (= (:arg gsp) (:arg gtp))
-                    (str "Type graph musn't mix meaning of T in same subtype relation: "
-                         (pr-str sp tp)))
-            (case (:kind sp)
-              (:Vec :Set :Coll) (subtype? (:arg sp) (:arg tp))
-              (:Instance) (= (:arg sp) (:arg tp))))
+            (do
+              (assert (= (:arg gsp) (:arg gtp))
+                      (str "Type graph musn't mix meaning of T in same subtype relation: "
+                           (pr-str sp tp)))
+              (case (:kind sp)
+                (:Vec :Set :Coll) (subtype? (:arg sp) (:arg tp))
+                (:Instance) (= (:arg sp) (:arg tp))))
           ;; A lone type param is free, and no params means the node match was sufficient
-          true)))))
+            true)))))
 
 (s/defn meet :- HaliteType
   "The 'least' supertype of s and t. Formally, return the type m such that all are true:
