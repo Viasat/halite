@@ -953,6 +953,27 @@
                                                j-expr#
                                                j-result#))))))
 
+
+(deftest test-stuff
+  (h (get (if true #{} [9 8 7 6]) (+ 1 2)) [:throws "First argument to get must be an instance of known type or non-empty vector"])
+
+  (hc :basic :my [(get (if true {:$type :my/Spec$v1, :n -3, :p 2} [9 8 7 6]) (+ 1 2)) [:throws "First argument to get must be an instance of known type or non-empty vector"]])
+
+  (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o (div 5 0) 1)) :Integer 1 "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {(5 / 0)} else {1}) }" "1"])
+
+  (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o 1 (div 5 0))) :Integer [:throws "Divide by zero"] "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {1} else {(5 / 0)}) }" [:throws "Divide by zero"]])
+
+  (h (if true "yes" (div 5 0)) :Object "yes" "(if(true) {\"yes\"} else {(5 / 0)})" "\"yes\"")
+
+  (h (if false "yes" (div 5 0)) :Object [:throws "Divide by zero"] "(if(false) {\"yes\"} else {(5 / 0)})" [:throws "Divide by zero"])
+
+  (h (when false (div 5 0)) [:Maybe :Integer] :Unset "(when(false) {(5 / 0)})" "Unset")
+
+  (h (when true (div 5 0)) [:Maybe :Integer] [:throws "Divide by zero"] "(when(true) {(5 / 0)})" [:throws "Divide by zero"])
+
+  (hc :basic :my [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2})) [:throws "Argument to 'valid?' must be instance-valued"]]))
+
+
 (deftest test-instances
   (h {} [:syntax-check-throws "instance literal must have :$type field"])
 
