@@ -164,7 +164,48 @@
                   (and (halite-types/subtype? s m)
                        (halite-types/subtype? t m)))))
 
-(defspec prop-meet-implication
+(defn prop-meet-implication [s t o]
+  (let [m (halite-types/meet s t)]
+    (cond
+      (and (halite-types/subtype? o s)
+           (halite-types/subtype? o t))
+      (halite-types/subtype? o m)
+
+      (and (halite-types/subtype? s o)
+           (halite-types/subtype? t o))
+      (halite-types/subtype? m o)
+
+      (halite-types/subtype? m o)
+      (and (halite-types/subtype? s o)
+           (halite-types/subtype? t o))
+
+      (and (halite-types/subtype? s o)
+           (halite-types/subtype? o m))
+      (not (halite-types/subtype? t o))
+
+      (and (halite-types/subtype? t o)
+           (halite-types/subtype? o m))
+      (not (halite-types/subtype? s o))
+
+      :else true)))
+
+(def *type-example-seq
+  (delay
+   (->> @halite-types/*ptn-adjacent-sub
+        keys
+        (mapcat #(case (:arg %)
+                   T [(assoc % :arg :Integer) (assoc % :arg :String)]
+                   KW [(assoc % :arg :ws/A) (assoc % :arg :ws/B)]
+                   [%]))
+        (map halite-types/ptn-type))))
+
+(deftest test-shallow-exhaustive-meet-implication
+  (doseq [s @*type-example-seq
+          t @*type-example-seq
+          o @*type-example-seq]
+    (is (prop-meet-implication s t o))))
+
+(defspec test-prop-meet-implication
   {:num-tests 1000
    :reporter-fn (fn [{:keys [type fail]}]
                   (when-let [[s t o] (and (= :shrunk type) fail)]
@@ -172,25 +213,7 @@
   (prop/for-all [s gen-type
                  t gen-type
                  o gen-type]
-                (let [m (halite-types/meet s t)]
-                  (cond
-                    (and (halite-types/subtype? o s)
-                         (halite-types/subtype? o t))
-                    (halite-types/subtype? o m)
-
-                    (halite-types/subtype? m o)
-                    (and (halite-types/subtype? s o)
-                         (halite-types/subtype? t o))
-
-                    (and (halite-types/subtype? s o)
-                         (halite-types/subtype? o m))
-                    (not (halite-types/subtype? t o))
-
-                    (and (halite-types/subtype? t o)
-                         (halite-types/subtype? o m))
-                    (not (halite-types/subtype? s o))
-
-                    :else true))))
+                (prop-meet-implication s t o)))
 
 (defspec prop-join-subtype
   {:num-tests 1000}
@@ -200,7 +223,36 @@
                   (and (halite-types/subtype? j s)
                        (halite-types/subtype? j t)))))
 
-(defspec prop-join-implication
+(defn prop-join-implication [s t o]
+  (let [j (halite-types/join s t)]
+    (cond
+      (and (halite-types/subtype? o s)
+           (halite-types/subtype? o t))
+      (halite-types/subtype? o j)
+
+      (or (halite-types/subtype? s o)
+          (halite-types/subtype? t o))
+      (halite-types/subtype? j o)
+
+      (and (halite-types/subtype? j o)
+           (halite-types/subtype? o s))
+      (not (halite-types/subtype? t o))
+
+      (and (halite-types/subtype? j o)
+           (halite-types/subtype? o t))
+      (not (halite-types/subtype? s o))
+
+      (halite-types/subtype? o s)
+      (and (not (halite-types/subtype? o t))
+           (not (halite-types/subtype? o j)))
+
+      (halite-types/subtype? o t)
+      (and (not (halite-types/subtype? o s))
+           (not (halite-types/subtype? o j)))
+
+      :else true)))
+
+(defspec test-prop-join-implication
   {:num-tests 1000
    :reporter-fn (fn [{:keys [type fail]}]
                   (when-let [[s t o] (and (= :shrunk type) fail)]
@@ -208,33 +260,8 @@
   (prop/for-all [s gen-type
                  t gen-type
                  o gen-type]
-                (let [j (halite-types/join s t)]
-                  (cond
-                    (and (halite-types/subtype? o s)
-                         (halite-types/subtype? o t))
-                    (halite-types/subtype? o j)
+                (prop-join-implication s t o)))
 
-                    (or (halite-types/subtype? s o)
-                        (halite-types/subtype? t o))
-                    (halite-types/subtype? j o)
-
-                    (and (halite-types/subtype? j o)
-                         (halite-types/subtype? o s))
-                    (not (halite-types/subtype? t o))
-
-                    (and (halite-types/subtype? j o)
-                         (halite-types/subtype? o t))
-                    (not (halite-types/subtype? s o))
-
-                    (halite-types/subtype? o s)
-                    (and (not (halite-types/subtype? o t))
-                         (not (halite-types/subtype? o j)))
-
-                    (halite-types/subtype? o t)
-                    (and (not (halite-types/subtype? o s))
-                         (not (halite-types/subtype? o j)))
-
-                    :else true))))
 (comment
 
   (gen/sample gen-type 30)

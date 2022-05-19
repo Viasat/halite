@@ -20,13 +20,6 @@
                      (tv KW :Instance :Object)
                      (tv [:Set T] [:Coll T] :Object)
                      (tv [:Vec T] [:Coll T])})
-      ;; Formerly Unset:
-      (tv (m :Integer) :Any)
-      (tv (m :String) :Any)
-      (tv (m :Boolean) :Any)
-      (tv (m KW) (m :Instance) :Any)
-      (tv (m [:Set T]) (m [:Coll T]) :Any)
-      (tv (m [:Vec T]) (m [:Coll T]))
       (tv :Nothing :Unset #{(tv (m :Integer) :Any)
                             (tv (m :String) :Any)
                             (tv (m :Boolean) :Any)
@@ -78,8 +71,7 @@
                      (vector? t) t
                      (or (= 'KW t) (and (keyword? t) (namespace t))) [:Instance t]
                      :else [t nil])]
-    {:maybe? maybe? :kind kind :arg arg}
-    #_(TypePtn. maybe? kind arg)))
+    {:maybe? maybe? :kind kind :arg arg}))
 
 (defn ptn-type [{:keys [maybe? kind arg]}]
   (as-> kind t
