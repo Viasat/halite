@@ -865,7 +865,8 @@
                                           {:spec/A [true]
                                            :spec/B [false]
                                            :spec/C [true]
-                                           :spec/D [true]}
+                                           :spec/D [true]
+                                           :spec/E [true]}
                                           (spec :A
                                                 (variables [:p "Integer"]
                                                            [:n "Integer"]
@@ -890,7 +891,11 @@
                                                 (variables [:ao :spec/A$v1 :optional]
                                                            [:co :spec/C$v1 :optional])
                                                 (constraints)
-                                                (refinements)))]})
+                                                (refinements))
+                                          (spec :E
+                                                (variables [:co :spec/C$v1 :optional])
+                                                (constraints)
+                                                (refinements [:as_c :to :spec/C$v1 [:halite "co"]])))]})
 
 (defmacro hc [workspaces workspace-id comment? & raw-args]
   (let [raw-args (if (string? comment?)
@@ -1267,7 +1272,22 @@
 
   (hc :basic-2
       :spec
-      [(get {:$type :spec/A$v1, :p 1, :n -1} :$type) [:throws "No such variable '$type' on spec ':spec/A$v1'"]]))
+      [(get {:$type :spec/A$v1, :p 1, :n -1} :$type) [:throws "No such variable '$type' on spec ':spec/A$v1'"]])
+
+  (hc :basic-2
+      :spec
+      "When a refinement is 'invoked' and the refinement exception does not produce a value, this is a runtime error."
+      [(refine-to {:$type :spec/E$v1} :spec/C$v1) :spec/C$v1 [:throws "No active refinement path from 'spec/E$v1' to 'spec/C$v1'"] "{$type: spec/E$v1}.refineTo( spec/C$v1 )" [:throws "No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]])
+  (hc :basic-2
+      :spec
+      [(refines-to? {:$type :spec/E$v1} :spec/C$v1) :Boolean false "{$type: spec/E$v1}.refinesTo?( spec/C$v1 )" "false"])
+
+  (hc :basic-2
+      :spec
+      [(refine-to {:$type :spec/E$v1, :co {:$type :spec/C$v1}} :spec/C$v1) :spec/C$v1 {:$type :spec/C$v1} "{$type: spec/E$v1, co: {$type: spec/C$v1}}.refineTo( spec/C$v1 )" "{$type: spec/C$v1}"])
+  (hc :basic-2
+      :spec
+      [(refines-to? {:$type :spec/E$v1, :co {:$type :spec/C$v1}} :spec/C$v1) :Boolean true "{$type: spec/E$v1, co: {$type: spec/C$v1}}.refinesTo?( spec/C$v1 )" "true"]))
 
 (deftest test-misc-types
   (h #"a" [:syntax-check-throws "Syntax error"])
