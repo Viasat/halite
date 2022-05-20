@@ -40,7 +40,7 @@
   (extend-scope* [self sym t]))
 
 (s/defn scope :- {BareSymbol HaliteType}
-  "The scope of th current type environment."
+  "The scope of the current type environment."
   [tenv :- (s/protocol TypeEnv)]
   (scope* tenv))
 
