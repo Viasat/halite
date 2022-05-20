@@ -1974,4 +1974,117 @@
       :spec
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t) :spec/N$v1) :spec/N$v1 {:$type :spec/N$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/N$v1 )" "{$type: spec/N$v1}"]))
 
+(deftest test-exception-handling-instances-vs-refinements
+  (let [ws [(workspace :spec
+                       {:spec/Inc [true]}
+                       (spec :Inc
+                             (variables [:x "Integer"]
+                                        [:y "Integer"])
+                             (constraints [:main [:halite (pr-str '(= (inc x) y))]])))]]
+    ;; instances & constraint violations
+    (hc ws
+        :spec
+        "Instance literal that meets all the constraints produces an instance"
+        [{:$type :spec/Inc$v1, :x 1, :y 2} :spec/Inc$v1 {:$type :spec/Inc$v1, :x 1, :y 2} "{$type: spec/Inc$v1, x: 1, y: 2}" "{$type: spec/Inc$v1, x: 1, y: 2}"])
+    (hc ws
+        :spec
+        "Instance literal that violates a constraint throws a runtime error"
+        [{:$type :spec/Inc$v1, :x 1, :y 1} :spec/Inc$v1 [:throws "invalid instance of 'spec/Inc$v1', violates constraints main"] "{$type: spec/Inc$v1, x: 1, y: 1}" [:throws "invalid instance of 'spec/Inc$v1', violates constraints main"]])
+    (hc ws
+        :spec
+        "`valid?` catches the constraint violations to produce a boolean"
+        [(valid? {:$type :spec/Inc$v1, :x 1, :y 1}) :Boolean false "(valid? {$type: spec/Inc$v1, x: 1, y: 1})" "false"])
+    (hc [(workspace :spec
+                    {:spec/Inc [true]
+                     :spec/BigInc [true]
+                     :spec/Ratio [true]}
+                    (spec :Inc
+                          (variables [:x "Integer"]
+                                     [:y "Integer"])
+                          (constraints [:main [:halite (pr-str '(= (inc x) y))]])
+                          (refinements [:as_big_inc :to :spec/BigInc$v1 [:halite "(when (>= x 100) {:$type :spec/BigInc$v1, :x x, :y y})"]]))
+                    (spec :BigInc
+                          (variables [:x "Integer"]
+                                     [:y "Integer"]))
+                    (spec :Ratio
+                          (variables [:x "Integer"]
+                                     [:y "Integer"]
+                                     [:r "Integer"])
+                          (constraints [:main [:halite (pr-str '(= r (div x y)))]])))]
+        :spec
+        "valid` catches the constraint violations to produce a `Maybe`"
+        [(valid {:$type :spec/Inc$v1, :x 1, :y 1}) [:Maybe :spec/Inc$v1] :Unset "(valid {$type: spec/Inc$v1, x: 1, y: 1})" "Unset"]))
+
+  (let [ws [(workspace :spec
+                       {:spec/Ratio [true]}
+                       (spec :Ratio
+                             (variables [:x "Integer"]
+                                        [:y "Integer"]
+                                        [:r "Integer"])
+                             (constraints [:main [:halite (pr-str '(= r (div x y)))]])))]]
+
+    (hc ws
+        :spec
+        [{:$type :spec/Ratio$v1, :x 6, :y 3, :r 2} :spec/Ratio$v1 {:$type :spec/Ratio$v1, :x 6, :y 3, :r 2} "{$type: spec/Ratio$v1, r: 2, x: 6, y: 3}" "{$type: spec/Ratio$v1, r: 2, x: 6, y: 3}"])
+    (hc ws
+        :spec
+        "A runtime error in a spec expression results in a runtime error to the user"
+        [{:$type :spec/Ratio$v1, :x 6, :y 0, :r 8} :spec/Ratio$v1 [:throws "Divide by zero"] "{$type: spec/Ratio$v1, r: 8, x: 6, y: 0}" [:throws "Divide by zero"]])
+    (hc ws
+        :spec
+        "`valid?` does not handle these exceptions"
+        [(valid? {:$type :spec/Ratio$v1, :x 6, :y 0, :r 8}) :Boolean [:throws "Divide by zero"] "(valid? {$type: spec/Ratio$v1, r: 8, x: 6, y: 0})" [:throws "Divide by zero"]])
+    (hc ws
+        :spec
+        "nor does `valid`"
+        [(valid {:$type :spec/Ratio$v1, :x 6, :y 0, :r 8}) [:Maybe :spec/Ratio$v1] [:throws "Divide by zero"] "(valid {$type: spec/Ratio$v1, r: 8, x: 6, y: 0})" [:throws "Divide by zero"]]))
+
+  (let [ws [(workspace :spec
+                       {:spec/Inc [true]
+                        :spec/BigInc [true]
+                        :spec/Meatball [true]}
+                       (spec :Inc
+                             (variables [:x "Integer"]
+                                        [:y "Integer"])
+                             (constraints [:main [:halite (pr-str '(= (inc x) y))]])
+                             (refinements [:as_big_inc :to :spec/BigInc$v1 [:halite "(when (>= x 100) {:$type :spec/BigInc$v1, :x x, :y y})"]]))
+                       (spec :BigInc
+                             (variables [:x "Integer"]
+                                        [:y "Integer"]))
+                       (spec :Meatball))]]
+    (hc ws
+        :spec
+        "If the refinement expression produces a value then an instance value is produced"
+        [(refine-to {:$type :spec/Inc$v1, :x 200, :y 201} :spec/BigInc$v1) :spec/BigInc$v1 {:$type :spec/BigInc$v1, :x 200, :y 201} "{$type: spec/Inc$v1, x: 200, y: 201}.refineTo( spec/BigInc$v1 )" "{$type: spec/BigInc$v1, x: 200, y: 201}"])
+    (hc ws
+        :spec
+        "If the refinement expression produces :Unset, then a runtime exception is thrown"
+        [(refine-to {:$type :spec/Inc$v1, :x 1, :y 2} :spec/BigInc$v1) :spec/BigInc$v1 [:throws "No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"] "{$type: spec/Inc$v1, x: 1, y: 2}.refineTo( spec/BigInc$v1 )" [:throws "No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]])
+    (hc ws
+        :spec
+        "The same runtime exception is thrown if we try to refine an instance to a completely unrelated spec"
+        [(refine-to {:$type :spec/Inc$v1, :x 1, :y 2} :spec/Meatball$v1) :spec/Meatball$v1 [:throws "No active refinement path from 'spec/Inc$v1' to 'spec/Meatball$v1'"] "{$type: spec/Inc$v1, x: 1, y: 2}.refineTo( spec/Meatball$v1 )" [:throws "No active refinement path from 'spec/Inc$v1' to 'spec/Meatball$v1'"]])
+    (hc ws
+        :spec
+        [(refines-to? {:$type :spec/Inc$v1, :x 1, :y 2} :spec/BigInc$v1) :Boolean false "{$type: spec/Inc$v1, x: 1, y: 2}.refinesTo?( spec/BigInc$v1 )" "false"])
+
+    (hc ws
+        :spec
+        [(refines-to? {:$type :spec/Inc$v1, :x 1, :y 2} :spec/Meatball$v1) :Boolean false "{$type: spec/Inc$v1, x: 1, y: 2}.refinesTo?( spec/Meatball$v1 )" "false"]))
+
+  (let [ws [(workspace :spec
+                       {:spec/Inc [true]
+                        :spec/BigInc [true]}
+                       (spec :Inc
+                             (refinements [:as_big_inc :to :spec/BigInc$v1 [:halite "(when (>= (div 1 0) 100) {:$type :spec/BigInc$v1})"]]))
+                       (spec :BigInc))]]
+    (hc ws
+        :spec
+        "A legit runtime error in a refinement is propagated to the user"
+        [(refine-to {:$type :spec/Inc$v1} :spec/BigInc$v1) :spec/BigInc$v1 [:throws "Divide by zero"] "{$type: spec/Inc$v1}.refineTo( spec/BigInc$v1 )" [:throws "Divide by zero"]])
+    (hc ws
+        :spec
+        "A legit runtime error is not handled by `refines-to?`"
+        [(refines-to? {:$type :spec/Inc$v1} :spec/BigInc$v1) :Boolean [:throws "Divide by zero"] "{$type: spec/Inc$v1}.refinesTo?( spec/BigInc$v1 )" [:throws "Divide by zero"]])))
+
 ;; (time (run-tests))
