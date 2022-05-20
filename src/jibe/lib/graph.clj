@@ -1,7 +1,8 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.lib.graph)
+(ns jibe.lib.graph
+  (:require [clojure.set :as set]))
 
 ;; dependency cycle detection
 
@@ -36,3 +37,29 @@
     (if x
       (recur (detect-cycle* [] checked x deps-f) ys)
       checked)))
+
+(defn find-reachable
+  "Find all of the nodes reachable starting at x and following the dependencies returned from deps-f."
+  [x deps-f]
+  (loop [[v & vs] #{x}
+         visited #{}]
+    (if v
+      (recur (into (set vs) (set/difference (deps-f v) visited))
+             (conj visited v))
+      visited)))
+
+(defn find-roots
+  "Find all of the nodes in xs which are roots, per the dependencies
+  returned from deps-f, i.e. the ones which only have outgoing
+  dependencies."
+  [xs deps-f]
+  (set/difference xs (set (keys (loop [adjacency {}
+                                       [x & ys] xs]
+                                  (if x
+                                    (recur (reduce
+                                            (fn [adjacency y]
+                                              (update-in adjacency [y] conj x))
+                                            adjacency
+                                            (deps-f x))
+                                           ys)
+                                    adjacency))))))
