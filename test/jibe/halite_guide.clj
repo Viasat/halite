@@ -850,8 +850,7 @@
                                                          [:n "Integer"]
                                                          [:o "Integer" :optional])
                                               (constraints [:pc [:halite "(> p 0)"]]
-                                                           [:pn [:halite "(< n 0)"]])
-                                              (refinements)))]
+                                                           [:pn [:halite "(< n 0)"]])))]
                      :basic-abstract [(workspace :my
                                                  {:my/Spec [false]}
                                                  (spec :Spec
@@ -859,8 +858,7 @@
                                                                   [:n "Integer"]
                                                                   [:o "Integer" :optional])
                                                        (constraints [:pc [:halite "(> p 0)"]]
-                                                                    [:pn [:halite "(< n 0)"]])
-                                                       (refinements)))]
+                                                                    [:pn [:halite "(< n 0)"]])))]
                      :basic-2 [(workspace :spec
                                           {:spec/A [true]
                                            :spec/B [false]
@@ -881,20 +879,13 @@
                                                            [:z "Integer" :optional])
                                                 (constraints [:px [:halite "(< x 100)"]]
                                                              [:py [:halite "(> y -100)"]]
-                                                             [:pz [:halite "(not= z 0)"]])
-                                                (refinements))
-                                          (spec :C
-                                                (variables)
-                                                (constraints)
-                                                (refinements))
+                                                             [:pz [:halite "(not= z 0)"]]))
+                                          (spec :C)
                                           (spec :D
                                                 (variables [:ao :spec/A$v1 :optional]
-                                                           [:co :spec/C$v1 :optional])
-                                                (constraints)
-                                                (refinements))
+                                                           [:co :spec/C$v1 :optional]))
                                           (spec :E
                                                 (variables [:co :spec/C$v1 :optional])
-                                                (constraints)
                                                 (refinements [:as_c :to :spec/C$v1 [:halite "co"]])))]})
 
 (defmacro hc [workspaces workspace-id comment? & raw-args]
@@ -979,7 +970,7 @@
 
   (hc [(workspace :my
                   {:my/Spec [true]}
-                  (spec :Spec (variables) (constraints) (refinements)))]
+                  (spec :Spec))]
       :my
       [{:$type :my/Spec$v1} :my/Spec$v1 {:$type :my/Spec$v1} "{$type: my/Spec$v1}" "{$type: my/Spec$v1}"])
 
@@ -1343,66 +1334,50 @@
   (hc [(workspace :spec
                   {:spec/T [true]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:n "Integer"])))]
       :spec
       [(get {:$type :spec/T$v1, :n 1} :n) :Integer 1 "{$type: spec/T$v1, n: 1}.n" "1"])
   (hc [(workspace :spec
                   {:spec/T [true]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:n "Integer"])))]
       :spec
       [(valid {:$type :spec/T$v1, :n 1}) [:Maybe :spec/T$v1] {:$type :spec/T$v1, :n 1} "(valid {$type: spec/T$v1, n: 1})" "{$type: spec/T$v1, n: 1}"])
   (hc [(workspace :spec
                   {:spec/T [true]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:n "Integer"])))]
       :spec
       [(valid? {:$type :spec/T$v1, :n 1}) :Boolean true "(valid? {$type: spec/T$v1, n: 1})" "true"])
   (hc [(workspace :spec
                   {:spec/T [true]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:n "Integer"])))]
       :spec
       [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1, :n 1} "{$type: spec/T$v1, n: 1}.refineTo( spec/T$v1 )" "{$type: spec/T$v1, n: 1}"])
 
   (hc [(workspace :spec
                   {:spec/T [false]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:n "Integer"])))]
       :spec
       [(get {:$type :spec/T$v1, :n 1} :n) :Integer 1 "{$type: spec/T$v1, n: 1}.n" "1"])
   (hc [(workspace :spec
                   {:spec/T [false]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:n "Integer"])))]
       :spec
       [(valid {:$type :spec/T$v1, :n 1}) [:Maybe :spec/T$v1] {:$type :spec/T$v1, :n 1} "(valid {$type: spec/T$v1, n: 1})" "{$type: spec/T$v1, n: 1}"])
   (hc [(workspace :spec
                   {:spec/T [false]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:n "Integer"])))]
       :spec
       [(valid? {:$type :spec/T$v1, :n 1}) :Boolean true "(valid? {$type: spec/T$v1, n: 1})" "true"])
   (hc [(workspace :spec
                   {:spec/T [false]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:n "Integer"])))]
       :spec
       [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1, :n 1} "{$type: spec/T$v1, n: 1}.refineTo( spec/T$v1 )" "{$type: spec/T$v1, n: 1}"]))
 
@@ -1411,13 +1386,9 @@
                   {:spec/T [true]
                    :spec/V [true]}
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements))
+                        (variables [:n "Integer"]))
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:t :spec/T$v1])))]
       :spec
       [(get {:$type :spec/V$v1, :t {:$type :spec/T$v1, :n 1}} :t) :spec/T$v1 {:$type :spec/T$v1, :n 1} "{$type: spec/V$v1, t: {$type: spec/T$v1, n: 1}}.t" "{$type: spec/T$v1, n: 1}"])
 
@@ -1426,17 +1397,11 @@
                    :spec/C [true]
                    :spec/V [true]}
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements))
+                        (variables [:n "Integer"]))
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:t :spec/T$v1])))]
       :spec
       [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of :t has wrong type"]])
 
@@ -1445,17 +1410,11 @@
                    :spec/C [false]
                    :spec/V [true]}
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements))
+                        (variables [:n "Integer"]))
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:t :spec/T$v1])))]
       :spec
       [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/V$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/V$v1, t: {$type: spec/C$v1}}" [:throws "instance cannot contain abstract value"]])
 
@@ -1464,17 +1423,11 @@
                    :spec/C [true]
                    :spec/V [true]}
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
                   (spec :T
-                        (variables [:n "Integer"])
-                        (constraints)
-                        (refinements))
+                        (variables [:n "Integer"]))
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements)))]
+                        (variables [:t :spec/T$v1])))]
       :spec
       [(get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :Instance {:$type :spec/C$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t" "{$type: spec/C$v1}"]))
 
@@ -1486,16 +1439,9 @@
                    :spec/S [false]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} :spec/U$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/U$v1, s: {$type: spec/T$v1}}" [:throws "instance cannot contain abstract value"]])
@@ -1504,16 +1450,9 @@
                    :spec/S [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of :s has wrong type"]])
@@ -1523,16 +1462,9 @@
                    :spec/S [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of :s has wrong type"]])
@@ -1542,16 +1474,9 @@
                    :spec/S [false]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/T$v1}}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
@@ -1560,13 +1485,8 @@
                   {:spec/T [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                        (variables [:s :spec/T$v1]))
+                  (spec :T))]
       :spec
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/T$v1}}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"]))
 
@@ -1585,21 +1505,12 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/C$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/C$v1]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :s has wrong type"]])
 
@@ -1610,25 +1521,13 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       "Since T is concrete, cannot use another type in its place"
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
@@ -1638,20 +1537,11 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/T$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
@@ -1660,21 +1550,11 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                        (variables [:s :spec/T$v1]))
+                  (spec :S)
+                  (spec :T))]
       :spec
       "Since T is concrete, T = C = S"
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/T$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
@@ -1685,25 +1565,13 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/T$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       "Nonsense to try and use an abstract instance in a place that needs a concrete instance"
       [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of :t has wrong type"]])
@@ -1713,17 +1581,10 @@
                    :spec/C [false]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/V$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/V$v1, t: {$type: spec/C$v1}}" [:throws "instance cannot contain abstract value"]])
 
@@ -1735,25 +1596,14 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
                                      [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       "This should fail because s is concrete, so it cannot hold a C"
@@ -1765,20 +1615,12 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
                   (spec :S
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/S$v1}} :t)} [:throws "value of :s has wrong type"]])
@@ -1790,25 +1632,14 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
                                      [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/C$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/C$v1}}"])
@@ -1820,26 +1651,14 @@
                    :spec/U [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
                                      [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/C$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/C$v1}}"]))
 
@@ -1851,20 +1670,11 @@
                    :spec/C [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
@@ -1875,21 +1685,11 @@
                    :spec/C [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} :spec/U$v1 [:throws "No active refinement path from 'spec/T$v1' to 'spec/S$v1'"] "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" [:throws "No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]])
 
@@ -1899,20 +1699,11 @@
                    :spec/C [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} :spec/U$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" [:throws "instance cannot contain abstract value"]])
@@ -1923,20 +1714,11 @@
                    :spec/C [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:throws "value of :s has wrong type"]])
@@ -1947,20 +1729,11 @@
                    :spec/S [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/S$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :S
-                        (variables)
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/S$v1]))
+                  (spec :S)
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:throws "value of :s has wrong type"]])
@@ -1971,17 +1744,10 @@
                    :spec/C [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/T$v1]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} :spec/U$v1 {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
 
@@ -1990,17 +1756,10 @@
                    :spec/C [true]
                    :spec/U [true]}
                   (spec :U
-                        (variables [:s :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:s :spec/T$v1]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} :spec/U$v1 [:throws "instance cannot contain abstract value"] "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" [:throws "instance cannot contain abstract value"]]))
 
@@ -2014,21 +1773,12 @@
                                          :spec/R [true]}
                                         (spec :V
                                               (variables [:t :spec/T$v1])
-                                              (constraints)
                                               (refinements [:as_r :to :spec/R$v1 [:halite "t"]]))
                                         (spec :C
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
                                                            [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-                                        (spec :T
-                                              (variables)
-                                              (constraints)
-                                              (refinements))
-                                        (spec :R
-                                              (variables)
-                                              (constraints)
-                                              (refinements)))]
+                                        (spec :T)
+                                        (spec :R))]
                             :spec
                             "fails because refinement expression is of type :Instance, but cannot work because R is not C, so the refinement type would not match, even if it knew it was a C in this case"
                             [(refine-to {:$type :spec/V$v1 :t {:$type :spec/C$v1}} :spec/R$v1)])))
@@ -2041,16 +1791,10 @@
                                          :spec/V [true]}
                                         (spec :V
                                               (variables [:t :spec/T$v1])
-                                              (constraints)
                                               (refinements [:as_c :to :spec/C$v1 [:halite "t"]]))
                                         (spec :C
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                                        (spec :T
-                                              (variables)
-                                              (constraints)
-                                              (refinements)))]
+                                        (spec :T))]
                             :spec
                             "fails because refinement expression is of type :Instance. This effectively means that the type of t is C"
                             [(refine-to {:$type :spec/V$v1 :t {:$type :spec/C$v1}} :spec/C$v1)])))
@@ -2062,16 +1806,10 @@
                                          :spec/V [false]}
                                         (spec :V
                                               (variables [:t :spec/T$v1])
-                                              (constraints)
                                               (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
                                         (spec :C
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                                        (spec :T
-                                              (variables)
-                                              (constraints)
-                                              (refinements)))]
+                                        (spec :T))]
                             :spec
                             "fails because refinement expression is of type :Instance"
                             [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1)])))
@@ -2081,12 +1819,8 @@
                    :spec/V [true]}
                   (spec :V
                         (variables [:t :spec/T$v1])
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
 
@@ -2098,16 +1832,10 @@
                    :spec/V [true]}
                   (spec :V
                         (variables [:t :spec/T$v1])
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "(refine-to t :spec/T$v1)"]]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       "This doesn't count because it has `refine-to` invocation around the field"
       [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
@@ -2118,16 +1846,10 @@
                    :spec/R [true]}
                   (spec :V
                         (variables [:t :spec/T$v1])
-                        (constraints)
                         (refinements [:as_r :to :spec/R$v1 [:halite "(refine-to t :spec/R$v1)"]]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-                  (spec :R
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :R))]
       :spec
       "This doesn't count because it has `refine-to` invocation around the field"
       [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/R$v1) :spec/R$v1 {:$type :spec/R$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/R$v1 )" "{$type: spec/R$v1}"])
@@ -2138,16 +1860,10 @@
                    :spec/V [true]}
                   (spec :V
                         (variables [:t :spec/T$v1])
-                        (constraints)
                         (refinements [:as_c :to :spec/C$v1 [:halite "(refine-to t :spec/C$v1)"]]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       "This doesn't count because it has `refine-to` invocation around the field"
       [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/C$v1) :spec/C$v1 {:$type :spec/C$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/C$v1 )" "{$type: spec/C$v1}"]))
@@ -2159,17 +1875,10 @@
                                          :spec/T [true]
                                          :spec/R [true]}
                                         (spec :U
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/T$v1}"]]))
                                         (spec :T
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-                                        (spec :R
-                                              (variables)
-                                              (constraints)
-                                              (refinements)))]
+                                        (spec :R))]
                             :spec
                             [(refine-to {:$type :spec/U$v1} :spec/R$v1)])))
 
@@ -2180,21 +1889,12 @@
                                          :spec/C [true]
                                          :spec/R [true]}
                                         (spec :U
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_r :to :spec/R$v1 [:halite "(refine-to {:$type :spec/C$v1} :spec/T$v1)"]]))
                                         (spec :C
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
                                         (spec :T
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-                                        (spec :R
-                                              (variables)
-                                              (constraints)
-                                              (refinements)))]
+                                        (spec :R))]
                             :spec
                             [(refine-to {:$type :spec/U$v1} :spec/R$v1)])))
 
@@ -2204,17 +1904,10 @@
                                          :spec/T [false]
                                          :spec/R [true]}
                                         (spec :U
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/T$v1}"]]))
                                         (spec :T
-                                              (variables)
-                                              (constraints)
                                               (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-                                        (spec :R
-                                              (variables)
-                                              (constraints)
-                                              (refinements)))]
+                                        (spec :R))]
                             :spec
                             [(refine-to {:$type :spec/U$v1} :spec/R$v1)]))))
 
@@ -2224,17 +1917,10 @@
                    :spec/C [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T))]
       :spec
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
 
@@ -2242,13 +1928,8 @@
                   {:spec/T [true]
                    :spec/V [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                        (variables [:t :spec/T$v1]))
+                  (spec :T))]
       :spec
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t) :spec/T$v1) :spec/T$v1 {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
 
@@ -2258,22 +1939,12 @@
                    :spec/V [true]
                    :spec/N [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
                                      [:as_n :to :spec/N$v1 [:halite "{:$type :spec/N$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements))
-                  (spec :N
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T)
+                  (spec :N))]
       :spec
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/N$v1) :spec/N$v1 {:$type :spec/N$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )" "{$type: spec/N$v1}"])
 
@@ -2283,21 +1954,11 @@
                    :spec/V [true]
                    :spec/N [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :C
-                        (variables)
-                        (constraints)
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                  (spec :T
-                        (variables)
-                        (constraints)
-                        (refinements))
-                  (spec :N
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :T)
+                  (spec :N))]
       :spec
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/N$v1) :spec/N$v1 [:throws "No active refinement path from 'spec/C$v1' to 'spec/N$v1'"] "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )" [:throws "No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]])
 
@@ -2306,17 +1967,10 @@
                    :spec/V [true]
                    :spec/N [true]}
                   (spec :V
-                        (variables [:t :spec/T$v1])
-                        (constraints)
-                        (refinements))
+                        (variables [:t :spec/T$v1]))
                   (spec :T
-                        (variables)
-                        (constraints)
                         (refinements [:as_n :to :spec/N$v1 [:halite "{:$type :spec/N$v1}"]]))
-                  (spec :N
-                        (variables)
-                        (constraints)
-                        (refinements)))]
+                  (spec :N))]
       :spec
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t) :spec/N$v1) :spec/N$v1 {:$type :spec/N$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/N$v1 )" "{$type: spec/N$v1}"]))
 
