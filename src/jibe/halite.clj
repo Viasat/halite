@@ -510,6 +510,10 @@
       (throw (ex-info (str "Element binding target for '" op "' must be a bare symbol, not: "
                            (pr-str elem))
                       {:form expr :element elem})))
+    (when (= acc elem)
+      (throw (ex-info (str "Cannot use the same symbol for accumulator and element binding: "
+                           (pr-str elem))
+                      {:form expr :accumulator acc :element elem})))
     (let [init-type (type-check* ctx init)
           coll-type (type-check* ctx coll)
           et (elem-type coll-type)]
@@ -652,7 +656,7 @@
       (spec-type? t) [:Maybe t]
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) t
-      :else (throw (ex-info "Argument to 'valid' must be instance-valued" {:form expr})))))
+      :else (throw (ex-info "Argument to 'valid' must be an instance of known type" {:form expr})))))
 
 (s/defn ^:private type-check-valid? :- HaliteType
   [ctx :- TypeContext, [_valid? subexpr :as expr]]
@@ -661,7 +665,7 @@
       (spec-type? t) :Boolean
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
-      :else (throw (ex-info "Argument to 'valid?' must be instance-valued" {:form expr})))))
+      :else (throw (ex-info "Argument to 'valid?' must be an instance of known type" {:form expr})))))
 
 (s/defn ^:private type-check* :- HaliteType
   [ctx :- TypeContext, expr]

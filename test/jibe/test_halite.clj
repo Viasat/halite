@@ -839,8 +839,8 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
-      '(valid 1) #"must be instance-valued"
-      '(valid? 1) #"must be instance-valued")
+      '(valid 1) #"must be an instance of known type"
+      '(valid? 1) #"must be an instance of known type")
 
     (are [expr v]
          (= v (halite/eval-expr senv tenv empty-env expr))

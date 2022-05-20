@@ -729,6 +729,9 @@
 (deftest test-vector
   (h [] [:Vec :Nothing] [] "[]" "[]")
 
+  (hf ['x 'y] [:throws "Undefined: 'x'"])
+  (h [:x :y] [:throws "Syntax error"])
+
   (h [1 2] [:Vec :Integer] [1 2] "[1, 2]" "[1, 2]")
 
   (h [[] [1] ["a" true]] [:Vec [:Vec :Object]] [[] [1] ["a" true]] "[[], [1], [\"a\", true]]" "[[], [1], [\"a\", true]]")
@@ -961,7 +964,8 @@
 
   (h (when true (div 5 0)) [:Maybe :Integer] [:throws "Divide by zero"] "(when(true) {(5 / 0)})" [:throws "Divide by zero"])
 
-  (hc :basic :my [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2})) [:throws "Argument to 'valid?' must be instance-valued"]]))
+  (hc :basic :my
+      [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2})) [:throws "Argument to 'valid?' must be an instance of known type"]]))
 
 (deftest test-instances
   (h {} [:syntax-check-throws "instance literal must have :$type field"])
@@ -2099,6 +2103,8 @@
   (h (map) [:throws "Wrong number of arguments to 'map': expected 2, but got 0"])
   (h (map (inc x)) [:throws "Wrong number of arguments to 'map': expected 2, but got 1"])
   (h (map (inc x) [x []]) [:throws "Undefined: 'x'"])
+  (hc [(workspace :spec {:spec/A [true]} (spec :A (variables [:x "Integer"])))] :spec
+      [(map [x {:$type :spec/A$v1, :x 1}] true) [:throws "collection required for 'map', not :spec/A$v1"]])
 
   (h (map [x [10 11 12]] (inc x)) [:Vec :Integer] [11 12 13] "map(x in [10, 11, 12])(x + 1)" "[11, 12, 13]")
   (h (map [x ["a" "b" "c"]] x) [:Vec :String] ["a" "b" "c"] "map(x in [\"a\", \"b\", \"c\"])x" "[\"a\", \"b\", \"c\"]")
@@ -2119,7 +2125,7 @@
       [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (get (refine-to x :spec/A$v1) :x)) [:Vec :Integer] [:throws "No active refinement path from 'spec/B$v1' to 'spec/A$v1'"] "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x" [:throws "No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
   ;; TODO
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
-      [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (valid x)) [:throws "Argument to 'valid' must be instance-valued"]])
+      [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (valid x)) [:throws "Argument to 'valid' must be an instance of known type"]])
 
   (h (map [x #{}] x) [:Set :Nothing] #{} "map(x in #{})x" "#{}")
   (h (map [x #{1 3 2}] x) [:Set :Integer] #{1 3 2} "map(x in #{1, 2, 3})x" "#{1, 2, 3}")
@@ -2128,9 +2134,8 @@
   (h (map [x #{"a" "b" "c"}] x) [:Set :String] #{"a" "b" "c"} "map(x in #{\"a\", \"b\", \"c\"})x" "#{\"a\", \"b\", \"c\"}")
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
       [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] x) [:Set :Instance] #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}} "map(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}})x" "#{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}}"])
-  ;; TODO
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
-      [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] (valid x)) [:throws "Argument to 'valid' must be instance-valued"]])
+      [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] (valid x)) [:throws "Argument to 'valid' must be an instance of known type"]])
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
       [(map [x #{[{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]}] (count x)) [:Set :Integer] #{2} "map(x in #{[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]})x.count()" "#{2}"])
 
@@ -2141,6 +2146,8 @@
   (h (filter 1 2) [:throws "nth not supported on this type: Long"])
   (h (filter [x []] x 1) [:throws "Wrong number of arguments to 'filter': expected 2, but got 3"])
   (h (filter 1 [x []]) [:throws "nth not supported on this type: Long"])
+  (hc [(workspace :spec {:spec/A [true]} (spec :A (variables [:x "Integer"])))] :spec
+      [(filter [x {:$type :spec/A$v1, :x 1}] true) [:throws "collection required for 'filter', not :spec/A$v1"]])
 
   (h (filter [x []] true) [:Vec :Nothing] [] "filter(x in [])true" "[]")
   (h (filter [x #{}] true) [:Set :Nothing] #{} "filter(x in #{})true" "#{}")
@@ -2174,5 +2181,57 @@
       [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (let [x x] (if (refines-to? x :spec/A$v1) (> (get (refine-to x :spec/A$v1) :x) 0) false))) [:Vec :Instance] [{:$type :spec/A$v1, :x 1}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}]){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) }" "[{$type: spec/A$v1, x: 1}]"])
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "Integer"])))] :spec
       [(filter [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}}] (let [x x] (if (refines-to? x :spec/A$v1) (> (get (refine-to x :spec/A$v1) :x) 1) true))) [:Set :Instance] #{{:$type :spec/B$v1, :x 2}} "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}}){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 1)} else {true}) }" "#{{$type: spec/B$v1, x: 2}}"]))
+
+(deftest test-reduce-collections
+  (h (reduce) [:throws "Wrong number of arguments to 'reduce': expected 3, but got 0"])
+  (h (reduce 1 "as" true) [:throws "nth not supported on this type: Long"])
+  (h (reduce [1 2] "as" true) [:throws "Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
+  (h (reduce [1 2] [x 3] true) [:throws "Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
+  (h (reduce [a 2] [x 3] true) [:throws "Second binding expression to 'reduce' must be a vector."])
+  (h (reduce [a [2]] [x 3] true) [:throws "Second binding expression to 'reduce' must be a vector."])
+  (h (reduce [a 2] [x [3]] true) :Boolean true "reduce( a = 2; x in [3] ) { true }" "true")
+  (h (reduce [a 2] [x [3]] (+ a x)) :Integer 5 "reduce( a = 2; x in [3] ) { (a + x) }" "5")
+  (h (reduce [a 0] [x [1 2 3]] (+ a x)) :Integer 6 "reduce( a = 0; x in [1, 2, 3] ) { (a + x) }" "6")
+
+  (h (reduce [a 0] [x []] (+ a x)) [:throws "Disallowed ':Nothing' expression: x"])
+  (h (reduce [a 0] [x []] a) :Integer 0 "reduce( a = 0; x in [] ) { a }" "0")
+  (h (reduce [a 0] [x #{}] (+ a x)) [:throws "Second binding expression to 'reduce' must be a vector."])
+  (h (reduce [a 0] [x #{}] a) [:throws "Second binding expression to 'reduce' must be a vector."])
+
+  (h (reduce [a 0] [x [1 3 2]] (+ a x)) :Integer 6 "reduce( a = 0; x in [1, 3, 2] ) { (a + x) }" "6")
+  (h (reduce [a 1] [x [1 3 2]] (* 2 a)) :Integer 8 "reduce( a = 1; x in [1, 3, 2] ) { (2 * a) }" "8")
+
+  (h (reduce [x 0] [x [1 2 3 4]] (+ x x)) [:throws "Cannot use the same symbol for accumulator and element binding: x"])
+  (h (reduce [x 10] [y [1 2 3 x]] (+ y x)) [:throws "Undefined: 'x'"])
+  (h (reduce [x y] [y [1 2 3 x]] (+ x x)) [:throws "Undefined: 'y'"])
+  (h (reduce [a 0] [x [1 2 3 4]] x) :Integer 4 "reduce( a = 0; x in [1, 2, 3, 4] ) { x }" "4")
+
+  (h (reduce [a 0] [x [[1 2] [3]]] (+ a (count x))) :Integer 3 "reduce( a = 0; x in [[1, 2], [3]] ) { (a + x.count()) }" "3")
+  (h (reduce [a 0] [x #{[3] [1 2]}] (+ a (count x))) [:throws "Second binding expression to 'reduce' must be a vector."])
+  (h (reduce [a 0] [x (sort-by [x #{[3] [1 2]}] (count x))] (+ a (count x))) :Integer 3 "reduce( a = 0; x in sortBy(x in #{[1, 2], [3]})x.count() ) { (a + x.count()) }" "3")
+  (h (reduce [_ 0] [x [[3] [1 2]]] (count x)) :Integer 2 "reduce( <_> = 0; x in [[3], [1, 2]] ) { x.count() }" "2")
+
+  (h (reduce [☺ 0] [x [[3] [1 2]]] (+ ☺ (count x))) :Integer 3 "reduce( <☺> = 0; x in [[3], [1, 2]] ) { (<☺> + x.count()) }" "3")
+
+  (hc [(workspace :spec {:spec/A [true]} (spec :A (variables [:x "Integer"])))] :spec
+      [(reduce [a 0] [x {:$type :spec/A$v1, :x 1}] a) [:throws "Second binding expression to 'reduce' must be a vector."]])
+  (hc [(workspace :spec {:spec/A [true]} (spec :A (variables [:x "Integer"])))] :spec
+      [(reduce [a 10] [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]] (+ a (get x :x))) :Integer 13 "reduce( a = 10; x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}] ) { (a + x.x) }" "13"]))
+
+(deftest test-sort
+  (h (sort) [:throws "no matching signature for 'sort'"])
+  (h (sort 1) [:throws "no matching signature for 'sort'"])
+  (h (sort "abc") [:throws "no matching signature for 'sort'"])
+
+  (h (sort []) [:Vec :Nothing] [] "[].sort()" "[]")
+  (h (sort #{}) [:Vec :Nothing] [] "#{}.sort()" "[]")
+
+  (h (sort [1 2 3]) [:Vec :Integer] [1 2 3] "[1, 2, 3].sort()" "[1, 2, 3]")
+  (h (sort [3 1 2]) [:Vec :Integer] [1 2 3] "[3, 1, 2].sort()" "[1, 2, 3]")
+  (h (sort #{1 3 2}) [:Vec :Integer] [1 2 3] "#{1, 2, 3}.sort()" "[1, 2, 3]")
+  (h (sort ["a" "c" "b"]) [:throws "no matching signature for 'sort'"])
+  (h (sort [[1 2] [3] [4 5 6]]) [:throws "no matching signature for 'sort'"])
+
+  (h (sort-by [x ["a" "c" "b"]] (if (= "a" x) 1 (if (= "b" x) 2 (if (= "c" x) 3 4)))) [:Vec :String] ["a" "b" "c"] "sortBy(x in [\"a\", \"c\", \"b\"])(if((\"a\" == x)) {1} else {(if((\"b\" == x)) {2} else {(if((\"c\" == x)) {3} else {4})})})" "[\"a\", \"b\", \"c\"]"))
 
 ;; (time (run-tests))
