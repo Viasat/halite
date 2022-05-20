@@ -367,8 +367,15 @@
       '(if-value x "foo" true) :Object
       '(if-value- x "foo" true) :Object ;; deprecated
       '(if-value x x (when true "foo")) :Any
+      '(if-value x "foo" true) :Object
       '(some? no-value-) :Boolean
-      '(some? x) :Boolean)
+      '(some? x) :Boolean
+      '(= no-value- x) :Boolean
+      '(= 5 x) :Boolean
+      '(if-value-let [y no-value-] 42 "foo") :String
+      '(if-value-let [y no-value-] (if-value y 4 5) "foo") :String
+      '(if-value-let [y x] "foo" true) :Object
+      '(if-value-let [y (get m :x)] y 5) :Integer)
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
@@ -377,7 +384,10 @@
       '(if-value 12 true false) #"must be a bare symbol"
       '(+ 10 (if-value x no-value- 5)) #"no matching signature for '\+'"
       '(let [y 22] (if-value y true false)) #"must have an optional type"
-      '(= "foo" x) #"would always be false")
+      '(= "foo" x) #"would always be false"
+      '(if-value-let [y no-value-] 42 y) #"Undefined: 'y'"
+      '(= no-value- 5) #"would always be false"
+      '(= m 5) #"would always be false")
 
     (let [env (halite-envs/env {'m {:$type :ws/Maybe$v1}
                                 'x :Unset})]
@@ -393,7 +403,12 @@
         '(= x (get m :x)) true
         '(= 5 (get m :x)) false
         '(some? x) false
-        '(some? m) true))))
+        '(some? m) true
+        '(if-value-let [y no-value-] 42 "foo") "foo"
+        '(if-value-let [y no-value-] (if-value y 4 5) "foo") "foo"
+        '(if-value-let [y x] "foo" true) true
+        '(if-value-let [y (get m :x)] y 5) 5
+        '(if-value-let [y (if true 10 no-value-)] y 5) 10))))
 
 (deftest no-value-restrictions
   ;; We want to limit the ways in which [:Maybe <T>] can be used.

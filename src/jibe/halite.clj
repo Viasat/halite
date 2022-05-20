@@ -538,11 +538,30 @@
                         {:form sym :expected [:Maybe :Any] :actual sym-type})))
       (if (= :Unset sym-type)
         (do
-          (type-check* (update ctx :tenv extend-scope sym :Any) set-expr)
+          (type-check* (update ctx :tenv extend-scope sym :Any) set-expr) ;; Should be :Unset?
           unset-type)
         (let [inner-type (second sym-type)
               set-type (type-check* (update ctx :tenv extend-scope sym inner-type) set-expr)]
           (meet set-type unset-type))))))
+
+(s/defn ^:private type-check-if-value-let :- HaliteType
+  [ctx :- TypeContext, expr :- s/Any]
+  (arg-count-exactly 3 expr)
+  (let [[op [sym maybe-expr] then-expr else-expr] expr]
+    (when-not (and (symbol? sym) (bare? sym))
+      (throw (ex-info (str "Binding target for '" op "' must be a bare symbol") {:form sym})))
+    (let [maybe-type (type-check* ctx maybe-expr)
+          else-type (type-check* ctx else-expr)]
+      (when-not (maybe-type? maybe-type)
+        (throw (ex-info (str "Binding expression in '" op "' must have an optional type")
+                        {:form maybe-expr :expected [:Maybe :Any] :actual maybe-type})))
+      (if (= :Unset maybe-type)
+        (do
+          (type-check* (update ctx :tenv extend-scope sym :Unset) then-expr)
+          else-type)
+        (let [inner-type (second maybe-type)
+              then-type (type-check* (update ctx :tenv extend-scope sym inner-type) then-expr)]
+          (meet then-type else-type))))))
 
 (defn- check-all-sets [[op :as expr] arg-types]
   (when-not (every? #(subtype? % [:Set :Object]) arg-types)
@@ -687,6 +706,7 @@
                   'let (type-check-let ctx expr)
                   'if-value (type-check-if-value ctx expr)
                   'if-value- (type-check-if-value ctx expr) ;; deprecated
+                  'if-value-let (type-check-if-value-let ctx expr)
                   'union (type-check-union ctx expr)
                   'intersection (type-check-intersection ctx expr)
                   'difference (type-check-difference ctx expr)
@@ -747,6 +767,14 @@
   (let [[sym then else] (rest expr)]
     (if (not= :Unset (eval-expr* ctx sym))
       (eval-expr* ctx then)
+      (eval-expr* ctx else))))
+
+(s/defn ^:private eval-if-value-let :- s/Any
+  [ctx :- EvalContext, expr]
+  (let [[[sym maybe] then else] (rest expr)
+        maybe-val (eval-expr* ctx maybe)]
+    (if (not= :Unset maybe-val)
+      (eval-expr* (update ctx :env bind sym maybe-val) then)
       (eval-expr* ctx else))))
 
 (s/defn ^:private eval-quantifier-bools :- [s/Bool]
@@ -816,6 +844,7 @@
                     'let (apply eval-let ctx (rest expr))
                     'if-value (eval-if-value ctx expr)
                     'if-value- (eval-if-value ctx expr) ;; deprecated
+                    'if-value-let (eval-if-value-let ctx expr)
                     'union (reduce set/union (map eval-in-env (rest expr)))
                     'intersection (reduce set/intersection (map eval-in-env (rest expr)))
                     'difference (apply set/difference (map eval-in-env (rest expr)))

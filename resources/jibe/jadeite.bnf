@@ -1,7 +1,8 @@
 expr         = conditional
 params       = symbol      | <'('> (symbol (<','> symbol)* <','>? )? <')'>
 
-conditional  = optional    | ('if' | 'ifValue' ) <'('> conditional <')'> conditional <'else'> conditional
+conditional  = if-value-let| ('if' | 'ifValue' ) <'('> conditional <')'> conditional <'else'> conditional
+if-value-let = optional    | <'ifValueLet'> <'('> symbol <'='> expr <')'> conditional <'else'> conditional
 optional     = valid       | <'when'> <'('> conditional <')'> conditional
 valid        = implication | ('valid?' | 'valid') conditional
 implication  = or          | or <'=>'> conditional

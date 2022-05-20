@@ -35,6 +35,7 @@
    (match [tree]
      [[:lambda [:params & params] body]]  (list 'fn (mapv toh params) (toh body))
      [[:conditional op a b c]]      (list (if (= "if" op) 'if 'if-value) (toh a) (toh b) (toh c))
+     [[:if-value-let sym m t e]]    (list 'if-value-let [(toh sym) (toh m)] (toh t) (toh e))
      [[:optional pred body]]        (list 'when (toh pred) (toh body))
      [[:valid op body]]             (list (symbol op) (toh body))
      [[:implication a b]]           (list '=> (toh a) (toh b))
@@ -179,6 +180,8 @@
                  (if-value if-value-) (str "(ifValue(" (toj a0)
                                            ") {" (toj a1)
                                            "} else {" (toj a2) "})")
+                 if-value-let (apply format "(ifValueLet ( %s = %s ) {%s} else {%s})"
+                                     (map toj [(first a0) (second a0) a1 a2]))
                  inc (str "(" (toj a0) " + 1)")
                  concat (call-method "concat" args)
                  let (let [[bindings expr] args]
