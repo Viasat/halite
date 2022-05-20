@@ -953,7 +953,6 @@
                                                j-expr#
                                                j-result#))))))
 
-
 (deftest test-stuff
   (h (get (if true #{} [9 8 7 6]) (+ 1 2)) [:throws "First argument to get must be an instance of known type or non-empty vector"])
 
@@ -972,7 +971,6 @@
   (h (when true (div 5 0)) [:Maybe :Integer] [:throws "Divide by zero"] "(when(true) {(5 / 0)})" [:throws "Divide by zero"])
 
   (hc :basic :my [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2})) [:throws "Argument to 'valid?' must be instance-valued"]]))
-
 
 (deftest test-instances
   (h {} [:syntax-check-throws "instance literal must have :$type field"])
