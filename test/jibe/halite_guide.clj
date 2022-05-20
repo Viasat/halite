@@ -1297,7 +1297,12 @@
       [(refine-to {:$type :spec/E$v1, :co {:$type :spec/C$v1}} :spec/C$v1) :spec/C$v1 {:$type :spec/C$v1} "{$type: spec/E$v1, co: {$type: spec/C$v1}}.refineTo( spec/C$v1 )" "{$type: spec/C$v1}"])
   (hc :basic-2
       :spec
-      [(refines-to? {:$type :spec/E$v1, :co {:$type :spec/C$v1}} :spec/C$v1) :Boolean true "{$type: spec/E$v1, co: {$type: spec/C$v1}}.refinesTo?( spec/C$v1 )" "true"]))
+      [(refines-to? {:$type :spec/E$v1, :co {:$type :spec/C$v1}} :spec/C$v1) :Boolean true "{$type: spec/E$v1, co: {$type: spec/C$v1}}.refinesTo?( spec/C$v1 )" "true"])
+
+  (hc :basic-2
+      :spec
+      "Cannot use `if-value` with a non-optional value"
+      [(let [v {:$type :spec/A$v1, :p 10, :n -1}] (if-value v 1 2)) [:throws "First argument to 'if-value' must have an optional type"]]))
 
 (deftest test-misc-types
   (h #"a" [:syntax-check-throws "Syntax error"])
@@ -2086,5 +2091,88 @@
         :spec
         "A legit runtime error is not handled by `refines-to?`"
         [(refines-to? {:$type :spec/Inc$v1} :spec/BigInc$v1) :Boolean [:throws "Divide by zero"] "{$type: spec/Inc$v1}.refinesTo?( spec/BigInc$v1 )" [:throws "Divide by zero"]])))
+
+(deftest test-mapping-over-collections
+  (h (map [x]) [:throws "Wrong number of arguments to 'map': expected 2, but got 1"])
+  (h (map [x] x) [:throws "Binding form for 'map' must have one variable and one collection"])
+  (h (map [x []]) [:throws "Wrong number of arguments to 'map': expected 2, but got 1"])
+  (h (map) [:throws "Wrong number of arguments to 'map': expected 2, but got 0"])
+  (h (map (inc x)) [:throws "Wrong number of arguments to 'map': expected 2, but got 1"])
+  (h (map (inc x) [x []]) [:throws "Undefined: 'x'"])
+
+  (h (map [x [10 11 12]] (inc x)) [:Vec :Integer] [11 12 13] "map(x in [10, 11, 12])(x + 1)" "[11, 12, 13]")
+  (h (map [x ["a" "b" "c"]] x) [:Vec :String] ["a" "b" "c"] "map(x in [\"a\", \"b\", \"c\"])x" "[\"a\", \"b\", \"c\"]")
+  (h (map [x []] (inc x)) [:throws "Disallowed ':Nothing' expression: x"])
+  (h (map [x []] x) [:Vec :Nothing] [] "map(x in [])x" "[]")
+  (h (map [x []] (+ 1 2)) [:Vec :Nothing] [] "map(x in [])(1 + 2)" "[]")
+  (h (map [x "abc"] x) [:throws "collection required for 'map', not :String"])
+  (h (map [x 1] x) [:throws "collection required for 'map', not :Integer"])
+  (h (map [x [[1 2] [3 4 5]]] x) [:Vec [:Vec :Integer]] [[1 2] [3 4 5]] "map(x in [[1, 2], [3, 4, 5]])x" "[[1, 2], [3, 4, 5]]")
+  (h (map [x [[1 2] [3 4 5]]] (count x)) [:Vec :Integer] [2 3] "map(x in [[1, 2], [3, 4, 5]])x.count()" "[2, 3]")
+  (h (map [x [#{1 2} #{4 3 5}]] (count x)) [:Vec :Integer] [2 3] "map(x in [#{1, 2}, #{3, 4, 5}])x.count()" "[2, 3]")
+  (h (map [x [1 "a"]] x) [:Vec :Object] [1 "a"] "map(x in [1, \"a\"])x" "[1, \"a\"]")
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
+      [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] x) [:Vec :Instance] [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}] "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x" "[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]"])
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
+      [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (get x :x)) [:throws "First argument to get must be an instance of known type or non-empty vector"]])
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
+      [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (get (refine-to x :spec/A$v1) :x)) [:Vec :Integer] [:throws "No active refinement path from 'spec/B$v1' to 'spec/A$v1'"] "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x" [:throws "No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
+  ;; TODO
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
+      [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (valid x)) [:throws "Argument to 'valid' must be instance-valued"]])
+
+  (h (map [x #{}] x) [:Set :Nothing] #{} "map(x in #{})x" "#{}")
+  (h (map [x #{1 3 2}] x) [:Set :Integer] #{1 3 2} "map(x in #{1, 2, 3})x" "#{1, 2, 3}")
+  (h (map [x #{1 3 2}] (inc x)) [:Set :Integer] #{4 3 2} "map(x in #{1, 2, 3})(x + 1)" "#{2, 3, 4}")
+  (h (map [x #{1 3 2}] 9) [:Set :Integer] #{9} "map(x in #{1, 2, 3})9" "#{9}")
+  (h (map [x #{"a" "b" "c"}] x) [:Set :String] #{"a" "b" "c"} "map(x in #{\"a\", \"b\", \"c\"})x" "#{\"a\", \"b\", \"c\"}")
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
+      [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] x) [:Set :Instance] #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}} "map(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}})x" "#{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}}"])
+  ;; TODO
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
+      [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] (valid x)) [:throws "Argument to 'valid' must be instance-valued"]])
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
+      [(map [x #{[{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]}] (count x)) [:Set :Integer] #{2} "map(x in #{[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]})x.count()" "#{2}"])
+
+  (h (map [x [2 1 0]] (div 1 x)) [:Vec :Integer] [:throws "Divide by zero"] "map(x in [2, 1, 0])(1 / x)" [:throws "Divide by zero"]))
+
+(deftest test-filtering-collections
+  (h (filter) [:throws "Wrong number of arguments to 'filter': expected 2, but got 0"])
+  (h (filter 1 2) [:throws "nth not supported on this type: Long"])
+  (h (filter [x []] x 1) [:throws "Wrong number of arguments to 'filter': expected 2, but got 3"])
+  (h (filter 1 [x []]) [:throws "nth not supported on this type: Long"])
+
+  (h (filter [x []] true) [:Vec :Nothing] [] "filter(x in [])true" "[]")
+  (h (filter [x #{}] true) [:Set :Nothing] #{} "filter(x in #{})true" "#{}")
+  (h (filter [x "abs"] true) [:throws "collection required for 'filter', not :String"])
+  (h (filter [x [1 2 3]] (> x 2)) [:Vec :Integer] [3] "filter(x in [1, 2, 3])(x > 2)" "[3]")
+  (h (filter [x #{1 3 2}] (> x 2)) [:Set :Integer] #{3} "filter(x in #{1, 2, 3})(x > 2)" "#{3}")
+
+  (h (filter [x [0 1]] (> (div 1 x) 1)) [:Vec :Integer] [:throws "Divide by zero"] "filter(x in [0, 1])((1 / x) > 1)" [:throws "Divide by zero"])
+  (h (filter [x #{0 1}] (> (div 1 x) 1)) [:Set :Integer] [:throws "Divide by zero"] "filter(x in #{0, 1})((1 / x) > 1)" [:throws "Divide by zero"])
+
+  (h (filter [x ["a" "b"]] (+ x 1)) [:throws "no matching signature for '+'"])
+  (h (filter [x [1 "a"]] true) [:Vec :Object] [1 "a"] "filter(x in [1, \"a\"])true" "[1, \"a\"]")
+  (h (filter [x #{true false}] x) [:Set :Boolean] #{true} "filter(x in #{false, true})x" "#{true}")
+  (h (filter [x [true false false true]] (not x)) [:Vec :Boolean] [false false] "filter(x in [true, false, false, true])!x" "[false, false]")
+
+  (hc [(workspace :spec {:spec/A [true]} (spec :A (variables [:x "Integer"])))] :spec
+      [(filter [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}] (valid x)) [:throws "Body expression in 'filter' must be boolean"]])
+  (hc [(workspace :spec {:spec/A [true]} (spec :A (variables [:x "Integer"])))] :spec
+      [(filter [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}] (valid? x)) [:Set :spec/A$v1] #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}} "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}})(valid? x)" "#{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}}"])
+  (hc [(workspace :spec {:spec/A [true]} (spec :A (variables [:x "Integer"])))] :spec
+      [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]] (> (get x :x) 1)) [:Vec :spec/A$v1] [{:$type :spec/A$v1, :x 2}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])(x.x > 1)" "[{$type: spec/A$v1, x: 2}]"])
+  (hc [(workspace :spec {:spec/A [true]} (spec :A (variables [:x "Integer"])))] :spec
+      [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]] (refines-to? x :spec/A$v1)) [:Vec :spec/A$v1] [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])x.refinesTo?( spec/A$v1 )" "[{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}]"])
+
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "Integer"])))] :spec
+      [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (refines-to? x :spec/A$v1)) [:Vec :Instance] [{:$type :spec/A$v1, :x 1}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])x.refinesTo?( spec/A$v1 )" "[{$type: spec/A$v1, x: 1}]"])
+
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "Integer"])))] :spec
+      [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (> (get x :x) 1)) [:throws "First argument to get must be an instance of known type or non-empty vector"]])
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "Integer"])))] :spec
+      [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (let [x x] (if (refines-to? x :spec/A$v1) (> (get (refine-to x :spec/A$v1) :x) 0) false))) [:Vec :Instance] [{:$type :spec/A$v1, :x 1}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}]){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) }" "[{$type: spec/A$v1, x: 1}]"])
+  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "Integer"])))] :spec
+      [(filter [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}}] (let [x x] (if (refines-to? x :spec/A$v1) (> (get (refine-to x :spec/A$v1) :x) 1) true))) [:Set :Instance] #{{:$type :spec/B$v1, :x 2}} "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}}){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 1)} else {true}) }" "#{{$type: spec/B$v1, x: 2}}"]))
 
 ;; (time (run-tests))
