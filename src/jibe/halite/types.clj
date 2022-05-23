@@ -5,7 +5,8 @@
   "Schemata defining the set of halite type terms,
   together with functions that define the subtype
   relation and compute meets and joins."
-  (:require [schema.core :as s]))
+  (:require [clojure.set :as set]
+            [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
@@ -189,7 +190,7 @@
         (if-not (contains? super-ptns gtp)
           false ;; t's graph node does not appear in s's supertypes.
           (if (every? symbol? [(:arg gtp) (:arg gsp)])
-          ;; If both nodes have type params, those params must be compared
+            ;; If both nodes have type params, those params must be compared
             (do
               (assert (= (:arg gsp) (:arg gtp))
                       (str "Type graph musn't mix meaning of T in same subtype relation: "
@@ -197,7 +198,7 @@
               (case (:kind sp)
                 (:Vec :Set :Coll) (subtype? (:arg sp) (:arg tp))
                 (:Instance) (= (:arg sp) (:arg tp))))
-          ;; A lone type param is free, and no params means the node match was sufficient
+            ;; A lone type param is free, and no params means the node match was sufficient
             true)))))
 
 (s/defn meet :- HaliteType
@@ -266,3 +267,88 @@
     (let [[x y] t]
       (when (or (= :Set x) (= :Vec x) (= :Coll x))
         y))))
+
+;;;;
+
+(defn remove-vals-from-map
+  "Remove entries from the map if applying f to the value produced false."
+  [m f]
+  (->> m
+       (remove (comp f second))
+       (apply concat)
+       (apply hash-map)))
+
+(defn no-empty
+  "Convert empty collection to nil"
+  [coll]
+  (when-not (empty? coll)
+    coll))
+
+(defn no-nil
+  "Remove all nil values from the map"
+  [m]
+  (remove-vals-from-map m nil?))
+
+;;
+
+(defn- all-r2 [t]
+  (cond
+    (= 'KW (:arg t)) (:r2 t)
+    :else (conj (or (:r2 t) #{}) (:arg t))))
+
+(defn- remove-redundant-r2 [t]
+  (if (contains? (or (:r2 t) #{}) (:arg t))
+    (no-nil (assoc t :r2 (no-empty (disj (:r2 t) (:arg t)))))
+    t))
+
+(defn instance-subtype? [s t]
+  (and (set/subset? (all-r2 t) (all-r2 s))
+       (or (= (:arg s) (:arg t))
+           (= 'KW (:arg t)))
+       (or (= (:maybe? s) (:maybe? t))
+           (:maybe? t))))
+
+(defn instance-meet [s t]
+  (remove-redundant-r2
+   (no-nil {:maybe? (or (:maybe? s) (:maybe? t))
+            :kind :Instance
+            :arg (cond
+                   (= (:arg s) (:arg t)) (:arg s)
+                   :else 'KW)
+            :r2 (no-empty (cond
+                            (and (not= 'KW (:arg s))
+                                 (not= 'KW (:arg t)))
+                            #{}
+
+                            (or (set/subset? (all-r2 t) (all-r2 s))
+                                (set/subset? (all-r2 s) (all-r2 t)))
+                            (set/intersection (all-r2 s) (all-r2 t))
+
+                            :else #{}))})))
+
+(defn instance-join [s t]
+  (remove-redundant-r2 (cond
+                         (or (= (:arg s) (:arg t))
+                             (= 'KW (:arg s))
+                             (= 'KW (:arg t)))
+                         (no-nil {:maybe? (and (:maybe? s) (:maybe? t))
+                                  :kind :Instance
+                                  :arg (cond
+                                         (= (:arg s) (:arg t)) (:arg s)
+                                         (= 'KW (:arg s)) (:arg t)
+                                         (= 'KW (:arg t)) (:arg s))
+                                  :r2 (no-empty (set/union (all-r2 s) (all-r2 t)))})
+
+                         :else
+                         (if (and (:maybe? s) (:maybe? t))
+                           :Unset
+                           :Nothing))))
+
+(defn instance-type [s]
+  (when (= 1 (count (all-r2 s)))
+    (if (= 'KW (:arg s))
+      (first (:r2 s))
+      (:arg s))))
+
+(defn instance-needs-refinement? [s]
+  (= 'KW (:arg s)))
