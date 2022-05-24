@@ -4,8 +4,8 @@
 (ns jibe.halite.propagate
   "Constraint propagation for halite."
   (:require [clojure.string :as str]
-            [jibe.halite.envs :as halite-envs]
-            [jibe.halite.types :as halite-types]
+            [jibe.halite.envs-old :as halite-envs]
+            [jibe.halite.types-old :as halite-types]
             [jibe.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.util :refer [fixpoint]]

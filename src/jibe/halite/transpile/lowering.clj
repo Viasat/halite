@@ -5,8 +5,8 @@
   "Re-express halite specs in a minimal subset of halite, by compiling higher-level
   features down into lower-level features."
   (:require [clojure.set :as set]
-            [jibe.halite.envs :as halite-envs]
-            [jibe.halite.types :as halite-types]
+            [jibe.halite.envs-old :as halite-envs]
+            [jibe.halite.types-old :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
              :refer [DerivationName Derivations SpecInfo SpecCtx]]
             [jibe.halite.transpile.simplify :refer [simplify]]

@@ -3,8 +3,8 @@
 
 (ns jibe.halite.transpile.test-ssa
   (:require [jibe.halite :as halite]
-            [jibe.halite.envs :as halite-envs]
-            [jibe.halite.types :as halite-types]
+            [jibe.halite.envs-old :as halite-envs]
+            [jibe.halite.types-old :as halite-types]
             [jibe.halite.transpile.ssa :as ssa]
             [jibe.halite.transpile.util :refer [mk-junct]]
             [schema.core :as s]

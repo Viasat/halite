@@ -6,8 +6,8 @@
   that is reminiscent of the single static assignment (SSA) representation often used
   in compilers."
   (:require [clojure.set :as set]
-            [jibe.halite.envs :as halite-envs]
-            [jibe.halite.types :as halite-types]
+            [jibe.halite.envs-old :as halite-envs]
+            [jibe.halite.types-old :as halite-types]
             [jibe.halite.transpile.util :refer [mk-junct]]
             [schema.core :as s]
             [weavejester.dependency :as dep]))

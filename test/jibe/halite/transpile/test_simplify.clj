@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.transpile.test-simplify
-  (:require [jibe.halite.envs :as halite-envs]
+  (:require [jibe.halite.envs-old :as halite-envs]
             [jibe.halite.transpile.ssa :as ssa]
             [jibe.halite.transpile.simplify :refer [simplify]]
             [schema.test])

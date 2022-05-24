@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.test-propagate
-  (:require [jibe.halite.envs :as halite-envs]
+  (:require [jibe.halite.envs-old :as halite-envs]
             [jibe.halite.propagate :as hp]
             [schema.test])
   (:use clojure.test))

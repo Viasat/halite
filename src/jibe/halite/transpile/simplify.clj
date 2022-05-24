@@ -4,7 +4,7 @@
 (ns jibe.halite.transpile.simplify
   "Simplify halite specs by evaluating those parts of the spec
   that are statically evaluable."
-  (:require [jibe.halite.envs :as halite-envs]
+  (:require [jibe.halite.envs-old :as halite-envs]
             [jibe.halite.transpile.ssa :as ssa]
             [jibe.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]))

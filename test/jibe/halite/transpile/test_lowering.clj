@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.transpile.test-lowering
-  (:require [jibe.halite.envs :as halite-envs]
+  (:require [jibe.halite.envs-old :as halite-envs]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.simplify :refer [simplify]]
             [jibe.halite.transpile.ssa :as ssa :refer [Derivations]]
