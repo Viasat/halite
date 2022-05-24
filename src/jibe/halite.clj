@@ -45,9 +45,10 @@
     (eval-expr (:senv ctx) tenv (:env ctx) expr)))
 
 (s/defn ^:private refines-to? :- s/Bool
-  [inst spec-id]
-  (or (= spec-id (:$type inst))
-      (boolean (get (:refinements (meta inst)) spec-id))))
+  [inst spec-type :- HaliteType]
+  (let [spec-id (instance-spec-id spec-type)]
+    (or (= spec-id (:$type inst))
+        (boolean (get (:refinements (meta inst)) spec-id)))))
 
 (s/defn ^:private concrete? :- s/Bool
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
@@ -71,7 +72,9 @@
   [declared-type :- HaliteType, v]
   (cond
     (spec-type? declared-type) (when-not (refines-to? v declared-type)
-                                 (throw (ex-info (format "No active refinement path from '%s' to '%s'" (symbol (:$type v)) (symbol declared-type))
+                                 (throw (ex-info (format "No active refinement path from '%s' to '%s'"
+                                                         (symbol (:$type v))
+                                                         (symbol (instance-spec-id declared-type)))
                                                  {:value v})))
     (vector? declared-type) (if (= :Maybe (first declared-type))
                               (check-against-declared-type (second declared-type) v)
@@ -128,7 +131,7 @@
                                          (assoc spec-id inst))))))
              {}))})))
 
-(s/defn ^:private check-instance :- NamespacedKeyword
+(s/defn ^:private check-instance :- HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
               (throw (ex-info "instance literal must have :$type field" {error-key inst})))
@@ -157,10 +160,10 @@
     (doseq [[field-kw field-val] (dissoc inst :$type)]
       (let [field-type (substitute-instance-type (:senv ctx) (get field-types field-kw))
             actual-type (check-fn ctx field-val)]
-        (when-not (subtype? actual-type field-type)
+        (when-not (or (subtype? actual-type field-type))
           (throw (ex-info (str "value of " field-kw " has wrong type")
                           {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
-    t))
+    [:Instance t]))
 
 (s/defn ^:private check-coll :- HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, coll]
@@ -387,7 +390,7 @@
         (second subexpr-type))
 
       (spec-type? subexpr-type)
-      (let [field-types (->> subexpr-type (lookup-spec (:senv ctx)) :spec-vars)]
+      (let [field-types (->> subexpr-type concrete-instance-spec-id (lookup-spec (:senv ctx)) :spec-vars)]
         (when-not (and (keyword? index) (bare? index))
           (throw (ex-info "Second argument to get must be a variable name (as a keyword) when first argument is an instance"
                           {:form form})))
@@ -647,22 +650,24 @@
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
-    (when-not (subtype? s :Instance)
+    (when-not (subtype? s [:Instance :*])
       (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr :actual s})))
-    (when-not (spec-type? kw)
+    (when-not (and (keyword? kw)
+                   (namespaced? kw))
       (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
     (when-not (lookup-spec (:senv ctx) kw)
       (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
-    kw))
+    [:Instance kw]))
 
 (s/defn ^:private type-check-refines-to? :- HaliteType
   [ctx :- TypeContext, expr]
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
-    (when-not (subtype? s :Instance)
+    (when-not (subtype? s [:Instance :*])
       (throw (ex-info "First argument to 'refines-to?' must be an instance" {:form expr})))
-    (when-not (spec-type? kw)
+    (when-not (and (keyword? kw)
+                   (namespaced? kw))
       (throw (ex-info "Second argument to 'refines-to?' must be a spec id" {:form expr})))
     (when-not (lookup-spec (:senv ctx) kw)
       (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
@@ -868,7 +873,7 @@
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]
-                                   (refines-to? inst kw))
+                                   (refines-to? inst [:Instance kw]))
                     'concrete? (concrete? (:senv ctx) (eval-in-env (second expr)))
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))

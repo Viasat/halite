@@ -80,9 +80,62 @@
             kind)]
     (if maybe? [:Maybe v] v)))
 
-(defn subtypes-svg []
-  (spit "types.dot" (edges-dot @*edges))
-  (clojure.java.shell/sh "dot" "-Tpng" "-O" "types.dot"))
+#_(defn subtypes-svg []
+    (spit "types.dot" (edges-dot @*edges))
+    (clojure.java.shell/sh "dot" "-Tpng" "-O" "types.dot"))
+
+;;;;
+
+(s/defn bare? :- s/Bool
+  "true if the symbol or keyword lacks a namespace component, false otherwise"
+  [sym-or-kw :- (s/cond-pre s/Keyword s/Symbol)] (nil? (namespace sym-or-kw)))
+
+(def namespaced?
+  "true if the symbol or keyword has a namespace component, false otherwise"
+  (complement bare?))
+
+(s/defschema BareKeyword (s/constrained s/Keyword bare?))
+(s/defschema NamespacedKeyword (s/constrained s/Keyword namespaced?))
+(s/defschema BareSymbol (s/constrained s/Symbol bare?))
+
+(s/defn spec-type? :- s/Bool
+  "True if t is a type structure representing a spec type, false otherwise"
+  [t]
+  (and (vector? t) (= :Instance (first t))))
+
+(s/defschema TypeAtom
+  "Type atoms are always unqualified keywords."
+  (s/enum :Integer :String :Boolean :Object :Nothing :Any :Unset))
+
+(declare maybe-type?)
+
+(s/defschema InnerType
+  (s/conditional
+   #(and (vector? %) (= :Instance (first %))) [(s/one (s/eq :Instance) "instance-keyword")
+                                               (s/one (s/cond-pre (s/eq :*)
+                                                                  NamespacedKeyword)
+                                                      "instance-type")
+                                               (s/optional #{NamespacedKeyword} "refines-to-set")]
+   vector? [(s/one (s/enum :Set :Vec :Coll) "coll-kind")
+            (s/one (s/recursive #'InnerType) "elem-type")]
+   :else TypeAtom))
+
+(s/defschema HaliteType
+  "A Halite type is either a type atom (keyword), or a 'type constructor' represented
+  as a tuple whose first element is the constructor name, and whose remaining elements
+  are types.
+
+  Note that the :Set and :Vec constructors do not accept :Maybe types."
+  (s/conditional
+   #(and (vector? %) (= :Maybe (first %))) [(s/one (s/eq :Maybe) "maybe-keyword")
+                                            (s/one InnerType "inner-type")]
+   :else InnerType))
+
+(s/defn maybe-type? :- s/Bool
+  "True if t is :Unset or [:Maybe T], false otherwise."
+  [t :- HaliteType]
+  (or (= :Unset t)
+      (and (vector? t) (= :Maybe (first t)))))
 
 ;;;;
 
@@ -118,8 +171,7 @@
     t))
 
 (defn instance-subtype? [s t]
-  (and (set/subset? (all-r2 t) (all-r2 s))
-       (or (= (:arg s) (:arg t))
+  (and (or (= (:arg s) (:arg t))
            (= :* (:arg t)))
        (or (= (:maybe? s) (:maybe? t))
            (:maybe? t))))
@@ -151,66 +203,36 @@
                            {:kind :Unset}
                            {:kind :Nothing}))))
 
-(defn instance-type [s]
-  (when (= 1 (count (all-r2 s)))
+(defn- instance-spec-id-ptn [s]
+  (when (and (= :Instance (:kind s))
+             (= 1 (count (all-r2 s))))
     (if (= :* (:arg s))
       (first (:r2 s))
       (:arg s))))
 
-(defn instance-needs-refinement? [s]
-  (= :* (:arg s)))
+(s/defn instance-spec-id :- (s/maybe NamespacedKeyword)
+  [s :- HaliteType]
+  (instance-spec-id-ptn (type-ptn s)))
+
+(defn- concrete-instance-spec-id-ptn [s]
+  (when (and (= :Instance (:kind s))
+             (not= :* (:arg s)))
+    (:arg s)))
+
+(s/defn concrete-instance-spec-id :- (s/maybe NamespacedKeyword)
+  [s :- HaliteType]
+  (concrete-instance-spec-id-ptn (type-ptn s)))
+
+(defn- instance-needs-refinement?-ptn
+  [s]
+  (and (= :Instance (:kind s))
+       (= :* (:arg s))))
+
+(s/defn instance-needs-refinement?
+  [s :- HaliteType]
+  (instance-needs-refinement?-ptn (type-ptn s)))
 
 ;;;;
-
-(s/defn bare? :- s/Bool
-  "true if the symbol or keyword lacks a namespace component, false otherwise"
-  [sym-or-kw :- (s/cond-pre s/Keyword s/Symbol)] (nil? (namespace sym-or-kw)))
-
-(def namespaced?
-  "true if the symbol or keyword has a namespace component, false otherwise"
-  (complement bare?))
-
-(s/defschema BareKeyword (s/constrained s/Keyword bare?))
-(s/defschema NamespacedKeyword (s/constrained s/Keyword namespaced?))
-(s/defschema BareSymbol (s/constrained s/Symbol bare?))
-
-(s/defn spec-type? :- s/Bool
-  "True if t is a namespaced keyword (the type term that represents a spec), false otherwise"
-  [t] (and (keyword? t) (namespaced? t)))
-
-(s/defschema TypeAtom
-  "Type atoms are always unqualified keywords."
-  (s/enum :Integer :String :Boolean :Object :Nothing :Any :Unset))
-
-(declare maybe-type?)
-
-(s/defschema InnerType
-  (s/conditional
-   #(and (vector? %) (= :Instance (first %))) [(s/one (s/eq :Instance) "instance-keyword")
-                                               (s/one (s/cond-pre (s/eq :*)
-                                                                  NamespacedKeyword)
-                                                      "instance-type")
-                                               (s/optional #{NamespacedKeyword} "refines-to-set")]
-   vector? [(s/one (s/enum :Set :Vec :Coll) "coll-kind")
-            (s/one (s/recursive #'InnerType) "elem-type")]
-   :else TypeAtom))
-
-(s/defschema HaliteType
-  "A Halite type is either a type atom (keyword), or a 'type constructor' represented
-  as a tuple whose first element is the constructor name, and whose remaining elements
-  are types.
-
-  Note that the :Set and :Vec constructors do not accept :Maybe types."
-  (s/conditional
-   #(and (vector? %) (= :Maybe (first %))) [(s/one (s/eq :Maybe) "maybe-keyword")
-                                            (s/one InnerType "inner-type")]
-   :else InnerType))
-
-(s/defn maybe-type? :- s/Bool
-  "True if t is :Unset or [:Maybe T], false otherwise."
-  [t :- HaliteType]
-  (or (= :Unset t)
-      (and (vector? t) (= :Maybe (first t)))))
 
 (defn edges-to-adjacent-sets [es keyfn valfn]
   (->
@@ -355,3 +377,8 @@
     (let [[x y] t]
       (when (or (= :Set x) (= :Vec x) (= :Coll x))
         y))))
+
+(s/defn types-equivalent? [s :- HaliteType
+                           t :- HaliteType]
+  (= (dissoc (type-ptn s) :r2)
+     (dissoc (type-ptn s) :r2)))

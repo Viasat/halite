@@ -3,7 +3,7 @@
 
 (ns jibe.halite.envs
   "Halite spec, type, and eval environment abstractions."
-  (:require [jibe.halite.types :refer [BareKeyword BareSymbol NamespacedKeyword HaliteType spec-type?]]
+  (:require [jibe.halite.types :refer [BareKeyword BareSymbol NamespacedKeyword HaliteType spec-type? instance-spec-id]]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -76,12 +76,12 @@
   "Return the type obtained by substituting :Instance for any occurrence of a spec-id that is abstract in the given spec environment."
   [senv :- (s/protocol SpecEnv), declared-type :- HaliteType]
   (cond
-    (spec-type? declared-type) (let [spec-info (lookup-spec senv declared-type)]
+    (spec-type? declared-type) (let [spec-info (lookup-spec senv (instance-spec-id declared-type))]
                                  (when (nil? spec-info)
                                    (throw (ex-info (format "resource spec not found: '%s'" (symbol declared-type))
                                                    {:type declared-type, #_#_:senv (.-spec-info-map senv)})))
                                  (if (:abstract? spec-info)
-                                   :Instance
+                                   [:Instance :* #{(instance-spec-id declared-type)}]
                                    declared-type))
     (vector? declared-type) [(first declared-type) (substitute-instance-type senv (second declared-type))]
     :else declared-type))

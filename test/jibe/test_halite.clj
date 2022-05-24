@@ -22,7 +22,7 @@
 (def senv (map->TestSpecEnv
            {:specs {:ws/A$v1 {:spec-vars {:x :Integer
                                           :y :Boolean
-                                          :c :ws2/B$v1}}
+                                          :c [:Instance :ws2/B$v1]}}
                     :ws2/B$v1 {:spec-vars {:s :String}}
                     :ws/C$v1 {:spec-vars {:xs [:Vec :Integer]}}
                     :ws/D$v1 {:spec-vars {:xss [:Vec [:Vec :Integer]]}}}}))
@@ -39,9 +39,9 @@
     false :Boolean
     1 :Integer
     "hi" :String
-    {:$type :ws2/B$v1 :s "foo"} :ws2/B$v1
+    {:$type :ws2/B$v1 :s "foo"} [:Instance :ws2/B$v1]
     {:$type :ws/A$v1 :x 1 :y true
-     :c {:$type :ws2/B$v1 :s "bar"}} :ws/A$v1
+     :c {:$type :ws2/B$v1 :s "bar"}} [:Instance :ws/A$v1]
     #{} [:Set :Nothing]
     [] [:Vec :Nothing]
     [1 2 3] [:Vec :Integer]
@@ -51,10 +51,10 @@
     [1 "two"] [:Vec :Object]
     #{[] #{}} [:Set [:Coll :Nothing]]
     #{[1] #{}} [:Set [:Coll :Integer]]
-    {:$type :ws/C$v1 :xs []} :ws/C$v1
-    {:$type :ws/C$v1 :xs [1 2 3]} :ws/C$v1
-    [{:$type :ws2/B$v1 :s "bar"}] [:Vec :ws2/B$v1]
-    {:$type :ws/D$v1 :xss [[]]} :ws/D$v1)
+    {:$type :ws/C$v1 :xs []} [:Instance :ws/C$v1]
+    {:$type :ws/C$v1 :xs [1 2 3]} [:Instance :ws/C$v1]
+    [{:$type :ws2/B$v1 :s "bar"}] [:Vec [:Instance :ws2/B$v1]]
+    {:$type :ws/D$v1 :xss [[]]} [:Instance :ws/D$v1])
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
@@ -214,19 +214,19 @@
 (deftest get-type-checking-tests
   (let [senv (->TestSpecEnv
               {:ws/A$v1 {:spec-vars {:x :Integer}}
-               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
-               :ws/C$v1 {:spec-vars {:bs [:Vec :ws/B$v1]}}})
+               :ws/B$v1 {:spec-vars {:a [:Instance :ws/A$v1]}}
+               :ws/C$v1 {:spec-vars {:bs [:Vec [:Instance :ws/B$v1]]}}})
         tenv (halite-envs/type-env
-              {'a :ws/A$v1
-               'b :ws/B$v1
-               'c :ws/C$v1
+              {'a [:Instance :ws/A$v1]
+               'b [:Instance :ws/B$v1]
+               'c [:Instance :ws/C$v1]
                'xs [:Vec :String]})]
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
 
-      'a :ws/A$v1   ; warm-up: symbol lookup
+      'a [:Instance :ws/A$v1] ; warm-up: symbol lookup
       '(get a :x) :Integer
-      '(get b :a) :ws/A$v1
+      '(get b :a) [:Instance :ws/A$v1]
       '(get (get b :a) :x) :Integer
       '(get xs (+ 1 2)) :String
       '(get (get (get (get c :bs) 2) :a) :x) :Integer
@@ -253,9 +253,9 @@
                      (range 5))}
         senv (->TestSpecEnv
               {:ws/A$v1 {:spec-vars {:x :Integer}}
-               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
-               :ws/C$v1 {:spec-vars {:bs [:Vec :ws/B$v1]}}})
-        tenv (halite-envs/type-env {'c :ws/C$v1})
+               :ws/B$v1 {:spec-vars {:a [:Instance :ws/A$v1]}}
+               :ws/C$v1 {:spec-vars {:bs [:Vec [:Instance :ws/B$v1]]}}})
+        tenv (halite-envs/type-env {'c [:Instance :ws/C$v1]})
         env (halite-envs/env {'c c})]
     (are [expr v]
          (= v (halite/eval-expr senv tenv env expr))
@@ -350,15 +350,15 @@
 (deftest maybe-tests
   (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
         tenv (-> tenv
-                 (halite-envs/extend-scope 'm :ws/Maybe$v1)
+                 (halite-envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (halite-envs/extend-scope 'x [:Maybe :Integer]))]
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
 
       'no-value- :Unset
-      {:$type :ws/Maybe$v1} :ws/Maybe$v1
-      {:$type :ws/Maybe$v1 :x 1} :ws/Maybe$v1
-      {:$type :ws/Maybe$v1 :x 'no-value-} :ws/Maybe$v1
+      {:$type :ws/Maybe$v1} [:Instance :ws/Maybe$v1]
+      {:$type :ws/Maybe$v1 :x 1} [:Instance :ws/Maybe$v1]
+      {:$type :ws/Maybe$v1 :x 'no-value-} [:Instance :ws/Maybe$v1]
       '(get m :x) [:Maybe :Integer]
       '(if-value x (+ x 1) 1) :Integer
       '(let [x no-value-] (if-value x x 1)) :Integer
@@ -428,7 +428,7 @@
 (deftest when-tests
   (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
         tenv (-> tenv
-                 (halite-envs/extend-scope 'm :ws/Maybe$v1)
+                 (halite-envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (halite-envs/extend-scope 'x [:Maybe :Integer])
                  (halite-envs/extend-scope 'b :Boolean))]
     (are [expr etype]
@@ -437,7 +437,7 @@
       '(when b 1) [:Maybe :Integer]
       '(when b x) [:Maybe :Integer]
       '(when b (when (if-value- x true false) "Foo")) [:Maybe :String]
-      '{:$type :ws/Maybe$v1 :x (when b 12)} :ws/Maybe$v1)
+      '{:$type :ws/Maybe$v1 :x (when b 12)} [:Instance :ws/Maybe$v1])
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
@@ -600,9 +600,9 @@
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
 
-      {:$type :ws/E$v1, :y false} :ws/E$v1
-      {:$type :ws/E$v1, :y true} :ws/E$v1
-      {:$type :ws/Invalid$v1} :ws/Invalid$v1)
+      {:$type :ws/E$v1, :y false} [:Instance :ws/E$v1]
+      {:$type :ws/E$v1, :y true} [:Instance :ws/E$v1]
+      {:$type :ws/Invalid$v1} [:Instance :ws/Invalid$v1])
 
     ;; type-of, on the other hand, only works with values, and *does* check constraints
     (are [expr err-msg]
@@ -639,7 +639,7 @@
 
     (let [invalid-a {:$type :ws/A :x -10}
           sketchy-a {:$type :ws/A :x 20}]
-      (is (= :ws/A (halite/type-check senv tenv invalid-a)))
+      (is (= [:Instance :ws/A] (halite/type-check senv tenv invalid-a)))
       (is (thrown-with-msg? ExceptionInfo #"invalid instance"
                             (halite/eval-expr senv tenv empty-env invalid-a)))
       (let [a (halite/eval-expr senv tenv empty-env sketchy-a)]
@@ -651,12 +651,12 @@
       (is (thrown-with-msg?
            ExceptionInfo #"invalid instance"
            (halite/eval-expr senv
-                             (halite-envs/extend-scope tenv 'a :ws/A)
+                             (halite-envs/extend-scope tenv 'a [:Instance :ws/A])
                              (halite-envs/bind empty-env 'a invalid-a)
                              'a)))
 
-      (is (= :ws/B (halite/type-check senv tenv (list 'refine-to sketchy-a :ws/B))))
-      (is (= :ws/E (halite/type-check senv tenv '(refine-to {:$type :ws/D :x 1} :ws/E))))
+      (is (= [:Instance :ws/B] (halite/type-check senv tenv (list 'refine-to sketchy-a :ws/B))))
+      (is (= [:Instance :ws/E] (halite/type-check senv tenv '(refine-to {:$type :ws/D :x 1} :ws/E))))
       (is (thrown-with-msg?
            ExceptionInfo #"No active refinement path from 'ws/D' to 'ws/E'"
            (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/D :x 1} :ws/E))))
@@ -711,13 +711,13 @@
                :ws/A2 {:spec-vars {:a :Integer
                                    :b :Integer}
                        :refines-to {:ws/A {:expr '{:$type :ws/A :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a :Instance}}
-               :ws/C {:spec-vars {:as [:Vec :Instance]}}
+               :ws/B {:spec-vars {:a [:Instance :* #{:ws/A}]}}
+               :ws/C {:spec-vars {:as [:Vec [:Instance :* #{:ws/A}]]}}
                :ws/D {:spec-vars {}}})
         tenv2 (-> tenv
-                  (halite-envs/extend-scope 'ax :Instance)
-                  (halite-envs/extend-scope 'ay :Instance)
-                  (halite-envs/extend-scope 'b1 :ws/B))
+                  (halite-envs/extend-scope 'ax [:Instance :* #{:ws/A2}])
+                  (halite-envs/extend-scope 'ay [:Instance :* #{:ws/A1}])
+                  (halite-envs/extend-scope 'b1 [:Instance :ws/B]))
         env2 (-> empty-env
                  (halite-envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
                  (halite-envs/bind 'ay {:$type :ws/A1})
@@ -726,17 +726,17 @@
     (are [expr etype]
          (= etype (halite/type-check senv tenv2 expr))
 
-      {:$type :ws/A1} :ws/A1
-      {:$type :ws/A2 :a 1 :b 2} :ws/A2
-      {:$type :ws/B :a {:$type :ws/A1}} :ws/B
-      {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :ws/B
-      '(get {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :a) :Instance
-      'ax :Instance
+      {:$type :ws/A1} [:Instance :ws/A1]
+      {:$type :ws/A2 :a 1 :b 2} [:Instance :ws/A2]
+      {:$type :ws/B :a {:$type :ws/A1}} [:Instance :ws/B]
+      {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} [:Instance :ws/B]
+      '(get {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :a) [:Instance :* #{:ws/A}]
+      'ax [:Instance :* #{:ws/A2}]
       '(= ax ay) :Boolean
       '(= b1 ax) :Boolean
-      {:$type :ws/B :a {:$type :ws/D}} :ws/B
-      '(refine-to ax :ws/A) :ws/A
-      '(union #{{:$type :ws/A1}} #{{:$type :ws/A2 :a 3 :b 3}}) [:Set :Instance])
+      {:$type :ws/B :a {:$type :ws/D}} [:Instance :ws/B]
+      '(refine-to ax :ws/A) [:Instance :ws/A]
+      '(union #{{:$type :ws/A1}} #{{:$type :ws/A2 :a 3 :b 3}}) [:Set [:Instance :*]])
 
     (are [expr v]
          (= v (halite/eval-expr senv tenv2 env2 expr))
@@ -760,13 +760,13 @@
                :ws/A2 {:spec-vars {:a :Integer
                                    :b :Integer}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a :Instance}}
-               :ws/C {:spec-vars {:as [:Vec :Instance]}}
+               :ws/B {:spec-vars {:a [:Instance :* #{:ws/A}]}}
+               :ws/C {:spec-vars {:as [:Vec [:Instance :* #{:ws/A}]]}}
                :ws/D {:spec-vars {}}})
         tenv2 (-> tenv
-                  (halite-envs/extend-scope 'ax :Instance)
-                  (halite-envs/extend-scope 'ay :Instance)
-                  (halite-envs/extend-scope 'b1 :ws/B))
+                  (halite-envs/extend-scope 'ax [:Instance :* #{:ws/A}])
+                  (halite-envs/extend-scope 'ay [:Instance :* #{:ws/A}])
+                  (halite-envs/extend-scope 'b1 [:Instance :ws/B]))
         env2 (-> empty-env
                  (halite-envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
                  (halite-envs/bind 'ay {:$type :ws/A1})
@@ -804,8 +804,8 @@
                :ws/A2 {:spec-vars {:a :Integer
                                    :b :Integer}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a :ws/A}}
-               :ws/C {:spec-vars {:as [:Vec :ws/A]}}
+               :ws/B {:spec-vars {:a [:Instance :* #{:ws/A}]}}
+               :ws/C {:spec-vars {:as [:Vec [:Instance :* #{:ws/A}]]}}
                :ws/D {:spec-vars {}}})]
 
     (are [expr etype]
@@ -836,16 +836,16 @@
                        :refines-to {:ws/B {:expr {:$type :ws/B :z (+ x y)}}}}
                 :ws/B {:spec-vars {:z :Integer}
                        :constraints [["posZ" (< 0 z)]]}
-                :ws/C {:spec-vars {:a :ws/A}
+                :ws/C {:spec-vars {:a [:Instance :ws/A]}
                        :constraints [["maxSum" (< (+ (get a :x) (get a :y)) 10)]]}})]
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
 
-      '(valid {:$type :ws/A, :x 1, :y 0}) [:Maybe :ws/A]
+      '(valid {:$type :ws/A, :x 1, :y 0}) [:Maybe [:Instance :ws/A]]
       '(let [a (valid {:$type :ws/A :x 1 :y 0})] (if-value- a 1 2)) :Integer
-      '(valid {:$type :ws/C :a {:$type :ws/A :x 1 :y 0}}) [:Maybe :ws/C]
-      '(let [a {:$type :ws/A :x 1 :y 0}] (valid a)) [:Maybe :ws/A]
-      '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) [:Maybe :ws/A]
+      '(valid {:$type :ws/C :a {:$type :ws/A :x 1 :y 0}}) [:Maybe [:Instance :ws/C]]
+      '(let [a {:$type :ws/A :x 1 :y 0}] (valid a)) [:Maybe [:Instance :ws/A]]
+      '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) [:Maybe [:Instance :ws/A]]
       '(valid? {:$type :ws/A, :x 1, :y 0}) :Boolean)
       ;; These are questionable... 
       ;;'(valid (valid {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
@@ -881,18 +881,25 @@
                :ws/A2 {:spec-vars {:a :Integer
                                    :b :Integer}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a :ws/A}
+               :ws/B {:spec-vars {:a [:Instance :* #{:ws/A}]}
                       :constraints '[["notFive" (not= 5 (get (refine-to a :ws/A) :x))]]}
-               :ws/C {:spec-vars {:as [:Vec :ws/A]}}
+               :ws/C {:spec-vars {:as [:Vec [:Instance :* #{:ws/A}]]}}
                :ws/D {:spec-vars {}}
-               :ws/Invalid {:spec-vars {:a :ws/A}
+               :ws/Z {:abstract? true}
+               :ws/Z1 {:refines-to {:ws/Z {:expr '{:$type :ws/Z}}}}
+               :ws/Invalid {:spec-vars {:a [:Instance :* #{:ws/A}]
+                                        :z [:Instance :* #{:ws/Z}]}
                             ;; a is typed as :Instance, so (get a :x) doesn't type check
-                            :constraints '[["notFive" (not= 5 (get a :x))]]}})
+                            :constraints '[["notFive" (not= 5 (get
+                                                               (first (sort-by [x (intersection #{a}
+                                                                                                #{z})]
+                                                                               1))
+                                                               :x))]]}})
         tenv2 (-> tenv
-                  (halite-envs/extend-scope 'ax :Instance)
-                  (halite-envs/extend-scope 'ay :Instance)
-                  (halite-envs/extend-scope 'b1 :ws/B)
-                  (halite-envs/extend-scope 'c :ws/C))
+                  (halite-envs/extend-scope 'ax [:Instance :* #{:ws/A}])
+                  (halite-envs/extend-scope 'ay [:Instance :* #{:ws/A}])
+                  (halite-envs/extend-scope 'b1 [:Instance :ws/B])
+                  (halite-envs/extend-scope 'c [:Instance :ws/C]))
         env2 (-> empty-env
                  (halite-envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
                  (halite-envs/bind 'ay {:$type :ws/A1})
@@ -902,19 +909,19 @@
     (are [expr etype]
          (= etype (halite/type-check senv tenv2 expr))
 
-      {:$type :ws/A :x 5} :ws/A
-      '(get b1 :a) :Instance
-      '(get c :as) [:Vec :Instance]
-      {:$type :ws/B :a {:$type :ws/A1}} :ws/B
-      {:$type :ws/B :a {:$type :ws/D}} :ws/B
-      {:$type :ws/C :as [{:$type :ws/D} {:$type :ws/A1}]} :ws/C
-      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/D})} :ws/C
-      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/A :x 9})} :ws/C)
+      {:$type :ws/A :x 5} [:Instance :ws/A]
+      '(get b1 :a) [:Instance :* #{:ws/A}]
+      '(get c :as) [:Vec [:Instance :* #{:ws/A}]]
+      {:$type :ws/B :a {:$type :ws/A1}} [:Instance :ws/B]
+      {:$type :ws/B :a {:$type :ws/D}} [:Instance :ws/B]
+      {:$type :ws/C :as [{:$type :ws/D} {:$type :ws/A1}]} [:Instance :ws/C]
+      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/D})} [:Instance :ws/C]
+      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/A :x 9})} [:Instance :ws/C])
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
 
-      {:$type :ws/Invalid :a {:$type :ws/A1}} #"invalid constraint")
+      {:$type :ws/Invalid :a {:$type :ws/A1} :z {:$type :ws/Z1}} #"invalid constraint")
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
@@ -959,14 +966,14 @@
                   :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonVec
-                 {:spec-vars {:entries [:Vec :ws/JsonVal]}
+                 {:spec-vars {:entries [:Vec [:Instance :* #{:ws/JsonVal}]]}
                   :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonObjEntry
-                 {:spec-vars {:key :String, :val :ws/JsonVal}}
+                 {:spec-vars {:key :String, :val [:Instance :* #{:ws/JsonVal}]}}
 
                  :ws/JsonObj
-                 {:spec-vars {:entries [:Set :ws/JsonObjEntry]}
+                 {:spec-vars {:entries [:Set [:Instance :ws/JsonObjEntry]]}
                   :constraints [["uniqueKeys" true
                                  ;; TODO: each key shows up once
                                  #_(= (count entries) (count (for [entry entries] (get* entry :key))))]]
