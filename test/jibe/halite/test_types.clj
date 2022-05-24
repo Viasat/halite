@@ -165,7 +165,7 @@
                   :else true)))
 
 (defspec prop-meet-subtype
-  {:num-tests 100000}
+  {:num-tests 1000}
   (prop/for-all [s gen-type
                  t gen-type]
                 (let [m (halite-types/meet s t)]
@@ -216,7 +216,7 @@
     (is (prop-meet-implication s t o))))
 
 (defspec test-prop-meet-implication
-  {:num-tests 100000
+  {:num-tests 1000
    :reporter-fn (fn [{:keys [type fail]}]
                   (when-let [[s t o] (and (= :shrunk type) fail)]
                     (prn :s s :t t :o o :m (halite-types/meet s t))))}
@@ -265,7 +265,7 @@
       :else true)))
 
 (defspec test-prop-join-implication
-  {:num-tests 100000
+  {:num-tests 1000
    :reporter-fn (fn [{:keys [type fail]}]
                   (when-let [[s t o] (and (= :shrunk type) fail)]
                     (prn :s s :t t :o o :j (halite-types/join s t))))}

@@ -84,6 +84,84 @@
   (spit "types.dot" (edges-dot @*edges))
   (clojure.java.shell/sh "dot" "-Tpng" "-O" "types.dot"))
 
+;;;;
+
+(defn remove-vals-from-map
+  "Remove entries from the map if applying f to the value produced false."
+  [m f]
+  (->> m
+       (remove (comp f second))
+       (apply concat)
+       (apply hash-map)))
+
+(defn no-empty
+  "Convert empty collection to nil"
+  [coll]
+  (when-not (empty? coll)
+    coll))
+
+(defn no-nil
+  "Remove all nil values from the map"
+  [m]
+  (remove-vals-from-map m nil?))
+
+;;
+
+(defn- all-r2 [t]
+  (cond
+    (= :* (:arg t)) (:r2 t)
+    :else (conj (or (:r2 t) #{}) (:arg t))))
+
+(defn- remove-redundant-r2 [t]
+  (if (contains? (or (:r2 t) #{}) (:arg t))
+    (no-nil (assoc t :r2 (no-empty (disj (:r2 t) (:arg t)))))
+    t))
+
+(defn instance-subtype? [s t]
+  (and (set/subset? (all-r2 t) (all-r2 s))
+       (or (= (:arg s) (:arg t))
+           (= :* (:arg t)))
+       (or (= (:maybe? s) (:maybe? t))
+           (:maybe? t))))
+
+(defn instance-meet [s t]
+  (remove-redundant-r2
+   (no-nil {:maybe? (or (:maybe? s) (:maybe? t))
+            :kind :Instance
+            :arg (if (= (:arg s) (:arg t))
+                   (:arg s)
+                   :*)
+            :r2 (no-empty (set/intersection (all-r2 s) (all-r2 t)))})))
+
+(defn instance-join [s t]
+  (remove-redundant-r2 (cond
+                         (or (= (:arg s) (:arg t))
+                             (= :* (:arg s))
+                             (= :* (:arg t)))
+                         (no-nil {:maybe? (and (:maybe? s) (:maybe? t))
+                                  :kind :Instance
+                                  :arg (cond
+                                         (= (:arg s) (:arg t)) (:arg s)
+                                         (= :* (:arg s)) (:arg t)
+                                         (= :* (:arg t)) (:arg s))
+                                  :r2 (no-empty (set/union (all-r2 s) (all-r2 t)))})
+
+                         :else
+                         (if (and (:maybe? s) (:maybe? t))
+                           {:kind :Unset}
+                           {:kind :Nothing}))))
+
+(defn instance-type [s]
+  (when (= 1 (count (all-r2 s)))
+    (if (= :* (:arg s))
+      (first (:r2 s))
+      (:arg s))))
+
+(defn instance-needs-refinement? [s]
+  (= :* (:arg s)))
+
+;;;;
+
 (s/defn bare? :- s/Bool
   "true if the symbol or keyword lacks a namespace component, false otherwise"
   [sym-or-kw :- (s/cond-pre s/Keyword s/Symbol)] (nil? (namespace sym-or-kw)))
@@ -277,79 +355,3 @@
     (let [[x y] t]
       (when (or (= :Set x) (= :Vec x) (= :Coll x))
         y))))
-
-;;;;
-
-(defn remove-vals-from-map
-  "Remove entries from the map if applying f to the value produced false."
-  [m f]
-  (->> m
-       (remove (comp f second))
-       (apply concat)
-       (apply hash-map)))
-
-(defn no-empty
-  "Convert empty collection to nil"
-  [coll]
-  (when-not (empty? coll)
-    coll))
-
-(defn no-nil
-  "Remove all nil values from the map"
-  [m]
-  (remove-vals-from-map m nil?))
-
-;;
-
-(defn- all-r2 [t]
-  (cond
-    (= :* (:arg t)) (:r2 t)
-    :else (conj (or (:r2 t) #{}) (:arg t))))
-
-(defn- remove-redundant-r2 [t]
-  (if (contains? (or (:r2 t) #{}) (:arg t))
-    (no-nil (assoc t :r2 (no-empty (disj (:r2 t) (:arg t)))))
-    t))
-
-(defn instance-subtype? [s t]
-  (and (set/subset? (all-r2 t) (all-r2 s))
-       (or (= (:arg s) (:arg t))
-           (= :* (:arg t)))
-       (or (= (:maybe? s) (:maybe? t))
-           (:maybe? t))))
-
-(defn instance-meet [s t]
-  (remove-redundant-r2
-   (no-nil {:maybe? (or (:maybe? s) (:maybe? t))
-            :kind :Instance
-            :arg (if (= (:arg s) (:arg t))
-                   (:arg s)
-                   :*)
-            :r2 (no-empty (set/intersection (all-r2 s) (all-r2 t)))})))
-
-(defn instance-join [s t]
-  (remove-redundant-r2 (cond
-                         (or (= (:arg s) (:arg t))
-                             (= :* (:arg s))
-                             (= :* (:arg t)))
-                         (no-nil {:maybe? (and (:maybe? s) (:maybe? t))
-                                  :kind :Instance
-                                  :arg (cond
-                                         (= (:arg s) (:arg t)) (:arg s)
-                                         (= :* (:arg s)) (:arg t)
-                                         (= :* (:arg t)) (:arg s))
-                                  :r2 (no-empty (set/union (all-r2 s) (all-r2 t)))})
-
-                         :else
-                         (if (and (:maybe? s) (:maybe? t))
-                           {:kind :Unset}
-                           {:kind :Nothing}))))
-
-(defn instance-type [s]
-  (when (= 1 (count (all-r2 s)))
-    (if (= :* (:arg s))
-      (first (:r2 s))
-      (:arg s))))
-
-(defn instance-needs-refinement? [s]
-  (= :* (:arg s)))
