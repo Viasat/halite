@@ -6,7 +6,8 @@
   together with functions that define the subtype
   relation and compute meets and joins."
   (:require [clojure.set :as set]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [schema.core :as schema]))
 
 (set! *warn-on-reflection* true)
 
@@ -14,24 +15,24 @@
   (let [m (fn [x] [:Maybe x])
         T 'T
         KW 'KW
+        R2 'R2
         tv list]
     #{(tv :Nothing #{(tv :Integer :Object :Any)
                      (tv :String :Object)
                      (tv :Boolean :Object)
-                     (tv KW :Instance :Object)
+                     (tv [:Instance KW R2] :Object)
                      (tv [:Set T] [:Coll T] :Object)
                      (tv [:Vec T] [:Coll T])})
       (tv :Nothing :Unset #{(tv (m :Integer) :Any)
                             (tv (m :String) :Any)
                             (tv (m :Boolean) :Any)
-                            (tv (m KW) (m :Instance) :Any)
+                            (tv (m [:Instance KW R2]) :Any)
                             (tv (m [:Set T]) (m [:Coll T]) :Any)
                             (tv (m [:Vec T]) (m [:Coll T]))})
+      (tv [:Instance KW R2] (m [:Instance KW R2]))
       (tv :Integer      (m :Integer))
       (tv :String       (m :String))
       (tv :Boolean      (m :Boolean))
-      (tv KW (m KW))
-      (tv :Instance     (m :Instance))
       (tv [:Set T]      (m [:Set T]))
       (tv [:Vec T]      (m [:Vec T]))
       (tv [:Coll T]     (m [:Coll T]))}))
@@ -54,7 +55,7 @@
 (defn edges-dot [es]
   (str
    "digraph Types {\n"
-   "rankdir=BT\n"
+   "rankdir=LR\n"
    "node [color=\"white\"]\n"
    (apply str (map (fn [[x y]]
                      (str (pr-str (pr-str x))
@@ -68,23 +69,20 @@
   (let [[maybe? t] (if (and (vector? t) (= :Maybe (first t)))
                      [true (second t)]
                      [false t])
-        [kind arg] (cond
-                     (vector? t) t
-                     (or (= 'KW t) (and (keyword? t) (namespace t))) [:Instance t]
-                     :else [t nil])]
-    {:maybe? maybe? :kind kind :arg arg}))
+        [kind arg r2] (cond
+                        (vector? t) t
+                        :else [t nil nil])]
+    {:maybe? maybe? :kind kind :arg arg :r2 r2}))
 
-(defn ptn-type [{:keys [maybe? kind arg]}]
-  (as-> kind t
-    (cond
-      (= t :Instance) (or arg t)
-      arg [t arg]
-      :else t)
-    (if maybe? [:Maybe t] t)))
+(defn ptn-type [{:keys [maybe? kind arg r2]}]
+  (let [v (if (#{:Set :Vec :Coll :Instance} kind)
+            (vec (remove nil? [kind arg r2]))
+            kind)]
+    (if maybe? [:Maybe v] v)))
 
-#_(defn subtypes-svg []
-    (spit "types.dot" (edges-dot @*edges))
-    (clojure.java.shell/sh "dot" "-Tpng" "-O" "types.dot"))
+(defn subtypes-svg []
+  (spit "types.dot" (edges-dot @*edges))
+  (clojure.java.shell/sh "dot" "-Tpng" "-O" "types.dot"))
 
 (s/defn bare? :- s/Bool
   "true if the symbol or keyword lacks a namespace component, false otherwise"
@@ -103,13 +101,21 @@
   [t] (and (keyword? t) (namespaced? t)))
 
 (s/defschema TypeAtom
-  "Type atoms are always keywords. Namespace-qualified keywords are interpreted as spec ids.
-  Unqualified keywords identify built-in scalar types."
-  (s/conditional
-   spec-type? NamespacedKeyword
-   :else (s/enum :Integer :String :Boolean :Object :Nothing :Any :Unset :Instance)))
+  "Type atoms are always unqualified keywords."
+  (s/enum :Integer :String :Boolean :Object :Nothing :Any :Unset))
 
 (declare maybe-type?)
+
+(s/defschema InnerType
+  (s/conditional
+   #(and (vector? %) (= :Instance (first %))) [(s/one (s/eq :Instance) "instance-keyword")
+                                               (s/one (s/cond-pre (s/eq :*)
+                                                                  NamespacedKeyword)
+                                                      "instance-type")
+                                               (s/optional #{NamespacedKeyword} "refines-to-set")]
+   vector? [(s/one (s/enum :Set :Vec :Coll) "coll-kind")
+            (s/one (s/recursive #'InnerType) "elem-type")]
+   :else TypeAtom))
 
 (s/defschema HaliteType
   "A Halite type is either a type atom (keyword), or a 'type constructor' represented
@@ -117,13 +123,10 @@
   are types.
 
   Note that the :Set and :Vec constructors do not accept :Maybe types."
-  (s/cond-pre
-   TypeAtom
-   (s/constrained
-    [(s/one (s/enum :Set :Vec :Coll :Maybe) "coll-type") (s/one (s/recursive #'HaliteType) "elem-type")]
-    (fn [[col-type elem-type]]
-      (not (maybe-type? elem-type)))
-    :no-nested-maybe)))
+  (s/conditional
+   #(and (vector? %) (= :Maybe (first %))) [(s/one (s/eq :Maybe) "maybe-keyword")
+                                            (s/one InnerType "inner-type")]
+   :else InnerType))
 
 (s/defn maybe-type? :- s/Bool
   "True if t is :Unset or [:Maybe T], false otherwise."
@@ -170,11 +173,13 @@
   (delay (-> (adjacent-map @*ptn-adjacent-sub)
              (update-vals set))))
 
-(defn genericize-ptn [p]
-  (let [gp (update p :arg #(when %
-                             (if (= :Instance (:kind p))
-                               'KW
-                               'T)))]
+(defn genericize-ptn
+  "Convert from ptn representing a halite type to a ptn that exists in the graph."
+  [p]
+  (let [gp (case (:kind p)
+             :Instance (assoc p :arg 'KW :r2 'R2)
+             (:Set :Vec :Coll) (assoc p :arg 'T)
+             p)]
     (assert (get @*ptn-adjacent-super gp) (str "Unknown type pattern:" gp))
     gp))
 
@@ -189,17 +194,13 @@
             super-ptns (@*ptn-supertypes-set gsp)]
         (if-not (contains? super-ptns gtp)
           false ;; t's graph node does not appear in s's supertypes.
-          (if (every? symbol? [(:arg gtp) (:arg gsp)])
-            ;; If both nodes have type params, those params must be compared
-            (do
-              (assert (= (:arg gsp) (:arg gtp))
-                      (str "Type graph musn't mix meaning of T in same subtype relation: "
-                           (pr-str sp tp)))
-              (case (:kind sp)
-                (:Vec :Set :Coll) (subtype? (:arg sp) (:arg tp))
-                (:Instance) (= (:arg sp) (:arg tp))))
-            ;; A lone type param is free, and no params means the node match was sufficient
-            true)))))
+          (if (= :Instance (:kind sp) (:kind tp))
+            (instance-subtype? sp tp)
+            (if (= 'T (:arg gsp) (:arg gtp))
+              ;; If both nodes have type params, those params must be compared
+              (subtype? (:arg sp) (:arg tp))
+              ;; A lone type param is free, and no params means the node match was sufficient
+              true))))))
 
 (s/defn meet :- HaliteType
   "The 'least' supertype of s and t. Formally, return the type m such that all are true:
@@ -213,21 +214,26 @@
         gtp (genericize-ptn tp)
         s-super-ptns (@*ptn-supertypes-set gsp)
         ;;_ (prn :supers (map ptn-type (@*ptn-supertypes gtp)))
-        meet-ptn (some (fn [gtp-super]
-                         (when (contains? s-super-ptns gtp-super)
-                           ;;(prn :consider gtp-super)
-                           (if (symbol? (:arg gtp-super))
-                             ;; If shared node has type param, compare original type params
-                             (case (:kind gtp-super)
-                               (:Vec :Set :Coll) (when-let [arg (if (and (:arg sp) (:arg tp))
-                                                                  (meet (:arg sp) (:arg tp))
-                                                                  (or (:arg sp) (:arg tp)))]
-                                                   (assoc gtp-super :arg arg))
-                               (:Instance) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
-                                             (assoc gtp-super :arg (some :arg [sp tp]))))
-                             ;; No param in meet, return unmodified
-                             gtp-super)))
-                       (get @*ptn-supertypes gtp))]
+        meet-ptn (if (= :Instance (:kind sp) (:kind tp))
+                   (instance-meet sp tp)
+                   (some (fn [gtp-super]
+                           (when (contains? s-super-ptns gtp-super)
+                             ;; gtp-super is a graph node that is the meet node
+                             ;;(prn :consider gtp-super)
+                             (if (symbol? (:arg gtp-super))
+                               ;; If shared node has type param, compare original type params
+                               (case (:kind gtp-super)
+                                 (:Vec :Set :Coll) (when-let [arg (if (and (:arg sp) (:arg tp))
+                                                                    (meet (:arg sp) (:arg tp))
+                                                                    (or (:arg sp) (:arg tp)))]
+                                                     (assoc gtp-super :arg arg))
+                                 (:Instance) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
+                                               (assoc gtp-super
+                                                      :arg (some :arg [sp tp])
+                                                      :r2 (some :r2 [sp tp]))))
+                               ;; No param in meet, return unmodified
+                               gtp-super)))
+                         (get @*ptn-supertypes gtp)))]
     (ptn-type meet-ptn)))
 
 (s/defn join :- HaliteType
@@ -242,21 +248,25 @@
         gtp (genericize-ptn tp)
         s-sub-ptns (@*ptn-subtypes-set gsp)
         ;;_ (prn :subs (map ptn-type (@*ptn-subtypes gtp)))
-        join-ptn (some (fn [gtp-sub]
-                         (when (contains? s-sub-ptns gtp-sub)
-                           ;;(prn :consider gtp-super)
-                           (if (symbol? (:arg gtp-sub))
-                             ;; If shared node has type param, compare original type params
-                             (case (:kind gtp-sub)
-                               (:Vec :Set :Coll) (when-let [arg (if (and (:arg sp) (:arg tp))
-                                                                  (join (:arg sp) (:arg tp))
-                                                                  (or (:arg sp) (:arg tp)))]
-                                                   (assoc gtp-sub :arg arg))
-                               (:Instance) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
-                                             (assoc gtp-sub :arg (some :arg [sp tp]))))
-                             ;; No param in meet, return unmodified
-                             gtp-sub)))
-                       (get @*ptn-subtypes gtp))]
+        join-ptn (if (= :Instance (:kind sp) (:kind tp))
+                   (instance-join sp tp)
+                   (some (fn [gtp-sub]
+                           (when (contains? s-sub-ptns gtp-sub)
+                             ;;(prn :consider gtp-super)
+                             (if (symbol? (:arg gtp-sub))
+                               ;; If shared node has type param, compare original type params
+                               (case (:kind gtp-sub)
+                                 (:Vec :Set :Coll) (when-let [arg (if (and (:arg sp) (:arg tp))
+                                                                    (join (:arg sp) (:arg tp))
+                                                                    (or (:arg sp) (:arg tp)))]
+                                                     (assoc gtp-sub :arg arg))
+                                 (:Instance) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
+                                               (assoc gtp-sub
+                                                      :arg (some :arg [sp tp])
+                                                      :r2 (some :r2 [sp tp]))))
+                               ;; No param in meet, return unmodified
+                               gtp-sub)))
+                         (get @*ptn-subtypes gtp)))]
     (ptn-type join-ptn)))
 
 (s/defn elem-type :- (s/maybe HaliteType)
@@ -293,7 +303,7 @@
 
 (defn- all-r2 [t]
   (cond
-    (= 'KW (:arg t)) (:r2 t)
+    (= :* (:arg t)) (:r2 t)
     :else (conj (or (:r2 t) #{}) (:arg t))))
 
 (defn- remove-redundant-r2 [t]
@@ -304,7 +314,7 @@
 (defn instance-subtype? [s t]
   (and (set/subset? (all-r2 t) (all-r2 s))
        (or (= (:arg s) (:arg t))
-           (= 'KW (:arg t)))
+           (= :* (:arg t)))
        (or (= (:maybe? s) (:maybe? t))
            (:maybe? t))))
 
@@ -312,43 +322,34 @@
   (remove-redundant-r2
    (no-nil {:maybe? (or (:maybe? s) (:maybe? t))
             :kind :Instance
-            :arg (cond
-                   (= (:arg s) (:arg t)) (:arg s)
-                   :else 'KW)
-            :r2 (no-empty (cond
-                            (and (not= 'KW (:arg s))
-                                 (not= 'KW (:arg t)))
-                            #{}
-
-                            (or (set/subset? (all-r2 t) (all-r2 s))
-                                (set/subset? (all-r2 s) (all-r2 t)))
-                            (set/intersection (all-r2 s) (all-r2 t))
-
-                            :else #{}))})))
+            :arg (if (= (:arg s) (:arg t))
+                   (:arg s)
+                   :*)
+            :r2 (no-empty (set/intersection (all-r2 s) (all-r2 t)))})))
 
 (defn instance-join [s t]
   (remove-redundant-r2 (cond
                          (or (= (:arg s) (:arg t))
-                             (= 'KW (:arg s))
-                             (= 'KW (:arg t)))
+                             (= :* (:arg s))
+                             (= :* (:arg t)))
                          (no-nil {:maybe? (and (:maybe? s) (:maybe? t))
                                   :kind :Instance
                                   :arg (cond
                                          (= (:arg s) (:arg t)) (:arg s)
-                                         (= 'KW (:arg s)) (:arg t)
-                                         (= 'KW (:arg t)) (:arg s))
+                                         (= :* (:arg s)) (:arg t)
+                                         (= :* (:arg t)) (:arg s))
                                   :r2 (no-empty (set/union (all-r2 s) (all-r2 t)))})
 
                          :else
                          (if (and (:maybe? s) (:maybe? t))
-                           :Unset
-                           :Nothing))))
+                           {:kind :Unset}
+                           {:kind :Nothing}))))
 
 (defn instance-type [s]
   (when (= 1 (count (all-r2 s)))
-    (if (= 'KW (:arg s))
+    (if (= :* (:arg s))
       (first (:r2 s))
       (:arg s))))
 
 (defn instance-needs-refinement? [s]
-  (= 'KW (:arg s)))
+  (= :* (:arg s)))
