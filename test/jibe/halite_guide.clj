@@ -189,7 +189,15 @@
 
   (h (if true false) [:throws "Wrong number of arguments to 'if': expected 3, but got 2"])
 
-  (h (if-value true false true) [:throws "First argument to 'if-value' must be a bare symbol"]))
+  (h (if-value true false true) [:throws "First argument to 'if-value' must be a bare symbol"])
+
+  (h (if-value-let [y false] false) [:throws "Wrong number of arguments to 'if-value-let': expected 3, but got 2"])
+
+  (h (if-value-let [y] false true) [:throws "Syntax error"])
+
+  (h (if-value-let [true false] false true) [:throws "Binding target for 'if-value-let' must be a bare symbol"])
+
+  (h (if-value-let [x false] false true) [:throws "Binding expression in 'if-value-let' must have an optional type"]))
 
 (deftest test-int
   (h 1 :Integer 1 "1" "1")
@@ -474,6 +482,10 @@
   (h (if true 1 3) :Integer 1 "(if(true) {1} else {3})" "1")
 
   (h (if-value 3 1 2) [:throws "First argument to 'if-value' must be a bare symbol"])
+
+  (h (if-value-let [3 4] 1 2) [:throws "Binding target for 'if-value-let' must be a bare symbol"])
+
+  (h (if-value-let [x 3] 1 2) [:throws "Binding expression in 'if-value-let' must have an optional type"])
 
   (h (if (> 2 1) false true) :Boolean false "(if((2 > 1)) {false} else {true})" "false")
 
@@ -961,6 +973,10 @@
   (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o (div 5 0) 1)) :Integer 1 "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {(5 / 0)} else {1}) }" "1"])
 
   (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o 1 (div 5 0))) :Integer [:throws "Divide by zero"] "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {1} else {(5 / 0)}) }" [:throws "Divide by zero"]])
+
+  (hc :basic :my [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (div 5 0) 1) :Integer 1 "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(5 / 0)} else {1})" "1"])
+
+  (hc :basic :my [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] 1 (div 5 0)) :Integer [:throws "Divide by zero"] "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {1} else {(5 / 0)})" [:throws "Divide by zero"]])
 
   (h (if true "yes" (div 5 0)) :Object "yes" "(if(true) {\"yes\"} else {(5 / 0)})" "\"yes\"")
 

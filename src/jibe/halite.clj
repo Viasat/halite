@@ -279,34 +279,35 @@
                           (mapcat identity)
                           (map syntax-check)
                           dorun))
-    (seq? expr) (and (or (#{'concrete?
-                            'sort-by
-                            'first
-                            'rest
-                            'if
+    (seq? expr) (and (or (#{'=
                             'any?
-                            'valid
                             'concat
-                            'when
-                            'union
-                            '=
+                            'concrete?
+                            'conj
+                            'difference
                             'every?
+                            'filter
+                            'first
+                            'get
+                            'get*
+                            'if
+                            'if-value
                             'if-value-
-                            'refines-to?
+                            'if-value-let
+                            'intersection
                             'into
-                            'valid?
                             'let
                             'map
-                            'reduce
                             'not=
-                            'get
-                            'difference
-                            'if-value
+                            'reduce
                             'refine-to
-                            'conj
-                            'intersection
-                            'get*
-                            'filter} (first expr))
+                            'refines-to?
+                            'rest
+                            'sort-by
+                            'union
+                            'valid
+                            'valid?
+                            'when} (first expr))
                          (get builtins (first expr))
                          (throw (ex-info "unknown function or operator" {:op (first expr)
                                                                          :expr expr})))
