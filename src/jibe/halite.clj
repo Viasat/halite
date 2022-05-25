@@ -307,7 +307,8 @@
                             'union
                             'valid
                             'valid?
-                            'when} (first expr))
+                            'when
+                            'when-value} (first expr))
                          (get builtins (first expr))
                          (throw (ex-info "unknown function or operator" {:op (first expr)
                                                                          :expr expr})))
@@ -527,13 +528,16 @@
                    body))))
 
 (s/defn ^:private type-check-if-value :- HaliteType
+  "handles if-value and when-value"
   [ctx :- TypeContext, expr :- s/Any]
-  (arg-count-exactly 3 expr)
   (let [[op sym set-expr unset-expr] expr]
+    (arg-count-exactly (if (= 'when-value op) 2 3) expr)
     (when-not (and (symbol? sym) (bare? sym))
       (throw (ex-info (str "First argument to '" op "' must be a bare symbol") {:form expr})))
     (let [sym-type (type-check* ctx sym)
-          unset-type (type-check* ctx unset-expr)]
+          unset-type (if (= 'when-value op)
+                       :Unset
+                       (type-check* ctx unset-expr))]
       (when-not (maybe-type? sym-type)
         (throw (ex-info (str "First argument to '" op "' must have an optional type")
                         {:form sym :expected [:Maybe :Any] :actual sym-type})))
@@ -707,6 +711,7 @@
                   'let (type-check-let ctx expr)
                   'if-value (type-check-if-value ctx expr)
                   'if-value- (type-check-if-value ctx expr) ;; deprecated
+                  'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
                   'if-value-let (type-check-if-value-let ctx expr)
                   'union (type-check-union ctx expr)
                   'intersection (type-check-intersection ctx expr)
@@ -764,11 +769,14 @@
    body))
 
 (s/defn ^:private eval-if-value :- s/Any
+  "handles if-value and when-value"
   [ctx :- EvalContext, expr]
   (let [[sym then else] (rest expr)]
     (if (not= :Unset (eval-expr* ctx sym))
       (eval-expr* ctx then)
-      (eval-expr* ctx else))))
+      (if (= 4 (count expr))
+        (eval-expr* ctx else)
+        :Unset))))
 
 (s/defn ^:private eval-if-value-let :- s/Any
   [ctx :- EvalContext, expr]
@@ -844,6 +852,7 @@
                               :Unset))
                     'let (apply eval-let ctx (rest expr))
                     'if-value (eval-if-value ctx expr)
+                    'when-value (eval-if-value ctx expr) ; eval-if-value handles when-value
                     'if-value- (eval-if-value ctx expr) ;; deprecated
                     'if-value-let (eval-if-value-let ctx expr)
                     'union (reduce set/union (map eval-in-env (rest expr)))

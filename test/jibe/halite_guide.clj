@@ -191,6 +191,8 @@
 
   (h (if-value true false true) [:throws "First argument to 'if-value' must be a bare symbol"])
 
+  (h (when-value true false) [:throws "First argument to 'when-value' must be a bare symbol"])
+
   (h (if-value-let [y false] false) [:throws "Wrong number of arguments to 'if-value-let': expected 3, but got 2"])
 
   (h (if-value-let [y] false true) [:throws "Syntax error"])
@@ -482,6 +484,8 @@
   (h (if true 1 3) :Integer 1 "(if(true) {1} else {3})" "1")
 
   (h (if-value 3 1 2) [:throws "First argument to 'if-value' must be a bare symbol"])
+
+  (h (when-value 3 1) [:throws "First argument to 'when-value' must be a bare symbol"])
 
   (h (if-value-let [3 4] 1 2) [:throws "Binding target for 'if-value-let' must be a bare symbol"])
 
@@ -973,6 +977,8 @@
   (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o (div 5 0) 1)) :Integer 1 "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {(5 / 0)} else {1}) }" "1"])
 
   (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o 1 (div 5 0))) :Integer [:throws "Divide by zero"] "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {1} else {(5 / 0)}) }" [:throws "Divide by zero"]])
+
+  (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (when-value o (div 5 0))) [:Maybe :Integer] :Unset "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(5 / 0)}) }" "Unset"])
 
   (hc :basic :my [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (div 5 0) 1) :Integer 1 "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(5 / 0)} else {1})" "1"])
 

@@ -1,11 +1,12 @@
 expr         = conditional
 params       = symbol      | <'('> (symbol (<','> symbol)* <','>? )? <')'>
 
-conditional  = if-value-let| ('if' | 'ifValue' ) <'('> conditional <')'> conditional <'else'> conditional
-if-value-let = optional    | <'ifValueLet'> <'('> symbol <'='> expr <')'> conditional <'else'> conditional
-optional     = valid       | <'when'> <'('> conditional <')'> conditional
-valid        = implication | ('valid?' | 'valid') conditional
-implication  = or          | or <'=>'> conditional
+conditional  = if-value-let| ('if' | 'ifValue' ) <'('> expr <')'> expr <'else'> expr
+if-value-let = when-value  | <'ifValueLet'> <'('> symbol <'='> expr <')'> expr <'else'> expr
+when-value   = optional    | <'whenValue'> <'('> symbol <')'> expr
+optional     = valid       | <'when'> <'('> expr <')'> expr
+valid        = implication | ('valid?' | 'valid') expr
+implication  = or          | or <'=>'> expr
 or           = and         | or '||' and
 and          = equality    | and '&&' equality
 equality     = relational  | relational ('==' | '!=') relational
