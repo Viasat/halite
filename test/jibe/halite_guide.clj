@@ -1846,7 +1846,7 @@
                    :spec/V [false]}
                   (spec :V
                         (variables [:t :spec/T$v1])
-                        (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
+                        (refinements [:as_t :to :spec/T$v1 [:halite "(refine-to t :spec/T$v1)"]]))
                   (spec :C
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
                   (spec :T))]
