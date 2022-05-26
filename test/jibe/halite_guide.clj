@@ -1840,20 +1840,23 @@
                             "fails because refinement expression is of type :Instance. This effectively means that the type of t is C"
                             [(refine-to {:$type :spec/V$v1 :t {:$type :spec/C$v1}} :spec/C$v1)])))
 
-  (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
-                        (hc [(workspace :spec
-                                        {:spec/T [false]
-                                         :spec/C [true]
-                                         :spec/V [false]}
-                                        (spec :V
-                                              (variables [:t :spec/T$v1])
-                                              (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
-                                        (spec :C
-                                              (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-                                        (spec :T))]
-                            :spec
-                            "fails because refinement expression is of type :Instance"
-                            [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1)])))
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [false]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
+                  (spec :C
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T))]
+      :spec
+      "fails because refinement expression is of type :Instance"
+      [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1)
+       [:Instance :spec/T$v1]
+       [:throws "instance cannot contain abstract value"]
+       "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/T$v1 )"
+       [:throws "instance cannot contain abstract value"]])
 
   (hc [(workspace :spec
                   {:spec/T [true]
