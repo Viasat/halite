@@ -12,69 +12,72 @@
             [internal :refer :all])
   (:import [clojure.lang ExceptionInfo]))
 
+(set! *warn-on-reflection* true)
+
+(deftype HInfo [s t j-expr h-result jh-result j-result])
+
+(defn ^HInfo h* [expr]
+  (let [senv (halite-envs/spec-env {})
+        tenv (halite-envs/type-env {})
+        env (halite-envs/env {})
+        j-expr (try (jadeite/to-jadeite expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)]))
+        s (try (halite/syntax-check expr)
+               nil
+               (catch RuntimeException e
+                 [:syntax-check-throws (.getMessage e)]))
+        t (try (halite/type-check senv tenv expr)
+               (catch RuntimeException e
+                 [:throws (.getMessage e)]))
+        h-result (try (halite/eval-expr senv tenv env expr)
+                      (catch RuntimeException e
+                        [:throws (.getMessage e)]))
+        jh-expr (when (string? j-expr)
+                  (try
+                    (jadeite/to-halite j-expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)])))
+
+        jh-result (try
+                    (halite/eval-expr senv tenv env jh-expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)]))
+        j-result (try
+                   (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
+                   (catch RuntimeException e
+                     [:throws (.getMessage e)]))]
+    (HInfo. s t j-expr h-result jh-result j-result)))
+
 (defmacro h
   [expr & args]
   (let [[expected-t result-expected j-expr-expected j-result-expected] args]
-    `(let [senv# (halite-envs/spec-env {})
-           tenv# (halite-envs/type-env {})
-           env# (halite-envs/env {})
-           j-expr# (try (jadeite/to-jadeite (quote ~expr))
-                        (catch RuntimeException e#
-                          [:throws (.getMessage e#)]))
-           s# (try (halite/syntax-check (quote ~expr))
-                   nil
-                   (catch RuntimeException e#
-                     [:syntax-check-throws (.getMessage e#)]))
-           t# (try (halite/type-check senv# tenv# (quote ~expr))
-                   (catch RuntimeException e#
-                     [:throws (.getMessage e#)]))
-           h-result# (try (halite/eval-expr senv# tenv# env# (quote ~expr))
-                          (catch RuntimeException e#
-                            [:throws (.getMessage e#)]))
-           jh-expr# (when (string? j-expr#)
-                      (try
-                        (jadeite/to-halite j-expr#)
-                        (catch RuntimeException e#
-                          [:throws (.getMessage e#)])))
-
-           jh-result# (try
-                        (halite/eval-expr senv# tenv# env# jh-expr#)
-                        (catch RuntimeException e#
-                          [:throws (.getMessage e#)]))
-           j-result# (try
-                       (jadeite/to-jadeite (halite/eval-expr senv# tenv# env# jh-expr#))
-                       (catch RuntimeException e#
-                         [:throws (.getMessage e#)]))]
-       (if (nil? s#)
+    `(let [i# (h* '~expr)]
+       (if (nil? (.-s i#))
          (do
-           (is (= ~expected-t t#))
-
-           (when (not (and (vector? t#)
-                           (= :throws (first t#))))
-             (when (and (vector? h-result#)
-                        (= :throws (first h-result#))))
-             (is (= ~result-expected h-result#))
-             (when (string? j-expr#)
-               (is (= ~result-expected jh-result#)))
-             (when (string? j-expr#)
-               (is (= ~j-result-expected j-result#)))
-             (is (= ~j-expr-expected j-expr#)))
-           (if (and (vector? t#)
-                    (= :throws (first t#)))
+           (is (= ~expected-t (.-t i#)))
+           (if (and (vector? (.-t i#))
+                    (= :throws (first (.-t i#))))
              (list (quote ~'h)
                    (quote ~expr)
-                   t#)
-             (list (quote ~'h)
-                   (quote ~expr)
-                   t#
-                   h-result#
-                   j-expr#
-                   j-result#)))
+                   (.-t i#))
+             (do
+               (is (= ~result-expected (.-h-result i#)))
+               (when (string? (.-j-expr i#))
+                 (is (= ~result-expected (.-jh-result i#)))
+                 (is (= ~j-result-expected (.-j-result i#))))
+               (is (= ~j-expr-expected (.-j-expr i#)))
+               (list (quote ~'h)
+                     (quote ~expr)
+                     (.-t i#)
+                     (.-h-result i#)
+                     (.-j-expr i#)
+                     (.-j-result i#)))))
          (do
-           (is (= ~expected-t s#))
+           (is (= ~expected-t (.-s i#)))
            (list (quote ~'h)
                  (quote ~expr)
-                 s#))))))
+                 (.-s i#)))))))
 
 (defn hf
   [expr & args]
@@ -891,6 +894,38 @@
                                                 (variables [:co :spec/C$v1 :optional])
                                                 (refinements [:as_c :to :spec/C$v1 [:halite "co"]])))]})
 
+(deftype HCInfo [t h-result j-expr jh-result j-result])
+
+(defn ^HCInfo hc* [workspace-id expr]
+  (let [senv (spec-env/for-workspace *spec-store* workspace-id)
+        tenv (halite-envs/type-env {})
+        env (halite-envs/env {})
+        j-expr (try (jadeite/to-jadeite expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)]))
+        t (try (halite/type-check senv tenv expr)
+               (catch RuntimeException e
+                 [:throws (.getMessage e)]))
+        h-result (try (halite/eval-expr senv tenv env expr)
+                      (catch RuntimeException e
+                        [:throws (.getMessage e)]))
+        jh-expr (when (string? j-expr)
+                  (try
+                    (jadeite/to-halite j-expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)])))
+
+        jh-result (try
+                    (halite/eval-expr senv tenv env jh-expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)]))
+        j-result (try
+                   (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
+                   (catch RuntimeException e
+                     [:throws (.getMessage e)]))]
+
+    (HCInfo. t h-result j-expr jh-result j-result)))
+
 (defmacro hc [workspaces workspace-id comment? & raw-args]
   (let [raw-args (if (string? comment?)
                    (first raw-args)
@@ -898,54 +933,25 @@
         [expr & args] raw-args
         [expected-t result-expected j-expr-expected j-result-expected] args]
     `(test-setup-specs/setup-specs ~(if (keyword? workspaces)
-                                      `'~(workspaces-map workspaces)
+                                      `(workspaces-map ~workspaces)
                                       workspaces)
-                                   (let [senv# (spec-env/for-workspace *spec-store* ~workspace-id)
-                                         tenv# (halite-envs/type-env {})
-                                         env# (halite-envs/env {})
-                                         j-expr# (try (jadeite/to-jadeite (quote ~expr))
-                                                      (catch RuntimeException e#
-                                                        [:throws (.getMessage e#)]))
-                                         t# (try (halite/type-check senv# tenv# (quote ~expr))
-                                                 (catch RuntimeException e#
-                                                   [:throws (.getMessage e#)]))
-                                         h-result# (try (halite/eval-expr senv# tenv# env# (quote ~expr))
-                                                        (catch RuntimeException e#
-                                                          [:throws (.getMessage e#)]))
-                                         jh-expr# (when (string? j-expr#)
-                                                    (try
-                                                      (jadeite/to-halite j-expr#)
-                                                      (catch RuntimeException e#
-                                                        [:throws (.getMessage e#)])))
-
-                                         jh-result# (try
-                                                      (halite/eval-expr senv# tenv# env# jh-expr#)
-                                                      (catch RuntimeException e#
-                                                        [:throws (.getMessage e#)]))
-                                         j-result# (try
-                                                     (jadeite/to-jadeite (halite/eval-expr senv# tenv# env# jh-expr#))
-                                                     (catch RuntimeException e#
-                                                       [:throws (.getMessage e#)]))]
-
-                                     (is (= ~expected-t t#))
-
-                                     (when (not (and (vector? t#)
-                                                     (= :throws (first t#))))
-                                       (is (= ~result-expected h-result#))
-                                       (when (string? j-expr#)
-                                         (is (= ~result-expected jh-result#)))
-                                       (when (string? j-expr#)
-                                         (is (= ~j-result-expected j-result#)))
-                                       (is (= ~j-expr-expected j-expr#)))
-                                     (if (and (vector? t#)
-                                              (= :throws (first t#)))
+                                   (let [i# (hc* ~workspace-id '~expr)]
+                                     (is (= ~expected-t (.-t i#)))
+                                     (if (and (vector? (.-t i#))
+                                              (= :throws (first (.-t i#))))
                                        (vector (quote ~expr)
-                                               t#)
-                                       (vector (quote ~expr)
-                                               t#
-                                               h-result#
-                                               j-expr#
-                                               j-result#))))))
+                                               (.-t i#))
+                                       (do
+                                         (is (= ~result-expected (.-h-result i#)))
+                                         (when (string? (.-j-expr i#))
+                                           (is (= ~result-expected (.-jh-result i#)))
+                                           (is (= ~j-result-expected (.-j-result i#))))
+                                         (is (= ~j-expr-expected (.-j-expr i#)))
+                                         (vector (quote ~expr)
+                                                 (.-t i#)
+                                                 (.-h-result i#)
+                                                 (.-j-expr i#)
+                                                 (.-j-result i#))))))))
 
 (deftest test-stuff
   (h (get (if true #{} [9 8 7 6]) (+ 1 2)) [:throws "First argument to get must be an instance of known type or non-empty vector"])
