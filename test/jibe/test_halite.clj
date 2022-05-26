@@ -83,6 +83,22 @@
     [1 2 3]
     [{:$type :ws2/B$v1 :s "bar"}]))
 
+(deftest error-tests
+  (are [expr etype]
+       (= etype (halite/type-check senv tenv expr))
+    '(error "You cannot pass") :Nothing
+    '(error (str "error" " message")) :Nothing)
+
+  (are [expr err-msg]
+       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+    '(error 10) #"no matching signature for 'error'"
+    '(error (error "foo")) #"Disallowed.*expression")
+
+  (are [expr err-msg]
+       (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
+    '(error "You cannot pass") #"Spec threw error: You cannot pass"
+    '(error (str "error" " message")) #"Spec threw error: error message"))
+
 (deftest application-tests
   (are [expr etype]
        (= etype (halite/type-check senv tenv expr))

@@ -14,7 +14,7 @@
 (def global-fns
   "Set of halite operator names that are written as function calls in jadeite,
   otherwise method call syntax is used."
-  '#{abs expt range str})
+  '#{abs error expt range str})
 
 ;;;;
 ;; From Jadeite to Halite

@@ -270,7 +270,10 @@
      'range (mk-builtin (comp vec range)
                         [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer :Integer] (halite-types/vector-type :Integer)
-                        [:Integer] (halite-types/vector-type :Integer))}))
+                        [:Integer] (halite-types/vector-type :Integer))
+     'error (mk-builtin #(throw (ex-info (str "Spec threw error: " %)
+                                         {:spec-error-str %}))
+                        [:String] :Nothing)}))
 
 (s/defn syntax-check
   [expr]
