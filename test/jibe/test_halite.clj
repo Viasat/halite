@@ -367,7 +367,9 @@
       '(if-value x "foo" true) :Object
       '(if-value- x "foo" true) :Object ;; deprecated
       '(if-value x x (when true "foo")) :Any
-      '(if-value x "foo" true) :Object
+      '(when-value x "foo") [:Maybe :String]
+      '(when-value x (+ x 1)) [:Maybe :Integer]
+      '(when-value no-value- "foo") :Unset
       '(some? no-value-) :Boolean
       '(some? x) :Boolean
       '(= no-value- x) :Boolean
@@ -382,8 +384,10 @@
 
       '(let [no-value- 12] "ha") #"reserved word"
       '(if-value 12 true false) #"must be a bare symbol"
+      '(when-value 12 true) #"must be a bare symbol"
       '(+ 10 (if-value x no-value- 5)) #"no matching signature for '\+'"
       '(let [y 22] (if-value y true false)) #"must have an optional type"
+      '(let [y 22] (when-value y false)) #"must have an optional type"
       '(= "foo" x) #"would always be false"
       '(if-value-let [y no-value-] 42 y) #"Undefined: 'y'"
       '(= no-value- 5) #"would always be false"
@@ -400,6 +404,8 @@
         '(if-value x x 12) 12
         '(let [y no-value-] (if-value y "foo" true)) true
         '(let [y no-value-] (if-value- y "foo" true)) true ;; deprecated
+        '(when-value x 12) :Unset
+        '(let [y (when true "foo")] (when-value y 12)) 12
         '(= x (get m :x)) true
         '(= 5 (get m :x)) false
         '(some? x) false
