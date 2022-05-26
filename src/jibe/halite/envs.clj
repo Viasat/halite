@@ -73,17 +73,19 @@
   (->TypeEnvImpl scope))
 
 (s/defn substitute-instance-type :- HaliteType
-  "Return the type obtained by substituting :Instance for any occurrence of a spec-id that is abstract in the given spec environment."
+  "NOTE: This function is obsolete now that the `types` module has been re-worked to represent instances differently.
+   So the comment below no longer applies.
+   
+  Return the type obtained by substituting :Instance for any occurrence of a spec-id that is abstract in the given spec environment."
   [senv :- (s/protocol SpecEnv), declared-type :- HaliteType]
   (cond
     (spec-type? declared-type) (let [spec-info (lookup-spec senv (instance-spec-id declared-type))]
                                  (when (nil? spec-info)
                                    (throw (ex-info (format "resource spec not found: '%s'" (symbol declared-type))
                                                    {:type declared-type, #_#_:senv (.-spec-info-map senv)})))
-                                 (if (:abstract? spec-info)
-                                   [:Instance :* #{(instance-spec-id declared-type)}]
-                                   declared-type))
-    (vector? declared-type) [(first declared-type) (substitute-instance-type senv (second declared-type))]
+                                 declared-type)
+    (and (vector? declared-type)
+         (not= :Instance (first declared-type))) [(first declared-type) (substitute-instance-type senv (second declared-type))]
     :else declared-type))
 
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)

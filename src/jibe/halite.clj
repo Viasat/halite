@@ -71,11 +71,11 @@
   and recursively deals with collection types."
   [declared-type :- HaliteType, v]
   (cond
-    (spec-type? declared-type) (when-not (refines-to? v declared-type)
-                                 (throw (ex-info (format "No active refinement path from '%s' to '%s'"
-                                                         (symbol (:$type v))
-                                                         (symbol (instance-spec-id declared-type)))
-                                                 {:value v})))
+    (instance-spec-id declared-type) (when-not (refines-to? v declared-type)
+                                       (throw (ex-info (format "No active refinement path from '%s' to '%s'"
+                                                               (symbol (:$type v))
+                                                               (symbol (instance-spec-id declared-type)))
+                                                       {:value v})))
     (vector? declared-type) (if (= :Maybe (first declared-type))
                               (check-against-declared-type (second declared-type) v)
                               (dorun (map (partial check-against-declared-type (second declared-type)) v)))
@@ -395,7 +395,7 @@
           (throw (ex-info "Second argument to get must be a variable name (as a keyword) when first argument is an instance"
                           {:form form})))
         (when-not (contains? field-types index)
-          (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) subexpr-type)
+          (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) (instance-spec-id subexpr-type))
                           {:form form})))
         (substitute-instance-type (:senv ctx) (get field-types index)))
 
@@ -467,7 +467,7 @@
     (let [coll-type (type-check* ctx expr)
           et (elem-type coll-type)
           _ (when-not et
-              (throw (ex-info (str "collection required for '" op "', not " (pr-str coll-type))
+              (throw (ex-info (str "collection required for '" op "', not " (pr-str (or (instance-spec-id coll-type) coll-type)))
                               {:form expr, :expr-type coll-type})))
           body-type (type-check* (update ctx :tenv extend-scope sym et) body)]
       {:coll-type coll-type

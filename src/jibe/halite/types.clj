@@ -101,7 +101,9 @@
 (s/defn spec-type? :- s/Bool
   "True if t is a type structure representing a spec type, false otherwise"
   [t]
-  (and (vector? t) (= :Instance (first t))))
+  (and (vector? t)
+       (= :Instance (first t))
+       (and (not= :* (second t)))))
 
 (s/defschema TypeAtom
   "Type atoms are always unqualified keywords."
