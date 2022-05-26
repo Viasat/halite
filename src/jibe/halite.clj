@@ -389,8 +389,8 @@
                           {:form index :expected :Integer :actual-type index-type})))
         (second subexpr-type))
 
-      (spec-type? subexpr-type)
-      (let [field-types (->> subexpr-type concrete-instance-spec-id (lookup-spec (:senv ctx)) :spec-vars)]
+      (and (spec-type? subexpr-type) (instance-spec-id subexpr-type) (not (instance-needs-refinement? subexpr-type)))
+      (let [field-types (->> subexpr-type instance-spec-id (lookup-spec (:senv ctx)) :spec-vars)]
         (when-not (and (keyword? index) (bare? index))
           (throw (ex-info "Second argument to get must be a variable name (as a keyword) when first argument is an instance"
                           {:form form})))
