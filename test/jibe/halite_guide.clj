@@ -274,27 +274,27 @@
 
   (h (mod 1 9223372036854775808) [:syntax-check-throws "Syntax error"])
 
-  (h (expt 2 3) :Integer 8 "2.expt(3)" "8")
+  (h (expt 2 3) :Integer 8 "expt(2, 3)" "8")
 
-  (h (expt 1 9223372036854775807) :Integer 1 "1.expt(9223372036854775807)" "1")
+  (h (expt 1 9223372036854775807) :Integer 1 "expt(1, 9223372036854775807)" "1")
 
   (h (expt 1 9223372036854775808N) [:syntax-check-throws "Syntax error"])
 
   (h (expt 2 3 4) [:throws "no matching signature for 'expt'"])
 
-  (h (expt 2 0) :Integer 1 "2.expt(0)" "1")
+  (h (expt 2 0) :Integer 1 "expt(2, 0)" "1")
 
-  (h (expt 2 -1) :Integer [:throws "Invalid exponent"] "2.expt(-1)" [:throws "Invalid exponent"])
+  (h (expt 2 -1) :Integer [:throws "Invalid exponent"] "expt(2, -1)" [:throws "Invalid exponent"])
 
-  (h (expt -2 3) :Integer -8 "-2.expt(3)" "-8")
+  (h (expt -2 3) :Integer -8 "expt(-2, 3)" "-8")
 
-  (h (expt -2 1) :Integer -2 "-2.expt(1)" "-2")
+  (h (expt -2 1) :Integer -2 "expt(-2, 1)" "-2")
 
-  (h (expt -2 4) :Integer 16 "-2.expt(4)" "16")
+  (h (expt -2 4) :Integer 16 "expt(-2, 4)" "16")
 
-  (h (expt -2 0) :Integer 1 "-2.expt(0)" "1")
+  (h (expt -2 0) :Integer 1 "expt(-2, 0)" "1")
 
-  (h (expt -2 -3) :Integer [:throws "Invalid exponent"] "-2.expt(-3)" [:throws "Invalid exponent"])
+  (h (expt -2 -3) :Integer [:throws "Invalid exponent"] "expt(-2, -3)" [:throws "Invalid exponent"])
 
   (h (inc 1) :Integer 2 "(1 + 1)" "2")
 
@@ -306,17 +306,17 @@
 
   (h (abs) [:throws "no matching signature for 'abs'"])
 
-  (h (abs 0) :Integer 0 "0.abs()" "0")
+  (h (abs 0) :Integer 0 "abs(0)" "0")
 
-  (h (abs 1) :Integer 1 "1.abs()" "1")
+  (h (abs 1) :Integer 1 "abs(1)" "1")
 
-  (h (abs -1) :Integer 1 "-1.abs()" "1")
+  (h (abs -1) :Integer 1 "abs(-1)" "1")
 
   (h (abs 1 2 3) [:throws "no matching signature for 'abs'"])
 
-  (h (abs (- 1 4)) :Integer 3 "(1 - 4).abs()" "3")
+  (h (abs (- 1 4)) :Integer 3 "abs((1 - 4))" "3")
 
-  (h (abs -9223372036854775808) :Integer -9223372036854775808 "-9223372036854775808.abs()" "-9223372036854775808")
+  (h (abs -9223372036854775808) :Integer -9223372036854775808 "abs(-9223372036854775808)" "-9223372036854775808")
 
   (h (abs true) [:throws "no matching signature for 'abs'"]))
 
@@ -421,7 +421,7 @@
 
   (h (inc -9223372036854775808) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807")
 
-  (h (abs -9223372036854775808) :Integer -9223372036854775808 "-9223372036854775808.abs()" "-9223372036854775808")
+  (h (abs -9223372036854775808) :Integer -9223372036854775808 "abs(-9223372036854775808)" "-9223372036854775808")
 
   (h (= -9223372036854775808 -9223372036854775808) :Boolean true "(-9223372036854775808 == -9223372036854775808)" "true")
 
@@ -793,11 +793,11 @@
 
   (h (range) [:throws "no matching signature for 'range'"])
 
-  (h (range 1) [:Vec :Integer] [0] "1.range()" "[0]")
+  (h (range 1) [:Vec :Integer] [0] "range(1)" "[0]")
 
-  (h (range 1 2) [:Vec :Integer] [1] "1.range(2)" "[1]")
+  (h (range 1 2) [:Vec :Integer] [1] "range(1, 2)" "[1]")
 
-  (h (range 1 2 3) [:Vec :Integer] [1] "1.range(2, 3)" "[1]")
+  (h (range 1 2 3) [:Vec :Integer] [1] "range(1, 2, 3)" "[1]")
 
   (h (conj [10 20] 30) [:Vec :Integer] [10 20 30] "[10, 20].conj(30)" "[10, 20, 30]")
 

@@ -11,6 +11,11 @@
 
 (set! *warn-on-reflection* true)
 
+(def global-fns
+  "Set of halite operator names that are written as function calls in jadeite,
+  otherwise method call syntax is used."
+  '#{abs expt range str})
+
 ;;;;
 ;; From Jadeite to Halite
 
@@ -62,10 +67,17 @@
                                                [(toh elem) (toh coll)] (toh body))
      [[:call-fn [:symbol "equalTo"] & args]]    (list* '= (map toh args))
      [[:call-fn [:symbol "notEqualTo"] & args]] (list* 'not= (map toh args))
-     [[:call-fn s & args]]                      (list* (toh s) (map toh args))
-     [[:call-method a [:symbol "concat"] b]]      (list 'concat (toh a) (toh b))
+     [[:call-fn op & args]]                     (let [s (toh op)]
+                                                  (if (global-fns s)
+                                                    (list* s (map toh args))
+                                                    (throw (ex-info (str "No such global function: " s)
+                                                                    {:op s :args args}))))
      [[:call-method a [:symbol "reduce"] & args]] (concat ['reduce-] (map toh args) [(toh a)])
-     [[:call-method a op & args]]                 (list* (toh op) (toh a) (map toh args))
+     [[:call-method a op & args]]                 (let [s (toh op)]
+                                                    (if (global-fns s)
+                                                      (throw (ex-info (str "No such method: " s)
+                                                                      {:op s :args args}))
+                                                      (list* s (toh a) (map toh args))))
      [[:type-method a "refineTo" & args]]         (list* 'refine-to (toh a) (map toh args))
      [[:type-method a "refinesTo?" & args]]       (list* 'refines-to? (toh a) (map toh args))
      [[:map & args]]          (into {} (map toh) args)
@@ -139,6 +151,11 @@
       (str (toj target) "\n." method-name (string/replace args-str #"\n" "\n  "))
       (str (toj target) "." method-name args-str))))
 
+(defn call-fn-or-method [op args]
+  (if (global-fns op)
+    (str op (infix ", " args))
+    (call-method op args)))
+
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
@@ -185,7 +202,6 @@
                  if-value-let (apply format "(ifValueLet ( %s = %s ) {%s} else {%s})"
                                      (map toj [(first a0) (second a0) a1 a2]))
                  inc (str "(" (toj a0) " + 1)")
-                 concat (call-method "concat" args)
                  let (let [[bindings expr] args]
                        (str "{ "
                             (->> bindings
@@ -205,9 +221,8 @@
                  refine-to (str (toj a0) ".refineTo( " (typename a1) " )")
                  refines-to? (str (toj a0) ".refinesTo?( " (typename a1) " )")
                  select (call-method "select" (reverse args))
-                 str (str "str" (infix ", " args))
                  ;; default:
-                 (call-method op args)))
+                 (call-fn-or-method op args)))
     :else (str x)))
 
 (def to-jadeite
