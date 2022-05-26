@@ -439,7 +439,15 @@
                                      {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
          (halite-types/instance-meet {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-                                     {:maybe? true :kind :Instance :arg :ws/A}))))
+                                     {:maybe? true :kind :Instance :arg :ws/A})))
+
+  (is (= {:kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+         (halite-types/instance-meet {:kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                     {:kind :Instance :arg :ws/A :r2 #{:ws/B}})))
+
+  (is (= {:kind :Instance :arg :* :r2 #{:ws/A}}
+         (halite-types/instance-meet {:kind :Instance :arg :* :r2 #{:ws/A}}
+                                     {:kind :Instance :arg :ws/A}))))
 
 (deftest test-instance-join
   (is (= {:maybe? false :kind :Instance :arg :ws/A}

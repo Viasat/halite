@@ -160,7 +160,7 @@
     (doseq [[field-kw field-val] (dissoc inst :$type)]
       (let [field-type (substitute-instance-type (:senv ctx) (get field-types field-kw))
             actual-type (check-fn ctx field-val)]
-        (when-not (or (subtype? actual-type field-type))
+        (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
                           {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
     [:Instance t]))
