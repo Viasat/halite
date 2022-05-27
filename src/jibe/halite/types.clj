@@ -398,3 +398,16 @@
    [:Instance :*])
   ([spec-id :- schema/Keyword]
    [:Instance :* #{spec-id}]))
+
+(s/defn unwrap-maybe-if-needed :- HaliteType
+  [t :- HaliteType]
+  (if (and (vector? t)
+           (= :Maybe (first t)))
+    (second t)
+    t))
+
+(s/defn collection-element-type :- (s/maybe HaliteType)
+  [t :- HaliteType]
+  (when (and (vector? t)
+             (#{:Coll :Set :Vec} (first t)))
+    (second t)))

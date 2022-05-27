@@ -70,16 +70,16 @@
   but at runtime, we need to confirm that v actually refines to the expected type. This function does,
   and recursively deals with collection types."
   [declared-type :- HaliteType, v]
-  (cond
-    (instance-spec-id declared-type) (when-not (refines-to? v declared-type)
-                                       (throw (ex-info (format "No active refinement path from '%s' to '%s'"
-                                                               (symbol (:$type v))
-                                                               (symbol (instance-spec-id declared-type)))
-                                                       {:value v})))
-    (vector? declared-type) (if (= :Maybe (first declared-type))
-                              (check-against-declared-type (second declared-type) v)
-                              (dorun (map (partial check-against-declared-type (second declared-type)) v)))
-    :else nil))
+  (let [declared-type (halite-types/unwrap-maybe-if-needed declared-type)]
+    (cond
+      (instance-spec-id declared-type) (when-not (refines-to? v declared-type)
+                                         (throw (ex-info (format "No active refinement path from '%s' to '%s'"
+                                                                 (symbol (:$type v))
+                                                                 (symbol (instance-spec-id declared-type)))
+                                                         {:value v})))
+      :else (if-let [element-type (halite-types/collection-element-type declared-type)]
+              (dorun (map (partial check-against-declared-type element-type) v))
+              nil))))
 
 (s/defn ^:private validate-instance :- s/Any
   "Check that an instance satisfies all applicable constraints.
