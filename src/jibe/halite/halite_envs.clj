@@ -3,7 +3,7 @@
 
 (ns jibe.halite.envs
   "Halite spec, type, and eval environment abstractions."
-  (:require [jibe.halite.types :refer [BareKeyword BareSymbol NamespacedKeyword HaliteType spec-type? instance-spec-id]]
+  (:require [jibe.halite.types :as halite-types]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -13,9 +13,9 @@
    (s/optional-key :inverted?) s/Bool})
 
 (s/defschema SpecInfo
-  {:spec-vars {BareKeyword HaliteType}
+  {:spec-vars {halite-types/BareKeyword halite-types/HaliteType}
    :constraints [[(s/one s/Str :name) (s/one s/Any :expr)]]
-   :refines-to {NamespacedKeyword Refinement}
+   :refines-to {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
 (defprotocol SpecEnv
@@ -24,7 +24,7 @@
 (s/defn lookup-spec :- (s/maybe SpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
-  [senv :- (s/protocol SpecEnv), spec-id :- NamespacedKeyword]
+  [senv :- (s/protocol SpecEnv), spec-id :- halite-types/NamespacedKeyword]
   (lookup-spec* senv spec-id))
 
 (deftype SpecEnvImpl [spec-info-map]
@@ -32,35 +32,35 @@
   (lookup-spec* [self spec-id] (spec-info-map spec-id)))
 
 (s/defn spec-env :- (s/protocol SpecEnv)
-  [spec-info-map :- {NamespacedKeyword SpecInfo}]
+  [spec-info-map :- {halite-types/NamespacedKeyword SpecInfo}]
   (->SpecEnvImpl spec-info-map))
 
 (defprotocol TypeEnv
   (scope* [self])
   (extend-scope* [self sym t]))
 
-(s/defn scope :- {BareSymbol HaliteType}
+(s/defn scope :- {halite-types/BareSymbol halite-types/HaliteType}
   "The scope of the current type environment."
   [tenv :- (s/protocol TypeEnv)]
   (scope* tenv))
 
 (s/defn extend-scope :- (s/protocol TypeEnv)
   "Produce a new type environment, extending the current scope by mapping the given symbol to the given type."
-  [tenv :- (s/protocol TypeEnv), sym :- BareSymbol, t :- HaliteType]
+  [tenv :- (s/protocol TypeEnv), sym :- halite-types/BareSymbol, t :- halite-types/HaliteType]
   (extend-scope* tenv sym t))
 
 (defprotocol Env
   (bindings* [self])
   (bind* [self sym value]))
 
-(s/defn bindings :- {BareSymbol s/Any}
+(s/defn bindings :- {halite-types/BareSymbol s/Any}
   "The bindings of the current environment."
   [env :- (s/protocol Env)]
   (bindings* env))
 
 (s/defn bind :- (s/protocol Env)
   "The environment produced by extending env with sym mapped to value."
-  [env :- (s/protocol Env), sym :- BareSymbol, value :- s/Any]
+  [env :- (s/protocol Env), sym :- halite-types/BareSymbol, value :- s/Any]
   (bind* env sym value))
 
 (deftype TypeEnvImpl [scope]
@@ -69,7 +69,7 @@
   (extend-scope* [self sym t] (TypeEnvImpl. (assoc scope sym t))))
 
 (s/defn type-env :- (s/protocol TypeEnv)
-  [scope :- {BareSymbol HaliteType}]
+  [scope :- {halite-types/BareSymbol halite-types/HaliteType}]
   (->TypeEnvImpl scope))
 
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
@@ -86,7 +86,7 @@
   (bind* [self sym value] (EnvImpl. (assoc bindings sym value))))
 
 (s/defn env :- (s/protocol Env)
-  [bindings :- {BareSymbol s/Any}]
+  [bindings :- {halite-types/BareSymbol s/Any}]
   (->EnvImpl bindings))
 
 (s/defn env-from-inst :- (s/protocol Env)
