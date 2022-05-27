@@ -89,6 +89,29 @@
   [args]
   (into-array ReExpression args))
 
+(defn- mod-workaround
+  "We've got problems with the mod operator.
+
+  First, there's an inconsistency between the expression
+  API and the actual propagators. The propagators implement the semantics of the Java remainder (%) operator,
+  but the expression API seems to compute bounds as if the semantics were consistent with e.g. Knuth/Clojure
+  mod.
+
+  Second, the propagators implement the semantics of the Java remanider (%) operator! We want Knuth/Clojure
+  mod.
+
+  To avoid incorrect bound computations, we only constrain the result of the operation when
+  both operands are known to be non-negative (in which case Clojure mod and Java % have the same behavior)."
+  [^Model m vars ^ArExpression a ^ArExpression n]
+  (let [[lb ub] *default-int-bounds*
+        r (.intVar m (int lb) (int ub))
+        c (.mod m (.intVar a) (.intVar n) r)]
+    (.post (.imp
+            (.and (.ge a (.intVar m (int 0)))
+                  (relational [(.ge n (.intVar m (int 0)))]))
+            (.reify c)))
+    r))
+
 (defn- make-expr [^Model m vars form]
   (cond
     (true? form) (.boolVar m true)
@@ -129,7 +152,9 @@
                          'not (.not ^ReExpression arg1)
                          '=> (.imp ^ReExpression arg1 ^ReExpression (first other-args))
                          'div (.div ^ArExpression arg1 ^ArExpression (first other-args))
-                         'mod (.mod ^ArExpression arg1 ^ArExpression (first other-args))
+                         ;; TODO: Implement our own mod propagators?
+                         ;;'mod (.mod (.abs ^ArExpression arg1) ^ArExpression (first other-args))
+                         'mod (mod-workaround m vars arg1 (first other-args))
                          'expt (.pow ^ArExpression arg1 ^ArExpression (first other-args))
                          'abs (.abs ^ArExpression arg1)
                          'if (let [[then else] other-args]

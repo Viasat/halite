@@ -165,3 +165,38 @@
         '{m 1}                                  '{m 1, n [-10 10], p #{true false}}
         '{m [0 10], p false}                    '{m [0 9], n [1 10], p false}
         '{m 0, n #{-2 -1 0 1 2}, p true}        '{m 0, n #{-2 -1}, p true}))))
+
+(defn- trunc-div [a n]
+  (let [q (/ (double a) (double n))]
+    (if (< q 0)
+      (Math/ceil q)
+      (Math/floor q))))
+
+(defn- java-% [a n]
+  (int (- a (* n (trunc-div a n)))))
+
+(deftest test-mod-workaround
+  (binding [choco-clj/*default-int-bounds* [-100 100]]
+    (let [spec {:vars {'n :Int, 'r :Int, 'd :Int},
+                :constraints #{'(= (mod n d) r)}}]
+
+      (is (= '{n [-100 100], r [-100 100], d [-100 100]}
+             (choco-clj/propagate spec)))
+
+      (is (= '{n [1 20], d 2, r [0 1]}
+             (choco-clj/propagate spec '{n [1 20], d 2})))
+
+      (is (= '{n [-20 -1], d 2, r [-100 100]}
+             (choco-clj/propagate spec '{n [-20 -1], d 2}))))))
+
+(deftest test-add-behavior
+  (binding [choco-clj/*default-int-bounds* [-100 100]]
+    (let [spec '{:vars {a :Int, b :Int, c :Int}
+                 :constraints #{(= (+ a b) c)}}]
+      (doseq [a (range -10 11), b (range -10 11)]
+        (is (= (+ a b) (get (choco-clj/propagate spec {'a a, 'b b}) 'c))
+            (format "expected (= (+ %d %d) %d)" a b (+ a b)))))))
+
+
+
+
