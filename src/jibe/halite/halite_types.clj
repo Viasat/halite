@@ -411,3 +411,9 @@
   (when (and (vector? t)
              (#{:Coll :Set :Vec} (first t)))
     (second t)))
+
+(s/defn maybe-type :- HaliteType
+  [t :- HaliteType]
+  (if (maybe-type? t)
+    t
+    [:Maybe t]))

@@ -143,7 +143,7 @@
         fields (set (keys field-types))
         required-fields (->> field-types
                              (remove (comp halite-types/maybe-type? second))
-                             (map first)
+                             (map first) ;; extract the value which was the key in the map entry
                              set)
         supplied-fields (disj (set (keys inst)) :$type)
         missing-fields (set/difference required-fields supplied-fields)
@@ -432,9 +432,7 @@
   (let [[pred-type body-type] (map (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
       (throw (ex-info "First argument to 'when' must be boolean" {:form expr})))
-    (if (and (vector? body-type) (= :Maybe (first body-type)))
-      body-type
-      [:Maybe body-type])))
+    (halite-types/maybe-type body-type)))
 
 (s/defn ^:private type-check-let :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
