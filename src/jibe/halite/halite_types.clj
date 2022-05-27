@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.types
+(ns jibe.halite.halite-types
   "Schemata defining the set of halite type terms,
   together with functions that define the subtype
   relation and compute meets and joins."

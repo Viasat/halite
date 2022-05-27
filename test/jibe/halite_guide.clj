@@ -3,7 +3,7 @@
 
 (ns jibe.halite-guide
   (:require [jibe.halite :as halite]
-            [jibe.halite.envs :as halite-envs]
+            [jibe.halite.halite-envs :as halite-envs]
             [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]

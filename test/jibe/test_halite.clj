@@ -3,7 +3,7 @@
 
 (ns jibe.test-halite
   (:require [jibe.halite :as halite]
-            [jibe.halite.envs :as halite-envs]
+            [jibe.halite.halite-envs :as halite-envs]
             [clojure.test :refer [deftest is are test-vars]]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))

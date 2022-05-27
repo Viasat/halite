@@ -1,8 +1,8 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.test-types
-  (:require [jibe.halite.types :as halite-types]
+(ns jibe.halite.test-halite-types
+  (:require [jibe.halite.halite-types :as halite-types]
             [clojure.test :as t :refer [deftest is are]]
             [schema.test :refer [validate-schemas]]
             [clojure.test.check.generators :as gen]

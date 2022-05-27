@@ -7,8 +7,8 @@
   (:require [clojure.math.numeric-tower :refer [expt]]
             [clojure.set :as set]
             [clojure.string :as str]
-            [jibe.halite.types :as halite-types]
-            [jibe.halite.envs :as halite-envs]
+            [jibe.halite.halite-types :as halite-types]
+            [jibe.halite.halite-envs :as halite-envs]
             [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]))
 

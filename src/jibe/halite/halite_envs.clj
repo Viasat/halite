@@ -1,9 +1,9 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.envs
+(ns jibe.halite.halite-envs
   "Halite spec, type, and eval environment abstractions."
-  (:require [jibe.halite.types :as halite-types]
+  (:require [jibe.halite.halite-types :as halite-types]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
