@@ -158,7 +158,7 @@
 
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
-      (let [field-type (substitute-instance-type (:senv ctx) (get field-types field-kw))
+      (let [field-type (get field-types field-kw)
             actual-type (check-fn ctx field-val)]
         (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
@@ -397,7 +397,7 @@
         (when-not (contains? field-types index)
           (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) (instance-spec-id subexpr-type))
                           {:form form})))
-        (substitute-instance-type (:senv ctx) (get field-types index)))
+        (get field-types index))
 
       :else (throw (ex-info "First argument to get must be an instance of known type or non-empty vector"
                             {:form form, :actual-type subexpr-type})))))
