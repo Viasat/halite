@@ -384,3 +384,17 @@
                            t :- HaliteType]
   (= (dissoc (type-ptn s) :r2)
      (dissoc (type-ptn s) :r2)))
+
+;; helper functions
+
+(s/defn abstract-spec-type [])
+
+(s/defn concrete-spec-type :- HaliteType
+  [spec-id :- schema/Keyword]
+  [:Instance spec-id])
+
+(s/defn abstract-spec-type :- HaliteType
+  ([]
+   [:Instance :*])
+  ([spec-id :- schema/Keyword]
+   [:Instance :* #{spec-id}]))

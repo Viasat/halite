@@ -78,8 +78,7 @@
   [senv :- (s/protocol SpecEnv), spec :- SpecInfo]
   (let [{:keys [spec-vars]} spec]
     (->TypeEnvImpl
-     (zipmap (map symbol (keys spec-vars))
-             (map identity (vals spec-vars))))))
+     (update-keys spec-vars symbol))))
 
 (deftype EnvImpl [bindings]
   Env

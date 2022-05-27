@@ -7,7 +7,7 @@
   (:require [clojure.math.numeric-tower :refer [expt]]
             [clojure.set :as set]
             [clojure.string :as str]
-            [jibe.halite.types :refer :all]
+            [jibe.halite.types :as halite-types :refer :all]
             [jibe.halite.envs :as halite-envs :refer :all]
             [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]))
@@ -163,7 +163,7 @@
         (when-not (subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
                           {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
-    [:Instance t]))
+    (halite-types/concrete-spec-type t)))
 
 (s/defn ^:private check-coll :- HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, coll]
@@ -650,21 +650,21 @@
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
-    (when-not (subtype? s [:Instance :*])
+    (when-not (subtype? s (halite-types/abstract-spec-type))
       (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr :actual s})))
     (when-not (and (keyword? kw)
                    (namespaced? kw))
       (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
     (when-not (lookup-spec (:senv ctx) kw)
       (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
-    [:Instance kw]))
+    (halite-types/concrete-spec-type kw)))
 
 (s/defn ^:private type-check-refines-to? :- HaliteType
   [ctx :- TypeContext, expr]
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
-    (when-not (subtype? s [:Instance :*])
+    (when-not (subtype? s (halite-types/abstract-spec-type))
       (throw (ex-info "First argument to 'refines-to?' must be an instance" {:form expr})))
     (when-not (and (keyword? kw)
                    (namespaced? kw))
@@ -873,7 +873,7 @@
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]
-                                   (refines-to? inst [:Instance kw]))
+                                   (refines-to? inst (halite-types/concrete-spec-type kw)))
                     'concrete? (concrete? (:senv ctx) (eval-in-env (second expr)))
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
