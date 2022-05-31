@@ -417,3 +417,9 @@
   (if (maybe-type? t)
     t
     [:Maybe t]))
+
+(s/defn halite-vector-type?
+  [t :- HaliteType]
+  (subtype? t [:Vec :Object]))
+
+(def empty-vector [:Vec :Nothing])

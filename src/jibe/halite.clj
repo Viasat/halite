@@ -142,7 +142,7 @@
         field-types (:spec-vars spec-info)
         fields (set (keys field-types))
         required-fields (->> field-types
-                             (remove (comp halite-types/maybe-type? second))
+                             (remove (comp halite-types/maybe-type? second));; 'second' is getting the value from the map entry
                              (map first) ;; extract the value which was the key in the map entry
                              set)
         supplied-fields (disj (set (keys inst)) :$type)
@@ -257,8 +257,8 @@
      'str (mk-builtin str [& :String] :String)
      'subset? (mk-builtin set/subset? [[:Set :Object] [:Set :Object]] :Boolean)
      'sort (mk-builtin (comp vec sort)
-                       [[:Set :Nothing]] [:Vec :Nothing]
-                       [[:Vec :Nothing]] [:Vec :Nothing]
+                       [[:Set :Nothing]] halite-types/empty-vector
+                       [halite-types/empty-vector] halite-types/empty-vector
                        [[:Set :Integer]] [:Vec :Integer]
                        [[:Vec :Integer]] [:Vec :Integer])
      'some? (mk-builtin (fn [v] (not= :Unset v)) ;; deprecated
@@ -380,14 +380,14 @@
   (let [[_ subexpr index] form
         subexpr-type (type-check* ctx subexpr)]
     (cond
-      (halite-types/subtype? subexpr-type [:Vec :Object])
+      (halite-types/halite-vector-type? subexpr-type)
       (let [index-type (type-check* ctx index)]
-        (when (= [:Vec :Nothing] subexpr-type)
+        (when (= halite-types/empty-vector subexpr-type)
           (throw (ex-info "Cannot index into empty vector" {:form form})))
         (when (not= :Integer index-type)
           (throw (ex-info "Second argument to get must be an integer when first argument is a vector"
                           {:form index :expected :Integer :actual-type index-type})))
-        (second subexpr-type))
+        (halite-types/collection-element-type subexpr-type))
 
       (and (halite-types/spec-type? subexpr-type) (halite-types/instance-spec-id subexpr-type) (not (halite-types/instance-needs-refinement? subexpr-type)))
       (let [field-types (->> subexpr-type halite-types/instance-spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)]
@@ -602,7 +602,7 @@
   (let [arg-type (type-check* ctx (second expr))]
     (when-not (halite-types/subtype? arg-type [:Vec :Object])
       (throw (ex-info "Argument to 'first' must be a vector" {:form expr})))
-    (when (= [:Vec :Nothing] arg-type)
+    (when (= halite-types/empty-vector arg-type)
       (throw (ex-info "argument to first is always empty" {:form expr})))
     (second arg-type)))
 

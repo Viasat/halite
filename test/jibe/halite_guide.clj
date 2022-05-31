@@ -1859,6 +1859,38 @@
        [:throws "instance cannot contain abstract value"]])
 
   (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [false]}
+                  (spec :V
+                        (variables [:t :spec/T$v1])
+                        (refinements [:as_t :to :spec/T$v1 [:halite "(when false (refine-to t :spec/T$v1))"]]))
+                  (spec :C
+                        (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
+                  (spec :T))]
+      :spec
+      [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1)
+       [:Instance :spec/T$v1]
+       [:throws "No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]
+       "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )"
+       [:throws "No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
+
+  (hc [(workspace :spec
+                  {:spec/T [false]
+                   :spec/C [true]
+                   :spec/V [true]}
+                  (spec :V
+                        (variables [:t :spec/T$v1]))
+                  (spec :C
+                        (refinements [:as_t :to :spec/T$v1 [:halite "(when false {:$type :spec/T$v1})"]]))
+                  (spec :T))]
+      :spec
+      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
+       [:Instance :spec/V$v1]
+       [:throws "No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]
+       "{$type: spec/V$v1, t: {$type: spec/C$v1}}" [:throws "No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]])
+
+  (hc [(workspace :spec
                   {:spec/T [true]
                    :spec/V [true]}
                   (spec :V
