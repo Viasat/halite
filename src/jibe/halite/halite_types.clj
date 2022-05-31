@@ -412,6 +412,10 @@
              (#{:Coll :Set :Vec} (first t)))
     (second t)))
 
+(s/defn element-type :- HaliteType
+  [t :- HaliteType]
+  (second t))
+
 (s/defn maybe-type :- HaliteType
   [t :- HaliteType]
   (if (maybe-type? t)
@@ -427,3 +431,26 @@
 (def empty-set [:Set :Nothing])
 
 (def empty-collection [:Coll :Nothing])
+
+(s/defn vector-type :- HaliteType
+  [element-t :- HaliteType]
+  [:Vec element-t])
+
+(s/defn make-collection-type :- HaliteType
+  [collection-value
+   t :- HaliteType]
+  [(cond
+     (vector? collection-value) :Vec
+     (set? collection-value) :Set)
+   t])
+
+(s/defn change-collection-type :- HaliteType
+  [collection-type :- HaliteType
+   t :- HaliteType]
+  [(first collection-type) t])
+
+(s/defn collection-type-string :- String
+  [collection-type :- HaliteType]
+  (if (= :Vec (first collection-type))
+    "vector"
+    "string"))
