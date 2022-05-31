@@ -31,7 +31,8 @@
   (s/cond-pre
    s/Int
    s/Bool
-   s/Symbol))
+   s/Symbol
+   (s/enum :Unset)))
 
 (s/defschema SSAOp (apply s/enum (disj supported-halite-ops 'let)))
 
@@ -321,6 +322,8 @@
    (cond
      (int? form) (add-derivation dgraph [form :Integer])
      (boolean? form) (add-derivation dgraph [form :Boolean])
+     (= :Unset form) (add-derivation dgraph [form :Unset])
+     (and (symbol? form) (or (= form 'no-value-) (= form 'no-value))) (add-derivation dgraph [:Unset :Unset])
      (symbol? form) (symbol-to-ssa ctx form)
      (seq? form) (let [[op & args] form]
                    (when-not (contains? supported-halite-ops op)
@@ -480,7 +483,7 @@
   (let [[form htype] (dgraph id)
         result (update result id update-guards current)]
     (cond
-      (or (integer? form) (boolean? form)) result
+      (or (integer? form) (boolean? form) (= :Unset form)) result
       (and (symbol? form) (nil? (s/check DerivationName form))) (compute-guards* dgraph current result form)
       (symbol? form) result
       (seq? form) (let [[op & args] form]
@@ -540,6 +543,7 @@
     (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
       (cond
         (or (integer? form) (boolean? form)) form
+        (= :Unset form) 'no-value
         (symbol? form) (if (bound? form)
                          form
                          (form-from-ssa* dgraph guards bound? curr-guard form))
@@ -629,6 +633,7 @@
                                   (or (bound? form) (bound? id)
                                       (integer? form)
                                       (boolean? form)
+                                      (= :Unset form)
                                       (<= (get usage-counts id 0) 1)
                                       ;; safe to bind if current guard implies some conjunct
                                       (not (some #(set/superset? curr-guard %1) (guards id))))))

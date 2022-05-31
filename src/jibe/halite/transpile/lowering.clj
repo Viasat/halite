@@ -234,6 +234,7 @@
     (cond
       (int? ssa-form) (ssa/form-to-ssa ctx true)
       (boolean? ssa-form) (ssa/form-to-ssa ctx true)
+      (= :Unset ssa-form) (ssa/form-to-ssa ctx true)
       (symbol? ssa-form) (ssa/form-to-ssa ctx true)
       (map? ssa-form) (validity-guard-inst sctx ctx deriv)
       (seq? ssa-form) (let [[op & args] ssa-form]

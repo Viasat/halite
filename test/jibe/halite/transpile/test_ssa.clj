@@ -50,6 +50,13 @@
         $7 [(not $6) :Boolean $6]}
       '[$6]
 
+      '[(= 1 no-value-)]
+      '{$1 [1 :Integer]
+        $2 [:Unset :Unset]
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
+      '[$3]
+
       '[(not= x 1)]
       '{$1 [x :Integer]
         $2 [1 :Integer]
@@ -293,6 +300,13 @@
 
       '[$1] '{$1 [b :Boolean]} 'b
 
+      '[$3]
+      '{$1 [1 :Integer]
+        $2 [:Unset :Unset]
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
+      '(= 1 no-value)
+
       '[$3 $5]
       '{$1 [x :Integer]
         $2 [1 :Integer]
@@ -338,7 +352,13 @@
         $2 [$1 :Integer]
         $3 [x :Integer]
         $4 [(< $3 $2) :Boolean]}
-      '(< x 12))))
+      '(< x 12)
+
+      '[$1]
+      '{$1 [(= $3 $3) :Boolean $2]
+        $2 [(not= $3 $3) :Boolean $1]
+        $3 [:Unset :Unset]}
+      '(= no-value no-value))))
 
 (deftest test-spec-from-ssa-preserves-guards
   (binding [ssa/*next-id* (atom 0)]
