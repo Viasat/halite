@@ -2301,4 +2301,21 @@
 
   (h (sort-by [x ["a" "c" "b"]] (if (= "a" x) 1 (if (= "b" x) 2 (if (= "c" x) 3 4)))) [:Vec :String] ["a" "b" "c"] "sortBy(x in [\"a\", \"c\", \"b\"])(if((\"a\" == x)) {1} else {(if((\"b\" == x)) {2} else {(if((\"c\" == x)) {3} else {4})})})" "[\"a\", \"b\", \"c\"]"))
 
+(deftest test-generic-collections
+  (h (if true [1 2] #{4 3}) [:Coll :Integer] [1 2] "(if(true) {[1, 2]} else {#{3, 4}})" "[1, 2]")
+
+  ;; at evaluation time the underlying type is preserved
+
+  (h (conj (if true [1 2] #{4 3}) 5) [:Coll :Integer] [1 2 5] "(if(true) {[1, 2]} else {#{3, 4}}).conj(5)" "[1, 2, 5]")
+  (h (conj (if false [1 2] #{4 3}) 5) [:Coll :Integer] #{4 3 5} "(if(false) {[1, 2]} else {#{3, 4}}).conj(5)" "#{3, 4, 5}")
+
+  (h (concat (if true [1 2] #{4 3}) [5 6]) [:Coll :Integer] [1 2 5 6] "(if(true) {[1, 2]} else {#{3, 4}}).concat([5, 6])" "[1, 2, 5, 6]")
+  (h (concat (if false [1 2] #{4 3}) [5 6]) [:Coll :Integer] #{4 6 3 5} "(if(false) {[1, 2]} else {#{3, 4}}).concat([5, 6])" "#{3, 4, 5, 6}")
+
+  (h (map [x (if true [1 2] #{4 3})] (inc x)) [:Coll :Integer] [2 3] "map(x in (if(true) {[1, 2]} else {#{3, 4}}))(x + 1)" "[2, 3]")
+  (h (map [x (if false [1 2] #{4 3})] (inc x)) [:Coll :Integer] #{4 5} "map(x in (if(false) {[1, 2]} else {#{3, 4}}))(x + 1)" "#{4, 5}")
+
+  (h (filter [x (if true [1 2] #{4 3})] (> x 1)) [:Coll :Integer] [2] "filter(x in (if(true) {[1, 2]} else {#{3, 4}}))(x > 1)" "[2]")
+  (h (filter [x (if false [1 2] #{1 2})] (> x 1)) [:Coll :Integer] #{2} "filter(x in (if(false) {[1, 2]} else {#{1, 2}}))(x > 1)" "#{2}"))
+
 ;; (time (run-tests))
