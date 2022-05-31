@@ -414,7 +414,7 @@
 
 (s/defn element-type :- HaliteType
   [t :- HaliteType]
-  (second t))
+  (:arg (type-ptn t)))
 
 (s/defn maybe-type :- HaliteType
   [t :- HaliteType]
@@ -447,7 +447,7 @@
 (s/defn change-collection-type :- HaliteType
   [collection-type :- HaliteType
    t :- HaliteType]
-  [(first collection-type) t])
+  [(:kind (type-ptn collection-type)) t])
 
 (s/defn collection-type-string :- String
   [collection-type :- HaliteType]

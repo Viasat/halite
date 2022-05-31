@@ -646,9 +646,8 @@
     (when (and (halite-types/subtype? s (halite-types/vector-type :Object)) (not (halite-types/subtype? t (halite-types/vector-type :Object))))
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
                       {:form expr})))
-    (let [elem-type (second t)
-          col-type (if (halite-types/subtype? s (halite-types/vector-type :Object)) :Vec :Set)]
-      (halite-types/meet s [col-type elem-type]))))
+    (halite-types/meet s
+                       (halite-types/change-collection-type s (halite-types/element-type t)))))
 
 (s/defn ^:private type-check-refine-to :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
