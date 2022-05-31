@@ -398,40 +398,52 @@
 (def empty-coll [:Coll :Nothing])
 
 (s/defn concrete-spec-type :- HaliteType
+  "Construct a type representing concrete instances of the given spec-id"
   [spec-id :- schema/Keyword]
   [:Instance spec-id])
 
 (s/defn abstract-spec-type :- HaliteType
-  ([]
-   [:Instance :*])
-  ([spec-id :- schema/Keyword]
-   [:Instance :* #{spec-id}]))
+  "Construct a type representing concrete instances that are to be refined to the given spec-id"
+  [spec-id :- schema/Keyword]
+  [:Instance :* #{spec-id}])
+
+(s/defn instance-type :- HaliteType
+  "Construct a type representing all instances."
+  []
+  [:Instance :*])
 
 (s/defn no-maybe :- HaliteType
+  "If the type represents a 'maybe' type, then remove the maybe."
   [t :- HaliteType]
   (if (strict-maybe-type? t)
     (second t)
     t))
 
 (s/defn maybe-type :- HaliteType
+  "Construct a type representing values that are 'maybe' of the given type."
   [t :- HaliteType]
   (if (maybe-type? t)
     t
     [:Maybe t]))
 
 (s/defn vector-type :- HaliteType
-  [element-t :- HaliteType]
-  [:Vec element-t])
+  "Construct a type representing vectors of the given type."
+  [elem-type :- HaliteType]
+  [:Vec elem-type])
 
-(s/defn halite-vector-type?
+(s/defn halite-vector-type? :- s/Bool
+  "Return true if this type corresponds to vector values."
   [t :- HaliteType]
   (subtype? t [:Vec :Object]))
 
 (s/defn set-type :- HaliteType
-  [element-t :- HaliteType]
-  [:Set element-t])
+  "Construct a type representing sets of the given type."
+  [elem-type :- HaliteType]
+  [:Set elem-type])
 
 (s/defn vector-or-set-type :- HaliteType
+  "Construct a type representing vectors or sets of the given type. The coll-value is used as an
+  example of the type of values to be represented."
   [coll-value
    t :- HaliteType]
   [(cond
@@ -440,15 +452,18 @@
    t])
 
 (s/defn coll-type :- HaliteType
-  [element-t :- HaliteType]
-  [:Coll element-t])
+  "Construct a type representing generic collections of the given type."
+  [elem-type :- HaliteType]
+  [:Coll elem-type])
 
-(s/defn change-coll-elem-type :- HaliteType
+(s/defn change-elem-type :- HaliteType
+  "Construct a type value that is like coll-type, except it contains new-element-type."
   [coll-type :- HaliteType
    new-elem-type :- HaliteType]
   (ptn-type (assoc (type-ptn coll-type) :arg new-elem-type)))
 
 (s/defn coll-type-string :- String
+  "For error messages, produce a string to describe the type of the given coll-type."
   [coll-type :- HaliteType]
   (if (= :Vec (:kind (type-ptn coll-type)))
     "vector"

@@ -630,7 +630,7 @@
       (when (halite-types/maybe-type? elem-type)
         (throw (ex-info (format "cannot conj possibly unset value to %s" (halite-types/coll-type-string base-type))
                         {:form elem}))))
-    (halite-types/change-coll-elem-type
+    (halite-types/change-elem-type
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
 
@@ -647,14 +647,14 @@
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
                       {:form expr})))
     (halite-types/meet s
-                       (halite-types/change-coll-elem-type s (halite-types/elem-type t)))))
+                       (halite-types/change-elem-type s (halite-types/elem-type t)))))
 
 (s/defn ^:private type-check-refine-to :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
-    (when-not (halite-types/subtype? s (halite-types/abstract-spec-type))
+    (when-not (halite-types/subtype? s (halite-types/instance-type))
       (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr :actual s})))
     (when-not (and (keyword? kw)
                    (halite-types/namespaced? kw))
@@ -668,7 +668,7 @@
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
-    (when-not (halite-types/subtype? s (halite-types/abstract-spec-type))
+    (when-not (halite-types/subtype? s (halite-types/instance-type))
       (throw (ex-info "First argument to 'refines-to?' must be an instance" {:form expr})))
     (when-not (and (keyword? kw)
                    (halite-types/namespaced? kw))
