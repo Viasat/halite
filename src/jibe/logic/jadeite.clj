@@ -188,7 +188,7 @@
                  fn (str (infix a0) " -> " (toj a1))
                  get (if (keyword? a1)
                        (str (toj a0) '. (name a1))
-                       (str (toj a0) [a1]))
+                       (str (toj a0) "[" (toj a1) "]"))
                  if (str "(if(" (toj a0)
                          ") {" (toj a1)
                          "} else {" (toj a2) "})")
