@@ -436,6 +436,14 @@
   [element-t :- HaliteType]
   [:Vec element-t])
 
+(s/defn set-type :- HaliteType
+  [element-t :- HaliteType]
+  [:Set element-t])
+
+(s/defn collection-type :- HaliteType
+  [element-t :- HaliteType]
+  [:Coll element-t])
+
 (s/defn make-collection-type :- HaliteType
   [collection-value
    t :- HaliteType]

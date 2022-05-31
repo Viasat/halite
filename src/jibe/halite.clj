@@ -238,8 +238,8 @@
      '<= (mk-builtin <= [:Integer :Integer] :Boolean)
      '> (mk-builtin > [:Integer :Integer] :Boolean)
      '>= (mk-builtin >= [:Integer :Integer] :Boolean)
-     'Cardinality (mk-builtin count [[:Coll :Object]] :Integer) ;; deprecated
-     'count (mk-builtin count [[:Coll :Object]] :Integer)
+     'Cardinality (mk-builtin count [(halite-types/collection-type :Object)] :Integer) ;; deprecated
+     'count (mk-builtin count [(halite-types/collection-type :Object)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
      'or (mk-builtin (fn [& args] (true? (some true? args)))
@@ -247,7 +247,7 @@
      'not (mk-builtin not [:Boolean] :Boolean)
      '=> (mk-builtin (fn [a b] (if a b true))
                      [:Boolean :Boolean] :Boolean)
-     'contains? (mk-builtin contains? [[:Set :Object] :Object] :Boolean)
+     'contains? (mk-builtin contains? [(halite-types/set-type :Object) :Object] :Boolean)
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (mk-builtin quot [:Integer :Integer] :Integer)
@@ -259,11 +259,11 @@
                          (expt x p)) [:Integer :Integer] :Integer)
      'abs (mk-builtin abs [:Integer] :Integer)
      'str (mk-builtin str [& :String] :String)
-     'subset? (mk-builtin set/subset? [[:Set :Object] [:Set :Object]] :Boolean)
+     'subset? (mk-builtin set/subset? [(halite-types/set-type :Object) (halite-types/set-type :Object)] :Boolean)
      'sort (mk-builtin (comp vec sort)
                        [halite-types/empty-set] halite-types/empty-vector
                        [halite-types/empty-vector] halite-types/empty-vector
-                       [[:Set :Integer]] (halite-types/vector-type :Integer)
+                       [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
                        [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer))
      'some? (mk-builtin (fn [v] (not= :Unset v)) ;; deprecated
                         [:Any] :Boolean)
@@ -576,7 +576,7 @@
           (halite-types/meet then-type else-type))))))
 
 (defn- check-all-sets [[op :as expr] arg-types]
-  (when-not (every? #(halite-types/subtype? % [:Set :Object]) arg-types)
+  (when-not (every? #(halite-types/subtype? % (halite-types/set-type :Object)) arg-types)
     (throw (ex-info (format "Arguments to '%s' must be sets" op) {:form expr}))))
 
 (s/defn ^:private type-check-union :- halite-types/HaliteType
@@ -624,7 +624,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (halite-types/subtype? base-type [:Coll :Object])
+    (when-not (halite-types/subtype? base-type (halite-types/collection-type :Object))
       (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
     (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
       (when (halite-types/maybe-type? elem-type)
@@ -639,9 +639,9 @@
   (arg-count-exactly 2 expr)
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (halite-types/subtype? s [:Coll :Object])
+    (when-not (halite-types/subtype? s (halite-types/collection-type :Object))
       (throw (ex-info (format "First argument to '%s' must be a set or vector" op) {:form expr})))
-    (when-not (halite-types/subtype? t [:Coll :Object])
+    (when-not (halite-types/subtype? t (halite-types/collection-type :Object))
       (throw (ex-info (format "Second argument to '%s' must be a set or vector" op) {:form expr})))
     (when (and (halite-types/subtype? s (halite-types/vector-type :Object)) (not (halite-types/subtype? t (halite-types/vector-type :Object))))
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
