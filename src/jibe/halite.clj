@@ -77,7 +77,7 @@
                                                                               (symbol (:$type v))
                                                                               (symbol (halite-types/instance-spec-id declared-type)))
                                                                       {:value v})))
-      :else (if-let [element-type (halite-types/collection-element-type declared-type)]
+      :else (if-let [element-type (halite-types/elem-type declared-type)]
               (dorun (map (partial check-against-declared-type element-type) v))
               nil))))
 
@@ -391,7 +391,7 @@
         (when (not= :Integer index-type)
           (throw (ex-info "Second argument to get must be an integer when first argument is a vector"
                           {:form index :expected :Integer :actual-type index-type})))
-        (halite-types/element-type subexpr-type))
+        (halite-types/elem-type subexpr-type))
 
       (and (halite-types/spec-type? subexpr-type)
            (halite-types/instance-spec-id subexpr-type)
@@ -505,7 +505,7 @@
       (throw (ex-info (str "Body expression in 'sort-by' must be Integer, not "
                            (pr-str body-type))
                       {:form expr})))
-    (halite-types/vector-type (halite-types/element-type coll-type))))
+    (halite-types/vector-type (halite-types/elem-type coll-type))))
 
 (s/defn ^:private type-check-reduce :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
@@ -632,7 +632,7 @@
                         {:form elem}))))
     (halite-types/change-collection-type
      base-type
-     (reduce halite-types/meet (halite-types/element-type base-type) elem-types))))
+     (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
 
 (s/defn ^:private type-check-concat :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -647,7 +647,7 @@
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
                       {:form expr})))
     (halite-types/meet s
-                       (halite-types/change-collection-type s (halite-types/element-type t)))))
+                       (halite-types/change-collection-type s (halite-types/elem-type t)))))
 
 (s/defn ^:private type-check-refine-to :- halite-types/HaliteType
   [ctx :- TypeContext, expr]

@@ -406,16 +406,6 @@
     (second t)
     t))
 
-(s/defn collection-element-type :- (s/maybe HaliteType)
-  [t :- HaliteType]
-  (when (and (vector? t)
-             (#{:Coll :Set :Vec} (first t)))
-    (second t)))
-
-(s/defn element-type :- HaliteType
-  [t :- HaliteType]
-  (:arg (type-ptn t)))
-
 (s/defn maybe-type :- HaliteType
   [t :- HaliteType]
   (if (maybe-type? t)
