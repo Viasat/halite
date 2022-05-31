@@ -19,7 +19,7 @@
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
       $do!
       ;; These are not available to halite users; they serve as the internal representation of if-value forms.
@@ -259,6 +259,13 @@
         htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
     (add-derivation dgraph [(list 'if pred-id then-id else-id) htype])))
 
+(s/defn ^:private when-to-ssa :- DerivResult
+  [ctx :- SSACtx, [_ pred then :as form]]
+  (let [[dgraph pred-id] (form-to-ssa ctx pred)
+        [dgraph then-id] (form-to-ssa (assoc ctx :dgraph dgraph) then)
+        [_ then-type] (deref-id dgraph then-id)]
+    (add-derivation dgraph [(list 'when pred-id then-id) (halite-types/meet then-type :Unset)])))
+
 (s/defn ^:private if-value-to-ssa :- DerivResult
   [ctx :- SSACtx, [_ var-sym then else :as form]]
   (when-not (symbol? var-sym)
@@ -389,6 +396,7 @@
                    (condp = (get renamed-ops op op)
                      'let (let-to-ssa ctx form)
                      'if (if-to-ssa ctx form)
+                     'when (when-to-ssa ctx form)
                      'get (get-to-ssa ctx form)
                      'refine-to (refine-to-to-ssa ctx form)
                      '$do! (do!-to-ssa ctx form)
@@ -550,6 +558,11 @@
                     (condp = op
                       'get (compute-guards* dgraph current result (first args))
                       'refine-to (compute-guards* dgraph current result (first args))
+                      'when (let [[pred-id then-id] args
+                                  not-pred-id (negated dgraph pred-id)]
+                              (as-> result result
+                                (compute-guards* dgraph current result pred-id)
+                                (compute-guards* dgraph (conj current pred-id) result then-id)))
                       'if (let [[pred-id then-id else-id] args
                                 not-pred-id (negated dgraph pred-id)]
                             (as-> result result
@@ -649,6 +662,13 @@
                                 (form-from-ssa* dgraph guards bound? curr-guard pred-id)
                                 (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)
                                 (let-bindable-exprs dgraph guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
+
+                      (= 'when (first form))
+                      (let [[_when pred-id then-id] form
+                            [pred] (deref-id dgraph pred-id)]
+                        (list 'when
+                              (form-from-ssa* dgraph guards bound? curr-guard pred-id)
+                              (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)))
 
                       :else
                       (apply list (first form) (map (partial form-from-ssa* dgraph guards bound? curr-guard) (rest form))))

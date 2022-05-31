@@ -192,6 +192,16 @@
            (list 'if pred-id then-guard-id else-guard-id)
            false))))
 
+(s/defn ^:private validity-guard-when :- ssa/DerivResult
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, [[_if pred-id then-id] htype] :- ssa/Derivation]
+  (let [[dgraph pred-guard-id] (validity-guard sctx ctx pred-id)
+        [dgraph then-guard-id] (validity-guard sctx (assoc ctx :dgraph dgraph) then-id)]
+    (ssa/form-to-ssa
+     (assoc ctx :dgraph dgraph)
+     (list 'if pred-guard-id
+           (list 'if pred-id then-guard-id true)
+           false))))
+
 (s/defn ^:private validity-guard-app :- ssa/DerivResult
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, [[op & args] htype] :- ssa/Derivation]
   (let [[dgraph guard-ids] (reduce
@@ -240,6 +250,7 @@
       (seq? ssa-form) (let [[op & args] ssa-form]
                         (condp = op
                           'if (validity-guard-if sctx ctx deriv)
+                          'when (validity-guard-when sctx ctx deriv)
                           'get (validity-guard sctx ctx (first args))
                           'valid? (validity-guard sctx ctx (first args))
                           (validity-guard-app sctx ctx deriv)))
