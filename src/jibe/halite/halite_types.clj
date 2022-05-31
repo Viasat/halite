@@ -395,7 +395,7 @@
 
 (def empty-set [:Set :Nothing])
 
-(def empty-collection [:Coll :Nothing])
+(def empty-coll [:Coll :Nothing])
 
 (s/defn concrete-spec-type :- HaliteType
   [spec-id :- schema/Keyword]
@@ -432,24 +432,24 @@
   [:Set element-t])
 
 (s/defn vector-or-set-type :- HaliteType
-  [collection-value
+  [coll-value
    t :- HaliteType]
   [(cond
-     (vector? collection-value) :Vec
-     (set? collection-value) :Set)
+     (vector? coll-value) :Vec
+     (set? coll-value) :Set)
    t])
 
-(s/defn collection-type :- HaliteType
+(s/defn coll-type :- HaliteType
   [element-t :- HaliteType]
   [:Coll element-t])
 
-(s/defn change-collection-element-type :- HaliteType
-  [collection-type :- HaliteType
-   new-element-type :- HaliteType]
-  (ptn-type (assoc (type-ptn collection-type) :arg new-element-type)))
+(s/defn change-coll-elem-type :- HaliteType
+  [coll-type :- HaliteType
+   new-elem-type :- HaliteType]
+  (ptn-type (assoc (type-ptn coll-type) :arg new-elem-type)))
 
-(s/defn collection-type-string :- String
-  [collection-type :- HaliteType]
-  (if (= :Vec (:kind (type-ptn collection-type)))
+(s/defn coll-type-string :- String
+  [coll-type :- HaliteType]
+  (if (= :Vec (:kind (type-ptn coll-type)))
     "vector"
     "string"))

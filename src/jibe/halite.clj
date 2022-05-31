@@ -77,8 +77,8 @@
                                                                               (symbol (:$type v))
                                                                               (symbol (halite-types/instance-spec-id declared-type)))
                                                                       {:value v})))
-      :else (if-let [element-type (halite-types/elem-type declared-type)]
-              (dorun (map (partial check-against-declared-type element-type) v))
+      :else (if-let [elem-type (halite-types/elem-type declared-type)]
+              (dorun (map (partial check-against-declared-type elem-type) v))
               nil))))
 
 (s/defn ^:private validate-instance :- s/Any
@@ -165,7 +165,7 @@
                           {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
     (halite-types/concrete-spec-type t)))
 
-(s/defn ^:private get-typestring-for-collection [coll]
+(s/defn ^:private get-typestring-for-coll [coll]
   (cond
     (vector? coll) "vector"
     (set? coll) "set"
@@ -174,7 +174,7 @@
 (s/defn ^:private check-coll :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, coll]
   (let [elem-types (map (partial check-fn ctx) coll)
-        coll-type-string (get-typestring-for-collection coll)]
+        coll-type-string (get-typestring-for-coll coll)]
     (when (not coll-type-string)
       (throw (ex-info "Invalid value" {error-key coll})))
     (doseq [[elem elem-type] (map vector coll elem-types)]
@@ -238,8 +238,8 @@
      '<= (mk-builtin <= [:Integer :Integer] :Boolean)
      '> (mk-builtin > [:Integer :Integer] :Boolean)
      '>= (mk-builtin >= [:Integer :Integer] :Boolean)
-     'Cardinality (mk-builtin count [(halite-types/collection-type :Object)] :Integer) ;; deprecated
-     'count (mk-builtin count [(halite-types/collection-type :Object)] :Integer)
+     'Cardinality (mk-builtin count [(halite-types/coll-type :Object)] :Integer) ;; deprecated
+     'count (mk-builtin count [(halite-types/coll-type :Object)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
      'or (mk-builtin (fn [& args] (true? (some true? args)))
@@ -487,7 +487,7 @@
 (s/defn ^:private type-check-map :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
-    [(first coll-type) (if (halite-types/subtype? coll-type halite-types/empty-collection)
+    [(first coll-type) (if (halite-types/subtype? coll-type halite-types/empty-coll)
                          :Nothing
                          body-type)]))
 
@@ -624,13 +624,13 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (halite-types/subtype? base-type (halite-types/collection-type :Object))
+    (when-not (halite-types/subtype? base-type (halite-types/coll-type :Object))
       (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
     (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
       (when (halite-types/maybe-type? elem-type)
-        (throw (ex-info (format "cannot conj possibly unset value to %s" (halite-types/collection-type-string base-type))
+        (throw (ex-info (format "cannot conj possibly unset value to %s" (halite-types/coll-type-string base-type))
                         {:form elem}))))
-    (halite-types/change-collection-element-type
+    (halite-types/change-coll-elem-type
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
 
@@ -639,15 +639,15 @@
   (arg-count-exactly 2 expr)
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (halite-types/subtype? s (halite-types/collection-type :Object))
+    (when-not (halite-types/subtype? s (halite-types/coll-type :Object))
       (throw (ex-info (format "First argument to '%s' must be a set or vector" op) {:form expr})))
-    (when-not (halite-types/subtype? t (halite-types/collection-type :Object))
+    (when-not (halite-types/subtype? t (halite-types/coll-type :Object))
       (throw (ex-info (format "Second argument to '%s' must be a set or vector" op) {:form expr})))
     (when (and (halite-types/subtype? s (halite-types/vector-type :Object)) (not (halite-types/subtype? t (halite-types/vector-type :Object))))
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
                       {:form expr})))
     (halite-types/meet s
-                       (halite-types/change-collection-element-type s (halite-types/elem-type t)))))
+                       (halite-types/change-coll-elem-type s (halite-types/elem-type t)))))
 
 (s/defn ^:private type-check-refine-to :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
