@@ -23,10 +23,18 @@
   (if-not (and (seq? h) (seq? (second h)))
     h
     (let [[op2 [op1 & args1] & args2] h]
-      (if-not (and (contains? '#{+ - * div or and =} op2)
-                   (= op2 op1))
-        h
-        (concat [op2] args1 args2)))))
+      (cond
+        (and (contains? '#{+ - * div or and =} op2)
+             (= op2 op1))
+        (concat [op2] args1 args2)
+
+        (and (= op2 'get) (= op1 'get))
+        (list 'get-in (first args1) [(second args1) (first args2)])
+
+        (and (= op2 'get) (= op1 'get-in))
+        (list 'get-in (first args1) (conj (second args1) (first args2)))
+
+        :else h))))
 
 (defn- unwrap-symbol [s]
   (if-let [[_ weird-s] (re-matches #"<(\S+)>" s)]
@@ -189,6 +197,12 @@
                  get (if (keyword? a1)
                        (str (toj a0) '. (name a1))
                        (str (toj a0) "[" (toj a1) "]"))
+                 get-in (reduce (fn [target index]
+                                  (if (keyword? index)
+                                    (str target '. (name index))
+                                    (str target "[" (toj index) "]")))
+                                (toj a0)
+                                a1)
                  if (str "(if(" (toj a0)
                          ") {" (toj a1)
                          "} else {" (toj a2) "})")

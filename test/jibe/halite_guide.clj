@@ -534,9 +534,9 @@
 
     (h (union "" "a") [:throws "Arguments to 'union' must be sets"])
 
-    (h (get "" 0) [:throws "First argument to get must be an instance of known type or non-empty vector"])
+    (h (get "" 0) [:throws "Lookup target must be an instance of known type or non-empty vector"])
 
-    (h (get "ab" 1) [:throws "First argument to get must be an instance of known type or non-empty vector"])))
+    (h (get "ab" 1) [:throws "Lookup target must be an instance of known type or non-empty vector"])))
 
 (deftest test-string-bool
   (h (and "true" false) [:throws "no matching signature for 'and'"])
@@ -819,7 +819,7 @@
 
   (h (get [10 20 30] 1) :Integer 20 "[10, 20, 30][1]" "20")
 
-  (h (get (get (get [[10 20 [300 302]] [30 40]] 0) 2) 1) [:throws "First argument to get must be an instance of known type or non-empty vector"])
+  (h (get (get (get [[10 20 [300 302]] [30 40]] 0) 2) 1) [:throws "Lookup target must be an instance of known type or non-empty vector"])
 
   (h (get (get (get [[[10] [20] [300 302]] [[30] [40]]] 0) 2) 1) :Integer 302 "[[[10], [20], [300, 302]], [[30], [40]]][0][2][1]" "302")
 
@@ -970,9 +970,9 @@
                                                  (.-j-result i#))))))))
 
 (deftest test-stuff
-  (h (get (if true #{} [9 8 7 6]) (+ 1 2)) [:throws "First argument to get must be an instance of known type or non-empty vector"])
+  (h (get (if true #{} [9 8 7 6]) (+ 1 2)) [:throws "Lookup target must be an instance of known type or non-empty vector"])
 
-  (hc :basic :my [(get (if true {:$type :my/Spec$v1, :n -3, :p 2} [9 8 7 6]) (+ 1 2)) [:throws "First argument to get must be an instance of known type or non-empty vector"]])
+  (hc :basic :my [(get (if true {:$type :my/Spec$v1, :n -3, :p 2} [9 8 7 6]) (+ 1 2)) [:throws "Lookup target must be an instance of known type or non-empty vector"]])
 
   (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o (div 5 0) 1)) :Integer 1 "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {(5 / 0)} else {1}) }" "1"])
 
@@ -1040,11 +1040,11 @@
 
   (hc :basic
       :my
-      [(get {:$type :my/Spec$v1, :p 1, :n -1} 0) [:throws "Second argument to get must be a variable name (as a keyword) when first argument is an instance"]])
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} 0) [:throws "Index must be a variable name (as a keyword) when target is an instance"]])
 
   (hc :basic
       :my
-      [(get {:$type :my/Spec$v1, :p 1, :n -1} "p") [:throws "Second argument to get must be a variable name (as a keyword) when first argument is an instance"]])
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} "p") [:throws "Index must be a variable name (as a keyword) when target is an instance"]])
 
   ;; test equality
   (hc :basic-2
@@ -1080,7 +1080,7 @@
       [(if true {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}) [:Instance :*] {:$type :spec/A$v1, :p 1, :n -1} "(if(true) {{$type: spec/A$v1, n: -1, p: 1}} else {{$type: spec/C$v1}})" "{$type: spec/A$v1, n: -1, p: 1}"])
   (hc :basic-2
       :spec
-      [(get (if true {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}) :p) [:throws "First argument to get must be an instance of known type or non-empty vector"]])
+      [(get (if true {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}) :p) [:throws "Lookup target must be an instance of known type or non-empty vector"]])
 
   (hc :basic-2
       :spec
@@ -1113,7 +1113,7 @@
       [(get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 0) [:Instance :*] {:$type :spec/A$v1, :p 1, :n -1} "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}][0]" "{$type: spec/A$v1, n: -1, p: 1}"])
   (hc :basic-2
       :spec
-      [(get (get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 0) :p) [:throws "First argument to get must be an instance of known type or non-empty vector"]])
+      [(get (get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 0) :p) [:throws "Lookup target must be an instance of known type or non-empty vector"]])
   (hc :basic-2
       :spec
       [(get (refine-to (get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 0) :spec/A$v1) :p) :Integer 1 "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}][0].refineTo( spec/A$v1 ).p" "1"])
@@ -2187,7 +2187,7 @@
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
       [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] x) [:Vec [:Instance :*]] [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}] "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x" "[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]"])
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
-      [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (get x :x)) [:throws "First argument to get must be an instance of known type or non-empty vector"]])
+      [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (get x :x)) [:throws "Lookup target must be an instance of known type or non-empty vector"]])
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "String"])))] :spec
       [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (get (refine-to x :spec/A$v1) :x)) [:Vec :Integer] [:throws "No active refinement path from 'spec/B$v1' to 'spec/A$v1'"] "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x" [:throws "No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
   ;; TODO
@@ -2243,7 +2243,7 @@
       [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (refines-to? x :spec/A$v1)) [:Vec [:Instance :*]] [{:$type :spec/A$v1, :x 1}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])x.refinesTo?( spec/A$v1 )" "[{$type: spec/A$v1, x: 1}]"])
 
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "Integer"])))] :spec
-      [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (> (get x :x) 1)) [:throws "First argument to get must be an instance of known type or non-empty vector"]])
+      [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (> (get x :x) 1)) [:throws "Lookup target must be an instance of known type or non-empty vector"]])
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "Integer"])))] :spec
       [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (let [x x] (if (refines-to? x :spec/A$v1) (> (get (refine-to x :spec/A$v1) :x) 0) false))) [:Vec [:Instance :*]] [{:$type :spec/A$v1, :x 1}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}]){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) }" "[{$type: spec/A$v1, x: 1}]"])
   (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A (variables [:x "Integer"])) (spec :B (variables [:x "Integer"])))] :spec

@@ -381,35 +381,43 @@
                             (name (first form)) n (count (rest form)))
                     {:form form}))))
 
+(defn ^:private type-check-lookup [ctx form subexpr-type index]
+  (cond
+    (halite-types/halite-vector-type? subexpr-type)
+    (let [index-type (type-check* ctx index)]
+      (when (= halite-types/empty-vector subexpr-type)
+        (throw (ex-info "Cannot index into empty vector" {:form form})))
+      (when (not= :Integer index-type)
+        (throw (ex-info "Index must be an integer when target is a vector"
+                        {:form form, :index-form index, :expected :Integer, :actual-type index-type})))
+      (halite-types/elem-type subexpr-type))
+
+    (and (halite-types/spec-type? subexpr-type)
+         (halite-types/spec-id subexpr-type)
+         (not (halite-types/needs-refinement? subexpr-type)))
+    (let [field-types (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)]
+      (when-not (and (keyword? index) (halite-types/bare? index))
+        (throw (ex-info "Index must be a variable name (as a keyword) when target is an instance"
+                        {:form form, :index-form index})))
+      (when-not (contains? field-types index)
+        (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) (halite-types/spec-id subexpr-type))
+                        {:form form, :index-form index})))
+      (get field-types index))
+
+    :else (throw (ex-info "Lookup target must be an instance of known type or non-empty vector"
+                          {:form form, :actual-type subexpr-type}))))
+
 (s/defn ^:private type-check-get :- halite-types/HaliteType
   [ctx :- TypeContext, form]
   (arg-count-exactly 2 form)
-  (let [[_ subexpr index] form
-        subexpr-type (type-check* ctx subexpr)]
-    (cond
-      (halite-types/halite-vector-type? subexpr-type)
-      (let [index-type (type-check* ctx index)]
-        (when (= halite-types/empty-vector subexpr-type)
-          (throw (ex-info "Cannot index into empty vector" {:form form})))
-        (when (not= :Integer index-type)
-          (throw (ex-info "Second argument to get must be an integer when first argument is a vector"
-                          {:form index :expected :Integer :actual-type index-type})))
-        (halite-types/elem-type subexpr-type))
+  (let [[_ subexpr index] form]
+    (type-check-lookup ctx form (type-check* ctx subexpr) index)))
 
-      (and (halite-types/spec-type? subexpr-type)
-           (halite-types/spec-id subexpr-type)
-           (not (halite-types/needs-refinement? subexpr-type)))
-      (let [field-types (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)]
-        (when-not (and (keyword? index) (halite-types/bare? index))
-          (throw (ex-info "Second argument to get must be a variable name (as a keyword) when first argument is an instance"
-                          {:form form})))
-        (when-not (contains? field-types index)
-          (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) (halite-types/spec-id subexpr-type))
-                          {:form form})))
-        (get field-types index))
-
-      :else (throw (ex-info "First argument to get must be an instance of known type or non-empty vector"
-                            {:form form, :actual-type subexpr-type})))))
+(s/defn ^:private type-check-get-in :- halite-types/HaliteType
+  [ctx :- TypeContext, form]
+  (arg-count-exactly 2 form)
+  (let [[_ subexpr indexes] form]
+    (reduce (partial type-check-lookup ctx form) (type-check* ctx subexpr) indexes)))
 
 (s/defn ^:private type-check-equals :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -714,6 +722,7 @@
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
                   'get* (type-check-get ctx expr) ;; deprecated
+                  'get-in (type-check-get-in ctx expr)
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
                   'if (type-check-if ctx expr)
@@ -767,6 +776,15 @@
     (if (vector? target)
       (nth target (dec (eval-expr* ctx index))) ;; 1-based index
       (get target index :Unset))))
+
+(s/defn ^:private eval-get-in :- s/Any
+  [ctx :- EvalContext, target-expr indexes]
+  (reduce (fn [target index]
+            (if (vector? target)
+              (nth target (eval-expr* ctx index))
+              (get target index :Unset)))
+          (eval-expr* ctx target-expr)
+          indexes))
 
 (s/defn ^:private eval-let :- s/Any
   [ctx :- EvalContext, bindings body]
@@ -852,6 +870,7 @@
       (seq? expr) (condp = (first expr)
                     'get (apply eval-get ctx (rest expr))
                     'get* (apply eval-get* ctx (rest expr)) ;; deprecated
+                    'get-in (apply eval-get-in ctx (rest expr))
                     '= (apply = (mapv eval-in-env (rest expr)))
                     'not= (apply not= (mapv eval-in-env (rest expr)))
                     'if (let [[pred then else] (rest expr)]

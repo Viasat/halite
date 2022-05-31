@@ -246,6 +246,7 @@
       '(get (get b :a) :x) :Integer
       '(get xs (+ 1 2)) :String
       '(get (get (get (get c :bs) 2) :a) :x) :Integer
+      '(get-in c [:bs 2 :a :x]) :Integer
       '(get* xs (+ 1 2)) :String) ;; deprecated
 
     (are [expr err-msg]
@@ -254,7 +255,7 @@
       'foo #"Undefined"
       '(get) #"Wrong number of arguments"
       '(get [] 1) #"Cannot index into empty vector"
-      '(get xs (< 1 2)) #"Second argument to get must be an integer"
+      '(get xs (< 1 2)) #"must be an integer"
       '(get a :foo/bar) #"must be a variable name"
       '(get a 12) #"must be a variable name"
       '(get a :b) #"No such variable"
@@ -280,7 +281,9 @@
       '(get* c :bs) (get c :bs) ;; deprecated
       '(get (get c :bs) 2) (get-in c [:bs 2])
       '(get* (get* c :bs) 3) (get-in c [:bs 2]) ;; deprecated
-      '(get (get (get c :bs) 2) :a) (get-in c [:bs 2 :a]))
+      '(get (get (get c :bs) 2) :a) (get-in c [:bs 2 :a])
+      '(get-in c [:bs 2]) (get-in c [:bs 2])
+      '(get-in c [:bs 2 :a]) (get-in c [:bs 2 :a]))
     (is (thrown? IndexOutOfBoundsException
                  (halite/eval-expr senv tenv env '(get (get c :bs) 10))))))
 
