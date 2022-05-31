@@ -133,11 +133,15 @@
                                             (s/one InnerType "inner-type")]
    :else InnerType))
 
+(s/defn ^:private strict-maybe-type? :- s/Bool
+  [t :- HaliteType]
+  (and (vector? t) (= :Maybe (first t))))
+
 (s/defn maybe-type? :- s/Bool
   "True if t is :Unset or [:Maybe T], false otherwise."
   [t :- HaliteType]
   (or (= :Unset t)
-      (and (vector? t) (= :Maybe (first t)))))
+      (strict-maybe-type? t)))
 
 ;;;;
 
@@ -385,7 +389,13 @@
   (= (dissoc (type-ptn s) :r2)
      (dissoc (type-ptn s) :r2)))
 
-;; helper functions
+;; helpers for callers to use to avoid making assumptions about how types are represented
+
+(def empty-vector [:Vec :Nothing])
+
+(def empty-set [:Set :Nothing])
+
+(def empty-collection [:Coll :Nothing])
 
 (s/defn concrete-spec-type :- HaliteType
   [spec-id :- schema/Keyword]
@@ -397,10 +407,9 @@
   ([spec-id :- schema/Keyword]
    [:Instance :* #{spec-id}]))
 
-(s/defn unwrap-maybe-if-needed :- HaliteType
+(s/defn no-maybe :- HaliteType
   [t :- HaliteType]
-  (if (and (vector? t)
-           (= :Maybe (first t)))
+  (if (strict-maybe-type? t)
     (second t)
     t))
 
@@ -410,29 +419,19 @@
     t
     [:Maybe t]))
 
-(s/defn halite-vector-type?
-  [t :- HaliteType]
-  (subtype? t [:Vec :Object]))
-
-(def empty-vector [:Vec :Nothing])
-
-(def empty-set [:Set :Nothing])
-
-(def empty-collection [:Coll :Nothing])
-
 (s/defn vector-type :- HaliteType
   [element-t :- HaliteType]
   [:Vec element-t])
+
+(s/defn halite-vector-type?
+  [t :- HaliteType]
+  (subtype? t [:Vec :Object]))
 
 (s/defn set-type :- HaliteType
   [element-t :- HaliteType]
   [:Set element-t])
 
-(s/defn collection-type :- HaliteType
-  [element-t :- HaliteType]
-  [:Coll element-t])
-
-(s/defn make-collection-type :- HaliteType
+(s/defn vector-or-set-type :- HaliteType
   [collection-value
    t :- HaliteType]
   [(cond
@@ -440,13 +439,17 @@
      (set? collection-value) :Set)
    t])
 
-(s/defn change-collection-type :- HaliteType
+(s/defn collection-type :- HaliteType
+  [element-t :- HaliteType]
+  [:Coll element-t])
+
+(s/defn change-collection-element-type :- HaliteType
   [collection-type :- HaliteType
-   t :- HaliteType]
-  (ptn-type (assoc (type-ptn collection-type) :arg t)))
+   new-element-type :- HaliteType]
+  (ptn-type (assoc (type-ptn collection-type) :arg new-element-type)))
 
 (s/defn collection-type-string :- String
   [collection-type :- HaliteType]
-  (if (= :Vec (first collection-type))
+  (if (= :Vec (:kind (type-ptn collection-type)))
     "vector"
     "string"))

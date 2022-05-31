@@ -70,7 +70,7 @@
   but at runtime, we need to confirm that v actually refines to the expected type. This function does,
   and recursively deals with collection types."
   [declared-type :- halite-types/HaliteType, v]
-  (let [declared-type (halite-types/unwrap-maybe-if-needed declared-type)]
+  (let [declared-type (halite-types/no-maybe declared-type)]
     (cond
       (halite-types/instance-spec-id declared-type) (when-not (refines-to? v declared-type)
                                                       (throw (ex-info (format "No active refinement path from '%s' to '%s'"
@@ -181,10 +181,10 @@
       (when (halite-types/maybe-type? elem-type)
         (throw (ex-info (format "%s literal element may not always evaluate to a value" coll-type-string)
                         {error-key elem}))))
-    (halite-types/make-collection-type coll (condp = (count coll)
-                                              0 :Nothing
-                                              1 (first elem-types)
-                                              (reduce halite-types/meet elem-types)))))
+    (halite-types/vector-or-set-type coll (condp = (count coll)
+                                            0 :Nothing
+                                            1 (first elem-types)
+                                            (reduce halite-types/meet elem-types)))))
 
 (s/defn ^:private type-of* :- halite-types/HaliteType
   [ctx :- TypeContext, value]
@@ -630,7 +630,7 @@
       (when (halite-types/maybe-type? elem-type)
         (throw (ex-info (format "cannot conj possibly unset value to %s" (halite-types/collection-type-string base-type))
                         {:form elem}))))
-    (halite-types/change-collection-type
+    (halite-types/change-collection-element-type
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
 
@@ -647,7 +647,7 @@
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
                       {:form expr})))
     (halite-types/meet s
-                       (halite-types/change-collection-type s (halite-types/elem-type t)))))
+                       (halite-types/change-collection-element-type s (halite-types/elem-type t)))))
 
 (s/defn ^:private type-check-refine-to :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
