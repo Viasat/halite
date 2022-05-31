@@ -46,7 +46,7 @@
 
 (s/defn ^:private refines-to? :- s/Bool
   [inst spec-type :- halite-types/HaliteType]
-  (let [spec-id (halite-types/instance-spec-id spec-type)]
+  (let [spec-id (halite-types/spec-id spec-type)]
     (or (= spec-id (:$type inst))
         (boolean (get (:refinements (meta inst)) spec-id)))))
 
@@ -72,11 +72,11 @@
   [declared-type :- halite-types/HaliteType, v]
   (let [declared-type (halite-types/no-maybe declared-type)]
     (cond
-      (halite-types/instance-spec-id declared-type) (when-not (refines-to? v declared-type)
-                                                      (throw (ex-info (format "No active refinement path from '%s' to '%s'"
-                                                                              (symbol (:$type v))
-                                                                              (symbol (halite-types/instance-spec-id declared-type)))
-                                                                      {:value v})))
+      (halite-types/spec-id declared-type) (when-not (refines-to? v declared-type)
+                                             (throw (ex-info (format "No active refinement path from '%s' to '%s'"
+                                                                     (symbol (:$type v))
+                                                                     (symbol (halite-types/spec-id declared-type)))
+                                                             {:value v})))
       :else (if-let [elem-type (halite-types/elem-type declared-type)]
               (dorun (map (partial check-against-declared-type elem-type) v))
               nil))))
@@ -394,14 +394,14 @@
         (halite-types/elem-type subexpr-type))
 
       (and (halite-types/spec-type? subexpr-type)
-           (halite-types/instance-spec-id subexpr-type)
-           (not (halite-types/instance-needs-refinement? subexpr-type)))
-      (let [field-types (->> subexpr-type halite-types/instance-spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)]
+           (halite-types/spec-id subexpr-type)
+           (not (halite-types/needs-refinement? subexpr-type)))
+      (let [field-types (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)]
         (when-not (and (keyword? index) (halite-types/bare? index))
           (throw (ex-info "Second argument to get must be a variable name (as a keyword) when first argument is an instance"
                           {:form form})))
         (when-not (contains? field-types index)
-          (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) (halite-types/instance-spec-id subexpr-type))
+          (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) (halite-types/spec-id subexpr-type))
                           {:form form})))
         (get field-types index))
 
@@ -471,7 +471,7 @@
     (let [coll-type (type-check* ctx expr)
           et (halite-types/elem-type coll-type)
           _ (when-not et
-              (throw (ex-info (str "collection required for '" op "', not " (pr-str (or (halite-types/instance-spec-id coll-type) coll-type)))
+              (throw (ex-info (str "collection required for '" op "', not " (pr-str (or (halite-types/spec-id coll-type) coll-type)))
                               {:form expr, :expr-type coll-type})))
           body-type (type-check* (update ctx :tenv halite-envs/extend-scope sym et) body)]
       {:coll-type coll-type

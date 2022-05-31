@@ -176,13 +176,13 @@
     (no-nil (assoc t :r2 (no-empty (disj (:r2 t) (:arg t)))))
     t))
 
-(defn instance-subtype? [s t]
+(defn- instance-subtype? [s t]
   (and (or (= (:arg s) (:arg t))
            (= :* (:arg t)))
        (or (= (:maybe? s) (:maybe? t))
            (:maybe? t))))
 
-(defn instance-meet [s t]
+(defn- instance-meet [s t]
   (remove-redundant-r2
    (no-nil {:maybe? (or (:maybe? s) (:maybe? t))
             :kind :Instance
@@ -191,7 +191,7 @@
                    :*)
             :r2 (no-empty (set/intersection (all-r2 s) (all-r2 t)))})))
 
-(defn instance-join [s t]
+(defn- instance-join [s t]
   (remove-redundant-r2 (cond
                          (or (= (:arg s) (:arg t))
                              (= :* (:arg s))
@@ -209,34 +209,25 @@
                            {:kind :Unset}
                            {:kind :Nothing}))))
 
-(defn- instance-spec-id-ptn [s]
+(defn- spec-id-ptn [s]
   (when (and (= :Instance (:kind s))
              (= 1 (count (all-r2 s))))
     (if (= :* (:arg s))
       (first (:r2 s))
       (:arg s))))
 
-(s/defn instance-spec-id :- (s/maybe NamespacedKeyword)
+(s/defn spec-id :- (s/maybe NamespacedKeyword)
   [s :- HaliteType]
-  (instance-spec-id-ptn (type-ptn s)))
+  (spec-id-ptn (type-ptn s)))
 
-(defn- concrete-instance-spec-id-ptn [s]
-  (when (and (= :Instance (:kind s))
-             (not= :* (:arg s)))
-    (:arg s)))
-
-(s/defn concrete-instance-spec-id :- (s/maybe NamespacedKeyword)
-  [s :- HaliteType]
-  (concrete-instance-spec-id-ptn (type-ptn s)))
-
-(defn- instance-needs-refinement?-ptn
+(defn- needs-refinement?-ptn
   [s]
   (and (= :Instance (:kind s))
        (= :* (:arg s))))
 
-(s/defn instance-needs-refinement?
+(s/defn needs-refinement?
   [s :- HaliteType]
-  (instance-needs-refinement?-ptn (type-ptn s)))
+  (needs-refinement?-ptn (type-ptn s)))
 
 ;;;;
 
