@@ -349,6 +349,18 @@
   [sctx :- SpecCtx]
   (update-vals sctx (partial lower-refinement-constraints-in-spec sctx)))
 
+;;;;;;;;;; Lowering Optionality ;;;;;;;;;;;;
+
+(s/defn ^:private lower-no-value-comparison-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  (when (and (seq? form) (contains? #{'= 'not=} (first form)))
+    (let [[op & arg-ids] form
+          args (map (partial ssa/deref-id dgraph) arg-ids)
+          no-value-args (filter #(= :Unset (first %)) args)
+          maybe-typed-args (filter #(and (halite-types/maybe-type? (second %)) (not= :Unset (first %))) args)]
+      (when (and (seq no-value-args) (empty? maybe-typed-args))
+        (every? #(= :Unset (first %)) args)))))
+
 ;;;;;;;;;; Combine semantics-preserving passes ;;;;;;;;;;;;;
 
 (s/defn lower :- SpecCtx
@@ -364,7 +376,8 @@
              (rewrite-sctx bubble-up-do-expr)
              (rewrite-sctx flatten-do-expr)
              (lower-instance-comparisons)
-             (push-gets-into-ifs)))
+             (push-gets-into-ifs)
+             (rewrite-sctx lower-no-value-comparison-expr)))
        (simplify)))
 
 ;;;;;;;;;; Semantics-modifying passes ;;;;;;;;;;;;;;;;

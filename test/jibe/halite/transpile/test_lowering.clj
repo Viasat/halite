@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.transpile.test-lowering
-  (:require [jibe.halite.halite-envs :as halite-envs]
+  (:require [jibe.halite :as halite]
+            [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.rewriting :as rewriting]
             [jibe.halite.transpile.simplify :refer [simplify]]
@@ -64,8 +65,16 @@
           scope (set (keys (halite-envs/scope (:tenv ctx))))]
       (ssa/form-from-ssa scope dgraph id))))
 
+(defn- make-ssa-ctx
+  ([] (make-ssa-ctx {}))
+  ([{:keys [senv tenv env] :or {senv {} tenv {} env {}}}]
+   {:senv (halite-envs/spec-env senv)
+    :tenv (halite-envs/type-env tenv)
+    :env env
+    :dgraph {}}))
+
 (defn- make-empty-ssa-ctx []
-  {:senv (halite-envs/spec-env {}) :tenv (halite-envs/type-env {}) :env {} :dgraph {}})
+  (make-ssa-ctx))
 
 (deftest test-flatten-do
   (let [ctx (make-empty-ssa-ctx)]
@@ -451,3 +460,15 @@
                  :ws/D
                  (ssa/spec-from-ssa)
                  :constraints first second))))))
+
+(def lower-no-value-comparison-expr #'lowering/lower-no-value-comparison-expr)
+
+(deftest test-lower-no-value-comparisons
+  (let [ctx (make-ssa-ctx {:tenv '{u [:Maybe :Integer] x :Integer p :Boolean}})]
+    (are [expr lowered]
+        (= lowered (rewrite-expr ctx lower-no-value-comparison-expr expr))
+
+      '(= no-value no-value) true
+      '(= no-value 1) false
+      '(= no-value x) false
+      '(= no-value u) '(= no-value u))))
