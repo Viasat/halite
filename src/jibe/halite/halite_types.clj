@@ -98,6 +98,9 @@
 (s/defschema NamespacedKeyword (s/constrained s/Keyword namespaced?))
 (s/defschema BareSymbol (s/constrained s/Symbol bare?))
 
+(s/defn namespaced-keyword? [kw]
+  (and (keyword? kw) (namespaced? kw)))
+
 (s/defn spec-type? :- s/Bool
   "True if t is a type structure representing a spec type, false otherwise"
   [t]

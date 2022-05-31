@@ -135,15 +135,15 @@
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
               (throw (ex-info "instance literal must have :$type field" {error-key inst})))
-        _ (when-not (and (keyword? t) (halite-types/namespaced? t))
+        _ (when-not (halite-types/namespaced-keyword? t)
             (throw (ex-info "expected namespaced keyword as value of :$type" {error-key inst})))
         spec-info (or (halite-envs/lookup-spec (:senv ctx) t)
                       (throw (ex-info (str "resource spec not found: " t) {error-key inst})))
         field-types (:spec-vars spec-info)
         fields (set (keys field-types))
         required-fields (->> field-types
-                             (remove (comp halite-types/maybe-type? second));; 'second' is getting the value from the map entry
-                             (map first) ;; extract the value which was the key in the map entry
+                             (remove (comp halite-types/maybe-type? val))
+                             keys
                              set)
         supplied-fields (disj (set (keys inst)) :$type)
         missing-fields (set/difference required-fields supplied-fields)
@@ -656,8 +656,7 @@
         s (type-check* ctx subexpr)]
     (when-not (halite-types/subtype? s (halite-types/instance-type))
       (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr :actual s})))
-    (when-not (and (keyword? kw)
-                   (halite-types/namespaced? kw))
+    (when-not (halite-types/namespaced-keyword? kw)
       (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
       (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
@@ -670,8 +669,7 @@
         s (type-check* ctx subexpr)]
     (when-not (halite-types/subtype? s (halite-types/instance-type))
       (throw (ex-info "First argument to 'refines-to?' must be an instance" {:form expr})))
-    (when-not (and (keyword? kw)
-                   (halite-types/namespaced? kw))
+    (when-not (halite-types/namespaced-keyword? kw)
       (throw (ex-info "Second argument to 'refines-to?' must be a spec id" {:form expr})))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
       (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
