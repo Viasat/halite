@@ -387,8 +387,6 @@
 
 ;; helper functions
 
-(s/defn abstract-spec-type [])
-
 (s/defn concrete-spec-type :- HaliteType
   [spec-id :- schema/Keyword]
   [:Instance spec-id])
@@ -445,7 +443,7 @@
 (s/defn change-collection-type :- HaliteType
   [collection-type :- HaliteType
    t :- HaliteType]
-  [(:kind (type-ptn collection-type)) t])
+  (ptn-type (assoc (type-ptn collection-type) :arg t)))
 
 (s/defn collection-type-string :- String
   [collection-type :- HaliteType]
