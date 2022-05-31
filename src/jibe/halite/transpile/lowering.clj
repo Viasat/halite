@@ -9,7 +9,7 @@
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
              :refer [DerivationName Derivations SpecInfo SpecCtx make-ssa-ctx]]
-            [jibe.halite.transpile.rewriting :refer [rewrite-sctx]]
+            [jibe.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx]]
             [jibe.halite.transpile.simplify :refer [simplify]]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
             [schema.core :as s]
@@ -372,6 +372,15 @@
       (when (and (seq no-value-args) (empty? maybe-typed-args))
         (every? #(= :Unset (first %)) args)))))
 
+;; FIXME: The current halite typing rules mean that the if generated from this rule
+;; doesn't type check whenever the inner type is not a maybe type :( I think we'll need
+;; to change them.
+(s/defn ^:private lower-when-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (when (and (seq? form) (= 'when (first form)))
+    (let [[_when pred-id body-id] form]
+      (list 'if pred-id body-id :Unset))))
+
 (s/defn ^:private lower-maybe-comparison-expr
   [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (let [opt-arg? (fn [[form htype]]
@@ -488,6 +497,7 @@
        (lower-refine-to)
        (lower-refinement-constraints)
        (lower-valid?)
+       (->>rewrite-sctx lower-when-expr)
        (fixpoint
         #(-> %
              (rewrite-sctx bubble-up-do-expr)

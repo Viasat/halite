@@ -91,7 +91,9 @@
    (keys sctx)))
 
 (defmacro rewrite-sctx
-  [sctx-form rewrite-fn-sym]
+  [sctx rewrite-fn-sym]
   (when-not (symbol? rewrite-fn-sym)
     (throw (ex-info "second arg to rewrite-sctx must be a symbol resolving to a rewrite fn" {})))
-  `(rewrite-sctx* ~sctx-form ~(name rewrite-fn-sym) ~rewrite-fn-sym))
+  `(rewrite-sctx* ~sctx ~(name rewrite-fn-sym) ~rewrite-fn-sym))
+
+(defmacro ->>rewrite-sctx [rewrite-fn-sym sctx] `(rewrite-sctx ~sctx ~rewrite-fn-sym))

@@ -207,6 +207,14 @@
 
       true true
 
+      '(valid? {:$type :ws/B :bn 1 :bp (= no-value (when (= an 1) 42))})
+      '(if (and true (and true (if (and true true) (if (= an 1) true true) false)))
+         (let [$8 (= no-value (when (= an 1) 42))] (let [$1 1] (and (<= $1 10) (=> $8 (<= 0 $1)))))
+         false)
+      #_(let [$8 (= no-value (when (= an 1) 42))]
+          (let [$1 1]
+            (and (<= $1 10) (=> $8 (<= 0 $1)))))
+
       '(valid? {:$type :ws/B :bn 1 :bp true})
       '(if (and true true)
          (let [$1 1 $2 true]
@@ -481,6 +489,15 @@
       '(= no-value x) false
       '(= no-value u) '(= no-value u))))
 
+(def lower-when-expr #'lowering/lower-when-expr)
+
+(deftest test-lower-when
+  (let [ctx (make-empty-ssa-ctx)]
+    (are [expr result]
+        (= result (rewrite-expr ctx lower-when-expr expr))
+
+      '(when (= 1 2) (+ 3 4)) '(if (= 1 2) (+ 3 4) no-value))))
+
 (def lower-maybe-comparisons #'lowering/lower-maybe-comparisons)
 (def lower-maybe-comparison-expr #'lowering/lower-maybe-comparison-expr)
 
@@ -645,6 +662,28 @@
              (if ($value? v)
                (+ ($value! v) 1)
                0)))))))
+
+(deftest test-lowering-when-example
+  (binding [ssa/*next-id* (atom 0)
+            ssa/*hide-non-halite-ops* true]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:an "Integer", :aw [:Maybe "Integer"], :p "Boolean"}
+                   :constraints [["a1" (= aw (when p an))]]
+                   :refines-to {}}})
+          sctx (ssa/build-spec-ctx senv :ws/A)]
+      (is (= '(if p
+                (if-value aw
+                  (= aw an)
+                  false)
+                (if-value aw
+                  false
+                  true))
+             (-> sctx
+                 (lowering/lower)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints first second))))))
 
 (defonce ^:dynamic *results* (atom nil))
 (defonce ^:dynamic *trace* (atom nil))
