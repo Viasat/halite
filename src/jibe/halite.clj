@@ -257,7 +257,7 @@
      'str (mk-builtin str [& :String] :String)
      'subset? (mk-builtin set/subset? [[:Set :Object] [:Set :Object]] :Boolean)
      'sort (mk-builtin (comp vec sort)
-                       [[:Set :Nothing]] halite-types/empty-vector
+                       [halite-types/empty-set] halite-types/empty-vector
                        [halite-types/empty-vector] halite-types/empty-vector
                        [[:Set :Integer]] [:Vec :Integer]
                        [[:Vec :Integer]] [:Vec :Integer])
@@ -389,7 +389,9 @@
                           {:form index :expected :Integer :actual-type index-type})))
         (halite-types/collection-element-type subexpr-type))
 
-      (and (halite-types/spec-type? subexpr-type) (halite-types/instance-spec-id subexpr-type) (not (halite-types/instance-needs-refinement? subexpr-type)))
+      (and (halite-types/spec-type? subexpr-type)
+           (halite-types/instance-spec-id subexpr-type)
+           (not (halite-types/instance-needs-refinement? subexpr-type)))
       (let [field-types (->> subexpr-type halite-types/instance-spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)]
         (when-not (and (keyword? index) (halite-types/bare? index))
           (throw (ex-info "Second argument to get must be a variable name (as a keyword) when first argument is an instance"
@@ -481,7 +483,7 @@
 (s/defn ^:private type-check-map :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
-    [(first coll-type) (if (halite-types/subtype? coll-type [:Coll :Nothing])
+    [(first coll-type) (if (halite-types/subtype? coll-type halite-types/empty-collection)
                          :Nothing
                          body-type)]))
 
@@ -541,7 +543,7 @@
                        (type-check* ctx unset-expr))]
       (when-not (halite-types/maybe-type? sym-type)
         (throw (ex-info (str "First argument to '" op "' must have an optional type")
-                        {:form sym :expected [:Maybe :Any] :actual sym-type})))
+                        {:form sym :expected (halite-types/maybe-type :Any) :actual sym-type})))
       (if (= :Unset sym-type)
         (do
           (type-check* (update ctx :tenv halite-envs/extend-scope sym :Any) set-expr) ;; Should be :Unset?
@@ -560,7 +562,7 @@
           else-type (type-check* ctx else-expr)]
       (when-not (halite-types/maybe-type? maybe-type)
         (throw (ex-info (str "Binding expression in '" op "' must have an optional type")
-                        {:form maybe-expr :expected [:Maybe :Any] :actual maybe-type})))
+                        {:form maybe-expr :expected (halite-types/maybe-type :Any) :actual maybe-type})))
       (if (= :Unset maybe-type)
         (do
           (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) then-expr)
@@ -578,7 +580,7 @@
   (arg-count-at-least 2 expr)
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
-    (reduce halite-types/meet [:Set :Nothing] arg-types)))
+    (reduce halite-types/meet halite-types/empty-set arg-types)))
 
 (s/defn ^:private type-check-intersection :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -586,7 +588,7 @@
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (if (empty? arg-types)
-      [:Set :Nothing]
+      halite-types/empty-set
       (reduce halite-types/join arg-types))))
 
 (s/defn ^:private type-check-difference :- halite-types/HaliteType
@@ -680,7 +682,7 @@
   [ctx :- TypeContext, [_valid subexpr :as expr]]
   (let [t (type-check* ctx subexpr)]
     (cond
-      (halite-types/spec-type? t) [:Maybe t]
+      (halite-types/spec-type? t) (halite-types/maybe-type t)
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) t
       :else (throw (ex-info "Argument to 'valid' must be an instance of known type" {:form expr})))))

@@ -423,3 +423,7 @@
   (subtype? t [:Vec :Object]))
 
 (def empty-vector [:Vec :Nothing])
+
+(def empty-set [:Set :Nothing])
+
+(def empty-collection [:Coll :Nothing])
