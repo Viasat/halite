@@ -685,6 +685,106 @@
                  (ssa/spec-from-ssa)
                  :constraints first second))))))
 
+(deftest test-lowering-nested-optionals
+  (schema.core/without-fn-validation
+   (binding [ssa/*next-id* (atom 0)]
+     (let [senv (halite-envs/spec-env
+                 '{:ws/A
+                   {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :ap "Boolean"}
+                    :constraints [["a1" (= b1 b2)]
+                                  ["a2" (=> ap (if-value b1 true false))]]
+                    :refines-to {}}
+                   :ws/B
+                   {:spec-vars {:bx "Integer", :bw [:Maybe "Integer"], :bp "Boolean", :c1 :ws/C, :c2 [:Maybe :ws/C]}
+                    :constraints [["b1" (= bw (when bp bx))]]
+                    :refines-to {}}
+                   :ws/C
+                   {:spec-vars {:cx "Integer"
+                                :cw [:Maybe "Integer"]}
+                    :constraints []
+                    :refines-to {}}
+                   :ws/D
+                   {:spec-vars {:dx "Integer"}
+                    :constraints []
+                    :refines-to {:ws/B {:expr {:$type :ws/B
+                                               :bx (+ dx 1)
+                                               :bw (when (= 0 (mod dx 2))
+                                                     (div dx 2))
+                                               :bp false
+                                               :c1 {:$type :ws/C :cx dx :cw dx}
+                                               :c2 {:$type :ws/C :cx dx :cw 12}}}}}})]
+       ;; TODO: Turn this into a property-based test. It's not useful like this.
+       (is (= '{:spec-vars {:ap "Boolean", :b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B]}
+                :constraints
+                [["$all"
+                   (and
+                    (if-value b1
+                     (let [$25 b1]
+                      (if-value b2
+                        (let [$105 (get $25 :c2)
+                              $104 (get b2 :c2)
+                              $101 (get $25 :c1)
+                              $159 (get $101 :cw)
+                              $100 (get b2 :c1)
+                              $158 (get $100 :cw)
+                              $93 (get $25 :bw)
+                              $92 (get b2 :bw)]
+                          (and
+                           (= (get b2 :bp) (get $25 :bp))
+                           (if-value $92
+                             (let [$114 $92]
+                               (if-value $93 (= $93 $114) false))
+                             (if-value $93 false true))
+                           (= (get b2 :bx) (get $25 :bx))
+                           (and
+                            (if-value $158
+                              (let [$194 $158] (if-value $159 (= $159 $194) false))
+                              (if-value $159 false true))
+                            (= (get $100 :cx) (get $101 :cx)))
+                           (if-value $104
+                             (let [$127 $104]
+                               (if-value $105
+                                 (let [$236 (get $127 :cw) $235 (get $105 :cw)]
+                                   (and
+                                    (if-value $235
+                                      (let [$249 $235] (if-value $236 (= $236 $249) false))
+                                      (if-value $236 false true))
+                                    (= (get $105 :cx) (get $127 :cx))))
+                                 false))
+                             (if-value $105 false true))))
+                       false))
+                     (if-value b2 false true))
+                    (=> ap (if-value b1 true false)))]]
+                  :refines-to {}}
+              (-> senv
+                  (ssa/build-spec-ctx :ws/A)
+                  (lowering/lower)
+                  :ws/A
+                  (ssa/spec-from-ssa))))
+
+       (is (= '{:spec-vars {:dx "Integer"}
+                :constraints
+                [["$all"
+                  (let [$373 (= 0 (mod dx 2))]
+                    (if (if $373 true true)
+                      (let [$376 (if $373 (div dx 2) no-value)
+                            $378 (+ dx 1)
+                            $379 {:$type :ws/C, :cw dx, :cx dx}
+                            $381 {:$type :ws/C, :cw 12, :cx dx}]
+                        (if $373 false true))
+                      false))]],
+                :refines-to {:ws/B {:expr {:$type :ws/B,
+                                           :bp false,
+                                           :bw (when (= 0 (mod dx 2)) (div dx 2)),
+                                           :bx (+ dx 1),
+                                           :c1 {:$type :ws/C, :cw dx, :cx dx},
+                                           :c2 {:$type :ws/C, :cw 12, :cx dx}}}},}
+              (-> senv
+                  (ssa/build-spec-ctx :ws/D)
+                  (lowering/lower)
+                  :ws/D
+                  (ssa/spec-from-ssa))))))))
+
 (defonce ^:dynamic *results* (atom nil))
 (defonce ^:dynamic *trace* (atom nil))
 
