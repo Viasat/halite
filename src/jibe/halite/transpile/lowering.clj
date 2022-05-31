@@ -9,47 +9,37 @@
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
              :refer [DerivationName Derivations SpecInfo SpecCtx make-ssa-ctx]]
+            [jibe.halite.transpile.rewriting :refer [rewrite-sctx]]
             [jibe.halite.transpile.simplify :refer [simplify]]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 
 
+
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
-(s/defn ^:private lower-instance-comparisons-in-spec :- SpecInfo
-  [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  (let [ctx (make-ssa-ctx sctx spec-info)]
-    (->> derivations
-         (reduce
-          (fn [dgraph [id [form type]]]
-            (if (and (seq? form) (#{'= 'not=} (first form)))
-              (let [comparison-op (first form)
-                    logical-op (if (= comparison-op '=) 'and 'or)
-                    arg-ids (rest form)
-                    arg-types (set (map (comp second dgraph) arg-ids))]
-                (if (every? halite-types/spec-type? arg-types)
-                  (first
-                   (ssa/form-to-ssa
-                    (assoc ctx :dgraph dgraph)
-                    id
-                    (if (not= 1 (count arg-types))
-                      (= comparison-op 'not=)
-                      (let [arg-type (first arg-types)
-                            var-kws (-> arg-type halite-types/spec-id sctx :spec-vars keys sort)]
-                        (->> var-kws
-                             (map (fn [var-kw]
-                                    (apply list comparison-op
-                                           (map #(list 'get %1 var-kw) arg-ids))))
-                             (mk-junct logical-op))))))
-                  dgraph))
-              dgraph))
-          derivations)
-         (assoc spec-info :derivations))))
+(s/defn ^:private lower-instance-comparison-expr
+  [{:keys [dgraph senv] :as ctx} id [form type]]
+  (when (and (seq? form) (#{'= 'not=} (first form)))
+    (let [comparison-op (first form)
+          logical-op (if (= comparison-op '=) 'and 'or)
+          arg-ids (rest form)
+          arg-types (set (map (comp second dgraph) arg-ids))]
+      (when (every? halite-types/spec-type? arg-types)
+        (if (not= 1 (count arg-types))
+          (= comparison-op 'not=)
+          (let [arg-type (first arg-types)
+                var-kws (->> arg-type (halite-types/spec-id) (halite-envs/lookup-spec senv) :spec-vars keys sort)]
+            (->> var-kws
+                 (map (fn [var-kw]
+                        (apply list comparison-op
+                               (map #(list 'get %1 var-kw) arg-ids))))
+                 (mk-junct logical-op))))))))
 
 (s/defn ^:private lower-instance-comparisons :- SpecCtx
   [sctx :- SpecCtx]
-  (update-vals sctx (partial lower-instance-comparisons-in-spec sctx)))
+  (rewrite-sctx sctx lower-instance-comparison-expr))
 
 ;;;;;;;;; Push gets inside instance-valued ifs ;;;;;;;;;;;
 

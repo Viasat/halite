@@ -4,6 +4,7 @@
 (ns jibe.halite.transpile.test-lowering
   (:require [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.transpile.lowering :as lowering]
+            [jibe.halite.transpile.rewriting :as rewriting]
             [jibe.halite.transpile.simplify :refer [simplify]]
             [jibe.halite.transpile.ssa :as ssa :refer [Derivations]]
             [jibe.halite.transpile.util :refer [fixpoint]]
@@ -12,6 +13,45 @@
   (:use clojure.test))
 
 (use-fixtures :once schema.test/validate-schemas)
+
+(defn- print-trace-item [{:keys [rule op pruned-ids form form']}]
+  (if rule
+    (println (format "%s:  %s\n |->%s%s"
+                     rule form (apply str (repeat (dec (count rule)) \space)) form'))
+    (println "--- prune" (count pruned-ids) "---")))
+
+(defn- print-trace-summary* [trace]
+  (doseq [item trace]
+    (print-trace-item item)))
+
+(defmacro ^:private print-trace-summary
+  [body spec-id]
+  `(rewriting/with-tracing [traces#]
+     (let [spec-id# ~spec-id
+           result# ~body]
+       (print-trace-summary* (get @traces# spec-id#))
+       result#)))
+
+(defn- troubleshoot* [trace]
+  (let [last-item (last trace)]
+    (clojure.pprint/pprint
+     (->> trace
+          (map (fn [{:keys [op] :as item}]
+                 (condp = op
+                   :rewrite (select-keys item [:rule :form :form'])
+                   :prune (select-keys item [:pruned]))))))
+    (when-let [spec-info (:spec-info last-item)]
+      (clojure.pprint/pprint
+       (ssa/spec-from-ssa spec-info)))
+    (ssa/pprint-dgraph (:dgraph' last-item))))
+
+(defmacro ^:private troubleshoot [body spec-id]
+  `(lowering/with-tracing [traces#]
+     (try
+       ~body
+       (catch Exception ex#
+         (troubleshoot* (get (deref traces#) ~spec-id))
+         (throw ex#)))))
 
 (def lower-instance-comparisons #'lowering/lower-instance-comparisons)
 

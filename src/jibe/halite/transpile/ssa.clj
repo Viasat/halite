@@ -6,6 +6,7 @@
   that is reminiscent of the single static assignment (SSA) representation often used
   in compilers."
   (:require [clojure.set :as set]
+            [clojure.pprint :as pp]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.transpile.util :refer [mk-junct]]
@@ -561,6 +562,11 @@
      {}
      dgraph)))
 
+(def ^:dynamic *elide-top-level-bindings*
+  "When true, form-from-ssa elides top-level let bindings, to produce a partial expression.
+  This is only to be used for debugging of rewrite rules!"
+  false)
+
 (s/defn ^:private let-bindable-exprs
   "We want to avoid as much expression duplication as possible without changing
   semantics. Expressions are side effect free, so we can generally avoid multiple occurrences
@@ -604,11 +610,13 @@
                                    (conj bindings id (form-from-ssa* subdgraph guards bound-set curr-guard id))])
                                 [bound? []]))]
     (cond->> (form-from-ssa* subdgraph guards bound? curr-guard id)
-      (seq bindings) (list 'let bindings))))
+      (and (seq bindings) (not *elide-top-level-bindings*)) (list 'let bindings))))
 
 (s/defn form-from-ssa
-  [scope :- #{s/Symbol}, dgraph :- Derivations, id :- DerivationName]
-  (let-bindable-exprs dgraph (compute-guards dgraph #{id}) scope #{} id))
+  ([{:keys [spec-vars derivations] :as spec-info} :- SpecInfo, id :- DerivationName]
+   (form-from-ssa (->> spec-vars keys (map symbol) set) derivations id))
+  ([scope :- #{s/Symbol}, dgraph :- Derivations, id :- DerivationName]
+   (let-bindable-exprs dgraph (compute-guards dgraph #{id}) scope #{} id)))
 
 (s/defn spec-from-ssa :- halite-envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
@@ -634,3 +642,6 @@
 (s/defn build-spec-env :- (s/protocol halite-envs/SpecEnv)
   [sctx :- SpecCtx]
   (-> sctx (update-vals spec-from-ssa) (halite-envs/spec-env)))
+
+(defn pprint-dgraph [dgraph]
+  (pp/pprint (sort-by #(Integer/parseInt (subs (name (key %)) 1)) dgraph)))
