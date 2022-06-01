@@ -13,9 +13,9 @@
 (deftest test-lower-expr
   (let [witness-map '{x x?}]
     (are [expr lowered]
-        (= lowered (try (lower-expr witness-map #{'y} expr)
-                        (catch Exception ex
-                          :error)))
+         (= lowered (try (lower-expr witness-map #{'y} expr)
+                         (catch Exception ex
+                           :error)))
 
       1 1
       true true
@@ -49,7 +49,7 @@
              (lower-spec spec)))
 
       (are [bounds vars]
-          (= vars (->> bounds (lower-bounds '{x x?})))
+           (= vars (->> bounds (lower-bounds '{x x?})))
 
         '{x :Unset}               '{x? false}
         '{x 1}                    '{x 1, x? true}
@@ -59,28 +59,27 @@
         '{x [1 10]}               '{x [1 10], x? true})
 
       (are [in out]
-          (= out (cco/propagate spec in))
+           (= out (cco/propagate spec in))
 
         '{}             '{x [-20 8 :Unset], y [-19 9], p #{true false}}
         '{x :Unset}     '{x :Unset,         y [2 9],   p #{true false}}
         '{p true}       '{x :Unset,         y [2 9],   p true}
-        '{y -3}         '{x [-20 -4],       y -3,      p false}
-        ))))
+        '{y -3}         '{x [-20 -4],       y -3,      p false}))))
 
 (deftest test-multiple-optional-vars
   (let [spec '{:vars {x [0 100], y [0 100], z [0 100]}
                :optionals #{y z}
                :constraints
                #{(if-value y
-                   (and (< x y)
-                        (if-value z true false))
-                   true)
+                           (and (< x y)
+                                (if-value z true false))
+                           true)
                  (if-value z
-                   (< z (* x 2))
-                   true)}}]
+                           (< z (* x 2))
+                           true)}}]
 
     (are [in out]
-        (= out (cco/propagate spec in))
+         (= out (cco/propagate spec in))
 
       '{} '{x [0 100], y [2 100 :Unset], z [0 100 :Unset]}
       '{x 12} '{x 12, y [13 100 :Unset], z [0 23 :Unset]}
@@ -90,7 +89,7 @@
 (deftest test-optional-that-must-not-be-set
   (let [spec '{:vars {w [0 10], p :Bool}
                :optionals #{w}
-               :constraints #{(=> p (if-value w true false) )
+               :constraints #{(=> p (if-value w true false))
                               (=> (not p) (if-value w false true))
                               (=> p (if-value w (< w 0) true))}}]
     (is (= '{w :Unset, p false} (cco/propagate spec)))))

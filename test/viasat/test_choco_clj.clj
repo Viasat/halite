@@ -38,10 +38,10 @@
 (deftest test-bounds-as-var-types
   (binding [choco-clj/*default-int-bounds* [0 100]]
     (are [bound expected]
-        (= expected
-           (-> {:vars {'v bound}, :constraints #{}}
-               (choco-clj/propagate)
-               (get 'v)))
+         (= expected
+            (-> {:vars {'v bound}, :constraints #{}}
+                (choco-clj/propagate)
+                (get 'v)))
 
       :Int choco-clj/*default-int-bounds*
       :Bool #{true false}
@@ -58,7 +58,7 @@
 
 (deftest test-intersect-bound
   (are [a b _ result]
-      (= result (choco-clj/intersect-bound a b))
+       (= result (choco-clj/intersect-bound a b))
 
     :Int :Int => :Int
     :Int 1 => 1
@@ -107,7 +107,7 @@
 
 (deftest test-union-bound
   (are [a b _ result]
-      (= result (choco-clj/union-bound a b))
+       (= result (choco-clj/union-bound a b))
 
     :Int :Int => :Int
     :Int 1 => :Int
@@ -159,7 +159,7 @@
                :constraints #{(if p (< n m) (> n m))}}]
     (binding [choco-clj/*default-int-bounds* [-10 10]]
       (are [in out]
-          (= out (choco-clj/propagate spec in))
+           (= out (choco-clj/propagate spec in))
 
         '{}                                     '{m [-10 10], n [-10 10], p #{true false}}
         '{m 1}                                  '{m 1, n [-10 10], p #{true false}}

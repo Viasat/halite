@@ -219,10 +219,10 @@
   (cond
     (and (set? bound) (= 1 (count bound))) (first bound)
     (vector? bound) (let [[lb ub] bound]
-                  (cond
-                    (= lb ub) lb
-                    (< ub lb) #{}
-                    :else bound))
+                      (cond
+                        (= lb ub) lb
+                        (< ub lb) #{}
+                        :else bound))
     :else bound))
 
 (s/defn intersect-bound :- ChocoVarType
