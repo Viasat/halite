@@ -97,7 +97,7 @@
     ;; check that all variables have values that are concrete and that conform to the
     ;; types declared in the parent resource spec
     (doseq [[kw v] (dissoc inst :$type)
-            :let [declared-type (spec-vars kw)]]
+            :let [declared-type (->> kw spec-vars (halite-envs/halite-type-from-var-type senv))]]
       ;; TODO: consider letting instances of abstract spec contain abstract values
       (when-not (concrete? senv v)
         (throw (ex-info "instance cannot contain abstract value" {:value v})))
@@ -142,7 +142,7 @@
         field-types (:spec-vars spec-info)
         fields (set (keys field-types))
         required-fields (->> field-types
-                             (remove (comp halite-types/maybe-type? val))
+                             (remove (comp halite-envs/optional-var-type? val))
                              keys
                              set)
         supplied-fields (disj (set (keys inst)) :$type)
@@ -158,7 +158,7 @@
 
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
-      (let [field-type (get field-types field-kw)
+      (let [field-type (halite-envs/halite-type-from-var-type (:senv ctx) (get field-types field-kw))
             actual-type (check-fn ctx field-val)]
         (when-not (halite-types/subtype? actual-type field-type)
           (throw (ex-info (str "value of " field-kw " has wrong type")
@@ -395,7 +395,8 @@
     (and (halite-types/spec-type? subexpr-type)
          (halite-types/spec-id subexpr-type)
          (not (halite-types/needs-refinement? subexpr-type)))
-    (let [field-types (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)]
+    (let [field-types (-> (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)
+                          (update-vals (partial halite-envs/halite-type-from-var-type (:senv ctx))))]
       (when-not (and (keyword? index) (halite-types/bare? index))
         (throw (ex-info "Index must be a variable name (as a keyword) when target is an instance"
                         {:form form, :index-form index})))

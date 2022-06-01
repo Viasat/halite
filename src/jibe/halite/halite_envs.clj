@@ -12,8 +12,30 @@
   {:expr s/Any
    (s/optional-key :inverted?) s/Bool})
 
+(s/defschema MandatoryVarType
+  (s/conditional
+   string? (s/enum "String" "Integer" "Boolean")
+   vector? (s/constrained [(s/recursive #'MandatoryVarType)]
+                          #(= 1 (count %))
+                          "exactly one inner type")
+   set? (s/constrained #{(s/recursive #'MandatoryVarType)}
+                          #(= 1 (count %))
+                          "exactly one inner type")
+   :else halite-types/NamespacedKeyword))
+
+(s/defschema VarType
+  (s/conditional
+   #(and (vector? %) (= :Maybe (first %)))
+   [(s/one (s/enum :Maybe) :maybe) (s/one MandatoryVarType :inner)]
+
+   :else MandatoryVarType))
+
+(s/defn optional-var-type? :- s/Bool
+  [var-type :- VarType]
+  (and (vector? var-type) (= :Maybe (first var-type))))
+
 (s/defschema SpecInfo
-  {:spec-vars {halite-types/BareKeyword halite-types/HaliteType}
+  {:spec-vars {halite-types/BareKeyword VarType}
    :constraints [[(s/one s/Str :name) (s/one s/Any :expr)]]
    :refines-to {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
@@ -72,13 +94,50 @@
   [scope :- {halite-types/BareSymbol halite-types/HaliteType}]
   (->TypeEnvImpl scope))
 
+(s/defn halite-type-from-var-type :- halite-types/HaliteType
+  [senv :- (s/protocol SpecEnv), var-type :- VarType]
+  (when (coll? var-type)
+    (let [n (if (and (vector? var-type) (= :Maybe (first var-type))) 2 1)]
+      (when (not= n (count var-type))
+        (throw (ex-info "Must contain exactly one inner type"
+                        {:var-type var-type})))))
+  (let [check-mandatory #(if (optional-var-type? %)
+                           (throw (ex-info "Set and vector types cannot have optional inner types"
+                                           {:var-type %}))
+                           %)]
+    (cond
+      (string? var-type)
+      (if (#{"Integer" "String" "Boolean"} var-type)
+        (keyword var-type)
+        (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
+
+      (optional-var-type? var-type)
+      [:Maybe (halite-type-from-var-type senv (second var-type))]
+
+      (vector? var-type)
+      [:Vec (halite-type-from-var-type senv (check-mandatory (first var-type)))]
+
+      (set? var-type)
+      [:Set (halite-type-from-var-type senv (check-mandatory (first var-type)))]
+
+      (halite-types/namespaced-keyword? var-type)
+      (if-let [spec-info (lookup-spec senv var-type)]
+        (if (:abstract? spec-info)
+          (halite-types/abstract-spec-type var-type)
+          (halite-types/concrete-spec-type var-type))
+        (throw (ex-info (format "Spec not found: %s" var-type) {:var-type var-type})))
+
+      :else (throw (ex-info "Invalid spec variable type" {:var-type var-type})))))
+
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
   [senv :- (s/protocol SpecEnv), spec :- SpecInfo]
-  (let [{:keys [spec-vars]} spec]
-    (->TypeEnvImpl
-     (update-keys spec-vars symbol))))
+  (-> spec
+      :spec-vars
+      (update-keys symbol)
+      (update-vals (partial halite-type-from-var-type senv))
+      (->TypeEnvImpl)))
 
 (deftype EnvImpl [bindings]
   Env

@@ -20,12 +20,12 @@
         (nil? refines-to) (assoc :refines-to {})))))
 
 (def senv (map->TestSpecEnv
-           {:specs {:ws/A$v1 {:spec-vars {:x :Integer
-                                          :y :Boolean
-                                          :c [:Instance :ws2/B$v1]}}
-                    :ws2/B$v1 {:spec-vars {:s :String}}
-                    :ws/C$v1 {:spec-vars {:xs [:Vec :Integer]}}
-                    :ws/D$v1 {:spec-vars {:xss [:Vec [:Vec :Integer]]}}}}))
+           {:specs {:ws/A$v1 {:spec-vars {:x "Integer"
+                                          :y "Boolean"
+                                          :c :ws2/B$v1}}
+                    :ws2/B$v1 {:spec-vars {:s "String"}}
+                    :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
+                    :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}}}))
 
 (def tenv (halite-envs/type-env {}))
 
@@ -229,9 +229,9 @@
 
 (deftest get-type-checking-tests
   (let [senv (->TestSpecEnv
-              {:ws/A$v1 {:spec-vars {:x :Integer}}
-               :ws/B$v1 {:spec-vars {:a [:Instance :ws/A$v1]}}
-               :ws/C$v1 {:spec-vars {:bs [:Vec [:Instance :ws/B$v1]]}}})
+              {:ws/A$v1 {:spec-vars {:x "Integer"}}
+               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
+               :ws/C$v1 {:spec-vars {:bs [:ws/B$v1]}}})
         tenv (halite-envs/type-env
               {'a [:Instance :ws/A$v1]
                'b [:Instance :ws/B$v1]
@@ -269,9 +269,9 @@
                             :x x}})
                      (range 5))}
         senv (->TestSpecEnv
-              {:ws/A$v1 {:spec-vars {:x :Integer}}
-               :ws/B$v1 {:spec-vars {:a [:Instance :ws/A$v1]}}
-               :ws/C$v1 {:spec-vars {:bs [:Vec [:Instance :ws/B$v1]]}}})
+              {:ws/A$v1 {:spec-vars {:x "Integer"}}
+               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
+               :ws/C$v1 {:spec-vars {:bs [:ws/B$v1]}}})
         tenv (halite-envs/type-env {'c [:Instance :ws/C$v1]})
         env (halite-envs/env {'c c})]
     (are [expr v]
@@ -367,7 +367,7 @@
     '(let [x "foo", y (let [x 1] (+ x 2))] y) 3))
 
 (deftest maybe-tests
-  (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
+  (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
         tenv (-> tenv
                  (halite-envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (halite-envs/extend-scope 'x [:Maybe :Integer]))]
@@ -455,7 +455,7 @@
       '(conj [] x) #"cannot conj possibly unset value to vector")))
 
 (deftest when-tests
-  (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
+  (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
         tenv (-> tenv
                  (halite-envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (halite-envs/extend-scope 'x [:Maybe :Integer])
@@ -619,8 +619,8 @@
 
 (deftest test-constraint-validation
   (let [senv (update senv :specs merge
-                     {:ws/E$v1 {:spec-vars {:x [:Maybe :Integer]
-                                            :y :Boolean}
+                     {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
+                                            :y "Boolean"}
                                 :constraints [["x-if-y" '(=> y (some? x))]]}
                       :ws/Invalid$v1 {:spec-vars {}
                                       :constraints [["broken" '(or y true)]]}})]
@@ -653,16 +653,16 @@
 
 (deftest test-refinement-validation
   (let [senv (->TestSpecEnv
-              {:ws/A {:spec-vars {:x :Integer}
+              {:ws/A {:spec-vars {:x "Integer"}
                       :refines-to {:ws/B {:expr '{:$type :ws/B :x x}}
                                    :ws/C {:inverted? true :expr '{:$type :ws/C :x x}}}}
-               :ws/B {:spec-vars {:x :Integer}
+               :ws/B {:spec-vars {:x "Integer"}
                       :constraints '[["posX" (< 0 x)]]
                       :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 x)}}}}
-               :ws/C {:spec-vars {:x :Integer}
+               :ws/C {:spec-vars {:x "Integer"}
                       :constraints '[["boundedX" (< x 10)]]
                       :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 (* 2 x))}}}}
-               :ws/D {:spec-vars {:x :Integer}
+               :ws/D {:spec-vars {:x "Integer"}
                       :constraints '[["xIsOdd" (= 1 (mod x 2))]]}
                :ws/E {:spec-vars {}}})]
 
@@ -707,9 +707,9 @@
 
 (deftest test-refinement-with-guards
   (let [senv (->TestSpecEnv
-              {:ws/A {:spec-vars {:x :Integer}
+              {:ws/A {:spec-vars {:x "Integer"}
                       :constraints '[["posX" (< 0 x)]]}
-               :ws/B {:spec-vars {:y :Integer}
+               :ws/B {:spec-vars {:y "Integer"}
                       :refines-to {:ws/A {:expr '(if (< 0 y) ; A passthru
                                                    {:$type :ws/A, :x y}
                                                    (when (< y 0) ; A via negation
@@ -732,16 +732,17 @@
 
 (deftest test-instance-type
   (let [senv (->TestSpecEnv
-              {:ws/A {:spec-vars {:x :Integer}
+              {:ws/A {:spec-vars {:x "Integer"}
+                      :abstract? true
                       :constraints '[["posX" (< 0 x)]
                                      ["boundedX" (< x 10)]]}
                :ws/A1 {:spec-vars {}
                        :refines-to {:ws/A {:expr '{:$type :ws/A :x 5}}}}
-               :ws/A2 {:spec-vars {:a :Integer
-                                   :b :Integer}
+               :ws/A2 {:spec-vars {:a "Integer"
+                                   :b "Integer"}
                        :refines-to {:ws/A {:expr '{:$type :ws/A :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a [:Instance :* #{:ws/A}]}}
-               :ws/C {:spec-vars {:as [:Vec [:Instance :* #{:ws/A}]]}}
+               :ws/B {:spec-vars {:a :ws/A}}
+               :ws/C {:spec-vars {:as [:ws/A]}}
                :ws/D {:spec-vars {}}})
         tenv2 (-> tenv
                   (halite-envs/extend-scope 'ax [:Instance :* #{:ws/A2}])
@@ -781,16 +782,17 @@
 
 (deftest test-refines-to?
   (let [senv (->TestSpecEnv
-              {:ws/A {:spec-vars {:x :Integer}
+              {:ws/A {:spec-vars {:x "Integer"}
+                      :abstract? true
                       :constraints '[["posX" (< 0 x)]
                                      ["boundedX" (< x 10)]]}
                :ws/A1 {:spec-vars {}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
-               :ws/A2 {:spec-vars {:a :Integer
-                                   :b :Integer}
+               :ws/A2 {:spec-vars {:a "Integer"
+                                   :b "Integer"}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a [:Instance :* #{:ws/A}]}}
-               :ws/C {:spec-vars {:as [:Vec [:Instance :* #{:ws/A}]]}}
+               :ws/B {:spec-vars {:a :ws/A}}
+               :ws/C {:spec-vars {:as [:ws/A]}}
                :ws/D {:spec-vars {}}})
         tenv2 (-> tenv
                   (halite-envs/extend-scope 'ax [:Instance :* #{:ws/A}])
@@ -824,17 +826,17 @@
 
 (deftest test-concrete?
   (let [senv (->TestSpecEnv
-              {:ws/A {:spec-vars {:x :Integer}
+              {:ws/A {:spec-vars {:x "Integer"}
                       :constraints '[["posX" (< 0 x)]
                                      ["boundedX" (< x 10)]]
                       :abstract? true}
                :ws/A1 {:spec-vars {}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
-               :ws/A2 {:spec-vars {:a :Integer
-                                   :b :Integer}
+               :ws/A2 {:spec-vars {:a "Integer"
+                                   :b "Integer"}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a [:Instance :* #{:ws/A}]}}
-               :ws/C {:spec-vars {:as [:Vec [:Instance :* #{:ws/A}]]}}
+               :ws/B {:spec-vars {:a :ws/A}}
+               :ws/C {:spec-vars {:as [:ws/A]}}
                :ws/D {:spec-vars {}}})]
 
     (are [expr etype]
@@ -860,12 +862,12 @@
 
 (deftest test-valid
   (let [senv (->TestSpecEnv
-              '{:ws/A {:spec-vars {:x :Integer, :y :Integer}
+              '{:ws/A {:spec-vars {:x "Integer", :y "Integer"}
                        :constraints [["xLTy" (< x y)]]
                        :refines-to {:ws/B {:expr {:$type :ws/B :z (+ x y)}}}}
-                :ws/B {:spec-vars {:z :Integer}
+                :ws/B {:spec-vars {:z "Integer"}
                        :constraints [["posZ" (< 0 z)]]}
-                :ws/C {:spec-vars {:a [:Instance :ws/A]}
+                :ws/C {:spec-vars {:a :ws/A}
                        :constraints [["maxSum" (< (+ (get a :x) (get a :y)) 10)]]}})]
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
@@ -901,23 +903,23 @@
 
 (deftest abstract-specs
   (let [senv (->TestSpecEnv
-              {:ws/A {:spec-vars {:x :Integer}
+              {:ws/A {:spec-vars {:x "Integer"}
                       :constraints '[["posX" (< 0 x)]
                                      ["boundedX" (< x 10)]]
                       :abstract? true}
                :ws/A1 {:spec-vars {}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x 6}}}}
-               :ws/A2 {:spec-vars {:a :Integer
-                                   :b :Integer}
+               :ws/A2 {:spec-vars {:a "Integer"
+                                   :b "Integer"}
                        :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a [:Instance :* #{:ws/A}]}
+               :ws/B {:spec-vars {:a :ws/A}
                       :constraints '[["notFive" (not= 5 (get (refine-to a :ws/A) :x))]]}
-               :ws/C {:spec-vars {:as [:Vec [:Instance :* #{:ws/A}]]}}
+               :ws/C {:spec-vars {:as [:ws/A]}}
                :ws/D {:spec-vars {}}
                :ws/Z {:abstract? true}
                :ws/Z1 {:refines-to {:ws/Z {:expr '{:$type :ws/Z}}}}
-               :ws/Invalid {:spec-vars {:a [:Instance :* #{:ws/A}]
-                                        :z [:Instance :* #{:ws/Z}]}
+               :ws/Invalid {:spec-vars {:a :ws/A
+                                        :z :ws/Z}
                             ;; a is typed as :Instance, so (get a :x) doesn't type check
                             :constraints '[["notFive" (not= 5 (get
                                                                (first (sort-by [x (intersection #{a}
@@ -983,26 +985,26 @@
                  {:abstract? true, :spec-vars {}, :constraints [], :refines-to {}}
 
                  :ws/JsonStr
-                 {:spec-vars {:s :String}
+                 {:spec-vars {:s "String"}
                   :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonBool
-                 {:spec-vars {:b :Boolean}
+                 {:spec-vars {:b "Boolean"}
                   :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonInt
-                 {:spec-vars {:n :Integer}
+                 {:spec-vars {:n "Integer"}
                   :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonVec
-                 {:spec-vars {:entries [:Vec [:Instance :* #{:ws/JsonVal}]]}
+                 {:spec-vars {:entries [:ws/JsonVal]}
                   :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                  :ws/JsonObjEntry
-                 {:spec-vars {:key :String, :val [:Instance :* #{:ws/JsonVal}]}}
+                 {:spec-vars {:key "String", :val :ws/JsonVal}}
 
                  :ws/JsonObj
-                 {:spec-vars {:entries [:Set [:Instance :ws/JsonObjEntry]]}
+                 {:spec-vars {:entries #{:ws/JsonObjEntry}}
                   :constraints [["uniqueKeys" true
                                  ;; TODO: each key shows up once
                                  #_(= (count entries) (count (for [entry entries] (get* entry :key))))]]
