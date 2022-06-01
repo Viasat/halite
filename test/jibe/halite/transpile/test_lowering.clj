@@ -65,6 +65,14 @@
           scope (set (keys (halite-envs/scope (:tenv ctx))))]
       (ssa/form-from-ssa scope dgraph id))))
 
+(defn- rewrite-expr-deeply
+  [ctx rewrite-fn form]
+  (binding [ssa/*next-id* (atom 0), ssa/*hide-non-halite-ops* false]
+    (let [[dgraph id] (ssa/form-to-ssa ctx form)
+          dgraph (rewriting/rewrite-dgraph (assoc ctx :dgraph dgraph) "<rule>" rewrite-fn)
+          scope (set (keys (halite-envs/scope (:tenv ctx))))]
+      (ssa/form-from-ssa scope dgraph id))))
+
 (defn- make-ssa-ctx
   ([] (make-ssa-ctx {}))
   ([{:keys [senv tenv env] :or {senv {} tenv {} env {}}}]
@@ -472,3 +480,327 @@
       '(= no-value 1) false
       '(= no-value x) false
       '(= no-value u) '(= no-value u))))
+
+(def lower-maybe-comparisons #'lowering/lower-maybe-comparisons)
+(def lower-maybe-comparison-expr #'lowering/lower-maybe-comparison-expr)
+
+(deftest test-lower-maybe-comparisons
+  (let [ctx (make-ssa-ctx {:tenv '{u [:Maybe :Integer], v [:Maybe :Integer], w [:Maybe :Integer], x :Integer, y :Integer}})]
+    (are [expr lowered]
+        (= lowered (rewrite-expr ctx lower-maybe-comparison-expr expr))
+
+      '(= v x)                '($do! x (if ($value? v) (= ($value! v) x) false))
+      '(= x v y)              '($do! x y (if ($value? v) (= ($value! v) x y) false))
+      '(= v no-value)         '(if ($value? v) false true)
+      '(= v no-value x)       '($do! v x false)
+      '(= v no-value w)       '($do! w (if ($value? v) false (= no-value w)))
+      '(not= v x)             '($do! x (if ($value? v) (not= ($value! v) x) true))
+      '(not= v no-value)      '(if ($value? v) true false)
+      '(not= v no-value x)    '($do! v x true)
+      '(not= x v y)           '($do! x y (if ($value? v) (not= ($value! v) x y) true))
+      '(= v w)                '($do! w (if ($value? v) (= ($value! v) w) (if ($value? w) false true)))
+      '(not= v w)             '($do! w (if ($value? v) (not= ($value! v) w) (if ($value? w) true false)))
+      '(= x u y v w)          '($do! x y v w (if ($value? u) (= ($value! u) x y v w) (if ($value? v) false true)))
+      '(= no-value no-value)  '(= no-value no-value)
+      ;; TODO: Show this working on (get) forms.
+
+      ;; cannot be lowered as-is
+      '(= x (if-value v (+ 1 v) w))
+      '(= x (if ($value? v)
+              (+ 1 ($value! v))
+              w))
+      )
+
+    ;; Test that the rule iterates as expected
+    (is (= '($do!
+             x y v w
+             (if ($value? u)
+               ($do!
+                ($value! u)
+                x y w
+                (if ($value? v)
+                  ($do!
+                   ($value! v) ($value! u) x y
+                   (if ($value? w)
+                     (= ($value! w) ($value! v) ($value! u) x y)
+                     false))
+                  (if ($value? w)
+                    false
+                    true)))
+               (if ($value? v)
+                 false
+                 true)))
+           (fixpoint #(rewrite-expr-deeply ctx lower-maybe-comparison-expr %) '(= x u y v w))))
+
+    ;; TODO: Add tests of semantics preservation!
+    ))
+
+(def push-comparisons-into-maybe-ifs #'lowering/push-comparisons-into-maybe-ifs)
+
+(deftest test-push-comparisons-into-maybe-ifs
+  (binding [ssa/*next-id* (atom 0)
+            ssa/*hide-non-halite-ops* false]
+    (let [senv '{:ws/A
+                 {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :p "Boolean"}
+                  :constraints []
+                  :refines-to {}}}]
+      (are [expr lowered]
+          (= lowered
+             (-> senv
+                 (update-in [:ws/A :constraints] conj ["c" expr])
+                 (halite-envs/spec-env)
+                 (ssa/build-spec-ctx :ws/A)
+                 (push-comparisons-into-maybe-ifs)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints first second))
+
+        '(= x (if p v w))
+        '(if p (= x v) (= x w))
+
+        '(= x (if-value v (+ 1 v) w))
+        '(if ($value? v)
+           (= x (+ 1 ($value! v)))
+           (= x w))
+
+        '(= (if p v w)
+            (if-value v (+ 1 v) w))
+        '(let [$46 (if ($value? v)
+                     (+ 1 ($value! v))
+                     w)]
+           (if p
+             (= v $46)
+             (= w $46))))
+
+      (let [expr '(= (if p v w) (if-value v (+ 1 v) w))]
+        (is (= '(if p
+                  (if ($value? v)
+                    (= v (+ 1 ($value! v)))
+                    (= v w))
+                  (if ($value? v)
+                    (= w (+ 1 ($value! v)))
+                    (= w w)))
+               (-> senv
+                   (update-in [:ws/A :constraints] conj ["c" expr])
+                   (halite-envs/spec-env)
+                   (ssa/build-spec-ctx :ws/A)
+                   (->> (fixpoint push-comparisons-into-maybe-ifs))
+                   :ws/A
+                   (ssa/spec-from-ssa)
+                   :constraints first second)))))))
+
+(def push-if-value-into-if #'lowering/push-if-value-into-if)
+
+(deftest test-push-if-value-into-if
+  (binding [ssa/*next-id* (atom 0)
+            ssa/*hide-non-halite-ops* false]
+    (let [senv '{:ws/A
+                 {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :p "Boolean"}
+                  :constraints []
+                  :refines-to {}}}]
+
+      (are [expr lowered]
+          (= lowered
+             (-> senv
+                 (update-in [:ws/A :constraints] conj ["c" expr])
+                 (halite-envs/spec-env)
+                 (ssa/build-spec-ctx :ws/A)
+                 (push-if-value-into-if)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints first second))
+
+        '(let [n (if p x v)]
+           (if-value n
+             (+ n 1)
+             0))
+        '($do!
+          (if p x v)
+          (if p
+            (+ x 1)
+            (if ($value? v)
+              (+ ($value! v) 1)
+              0)))
+
+        '(let [n (if p v x)]
+           (if-value n
+             (+ n 1)
+             0))
+        '($do! (if p v x)
+           (if p
+             (if ($value? v)
+               (+ ($value! v) 1)
+               0)
+             (+ x 1)))
+
+        '(let [n (if p w v)]
+           (if-value n
+             (+ n 1)
+             0))
+        '($do! (if p w v)
+           (if p
+             (if ($value? w)
+               (+ ($value! w) 1)
+               0)
+             (if ($value? v)
+               (+ ($value! v) 1)
+               0)))))))
+
+(defonce ^:dynamic *results* (atom nil))
+(defonce ^:dynamic *trace* (atom nil))
+
+(deftest test-lowering-optionality
+  (schema.core/without-fn-validation
+   (binding [ssa/*next-id* (atom 0)
+             ssa/*hide-non-halite-ops* true]
+     (let [senv (halite-envs/spec-env
+                 '{:ws/A
+                   {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :aw [:Maybe "Integer"], :x "Integer", :p "Boolean"}
+                    :constraints [["a1" (not= (if p b1 b2)
+                                              (if-value aw
+                                                {:$type :ws/B :bw aw :bx (+ aw 1)}
+                                                (get {:$type :ws/C :b3 b1 :cw x} :b3)))]]
+                    :refines-to {}}
+                   :ws/B
+                   {:spec-vars {:bv [:Maybe "Integer"], :bw [:Maybe "Integer"], :bx "Integer"}
+                    :constraints []
+                    :refines-to {}}
+                   :ws/C
+                   {:spec-vars {:b3 [:Maybe :ws/B], :cw "Integer"}
+                    :constraints [["c1" (= (< 0 cw) (if-value b3 true false))]
+                                  ["c2" (if-value b3
+                                          (let [bw (get b3 :bw)]
+                                            (if-value bw
+                                              (< cw bw)
+                                              false))
+                                          true)]]
+                    :refines-to {}}})
+           sctx (ssa/build-spec-ctx senv :ws/A)
+           sctx' (rewriting/with-tracing [traces]
+                   (let [result (lowering/lower sctx)]
+                     (reset! *trace* (get @traces :ws/A))
+                     result))
+           int-range [-2 0 1 2]
+           b-seq (for [bv? [true false]
+                       bv (if bv? int-range [nil])
+                       bw? [true false]
+                       bw (if bw? int-range [nil])
+                       bx int-range]
+                   (cond-> {:$type :ws/B :bx bx}
+                     bv? (assoc :bv bv)
+                     bw? (assoc :bw bw)))
+           a-seq (for [b1? [true false]
+                       b1 (if b1? b-seq [nil])
+                       b2? [true false]
+                       b2 (if b2? b-seq [nil])
+                       aw? [true false]
+                       aw (if aw? int-range [nil])
+                       x int-range
+                       p [true false]]
+                   (cond-> {:$type :ws/A :x x :p p}
+                     b1? (assoc :b1 b1)
+                     b2? (assoc :b2 b2)
+                     aw? (assoc :aw aw)))
+           senv' (ssa/build-spec-env sctx')
+           tenv (halite-envs/type-env {})
+           env (halite-envs/env {})
+           check-a (fn [senv a]
+                     (try
+                       (halite/eval-expr senv tenv env (list 'valid? a))
+                       (catch Exception ex
+                         :runtime-error)))
+           num-to-check 10000
+           pprint-spec (fn [sctx spec-id]
+                         (binding [ssa/*hide-non-halite-ops* false]
+                           (clojure.pprint/pprint (ssa/spec-from-ssa (get sctx spec-id)))))]
+       ;;(clojure.pprint/pprint (halite-envs/lookup-spec (ssa/build-spec-env sctx') :ws/A))
+       (reset! *results* {:checked 0 :failed 0 :failures [] :valid 0 :invalid 0 :runtime-error 0})
+       (doseq [a (take num-to-check (shuffle a-seq))]
+         (let [r1 (check-a senv a)
+               r2 (check-a senv' a)]
+           (when-not (is (= r1 r2) (pr-str a))
+             (println "Checking steps in trace...")
+             (let [sctx' (assoc-in sctx [:ws/A :derivations] (:dgraph (first @*trace*)))
+                   r3 (check-a (ssa/build-spec-env sctx') a)]
+               (pprint-spec sctx' :ws/A)
+               (when (not= r1 r3)
+                 (println "Semantics different at start of trace")
+                 (pprint-spec sctx' :ws/A)
+                 (throw (ex-info "Stopping" {:r1 r1 :r2 r2 :inst a})))
+
+               (doseq [{:keys [dgraph dgraph'] :as item} @*trace*]
+                 (print-trace-item item)
+                 (let [sctx' (assoc-in sctx [:ws/A :derivations] dgraph)
+                       sctx'' (assoc-in sctx [:ws/A :derivations] dgraph')
+                       r3 (check-a (ssa/build-spec-env sctx'') a)]
+                   (when (not= r1 r3)
+                     (pprint-spec sctx' :ws/A)
+                     (pprint-spec sctx'' :ws/A)
+                     (ssa/pprint-dgraph (-> sctx'' :ws/A :derivations))
+                     (throw (ex-info "Stopping" {:r1 r1 :r2 r2 :inst a}))))
+                 )))
+           (swap! *results*
+                  (fn [results]
+                    (-> results
+                        (update :checked inc)
+                        (cond-> (= r1 r2)
+                          (-> (update (condp = r1
+                                        true :valid
+                                        false :invalid
+                                        :runtime-error :runtime-error) inc)))
+                        (cond-> (not= r1 r2)
+                          (-> (update :failed inc)
+                              (update :failures conj {:inst a :r1 r1 :r2 r2}))))))
+           (when (< 0 (:failed @*results*))
+             (throw (ex-info "Lowered spec is not semantically equivalent!"
+                             @*results*)))))
+       ;; an assertion, to keep kaocha runner happy
+       (is (= num-to-check (:checked @*results*)))))))
+
+;; TODO: (get {:$type :ws/B} :notset) => :Unset
+;; TODO: (from-ssa :Unset) => no-value-
+;; TODO: Go back through the rules to see what needs to be added because of $do!
+
+;; TODO: Test case where maybe comparisons lower to instance comparisons that lower to maybe comparisons.
+;; We can handle the preservation of runtime errors by adding a $do internal form that form-from-ssa
+;; turns into a let form for unbound nodes. Once that's in place, we should go back and fix
+;; any runtime error preservation problems with other rewrite rules.
+
+(comment
+  "This example highlights the subtlety of RS^2's notion of abstractness."
+  (defn example []
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:abstract? true, :spec-vars {} :constraints [] :refines-to {}}
+                  :ws/B
+                  {:abstract? true, :spec-vars {} :constraints [] :refines-to {}}
+                  :ws/X
+                  {:spec-vars {:a :ws/A} :constraints [] :refines-to {}}
+                  :ws/Y
+                  {:spec-vars {:b :ws/B} :constraints [] :refines-to {}}
+                  :ws/C
+                  {:spec-vars {:x :ws/X, :y :ws/Y}
+                   :constraints
+                   [["c0" (refines-to? (get y :b) :ws/A)]
+                    ["c1" (if (refines-to? (get y :b) :ws/A)
+                            (not= x {:$type :ws/X :a (get y :b)})
+                            false)]
+                    ["c2" (if-let [x' (valid {:$type :ws/X :a (get y :b)})]
+                            (not= x x'))]]
+                   :refines-to {}}
+
+                ;;;;;;;;;;;
+
+                  :ws/Z
+                  {:spec-vars {}
+                   :constraints []
+                   :refines-to
+                   {:ws/A {:expr {:$type :ws/A}}
+                    :ws/B {:expr {:$type :ws/B}}}}})
+          tenv (halite-envs/type-env {'y :ws/Y})
+          env (halite-envs/env {'y {:$type :ws/Y :b {:$type :ws/Z}}})
+          expr '{:$type :ws/X :a (get y :b)}]
+      (prn :expr expr)
+      (prn :type (halite/type-check senv tenv expr))
+      (prn :v (halite/eval-expr senv tenv env expr))
+      )))

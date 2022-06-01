@@ -361,6 +361,112 @@
       (when (and (seq no-value-args) (empty? maybe-typed-args))
         (every? #(= :Unset (first %)) args)))))
 
+(s/defn ^:private lower-maybe-comparison-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (let [opt-arg? (fn [[form htype]]
+                   (halite-types/maybe-type? htype))
+        if-form? (fn [[form htype]]
+                   (and (seq? form) (= 'if (first form))))]
+    (when (and (seq? form) (contains? #{'= 'not=} (first form)))
+      (let [[op & arg-ids] form
+            args (map-indexed vector (mapv (partial ssa/deref-id dgraph) arg-ids))
+            opt-args (filter #(and (opt-arg? (second %)) (not= :Unset (second (second %)))) args)
+            no-value-args (filter #(= :Unset (first (second %))) args)
+            valued-args (filter #(not (opt-arg? (second %))) args)]
+        (when (and (seq opt-args) (empty? (filter (comp if-form? second) opt-args)))
+          (cond
+            (and (seq no-value-args) (seq valued-args))
+            (let [no-value-ids (set (map (comp (partial nth arg-ids) first) no-value-args))]
+              (make-do (->> arg-ids (remove no-value-ids)) (= 'not= op)))
+
+            (and (seq no-value-args) (= 1 (count opt-args)))
+            (let [[i [form htype]] (first opt-args)]
+              (list 'if (list '$value? (nth arg-ids i)) (= 'not= op) (not= 'not= op)))
+
+            (seq no-value-args)
+            (let [[i [form htype]] (first opt-args)
+                  opt-arg-id (nth arg-ids i)
+                  excluded-ids (->> no-value-args (map (comp (partial nth arg-ids) first)) (cons (nth arg-ids i)) set)
+                  other-arg-ids (->> arg-ids (remove excluded-ids))]
+              (make-do other-arg-ids
+                       (list 'if (list '$value? opt-arg-id)
+                             (= op 'not=)
+                             (apply list op (nth arg-ids (ffirst no-value-args)) other-arg-ids))))
+
+            (= 1 (count opt-args))
+            (let [[i [form htype]] (first opt-args)
+                  opt-arg-id (nth arg-ids i)
+                  other-arg-ids (concat (take i arg-ids) (drop (inc i) arg-ids))]
+              (make-do other-arg-ids
+                       (list 'if (list '$value? opt-arg-id)
+                             (apply list op (list '$value! opt-arg-id) other-arg-ids)
+                             (= op 'not=))))
+
+            (< 1 (count opt-args))
+            (let [opt-pair (take 2 opt-args)
+                  [i1 [form1 htype1]] (first opt-pair)
+                  opt-id1 (nth arg-ids i1)
+                  other-arg-ids (concat (take i1 arg-ids) (drop (inc i1) arg-ids))
+                  [i2 [form2 htype2]] (second opt-pair)
+                  opt-id2 (nth arg-ids i2)]
+              (make-do other-arg-ids
+                       (list 'if (list '$value? opt-id1)
+                             (apply list op (list '$value! opt-id1) other-arg-ids)
+                             (list 'if (list '$value? opt-id2)
+                                   (= op 'not=)
+                                   (not= op 'not=)))))))))))
+
+(s/defn ^:private lower-maybe-comparisons :- SpecCtx
+  [sctx :- SpecCtx]
+  (rewrite-sctx sctx lower-maybe-comparison-expr))
+
+(s/defn ^:private push-comparison-into-maybe-if-in-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  (let [maybe-if? (fn [[form htype]]
+                    (and (seq? form)
+                         (= 'if (first form))
+                         (halite-types/maybe-type? htype)))]
+    (when (and (seq? form) (contains? #{'= 'not=} (first form)))
+      (let [[op & arg-ids] form
+            args (mapv (partial ssa/deref-id dgraph) arg-ids)]
+        (when-let [[i [[_if pred-id then-id else-id]]] (first (filter (comp maybe-if? second) (map-indexed vector args)))]
+          (list 'if pred-id
+                (apply list op (assoc (vec arg-ids) i then-id))
+                (apply list op (assoc (vec arg-ids) i else-id))))))))
+
+(s/defn ^:private push-comparisons-into-maybe-ifs :- SpecCtx
+  [sctx :- SpecCtx]
+  (rewrite-sctx sctx push-comparison-into-maybe-if-in-expr))
+
+(s/defn ^:private push-if-value-into-if-in-expr
+  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  (when (and (seq? form) (= 'if (first form)))
+    (let [[_if val?-id then-id else-id] form
+          [val?-form] (ssa/deref-id dgraph val?-id)]
+      (when (and (seq? val?-form) (= '$value? (first val?-form)))
+        (let [[_value? nested-if-id] val?-form
+              [nested-if-form] (ssa/deref-id dgraph nested-if-id)
+              value!-nested-if-id (ssa/find-form dgraph (list '$value! nested-if-id))]
+          (when (and (some? value!-nested-if-id) (seq? nested-if-form) (= 'if (first nested-if-form)))
+            (let [[[_if nested-pred-id nested-then-id nested-else-id]] (ssa/deref-id dgraph nested-if-id)
+                  rewrite-branch (fn [dgraph branch-id]
+                                   (let [[_ branch-htype] (ssa/deref-id dgraph branch-id)]
+                                     (if (halite-types/maybe-type? branch-htype)
+                                       (let [[dgraph rewritten-then-id] (ssa/replace-in-expr dgraph then-id {nested-if-id branch-id})]
+                                         (ssa/form-to-ssa (assoc ctx :dgraph dgraph)
+                                                          (list 'if (list '$value? branch-id)
+                                                                rewritten-then-id
+                                                                else-id)))
+                                       (ssa/replace-in-expr dgraph then-id {value!-nested-if-id branch-id}))))
+                  [dgraph new-then-id] (rewrite-branch dgraph nested-then-id)
+                  [dgraph new-else-id] (rewrite-branch dgraph nested-else-id)]
+              (with-meta (list 'if nested-pred-id new-then-id new-else-id) {:dgraph dgraph}))))))))
+
+(s/defn ^:private push-if-value-into-if :- SpecCtx
+  [sctx :- SpecCtx]
+  (rewrite-sctx sctx push-if-value-into-if-in-expr))
+
+
 ;;;;;;;;;; Combine semantics-preserving passes ;;;;;;;;;;;;;
 
 (s/defn lower :- SpecCtx
@@ -377,7 +483,10 @@
              (rewrite-sctx flatten-do-expr)
              (lower-instance-comparisons)
              (push-gets-into-ifs)
-             (rewrite-sctx lower-no-value-comparison-expr)))
+             (lower-maybe-comparisons)
+             (rewrite-sctx lower-no-value-comparison-expr)
+             (push-comparisons-into-maybe-ifs)
+             (push-if-value-into-if)))
        (simplify)))
 
 ;;;;;;;;;; Semantics-modifying passes ;;;;;;;;;;;;;;;;

@@ -4,6 +4,7 @@
 (ns jibe.halite.transpile.rewriting
   "Functions to facilitate rewriting of halite specs."
   (:require [clojure.set :as set]
+            [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
              :refer [SpecInfo SpecCtx SSACtx]]
@@ -44,11 +45,10 @@
           :pruned (map #(ssa/form-from-ssa spec-info %) pruned-ids)})))
     spec-info'))
 
-(s/defn rewrite-spec :- SpecInfo
-  [sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, {:keys [derivations] :as spec-info} :- SpecInfo, rewrite-rule-name :- s/Str, rewrite-fn]
-  (let [ctx (ssa/make-ssa-ctx sctx spec-info)
-        scope (->> spec-info :spec-vars keys (map symbol) set)]
-    (->> derivations
+(s/defn rewrite-dgraph :- ssa/Derivations
+  [{:keys [dgraph tenv] :as ctx} :- ssa/SSACtx, rewrite-rule-name :- s/Str, rewrite-fn & [spec-id spec-info]]
+  (let [scope (->> tenv (halite-envs/scope) keys set)]
+    (->> dgraph
          (reduce
           (fn [ctx [id deriv]]
             (let [form (rewrite-fn ctx id deriv)]
@@ -57,21 +57,28 @@
                       [dgraph' id'] (->> form (ssa/form-to-ssa (assoc ctx :dgraph dgraph) id))]
                   (trace!
                    (binding [ssa/*elide-top-level-bindings* true]
-                     {:op :rewrite
-                      :spec-id spec-id
-                      :spec-info (assoc spec-info :derivations dgraph)
-                      :rule rewrite-rule-name
-                      :dgraph dgraph
-                      :dgraph' dgraph'
-                      :id id
-                      :form (ssa/form-from-ssa scope dgraph id)
-                      :id' id'
-                      :result form
-                      :form' (ssa/form-from-ssa scope dgraph' id')}))
+                     (cond->
+                         {:op :rewrite
+                          :rule rewrite-rule-name
+                          :dgraph dgraph
+                          :dgraph' dgraph'
+                          :id id
+                          :form (ssa/form-from-ssa scope dgraph id)
+                          :id' id'
+                          :result form
+                          :form' (ssa/form-from-ssa scope dgraph' id')}
+                       spec-id (assoc :spec-id spec-id)
+                       spec-info (assoc :spec-info (assoc spec-info :derivations dgraph)))))
                   (assoc ctx :dgraph dgraph'))
                 ctx)))
           ctx)
-         :dgraph
+         :dgraph)))
+
+(s/defn rewrite-spec :- SpecInfo
+  [sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, spec-info :- SpecInfo, rewrite-rule-name :- s/Str, rewrite-fn]
+  (let [ctx (ssa/make-ssa-ctx sctx spec-info)]
+    (->> spec-info
+         (rewrite-dgraph ctx rewrite-rule-name rewrite-fn spec-id)
          (assoc spec-info :derivations)
          (prune spec-id rewrite-rule-name))))
 

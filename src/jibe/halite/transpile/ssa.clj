@@ -98,7 +98,7 @@
 
 (s/defschema DerivResult [(s/one Derivations :derivs) (s/one DerivationName :id)])
 
-(s/defn ^:private find-form :- (s/maybe DerivationName)
+(s/defn find-form :- (s/maybe DerivationName)
   [dgraph :- Derivations, ssa-form :- SSAForm]
   (loop [[[id [form _] :as entry] & entries] dgraph]
     (when entry
