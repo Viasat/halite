@@ -228,9 +228,8 @@
                          (->> expr (inline-gets) (flatten-expr vars #{'no-value}))
                          ;; TODO: This keeps masking implementation errors, we need a safer way to exclude constraints!
                          (catch clojure.lang.ExceptionInfo ex
-                           (if-not (:skip-constraint? (ex-data ex))
-                             (throw ex)
-                             (println (format "WARNING! Skipping constraint %s: %s" cname expr)))))]
+                           (when-not (:skip-constraint? (ex-data ex))
+                             (throw ex))))]
            (let [[dgraph id] (->> expr
                                   (guard-constraint-in-optional-context witnesses mandatories)
                                   (ssa/form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations}))]
