@@ -58,15 +58,15 @@
                   (trace!
                    (binding [ssa/*elide-top-level-bindings* true]
                      (cond->
-                         {:op :rewrite
-                          :rule rewrite-rule-name
-                          :dgraph dgraph
-                          :dgraph' dgraph'
-                          :id id
-                          :form (ssa/form-from-ssa scope dgraph id)
-                          :id' id'
-                          :result form
-                          :form' (ssa/form-from-ssa scope dgraph' id')}
+                      {:op :rewrite
+                       :rule rewrite-rule-name
+                       :dgraph dgraph
+                       :dgraph' dgraph'
+                       :id id
+                       :form (ssa/form-from-ssa scope dgraph id)
+                       :id' id'
+                       :result form
+                       :form' (ssa/form-from-ssa scope dgraph' id')}
                        spec-id (assoc :spec-id spec-id)
                        spec-info (assoc :spec-info (assoc spec-info :derivations dgraph)))))
                   (assoc ctx :dgraph dgraph'))

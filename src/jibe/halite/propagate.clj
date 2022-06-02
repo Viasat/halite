@@ -85,7 +85,7 @@
                                  (cond->> vtype
                                    actually-mandatory? (vector :Maybe))])
                   (cond->
-                      actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
+                   actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
 
             (spec-maybe-type? htype)
             (let [spec-id (halite-types/spec-id (unwrap-maybe htype))
@@ -233,7 +233,7 @@
                              (println (format "WARNING! Skipping constraint %s: %s" cname expr)))))]
            (let [[dgraph id] (->> expr
                                   (guard-constraint-in-optional-context witnesses mandatories)
-                                  (ssa/form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} ))]
+                                  (ssa/form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations}))]
              (-> spec-info
                  (assoc :derivations dgraph)
                  (update :constraints conj [cname id])))
@@ -341,7 +341,7 @@
                                           (contains? info :$witness))))
                               (sort-by first)
                               (map (fn [[opt-var-kw info]]
-                                     (list '=> 
+                                     (list '=>
                                            (if (vector? info)
                                              (list 'if-value (symbol (first info)) true false)
                                              (symbol (first (:$witness info))))

@@ -19,8 +19,8 @@
                           #(= 1 (count %))
                           "exactly one inner type")
    set? (s/constrained #{(s/recursive #'MandatoryVarType)}
-                          #(= 1 (count %))
-                          "exactly one inner type")
+                       #(= 1 (count %))
+                       "exactly one inner type")
    :else halite-types/NamespacedKeyword))
 
 (s/defschema VarType

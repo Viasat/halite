@@ -16,18 +16,18 @@
                 :constraints []
                 :refines-to {}}}]
     (are [expr simplified]
-        (= simplified
-           (binding [ssa/*next-id* (atom 0)
-                     ssa/*hide-non-halite-ops* false]
-             (-> senv
-                 (update-in [:ws/A :constraints] conj ["c" expr])
-                 (halite-envs/spec-env)
-                 (ssa/build-spec-ctx :ws/A)
-                 (simplify)
-                 :ws/A
-                 (ssa/spec-from-ssa)
-                 :constraints
-                 first second)))
+         (= simplified
+            (binding [ssa/*next-id* (atom 0)
+                      ssa/*hide-non-halite-ops* false]
+              (-> senv
+                  (update-in [:ws/A :constraints] conj ["c" expr])
+                  (halite-envs/spec-env)
+                  (ssa/build-spec-ctx :ws/A)
+                  (simplify)
+                  :ws/A
+                  (ssa/spec-from-ssa)
+                  :constraints
+                  first second)))
 
       true true
       '(= an 1) '(= an 1)

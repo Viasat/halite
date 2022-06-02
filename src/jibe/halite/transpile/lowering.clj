@@ -15,8 +15,6 @@
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 
-
-
 ;;;;;;;;; Bubble up and Flatten $do! ;;;;;;;;;;;;
 
 (defn- make-do
@@ -485,7 +483,6 @@
 (s/defn ^:private push-if-value-into-if :- SpecCtx
   [sctx :- SpecCtx]
   (rewrite-sctx sctx push-if-value-into-if-in-expr))
-
 
 ;;;;;;;;;; Combine semantics-preserving passes ;;;;;;;;;;;;;
 

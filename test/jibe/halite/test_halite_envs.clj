@@ -11,7 +11,7 @@
               '{:ws/A {:abstract? true :spec-vars {} :constraints #{} :refines-to {}}
                 :ws/B {:spec-vars {} :constraints #{} refines-to {}}})]
     (are [vtype htype]
-        (= htype (halite-envs/halite-type-from-var-type senv vtype))
+         (= htype (halite-envs/halite-type-from-var-type senv vtype))
 
       "Integer" :Integer
       "String" :String
@@ -28,8 +28,8 @@
       [:Maybe [:ws/A]] [:Maybe [:Vec [:Instance :* #{:ws/A}]]])
 
     (are [invalid-type msg]
-        (thrown-with-msg? ExceptionInfo msg
-                          (halite-envs/halite-type-from-var-type senv invalid-type))
+         (thrown-with-msg? ExceptionInfo msg
+                           (halite-envs/halite-type-from-var-type senv invalid-type))
 
       "Foo" #"Unrecognized primitive type"
       :ws/C #"Spec not found"

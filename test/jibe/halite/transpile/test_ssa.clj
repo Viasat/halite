@@ -296,9 +296,9 @@
       '[$16]
 
       '[(if-value v
-          (let [u (get c :cn)]
-            (if-value u (+ u 1) 0))
-          1)]
+                  (let [u (get c :cn)]
+                    (if-value u (+ u 1) 0))
+                  1)]
       '{$1 [v [:Maybe :Integer]],
         $2 [($value? $1) :Boolean $3],
         $3 [(not $2) :Boolean $2],
@@ -314,8 +314,7 @@
         $13 [(if $7 $11 $12) :Integer],
         $14 [($do! $6 $13) :Integer],
         $15 [(if $2 $14 $10) :Integer]}
-      '[$15]
-      )))
+      '[$15])))
 
 (def form-from-ssa* #'ssa/form-from-ssa*)
 
@@ -543,9 +542,9 @@
         $13 [(if $7 $11 $12) :Integer],
         $14 [(if $2 $13 $10) :Integer]}
       '(if-value v
-         (let [$6 (get c :cn)]
-           (if-value $6 (+ $6 1) 0))
-         1)
+                 (let [$6 (get c :cn)]
+                   (if-value $6 (+ $6 1) 0))
+                 1)
 
       '[$1]
       '{$1 [(if $2 $3 $4) :Integer]

@@ -87,7 +87,7 @@
 (deftest test-flatten-do
   (let [ctx (make-empty-ssa-ctx)]
     (are [expr result]
-        (= result (rewrite-expr ctx flatten-do-expr expr))
+         (= result (rewrite-expr ctx flatten-do-expr expr))
 
       '($do! 1 ($do! 2 3 4) 5) '($do! 1 2 3 4 5)
       '($do! 1 2 ($do! 3 4 5)) '($do! 1 2 3 4 5))))
@@ -97,7 +97,7 @@
 (deftest test-bubble-up-do
   (let [ctx (make-empty-ssa-ctx)]
     (are [expr result]
-        (= result (rewrite-expr ctx bubble-up-do-expr expr))
+         (= result (rewrite-expr ctx bubble-up-do-expr expr))
 
       '(+ 1 ($do! (div 1 0) 2) 3) '($do! (div 1 0) (+ 1 2 3))
       '(if true ($do! 1 2) 3) '(if true ($do! 1 2) 3)
@@ -482,7 +482,7 @@
 (deftest test-lower-no-value-comparisons
   (let [ctx (make-ssa-ctx {:tenv '{u [:Maybe :Integer] x :Integer p :Boolean}})]
     (are [expr lowered]
-        (= lowered (rewrite-expr ctx lower-no-value-comparison-expr expr))
+         (= lowered (rewrite-expr ctx lower-no-value-comparison-expr expr))
 
       '(= no-value no-value) true
       '(= no-value 1) false
@@ -494,7 +494,7 @@
 (deftest test-lower-when
   (let [ctx (make-empty-ssa-ctx)]
     (are [expr result]
-        (= result (rewrite-expr ctx lower-when-expr expr))
+         (= result (rewrite-expr ctx lower-when-expr expr))
 
       '(when (= 1 2) (+ 3 4)) '(if (= 1 2) (+ 3 4) no-value))))
 
@@ -504,7 +504,7 @@
 (deftest test-lower-maybe-comparisons
   (let [ctx (make-ssa-ctx {:tenv '{u [:Maybe :Integer], v [:Maybe :Integer], w [:Maybe :Integer], x :Integer, y :Integer}})]
     (are [expr lowered]
-        (= lowered (rewrite-expr ctx lower-maybe-comparison-expr expr))
+         (= lowered (rewrite-expr ctx lower-maybe-comparison-expr expr))
 
       '(= v x)                '($do! x (if ($value? v) (= ($value! v) x) false))
       '(= x v y)              '($do! x y (if ($value? v) (= ($value! v) x y) false))
@@ -525,10 +525,9 @@
       '(= x (if-value v (+ 1 v) w))
       '(= x (if ($value? v)
               (+ 1 ($value! v))
-              w))
-      )
+              w)))
 
-    ;; Test that the rule iterates as expected
+;; Test that the rule iterates as expected
     (is (= '($do!
              x y v w
              (if ($value? u)
@@ -562,15 +561,15 @@
                   :constraints []
                   :refines-to {}}}]
       (are [expr lowered]
-          (= lowered
-             (-> senv
-                 (update-in [:ws/A :constraints] conj ["c" expr])
-                 (halite-envs/spec-env)
-                 (ssa/build-spec-ctx :ws/A)
-                 (push-comparisons-into-maybe-ifs)
-                 :ws/A
-                 (ssa/spec-from-ssa)
-                 :constraints first second))
+           (= lowered
+              (-> senv
+                  (update-in [:ws/A :constraints] conj ["c" expr])
+                  (halite-envs/spec-env)
+                  (ssa/build-spec-ctx :ws/A)
+                  (push-comparisons-into-maybe-ifs)
+                  :ws/A
+                  (ssa/spec-from-ssa)
+                  :constraints first second))
 
         '(= x (if p v w))
         '(if p (= x v) (= x w))
@@ -617,20 +616,20 @@
                   :refines-to {}}}]
 
       (are [expr lowered]
-          (= lowered
-             (-> senv
-                 (update-in [:ws/A :constraints] conj ["c" expr])
-                 (halite-envs/spec-env)
-                 (ssa/build-spec-ctx :ws/A)
-                 (push-if-value-into-if)
-                 :ws/A
-                 (ssa/spec-from-ssa)
-                 :constraints first second))
+           (= lowered
+              (-> senv
+                  (update-in [:ws/A :constraints] conj ["c" expr])
+                  (halite-envs/spec-env)
+                  (ssa/build-spec-ctx :ws/A)
+                  (push-if-value-into-if)
+                  :ws/A
+                  (ssa/spec-from-ssa)
+                  :constraints first second))
 
         '(let [n (if p x v)]
            (if-value n
-             (+ n 1)
-             0))
+                     (+ n 1)
+                     0))
         '($do!
           (if p x v)
           (if p
@@ -641,27 +640,27 @@
 
         '(let [n (if p v x)]
            (if-value n
-             (+ n 1)
-             0))
+                     (+ n 1)
+                     0))
         '($do! (if p v x)
-           (if p
-             (if ($value? v)
-               (+ ($value! v) 1)
-               0)
-             (+ x 1)))
+               (if p
+                 (if ($value? v)
+                   (+ ($value! v) 1)
+                   0)
+                 (+ x 1)))
 
         '(let [n (if p w v)]
            (if-value n
-             (+ n 1)
-             0))
+                     (+ n 1)
+                     0))
         '($do! (if p w v)
-           (if p
-             (if ($value? w)
-               (+ ($value! w) 1)
-               0)
-             (if ($value? v)
-               (+ ($value! v) 1)
-               0)))))))
+               (if p
+                 (if ($value? w)
+                   (+ ($value! w) 1)
+                   0)
+                 (if ($value? v)
+                   (+ ($value! v) 1)
+                   0)))))))
 
 (deftest test-lowering-when-example
   (binding [ssa/*next-id* (atom 0)
@@ -674,11 +673,11 @@
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '(if p
                 (if-value aw
-                  (= aw an)
-                  false)
+                          (= aw an)
+                          false)
                 (if-value aw
-                  false
-                  true))
+                          false
+                          true))
              (-> sctx
                  (lowering/lower)
                  :ws/A
@@ -717,45 +716,45 @@
        (is (= '{:spec-vars {:ap "Boolean", :b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B]}
                 :constraints
                 [["$all"
-                   (and
-                    (if-value b1
-                     (let [$25 b1]
-                      (if-value b2
-                        (let [$105 (get $25 :c2)
-                              $104 (get b2 :c2)
-                              $101 (get $25 :c1)
-                              $159 (get $101 :cw)
-                              $100 (get b2 :c1)
-                              $158 (get $100 :cw)
-                              $93 (get $25 :bw)
-                              $92 (get b2 :bw)]
-                          (and
-                           (= (get b2 :bp) (get $25 :bp))
-                           (if-value $92
-                             (let [$114 $92]
-                               (if-value $93 (= $93 $114) false))
-                             (if-value $93 false true))
-                           (= (get b2 :bx) (get $25 :bx))
-                           (and
-                            (if-value $158
-                              (let [$194 $158] (if-value $159 (= $159 $194) false))
-                              (if-value $159 false true))
-                            (= (get $100 :cx) (get $101 :cx)))
-                           (if-value $104
-                             (let [$127 $104]
-                               (if-value $105
-                                 (let [$236 (get $127 :cw) $235 (get $105 :cw)]
-                                   (and
-                                    (if-value $235
-                                      (let [$249 $235] (if-value $236 (= $236 $249) false))
-                                      (if-value $236 false true))
-                                    (= (get $105 :cx) (get $127 :cx))))
-                                 false))
-                             (if-value $105 false true))))
-                       false))
-                     (if-value b2 false true))
-                    (=> ap (if-value b1 true false)))]]
-                  :refines-to {}}
+                  (and
+                   (if-value b1
+                             (let [$25 b1]
+                               (if-value b2
+                                         (let [$105 (get $25 :c2)
+                                               $104 (get b2 :c2)
+                                               $101 (get $25 :c1)
+                                               $159 (get $101 :cw)
+                                               $100 (get b2 :c1)
+                                               $158 (get $100 :cw)
+                                               $93 (get $25 :bw)
+                                               $92 (get b2 :bw)]
+                                           (and
+                                            (= (get b2 :bp) (get $25 :bp))
+                                            (if-value $92
+                                                      (let [$114 $92]
+                                                        (if-value $93 (= $93 $114) false))
+                                                      (if-value $93 false true))
+                                            (= (get b2 :bx) (get $25 :bx))
+                                            (and
+                                             (if-value $158
+                                                       (let [$194 $158] (if-value $159 (= $159 $194) false))
+                                                       (if-value $159 false true))
+                                             (= (get $100 :cx) (get $101 :cx)))
+                                            (if-value $104
+                                                      (let [$127 $104]
+                                                        (if-value $105
+                                                                  (let [$236 (get $127 :cw) $235 (get $105 :cw)]
+                                                                    (and
+                                                                     (if-value $235
+                                                                               (let [$249 $235] (if-value $236 (= $236 $249) false))
+                                                                               (if-value $236 false true))
+                                                                     (= (get $105 :cx) (get $127 :cx))))
+                                                                  false))
+                                                      (if-value $105 false true))))
+                                         false))
+                             (if-value b2 false true))
+                   (=> ap (if-value b1 true false)))]]
+                :refines-to {}}
               (-> senv
                   (ssa/build-spec-ctx :ws/A)
                   (lowering/lower)
@@ -778,7 +777,7 @@
                                            :bw (when (= 0 (mod dx 2)) (div dx 2)),
                                            :bx (+ dx 1),
                                            :c1 {:$type :ws/C, :cw dx, :cx dx},
-                                           :c2 {:$type :ws/C, :cw 12, :cx dx}}}},}
+                                           :c2 {:$type :ws/C, :cw 12, :cx dx}}}}}
               (-> senv
                   (ssa/build-spec-ctx :ws/D)
                   (lowering/lower)
@@ -797,8 +796,8 @@
                    {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :aw [:Maybe "Integer"], :x "Integer", :p "Boolean"}
                     :constraints [["a1" (not= (if p b1 b2)
                                               (if-value aw
-                                                {:$type :ws/B :bw aw :bx (+ aw 1)}
-                                                (get {:$type :ws/C :b3 b1 :cw x} :b3)))]]
+                                                        {:$type :ws/B :bw aw :bx (+ aw 1)}
+                                                        (get {:$type :ws/C :b3 b1 :cw x} :b3)))]]
                     :refines-to {}}
                    :ws/B
                    {:spec-vars {:bv [:Maybe "Integer"], :bw [:Maybe "Integer"], :bx "Integer"}
@@ -808,11 +807,11 @@
                    {:spec-vars {:b3 [:Maybe :ws/B], :cw "Integer"}
                     :constraints [["c1" (= (< 0 cw) (if-value b3 true false))]
                                   ["c2" (if-value b3
-                                          (let [bw (get b3 :bw)]
-                                            (if-value bw
-                                              (< cw bw)
-                                              false))
-                                          true)]]
+                                                  (let [bw (get b3 :bw)]
+                                                    (if-value bw
+                                                              (< cw bw)
+                                                              false))
+                                                  true)]]
                     :refines-to {}}})
            sctx (ssa/build-spec-ctx senv :ws/A)
            sctx' (rewriting/with-tracing [traces]
@@ -876,8 +875,7 @@
                      (pprint-spec sctx' :ws/A)
                      (pprint-spec sctx'' :ws/A)
                      (ssa/pprint-dgraph (-> sctx'' :ws/A :derivations))
-                     (throw (ex-info "Stopping" {:r1 r1 :r2 r2 :inst a}))))
-                 )))
+                     (throw (ex-info "Stopping" {:r1 r1 :r2 r2 :inst a})))))))
            (swap! *results*
                   (fn [results]
                     (-> results
@@ -941,5 +939,4 @@
           expr '{:$type :ws/X :a (get y :b)}]
       (prn :expr expr)
       (prn :type (halite/type-check senv tenv expr))
-      (prn :v (halite/eval-expr senv tenv env expr))
-      )))
+      (prn :v (halite/eval-expr senv tenv env expr)))))

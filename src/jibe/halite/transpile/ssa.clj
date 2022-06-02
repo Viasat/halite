@@ -311,7 +311,6 @@
                        (-> form (dissoc :$type) keys sort))]
     (add-derivation dgraph [inst (halite-types/concrete-spec-type spec-id)])))
 
-
 (s/defn ^:private do!-to-ssa :- DerivResult
   [{:keys [dgraph] :as ctx} :- SSACtx, [_do & args :as form]]
   (let [[dgraph arg-ids] (reduce (fn [[dgraph arg-ids] arg]
@@ -639,7 +638,7 @@
                                                unbound)]
                         (-> (form-from-ssa* dgraph guards bound? curr-guard (last form))
                             (cond->>
-                                (seq unbound) (list 'let bindings))))
+                             (seq unbound) (list 'let bindings))))
 
                       (and (= '$value! (first form)) *hide-non-halite-ops*)
                       (form-from-ssa* dgraph guards bound? curr-guard (second form))

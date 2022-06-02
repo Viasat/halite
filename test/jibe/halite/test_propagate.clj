@@ -82,12 +82,12 @@
              :refines-to {}
              :constraints
              [["$all"  (let [$91 (+ an 1)]
-                        (if (and (if ab
-                                   (<= (div 10 an) 10)
-                                   (<= (div 10 12) 10))
-                                 (<= (div 10 $91) 10))
-                          (not= (if ab an 12) $91)
-                          false))]]}
+                         (if (and (if ab
+                                    (<= (div 10 an) 10)
+                                    (<= (div 10 12) 10))
+                                  (<= (div 10 $91) 10))
+                           (not= (if ab an 12) $91)
+                           false))]]}
            (hp/spec-ify-bound senv {:$type :ws/A})))))
 
 (deftest test-spec-ify-bound-with-composite-specs
@@ -201,8 +201,7 @@
                       (= b|bn c|cn)
                       (if (if $58 true true) (if $58 (< b|bn c|a|b|bn) true) false)
                       (if b|bp (<= b|bn 10) (<= 10 b|bn))
-                      (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]}
-        ))))
+                      (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]}))))
 
 (deftest test-spec-ify-bound-on-recursive-composition
   (let [senv (halite-envs/spec-env
@@ -281,8 +280,7 @@
 
       {:$type :ws/A, :x 8, :oddSum false} {:$type :ws/A, :x 8, :y {:$in [10 100]}, :oddSum false}
 
-      {:$type :ws/A, :x 10} {:$type :ws/A, :x 10, :y 32, :oddSum false}
-      )))
+      {:$type :ws/A, :x 10} {:$type :ws/A, :x 10, :y 32, :oddSum false})))
 
 (deftest test-one-to-one-composition
   (let [senv (halite-envs/spec-env
@@ -327,8 +325,7 @@
             :y {:$in [1 2]}}
        :a2 {:$type :ws/A
             :x {:$in [16 17]}
-            :y {:$in [2 3]}}}
-      )))
+            :y {:$in [2 3]}}})))
 
 (deftest test-recursive-composition
   (schema.core/without-fn-validation
@@ -351,7 +348,7 @@
                   :refines-to {}}})
          opts {:default-int-bounds [-100 100]}]
      (are [in out]
-         (= out (hp/propagate senv opts in))
+          (= out (hp/propagate senv opts in))
 
        {:$type :ws/A}
        {:$type :ws/A
@@ -389,8 +386,7 @@
             :a {:$type :ws/A,
                 :b {:$type :ws/B, :bn {:$in [-100 100]}, :bp {:$in #{false true}}},
                 :c {:$type :ws/C}},
-            :cn {:$in [-100 10]}}}
-       ))))
+            :cn {:$in [-100 10]}}}))))
 
 (deftest test-instance-literals
   (let [senv (halite-envs/spec-env
@@ -416,8 +412,7 @@
 
       {:$type :ws/C} {:$type :ws/C :cx {:$in [1 9]}}
       {:$type :ws/B} {:$type :ws/B :by {:$in [1 4]} :bz {:$in [1 4]}}
-      {:$type :ws/B :by 2} {:$type :ws/B :by 2 :bz 2}
-      )))
+      {:$type :ws/B :by 2} {:$type :ws/B :by 2 :bz 2})))
 
 (deftest test-spec-ify-bound-for-refinement
   (schema.core/without-fn-validation
@@ -444,7 +439,7 @@
                   :refines-to {}}})]
 
      (are [spec-id spec]
-         (= spec (hp/spec-ify-bound senv {:$type spec-id}))
+          (= spec (hp/spec-ify-bound senv {:$type spec-id}))
 
        :ws/C '{:spec-vars {:cn "Integer"}
                :constraints [["$all" (= 0 (mod cn 2))]]
@@ -456,14 +451,13 @@
                              (= 0 (mod bn 2)))]]
                :refines-to {}}
 
-
-      :ws/A '{:spec-vars {:an "Integer"}
-              :constraints
-              [["$all" (let [$107 (+ 1 an)]
-                         (and (< an 10)
-                              (and (< 0 $107)
-                                   (= 0 (mod $107 2)))))]]
-              :refines-to {}}
+       :ws/A '{:spec-vars {:an "Integer"}
+               :constraints
+               [["$all" (let [$107 (+ 1 an)]
+                          (and (< an 10)
+                               (and (< 0 $107)
+                                    (= 0 (mod $107 2)))))]]
+               :refines-to {}}
 
        :ws/D '{:spec-vars {:a|an "Integer", :dm "Integer", :dn "Integer"}
                :constraints
@@ -509,12 +503,12 @@
                 :constraints []
                 :refines-to {}}}]
     (are [constraint choco-spec]
-        (= choco-spec
-           (-> senv
-               (update-in [:ws/Test :constraints] conj ["c1" constraint])
-               (halite-envs/spec-env)
-               (hp/spec-ify-bound {:$type :ws/Test})
-               :constraints first second))
+         (= choco-spec
+            (-> senv
+                (update-in [:ws/Test :constraints] conj ["c1" constraint])
+                (halite-envs/spec-env)
+                (hp/spec-ify-bound {:$type :ws/Test})
+                :constraints first second))
 
       '(get
         (let [x (+ 1 2)
@@ -531,11 +525,11 @@
            false))
       ;; hand-simplified
       #_'(and (< 0 (+ (+ 1 2) 1))
-            (= false (= (mod (+ (+ 1 2) 1) 2) 1))
-            (< 0 (- (+ (+ 1 2) 1) 2))
-            (= true (= (mod (- (+ (+ 1 2) 1) 2) 2) 1))
-            (< 0 12)
-            (= true (= (mod 12 2) 1)))
+              (= false (= (mod (+ (+ 1 2) 1) 2) 1))
+              (< 0 (- (+ (+ 1 2) 1) 2))
+              (= true (= (mod (- (+ (+ 1 2) 1) 2) 2) 1))
+              (< 0 12)
+              (= true (= (mod 12 2) 1)))
 
       '(get {:$type :ws/Simpler :x (get {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
       '(let [$87 (< 0 14)
@@ -572,7 +566,7 @@
            (hp/spec-ify-bound senv {:$type :ws/A})))
 
     (are [in out]
-        (= out (hp/propagate senv opts in))
+         (= out (hp/propagate senv opts in))
 
       {:$type :ws/A}            {:$type :ws/A, :an {:$in [-10 10]}, :aw {:$in [-10 10 :Unset]}, :p {:$in #{false true}}}
       {:$type :ws/A :p true}    {:$type :ws/A :an {:$in [-10 10]} :aw {:$in [-10 10]}, :p true}
@@ -613,7 +607,7 @@
     (let [senv (halite-envs/spec-env nested-optionals-spec-env)]
 
       (are [bound expected]
-          (= expected (flatten-vars senv bound))
+           (= expected (flatten-vars senv bound))
 
         {:$type :ws/C}
         {::hp/spec-id :ws/C
@@ -740,9 +734,7 @@
                    ::hp/mandatory #{:b2|c2|cx}}
               ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
          :ap [:ap "Boolean"]
-         ::hp/mandatory #{}}
-        )
-      )))
+         ::hp/mandatory #{}}))))
 
 (def lower-spec-bound #'hp/lower-spec-bound)
 
@@ -750,7 +742,7 @@
   (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env nested-optionals-spec-env)]
       (are [bound lowered]
-          (= lowered (lower-spec-bound (flatten-vars senv bound) bound))
+           (= lowered (lower-spec-bound (flatten-vars senv bound) bound))
 
         {:$type :ws/A} {}
 
@@ -781,8 +773,7 @@
         ;; TODO: Ensure that optionality-constraints for this case produces (=> b1? b1|c2?)
         {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type :ws/C :cw 5}}} '{b1|c2|cw #{5 :Unset}}
 
-        {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{b1? true, b1|c2? true, b1|c2|cw 5}
-        ))))
+        {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{b1? true, b1|c2? true, b1|c2|cw 5}))))
 
 (def optionality-constraint #'hp/optionality-constraint)
 
@@ -813,7 +804,7 @@
          opts {:default-int-bounds [-10 10]}]
 
      (are [in out]
-         (= out (hp/propagate senv opts in))
+          (= out (hp/propagate senv opts in))
 
        {:$type :ws/A}
        {:$type :ws/A,
@@ -934,35 +925,33 @@
        {:$type :ws/D :dx {:$in [-9 9]}}
 
        {:$type :ws/D :dx {:$in (set (range -5 6))}}
-       {:$type :ws/D :dx {:$in #{-5 -3 -1 1 3 5}}}
-       ))))
+       {:$type :ws/D :dx {:$in #{-5 -3 -1 1 3 5}}}))))
 
 (deftest simpler-composite-optional-test
   (schema.core/with-fn-validation
-   (let [senv (halite-envs/spec-env
-               '{:ws/A
-                 {:spec-vars {:b1 [:Maybe :ws/B] :b2 [:Maybe :ws/B]}
-                  :constraints [["a1" (= b1 b2)]]
-                  :refines-to {}}
-                 :ws/B
-                 {:spec-vars {:bx "Integer"}
-                  :constraints [["b1" (< 0 bx)]]
-                  :refines-to {}}})
-         opts {:default-int-bounds [-10 10]}]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:b1 [:Maybe :ws/B] :b2 [:Maybe :ws/B]}
+                   :constraints [["a1" (= b1 b2)]]
+                   :refines-to {}}
+                  :ws/B
+                  {:spec-vars {:bx "Integer"}
+                   :constraints [["b1" (< 0 bx)]]
+                   :refines-to {}}})
+          opts {:default-int-bounds [-10 10]}]
 
-     (is (= {:$type :ws/A, :b1 {:$type :ws/B, :bx 4}, :b2 {:$type :ws/B, :bx 4}}
-            (hp/propagate senv opts {:$type :ws/A :b1 {:$type :ws/B :bx 4}}))))))
+      (is (= {:$type :ws/A, :b1 {:$type :ws/B, :bx 4}, :b2 {:$type :ws/B, :bx 4}}
+             (hp/propagate senv opts {:$type :ws/A :b1 {:$type :ws/B :bx 4}}))))))
 
 (def inline-gets #'hp/inline-gets)
 
 (deftest test-inline-gets
   (are [expr result]
-      (= result (inline-gets expr))
+       (= result (inline-gets expr))
 
     1 1
     true true
     'foo 'foo
     '(get foo :bar) '(get foo :bar)
-    '(let [x (get foo :bar)] (get x :baz)) '(get (get foo :bar) :baz)
-    ))
+    '(let [x (get foo :bar)] (get x :baz)) '(get (get foo :bar) :baz)))
 
