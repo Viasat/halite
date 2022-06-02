@@ -14,6 +14,8 @@
 
 (set! *warn-on-reflection* true)
 
+(def ^:dynamic *legacy-salt-type-checking* true)
+
 (def reserved-words #{'no-value 'no-value-})
 
 (declare eval-expr)
@@ -212,7 +214,8 @@
 
 (s/defschema Builtin
   {:signatures (s/constrained [FnSignature] seq)
-   :impl clojure.lang.IFn})
+   :impl clojure.lang.IFn
+   (s/optional-key :deprecated?) Boolean})
 
 (def & :&)
 
@@ -229,6 +232,9 @@
                    :return-type return-type}
             variadic? (assoc :variadic-tail (last arg-types)))))})
 
+(defn- deprecated-builtin [builtin]
+  (assoc builtin :deprecated? true))
+
 (def ^:private builtins
   (s/with-fn-validation
     {'+ (mk-builtin + [:Integer :Integer & :Integer] :Integer)
@@ -238,7 +244,7 @@
      '<= (mk-builtin <= [:Integer :Integer] :Boolean)
      '> (mk-builtin > [:Integer :Integer] :Boolean)
      '>= (mk-builtin >= [:Integer :Integer] :Boolean)
-     'Cardinality (mk-builtin count [(halite-types/coll-type :Object)] :Integer) ;; deprecated
+     'Cardinality (deprecated-builtin (mk-builtin count [(halite-types/coll-type :Object)] :Integer))
      'count (mk-builtin count [(halite-types/coll-type :Object)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
@@ -251,7 +257,7 @@
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (mk-builtin quot [:Integer :Integer] :Integer)
-     'mod* (mk-builtin mod [:Integer :Integer] :Integer) ;; deprecated
+     'mod* (deprecated-builtin (mk-builtin mod [:Integer :Integer] :Integer))
      'mod (mk-builtin mod [:Integer :Integer] :Integer)
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
@@ -265,8 +271,8 @@
                        [halite-types/empty-vector] halite-types/empty-vector
                        [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
                        [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer))
-     'some? (mk-builtin (fn [v] (not= :Unset v)) ;; deprecated
-                        [:Any] :Boolean)
+     'some? (deprecated-builtin (mk-builtin (fn [v] (not= :Unset v))
+                                            [:Any] :Boolean))
      'range (mk-builtin (comp vec range)
                         [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer :Integer] (halite-types/vector-type :Integer)
@@ -344,9 +350,11 @@
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
-        {:keys [signatures impl] :as builtin} (get builtins op)
+        {:keys [signatures impl deprecated?] :as builtin} (get builtins op)
         actual-types (map (partial type-check* ctx) args)]
-    (when (nil? builtin)
+    (when (or (nil? builtin)
+              (and deprecated?
+                   (not *legacy-salt-type-checking*)))
       (throw (ex-info (str "function '" op "' not found") {:form form})))
     (doseq [[arg t] (map vector args actual-types)]
       (when (= :Nothing t)
@@ -710,19 +718,25 @@
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
       :else (throw (ex-info "Argument to 'valid?' must be an instance of known type" {:form expr})))))
 
+(s/defn deprecated [f expr]
+  (if *legacy-salt-type-checking*
+    (f expr)
+    (throw (ex-info "Syntax error" {:form expr}))))
+
 (s/defn ^:private type-check* :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (cond
     (boolean? expr) :Boolean
     (long? expr) :Integer
     (string? expr) :String
-    (symbol? expr) (if (or (= 'no-value expr) (= 'no-value- expr))
+    (symbol? expr) (if (or (= 'no-value expr)
+                           (and *legacy-salt-type-checking* (= 'no-value- expr)))
                      :Unset
                      (type-check-symbol ctx expr))
     (map? expr) (check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
-                  'get* (type-check-get ctx expr) ;; deprecated
+                  'get* (deprecated #(type-check-get ctx %) expr)
                   'get-in (type-check-get-in ctx expr)
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
@@ -730,7 +744,7 @@
                   'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
                   'if-value (type-check-if-value ctx expr)
-                  'if-value- (type-check-if-value ctx expr) ;; deprecated
+                  'if-value- (deprecated #(type-check-if-value ctx %) expr)
                   'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
                   'if-value-let (type-check-if-value-let ctx expr)
                   'union (type-check-union ctx expr)
@@ -739,7 +753,7 @@
                   'first (type-check-first ctx expr)
                   'rest (type-check-rest ctx expr)
                   'conj (type-check-conj ctx expr)
-                  'into (type-check-concat ctx expr) ;; deprecated
+                  'into (deprecated #(type-check-concat ctx %) expr)
                   'concat (type-check-concat ctx expr)
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)
