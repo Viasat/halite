@@ -866,7 +866,7 @@
   (h #{#{[#{[true false] [true true]}] [#{[false]}]} #{[#{[true false] [true true]}] [#{[false]} #{[true]}]}} [:Set [:Set [:Vec [:Set [:Vec :Boolean]]]]] #{#{[#{[true false] [true true]}] [#{[false]}]} #{[#{[true false] [true true]}] [#{[false]} #{[true]}]}} "#{#{[#{[false]}, #{[true]}], [#{[true, false], [true, true]}]}, #{[#{[false]}], [#{[true, false], [true, true]}]}}" "#{#{[#{[false]}, #{[true]}], [#{[true, false], [true, true]}]}, #{[#{[false]}], [#{[true, false], [true, true]}]}}"))
 
 (def workspaces-map {:basic [(workspace :my
-                                        {:my/Spec [true]}
+                                        {:my/Spec []}
                                         (spec :Spec :concrete
                                               (variables [:p "Integer"]
                                                          [:n "Integer"]
@@ -874,7 +874,7 @@
                                               (constraints [:pc [:halite "(> p 0)"]]
                                                            [:pn [:halite "(< n 0)"]])))]
                      :basic-abstract [(workspace :my
-                                                 {:my/Spec [false]}
+                                                 {:my/Spec []}
                                                  (spec :Spec :abstract
                                                        (variables [:p "Integer"]
                                                                   [:n "Integer"]
@@ -882,11 +882,11 @@
                                                        (constraints [:pc [:halite "(> p 0)"]]
                                                                     [:pn [:halite "(< n 0)"]])))]
                      :basic-2 [(workspace :spec
-                                          {:spec/A [true]
-                                           :spec/B [false]
-                                           :spec/C [true]
-                                           :spec/D [true]
-                                           :spec/E [true]}
+                                          {:spec/A []
+                                           :spec/B []
+                                           :spec/C []
+                                           :spec/D []
+                                           :spec/E []}
                                           (spec :A :concrete
                                                 (variables [:p "Integer"]
                                                            [:n "Integer"]
@@ -1001,7 +1001,7 @@
   (h {:$type :my/Spec$v1} [:throws "resource spec not found: :my/Spec$v1"])
 
   (hc [(workspace :my
-                  {:my/Spec [true]}
+                  {:my/Spec []}
                   (spec :Spec :concrete))]
       :my
       [{:$type :my/Spec$v1} [:Instance :my/Spec$v1] {:$type :my/Spec$v1} "{$type: my/Spec$v1}" "{$type: my/Spec$v1}"])
@@ -1369,50 +1369,50 @@
 
 (deftest test-instantiate-use
   (hc [(workspace :spec
-                  {:spec/T [true]}
+                  {:spec/T []}
                   (spec :T :concrete
                         (variables [:n "Integer"])))]
       :spec
       [(get {:$type :spec/T$v1, :n 1} :n) :Integer 1 "{$type: spec/T$v1, n: 1}.n" "1"])
   (hc [(workspace :spec
-                  {:spec/T [true]}
+                  {:spec/T []}
                   (spec :T :concrete
                         (variables [:n "Integer"])))]
       :spec
       [(valid {:$type :spec/T$v1, :n 1}) [:Maybe [:Instance :spec/T$v1]] {:$type :spec/T$v1, :n 1} "(valid {$type: spec/T$v1, n: 1})" "{$type: spec/T$v1, n: 1}"])
   (hc [(workspace :spec
-                  {:spec/T [true]}
+                  {:spec/T []}
                   (spec :T :concrete
                         (variables [:n "Integer"])))]
       :spec
       [(valid? {:$type :spec/T$v1, :n 1}) :Boolean true "(valid? {$type: spec/T$v1, n: 1})" "true"])
   (hc [(workspace :spec
-                  {:spec/T [true]}
+                  {:spec/T []}
                   (spec :T :concrete
                         (variables [:n "Integer"])))]
       :spec
       [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1) [:Instance :spec/T$v1] {:$type :spec/T$v1, :n 1} "{$type: spec/T$v1, n: 1}.refineTo( spec/T$v1 )" "{$type: spec/T$v1, n: 1}"])
 
   (hc [(workspace :spec
-                  {:spec/T [false]}
+                  {:spec/T []}
                   (spec :T :abstract
                         (variables [:n "Integer"])))]
       :spec
       [(get {:$type :spec/T$v1, :n 1} :n) :Integer 1 "{$type: spec/T$v1, n: 1}.n" "1"])
   (hc [(workspace :spec
-                  {:spec/T [false]}
+                  {:spec/T []}
                   (spec :T :abstract
                         (variables [:n "Integer"])))]
       :spec
       [(valid {:$type :spec/T$v1, :n 1}) [:Maybe [:Instance :spec/T$v1]] {:$type :spec/T$v1, :n 1} "(valid {$type: spec/T$v1, n: 1})" "{$type: spec/T$v1, n: 1}"])
   (hc [(workspace :spec
-                  {:spec/T [false]}
+                  {:spec/T []}
                   (spec :T :abstract
                         (variables [:n "Integer"])))]
       :spec
       [(valid? {:$type :spec/T$v1, :n 1}) :Boolean true "(valid? {$type: spec/T$v1, n: 1})" "true"])
   (hc [(workspace :spec
-                  {:spec/T [false]}
+                  {:spec/T []}
                   (spec :T :abstract
                         (variables [:n "Integer"])))]
       :spec
@@ -1420,8 +1420,8 @@
 
 (deftest test-component-use
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/V []}
                   (spec :T :concrete
                         (variables [:n "Integer"]))
                   (spec :V :concrete
@@ -1430,9 +1430,9 @@
       [(get {:$type :spec/V$v1, :t {:$type :spec/T$v1, :n 1}} :t) [:Instance :spec/T$v1] {:$type :spec/T$v1, :n 1} "{$type: spec/V$v1, t: {$type: spec/T$v1, n: 1}}.t" "{$type: spec/T$v1, n: 1}"])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/C [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :C :concrete
                         (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
                   (spec :T :concrete
@@ -1443,9 +1443,9 @@
       [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of :t has wrong type"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [false]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :C :abstract
                         (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
                   (spec :T :abstract
@@ -1456,14 +1456,14 @@
       [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:Instance :spec/V$v1] [:throws "instance cannot contain abstract value"] "{$type: spec/V$v1, t: {$type: spec/C$v1}}" [:throws "instance cannot contain abstract value"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :C :concrete
                         (refinements [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
-                  (spec :T :concrete
+                  (spec :T :abstract
                         (variables [:n "Integer"]))
-                  (spec :V :abstract
+                  (spec :V :concrete
                         (variables [:t :spec/T$v1])))]
       :spec
       [(get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) [:Instance :* #{:spec/T$v1}] {:$type :spec/C$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t" "{$type: spec/C$v1}"]))
@@ -1472,9 +1472,9 @@
   ;; T concrete
   ;; S != T => S abstract, T refines to S
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/S [false]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :abstract)
@@ -1483,9 +1483,9 @@
       :spec
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:Instance :spec/U$v1] [:throws "instance cannot contain abstract value"] "{$type: spec/U$v1, s: {$type: spec/T$v1}}" [:throws "instance cannot contain abstract value"]])
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/S [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :concrete)
@@ -1495,9 +1495,9 @@
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of :s has wrong type"]])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/S [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :concrete)
@@ -1507,9 +1507,9 @@
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of :s has wrong type"]])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/S [false]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :abstract)
@@ -1519,8 +1519,8 @@
       [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:Instance :spec/U$v1] {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/T$v1}}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/T$v1]))
                   (spec :T :concrete))]
@@ -1537,10 +1537,10 @@
   ;; C != S != T => T abstract, S abstract, C concrete, C refines to T, C refines to S
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1552,11 +1552,11 @@
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :s has wrong type"]])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/S [true]
-                   :spec/C [true]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/C []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1569,10 +1569,10 @@
       "Since T is concrete, cannot use another type in its place"
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/S [false]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1583,9 +1583,9 @@
       :spec
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)} [:Instance :spec/U$v1] {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/T$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1597,10 +1597,10 @@
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)} [:Instance :spec/U$v1] {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/T$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/C [false]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1614,9 +1614,9 @@
       [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of :t has wrong type"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [false]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :C :abstract
@@ -1627,11 +1627,11 @@
 
   ;; TODO
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/S [true]
-                   :spec/C [true]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/C []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1647,10 +1647,10 @@
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :s has wrong type"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/S [true]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1663,11 +1663,11 @@
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/S$v1}} :t)} [:throws "value of :s has wrong type"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/S [false]
-                   :spec/C [true]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/C []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1682,11 +1682,11 @@
       [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:Instance :spec/U$v1] {:$type :spec/U$v1, :s {:$type :spec/C$v1}} "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}" "{$type: spec/U$v1, s: {$type: spec/C$v1}}"])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/S [false]
-                   :spec/C [true]
-                   :spec/U [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/C []
+                   :spec/U []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :U :concrete
@@ -1702,10 +1702,10 @@
 (deftest test-refine-to-construction
   ;; S != T => T must be concrete, S must be abstract
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/S [false]
-                   :spec/C [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/C []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :abstract)
@@ -1717,10 +1717,10 @@
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:Instance :spec/U$v1] {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/S [false]
-                   :spec/C [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/C []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :abstract)
@@ -1735,10 +1735,10 @@
        [:throws "No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/S [false]
-                   :spec/C [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/C []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :abstract)
@@ -1750,10 +1750,10 @@
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:Instance :spec/U$v1] [:throws "instance cannot contain abstract value"] "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" [:throws "instance cannot contain abstract value"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/S [true]
-                   :spec/C [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/S []
+                   :spec/C []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :concrete)
@@ -1765,10 +1765,10 @@
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:throws "value of :s has wrong type"]])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/C [true]
-                   :spec/S [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/S []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/S$v1]))
                   (spec :S :concrete)
@@ -1781,9 +1781,9 @@
 
   ;; S = T => T concrete
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/C [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/T$v1]))
                   (spec :C :concrete
@@ -1793,9 +1793,9 @@
       [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:Instance :spec/U$v1] {:$type :spec/U$v1, :s {:$type :spec/T$v1}} "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}" "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/U [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/U []}
                   (spec :U :concrete
                         (variables [:s :spec/T$v1]))
                   (spec :C :concrete
@@ -1808,10 +1808,10 @@
   ;; T = C = R & T concrete
   (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
                         (hc [(workspace :spec
-                                        {:spec/T [false]
-                                         :spec/C [true]
-                                         :spec/V [true]
-                                         :spec/R [true]}
+                                        {:spec/T []
+                                         :spec/C []
+                                         :spec/V []
+                                         :spec/R []}
                                         (spec :V :concrete
                                               (variables [:t :spec/T$v1])
                                               (refinements [:as_r :to :spec/R$v1 [:halite "t"]]))
@@ -1827,9 +1827,9 @@
   ;; TODO
   (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
                         (hc [(workspace :spec
-                                        {:spec/T [false]
-                                         :spec/C [true]
-                                         :spec/V [true]}
+                                        {:spec/T []
+                                         :spec/C []
+                                         :spec/V []}
                                         (spec :V :concrete
                                               (variables [:t :spec/T$v1])
                                               (refinements [:as_c :to :spec/C$v1 [:halite "t"]]))
@@ -1841,9 +1841,9 @@
                             [(refine-to {:$type :spec/V$v1 :t {:$type :spec/C$v1}} :spec/C$v1)])))
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [false]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :V :abstract
                         (variables [:t :spec/T$v1])
                         (refinements [:as_t :to :spec/T$v1 [:halite "(refine-to t :spec/T$v1)"]]))
@@ -1859,9 +1859,9 @@
        [:throws "instance cannot contain abstract value"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [false]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :V :abstract
                         (variables [:t :spec/T$v1])
                         (refinements [:as_t :to :spec/T$v1 [:halite "(when false (refine-to t :spec/T$v1))"]]))
@@ -1876,9 +1876,9 @@
        [:throws "No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :C :concrete
@@ -1891,8 +1891,8 @@
        "{$type: spec/V$v1, t: {$type: spec/C$v1}}" [:throws "No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1])
                         (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
@@ -1903,9 +1903,9 @@
   ;;
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1])
                         (refinements [:as_t :to :spec/T$v1 [:halite "(refine-to t :spec/T$v1)"]]))
@@ -1917,9 +1917,9 @@
       [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1) [:Instance :spec/T$v1] {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/V [true]
-                   :spec/R [true]}
+                  {:spec/T []
+                   :spec/V []
+                   :spec/R []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1])
                         (refinements [:as_r :to :spec/R$v1 [:halite "(refine-to t :spec/R$v1)"]]))
@@ -1931,9 +1931,9 @@
       [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/R$v1) [:Instance :spec/R$v1] {:$type :spec/R$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/R$v1 )" "{$type: spec/R$v1}"])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1])
                         (refinements [:as_c :to :spec/C$v1 [:halite "(refine-to t :spec/C$v1)"]]))
@@ -1947,9 +1947,9 @@
 (deftest test-instantiate-refinement
   (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
                         (hc [(workspace :spec
-                                        {:spec/U [true]
-                                         :spec/T [true]
-                                         :spec/R [true]}
+                                        {:spec/U []
+                                         :spec/T []
+                                         :spec/R []}
                                         (spec :U :concrete
                                               (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/T$v1}"]]))
                                         (spec :T :concrete
@@ -1960,10 +1960,10 @@
 
   (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
                         (hc [(workspace :spec
-                                        {:spec/U [true]
-                                         :spec/T [true]
-                                         :spec/C [true]
-                                         :spec/R [true]}
+                                        {:spec/U []
+                                         :spec/T []
+                                         :spec/C []
+                                         :spec/R []}
                                         (spec :U :concrete
                                               (refinements [:as_r :to :spec/R$v1 [:halite "(refine-to {:$type :spec/C$v1} :spec/T$v1)"]]))
                                         (spec :C :concrete
@@ -1976,9 +1976,9 @@
 
   (is (thrown-with-msg? ExceptionInfo #"Exception validating spec"
                         (hc [(workspace :spec
-                                        {:spec/U [true]
-                                         :spec/T [false]
-                                         :spec/R [true]}
+                                        {:spec/U []
+                                         :spec/T []
+                                         :spec/R []}
                                         (spec :U :concrete
                                               (refinements [:as_r :to :spec/R$v1 [:halite "{:$type :spec/T$v1}"]]))
                                         (spec :T :abstract
@@ -1989,9 +1989,9 @@
 
 (deftest test-component-refine-to
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :C :concrete
@@ -2001,8 +2001,8 @@
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/T$v1) [:Instance :spec/T$v1] {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/V [true]}
+                  {:spec/T []
+                   :spec/V []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :T :concrete))]
@@ -2010,10 +2010,10 @@
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t) :spec/T$v1) [:Instance :spec/T$v1] {:$type :spec/T$v1} "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/T$v1 )" "{$type: spec/T$v1}"])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [true]
-                   :spec/N [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []
+                   :spec/N []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :C :concrete
@@ -2025,10 +2025,10 @@
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/N$v1) [:Instance :spec/N$v1] {:$type :spec/N$v1} "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )" "{$type: spec/N$v1}"])
 
   (hc [(workspace :spec
-                  {:spec/T [false]
-                   :spec/C [true]
-                   :spec/V [true]
-                   :spec/N [true]}
+                  {:spec/T []
+                   :spec/C []
+                   :spec/V []
+                   :spec/N []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :C :concrete
@@ -2039,9 +2039,9 @@
       [(refine-to (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t) :spec/N$v1) [:Instance :spec/N$v1] [:throws "No active refinement path from 'spec/C$v1' to 'spec/N$v1'"] "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )" [:throws "No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]])
 
   (hc [(workspace :spec
-                  {:spec/T [true]
-                   :spec/V [true]
-                   :spec/N [true]}
+                  {:spec/T []
+                   :spec/V []
+                   :spec/N []}
                   (spec :V :concrete
                         (variables [:t :spec/T$v1]))
                   (spec :T :concrete
@@ -2052,7 +2052,7 @@
 
 (deftest test-exception-handling-instances-vs-refinements
   (let [ws [(workspace :spec
-                       {:spec/Inc [true]}
+                       {:spec/Inc []}
                        (spec :Inc :concrete
                              (variables [:x "Integer"]
                                         [:y "Integer"])
@@ -2071,9 +2071,9 @@
         "`valid?` catches the constraint violations to produce a boolean"
         [(valid? {:$type :spec/Inc$v1, :x 1, :y 1}) :Boolean false "(valid? {$type: spec/Inc$v1, x: 1, y: 1})" "false"])
     (hc [(workspace :spec
-                    {:spec/Inc [true]
-                     :spec/BigInc [true]
-                     :spec/Ratio [true]}
+                    {:spec/Inc []
+                     :spec/BigInc []
+                     :spec/Ratio []}
                     (spec :Inc :concrete
                           (variables [:x "Integer"]
                                      [:y "Integer"])
@@ -2092,7 +2092,7 @@
         [(valid {:$type :spec/Inc$v1, :x 1, :y 1}) [:Maybe [:Instance :spec/Inc$v1]] :Unset "(valid {$type: spec/Inc$v1, x: 1, y: 1})" "Unset"]))
 
   (let [ws [(workspace :spec
-                       {:spec/Ratio [true]}
+                       {:spec/Ratio []}
                        (spec :Ratio :concrete
                              (variables [:x "Integer"]
                                         [:y "Integer"]
@@ -2116,9 +2116,9 @@
         [(valid {:$type :spec/Ratio$v1, :x 6, :y 0, :r 8}) [:Maybe [:Instance :spec/Ratio$v1]] [:throws "Divide by zero"] "(valid {$type: spec/Ratio$v1, r: 8, x: 6, y: 0})" [:throws "Divide by zero"]]))
 
   (let [ws [(workspace :spec
-                       {:spec/Inc [true]
-                        :spec/BigInc [true]
-                        :spec/Meatball [true]}
+                       {:spec/Inc []
+                        :spec/BigInc []
+                        :spec/Meatball []}
                        (spec :Inc :concrete
                              (variables [:x "Integer"]
                                         [:y "Integer"])
@@ -2149,8 +2149,8 @@
         [(refines-to? {:$type :spec/Inc$v1, :x 1, :y 2} :spec/Meatball$v1) :Boolean false "{$type: spec/Inc$v1, x: 1, y: 2}.refinesTo?( spec/Meatball$v1 )" "false"]))
 
   (let [ws [(workspace :spec
-                       {:spec/Inc [true]
-                        :spec/BigInc [true]}
+                       {:spec/Inc []
+                        :spec/BigInc []}
                        (spec :Inc :concrete
                              (refinements [:as_big_inc :to :spec/BigInc$v1 [:halite "(when (>= (div 1 0) 100) {:$type :spec/BigInc$v1})"]]))
                        (spec :BigInc :concrete))]]
@@ -2170,7 +2170,7 @@
   (h (map) [:throws "Wrong number of arguments to 'map': expected 2, but got 0"])
   (h (map (inc x)) [:throws "Wrong number of arguments to 'map': expected 2, but got 1"])
   (h (map (inc x) [x []]) [:throws "Undefined: 'x'"])
-  (hc [(workspace :spec {:spec/A [true]} (spec :A :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A []} (spec :A :concrete (variables [:x "Integer"])))] :spec
       [(map [x {:$type :spec/A$v1, :x 1}] true) [:throws "collection required for 'map', not :spec/A$v1"]])
 
   (h (map [x [10 11 12]] (inc x)) [:Vec :Integer] [11 12 13] "map(x in [10, 11, 12])(x + 1)" "[11, 12, 13]")
@@ -2184,14 +2184,14 @@
   (h (map [x [[1 2] [3 4 5]]] (count x)) [:Vec :Integer] [2 3] "map(x in [[1, 2], [3, 4, 5]])x.count()" "[2, 3]")
   (h (map [x [#{1 2} #{4 3 5}]] (count x)) [:Vec :Integer] [2 3] "map(x in [#{1, 2}, #{3, 4, 5}])x.count()" "[2, 3]")
   (h (map [x [1 "a"]] x) [:Vec :Object] [1 "a"] "map(x in [1, \"a\"])x" "[1, \"a\"]")
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
       [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] x) [:Vec [:Instance :*]] [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}] "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x" "[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]"])
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
       [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (get x :x)) [:throws "Lookup target must be an instance of known type or non-empty vector"]])
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
       [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (get (refine-to x :spec/A$v1) :x)) [:Vec :Integer] [:throws "No active refinement path from 'spec/B$v1' to 'spec/A$v1'"] "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x" [:throws "No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
   ;; TODO
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
       [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (valid x)) [:throws "Argument to 'valid' must be an instance of known type"]])
 
   (h (map [x #{}] x) [:Set :Nothing] #{} "map(x in #{})x" "#{}")
@@ -2199,11 +2199,11 @@
   (h (map [x #{1 3 2}] (inc x)) [:Set :Integer] #{4 3 2} "map(x in #{1, 2, 3})(x + 1)" "#{2, 3, 4}")
   (h (map [x #{1 3 2}] 9) [:Set :Integer] #{9} "map(x in #{1, 2, 3})9" "#{9}")
   (h (map [x #{"a" "b" "c"}] x) [:Set :String] #{"a" "b" "c"} "map(x in #{\"a\", \"b\", \"c\"})x" "#{\"a\", \"b\", \"c\"}")
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
       [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] x) [:Set [:Instance :*]] #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}} "map(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}})x" "#{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}}"])
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
       [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] (valid x)) [:throws "Argument to 'valid' must be an instance of known type"]])
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
       [(map [x #{[{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]}] (count x)) [:Set :Integer] #{2} "map(x in #{[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]})x.count()" "#{2}"])
 
   (h (map [x [2 1 0]] (div 1 x)) [:Vec :Integer] [:throws "Divide by zero"] "map(x in [2, 1, 0])(1 / x)" [:throws "Divide by zero"]))
@@ -2213,7 +2213,7 @@
   (h (filter 1 2) [:throws "nth not supported on this type: Long"])
   (h (filter [x []] x 1) [:throws "Wrong number of arguments to 'filter': expected 2, but got 3"])
   (h (filter 1 [x []]) [:throws "nth not supported on this type: Long"])
-  (hc [(workspace :spec {:spec/A [true]} (spec :A :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A []} (spec :A :concrete (variables [:x "Integer"])))] :spec
       [(filter [x {:$type :spec/A$v1, :x 1}] true) [:throws "collection required for 'filter', not :spec/A$v1"]])
 
   (h (filter [x []] true) [:Vec :Nothing] [] "filter(x in [])true" "[]")
@@ -2230,23 +2230,23 @@
   (h (filter [x #{true false}] x) [:Set :Boolean] #{true} "filter(x in #{false, true})x" "#{true}")
   (h (filter [x [true false false true]] (not x)) [:Vec :Boolean] [false false] "filter(x in [true, false, false, true])!x" "[false, false]")
 
-  (hc [(workspace :spec {:spec/A [true]} (spec :A :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A []} (spec :A :concrete (variables [:x "Integer"])))] :spec
       [(filter [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}] (valid x)) [:throws "Body expression in 'filter' must be boolean"]])
-  (hc [(workspace :spec {:spec/A [true]} (spec :A :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A []} (spec :A :concrete (variables [:x "Integer"])))] :spec
       [(filter [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}] (valid? x)) [:Set [:Instance :spec/A$v1]] #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}} "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}})(valid? x)" "#{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}}"])
-  (hc [(workspace :spec {:spec/A [true]} (spec :A :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A []} (spec :A :concrete (variables [:x "Integer"])))] :spec
       [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]] (> (get x :x) 1)) [:Vec [:Instance :spec/A$v1]] [{:$type :spec/A$v1, :x 2}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])(x.x > 1)" "[{$type: spec/A$v1, x: 2}]"])
-  (hc [(workspace :spec {:spec/A [true]} (spec :A :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A []} (spec :A :concrete (variables [:x "Integer"])))] :spec
       [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]] (refines-to? x :spec/A$v1)) [:Vec [:Instance :spec/A$v1]] [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])x.refinesTo?( spec/A$v1 )" "[{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}]"])
 
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "Integer"])))] :spec
       [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (refines-to? x :spec/A$v1)) [:Vec [:Instance :*]] [{:$type :spec/A$v1, :x 1}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])x.refinesTo?( spec/A$v1 )" "[{$type: spec/A$v1, x: 1}]"])
 
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "Integer"])))] :spec
       [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (> (get x :x) 1)) [:throws "Lookup target must be an instance of known type or non-empty vector"]])
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "Integer"])))] :spec
       [(filter [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]] (let [x x] (if (refines-to? x :spec/A$v1) (> (get (refine-to x :spec/A$v1) :x) 0) false))) [:Vec [:Instance :*]] [{:$type :spec/A$v1, :x 1}] "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}]){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) }" "[{$type: spec/A$v1, x: 1}]"])
-  (hc [(workspace :spec {:spec/A [true] :spec/B [true]} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "Integer"])))] :spec
       [(filter [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}}] (let [x x] (if (refines-to? x :spec/A$v1) (> (get (refine-to x :spec/A$v1) :x) 1) true))) [:Set [:Instance :*]] #{{:$type :spec/B$v1, :x 2}} "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}}){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 1)} else {true}) }" "#{{$type: spec/B$v1, x: 2}}"]))
 
 (deftest test-reduce-collections
@@ -2280,9 +2280,9 @@
 
   (h (reduce [☺ 0] [x [[3] [1 2]]] (+ ☺ (count x))) :Integer 3 "reduce( <☺> = 0; x in [[3], [1, 2]] ) { (<☺> + x.count()) }" "3")
 
-  (hc [(workspace :spec {:spec/A [true]} (spec :A :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A []} (spec :A :concrete (variables [:x "Integer"])))] :spec
       [(reduce [a 0] [x {:$type :spec/A$v1, :x 1}] a) [:throws "Second binding expression to 'reduce' must be a vector."]])
-  (hc [(workspace :spec {:spec/A [true]} (spec :A :concrete (variables [:x "Integer"])))] :spec
+  (hc [(workspace :spec {:spec/A []} (spec :A :concrete (variables [:x "Integer"])))] :spec
       [(reduce [a 10] [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]] (+ a (get x :x))) :Integer 13 "reduce( a = 10; x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}] ) { (a + x.x) }" "13"]))
 
 (deftest test-sort
