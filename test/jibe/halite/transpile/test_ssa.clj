@@ -362,7 +362,16 @@
         $14 [(if $8 $12 $13) :Integer],
         $15 [($do! $7 $14) :Integer],
         $16 [(if $3 $15 $11) :Integer]}
-      '[$16])))
+      '[$16]
+
+      '[(if true (error "nope") true)]
+      '{$1 [true :Boolean $2]
+        $2 [false :Boolean $1]
+        $3 ["nope" :String]
+        $4 [(error $3) :Nothing]
+        $5 [(if $1 $4 $1) :Boolean $6]
+        $6 [(not $5) :Boolean $5]}
+      '[$5])))
 
 (def form-from-ssa* #'ssa/form-from-ssa*)
 
@@ -467,6 +476,26 @@
         (if ($value? w) (+ ($value! w) 1) 0) b1
         (not= 0 (if ($value? w) (+ ($value! w) 1) 0)) b1})))
 
+(def normalize-vars #'ssa/normalize-vars)
+
+(deftest test-normalize-vars
+  (are [expr expr']
+       (= expr' (normalize-vars #{'v3} expr))
+
+    1 1
+    true true
+    "foo" "foo"
+    '(+ 1 2) '(+ 1 2)
+
+    '(let [x 1, $42 a] (+ x $42))
+    '(let [x 1, v1 a] (+ x v1))
+
+    '(let [$42 x] (let [$42 y] (+ $42 $42)))
+    '(let [v1 x] (let [v2 y] (+ v2 v2)))
+
+    '(let [$10 1, $20 2, $30 3] (+ $10 $20 v3 $30))
+    '(let [v1 1, v2 2, v4 3] (+ v1 v2 v3 v4))))
+
 (deftest test-spec-from-ssa
   (let [spec-info {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}
                    :constraints []
@@ -509,7 +538,7 @@
         $5 [false :Boolean $4]
         $6 [($do! $3 $4) :Boolean $7]
         $7 [(not $6) :Boolean $6]}
-      '(let [$3 (div 1 0)]
+      '(let [v1 (div 1 0)]
          true)
 
       '[$7 $8]
@@ -523,9 +552,9 @@
         $8 [(= $9 $10) :Boolean]
         $9 [(+ $3 $4) :Integer]
         $10 [(* $6 $1) :Integer]}
-      '(let [$1 (+ x y)]
-         (and (< $1 10)
-              (= (+ y z) (* 2 $1))))
+      '(let [v1 (+ x y)]
+         (and (< v1 10)
+              (= (+ y z) (* 2 v1))))
 
       '[$1]
       '{$1 [(get $2 :foo) :Boolean]
@@ -571,8 +600,8 @@
         $13 [false :Boolean $12]
         $14 [(if $6 $10 $12) :Boolean $15]
         $15 [(not $14) :Boolean $14]}
-      '(let [$5 (if b v w)]
-         (if-value $5 (< $5 10) true))
+      '(let [v1 (if b v w)]
+         (if-value v1 (< v1 10) true))
 
       '[$14]
       '{$1 [v [:Maybe :Integer]],
@@ -590,8 +619,8 @@
         $13 [(if $7 $11 $12) :Integer],
         $14 [(if $2 $13 $10) :Integer]}
       '(if-value v
-                 (let [$6 (get c :cn)]
-                   (if-value $6 (+ $6 1) 0))
+                 (let [v1 (get c :cn)]
+                   (if-value v1 (+ v1 1) 0))
                  1)
 
       '[$1]
@@ -603,14 +632,30 @@
         $6 [{:$type :ws/C :foo $8} [:Instance :ws/C]]
         $7 [(not $2) :Boolean $2]
         $8 [12 :Integer]}
-      '(let [$5 (get {:$type :ws/C :foo 12} :foo)]
-         (if-value $5 1 2))
+      '(let [v1 (get {:$type :ws/C :foo 12} :foo)]
+         (if-value v1 1 2))
 
       '[$2]
       '{$1 [:Unset :Unset]
         $2 [($value? $1) :Boolean $3]
         $3 [(not $2) :Boolean $2]}
-      '($value? $no-value))))
+      '($value? $no-value)))
+
+      '[$3]
+      '{$1 ["foo" :String]
+        $2 [s :String]
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
+      '(= "foo" s)
+
+      '[$5]
+      '{$1 [true :Boolean $2]
+        $2 [false :Boolean $1]
+        $3 ["nope" :String]
+        $4 [(error $3) :Nothing]
+        $5 [(if $1 $4 $1) :Boolean $6]
+        $6 [(not $5) :Boolean $5]}
+      '(if true (error "nope") true))
 
 (deftest test-spec-from-ssa-preserves-guards
   (binding [ssa/*next-id* (atom 0)]
@@ -623,7 +668,7 @@
                    :refines-to {}}})
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (and (if p (< (div 10 0) 1) true)
-                            (if q true (let [$5 (div 10 0)] (and (< 1 $5) (< $5 1))))
+                            (if q true (let [v1 (div 10 0)] (and (< 1 v1) (< v1 1))))
                             (if (not q) (< 1 (div 10 0)) true))]]
              (-> sctx (ssa/build-spec-env) (halite-envs/lookup-spec :ws/A) :constraints))))))
 
@@ -670,8 +715,8 @@
           ;;_ (clojure.pprint/pprint (sort-by #(Integer/parseInt (subs (name (first %)) 1)) dgraph2))
           [dgraph3 new-id] (ssa/replace-in-expr
                             dgraph2 orig-id {old-add-id add-id})]
-      (is (= '(let [$21 (+ x y)]
+      (is (= '(let [v1 (+ x y)]
                 (or p
-                    (< $21 24)
-                    (<= 0 (get {:$type :ws/A, :an (* $21 2)} :an))))
+                    (< v1 24)
+                    (<= 0 (get {:$type :ws/A, :an (* v1 2)} :an))))
              (ssa/form-from-ssa '#{x y p} dgraph3 new-id))))))

@@ -818,11 +818,56 @@
     (cond->> (form-from-ssa* subdgraph guards bound? curr-guard id)
       (and (seq bindings) (not *elide-top-level-bindings*)) (list 'let bindings))))
 
+(defn- next-free-var [scope aliases]
+  (loop [n (inc (count aliases))]
+    (let [var-sym (symbol (str "v" n))]
+      (if (or (contains? scope var-sym) (contains? aliases var-sym))
+        (recur (inc n))
+        var-sym))))
+
+(defn- normalize-vars
+  "Rewrite expr such that all let-bound variables of the form '$<s>'
+  are deterministically renamed, leaving the expression otherwise unchanged.
+  The normalized variable names are all prefixed with 'v' rather than '$',
+  to avoid colliding with SSA node ids.
+
+   (normalize-vars '(let [$43 1, $12 1] (+ $43 $12))) => '(let [v1 1, v2 1] (+ v1 v2))"
+  ([scope expr] (normalize-vars scope {} expr))
+  ([scope aliases expr]
+   (cond
+     (or (integer? expr) (boolean? expr) (string? expr) (keyword? expr)) expr
+     (symbol? expr) (get aliases expr expr)
+     (map? expr) (update-vals expr (partial normalize-vars scope aliases))
+     (vector? expr) (mapv (partial normalize-vars scope aliases) expr)
+     (set? expr) (set (map (partial normalize-vars scope aliases) expr))
+     (seq? expr) (let [[op & args] expr]
+                   (case op
+                     let (let [[bindings body] args
+                               [aliases bindings]
+                               ,,(reduce
+                                  (fn [[aliases bindings] [var-sym subexpr]]
+                                    ;; This assumes that no $<n> binding will ever shadow anything.
+                                    ;; The assumption is expected to hold for any expression restored from SSA,
+                                    ;; because all SSA let bindings use unique node ids, and a node is only ever bound once.
+                                    (let [subexpr (normalize-vars scope aliases subexpr)]
+                                      (if (clojure.string/starts-with? (name var-sym) "$")
+                                        (let [alias (next-free-var scope aliases)]
+                                          [(assoc aliases var-sym alias)
+                                           (conj bindings alias subexpr)])
+                                        [aliases (conj bindings var-sym subexpr)])))
+                                  [aliases []]
+                                  (partition 2 bindings))]
+                           (list 'let bindings (normalize-vars scope aliases body)))
+                     (cons op (map (partial normalize-vars scope aliases) args))))
+     :else (throw (ex-info "Couldn't normalize expression" {:expr expr})))))
+
 (s/defn form-from-ssa
   ([{:keys [spec-vars derivations] :as spec-info} :- SpecInfo, id :- DerivationName]
    (form-from-ssa (->> spec-vars keys (map symbol) set) derivations id))
   ([scope :- #{s/Symbol}, dgraph :- Derivations, id :- DerivationName]
-   (let-bindable-exprs dgraph (compute-guards dgraph #{id}) scope #{} id)))
+   (->> id
+        (let-bindable-exprs dgraph (compute-guards dgraph #{id}) scope #{})
+        (normalize-vars scope))))
 
 (s/defn spec-from-ssa :- halite-envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
