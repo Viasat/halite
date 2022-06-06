@@ -281,6 +281,59 @@
                                          {:spec-error-str %}))
                         [:String] :Nothing)}))
 
+;;;;
+
+(declare gather-free-vars)
+
+(defn gather-seq-free-vars [context expr]
+  (cond
+    (= 'let (first expr))
+    (let [[_ bindings body] expr
+          [context free-vars] (reduce
+                               (fn [[context free-vars] [sym e]]
+                                 [(conj context sym) (into free-vars (gather-free-vars context e))])
+                               [context #{}]
+                               (partition 2 bindings))]
+      (into free-vars (gather-free-vars context body)))
+
+    (#{'every 'all} (first expr))
+    (let [[_ [sym coll] body] expr]
+      (into (gather-free-vars context coll)
+            (gather-free-vars (conj context sym) body)))
+
+    :default
+    (->> expr
+         rest
+         (map (partial gather-free-vars context))
+         (reduce into #{}))))
+
+(defn gather-collection-free-vars [context expr]
+  (->> expr
+       (map (partial gather-free-vars context))
+       (reduce into #{})))
+
+(defn gather-free-vars
+  "Recursively find the set of symbols in the expr which refer to the surrounding context."
+  ([expr]
+   (gather-free-vars #{} expr))
+  ([context expr]
+   (cond
+     (boolean? expr) #{}
+     (long? expr) #{}
+     (string? expr) #{}
+     (symbol? expr) (if (context expr)
+                      #{}
+                      #{expr})
+     (keyword? expr) #{}
+     (map? expr) (->> (vals expr)
+                      (map (partial gather-free-vars context))
+                      (reduce into #{}))
+     (seq? expr) (gather-seq-free-vars context expr)
+     (set? expr) (gather-collection-free-vars context expr)
+     (vector? expr) (gather-collection-free-vars context expr))))
+
+;;;;
+
 (s/defn syntax-check
   [expr]
   (cond

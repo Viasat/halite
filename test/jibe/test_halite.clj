@@ -878,9 +878,9 @@
       '(let [a {:$type :ws/A :x 1 :y 0}] (valid a)) [:Maybe [:Instance :ws/A]]
       '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) [:Maybe [:Instance :ws/A]]
       '(valid? {:$type :ws/A, :x 1, :y 0}) :Boolean)
-      ;; These are questionable... 
-      ;;'(valid (valid {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
-      ;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
+    ;; These are questionable...
+    ;;'(valid (valid {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
+    ;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 0})) [:Maybe :ws/A]
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
@@ -899,7 +899,7 @@
       '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) :Unset
       '(valid? {:$type :ws/A :x 2 :y 1}) false
       '(valid? {:$type :ws/A :x 1 :y 2}) true)))
-      ;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 2})) :Unset
+;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 2})) :Unset
 
 (deftest abstract-specs
   (let [senv (->TestSpecEnv
@@ -1023,5 +1023,54 @@
         {"hi" "there"} {:$type :ws/JsonObj :entries
                         #{{:$type :ws/JsonObjEntry :key "hi" :val
                            {:$type :ws/JsonStr :s "there"}}}}))))
+
+(deftest test-gather-free-vars
+  (are [v expected]
+       (= expected
+          (halite/gather-free-vars v))
+    1
+    #{}
+
+    'x
+    '#{x}
+
+    '(+ 1 x y)
+    '#{x y}
+
+    '(let [x a
+           y x
+           a 1
+           z a]
+       (+ x y z b))
+    '#{a b}
+
+    '(and (or (= (+ 1 z))
+              b))
+    '#{z b}
+
+    '{:$type :my/S$v1
+      :x 1
+      :y a
+      :z (and b {:$type :my/T$v1 :q c})}
+    '#{a b c}
+
+    '[1 2 x]
+    '#{x}
+
+    '#{a b 3}
+    '#{a b}
+
+    '(if x y z)
+    '#{x y z}
+
+    '(let [x a
+           y x
+           a 1
+           z a
+           p [#{[#{c}]}]]
+       (if (+ x y z b)
+         (every? [x [a a d]]
+                 (+ x e))))
+    '#{a b c d e}))
 
 ;; (clojure.test/run-tests)
