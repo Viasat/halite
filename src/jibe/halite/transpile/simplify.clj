@@ -54,18 +54,35 @@
 
 (defn- always-evaluates?
   "True if the given form cannot possibly produce a runtime error during evaluation."
-  [form]
-  (or
-   (integer? form)
-   (boolean? form)
-   (symbol? form)))
+  [dgraph form]
+  (cond
+    (or (integer? form) (boolean? form) (symbol? form) (string? form)) true
+    (seq? form) (let [[op & arg-ids] form
+                      args-evaluate? (reduce
+                                      (fn [r arg-id]
+                                        (if (keyword? arg-id)
+                                          true
+                                          (if (always-evaluates? dgraph (first (ssa/deref-id dgraph arg-id)))
+                                            true
+                                            (reduced false))))
+                                      true
+                                      arg-ids)]
+                  (case op
+                    (< <= > >= and or not => abs = not= get valid? if $do!) args-evaluate?
+                    ;; when divisor is statically known not to be zero, we know mod will evaluate
+                    mod (and args-evaluate?
+                             (let [[form htype] (ssa/deref-id dgraph (second arg-ids))]
+                               (and (integer? form) (not= 0 form))))
+                    ;; assume false by default
+                    false))
+    :else false))
 
 (s/defn ^:private simplify-if-static-branches
   [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_ pred-id then-id else-id] form
           pred (deref-form dgraph pred-id)]
-      (when (always-evaluates? pred)
+      (when (always-evaluates? dgraph pred)
         (let [then (deref-form dgraph then-id)
               else (deref-form dgraph else-id)]
           (cond
@@ -79,7 +96,7 @@
   [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [side-effects (->> form (rest) (butlast)
-                            (remove (comp always-evaluates? (partial deref-form dgraph))))]
+                            (remove (comp (partial always-evaluates? dgraph) (partial deref-form dgraph))))]
       (cond
         (empty? side-effects) (last form)
         (< (count side-effects) (- (count form) 2)) `(~'$do! ~@side-effects ~(last form))))))

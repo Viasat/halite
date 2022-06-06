@@ -738,31 +738,26 @@
                                                v9 (get v8 :cw)]
                                            (and
                                             (= (get b2 :bp) (get v1 :bp))
-                                            (if-value
-                                             v5
-                                             (let [v10 v5] (if-value v4 (= v4 v10) false))
-                                             (if-value v4 false true))
+                                            (if-value v5
+                                                      (let [v10 v5] (if-value v4 (= v4 v10) false))
+                                                      (if-value v4 false true))
                                             (= (get b2 :bx) (get v1 :bx))
                                             (and
-                                             (if-value
-                                              v9
-                                              (let [v10 v9] (if-value v7 (= v7 v10) false))
-                                              (if-value v7 false true))
+                                             (if-value v9
+                                                       (let [v10 v9] (if-value v7 (= v7 v10) false))
+                                                       (if-value v7 false true))
                                              (= (get v8 :cx) (get v6 :cx)))
-                                            (if-value
-                                             v3
-                                             (let [v10 v3]
-                                               (if-value
-                                                v2
-                                                (let [v11 (get v2 :cw) v12 (get v10 :cw)]
-                                                  (and
-                                                   (if-value
-                                                    v11
-                                                    (let [v13 v11] (if-value v12 (= v12 v13) false))
-                                                    (if-value v12 false true))
-                                                   (= (get v2 :cx) (get v10 :cx))))
-                                                false))
-                                             (if-value v2 false true))))
+                                            (if-value v3
+                                                      (let [v10 v3]
+                                                        (if-value v2
+                                                                  (let [v11 (get v2 :cw) v12 (get v10 :cw)]
+                                                                    (and
+                                                                     (if-value v11
+                                                                               (let [v13 v11] (if-value v12 (= v12 v13) false))
+                                                                               (if-value v12 false true))
+                                                                     (= (get v2 :cx) (get v10 :cx))))
+                                                                  false))
+                                                      (if-value v2 false true))))
                                          false))
                              (if-value b2 false true))
                    (=> ap (if-value b1 true false)))]]
@@ -777,13 +772,11 @@
                 :constraints
                 [["$all"
                   (let [v1 (= 0 (mod dx 2))]
-                    (if (if v1 true true)
-                      (let [v2 (if v1 (div dx 2) $no-value)
-                            v3 (+ dx 1)
-                            v4 {:$type :ws/C, :cw dx, :cx dx}
-                            v5 {:$type :ws/C, :cw 12, :cx dx}]
-                        (if v1 (let [v6 (div dx 2)] false) true))
-                      false))]],
+                    (let [v2 (if v1 (div dx 2) $no-value)
+                          v3 (+ dx 1)
+                          v4 {:$type :ws/C, :cw dx, :cx dx}
+                          v5 {:$type :ws/C, :cw 12, :cx dx}]
+                      (if v1 (let [v6 (div dx 2)] false) true)))]],
                 :refines-to {:ws/B {:expr {:$type :ws/B,
                                            :bp false,
                                            :bw (when (= 0 (mod dx 2)) (div dx 2)),

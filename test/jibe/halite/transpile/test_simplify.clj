@@ -50,6 +50,7 @@
       '(if ap true false) 'ap
       '(if ap false true) '(not ap)
       '(if ap 1 1) 1
+      '(if (< 1 2) true false) '(< 1 2)
 
       '(not true) false
       '(not false) true
