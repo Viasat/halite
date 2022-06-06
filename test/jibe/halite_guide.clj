@@ -2318,4 +2318,12 @@
   (h (filter [x (if true [1 2] #{4 3})] (> x 1)) [:Coll :Integer] [2] "filter(x in (if(true) {[1, 2]} else {#{3, 4}}))(x > 1)" "[2]")
   (h (filter [x (if false [1 2] #{1 2})] (> x 1)) [:Coll :Integer] #{2} "filter(x in (if(false) {[1, 2]} else {#{1, 2}}))(x > 1)" "#{2}"))
 
+(deftest test-let
+  (h (let [x 1 y (inc x) z (inc y)] z) :Integer 3 "{ x = 1; y = (x + 1); z = (y + 1); z }" "3")
+  (h (let [x 1 x (inc x) x (inc x)] x) :Integer 3 "{ x = 1; x = (x + 1); x = (x + 1); x }" "3")
+  (h (let [x y y 1] y) [:throws "Undefined: 'y'"])
+  (h (let [:x 1] x) [:throws "even-numbered forms in let binding vector must be symbols"])
+  (h (let [[a b] [1 2]] a) [:throws "even-numbered forms in let binding vector must be symbols"])
+  (h (let [x 1 y (inc x) z (inc y)] x z) [:throws "Wrong number of arguments to 'let': expected 2, but got 3"]))
+
 ;; (time (run-tests))
