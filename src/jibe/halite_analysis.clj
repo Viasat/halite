@@ -140,21 +140,29 @@
                                  :max-inclusive (and (:max-inclusive a)
                                                      (:max-inclusive b)))))
 
+(defn- get-min [a]
+  (or (:min a)
+      Long/MIN_VALUE))
+
+(defn- get-max [a]
+  (or (:max a)
+      Long/MAX_VALUE))
+
 (defn- combine-mins-or [a b]
   (cond
-    (< (:min a) (:min b)) (merge b a)
-    (> (:min a) (:min b)) (merge a b)
-    (= (:min a) (:min b)) (assoc (merge a b)
-                                 :min-inclusive (or (:min-inclusive a)
-                                                    (:min-inclusive b)))))
+    (< (get-min a) (get-min b)) (merge b a)
+    (> (get-min a) (get-min b)) (merge a b)
+    (= (get-min a) (get-min b)) (assoc (merge a b)
+                                       :min-inclusive (or (:min-inclusive a)
+                                                          (:min-inclusive b)))))
 
 (defn- combine-maxs-or [a b]
   (cond
-    (< (:max a) (:max b)) (merge a b)
-    (> (:max a) (:max b)) (merge b a)
-    (= (:max a) (:max b)) (assoc (merge a b)
-                                 :max-inclusive (or (:max-inclusive a)
-                                                    (:max-inclusive b)))))
+    (< (get-max a) (get-max b)) (merge a b)
+    (> (get-max a) (get-max b)) (merge b a)
+    (= (get-max a) (get-max b)) (assoc (merge a b)
+                                       :max-inclusive (or (:max-inclusive a)
+                                                          (:max-inclusive b)))))
 
 (defn- tlfc-data-and [xs]
   (if (some #(not (nil? (:enum %))) xs)
@@ -164,21 +172,23 @@
                        (set/intersection (:enum a) (:enum b)))})
             {:enum :any}
             (filter #(not (nil? (:enum %))) xs))
-    {:range [(reduce (fn [a b]
-                       (cond
-                         (and (:min a) (:min b)
-                              (:max a) (:max b))
-                         (merge (combine-mins a b)
-                                (combine-maxs a b))
+    (if-let [r (some #(:range %) xs)]
+      {:range r}
+      {:range [(reduce (fn [a b]
+                         (cond
+                           (and (:min a) (:min b)
+                                (:max a) (:max b))
+                           (merge (select-keys (combine-mins a b) [:min :min-inclusive])
+                                  (select-keys (combine-maxs a b) [:max :max-inclusive]))
 
-                         (and (:min a) (:min b))
-                         (combine-mins a b)
+                           (and (:min a) (:min b))
+                           (combine-mins a b)
 
-                         (and (:max a) (:max b))
-                         (combine-maxs a b)
+                           (and (:max a) (:max b))
+                           (combine-maxs a b)
 
-                         :default
-                         (merge a b))) {} xs)]}))
+                           :default
+                           (merge a b))) {} xs)]})))
 
 (defn- tlfc-data* [expr]
   (cond
@@ -246,6 +256,66 @@
                          vec))
     x))
 
+(defn- ranges-overlap? [a b]
+  (let [min-a (or (:min a)
+                  Long/MIN_VALUE)
+        min-b (or (:min b)
+                  Long/MIN_VALUE)
+        max-a (or (:max a)
+                  Long/MAX_VALUE)
+        max-b (or (:max b)
+                  Long/MAX_VALUE)]
+    (or (< min-a min-b max-a)
+        (< min-a max-b max-a)
+        (< min-b min-a max-b)
+        (< min-b max-a max-b))))
+
+(defn- touch-min [a b]
+  (= (:min a) (:min b)))
+
+(defn- touch-max [a b]
+  (= (:max a) (:max b)))
+
+(defn- touch-min-max [a b]
+  (let [min-a (or (:min a)
+                  Long/MIN_VALUE)
+        min-b (or (:min b)
+                  Long/MIN_VALUE)
+        max-a (or (:max a)
+                  Long/MAX_VALUE)
+        max-b (or (:max b)
+                  Long/MAX_VALUE)]
+    (or (= min-a max-b)
+        (= min-b max-a))))
+
+(defn- combine-ranges [a b]
+  (merge (select-keys (combine-mins-or a b) [:min :min-inclusive])
+         (select-keys (combine-maxs-or a b) [:max :max-inclusive])))
+
+(defn- remove-overlapping [x]
+  (if-let [ranges (:range x)]
+    (loop [[r1 & remaining] (set ranges)
+           output []]
+      (if r1
+        (let [[combined-r1 other-1] (loop [result r1
+                                           [r2 & remaining2] remaining
+                                           todo []]
+                                      (if r2
+                                        (if (or (ranges-overlap? r1 r2)
+                                                (touch-min-max r1 r2)
+                                                (touch-min r1 r2)
+                                                (touch-max r1 r2))
+                                          (recur (combine-ranges r1 r2)
+                                                 remaining2
+                                                 todo)
+                                          (recur result
+                                                 remaining2
+                                                 (conj todo r2)))
+                                        [result todo]))]
+          (recur other-1 (conj output combined-r1)))
+        (assoc x :range output)))
+    x))
+
 (defn- tlfc-data [expr]
   (->> (let [result (tlfc-data* expr)]
          (if (and (map? result)
@@ -253,7 +323,8 @@
                       (contains? result :max)))
            {:range [result]}
            result))
-       combine-single-leg-ranges))
+       combine-single-leg-ranges
+       remove-overlapping))
 
 (defn tlfc-data-map [m]
   (->> (update-vals m tlfc-data)

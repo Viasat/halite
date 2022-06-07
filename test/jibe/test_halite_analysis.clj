@@ -294,6 +294,108 @@
           (>= x 2700)) ['(and (> x 2700) (>= x 2700))
                         '{x (and (> x 2700) (>= x 2700))}
                         '{x {:range [{:min 2700
-                                      :min-inclusive false}]}}]))
+                                      :min-inclusive false}]}}]
+
+    '(or (and (> x 2800)
+              (<= x 2850))
+         (and (> x 2840)
+              (<= x 2860))) ['(or (and (> x 2800) (<= x 2850))
+                                  (and (> x 2840) (<= x 2860)))
+                             '{x (or
+                                  (and (> x 2800) (<= x 2850))
+                                  (and (> x 2840) (<= x 2860)))}
+                             '{x {:range
+                                  [{:min 2800
+                                    :min-inclusive false
+                                    :max 2860
+                                    :max-inclusive true}]}}]
+
+    '(or (and (> x 2900)
+              (< x 2950))
+         (and (>= x 2950)
+              (<= x 2960))) ['(or (and (> x 2900) (< x 2950))
+                                  (and (>= x 2950) (<= x 2960)))
+                             '{x (or (and (> x 2900) (< x 2950))
+                                     (and (>= x 2950) (<= x 2960)))}
+                             '{x {:range
+                                  [{:min 2900
+                                    :min-inclusive false
+                                    :max 2960
+                                    :max-inclusive true}]}}]
+
+    '(or (and (> x 3000)
+              (<= x 3050))
+         (and (> x 3040)
+              (<= x 3060))
+         (> x 1)) ['(or (and (> x 3000) (<= x 3050))
+                        (and (> x 3040) (<= x 3060))
+                        (> x 1))
+                   '{x (or (and (> x 3000) (<= x 3050))
+                           (and (> x 3040) (<= x 3060))
+                           (> x 1))}
+                   '{x {:range
+                        [{:min 1
+                          :min-inclusive false
+                          :max 3060
+                          :max-inclusive true}]}}]
+
+    '(and (> x 1)
+          (or (and (> x 3100)
+                   (<= x 3150))
+              (and (> x 3140)
+                   (<= x 3160)))) ['(and (> x 1)
+                                         (or
+                                          (and (> x 3100) (<= x 3150))
+                                          (and (> x 3140) (<= x 3160))))
+                                   '{x (and (> x 1)
+                                            (or
+                                             (and (> x 3100) (<= x 3150))
+                                             (and (> x 3140) (<= x 3160))))}
+                                   '{x {:range [{:min 3100
+                                                 :min-inclusive false
+                                                 :max 3160
+                                                 :max-inclusive true}]}}]
+
+    '(and (> x 3225) ;; this falls out and is not included in the range, ranges are assumed to be more specific
+          (or (and (> x 3200)
+                   (<= x 3250))
+              (and (> x 3240)
+                   (<= x 3260)))) ['(and (> x 3225)
+                                         (or
+                                          (and (> x 3200) (<= x 3250))
+                                          (and (> x 3240) (<= x 3260))))
+                                   '{x (and (> x 3225)
+                                            (or
+                                             (and (> x 3200) (<= x 3250))
+                                             (and (> x 3240) (<= x 3260))))}
+                                   '{x {:range [{:min 3200
+                                                 :min-inclusive false
+                                                 :max 3260
+                                                 :max-inclusive true}]}}]
+
+    '(and (= x 3325)
+          (or (and (> x 3300)
+                   (<= x 3350))
+              (and (> x 3340)
+                   (<= x 3360)))) ['(and (= x 3325)
+                                         (or (and (> x 3300) (<= x 3350))
+                                             (and (> x 3340) (<= x 3360))))
+                                   '{x (and
+                                        (= x 3325)
+                                        (or (and (> x 3300) (<= x 3350))
+                                            (and (> x 3340) (<= x 3360))))}
+                                   '{x {:enum #{3325}}}]
+    '(and (= x 0)
+          (or (and (> x 3400)
+                   (<= x 3450))
+              (and (> x 3440)
+                   (<= x 3460)))) ['(and (= x 0)
+                                         (or (and (> x 3400) (<= x 3450))
+                                             (and (> x 3440) (<= x 3460))))
+                                   '{x (and (= x 0)
+                                            (or (and (> x 3400) (<= x 3450))
+                                                (and (> x 3440) (<= x 3460))))}
+                                   '{x {:enum #{0}}} ;; not smart enough to figure out this violates the ranges
+                                   ]))
 
 ;; (run-tests)
