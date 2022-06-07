@@ -68,10 +68,64 @@
     (vector? expr) true
     :default false))
 
-(defn- sort-tlfc [tlfc]
-  (-> (group-by gather-free-vars tlfc)
-      (update-keys first)
-      (update-vals set)))
+(defn- condense-boolean-logic [expr]
+  (cond
+    (and (seq? expr)
+         (= 'and (first expr))) (let [args (->> expr
+                                                rest
+                                                (map condense-boolean-logic)
+                                                (remove #(= % true))
+                                                (mapcat #(if (and (seq? %)
+                                                                  (= 'and (first %)))
+                                                           (rest %)
+                                                           [%])))]
+                                  (condp = (count args)
+                                    0 true
+                                    1 (first args)
+                                    (cons 'and args)))
+    (and (seq? expr)
+         (= 'or (first expr))) (let [args (->> expr
+                                               rest
+                                               (map condense-boolean-logic)
+                                               (remove #(= % false)))]
+                                 (if (some #(= % true) args)
+                                   true
+                                   (condp = (count args)
+                                     0 false
+                                     1 (first args)
+                                     (cons 'or args))))
+    :default expr))
+
+(defn sort-tlfc [expr]
+  (cond
+    (and (seq? expr)
+         (= 'and (first expr))) (-> (group-by gather-free-vars (rest expr))
+                                    (update-keys first)
+                                    (update-vals #(condense-boolean-logic (cons 'and %))))
+    (= true expr) nil
+
+    (= 1 (count (gather-free-vars expr))) {(first (gather-free-vars expr))
+                                           expr}
+
+    :default (throw (ex-info "unexpected expression" {:expr expr}))))
+
+(defn- gather-tlfc-single*
+  [expr]
+  (cond
+    (and (seq? expr)
+         (= 'and (first expr))) (->> expr
+                                     rest
+                                     (map gather-tlfc-single*)
+                                     (cons 'and))
+
+    (and (seq? expr)
+         (#{'= '< '<= '> '>=} (first expr))) (if (and (= 1 (count (gather-free-vars expr)))
+                                                      (->> (rest expr)
+                                                           (every? simple-value-or-symbol?))
+                                                      (some symbol? (rest expr)))
+                                               expr
+                                               true)
+    :default true))
 
 (defn- gather-tlfc*
   [expr]
@@ -80,14 +134,21 @@
          (= 'and (first expr))) (->> expr
                                      rest
                                      (map gather-tlfc*)
-                                     (reduce into #{}))
+                                     (cons 'and))
+    (and (seq? expr)
+         (= 'or (first expr))
+         (= 1 (count (gather-free-vars expr)))) (->> expr
+                                                     rest
+                                                     (map gather-tlfc-single*)
+                                                     (cons 'or))
+
     (and (seq? expr)
          (#{'= '< '<= '> '>=} (first expr))) (if (and (= 1 (count (gather-free-vars expr)))
                                                       (->> (rest expr)
                                                            (every? simple-value-or-symbol?))
                                                       (some symbol? (rest expr)))
-                                               #{expr}
-                                               #{})
+                                               expr
+                                               true)
 
     (and (seq? expr)
          (= 'contains? (first expr))) (let [[_ coll e] expr]
@@ -95,9 +156,9 @@
                                                  (->> (rest expr)
                                                       (every? simple-value-or-symbol?))
                                                  (symbol? e))
-                                          #{expr}
-                                          #{}))
-    :default #{}))
+                                          expr
+                                          true))
+    :default true))
 
 (defn gather-tlfc
   "Produce a map from symbols to sets of all of the 'top-level-field-constraints' contained in the
@@ -105,4 +166,4 @@
   single variable, which are of a form that can be understood simply. These are necessary, but not
   sufficient constraints for the entire expression to evaluate to 'true'."
   [expr]
-  (->> expr gather-tlfc* sort-tlfc))
+  (->> expr gather-tlfc* condense-boolean-logic))

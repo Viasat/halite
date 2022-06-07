@@ -55,63 +55,82 @@
     '#{a b c d e}))
 
 (deftest test-gather-tlfc
-  (are [v expected]
-       (= expected
-          (halite-analysis/gather-tlfc v))
+  (are [v expected expected-sort]
+       (= [expected expected-sort]
+          [(halite-analysis/gather-tlfc v)
+           (halite-analysis/sort-tlfc (halite-analysis/gather-tlfc v))])
 
     true
-    {}
+    true
+    nil
 
     '(and true false)
-    {}
+    'true
+    nil
 
     '(= x 1)
-    '{x #{(= x 1)}}
+    '(= x 1)
+    '{x (= x 1)}
 
     '(= x (+ 1 3))
-    {}
+    true
+    nil
 
     '(and (= x 1)
           (= 2 y))
-    '{x #{(= x 1)}
-      y #{(= 2 y)}}
+    '(and (= x 1)
+          (= 2 y))
+    '{x (= x 1)
+      y (= 2 y)}
 
     '(and (and (= x 1)
                (= 2 y))
           z)
-    '{x #{(= x 1)}
-      y #{(= 2 y)}}
+    '(and (= x 1)
+          (= 2 y))
+    '{x (= x 1)
+      y (= 2 y)}
 
     '(< x 1)
-    '{x #{(< x 1)}}
+    '(< x 1)
+    '{x (< x 1)}
 
     '(< x y)
-    {}
+    true
+    nil
 
     '(= x [1 2])
-    '{x #{(= x [1 2])}}
+    '(= x [1 2])
+    '{x (= x [1 2])}
 
     '(= x [1 z])
-    {}
+    true
+    nil
 
     '(let [y 1]
        (< x y))
-    {}
+    true
+    nil
 
     '(< x (let [y 1] y))
-    {}
+    true
+    nil
 
     '(contains? #{1 2 3} x)
-    '{x #{(contains? #{1 2 3} x)}}
+    '(contains? #{1 3 2} x)
+    '{x (contains? #{1 3 2} x)}
 
     '(and (contains? #{1 2 3} x)
           (= y 1)
           (and (<= z 20)
                (> z 10)))
-    '{x #{(contains? #{1 2 3} x)}
-      y #{(= y 1)}
-      z #{(<= z 20)
-          (> z 10)}}
+    '(and (contains? #{1 3 2} x)
+          (= y 1)
+          (<= z 20)
+          (> z 10))
+    '{x (contains? #{1 3 2} x),
+      y (= y 1),
+      z (and (<= z 20) (> z 10))}
 
     '(and (contains? #{1 2 3} x)
           (or a b)
@@ -119,32 +138,53 @@
                (and (<= z 20)
                     (> z 10)))
           q)
-    '{x #{(contains? #{1 2 3} x)}
-      y #{(= y 1)}
-      z #{(<= z 20)
-          (> z 10)}}
+    '(and
+      (contains? #{1 3 2} x)
+      (= y 1)
+      (<= z 20)
+      (> z 10))
+    '{x (contains? #{1 3 2} x)
+      y (= y 1),
+      z (and (<= z 20) (> z 10))}
 
     '(or (= x 1) (= x 2))
-    {}
+    '(or (= x 1) (= x 2))
+    '{x (or (= x 1) (= x 2))}
 
     '(and (contains? #{1 2 3} x)
           (or a b)
-          (and (c (every? [c [1 2 3]]
-                          (= c 1)))
-               (and true
-                    (and (= z 1))))
-          (and (= y 1)
-               (and (<= z 20)
-                    (> z 10)))
+          (c (every? [c [1 2 3]]
+                     (= c 1)))
+          (= z 1)
+          (= y 1)
+          (<= z 20)
+          (> z 10)
           q)
-    '{z #{(> z 10) (<= z 20) (= z 1)}
-      x #{(contains? #{1 3 2} x)}
-      y #{(= y 1)}}
+    '(and
+      (contains? #{1 3 2} x)
+      (= z 1)
+      (= y 1)
+      (<= z 20)
+      (> z 10))
+    '{x (contains? #{1 3 2} x)
+      z (and (= z 1) (<= z 20) (> z 10)),
+      y (= y 1)}
 
     '(= [1 2] [x 2])
-    {}
+    true
+    nil
 
     '(= #{x 2} #{1 2})
-    {}))
+    true
+    nil
+
+    '(or (and (>= x 3)
+              (< x 12))
+         (and (>= x 20)
+              (< x 25)))
+    '(or (and (>= x 3) (< x 12))
+         (and (>= x 20) (< x 25)))
+    '{x (or (and (>= x 3) (< x 12))
+            (and (>= x 20) (< x 25)))}))
 
 ;; (run-tests)
