@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite-analysis
-  (:require [jibe.halite :as halite]
+  (:require [clojure.set :as set]
+            [jibe.halite :as halite]
             [internal :as s]))
 
 (declare gather-free-vars)
@@ -108,6 +109,77 @@
                                            expr}
 
     :default (throw (ex-info "unexpected expression" {:expr expr}))))
+
+(defn- third [s]
+  (second (rest s)))
+
+(defn- tlfc-data-or [xs]
+  (if (some #(not (nil? (:enum %))) xs)
+    (reduce (fn [a b]
+              {:enum (set/union (:enum a) (:enum b))}) {:enum #{}} xs)
+    {:range (vec (mapcat :range xs))}))
+
+(defn- tlfc-data-and [xs]
+  (if (some #(not (nil? (:enum %))) xs)
+    (reduce (fn [a b]
+              {:enum (if (= (:enum a) :any)
+                       (:enum b)
+                       (set/intersection (:enum a) (:enum b)))})
+            {:enum :any}
+            (filter #(not (nil? (:enum %))) xs))
+    {:range [(reduce merge {} xs)]}))
+
+(defn- tlfc-data* [expr]
+  (cond
+    (and (seq? expr)
+         (= '= (first expr))) {:enum (->> (rest expr)
+                                          (remove symbol?)
+                                          set)}
+
+    (and (seq? expr)
+         (#{'< '<= '> '>=} (first expr))) (if (symbol? (second expr))
+                                            (condp = (first expr)
+                                              '< {:max (third expr)
+                                                  :max-inclusive false}
+                                              '<= {:max (third expr)
+                                                   :max-inclusive true}
+                                              '> {:min (third expr)
+                                                  :min-inclusive false}
+                                              '>= {:min (third expr)
+                                                   :min-inclusive true})
+                                            (condp = (first expr)
+                                              '< {:min (second expr)
+                                                  :min-inclusive false}
+
+                                              '<= {:min (second expr)
+                                                   :min-inclusive true}
+                                              '> {:max (second expr)
+                                                  :max-inclusive false}
+                                              '>= {:max (second expr)
+                                                   :max-inclusive true}))
+
+    (and (seq? expr)
+         (= 'and (first expr))) (->> (rest expr)
+                                     (map tlfc-data*)
+                                     tlfc-data-and)
+
+    (and (seq? expr)
+         (= 'or (first expr))) (->> (rest expr)
+                                    (map tlfc-data*)
+                                    tlfc-data-or)
+
+    (and (seq? expr)
+         (= 'contains? (first expr))) {:enum (second expr)}
+
+    :default expr))
+
+(defn tlfc-data [expr]
+  (let [result (tlfc-data* expr)]
+    (if (and (map? result)
+             (or (contains? result :min)
+                 (contains? result :max)))
+      {:range [result]}
+      result)))
 
 (defn- gather-tlfc-single*
   [expr]

@@ -58,54 +58,72 @@
   (are [v x]
        (= x
           [(halite-analysis/gather-tlfc v)
-           (halite-analysis/sort-tlfc (halite-analysis/gather-tlfc v))])
+           (halite-analysis/sort-tlfc (halite-analysis/gather-tlfc v))
+           (-> (halite-analysis/sort-tlfc (halite-analysis/gather-tlfc v))
+               (update-vals halite-analysis/tlfc-data))])
 
     true [true
-          nil]
+          nil
+          {}]
 
     '(and true false) ['true
-                       nil]
+                       nil
+                       {}]
 
     '(= x 100) ['(= x 100)
-                '{x (= x 100)}]
+                '{x (= x 100)}
+                '{x {:enum #{100}}}]
 
     '(= x (+ 200 3)) [true
-                      nil]
+                      nil
+                      {}]
 
     '(and (= x 300)
           (= 2 y)) ['(and (= x 300)
                           (= 2 y))
                     '{x (= x 300)
-                      y (= 2 y)}]
+                      y (= 2 y)}
+                    '{x {:enum #{300}}
+                      y {:enum #{2}}}]
 
     '(and (and (= x 400)
                (= 2 y))
           z) ['(and (= x 400)
                     (= 2 y))
               '{x (= x 400)
-                y (= 2 y)}]
+                y (= 2 y)}
+              '{x {:enum #{400}}
+                y {:enum #{2}}}]
 
     '(< x 500) ['(< x 500)
-                '{x (< x 500)}]
+                '{x (< x 500)}
+                '{x {:range [{:max 500
+                              :max-inclusive false}]}}]
 
     '(< x y) [true
-              nil]
+              nil
+              {}]
 
     '(= x [1 600]) ['(= x [1 600])
-                    '{x (= x [1 600])}]
+                    '{x (= x [1 600])}
+                    '{x {:enum #{[1 600]}}}]
 
     '(= x [700 z]) [true
-                    nil]
+                    nil
+                    {}]
 
     '(let [y 800]
        (< x y)) [true
-                 nil]
+                 nil
+                 {}]
 
     '(< x (let [y 900] y)) [true
-                            nil]
+                            nil
+                            {}]
 
     '(contains? #{1000 2 3} x) ['(contains? #{1000 3 2} x)
-                                '{x (contains? #{1000 3 2} x)}]
+                                '{x (contains? #{1000 3 2} x)}
+                                '{x {:enum #{1000 3 2}}}]
 
     '(and (contains? #{1100 2 3} x)
           (= y 1)
@@ -116,8 +134,13 @@
                                  (> z 10))
                            '{x (contains? #{1100 3 2} x),
                              y (= y 1),
-                             z (and (<= z 20) (> z 10))}]
-
+                             z (and (<= z 20) (> z 10))}
+                           '{x {:enum #{1100 3 2}}
+                             y {:enum #{1}}
+                             z {:range [{:max 20
+                                         :max-inclusive true
+                                         :min 10
+                                         :min-inclusive false}]}}]
     '(and (contains? #{1200 2 3} x)
           (or a b)
           (and (= y 1)
@@ -130,15 +153,24 @@
                 (> z 10))
               '{x (contains? #{1200 3 2} x)
                 y (= y 1),
-                z (and (<= z 20) (> z 10))}]
+                z (and (<= z 20) (> z 10))}
+              '{x {:enum #{1200 3 2}}
+                y {:enum #{1}}
+                z {:range [{:max 20
+                            :max-inclusive true
+                            :min 10
+                            :min-inclusive false}]}}]
 
     '(or (= x 1300) (= x 2)) ['(or (= x 1300) (= x 2))
-                              '{x (or (= x 1300) (= x 2))}]
+                              '{x (or (= x 1300) (= x 2))}
+                              '{x {:enum #{2 1300}}}]
 
     '(and (or (= x 1310) (= x 2))
           (= y 3)) ['(and (or (= x 1310) (= x 2)) (= y 3))
                     '{x (or (= x 1310) (= x 2))
-                      y (= y 3)}]
+                      y (= y 3)}
+                    '{x {:enum #{1310 2}}
+                      y {:enum #{3}}}]
 
     '(and (contains? #{1400 2 3} x)
           (or a b)
@@ -156,13 +188,18 @@
                 (> z 10))
               '{x (contains? #{1400 3 2} x)
                 z (and (= z 1) (<= z 20) (> z 10)),
-                y (= y 1)}]
+                y (= y 1)}
+              '{x {:enum #{1400 3 2}}
+                z {:enum #{1}}
+                y {:enum #{1}}}]
 
     '(= [1 1500] [x 1500]) [true
-                            nil]
+                            nil
+                            {}]
 
     '(= #{x 1600} #{1 1600}) [true
-                              nil]
+                              nil
+                              {}]
 
     '(or (and (>= x 3)
               (< x 12))
@@ -170,6 +207,14 @@
               (< x 1700))) ['(or (and (>= x 3) (< x 12))
                                  (and (>= x 20) (< x 1700)))
                             '{x (or (and (>= x 3) (< x 12))
-                                    (and (>= x 20) (< x 1700)))}]))
+                                    (and (>= x 20) (< x 1700)))}
+                            '{x {:range [{:min 3
+                                          :min-inclusive true
+                                          :max 12
+                                          :max-inclusive false}
+                                         {:min 20
+                                          :min-inclusive true
+                                          :max 1700
+                                          :max-inclusive false}]}}]))
 
 ;; (run-tests)
