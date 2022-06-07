@@ -97,13 +97,13 @@
 
     '(< x 500) ['(< x 500)
                 '{x (< x 500)}
-                '{x {:range [{:max 500
-                              :max-inclusive false}]}}]
+                '{x {:ranges #{{:max 500
+                                :max-inclusive false}}}}]
 
     '(< 510 x) ['(< 510 x)
                 '{x (< 510 x)}
-                '{x {:range [{:min 510
-                              :min-inclusive true}]}}]
+                '{x {:ranges #{{:min 510
+                                :min-inclusive true}}}}]
 
     '(< x y) [true
               nil
@@ -142,10 +142,10 @@
                              z (and (<= z 20) (> z 10))}
                            '{x {:enum #{1100 3 2}}
                              y {:enum #{1}}
-                             z {:range [{:max 20
-                                         :max-inclusive true
-                                         :min 10
-                                         :min-inclusive false}]}}]
+                             z {:ranges #{{:max 20
+                                           :max-inclusive true
+                                           :min 10
+                                           :min-inclusive false}}}}]
     '(and (contains? #{1200 2 3} x)
           (or a b)
           (and (= y 1)
@@ -161,10 +161,10 @@
                 z (and (<= z 20) (> z 10))}
               '{x {:enum #{1200 3 2}}
                 y {:enum #{1}}
-                z {:range [{:max 20
-                            :max-inclusive true
-                            :min 10
-                            :min-inclusive false}]}}]
+                z {:ranges #{{:max 20
+                              :max-inclusive true
+                              :min 10
+                              :min-inclusive false}}}}]
 
     '(or (= x 1300) (= x 2)) ['(or (= x 1300) (= x 2))
                               '{x (or (= x 1300) (= x 2))}
@@ -213,14 +213,14 @@
                                  (and (>= x 20) (< x 1700)))
                             '{x (or (and (>= x 3) (< x 12))
                                     (and (>= x 20) (< x 1700)))}
-                            '{x {:range [{:min 3
-                                          :min-inclusive true
-                                          :max 12
-                                          :max-inclusive false}
-                                         {:min 20
-                                          :min-inclusive true
-                                          :max 1700
-                                          :max-inclusive false}]}}]
+                            '{x {:ranges #{{:min 3
+                                            :min-inclusive true
+                                            :max 12
+                                            :max-inclusive false}
+                                           {:min 20
+                                            :min-inclusive true
+                                            :max 1700
+                                            :max-inclusive false}}}}]
 
     '(or (and (>= x 3)
               (< x 13)
@@ -234,14 +234,14 @@
                             '{x (or
                                  (and (>= x 3) (< x 13) (<= x 9) (< x 12) (> 14 x))
                                  (and (>= x 20) (< x 1800)))}
-                            '{x {:range [{:min 3
-                                          :min-inclusive true
-                                          :max 9
-                                          :max-inclusive true}
-                                         {:min 20
-                                          :min-inclusive true
-                                          :max 1800
-                                          :max-inclusive false}]}}]
+                            '{x {:ranges #{{:min 3
+                                            :min-inclusive true
+                                            :max 9
+                                            :max-inclusive true}
+                                           {:min 20
+                                            :min-inclusive true
+                                            :max 1800
+                                            :max-inclusive false}}}}]
 
     '(or (< x 1)
          (= x 2)
@@ -251,50 +251,50 @@
     '(or (< x 1)
          (< x 2000)) ['(or (< x 1) (< x 2000))
                       '{x (or (< x 1) (< x 2000))}
-                      '{x {:range [{:max 2000
-                                    :max-inclusive false}]}}]
+                      '{x {:ranges #{{:max 2000
+                                      :max-inclusive false}}}}]
 
     '(or (< x 2100)
          (<= x 2100)) ['(or (< x 2100) (<= x 2100))
                        '{x (or (< x 2100) (<= x 2100))}
-                       '{x {:range [{:max 2100
-                                     :max-inclusive true}]}}]
+                       '{x {:ranges #{{:max 2100
+                                       :max-inclusive true}}}}]
 
     '(or (< x 2200)
          (>= 2200 x)) ['(or (< x 2200) (>= 2200 x))
                        '{x (or (< x 2200) (>= 2200 x))}
-                       '{x {:range [{:max 2200
-                                     :max-inclusive false}]}}]
+                       '{x {:ranges #{{:max 2200
+                                       :max-inclusive false}}}}]
 
     '(and (< x 2300)
           (>= 2300 x)) ['(and (< x 2300) (>= 2300 x))
                         '{x (and (< x 2300) (>= 2300 x))}
-                        '{x {:range [{:max 2300
-                                      :max-inclusive false}]}}]
+                        '{x {:ranges #{{:max 2300
+                                        :max-inclusive false}}}}]
 
     '(or (< x 2400)
          (<= x 2400)) ['(or (< x 2400) (<= x 2400))
                        '{x (or (< x 2400) (<= x 2400))}
-                       '{x {:range [{:max 2400
-                                     :max-inclusive true}]}}]
+                       '{x {:ranges #{{:max 2400
+                                       :max-inclusive true}}}}]
 
     '(and (< x 2500)
           (<= x 2500)) ['(and (< x 2500) (<= x 2500))
                         '{x (and (< x 2500) (<= x 2500))}
-                        '{x {:range [{:max 2500
-                                      :max-inclusive false}]}}]
+                        '{x {:ranges #{{:max 2500
+                                        :max-inclusive false}}}}]
 
     '(or (> x 2600)
          (>= x 2600)) ['(or (> x 2600) (>= x 2600))
                        '{x (or (> x 2600) (>= x 2600))}
-                       '{x {:range [{:min 2600
-                                     :min-inclusive true}]}}]
+                       '{x {:ranges #{{:min 2600
+                                       :min-inclusive true}}}}]
 
     '(and (> x 2700)
           (>= x 2700)) ['(and (> x 2700) (>= x 2700))
                         '{x (and (> x 2700) (>= x 2700))}
-                        '{x {:range [{:min 2700
-                                      :min-inclusive false}]}}]
+                        '{x {:ranges #{{:min 2700
+                                        :min-inclusive false}}}}]
 
     '(or (and (> x 2800)
               (<= x 2850))
@@ -304,11 +304,10 @@
                              '{x (or
                                   (and (> x 2800) (<= x 2850))
                                   (and (> x 2840) (<= x 2860)))}
-                             '{x {:range
-                                  [{:min 2800
-                                    :min-inclusive false
-                                    :max 2860
-                                    :max-inclusive true}]}}]
+                             '{x {:ranges #{{:min 2800
+                                             :min-inclusive false
+                                             :max 2860
+                                             :max-inclusive true}}}}]
 
     '(or (and (> x 2900)
               (< x 2950))
@@ -317,11 +316,10 @@
                                   (and (>= x 2950) (<= x 2960)))
                              '{x (or (and (> x 2900) (< x 2950))
                                      (and (>= x 2950) (<= x 2960)))}
-                             '{x {:range
-                                  [{:min 2900
-                                    :min-inclusive false
-                                    :max 2960
-                                    :max-inclusive true}]}}]
+                             '{x {:ranges #{{:min 2900
+                                             :min-inclusive false
+                                             :max 2960
+                                             :max-inclusive true}}}}]
 
     '(or (and (> x 3000)
               (<= x 3050))
@@ -333,11 +331,10 @@
                    '{x (or (and (> x 3000) (<= x 3050))
                            (and (> x 3040) (<= x 3060))
                            (> x 1))}
-                   '{x {:range
-                        [{:min 1
-                          :min-inclusive false
-                          :max 3060
-                          :max-inclusive true}]}}]
+                   '{x {:ranges #{{:min 1
+                                   :min-inclusive false
+                                   :max 3060
+                                   :max-inclusive true}}}}]
 
     '(and (> x 1)
           (or (and (> x 3100)
@@ -351,10 +348,10 @@
                                             (or
                                              (and (> x 3100) (<= x 3150))
                                              (and (> x 3140) (<= x 3160))))}
-                                   '{x {:range [{:min 3100
-                                                 :min-inclusive false
-                                                 :max 3160
-                                                 :max-inclusive true}]}}]
+                                   '{x {:ranges #{{:min 3100
+                                                   :min-inclusive false
+                                                   :max 3160
+                                                   :max-inclusive true}}}}]
 
     '(and (> x 3225) ;; this falls out and is not included in the range, ranges are assumed to be more specific
           (or (and (> x 3200)
@@ -368,10 +365,10 @@
                                             (or
                                              (and (> x 3200) (<= x 3250))
                                              (and (> x 3240) (<= x 3260))))}
-                                   '{x {:range [{:min 3200
-                                                 :min-inclusive false
-                                                 :max 3260
-                                                 :max-inclusive true}]}}]
+                                   '{x {:ranges #{{:min 3200
+                                                   :min-inclusive false
+                                                   :max 3260
+                                                   :max-inclusive true}}}}]
 
     '(and (= x 3325)
           (or (and (> x 3300)
