@@ -115,9 +115,46 @@
 
 (defn- tlfc-data-or [xs]
   (if (some #(not (nil? (:enum %))) xs)
-    (reduce (fn [a b]
-              {:enum (set/union (:enum a) (:enum b))}) {:enum #{}} xs)
-    {:range (vec (mapcat :range xs))}))
+    (if (every? #(not (nil? (:enum %))) xs)
+      (reduce (fn [a b]
+                {:enum (set/union (:enum a) (:enum b))}) {:enum #{}} xs)
+      true)
+    {:range (vec (mapcat
+                  #(or (:range %)
+                       [%])
+                  xs))}))
+
+(defn- combine-mins [a b]
+  (cond
+    (< (:min a) (:min b)) (merge a b)
+    (> (:min a) (:min b)) (merge b a)
+    (= (:min a) (:min b)) (assoc (merge a b)
+                                 :min-inclusive (and (:min-inclusive a)
+                                                     (:min-inclusive b)))))
+
+(defn- combine-maxs [a b]
+  (cond
+    (< (:max a) (:max b)) (merge b a)
+    (> (:max a) (:max b)) (merge a b)
+    (= (:max a) (:max b)) (assoc (merge a b)
+                                 :max-inclusive (and (:max-inclusive a)
+                                                     (:max-inclusive b)))))
+
+(defn- combine-mins-or [a b]
+  (cond
+    (< (:min a) (:min b)) (merge b a)
+    (> (:min a) (:min b)) (merge a b)
+    (= (:min a) (:min b)) (assoc (merge a b)
+                                 :min-inclusive (or (:min-inclusive a)
+                                                    (:min-inclusive b)))))
+
+(defn- combine-maxs-or [a b]
+  (cond
+    (< (:max a) (:max b)) (merge a b)
+    (> (:max a) (:max b)) (merge b a)
+    (= (:max a) (:max b)) (assoc (merge a b)
+                                 :max-inclusive (or (:max-inclusive a)
+                                                    (:max-inclusive b)))))
 
 (defn- tlfc-data-and [xs]
   (if (some #(not (nil? (:enum %))) xs)
@@ -127,7 +164,21 @@
                        (set/intersection (:enum a) (:enum b)))})
             {:enum :any}
             (filter #(not (nil? (:enum %))) xs))
-    {:range [(reduce merge {} xs)]}))
+    {:range [(reduce (fn [a b]
+                       (cond
+                         (and (:min a) (:min b)
+                              (:max a) (:max b))
+                         (merge (combine-mins a b)
+                                (combine-maxs a b))
+
+                         (and (:min a) (:min b))
+                         (combine-mins a b)
+
+                         (and (:max a) (:max b))
+                         (combine-maxs a b)
+
+                         :default
+                         (merge a b))) {} xs)]}))
 
 (defn- tlfc-data* [expr]
   (cond
@@ -149,14 +200,14 @@
                                                    :min-inclusive true})
                                             (condp = (first expr)
                                               '< {:min (second expr)
-                                                  :min-inclusive false}
+                                                  :min-inclusive true}
 
                                               '<= {:min (second expr)
-                                                   :min-inclusive true}
+                                                   :min-inclusive false}
                                               '> {:max (second expr)
-                                                  :max-inclusive false}
+                                                  :max-inclusive true}
                                               '>= {:max (second expr)
-                                                   :max-inclusive true}))
+                                                   :max-inclusive false}))
 
     (and (seq? expr)
          (= 'and (first expr))) (->> (rest expr)
@@ -173,13 +224,41 @@
 
     :default expr))
 
-(defn tlfc-data [expr]
-  (let [result (tlfc-data* expr)]
-    (if (and (map? result)
-             (or (contains? result :min)
-                 (contains? result :max)))
-      {:range [result]}
-      result)))
+(defn- combine-max-only-ranges [ranges]
+  (let [max-only (filter #(nil? (:min %)) ranges)
+        others (remove #(nil? (:min %)) ranges)]
+    (if (> (count max-only) 1)
+      (conj others (reduce combine-maxs-or (first max-only) (rest max-only)))
+      ranges)))
+
+(defn- combine-min-only-ranges [ranges]
+  (let [min-only (filter #(nil? (:max %)) ranges)
+        others (remove #(nil? (:max %)) ranges)]
+    (if (> (count min-only) 1)
+      (conj others (reduce combine-mins-or (first min-only) (rest min-only)))
+      ranges)))
+
+(defn- combine-single-leg-ranges [x]
+  (if (:range x)
+    (assoc x :range (->> (:range x)
+                         combine-max-only-ranges
+                         combine-min-only-ranges
+                         vec))
+    x))
+
+(defn- tlfc-data [expr]
+  (->> (let [result (tlfc-data* expr)]
+         (if (and (map? result)
+                  (or (contains? result :min)
+                      (contains? result :max)))
+           {:range [result]}
+           result))
+       combine-single-leg-ranges))
+
+(defn tlfc-data-map [m]
+  (->> (update-vals m tlfc-data)
+       (remove #(= true (second %)))
+       (into {})))
 
 (defn- gather-tlfc-single*
   [expr]
