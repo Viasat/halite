@@ -66,19 +66,22 @@
           nil
           {}]
 
-    '(and true false) ['true
-                       nil
-                       {}]
+    '(and true ;; this expression references no fields, so no field constraints are extracted
+          false)
+    ['true
+     nil
+     {}]
 
-    '(= x 100) ['(= x 100)
-                '{x (= x 100)}
-                '{x {:enum #{100}}}]
+    '(= x 100) ;; field assignments come out as enum values
+    ['(= x 100)
+     '{x (= x 100)}
+     '{x {:enum #{100}}}]
 
     '(= x (+ 200 3)) [true
                       nil
                       {}]
 
-    '(and (= x 300)
+    '(and (= x 300) ;; multiple fields can be teased apart as long as the clauses are independent
           (= 2 y)) ['(and (= x 300)
                           (= 2 y))
                     '{x (= x 300)
@@ -86,38 +89,49 @@
                     '{x {:enum #{300}}
                       y {:enum #{2}}}]
 
-    '(and (and (= x 400)
-               (= 2 y))
-          z) ['(and (= x 400)
-                    (= 2 y))
-              '{x (= x 400)
-                y (= 2 y)}
-              '{x {:enum #{400}}
-                y {:enum #{2}}}]
+    '(and ;; multiple ands can be walked through
+      z ;; even if there are constraints that are not extraced
+      (and (= x 400)
+           (= 2 y))) ['(and (= x 400)
+                            (= 2 y))
+                      '{x (= x 400)
+                        y (= 2 y)}
+                      '{x {:enum #{400}}
+                        y {:enum #{2}}}]
 
-    '(< x 500) ['(< x 500)
-                '{x (< x 500)}
-                '{x {:ranges #{{:max 500
-                                :max-inclusive false}}}}]
+    '(< x 500) ;; partial ranges are extracted
+    ['(< x 500)
+     '{x (< x 500)}
+     '{x {:ranges #{{:max 500
+                     :max-inclusive false}}}}]
 
-    '(< 510 x) ['(< 510 x)
-                '{x (< 510 x)}
-                '{x {:ranges #{{:min 510
-                                :min-inclusive true}}}}]
+    '(< 510 x) ;; arguments can be in either order
+    ['(< 510 x)
+     '{x (< 510 x)}
+     '{x {:ranges #{{:min 510
+                     :min-inclusive true}}}}]
 
-    '(< x y) [true
-              nil
-              {}]
+    '(< x y) ;; expressions over multiple fields are not extracted
+    [true
+     nil
+     {}]
 
-    '(= x [1 600]) ['(= x [1 600])
-                    '{x (= x [1 600])}
-                    '{x {:enum #{[1 600]}}}]
+    '(= x [1 600]) ;; fields of any type are extracted into enums
+    ['(= x [1 600])
+     '{x (= x [1 600])}
+     '{x {:enum #{[1 600]}}}]
 
-    '(= x [700 z]) [true
-                    nil
-                    {}]
+    '(= x {:$type :my/Spec}) ;; instance values are pulled out into enums
+    ['(= x {:$type :my/Spec})
+     '{x (= x {:$type :my/Spec})}
+     '{x {:enum #{{:$type :my/Spec}}}}]
 
-    '(let [y 800]
+    '(= x [700 z]) ;; no "destructuring" of collections
+    [true
+     nil
+     {}]
+
+    '(let [y 800] ;; no navigating through locals to find literal values
        (< x y)) [true
                  nil
                  {}]
@@ -126,11 +140,15 @@
                             nil
                             {}]
 
-    '(contains? #{1000 2 3} x) ['(contains? #{1000 3 2} x)
-                                '{x (contains? #{1000 3 2} x)}
-                                '{x {:enum #{1000 3 2}}}]
+    '(contains? #{1000 2 3} x) ;; set containment translated into enums
+    ['(contains? #{1000 3 2} x)
+     '{x (contains? #{1000 3 2} x)}
+     '{x {:enum #{1000 3 2}}}]
 
-    '(and (contains? #{1100 2 3} x)
+    '(contains? #{1050 x 3} 1) ;; no set "deconstruction"
+    [true nil {}]
+
+    '(and (contains? #{1100 2 3} x) ;; many fields can be teased apart as long as the clauses are independent 'and' sub-expressions
           (= y 1)
           (and (<= z 20)
                (> z 10))) ['(and (contains? #{1100 3 2} x)
@@ -166,11 +184,13 @@
                               :min 10
                               :min-inclusive false}}}}]
 
-    '(or (= x 1300) (= x 2)) ['(or (= x 1300) (= x 2))
-                              '{x (or (= x 1300) (= x 2))}
-                              '{x {:enum #{2 1300}}}]
+    '(or (= x 1300)
+         (= x 2)) ['(or (= x 1300) (= x 2))
+                   '{x (or (= x 1300) (= x 2))}
+                   '{x {:enum #{2 1300}}}]
 
-    '(and (or (= x 1310) (= x 2))
+    '(and (or (= x 1310)
+              (= x 2))
           (= y 3)) ['(and (or (= x 1310) (= x 2)) (= y 3))
                     '{x (or (= x 1310) (= x 2))
                       y (= y 3)}
@@ -337,6 +357,8 @@
                                    :max-inclusive true}}}}]
 
     '(and (> x 1)
+          (let [x 5] ;; this x does not collide with the outer x, this clause is ignored since it is in 'and'
+            (> x 6))
           (or (and (> x 3100)
                    (<= x 3150))
               (and (> x 3140)
@@ -354,6 +376,7 @@
                                                    :max-inclusive true}}}}]
 
     '(and (> x 3225) ;; this falls out and is not included in the range, ranges are assumed to be more specific
+          (= b x) ;; this is ignored, but it is in an 'and', so the other expressions remain
           (or (and (> x 3200)
                    (<= x 3250))
               (and (> x 3240)
@@ -370,18 +393,19 @@
                                                    :max 3260
                                                    :max-inclusive true}}}}]
 
-    '(and (= x 3325)
-          (or (and (> x 3300)
-                   (<= x 3350))
-              (and (> x 3340)
-                   (<= x 3360)))) ['(and (= x 3325)
-                                         (or (and (> x 3300) (<= x 3350))
-                                             (and (> x 3340) (<= x 3360))))
-                                   '{x (and
-                                        (= x 3325)
-                                        (or (and (> x 3300) (<= x 3350))
-                                            (and (> x 3340) (<= x 3360))))}
-                                   '{x {:enum #{3325}}}]
+    '(and ;; extra 'and' at root makes no difference
+      (and (= x 3325)
+           (or (and (> x 3300)
+                    (<= x 3350))
+               (and (> x 3340)
+                    (<= x 3360))))) ['(and (= x 3325)
+                                           (or (and (> x 3300) (<= x 3350))
+                                               (and (> x 3340) (<= x 3360))))
+                                     '{x (and
+                                          (= x 3325)
+                                          (or (and (> x 3300) (<= x 3350))
+                                              (and (> x 3340) (<= x 3360))))}
+                                     '{x {:enum #{3325}}}]
     '(and (= x 0)
           (or (and (> x 3400)
                    (<= x 3450))
@@ -393,6 +417,27 @@
                                             (or (and (> x 3400) (<= x 3450))
                                                 (and (> x 3440) (<= x 3460))))}
                                    '{x {:enum #{0}}} ;; not smart enough to figure out this violates the ranges
-                                   ]))
+                                   ]
+
+    '(and (= x 3500)
+          (= x 3500)
+          (< x 16)
+          (>= x 10)) ['(and (= x 3500) (= x 3500) (< x 16) (>= x 10))
+                      '{x (and (= x 3500) (= x 3500) (< x 16) (>= x 10))}
+                      '{x {:enum #{3500}}}]
+
+    '(or ;; or at the root with mixed enum and ranges foils the logic to pull out direct field constraints
+      (or (= x 3600)
+          (= x 1))
+      (and (< x 16)
+           (>= x 10))) [true nil {}]
+
+    '(or (and (> x 3700))
+         q ;; an extra clause in an 'or' foils attempts to lift out mandatory values for x
+         (and (>= x 3750)
+              (<= x 3760))) [true nil {}]
+
+    '(= x y z 3800) ;; only binary '=' are extracted
+    [true nil {}]))
 
 ;; (run-tests)
