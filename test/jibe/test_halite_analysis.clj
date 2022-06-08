@@ -492,8 +492,8 @@
     [true nil {}]
 
     '(every? [x a]
-             (= x 3900)) ['#:halite-analysis{:coll (= a 3900)}
-                          '{a #:halite-analysis{:coll (= a 3900)}}
+             (= x 3900)) ['[(= a 3900)]
+                          '{a [(= a 3900)]}
                           '{a {:coll {:enum #{3900}}}}]
 
     '(every? [x a]
@@ -502,8 +502,8 @@
 
     '(every? [x a]
              (every? [y x]
-                     (= y 4100))) ['#:halite-analysis{:coll #:halite-analysis{:coll (= a 4100)}}
-                                   '{a #:halite-analysis{:coll #:halite-analysis{:coll (= a 4100)}}}
+                     (= y 4100))) ['[[(= a 4100)]]
+                                   '{a [[(= a 4100)]]}
                                    '{a {:coll {:coll {:enum #{4100}}}}}]
 
     '(every? [x a]
@@ -511,14 +511,14 @@
                      (or (and (> y 4200)
                               (<= y 4210))
                          (and (< y 5)
-                              (> y 0))))) ['#:halite-analysis{:coll #:halite-analysis{:coll (or (and (> a 4200)
-                                                                                                     (<= a 4210))
-                                                                                                (and (< a 5)
-                                                                                                     (> a 0)))}}
-                                           '{a #:halite-analysis{:coll #:halite-analysis{:coll (or (and (> a 4200)
-                                                                                                        (<= a 4210))
-                                                                                                   (and (< a 5)
-                                                                                                        (> a 0)))}}}
+                              (> y 0))))) ['[[(or (and (> a 4200)
+                                                       (<= a 4210))
+                                                  (and (< a 5)
+                                                       (> a 0)))]]
+                                           '{a [[(or (and (> a 4200)
+                                                          (<= a 4210))
+                                                     (and (< a 5)
+                                                          (> a 0)))]]}
                                            '{a {:coll {:coll {:ranges #{{:max 5
                                                                          :max-inclusive false
                                                                          :min 0
@@ -534,6 +534,25 @@
 
     '(contains? #{"4400" "a" "b"} x) ['(contains? #{"a" "b" "4400"} x)
                                       '{x (contains? #{"a" "b" "4400"} x)}
-                                      '{x {:enum #{"a" "b" "4400"}}}]))
+                                      '{x {:enum #{"a" "b" "4400"}}}]
+
+    '(= 4500 (count x)) ['(= 4500 (count x))
+                         '{x (= 4500 (count x))}
+                         '{x {:coll-count 4500}}]
+    '(= (count x) 4510) ['(= (count x) 4510)
+                         '{x (= (count x) 4510)}
+                         '{x {:coll-count 4510}}]
+
+    '(every? [x a]
+             (= 4600 (count x))) ['[(= 4600 (count a))]
+                                  '{a [(= 4600 (count a))]}
+                                  '{a {:coll {:coll-count 4600}}}]
+
+    #_'(and
+        (= (count x) 4700)
+        (every? [x a]
+                (and (= 5 (count x))
+                     (every? [y x]
+                             (= x "a")))))))
 
 ;; (run-tests)

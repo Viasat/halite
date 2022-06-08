@@ -244,9 +244,20 @@
 (defn- tlfc-data* [expr]
   (cond
     (and (seq? expr)
-         (= '= (first expr))) {:enum (->> (rest expr)
-                                          (remove symbol?)
-                                          set)}
+         (= '= (first expr))) (if (some (fn [x]
+                                          (and (seq? x)
+                                               (= 2 (count x))
+                                               (= 'count (first x))
+                                               (symbol? (second x)))) (rest expr))
+                                (cond
+                                  (and (seq? (second expr))
+                                       (integer? (third expr))) {:coll-count (third expr)}
+                                  (and (seq? (third expr))
+                                       (integer? (second expr))) {:coll-count (second expr)}
+                                  :default true)
+                                {:enum (->> (rest expr)
+                                            (remove symbol?)
+                                            set)})
 
     (and (seq? expr)
          (#{'< '<= '> '>=} (first expr))) (if (symbol? (second expr))
@@ -283,9 +294,7 @@
     (and (seq? expr)
          (= 'contains? (first expr))) {:enum (second expr)}
 
-    (and (map? expr)
-         (= 1 (count expr))
-         #{:halite-analysis/coll (keys expr)}) {:coll (tlfc-data* (get expr :halite-analysis/coll))}
+    (and (vector? expr)) {:coll (tlfc-data* (first expr))}
 
     :default expr))
 
@@ -421,9 +430,15 @@
 
     (and (seq? expr)
          (#{'= '< '<= '> '>=} (first expr))) (if (and (= 1 (count (gather-free-vars expr)))
-                                                      (->> (rest expr)
-                                                           (every? simple-value-or-symbol?))
-                                                      (some symbol? (rest expr)))
+                                                      (or (and (->> (rest expr)
+                                                                    (every? simple-value-or-symbol?))
+                                                               (some symbol? (rest expr)))
+                                                          (and (= '= (first expr))
+                                                               (some (fn [x]
+                                                                       (and (seq? x)
+                                                                            (= 2 (count x))
+                                                                            (= 'count (first x))
+                                                                            (symbol? (second x)))) (rest expr)))))
                                                expr
                                                true)
 
@@ -443,8 +458,8 @@
                                               (symbol? v)
                                               (= 1 (count (gather-free-vars e)))
                                               (= #{sym} (gather-free-vars e)))
-                                       {:halite-analysis/coll (replace-free-vars {sym v}
-                                                                                 (gather-tlfc* e))}
+                                       [(replace-free-vars {sym v}
+                                                           (gather-tlfc* e))]
                                        true))
 
     :default true))
