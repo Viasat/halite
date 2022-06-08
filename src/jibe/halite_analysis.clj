@@ -6,9 +6,60 @@
             [jibe.halite :as halite]
             [internal :as s]))
 
+(declare replace-free-vars)
+
+(defn- replace-seq-free-vars [var-map context expr]
+  (cond
+    (= 'let (first expr))
+    (let [[_ bindings body] expr
+          [context bindings'] (reduce
+                               (fn [[context bindings'] [sym e]]
+                                 [(conj context sym) (conj bindings' sym (replace-free-vars var-map context e))])
+                               [context []]
+                               (partition 2 bindings))]
+      (list 'let bindings'
+            (replace-free-vars var-map context body)))
+
+    (#{'every? 'any?} (first expr))
+    (let [[_ [sym coll] body] expr]
+      (list (first expr) [sym (replace-free-vars var-map context coll)]
+            (replace-free-vars var-map (conj context sym) body)))
+
+    :default
+    (apply list (first expr) (->> expr
+                                  rest
+                                  (map (partial replace-free-vars var-map context))))))
+
+(defn- replace-collection-free-vars [var-map context expr]
+  (into (empty expr)
+        (->> expr
+             (map (partial replace-free-vars var-map context)))))
+
+(defn replace-free-vars
+  "Recursively replace free-vars according to var-map"
+  ([var-map expr]
+   (replace-free-vars var-map #{} expr))
+  ([var-map context expr]
+   (cond
+     (boolean? expr) expr
+     (halite/integer-or-long? expr) expr
+     (string? expr) expr
+     (symbol? expr) (if (context expr)
+                      expr
+                      (var-map expr expr))
+     (keyword? expr) expr
+     (map? expr) (update-vals expr
+                              (partial replace-free-vars var-map context))
+     (seq? expr) (replace-seq-free-vars var-map context expr)
+     (set? expr) (replace-collection-free-vars var-map context expr)
+     (vector? expr) (replace-collection-free-vars var-map context expr)
+     :default (throw (ex-info "unexpected expr to replace-free-vars" {:expr expr})))))
+
+;;
+
 (declare gather-free-vars)
 
-(defn gather-seq-free-vars [context expr]
+(defn- gather-seq-free-vars [context expr]
   (cond
     (= 'let (first expr))
     (let [[_ bindings body] expr
@@ -19,7 +70,7 @@
                                (partition 2 bindings))]
       (into free-vars (gather-free-vars context body)))
 
-    (#{'every 'all} (first expr))
+    (#{'every? 'any?} (first expr))
     (let [[_ [sym coll] body] expr]
       (into (gather-free-vars context coll)
             (gather-free-vars (conj context sym) body)))
@@ -30,7 +81,7 @@
          (map (partial gather-free-vars context))
          (reduce into #{}))))
 
-(defn gather-collection-free-vars [context expr]
+(defn- gather-collection-free-vars [context expr]
   (->> expr
        (map (partial gather-free-vars context))
        (reduce into #{})))
@@ -232,6 +283,10 @@
     (and (seq? expr)
          (= 'contains? (first expr))) {:enum (second expr)}
 
+    (and (map? expr)
+         (= 1 (count expr))
+         #{:halite-analysis/coll (keys expr)}) {:coll (tlfc-data* (get expr :halite-analysis/coll))}
+
     :default expr))
 
 (defn- combine-max-only-ranges [ranges]
@@ -380,6 +435,18 @@
                                                  (symbol? e))
                                           expr
                                           true))
+
+    (and (seq? expr)
+         (= 'every? (first expr))) (let [[_ [sym v] e] expr]
+                                     (if (and (= 1 (count (gather-free-vars expr)))
+                                              (= 1 (count (gather-free-vars v)))
+                                              (symbol? v)
+                                              (= 1 (count (gather-free-vars e)))
+                                              (= #{sym} (gather-free-vars e)))
+                                       {:halite-analysis/coll (replace-free-vars {sym v}
+                                                                                 (gather-tlfc* e))}
+                                       true))
+
     :default true))
 
 (defn gather-tlfc

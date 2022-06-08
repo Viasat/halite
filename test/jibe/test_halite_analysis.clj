@@ -52,7 +52,58 @@
        (if (+ x y z b)
          (every? [x [a a d]]
                  (+ x e))))
-    '#{a b c d e}))
+    '#{a b c d e}
+
+    '(every? [x [1 2 3]]
+             (+ x 1))
+    #{}))
+
+(deftest test-replace-free-vars
+  (are [v var-map expected]
+       (= expected
+          (halite-analysis/replace-free-vars var-map v))
+    true
+    {}
+    true
+
+    'x
+    {}
+    'x
+
+    'x
+    '{x y}
+    'y
+
+    '(+ x 1)
+    {}
+    '(+ x 1)
+
+    '(+ x (let [x 1]
+            x))
+    '{x y}
+    '(+ y (let [x 1]
+            x))
+
+    '[x #{y}]
+    '{x a
+      y b}
+    '[a #{b}]
+
+    '(+ x (let [x 1
+                a y]
+            (+ x a b z)))
+    '{x p
+      y q
+      z r}
+    '(+ p (let [x 1
+                a q]
+            (+ x a b r)))
+
+    '(+ x a b z)
+    '{x p
+      y q
+      z r}
+    '(+ p a b r)))
 
 (deftest test-gather-tlfc
   (are [v x]
@@ -438,6 +489,51 @@
               (<= x 3760))) [true nil {}]
 
     '(= x y z 3800) ;; only binary '=' are extracted
-    [true nil {}]))
+    [true nil {}]
+
+    '(every? [x a]
+             (= x 3900)) ['#:halite-analysis{:coll (= a 3900)}
+                          '{a #:halite-analysis{:coll (= a 3900)}}
+                          '{a {:coll {:enum #{3900}}}}]
+
+    '(every? [x a]
+             (and (= x 4000)
+                  y)) [true nil {}]
+
+    '(every? [x a]
+             (every? [y x]
+                     (= y 4100))) ['#:halite-analysis{:coll #:halite-analysis{:coll (= a 4100)}}
+                                   '{a #:halite-analysis{:coll #:halite-analysis{:coll (= a 4100)}}}
+                                   '{a {:coll {:coll {:enum #{4100}}}}}]
+
+    '(every? [x a]
+             (every? [y x]
+                     (or (and (> y 4200)
+                              (<= y 4210))
+                         (and (< y 5)
+                              (> y 0))))) ['#:halite-analysis{:coll #:halite-analysis{:coll (or (and (> a 4200)
+                                                                                                     (<= a 4210))
+                                                                                                (and (< a 5)
+                                                                                                     (> a 0)))}}
+                                           '{a #:halite-analysis{:coll #:halite-analysis{:coll (or (and (> a 4200)
+                                                                                                        (<= a 4210))
+                                                                                                   (and (< a 5)
+                                                                                                        (> a 0)))}}}
+                                           '{a {:coll {:coll {:ranges #{{:max 5
+                                                                         :max-inclusive false
+                                                                         :min 0
+                                                                         :min-inclusive false}
+                                                                        {:min 4200
+                                                                         :min-inclusive false
+                                                                         :max 4210
+                                                                         :max-inclusive true}}}}}}]
+
+    '(= x "4300") ['(= x "4300")
+                   '{x (= x "4300")}
+                   '{x {:enum #{"4300"}}}]
+
+    '(contains? #{"4400" "a" "b"} x) ['(contains? #{"a" "b" "4400"} x)
+                                      '{x (contains? #{"a" "b" "4400"} x)}
+                                      '{x {:enum #{"a" "b" "4400"}}}]))
 
 ;; (run-tests)
