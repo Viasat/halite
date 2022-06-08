@@ -400,6 +400,8 @@
 
   (hf (byte 1) [:throws "Syntax error"])
 
+  (hf (int 2) :Integer 2 "2" "2")
+
   (h ##NaN [:syntax-check-throws "Syntax error"])
 
   (hf Double/NaN [:throws "Syntax error"])

@@ -28,8 +28,9 @@
 
 (def ^:private ^:dynamic *refinements*)
 
-(defn long? [value]
-  (instance? Long value))
+(defn integer-or-long? [value]
+  (or (instance? Long value)
+      (instance? Integer value)))
 
 (s/defn ^:private eval-predicate :- s/Bool
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- s/Str, bool-expr]
@@ -56,7 +57,7 @@
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
   [senv :- (s/protocol halite-envs/SpecEnv), v]
   (cond
-    (or (long? v) (boolean? v) (string? v)) true
+    (or (integer-or-long? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
                    spec-info (or (halite-envs/lookup-spec senv spec-id)
                                  (throw (ex-info (str "resource spec not found: " spec-id) {:spec-id spec-id})))]
@@ -192,7 +193,7 @@
   [ctx :- TypeContext, value]
   (cond
     (boolean? value) :Boolean
-    (long? value) :Integer
+    (integer-or-long? value) :Integer
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
@@ -285,7 +286,7 @@
   [expr]
   (cond
     (boolean? expr) true
-    (long? expr) true
+    (integer-or-long? expr) true
     (string? expr) true
     (symbol? expr) true
     (keyword? expr) true
@@ -333,7 +334,8 @@
                           dorun))
     (or (vector? expr)
         (set? expr)) (->> (map syntax-check expr) dorun)
-    :else (throw (ex-info "Syntax error" {:form expr}))))
+    :else (throw (ex-info "Syntax error" {:form expr
+                                          :form-class (class expr)}))))
 
 (s/defn ^:private matches-signature?
   [sig :- FnSignature, actual-types :- [halite-types/HaliteType]]
@@ -721,13 +723,14 @@
 (s/defn deprecated [f expr]
   (if *legacy-salt-type-checking*
     (f expr)
-    (throw (ex-info "Syntax error" {:form expr}))))
+    (throw (ex-info "Syntax error" {:form expr
+                                    :form-class (class expr)}))))
 
 (s/defn ^:private type-check* :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (cond
     (boolean? expr) :Boolean
-    (long? expr) :Integer
+    (integer-or-long? expr) :Integer
     (string? expr) :String
     (symbol? expr) (if (or (= 'no-value expr)
                            (and *legacy-salt-type-checking* (= 'no-value- expr)))
@@ -768,7 +771,8 @@
                   'reduce (type-check-reduce ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
-    :else (throw (ex-info "Syntax error" {:form expr}))))
+    :else (throw (ex-info "Syntax error" {:form expr
+                                          :form-class (class expr)}))))
 
 (s/defn type-check :- halite-types/HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
@@ -872,7 +876,7 @@
   (let [eval-in-env (partial eval-expr* ctx)]
     (cond
       (or (boolean? expr)
-          (long? expr)
+          (integer-or-long? expr)
           (string? expr)) expr
       (symbol? expr) (if (or (= 'no-value expr) (= 'no-value- expr))
                        :Unset

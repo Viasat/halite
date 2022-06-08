@@ -42,7 +42,7 @@
   ([context expr]
    (cond
      (boolean? expr) #{}
-     (halite/long? expr) #{}
+     (halite/integer-or-long? expr) #{}
      (string? expr) #{}
      (symbol? expr) (if (context expr)
                       #{}
@@ -61,7 +61,7 @@
 (defn- simple-value-or-symbol? [expr]
   (cond
     (boolean? expr) true
-    (halite/long? expr) true
+    (halite/integer-or-long? expr) true
     (string? expr) true
     (symbol? expr) true
     (map? expr) true
