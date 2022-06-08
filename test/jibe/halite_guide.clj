@@ -4,6 +4,7 @@
 (ns jibe.halite-guide
   (:require [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
+            [jibe.halite.halite-types :as halite-types]
             [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]
@@ -15,6 +16,18 @@
 (set! *warn-on-reflection* true)
 
 (deftype HInfo [s t j-expr h-result jh-result j-result])
+
+(defn- is-harness-error? [x]
+  (and (vector? x)
+       (= :throws (first x))))
+
+(defn- check-result-type [senv tenv t result]
+  (when-not (is-harness-error? result)
+    (if (= :Unset result)
+      (is (halite-types/maybe-type? t))
+      (let [result-type (halite/type-check senv tenv result)]
+        (when-not (is-harness-error? t)
+          (is (halite-types/subtype? result-type t)))))))
 
 (defn ^HInfo h* [expr]
   (let [senv (halite-envs/spec-env {})
@@ -33,6 +46,7 @@
         h-result (try (halite/eval-expr senv tenv env expr)
                       (catch RuntimeException e
                         [:throws (.getMessage e)]))
+        h-result-type (check-result-type senv tenv t h-result)
         jh-expr (when (string? j-expr)
                   (try
                     (jadeite/to-halite j-expr)
@@ -43,6 +57,7 @@
                     (halite/eval-expr senv tenv env jh-expr)
                     (catch RuntimeException e
                       [:throws (.getMessage e)]))
+        jh-result-type (check-result-type senv tenv t jh-result)
         j-result (try
                    (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
                    (catch RuntimeException e
@@ -56,8 +71,7 @@
        (if (nil? (.-s i#))
          (do
            (is (= ~expected-t (.-t i#)))
-           (if (and (vector? (.-t i#))
-                    (= :throws (first (.-t i#))))
+           (if (is-harness-error? (.-t i#))
              (list (quote ~'h)
                    (quote ~expr)
                    (.-t i#))
@@ -94,6 +108,7 @@
           h-result (try (halite/eval-expr senv tenv env expr)
                         (catch RuntimeException e
                           [:throws (.getMessage e)]))
+          h-result-type (check-result-type senv tenv t h-result)
           jh-expr (when (string? j-expr)
                     (try
                       (jadeite/to-halite j-expr)
@@ -104,13 +119,13 @@
                       (halite/eval-expr senv tenv env jh-expr)
                       (catch RuntimeException e
                         [:throws (.getMessage e)]))
+          jh-result-type (check-result-type senv tenv t jh-result)
           j-result (try
                      (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
                      (catch RuntimeException e
                        [:throws (.getMessage e)]))]
       (is (= expected-t t))
-      (when (not (and (vector? t)
-                      (= :throws (first t))))
+      (when-not (is-harness-error? t)
         (is (= result-expected h-result))
         (when (string? j-expr)
           (is (= result-expected jh-result)))
@@ -118,8 +133,7 @@
         (when (string? j-expr)
           (is (= j-result-expected j-result))))
 
-      (if (and (vector? t)
-               (= :throws (first t)))
+      (if (is-harness-error? t)
         (list 'hf
               expr
               t)
@@ -955,8 +969,7 @@
                                       workspaces)
                                    (let [i# (hc* ~workspace-id '~expr)]
                                      (is (= ~expected-t (.-t i#)))
-                                     (if (and (vector? (.-t i#))
-                                              (= :throws (first (.-t i#))))
+                                     (if (is-harness-error? (.-t i#))
                                        (vector (quote ~expr)
                                                (.-t i#))
                                        (do
