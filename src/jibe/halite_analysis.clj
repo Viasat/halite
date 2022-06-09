@@ -43,6 +43,7 @@
    (cond
      (boolean? expr) expr
      (halite/integer-or-long? expr) expr
+     (halite/big-decimal? expr) expr
      (string? expr) expr
      (symbol? expr) (if (context expr)
                       expr
@@ -94,6 +95,7 @@
    (cond
      (boolean? expr) #{}
      (halite/integer-or-long? expr) #{}
+     (halite/big-decimal? expr) #{}
      (string? expr) #{}
      (symbol? expr) (if (context expr)
                       #{}
@@ -110,15 +112,15 @@
 ;;;;
 
 (defn- simple-value-or-symbol? [expr]
-  (cond
-    (boolean? expr) true
-    (halite/integer-or-long? expr) true
-    (string? expr) true
-    (symbol? expr) true
-    (map? expr) true
-    (set? expr) true
-    (vector? expr) true
-    :default false))
+  (or
+   (boolean? expr)
+   (halite/integer-or-long? expr)
+   (halite/big-decimal? expr)
+   (string? expr)
+   (symbol? expr)
+   (map? expr)
+   (set? expr)
+   (vector? expr)))
 
 (defn- condense-boolean-logic [expr]
   (cond
