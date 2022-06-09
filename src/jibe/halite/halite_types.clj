@@ -363,9 +363,9 @@
                    (instance-join sp tp)
                    (some (fn [gtp-sub]
                            (when (contains? s-sub-ptns gtp-sub)
-                             ;;(prn :consider gtp-super)
+                              ;;(prn :consider gtp-super)
                              (if (symbol? (:arg gtp-sub))
-                               ;; If shared node has type param, compare original type params
+                                ;; If shared node has type param, compare original type params
                                (case (:kind gtp-sub)
                                  (:Vec :Set :Coll) (when-let [arg (if (and (:arg sp) (:arg tp))
                                                                     (join (:arg sp) (:arg tp))
@@ -375,9 +375,9 @@
                                                (assoc gtp-sub
                                                       :arg (some :arg [sp tp])
                                                       :r2 (some :r2 [sp tp])))
-                                 (:Decimal (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
-                                             (assoc gtp-sub :arg (some :arg [sp tp])))))
-                               ;; No param in meet, return unmodified
+                                 (:Decimal) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
+                                              (assoc gtp-sub :arg (some :arg [sp tp]))))
+                                ;; No param in meet, return unmodified
                                gtp-sub)))
                          (get @*ptn-subtypes gtp)))]
     (ptn-type join-ptn)))
@@ -475,3 +475,10 @@
   (if (= :Vec (:kind (type-ptn coll-type)))
     "vector"
     "string"))
+
+(s/defn decimal-type [scale]
+  [:Decimal scale])
+
+(s/defn decimal-type? [t]
+  (and (vector? t)
+       (= :Decimal (first t))))

@@ -9,8 +9,10 @@
             [clojure.string :as str]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
+            [jibe.lib.fixed :as fixed]
             [schema.core :as s])
-  (:import [clojure.lang ExceptionInfo]))
+  (:import [clojure.lang ExceptionInfo]
+           [java.math BigDecimal]))
 
 (set! *warn-on-reflection* true)
 
@@ -31,6 +33,9 @@
 (defn integer-or-long? [value]
   (or (instance? Long value)
       (instance? Integer value)))
+
+(defn big-decimal? [value]
+  (instance? BigDecimal value))
 
 (s/defn ^:private eval-predicate :- s/Bool
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- s/Str, bool-expr]
@@ -57,7 +62,7 @@
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
   [senv :- (s/protocol halite-envs/SpecEnv), v]
   (cond
-    (or (integer-or-long? v) (boolean? v) (string? v)) true
+    (or (integer-or-long? v) (big-decimal? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
                    spec-info (or (halite-envs/lookup-spec senv spec-id)
                                  (throw (ex-info (str "resource spec not found: " spec-id) {:spec-id spec-id})))]
@@ -194,6 +199,7 @@
   (cond
     (boolean? value) :Boolean
     (integer-or-long? value) :Integer
+    (big-decimal? value) (halite-types/decimal-type (.scale ^BigDecimal value))
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
@@ -236,15 +242,90 @@
 (defn- deprecated-builtin [builtin]
   (assoc builtin :deprecated? true))
 
+(defn- h+ [& args]
+  (if (big-decimal? (first args))
+    (reduce fixed/f+ (first args) (rest args))
+    (apply + args)))
+
+(defn- h- [& args]
+  (if (big-decimal? (first args))
+    (reduce fixed/f- (first args) (rest args))
+    (apply - args)))
+
+(defn- h* [& args]
+  (if (big-decimal? (first args))
+    (reduce fixed/f* (first args) (rest args))
+    (apply * args)))
+
+(defn- hquot [& args]
+  (if (big-decimal? (first args))
+    (reduce fixed/f÷ (first args) (rest args))
+    (apply quot args)))
+
+(defn- habs [& args]
+  (if (big-decimal? (first args))
+    (apply fixed/fabs args)
+    (apply abs args)))
+
+(defn- hmod [& args]
+  (if (big-decimal? (first args))
+    (apply fixed/fmod args)
+    (apply mod args)))
+
+(defn- h< [& args]
+  (if (big-decimal? (first args))
+    (apply fixed/f< args)
+    (apply < args)))
+
+(defn- h> [& args]
+  (if (big-decimal? (first args))
+    (apply fixed/f> args)
+    (apply > args)))
+
+(defn- h<= [& args]
+  (if (big-decimal? (first args))
+    (apply fixed/f<= args)
+    (apply <= args)))
+
+(defn- h>= [& args]
+  (if (big-decimal? (first args))
+    (apply fixed/f>= args)
+    (apply >= args)))
+
+(def ^:private decimal-sigs (mapcat (fn [s]
+                                      [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
+                                       (halite-types/decimal-type s)])
+                                    (range 1 20)))
+
+(def ^:private decimal-sigs-single (mapcat (fn [s]
+                                             [[(halite-types/decimal-type s) :Integer & :Integer]
+                                              (halite-types/decimal-type s)])
+                                           (range 1 20)))
+
+(def ^:private decimal-sigs-unary (mapcat (fn [s]
+                                            [[(halite-types/decimal-type s)]
+                                             (halite-types/decimal-type s)])
+                                          (range 1 20)))
+
+(def ^:private decimal-sigs-binary (mapcat (fn [s]
+                                             [[(halite-types/decimal-type s) :Integer]
+                                              (halite-types/decimal-type s)])
+                                           (range 1 20)))
+
+(def ^:private decimal-sigs-boolean (mapcat (fn [s]
+                                              [[(halite-types/decimal-type s) (halite-types/decimal-type s)]
+                                               :Boolean])
+                                            (range 1 20)))
+
 (def ^:private builtins
   (s/with-fn-validation
-    {'+ (mk-builtin + [:Integer :Integer & :Integer] :Integer)
-     '- (mk-builtin - [:Integer :Integer & :Integer] :Integer)
-     '* (mk-builtin * [:Integer :Integer & :Integer] :Integer)
-     '< (mk-builtin < [:Integer :Integer] :Boolean)
-     '<= (mk-builtin <= [:Integer :Integer] :Boolean)
-     '> (mk-builtin > [:Integer :Integer] :Boolean)
-     '>= (mk-builtin >= [:Integer :Integer] :Boolean)
+    {'+ (apply mk-builtin h+ (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
+     '- (apply mk-builtin h- (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
+     '* (apply mk-builtin h* (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
+     '< (apply mk-builtin h< (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '<= (apply mk-builtin h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '> (apply mk-builtin h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '>= (apply mk-builtin h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      'Cardinality (deprecated-builtin (mk-builtin count [(halite-types/coll-type :Object)] :Integer))
      'count (mk-builtin count [(halite-types/coll-type :Object)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
@@ -257,14 +338,14 @@
      'contains? (mk-builtin contains? [(halite-types/set-type :Object) :Object] :Boolean)
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
-     'div (mk-builtin quot [:Integer :Integer] :Integer)
-     'mod* (deprecated-builtin (mk-builtin mod [:Integer :Integer] :Integer))
-     'mod (mk-builtin mod [:Integer :Integer] :Integer)
+     'div (apply mk-builtin hquot (into [[:Integer :Integer] :Integer] decimal-sigs-single))
+     'mod* (deprecated-builtin (apply mk-builtin hmod (into [[:Integer :Integer] :Integer] decimal-sigs-binary)))
+     'mod (apply mk-builtin hmod (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
                            (throw (ex-info "Invalid exponent" {:p p})))
                          (expt x p)) [:Integer :Integer] :Integer)
-     'abs (mk-builtin abs [:Integer] :Integer)
+     'abs (apply mk-builtin habs (into [[:Integer] :Integer] decimal-sigs-unary))
      'str (mk-builtin str [& :String] :String)
      'subset? (mk-builtin set/subset? [(halite-types/set-type :Object) (halite-types/set-type :Object)] :Boolean)
      'sort (mk-builtin (comp vec sort)
@@ -287,6 +368,7 @@
   (cond
     (boolean? expr) true
     (integer-or-long? expr) true
+    (big-decimal? expr) true
     (string? expr) true
     (symbol? expr) true
     (keyword? expr) true
@@ -297,6 +379,7 @@
                           (map syntax-check)
                           dorun))
     (seq? expr) (and (or (#{'=
+                            'set-scale
                             'any?
                             'concat
                             'concrete?
@@ -445,6 +528,28 @@
          j))
      arg-types))
   :Boolean)
+
+(s/defn ^:private type-check-set-scale :- halite-types/HaliteType
+  [ctx :- TypeContext, expr :- s/Any]
+  (arg-count-exactly 2 expr)
+  (let [[_ _ scale] expr
+        arg-types (mapv (partial type-check* ctx) (rest expr))]
+    (when-not (halite-types/decimal-type? (first arg-types))
+      (throw (ex-info "First argument to 'set-scale' must be a fixed point decimal"
+                      {:expr expr})))
+    (when-not (= :Integer (second arg-types))
+      (throw (ex-info "Second argument to 'set-scale' must be an integer"
+                      {:expr expr})))
+    (when-not (integer-or-long? scale)
+      (throw (ex-info "Second argument to 'set-scale' must be an integer literal"
+                      {:expr expr})))
+    (when-not (and (>= scale 0)
+                   (< scale 20))
+      (throw (ex-info "Second argument to 'set-scale' must be an integer between 0 and 19"
+                      {:expr expr})))
+    (if (zero? scale)
+      :Integer
+      (halite-types/decimal-type scale))))
 
 (s/defn ^:private type-check-if :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -731,6 +836,7 @@
   (cond
     (boolean? expr) :Boolean
     (integer-or-long? expr) :Integer
+    (big-decimal? expr) (halite-types/decimal-type (.scale ^BigDecimal expr))
     (string? expr) :String
     (symbol? expr) (if (or (= 'no-value expr)
                            (and *legacy-salt-type-checking* (= 'no-value- expr)))
@@ -743,6 +849,7 @@
                   'get-in (type-check-get-in ctx expr)
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
+                  'set-scale (type-check-set-scale ctx expr)
                   'if (type-check-if ctx expr)
                   'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
@@ -878,6 +985,8 @@
       (or (boolean? expr)
           (integer-or-long? expr)
           (string? expr)) expr
+      (big-decimal? expr) (do (fixed/assert-fixed? expr)
+                              expr)
       (symbol? expr) (if (or (= 'no-value expr) (= 'no-value- expr))
                        :Unset
                        (get (halite-envs/bindings (:env ctx)) expr))
@@ -890,8 +999,16 @@
                     'get (apply eval-get ctx (rest expr))
                     'get* (apply eval-get* ctx (rest expr)) ;; deprecated
                     'get-in (apply eval-get-in ctx (rest expr))
-                    '= (apply = (mapv eval-in-env (rest expr)))
-                    'not= (apply not= (mapv eval-in-env (rest expr)))
+                    '= (let [args (mapv eval-in-env (rest expr))]
+                         (if (big-decimal? (first args))
+                           (reduce fixed/f= (first args) (rest args))
+                           (apply = args)))
+                    'not= (let [args (mapv eval-in-env (rest expr))]
+                            (if (big-decimal? (first args))
+                              (not (reduce fixed/f= (first args) (rest args)))
+                              (apply not= args)))
+                    'set-scale (fixed/set-scale (eval-in-env (first (rest expr)))
+                                                (second (rest expr)))
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
                     'when (let [[pred body] (rest expr)]

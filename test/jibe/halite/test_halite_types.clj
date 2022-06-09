@@ -120,6 +120,7 @@
     :String :String :String
     [:Maybe :String] :String [:Maybe :String]
     :Integer :String :Object
+    [:Decimal 3] [:Decimal 3] [:Decimal 3]
     [:Decimal 3] :String :Object
     [:Decimal 3] [:Decimal 2] :Object
     [:Decimal 3] [:Maybe [:Decimal 2]] :Any
@@ -162,10 +163,11 @@
     [:Coll :Integer] [:Maybe [:Set :Integer]] [:Set :Integer]
     [:Coll :Object] [:Maybe [:Set [:Instance :*]]] [:Set [:Instance :*]]
     :Integer [:Maybe :String] :Nothing
+    [:Decimal 2] [:Decimal 2] [:Decimal 2]
     [:Decimal 2] [:Maybe :String] :Nothing
     [:Decimal 2] [:Decimal 1] :Nothing
     [:Decimal 2] [:Maybe [:Decimal 1]] :Nothing
-    [:Decimal 2] [:Maybe [:Decimal 2]] :Nothing
+    [:Decimal 2] [:Maybe [:Decimal 2]] [:Decimal 2]
     [:Maybe [:Decimal 1]] [:Maybe [:Decimal 2]] :Unset
     [:Instance :* #{:ws/A :ws/B}] [:Instance :* #{:ws/B :ws/C}] [:Instance :* #{:ws/A :ws/B :ws/C}]))
 

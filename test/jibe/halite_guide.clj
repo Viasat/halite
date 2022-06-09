@@ -408,8 +408,6 @@
 
   (h 1.1 [:syntax-check-throws "Syntax error"])
 
-  (h 1.1M [:syntax-check-throws "Syntax error"])
-
   (h 1/2 [:syntax-check-throws "Syntax error"])
 
   (hf (byte 1) [:throws "Syntax error"])
@@ -2340,5 +2338,55 @@
   (h (let [:x 1] x) [:throws "even-numbered forms in let binding vector must be symbols"])
   (h (let [[a b] [1 2]] a) [:throws "even-numbered forms in let binding vector must be symbols"])
   (h (let [x 1 y (inc x) z (inc y)] x z) [:throws "Wrong number of arguments to 'let': expected 2, but got 3"]))
+
+(comment ;; need to get jadeite fixed decimals implements
+  (deftest test-fixed-decimal
+    (h 1.1M [:Decimal 1] 1.1M "1.1" [:throws "Syntax error"])
+    (h (+ 1.1M 0.1M) [:Decimal 1] 1.2M "(1.1 + 0.1)" [:throws "Syntax error"])
+    (h (+ 1.1M 0.1M 0.2M) [:Decimal 1] 1.4M "(1.1 + 0.1 + 0.2)" [:throws "Syntax error"])
+    (h (- 1.1M 0.1M) [:Decimal 1] 1.0M "(1.1 - 0.1)" [:throws "Syntax error"])
+    (h (- 1.1M 0.1M 0.2M) [:Decimal 1] 0.8M "(1.1 - 0.1 - 0.2)" [:throws "Syntax error"])
+    (h (* 1.1M 2) [:Decimal 1] 2.2M "(1.1 * 2)" [:throws "Syntax error"])
+    (h (* 1.1M 2 3) [:Decimal 1] 6.6M "(1.1 * 2 * 3)" [:throws "Syntax error"])
+    (h (div 1.1M 2) [:Decimal 1] 0.5M "(1.1 / 2)" [:throws "Syntax error"])
+    (h (div 1.1M 2 2) [:Decimal 1] 0.2M "(1.1 / 2 / 2)" [:throws "Syntax error"])
+
+    (h (mod 1.1M 2) [:Decimal 1] 1.1M "(1.1 % 2)" [:throws "Syntax error"])
+    (h (mod 3.1M 2) [:Decimal 1] 1.1M "(3.1 % 2)" [:throws "Syntax error"])
+
+    (h (abs 1.1M) [:Decimal 1] 1.1M "abs(1.1)" [:throws "Syntax error"])
+    (h (abs -1.1M) [:Decimal 1] 1.1M "abs(-1.1)" [:throws "Syntax error"])
+
+    (h (+ 1.1M 1) [:throws "no matching signature for '+'"])
+    (h (+ 1.1M 0.01M) [:throws "no matching signature for '+'"])
+    (h (- 1.1M 1) [:throws "no matching signature for '-'"])
+    (h (- 1.1M 2.01M) [:throws "no matching signature for '-'"])
+
+    (h (* 1.1M 0.1M) [:throws "no matching signature for '*'"])
+    (h (div 1.1M 0.1M) [:throws "no matching signature for 'div'"])
+
+    (h (= 1.0M 1.0M) :Boolean true "(1.0 == 1.0)" [:throws "Syntax error"])
+    (h (= 1.0M 1.0) [:syntax-check-throws "Syntax error"])
+    (h (= 1.0M 1.00M) [:throws "Result of '=' would always be false"])
+    (h (= 1.0M 1) [:throws "Result of '=' would always be false"])
+
+    (h (not= 1.0M 1.0M) :Boolean false "(1.0 != 1.0)" [:throws "Syntax error"])
+    (h (= 1.0M 1.0M 1.0M) :Boolean [:throws "unknown numeric type: [true java.lang.Boolean]"] "equalTo(1.0, 1.0, 1.0)" [:throws "Syntax error"])
+    (h (not= 1.0M 1.0M 1.0M) :Boolean [:throws "unknown numeric type: [true java.lang.Boolean]"] "notEqualTo(1.0, 1.0, 1.0)" [:throws "Syntax error"])
+
+    (h (< 1.0M 1.1M) :Boolean true "(1.0 < 1.1)" [:throws "Syntax error"])
+    (h (<= 1.0M 1.1M) :Boolean true "(1.0 <= 1.1)" [:throws "Syntax error"])
+    (h (<= 1.1M 1.1M) :Boolean true "(1.1 <= 1.1)" [:throws "Syntax error"])
+    (h (> 1.0M 1.1M) :Boolean false "(1.0 > 1.1)" [:throws "Syntax error"])
+    (h (>= 1.0M 1.1M) :Boolean false "(1.0 >= 1.1)" [:throws "Syntax error"])
+    (h (>= 1.1M 1.1M) :Boolean true "(1.1 >= 1.1)" [:throws "Syntax error"])
+
+    (h (set-scale 1.23M 0) :Integer 1 "1.23.set-scale(0)" [:throws "Syntax error"])
+    (h (set-scale 1.23M 1) [:Decimal 1] 1.2M "1.23.set-scale(1)" [:throws "Syntax error"])
+    (h (set-scale 1.23M 2) [:Decimal 2] 1.23M "1.23.set-scale(2)" [:throws "Syntax error"])
+    (h (set-scale 1.23M 3) [:Decimal 3] 1.230M "1.23.set-scale(3)" [:throws "Syntax error"])
+    (h (set-scale 1.23M -1) [:throws "Second argument to 'set-scale' must be an integer between 0 and 19"])
+    (h (set-scale 1.23M 1.0) [:syntax-check-throws "Syntax error"])
+    (h (set-scale 1.23M 1.0M) [:throws "Second argument to 'set-scale' must be an integer"])))
 
 ;; (time (run-tests))
