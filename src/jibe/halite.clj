@@ -194,12 +194,17 @@
                                             1 (first elem-types)
                                             (reduce halite-types/meet elem-types)))))
 
+(def max-decimal-scale-exclusive 20)
+
 (s/defn ^:private type-of* :- halite-types/HaliteType
   [ctx :- TypeContext, value]
   (cond
     (boolean? value) :Boolean
     (integer-or-long? value) :Integer
-    (big-decimal? value) (halite-types/decimal-type (.scale ^BigDecimal value))
+    (big-decimal? value) (let [scale (.scale ^BigDecimal value)]
+                           (when-not (< 0 scale max-decimal-scale-exclusive)
+                             (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
+                           (halite-types/decimal-type))
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
@@ -295,27 +300,27 @@
 (def ^:private decimal-sigs (mapcat (fn [s]
                                       [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
                                        (halite-types/decimal-type s)])
-                                    (range 1 20)))
+                                    (range 1 max-decimal-scale-exclusive)))
 
 (def ^:private decimal-sigs-single (mapcat (fn [s]
                                              [[(halite-types/decimal-type s) :Integer & :Integer]
                                               (halite-types/decimal-type s)])
-                                           (range 1 20)))
+                                           (range 1 max-decimal-scale-exclusive)))
 
 (def ^:private decimal-sigs-unary (mapcat (fn [s]
                                             [[(halite-types/decimal-type s)]
                                              (halite-types/decimal-type s)])
-                                          (range 1 20)))
+                                          (range 1 max-decimal-scale-exclusive)))
 
 (def ^:private decimal-sigs-binary (mapcat (fn [s]
                                              [[(halite-types/decimal-type s) :Integer]
                                               (halite-types/decimal-type s)])
-                                           (range 1 20)))
+                                           (range 1 max-decimal-scale-exclusive)))
 
 (def ^:private decimal-sigs-boolean (mapcat (fn [s]
                                               [[(halite-types/decimal-type s) (halite-types/decimal-type s)]
                                                :Boolean])
-                                            (range 1 20)))
+                                            (range 1 max-decimal-scale-exclusive)))
 
 (def ^:private builtins
   (s/with-fn-validation
@@ -379,7 +384,7 @@
                           (map syntax-check)
                           dorun))
     (seq? expr) (and (or (#{'=
-                            'set-scale
+                            'scale
                             'any?
                             'concat
                             'concrete?
@@ -535,17 +540,17 @@
   (let [[_ _ scale] expr
         arg-types (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/decimal-type? (first arg-types))
-      (throw (ex-info "First argument to 'set-scale' must be a fixed point decimal"
+      (throw (ex-info "First argument to 'scale' must be a fixed point decimal"
                       {:expr expr})))
     (when-not (= :Integer (second arg-types))
-      (throw (ex-info "Second argument to 'set-scale' must be an integer"
+      (throw (ex-info "Second argument to 'scale' must be an integer"
                       {:expr expr})))
     (when-not (integer-or-long? scale)
-      (throw (ex-info "Second argument to 'set-scale' must be an integer literal"
+      (throw (ex-info "Second argument to 'scale' must be an integer literal"
                       {:expr expr})))
     (when-not (and (>= scale 0)
-                   (< scale 20))
-      (throw (ex-info "Second argument to 'set-scale' must be an integer between 0 and 19"
+                   (< scale max-decimal-scale-exclusive))
+      (throw (ex-info (str "Second argument to 'scale' must be an integer between 0 and " (dec max-decimal-scale-exclusive))
                       {:expr expr})))
     (if (zero? scale)
       :Integer
@@ -836,7 +841,11 @@
   (cond
     (boolean? expr) :Boolean
     (integer-or-long? expr) :Integer
-    (big-decimal? expr) (halite-types/decimal-type (.scale ^BigDecimal expr))
+    (big-decimal? expr) (let [scale (.scale ^BigDecimal expr)]
+                          (when-not (< 0 scale max-decimal-scale-exclusive)
+                            (throw (ex-info (str "Invalid fixed decimal scale: " [expr scale]) {:expr expr
+                                                                                                :scale scale})))
+                          (halite-types/decimal-type scale))
     (string? expr) :String
     (symbol? expr) (if (or (= 'no-value expr)
                            (and *legacy-salt-type-checking* (= 'no-value- expr)))
@@ -849,7 +858,7 @@
                   'get-in (type-check-get-in ctx expr)
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
-                  'set-scale (type-check-set-scale ctx expr)
+                  'scale (type-check-set-scale ctx expr)
                   'if (type-check-if ctx expr)
                   'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
@@ -985,7 +994,7 @@
       (or (boolean? expr)
           (integer-or-long? expr)
           (string? expr)) expr
-      (big-decimal? expr) (do (fixed/assert-fixed? expr)
+      (big-decimal? expr) (do (fixed/extract-long expr) ;; check bounds
                               expr)
       (symbol? expr) (if (or (= 'no-value expr) (= 'no-value- expr))
                        :Unset
@@ -1007,8 +1016,8 @@
                             (if (big-decimal? (first args))
                               (not (reduce fixed/f= (first args) (rest args)))
                               (apply not= args)))
-                    'set-scale (fixed/set-scale (eval-in-env (first (rest expr)))
-                                                (second (rest expr)))
+                    'scale (fixed/set-scale (eval-in-env (first (rest expr)))
+                                            (second (rest expr)))
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
                     'when (let [[pred body] (rest expr)]

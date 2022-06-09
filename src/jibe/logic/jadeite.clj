@@ -7,14 +7,15 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [instaparse.core :as insta]
-            [jibe.logic.expression :as expression]))
+            [jibe.logic.expression :as expression])
+  (:import [java.math BigDecimal]))
 
 (set! *warn-on-reflection* true)
 
 (def global-fns
   "Set of halite operator names that are written as function calls in jadeite,
   otherwise method call syntax is used."
-  '#{abs error expt range str})
+  '#{abs error expt range str scale})
 
 ;;;;
 ;; From Jadeite to Halite
@@ -97,6 +98,7 @@
                                 (list 'let (mapv toh (drop-last args)) (toh (last args)))
                                 (toh (last args)))
      [[:int & strs]]          (parse-long (apply str strs))
+     [[:dec & strs]]          (BigDecimal. ^String (apply str strs))
      [[:symbol "true"]]       true
      [[:symbol "false"]]      false
      [[:symbol s]]            (unwrap-symbol s)
