@@ -225,21 +225,28 @@
             (filter #(not (nil? (:enum %))) xs))
     (if-let [r (some #(:ranges %) xs)]
       {:ranges r}
-      {:ranges #{(reduce (fn [a b]
-                           (cond
-                             (and (:min a) (:min b)
-                                  (:max a) (:max b))
-                             (merge (select-keys (combine-mins a b) [:min :min-inclusive])
-                                    (select-keys (combine-maxs a b) [:max :max-inclusive]))
+      (if (some #(and (map? %)
+                      (or (:coll-count %)
+                          (:coll %))) xs)
+        (when (every? #(and (map? %)
+                            (or (:coll-count %)
+                                (:coll %))) xs)
+          (reduce merge {} xs))
+        {:ranges #{(reduce (fn [a b]
+                             (cond
+                               (and (:min a) (:min b)
+                                    (:max a) (:max b))
+                               (merge (select-keys (combine-mins a b) [:min :min-inclusive])
+                                      (select-keys (combine-maxs a b) [:max :max-inclusive]))
 
-                             (and (:min a) (:min b))
-                             (combine-mins a b)
+                               (and (:min a) (:min b))
+                               (combine-mins a b)
 
-                             (and (:max a) (:max b))
-                             (combine-maxs a b)
+                               (and (:max a) (:max b))
+                               (combine-maxs a b)
 
-                             :default
-                             (merge a b))) {} xs)}})))
+                               :default
+                               (merge a b))) {} xs)}}))))
 
 (defn- tlfc-data* [expr]
   (cond

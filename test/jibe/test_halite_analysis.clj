@@ -548,11 +548,19 @@
                                   '{a [(= 4600 (count a))]}
                                   '{a {:coll {:coll-count 4600}}}]
 
-    #_'(and
-        (= (count x) 4700)
-        (every? [x a]
-                (and (= 5 (count x))
-                     (every? [y x]
-                             (= x "a")))))))
+    '(and (= (count a) 4700)
+          (every? [x a]
+                  (and (= 5 (count x))
+                       (every? [y x]
+                               (or (= y "a")
+                                   (= y "b")))))) ['(and (= (count a) 4700)
+                                                         [(and (= 5 (count a))
+                                                               [(or (= a "a") (= a "b"))])])
+                                                   '{a (and (= (count a) 4700)
+                                                            [(and (= 5 (count a))
+                                                                  [(or (= a "a") (= a "b"))])])}
+                                                   '{a {:coll-count 4700
+                                                        :coll {:coll-count 5
+                                                               :coll {:enum #{"a" "b"}}}}}]))
 
 ;; (run-tests)
