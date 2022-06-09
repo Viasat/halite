@@ -227,10 +227,10 @@
       {:ranges r}
       (if (some #(and (map? %)
                       (or (:coll-count %)
-                          (:coll %))) xs)
+                          (:coll-elements %))) xs)
         (when (every? #(and (map? %)
                             (or (:coll-count %)
-                                (:coll %))) xs)
+                                (:coll-elements %))) xs)
           (reduce merge {} xs))
         {:ranges #{(reduce (fn [a b]
                              (cond
@@ -301,7 +301,7 @@
     (and (seq? expr)
          (= 'contains? (first expr))) {:enum (second expr)}
 
-    (and (vector? expr)) {:coll (tlfc-data* (first expr))}
+    (and (vector? expr)) {:coll-elements (tlfc-data* (first expr))}
 
     :default expr))
 

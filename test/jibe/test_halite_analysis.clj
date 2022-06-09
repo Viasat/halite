@@ -494,7 +494,7 @@
     '(every? [x a]
              (= x 3900)) ['[(= a 3900)]
                           '{a [(= a 3900)]}
-                          '{a {:coll {:enum #{3900}}}}]
+                          '{a {:coll-elements {:enum #{3900}}}}]
 
     '(every? [x a]
              (and (= x 4000)
@@ -504,7 +504,7 @@
              (every? [y x]
                      (= y 4100))) ['[[(= a 4100)]]
                                    '{a [[(= a 4100)]]}
-                                   '{a {:coll {:coll {:enum #{4100}}}}}]
+                                   '{a {:coll-elements {:coll-elements {:enum #{4100}}}}}]
 
     '(every? [x a]
              (every? [y x]
@@ -519,14 +519,14 @@
                                                           (<= a 4210))
                                                      (and (< a 5)
                                                           (> a 0)))]]}
-                                           '{a {:coll {:coll {:ranges #{{:max 5
-                                                                         :max-inclusive false
-                                                                         :min 0
-                                                                         :min-inclusive false}
-                                                                        {:min 4200
-                                                                         :min-inclusive false
-                                                                         :max 4210
-                                                                         :max-inclusive true}}}}}}]
+                                           '{a {:coll-elements {:coll-elements {:ranges #{{:max 5
+                                                                                           :max-inclusive false
+                                                                                           :min 0
+                                                                                           :min-inclusive false}
+                                                                                          {:min 4200
+                                                                                           :min-inclusive false
+                                                                                           :max 4210
+                                                                                           :max-inclusive true}}}}}}]
 
     '(= x "4300") ['(= x "4300")
                    '{x (= x "4300")}
@@ -546,7 +546,7 @@
     '(every? [x a]
              (= 4600 (count x))) ['[(= 4600 (count a))]
                                   '{a [(= 4600 (count a))]}
-                                  '{a {:coll {:coll-count 4600}}}]
+                                  '{a {:coll-elements {:coll-count 4600}}}]
 
     '(and (= (count a) 4700)
           (every? [x a]
@@ -560,7 +560,7 @@
                                                             [(and (= 5 (count a))
                                                                   [(or (= a "a") (= a "b"))])])}
                                                    '{a {:coll-count 4700
-                                                        :coll {:coll-count 5
-                                                               :coll {:enum #{"a" "b"}}}}}]))
+                                                        :coll-elements {:coll-count 5
+                                                                        :coll-elements {:enum #{"a" "b"}}}}}]))
 
 ;; (run-tests)
