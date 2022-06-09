@@ -4,6 +4,7 @@
 (ns jibe.halite.test-halite-types
   (:require [jibe.halite.halite-types :as halite-types]
             [clojure.test :as t :refer [deftest is are]]
+            [schema.core :as s]
             [schema.test :refer [validate-schemas]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
@@ -15,12 +16,14 @@
   (let [T 'T]
     (are [t tp] (= tp (into {} (halite-types/type-ptn t)))
       :Integer                   {:maybe? false, :kind :Integer,  :arg nil, :r2 nil}
+      [:Decimal 1]               {:maybe? false, :kind :Decimal,  :arg 1, :r2 nil}
       [:Set :Nothing]            {:maybe? false, :kind :Set,      :arg :Nothing, :r2 nil}
       [:Instance :ws/A]          {:maybe? false, :kind :Instance  :arg :ws/A, :r2 nil}
       [:Maybe [:Instance :ws/A]] {:maybe? true,  :kind :Instance  :arg :ws/A, :r2 nil}
       [:Vec [:Set :Integer]]     {:maybe? false, :kind :Vec,      :arg [:Set :Integer], :r2 nil}
       [:Vec T]                   {:maybe? false, :kind :Vec,      :arg T, :r2 nil}
       [:Maybe [:Set :Integer]]   {:maybe? true,  :kind :Set,      :arg :Integer, :r2 nil}
+      [:Maybe [:Decimal 3]]      {:maybe? true,  :kind :Decimal,  :arg 3, :r2 nil}
       [:Maybe [:Set T]]          {:maybe? true,  :kind :Set,      :arg T, :r2 nil}
       :Unset                     {:maybe? false, :kind :Unset,    :arg nil, :r2 nil}
       :Nothing                   {:maybe? false, :kind :Nothing,  :arg nil, :r2 nil})))
@@ -29,6 +32,8 @@
   (let [T 'T]
     (are [t] (= t (halite-types/ptn-type (halite-types/type-ptn t)))
       :Integer
+      [:Decimal 2]
+      [:Maybe [:Decimal 2]]
       [:Set :Nothing]
       [:Instance :ws/A]
       [:Instance :*]
@@ -42,6 +47,20 @@
       :Unset
       [:Coll T]
       [:Maybe [:Coll T]])))
+
+(deftest test-schema
+  (are [t]
+       (nil? (s/check halite-types/HaliteType t))
+    :Integer
+    [:Decimal 1]
+    [:Maybe [:Set :Nothing]]
+    [:Coll [:Decimal 3]]))
+
+(deftest test-not-schema
+  (are [t]
+       (s/check halite-types/HaliteType t)
+    [:Decimal]
+    [:Decimal "1"]))
 
 #_(deftest type-nodename
     (are [t tn] (= tn (halite-types/type-nodename t))
@@ -59,7 +78,9 @@
     [:Coll :Integer] [:Maybe [:Coll :Integer]]
     [:Instance :*] [:Maybe [:Instance :*]]
     :Integer :Any
+    [:Decimal 1] :Any
     :Integer [:Maybe :Integer]
+    [:Decimal 1] [:Maybe [:Decimal 1]]
     :Nothing [:Vec [:Coll :String]]
     [:Instance :ws/A] [:Instance :*]
     [:Instance :ws/A] [:Maybe [:Instance :*]]
@@ -67,6 +88,7 @@
     :Unset [:Maybe [:Vec [:Coll :String]]]
     [:Maybe [:Instance :ws/A]] [:Maybe [:Instance :*]]
     [:Maybe :Integer] :Any
+    [:Maybe [:Decimal 1]] :Any
     [:Set :Integer] [:Maybe [:Set :Integer]]
     [:Set :Nothing] [:Coll :Object]
     [:Set :Nothing] [:Maybe [:Coll :Object]]
@@ -77,14 +99,18 @@
     [:Set [:Instance :ws/A]] [:Maybe [:Set [:Instance :*]]]
     [:Vec :String] [:Maybe [:Coll :Object]]
     [:Vec [:Set [:Vec :Integer]]] [:Vec [:Set [:Coll :Object]]]
+    [:Vec [:Set [:Vec [:Decimal 4]]]] [:Vec [:Set [:Coll :Object]]]
     [:Instance :ws/C #{:ws/A :ws/B}] [:Instance :* #{:ws/A}]))
 
 (deftest not-subtypes
   (are [s t] (not (halite-types/subtype? s t))
     :Unset :Integer
+    :Unset [:Decimal 2]
+    [:Decimal 1] [:Decimal 2]
     [:Instance :*] [:Instance :ws/A]
     [:Set :Integer] [:Maybe [:Set :String]]
     [:Set :Integer] [:Set :String]
+    [:Set :Integer] [:Set [:Decimal 1]]
     [:Instance :ws/A] [:Maybe [:Instance :ws/B]]
     [:Instance :ws/A] [:Instance :ws/B]
     [:Instance :* #{:ws/A :ws/B}] [:Instance :ws/D #{:ws/C}]))
@@ -94,18 +120,24 @@
     :String :String :String
     [:Maybe :String] :String [:Maybe :String]
     :Integer :String :Object
+    [:Decimal 3] :String :Object
+    [:Decimal 3] [:Decimal 2] :Object
+    [:Decimal 3] [:Maybe [:Decimal 2]] :Any
+    [:Decimal 2] [:Maybe [:Decimal 2]] [:Maybe [:Decimal 2]]
     :Integer [:Maybe :Integer] [:Maybe :Integer]
     [:Set :String] [:Vec :String] [:Coll :String]
     [:Set :Nothing] [:Vec :Nothing] [:Coll :Nothing]
     :Unset [:Vec :Nothing] [:Maybe [:Vec :Nothing]]
     [:Vec :Integer] [:Maybe [:Vec :Integer]] [:Maybe [:Vec :Integer]]
     [:Vec :Integer] [:Maybe [:Set :Integer]] [:Maybe [:Coll :Integer]]
+    [:Vec [:Decimal 9]] [:Maybe [:Vec [:Decimal 9]]] [:Maybe [:Vec [:Decimal 9]]]
     [:Set :Nothing] :Unset [:Maybe [:Set :Nothing]]
     [:Set :Nothing] [:Vec :Integer] [:Coll :Integer]
     [:Vec :String] [:Vec :Integer] [:Vec :Object]
     [:Vec [:Set :Integer]] [:Vec [:Set :Nothing]] [:Vec [:Set :Integer]]
     [:Vec [:Set :Integer]] [:Vec [:Set :String]]  [:Vec [:Set :Object]]
     [:Vec [:Set :Integer]] [:Vec [:Coll :Object]] [:Vec [:Coll :Object]]
+    [:Vec [:Set [:Decimal 2]]] [:Vec [:Set :Nothing]] [:Vec [:Set [:Decimal 2]]]
     [:Instance :ws/A] [:Instance :ws/A] [:Instance :ws/A]
     [:Instance :ws/A] [:Instance :ws/B] [:Instance :*]
     [:Instance :ws/A] [:Instance :*] [:Instance :*]
@@ -125,10 +157,16 @@
     :String :String :String
     [:Maybe :String] :String :String
     :Object [:Maybe [:Coll :Integer]] [:Coll :Integer]
+    :Object [:Maybe [:Coll [:Decimal 1]]] [:Coll [:Decimal 1]]
     [:Maybe [:Vec :Integer]] [:Maybe [:Set :Integer]] :Unset
     [:Coll :Integer] [:Maybe [:Set :Integer]] [:Set :Integer]
     [:Coll :Object] [:Maybe [:Set [:Instance :*]]] [:Set [:Instance :*]]
     :Integer [:Maybe :String] :Nothing
+    [:Decimal 2] [:Maybe :String] :Nothing
+    [:Decimal 2] [:Decimal 1] :Nothing
+    [:Decimal 2] [:Maybe [:Decimal 1]] :Nothing
+    [:Decimal 2] [:Maybe [:Decimal 2]] :Nothing
+    [:Maybe [:Decimal 1]] [:Maybe [:Decimal 2]] :Unset
     [:Instance :* #{:ws/A :ws/B}] [:Instance :* #{:ws/B :ws/C}] [:Instance :* #{:ws/A :ws/B :ws/C}]))
 
 (def gen-type
@@ -139,7 +177,9 @@
                              (gen/one-of [(gen/elements [:Integer :String :Boolean :Nothing :Object])
                                           (gen/fmap (fn [[a r2]] [:Instance a (disj r2 a)])
                                                     (gen/tuple (gen/elements [:* :ws/A :ws/B :ws/C])
-                                                               (gen/set (gen/elements [:ws/A :ws/B :ws/C]))))]))
+                                                               (gen/set (gen/elements [:ws/A :ws/B :ws/C]))))
+                                          (gen/fmap (fn [[a]] [:Decimal a])
+                                                    (gen/tuple (gen/elements [1 2 3])))]))
         s (gen/one-of [r
                        (gen/elements [:Unset :Any])])]
     (gen/one-of [s
@@ -214,6 +254,7 @@
                    KW (mapcat (fn [r2] [(assoc % :arg :ws/A :r2 r2)
                                         (assoc % :arg :* :r2 r2)])
                               [nil #{:ws/B}])
+                   S [(assoc % :arg 1) (assoc % :arg 2)]
                    [%]))
         (map halite-types/ptn-type))))
 
@@ -233,7 +274,7 @@
                  o gen-type]
                 (prop-meet-implication s t o)))
 
-(defspec prop-join-subtype
+(defspec test-prop-join-subtype
   {:num-tests 1000}
   (prop/for-all [s gen-type
                  t gen-type]

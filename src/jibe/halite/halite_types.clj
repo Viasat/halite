@@ -14,16 +14,19 @@
 (def subtypes
   (let [m (fn [x] [:Maybe x])
         T 'T
+        S 'S
         KW 'KW
         R2 'R2
         tv list]
     #{(tv :Nothing #{(tv :Integer :Object :Any)
+                     (tv [:Decimal S] :Object)
                      (tv :String :Object)
                      (tv :Boolean :Object)
                      (tv [:Instance KW R2] :Object)
                      (tv [:Set T] [:Coll T] :Object)
                      (tv [:Vec T] [:Coll T])})
       (tv :Nothing :Unset #{(tv (m :Integer) :Any)
+                            (tv (m [:Decimal S]) :Any)
                             (tv (m :String) :Any)
                             (tv (m :Boolean) :Any)
                             (tv (m [:Instance KW R2]) :Any)
@@ -31,6 +34,7 @@
                             (tv (m [:Vec T]) (m [:Coll T]))})
       (tv [:Instance KW R2] (m [:Instance KW R2]))
       (tv :Integer      (m :Integer))
+      (tv [:Decimal S]  (m [:Decimal S]))
       (tv :String       (m :String))
       (tv :Boolean      (m :Boolean))
       (tv [:Set T]      (m [:Set T]))
@@ -75,7 +79,7 @@
     {:maybe? maybe? :kind kind :arg arg :r2 r2}))
 
 (defn ptn-type [{:keys [maybe? kind arg r2]}]
-  (let [v (if (#{:Set :Vec :Coll :Instance} kind)
+  (let [v (if (#{:Set :Vec :Coll :Instance :Decimal} kind)
             (vec (remove nil? [kind arg r2]))
             kind)]
     (if maybe? [:Maybe v] v)))
@@ -121,6 +125,8 @@
                                                                   NamespacedKeyword)
                                                       "instance-type")
                                                (s/optional #{NamespacedKeyword} "refines-to-set")]
+   #(and (vector? %) (= :Decimal (first %))) [(s/one (s/eq :Decimal) "decimal-keyword")
+                                              (s/one s/Int "decimal-scale")]
    vector? [(s/one (s/enum :Set :Vec :Coll) "coll-kind")
             (s/one (s/recursive #'InnerType) "elem-type")]
    :else TypeAtom))
@@ -279,6 +285,7 @@
   (let [gp (case (:kind p)
              :Instance (assoc p :arg 'KW :r2 'R2)
              (:Set :Vec :Coll) (assoc p :arg 'T)
+             :Decimal (assoc p :arg 'S)
              p)]
     (assert (get @*ptn-adjacent-super gp) (str "Unknown type pattern:" gp))
     gp))
@@ -299,8 +306,10 @@
             (if (= 'T (:arg gsp) (:arg gtp))
               ;; If both nodes have type params, those params must be compared
               (subtype? (:arg sp) (:arg tp))
-              ;; A lone type param is free, and no params means the node match was sufficient
-              true))))))
+              (if (= 'S (:arg gsp) (:arg gtp))
+                (= (:arg sp) (:arg tp))
+                ;; A lone type param is free, and no params means the node match was sufficient
+                true)))))))
 
 (s/defn meet :- HaliteType
   "The 'least' supertype of s and t. Formally, return the type m such that all are true:
@@ -330,7 +339,9 @@
                                  (:Instance) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
                                                (assoc gtp-super
                                                       :arg (some :arg [sp tp])
-                                                      :r2 (some :r2 [sp tp]))))
+                                                      :r2 (some :r2 [sp tp])))
+                                 (:Decimal) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
+                                              (assoc gtp-super :arg (some :arg [sp tp]))))
                                ;; No param in meet, return unmodified
                                gtp-super)))
                          (get @*ptn-supertypes gtp)))]
@@ -363,7 +374,9 @@
                                  (:Instance) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
                                                (assoc gtp-sub
                                                       :arg (some :arg [sp tp])
-                                                      :r2 (some :r2 [sp tp]))))
+                                                      :r2 (some :r2 [sp tp])))
+                                 (:Decimal (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
+                                             (assoc gtp-sub :arg (some :arg [sp tp])))))
                                ;; No param in meet, return unmodified
                                gtp-sub)))
                          (get @*ptn-subtypes gtp)))]
