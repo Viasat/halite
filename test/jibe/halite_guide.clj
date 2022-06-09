@@ -2347,6 +2347,8 @@
   (h -922337203685477580.8M [:Decimal 1] -922337203685477580.8M "-922337203685477580.8" "-922337203685477580.8")
   (h (- -922337203685477580.8M 0.1M) [:Decimal 1] [:throws "long overflow"] "(-922337203685477580.8 - 0.1)" [:throws "long overflow"])
   (h -922337203685477580.9M [:Decimal 1] [:throws "For input string: \"-9223372036854775809\""] "-922337203685477580.9" [:throws "For input string: \"-9223372036854775809\""])
+  (h 9.223372036854775807M [:Decimal 18] 9.223372036854775807M "9.223372036854775807" "9.223372036854775807")
+  (h 1.2233720368547758070M [:throws "Invalid fixed decimal scale: [1.2233720368547758070M 19]"])
 
   (h 1.1M [:Decimal 1] 1.1M "1.1" "1.1")
   (h (+ 1.1M 0.1M) [:Decimal 1] 1.2M "(1.1 + 0.1)" "1.2")
@@ -2394,7 +2396,7 @@
   (h (scale 1.23M 1) [:Decimal 1] 1.2M "scale(1.23, 1)" "1.2")
   (h (scale 1.23M 2) [:Decimal 2] 1.23M "scale(1.23, 2)" "1.23")
   (h (scale 1.23M 3) [:Decimal 3] 1.230M "scale(1.23, 3)" "1.230")
-  (h (scale 1.23M -1) [:throws "Second argument to 'scale' must be an integer between 0 and 19"])
+  (h (scale 1.23M -1) [:throws "Second argument to 'scale' must be an integer between 0 and 18"])
   (h (scale 1.23M 1.0) [:syntax-check-throws "Syntax error"])
   (h (scale 1.23M 1.0M) [:throws "Second argument to 'scale' must be an integer"]))
 

@@ -194,15 +194,13 @@
                                             1 (first elem-types)
                                             (reduce halite-types/meet elem-types)))))
 
-(def max-decimal-scale-exclusive 20)
-
 (s/defn ^:private type-of* :- halite-types/HaliteType
   [ctx :- TypeContext, value]
   (cond
     (boolean? value) :Boolean
     (integer-or-long? value) :Integer
     (big-decimal? value) (let [scale (.scale ^BigDecimal value)]
-                           (when-not (< 0 scale max-decimal-scale-exclusive)
+                           (when-not (< 0 scale (inc fixed/max-scale))
                              (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
                            (halite-types/decimal-type))
     (string? value) :String
@@ -300,27 +298,27 @@
 (def ^:private decimal-sigs (mapcat (fn [s]
                                       [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
                                        (halite-types/decimal-type s)])
-                                    (range 1 max-decimal-scale-exclusive)))
+                                    (range 1 (inc fixed/max-scale))))
 
 (def ^:private decimal-sigs-single (mapcat (fn [s]
                                              [[(halite-types/decimal-type s) :Integer & :Integer]
                                               (halite-types/decimal-type s)])
-                                           (range 1 max-decimal-scale-exclusive)))
+                                           (range 1 (inc fixed/max-scale))))
 
 (def ^:private decimal-sigs-unary (mapcat (fn [s]
                                             [[(halite-types/decimal-type s)]
                                              (halite-types/decimal-type s)])
-                                          (range 1 max-decimal-scale-exclusive)))
+                                          (range 1 (inc fixed/max-scale))))
 
 (def ^:private decimal-sigs-binary (mapcat (fn [s]
                                              [[(halite-types/decimal-type s) :Integer]
                                               (halite-types/decimal-type s)])
-                                           (range 1 max-decimal-scale-exclusive)))
+                                           (range 1 (inc fixed/max-scale))))
 
 (def ^:private decimal-sigs-boolean (mapcat (fn [s]
                                               [[(halite-types/decimal-type s) (halite-types/decimal-type s)]
                                                :Boolean])
-                                            (range 1 max-decimal-scale-exclusive)))
+                                            (range 1 (inc fixed/max-scale))))
 
 (def ^:private builtins
   (s/with-fn-validation
@@ -549,8 +547,8 @@
       (throw (ex-info "Second argument to 'scale' must be an integer literal"
                       {:expr expr})))
     (when-not (and (>= scale 0)
-                   (< scale max-decimal-scale-exclusive))
-      (throw (ex-info (str "Second argument to 'scale' must be an integer between 0 and " (dec max-decimal-scale-exclusive))
+                   (< scale (inc fixed/max-scale)))
+      (throw (ex-info (str "Second argument to 'scale' must be an integer between 0 and " fixed/max-scale)
                       {:expr expr})))
     (if (zero? scale)
       :Integer
@@ -842,7 +840,7 @@
     (boolean? expr) :Boolean
     (integer-or-long? expr) :Integer
     (big-decimal? expr) (let [scale (.scale ^BigDecimal expr)]
-                          (when-not (< 0 scale max-decimal-scale-exclusive)
+                          (when-not (< 0 scale (inc fixed/max-scale))
                             (throw (ex-info (str "Invalid fixed decimal scale: " [expr scale]) {:expr expr
                                                                                                 :scale scale})))
                           (halite-types/decimal-type scale))
