@@ -538,15 +538,15 @@
 
     '(= 4500 (count x)) ['(= 4500 (count x))
                          '{x (= 4500 (count x))}
-                         '{x {:coll-count 4500}}]
+                         '{x {:coll-size 4500}}]
     '(= (count x) 4510) ['(= (count x) 4510)
                          '{x (= (count x) 4510)}
-                         '{x {:coll-count 4510}}]
+                         '{x {:coll-size 4510}}]
 
     '(every? [x a]
              (= 4600 (count x))) ['[(= 4600 (count a))]
                                   '{a [(= 4600 (count a))]}
-                                  '{a {:coll-elements {:coll-count 4600}}}]
+                                  '{a {:coll-elements {:coll-size 4600}}}]
 
     '(and (= (count a) 4700)
           (every? [x a]
@@ -559,8 +559,8 @@
                                                    '{a (and (= (count a) 4700)
                                                             [(and (= 5 (count a))
                                                                   [(or (= a "a") (= a "b"))])])}
-                                                   '{a {:coll-count 4700
-                                                        :coll-elements {:coll-count 5
+                                                   '{a {:coll-size 4700
+                                                        :coll-elements {:coll-size 5
                                                                         :coll-elements {:enum #{"a" "b"}}}}}]
 
     '(or (= (count a) 4800)
@@ -601,6 +601,37 @@
                                           (= x {:$type :spec/B}))}
                                   '{x {:enum #{{:$type :spec/A
                                                 :a 5100}
-                                               {:$type :spec/B}}}}]))
+                                               {:$type :spec/B}}}}]
+
+    '(and (<= z 10) ;; what to do if the min is greater than the max?
+          (> z 5200)) ['(and (<= z 10)
+                             (> z 5200))
+                       '{z (and (<= z 10)
+                                (> z 5200))}
+                       '{z {:ranges #{{:max 10
+                                       :max-inclusive true
+                                       :min 5200
+                                       :min-inclusive false}}}}]
+
+    '(or (and (<= z 10) ;; sensible ranges are not combined with non-sensical ranges
+              (> z 5300))
+         (and (<= z 30)
+              (> z 20))) ['(or (and (<= z 10)
+                                    (> z 5300))
+                               (and (<= z 30)
+                                    (> z 20)))
+                          '{z (or (and
+                                   (<= z 10)
+                                   (> z 5300))
+                                  (and (<= z 30)
+                                       (> z 20)))}
+                          '{z {:ranges #{{:max 10
+                                          :max-inclusive true
+                                          :min 5300
+                                          :min-inclusive false}
+                                         {:max 30
+                                          :max-inclusive true
+                                          :min 20
+                                          :min-inclusive false}}}}]))
 
 ;; (run-tests)

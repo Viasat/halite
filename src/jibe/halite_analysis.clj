@@ -226,10 +226,10 @@
     (if-let [r (some #(:ranges %) xs)]
       {:ranges r}
       (if (some #(and (map? %)
-                      (or (:coll-count %)
+                      (or (:coll-size %)
                           (:coll-elements %))) xs)
         (when (every? #(and (map? %)
-                            (or (:coll-count %)
+                            (or (:coll-size %)
                                 (:coll-elements %))) xs)
           (reduce merge {} xs))
         {:ranges #{(reduce (fn [a b]
@@ -258,9 +258,9 @@
                                                (symbol? (second x)))) (rest expr))
                                 (cond
                                   (and (seq? (second expr))
-                                       (integer? (third expr))) {:coll-count (third expr)}
+                                       (integer? (third expr))) {:coll-size (third expr)}
                                   (and (seq? (third expr))
-                                       (integer? (second expr))) {:coll-count (second expr)}
+                                       (integer? (second expr))) {:coll-size (second expr)}
                                   :default true)
                                 {:enum (->> (rest expr)
                                             (remove symbol?)
