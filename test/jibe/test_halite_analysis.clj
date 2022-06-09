@@ -561,6 +561,46 @@
                                                                   [(or (= a "a") (= a "b"))])])}
                                                    '{a {:coll-count 4700
                                                         :coll-elements {:coll-count 5
-                                                                        :coll-elements {:enum #{"a" "b"}}}}}]))
+                                                                        :coll-elements {:enum #{"a" "b"}}}}}]
+
+    '(or (= (count a) 4800)
+         (every? [x a]
+                 (and (= 5 (count x))
+                      (every? [y x]
+                              (or (= y "a")
+                                  (= y "b")))))) [true nil {}]
+
+    '(or (= "a" x)
+         (= x 4900)) ['(or (= "a" x) (= x 4900))
+                      '{x (or (= "a" x) (= x 4900))}
+                      '{x {:enum #{"a" 4900}}}]
+
+    '(or (= {:$type :spec/A
+             :a 5000} x)
+         (contains? #{{:$type :spec/B}
+                      {:$type :spec/C}} x)) ['(or (= {:$type :spec/A
+                                                      :a 5000} x)
+                                                  (contains? #{{:$type :spec/C}
+                                                               {:$type :spec/B}} x))
+                                             '{x (or (= {:$type :spec/A
+                                                         :a 5000} x)
+                                                     (contains? #{{:$type :spec/C}
+                                                                  {:$type :spec/B}} x))}
+                                             '{x {:enum #{{:$type :spec/C}
+                                                          {:$type :spec/B}
+                                                          {:$type :spec/A
+                                                           :a 5000}}}}]
+
+    '(or (= {:$type :spec/A
+             :a 5100} x)
+         (= x {:$type :spec/B})) ['(or (= {:$type :spec/A
+                                           :a 5100} x)
+                                       (= x {:$type :spec/B}))
+                                  '{x (or (= {:$type :spec/A
+                                              :a 5100} x)
+                                          (= x {:$type :spec/B}))}
+                                  '{x {:enum #{{:$type :spec/A
+                                                :a 5100}
+                                               {:$type :spec/B}}}}]))
 
 ;; (run-tests)

@@ -418,6 +418,15 @@
                                                       (some symbol? (rest expr)))
                                                expr
                                                true)
+
+    (and (seq? expr)
+         (= 'contains? (first expr))) (let [[_ coll e] expr]
+                                        (if (and (= 1 (count (gather-free-vars expr)))
+                                                 (->> (rest expr)
+                                                      (every? simple-value-or-symbol?))
+                                                 (symbol? e))
+                                          expr
+                                          true))
     :default true))
 
 (defn- gather-tlfc*
