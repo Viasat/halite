@@ -202,7 +202,7 @@
     (big-decimal? value) (let [scale (.scale ^BigDecimal value)]
                            (when-not (< 0 scale (inc fixed/max-scale))
                              (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
-                           (halite-types/decimal-type))
+                           (halite-types/decimal-type scale))
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
