@@ -5,6 +5,8 @@
   (:require [jibe.halite-analysis :as halite-analysis]
             [internal :refer :all]))
 
+(set! *warn-on-reflection* true)
+
 (deftest test-gather-free-vars
   (are [v expected]
        (= expected

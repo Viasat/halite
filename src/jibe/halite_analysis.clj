@@ -6,6 +6,8 @@
             [jibe.halite :as halite]
             [internal :as s]))
 
+(set! *warn-on-reflection* true)
+
 (declare replace-free-vars)
 
 (defn- replace-seq-free-vars [var-map context expr]
