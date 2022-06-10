@@ -4,6 +4,7 @@
 (ns jibe.halite-analysis
   (:require [clojure.set :as set]
             [jibe.halite :as halite]
+            [jibe.lib.fixed :as fixed]
             [internal :as s]))
 
 (set! *warn-on-reflection* true)
@@ -45,7 +46,7 @@
    (cond
      (boolean? expr) expr
      (halite/integer-or-long? expr) expr
-     (halite/big-decimal? expr) expr
+     (halite/fixed-decimal? expr) expr
      (string? expr) expr
      (symbol? expr) (if (context expr)
                       expr
@@ -97,7 +98,7 @@
    (cond
      (boolean? expr) #{}
      (halite/integer-or-long? expr) #{}
-     (halite/big-decimal? expr) #{}
+     (halite/fixed-decimal? expr) #{}
      (string? expr) #{}
      (symbol? expr) (if (context expr)
                       #{}
@@ -117,7 +118,7 @@
   (or
    (boolean? expr)
    (halite/integer-or-long? expr)
-   (halite/big-decimal? expr)
+   (halite/fixed-decimal? expr)
    (string? expr)
    (symbol? expr)
    (map? expr)
@@ -331,6 +332,11 @@
                           set))
     x))
 
+(defn- lt [x y z]
+  (if (halite/fixed-decimal? x)
+    (fixed/f< x y z)
+    (< x y z)))
+
 (defn- ranges-overlap? [a b]
   (let [min-a (or (:min a)
                   Long/MIN_VALUE)
@@ -340,10 +346,10 @@
                   Long/MAX_VALUE)
         max-b (or (:max b)
                   Long/MAX_VALUE)]
-    (or (< min-a min-b max-a)
-        (< min-a max-b max-a)
-        (< min-b min-a max-b)
-        (< min-b max-a max-b))))
+    (or (lt min-a min-b max-a)
+        (lt min-a max-b max-a)
+        (lt min-b min-a max-b)
+        (lt min-b max-a max-b))))
 
 (defn- touch-min [a b]
   (= (:min a) (:min b)))

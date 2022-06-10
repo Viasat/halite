@@ -5,6 +5,7 @@
   (:require [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
+            [jibe.lib.fixed :as fixed]
             [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]
@@ -2340,68 +2341,90 @@
   (h (let [x 1 y (inc x) z (inc y)] x z) [:throws "Wrong number of arguments to 'let': expected 2, but got 3"]))
 
 (deftest test-fixed-decimal
-  (h 1M [:throws "Invalid fixed decimal scale: [1M 0]"])
-  (h 922337203685477580.7M [:Decimal 1] 922337203685477580.7M "922337203685477580.7" "922337203685477580.7")
-  (h (+ 922337203685477580.7M 0.1M) [:Decimal 1] [:throws "long overflow"] "(922337203685477580.7 + 0.1)" [:throws "long overflow"])
-  (h 922337203685477580.8M [:Decimal 1] [:throws "For input string: \"9223372036854775808\""] "922337203685477580.8" [:throws "For input string: \"9223372036854775808\""])
-  (h -922337203685477580.8M [:Decimal 1] -922337203685477580.8M "-922337203685477580.8" "-922337203685477580.8")
-  (h (- -922337203685477580.8M 0.1M) [:Decimal 1] [:throws "long overflow"] "(-922337203685477580.8 - 0.1)" [:throws "long overflow"])
-  (h -922337203685477580.9M [:Decimal 1] [:throws "For input string: \"-9223372036854775809\""] "-922337203685477580.9" [:throws "For input string: \"-9223372036854775809\""])
-  (h 9.223372036854775807M [:Decimal 18] 9.223372036854775807M "9.223372036854775807" "9.223372036854775807")
-  (h 1.2233720368547758070M [:throws "Invalid fixed decimal scale: [1.2233720368547758070M 19]"])
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (read-string "#d 1M")))
+  (h #d 922337203685477580.7M [:Decimal 1] #d 922337203685477580.7M "922337203685477580.7" "922337203685477580.7")
 
-  (h 1.1M [:Decimal 1] 1.1M "1.1" "1.1")
-  (h (+ 1.1M 0.1M) [:Decimal 1] 1.2M "(1.1 + 0.1)" "1.2")
-  (h (+ 1.1M 0.1M 0.2M) [:Decimal 1] 1.4M "(1.1 + 0.1 + 0.2)" "1.4")
-  (h (- 1.1M 0.1M) [:Decimal 1] 1.0M "(1.1 - 0.1)" "1.0")
-  (h (- 1.1M 0.1M 0.2M) [:Decimal 1] 0.8M "(1.1 - 0.1 - 0.2)" "0.8")
-  (h (* 1.1M 2) [:Decimal 1] 2.2M "(1.1 * 2)" "2.2")
-  (h (* 1.1M 2 3) [:Decimal 1] 6.6M "(1.1 * 2 * 3)" "6.6")
-  (h (* 2 1.1M) [:throws "no matching signature for '*'"])
-  (h (div 1.1M 2) [:Decimal 1] 0.5M "(1.1 / 2)" "0.5")
-  (h (div 1.1M 2 2) [:Decimal 1] 0.2M "(1.1 / 2 / 2)" "0.2")
-  (h (div 2 1.1M) [:throws "no matching signature for 'div'"])
-  (h (div 1.1M 0) [:Decimal 1] [:throws "Divide by zero"] "(1.1 / 0)" [:throws "Divide by zero"])
+  (h (+ #d 922337203685477580.7M #d 0.1M) [:Decimal 1] [:throws "long overflow"] "(922337203685477580.7 + 0.1)" [:throws "long overflow"])
 
-  (h (mod 1.1M 2) [:Decimal 1] 1.1M "(1.1 % 2)" "1.1")
-  (h (mod 3.1M 2) [:Decimal 1] 1.1M "(3.1 % 2)" "1.1")
-  (h (mod 3.1M 0) [:Decimal 1] [:throws "Divide by zero"] "(3.1 % 0)" [:throws "Divide by zero"])
+  (is (thrown-with-msg? NumberFormatException #"For input string"
+                        (read-string "#d 922337203685477580.8M")))
 
-  (h (abs 1.1M) [:Decimal 1] 1.1M "abs(1.1)" "1.1")
-  (h (abs -1.1M) [:Decimal 1] 1.1M "abs(-1.1)" "1.1")
-  (h (abs -922337203685477580.8M) [:Decimal 1] -922337203685477580.8M "abs(-922337203685477580.8)" "-922337203685477580.8")
-  (h (abs -92233720368547758.08M) [:Decimal 2] -92233720368547758.08M "abs(-92233720368547758.08)" "-92233720368547758.08")
+  (h #d -922337203685477580.8M [:Decimal 1] #d -922337203685477580.8M "-922337203685477580.8" "-922337203685477580.8")
 
-  (h (+ 1.1M 1) [:throws "no matching signature for '+'"])
-  (h (+ 1.1M 0.01M) [:throws "no matching signature for '+'"])
-  (h (- 1.1M 1) [:throws "no matching signature for '-'"])
-  (h (- 1.1M 2.01M) [:throws "no matching signature for '-'"])
+  (h (- #d -922337203685477580.8M #d 0.1M) [:Decimal 1] [:throws "long overflow"] "(-922337203685477580.8 - 0.1)" [:throws "long overflow"])
 
-  (h (* 1.1M 0.1M) [:throws "no matching signature for '*'"])
-  (h (div 1.1M 0.1M) [:throws "no matching signature for 'div'"])
+  (is (thrown-with-msg? NumberFormatException #"For input string"
+                        (read-string "#d -922337203685477580.9M")))
+  (h #d 9.223372036854775807M [:Decimal 18] #d 9.223372036854775807M "9.223372036854775807" "9.223372036854775807")
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (read-string "#d 1.2233720368547758070M")))
+  (h #d 1.1M [:Decimal 1] #d 1.1M "1.1" "1.1")
+  (h (+ #d 1.1M #d 0.1M) [:Decimal 1] #d 1.2M "(1.1 + 0.1)" "1.2")
+  (h (+ #d 1.1M #d 0.1M #d 0.2M) [:Decimal 1] #d 1.4M "(1.1 + 0.1 + 0.2)" "1.4")
+  (h (- #d 1.1M #d 0.1M) [:Decimal 1] #d 1.0M "(1.1 - 0.1)" "1.0")
+  (h (- #d 1.1M #d 0.1M #d 0.2M) [:Decimal 1] #d 0.8M "(1.1 - 0.1 - 0.2)" "0.8")
+  (h (* #d 1.1M 2) [:Decimal 1] #d 2.2M "(1.1 * 2)" "2.2")
+  (h (* #d 1.1M 2 3) [:Decimal 1] #d 6.6M "(1.1 * 2 * 3)" "6.6")
+  (h (* 2 #d 1.1M) [:throws "no matching signature for '*'"])
+  (h (div #d 1.1M 2) [:Decimal 1] #d 0.5M "(1.1 / 2)" "0.5")
+  (h (div #d 1.1M 2 2) [:Decimal 1] #d 0.2M "(1.1 / 2 / 2)" "0.2")
+  (h (div 2 #d 1.1M) [:throws "no matching signature for 'div'"])
+  (h (div #d 1.1M 0) [:Decimal 1] [:throws "Divide by zero"] "(1.1 / 0)" [:throws "Divide by zero"])
 
-  (h (= 1.0M 1.0M) :Boolean true "(1.0 == 1.0)" "true")
-  (h (= 1.0M 1.0) [:syntax-check-throws "Syntax error"])
-  (h (= 1.0M 1.00M) [:throws "Result of '=' would always be false"])
-  (h (= 1.0M 1) [:throws "Result of '=' would always be false"])
+  ;; (h (mod #d 1.1M 2) [:Decimal 1] #d 1.1M "(1.1 % 2)" "1.1")
+  ;; (h (mod #d 3.1M 2) [:Decimal 1] #d 1.1M "(3.1 % 2)" "1.1")
+  ;; (h (mod #d 3.1M 0) [:Decimal 1] [:throws "Divide by zero"] "(3.1 % 0)" [:throws "Divide by zero"])
 
-  (h (not= 1.0M 1.0M) :Boolean false "(1.0 != 1.0)" "false")
-  (h (= 1.0M 1.0M 1.0M) :Boolean [:throws "unknown numeric type: [true java.lang.Boolean]"] "equalTo(1.0, 1.0, 1.0)" [:throws "unknown numeric type: [true java.lang.Boolean]"])
-  (h (not= 1.0M 1.0M 1.0M) :Boolean [:throws "unknown numeric type: [true java.lang.Boolean]"] "notEqualTo(1.0, 1.0, 1.0)" [:throws "unknown numeric type: [true java.lang.Boolean]"])
+  (h (abs #d 1.1M) [:Decimal 1] #d 1.1M "abs(1.1)" "1.1")
+  (h (abs #d -1.1M) [:Decimal 1] #d 1.1M "abs(-1.1)" "1.1")
+  (h (abs #d -922337203685477580.8M) [:Decimal 1] #d -922337203685477580.8M "abs(-922337203685477580.8)" "-922337203685477580.8")
+  (h (abs #d -92233720368547758.08M) [:Decimal 2] #d -92233720368547758.08M "abs(-92233720368547758.08)" "-92233720368547758.08")
 
-  (h (< 1.0M 1.1M) :Boolean true "(1.0 < 1.1)" "true")
-  (h (<= 1.0M 1.1M) :Boolean true "(1.0 <= 1.1)" "true")
-  (h (<= 1.1M 1.1M) :Boolean true "(1.1 <= 1.1)" "true")
-  (h (> 1.0M 1.1M) :Boolean false "(1.0 > 1.1)" "false")
-  (h (>= 1.0M 1.1M) :Boolean false "(1.0 >= 1.1)" "false")
-  (h (>= 1.1M 1.1M) :Boolean true "(1.1 >= 1.1)" "true")
+  (h (+ #d 1.1M 1) [:throws "no matching signature for '+'"])
+  (h (+ #d 1.1M #d 0.01M) [:throws "no matching signature for '+'"])
+  (h (- #d 1.1M 1) [:throws "no matching signature for '-'"])
+  (h (- #d 1.1M #d 2.01M) [:throws "no matching signature for '-'"])
 
-  (h (scale 1.23M 0) :Integer 1 "scale(1.23, 0)" "1")
-  (h (scale 1.23M 1) [:Decimal 1] 1.2M "scale(1.23, 1)" "1.2")
-  (h (scale 1.23M 2) [:Decimal 2] 1.23M "scale(1.23, 2)" "1.23")
-  (h (scale 1.23M 3) [:Decimal 3] 1.230M "scale(1.23, 3)" "1.230")
-  (h (scale 1.23M -1) [:throws "Second argument to 'scale' must be an integer between 0 and 18"])
-  (h (scale 1.23M 1.0) [:syntax-check-throws "Syntax error"])
-  (h (scale 1.23M 1.0M) [:throws "Second argument to 'scale' must be an integer"]))
+  (h (* #d 1.1M #d 0.1M) [:throws "no matching signature for '*'"])
+  (h (div #d 1.1M #d 0.1M) [:throws "no matching signature for 'div'"])
+
+  (h (= #d 1.0M #d 1.0M) :Boolean true "(1.0 == 1.0)" "true")
+  (h (= #d 1.0M 1.0) [:syntax-check-throws "Syntax error"])
+  (h (= #d 1.0M #d 1.00M) [:throws "Result of '=' would always be false"])
+  (h (= #d 1.0M 1) [:throws "Result of '=' would always be false"])
+
+  (h (not= #d 1.0M #d 1.0M) :Boolean false "(1.0 != 1.0)" "false")
+  (h (= #d 1.0M #d 1.0M #d 1.0M) :Boolean true "equalTo(1.0, 1.0, 1.0)" "true")
+  (h (not= #d 1.0M #d 1.0M #d 1.0M) :Boolean false "notEqualTo(1.0, 1.0, 1.0)" "false")
+  (h (not= #d 1.0M #d 1.0M #d 1.00M) [:throws "Result of 'not=' would always be true"])
+
+  (h (< #d 1.0M #d 1.1M) :Boolean true "(1.0 < 1.1)" "true")
+  (h (<= #d 1.0M #d 1.1M) :Boolean true "(1.0 <= 1.1)" "true")
+  (h (<= #d 1.1M #d 1.1M) :Boolean true "(1.1 <= 1.1)" "true")
+  (h (> #d 1.0M #d 1.1M) :Boolean false "(1.0 > 1.1)" "false")
+  (h (>= #d 1.0M #d 1.1M) :Boolean false "(1.0 >= 1.1)" "false")
+  (h (>= #d 1.1M #d 1.1M) :Boolean true "(1.1 >= 1.1)" "true")
+
+  (h (scale #d 1.23M 0) :Integer 1 "scale(1.23, 0)" "1")
+  (h (scale #d 1.23M 1) [:Decimal 1] #d 1.2M "scale(1.23, 1)" "1.2")
+  (h (scale #d 1.23M 2) [:Decimal 2] #d 1.23M "scale(1.23, 2)" "1.23")
+  (h (scale #d 1.23M 3) [:Decimal 3] #d 1.230M "scale(1.23, 3)" "1.230")
+  (h (scale #d 1.23M -1) [:throws "Second argument to 'scale' must be an integer between 0 and 18"])
+  (h (scale #d 1.23M 1.0) [:syntax-check-throws "Syntax error"])
+  (h (scale #d 1.23M #d 1.0M) [:throws "Second argument to 'scale' must be an integer"])
+  (h (scale #d 1.23M (+ 1 0)) [:throws "Second argument to 'scale' must be an integer literal"])
+
+  (h (intersection #{0 1 2} #{#d 0.0M #d 2.0M #d 1.0M}) [:Set :Nothing] #{} "#{0, 1, 2}.intersection(#{0.0, 1.0, 2.0})" "#{}")
+  (h (intersection #{#d 0.0M #d 1.0M #d 2.0M} #{#d 2.00M #d 0.00M #d 1.00M}) [:Set :Nothing] #{} "#{0.0, 1.0, 2.0}.intersection(#{0.00, 1.00, 2.00})" "#{}")
+  (h #{0 #d 2.00M #d 1.0M} [:Set :Object] #{0 #d 2.00M #d 1.0M} "#{0, 1.0, 2.00}" "#{0, 1.0, 2.00}")
+
+  (h #{0 #d 0.0M #d 0.00M} [:Set :Object] #{0 #d 0.0M #d 0.00M} "#{0, 0.0, 0.00}" "#{0, 0.0, 0.00}")
+  (hf #{0 #d 0.0M} [:Set :Object] #{0 #d 0.0M} "#{0, 0.0}" "#{0, 0.0}")
+  (h (reduce [a #{}] [x [0 #d 0.0M #d 0.00M]] (conj a x)) [:Set :Object] #{0 (fixed/fixed "0.00") (fixed/fixed "0.0")} "reduce( a = #{}; x in [0, 0.0, 0.00] ) { a.conj(x) }" "#{0, 0.0, 0.00}")
+
+  (h (= 0 #d 0.0M) [:throws "Result of '=' would always be false"])
+  (h (= #d 0.0M #d 0.00M) [:throws "Result of '=' would always be false"])
+  (hf (reduce conj #{} [1 #d 1.0M #d 1.00M]) [:Set :Object] #{1 #d 1.0M #d 1.00M} "#{1, 1.0, 1.00}" "#{1, 1.0, 1.00}"))
 
 ;; (time (run-tests))

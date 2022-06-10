@@ -34,8 +34,8 @@
   (or (instance? Long value)
       (instance? Integer value)))
 
-(defn big-decimal? [value]
-  (instance? BigDecimal value))
+(defn fixed-decimal? [value]
+  (fixed/fixed-decimal? value))
 
 (s/defn ^:private eval-predicate :- s/Bool
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- s/Str, bool-expr]
@@ -62,7 +62,7 @@
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
   [senv :- (s/protocol halite-envs/SpecEnv), v]
   (cond
-    (or (integer-or-long? v) (big-decimal? v) (boolean? v) (string? v)) true
+    (or (integer-or-long? v) (fixed-decimal? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
                    spec-info (or (halite-envs/lookup-spec senv spec-id)
                                  (throw (ex-info (str "resource spec not found: " spec-id) {:spec-id spec-id})))]
@@ -142,7 +142,8 @@
 (s/defn ^:private check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
-              (throw (ex-info "instance literal must have :$type field" {error-key inst})))
+              (throw (ex-info "instance literal must have :$type field" {error-key inst
+                                                                         :inst-class (class inst)})))
         _ (when-not (halite-types/namespaced-keyword? t)
             (throw (ex-info "expected namespaced keyword as value of :$type" {error-key inst})))
         spec-info (or (halite-envs/lookup-spec (:senv ctx) t)
@@ -199,10 +200,10 @@
   (cond
     (boolean? value) :Boolean
     (integer-or-long? value) :Integer
-    (big-decimal? value) (let [scale (.scale ^BigDecimal value)]
-                           (when-not (< 0 scale (inc fixed/max-scale))
-                             (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
-                           (halite-types/decimal-type scale))
+    (fixed-decimal? value) (let [scale (.scale ^BigDecimal (fixed/fixed->BigDecimal value))]
+                             (when-not (< 0 scale (inc fixed/max-scale))
+                               (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
+                             (halite-types/decimal-type scale))
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
@@ -246,54 +247,31 @@
   (assoc builtin :deprecated? true))
 
 (defn- h+ [& args]
-  (if (big-decimal? (first args))
-    (reduce fixed/f+ (first args) (rest args))
-    (apply + args)))
+  (apply (if (fixed-decimal? (first args)) fixed/f+ +) args))
 
 (defn- h- [& args]
-  (if (big-decimal? (first args))
-    (reduce fixed/f- (first args) (rest args))
-    (apply - args)))
+  (apply (if (fixed-decimal? (first args)) fixed/f- -) args))
 
 (defn- h* [& args]
-  (if (big-decimal? (first args))
-    (reduce fixed/f* (first args) (rest args))
-    (apply * args)))
+  (apply (if (fixed-decimal? (first args)) fixed/f* *) args))
 
 (defn- hquot [& args]
-  (if (big-decimal? (first args))
-    (reduce fixed/f÷ (first args) (rest args))
-    (apply quot args)))
+  (apply (if (fixed-decimal? (first args)) fixed/f÷ quot) args))
 
 (defn- habs [& args]
-  (if (big-decimal? (first args))
-    (apply fixed/fabs args)
-    (apply abs args)))
-
-(defn- hmod [& args]
-  (if (big-decimal? (first args))
-    (apply fixed/fmod args)
-    (apply mod args)))
+  (apply (if (fixed-decimal? (first args)) fixed/fabs abs) args))
 
 (defn- h< [& args]
-  (if (big-decimal? (first args))
-    (apply fixed/f< args)
-    (apply < args)))
+  (apply (if (fixed-decimal? (first args)) fixed/f< <) args))
 
 (defn- h> [& args]
-  (if (big-decimal? (first args))
-    (apply fixed/f> args)
-    (apply > args)))
+  (apply (if (fixed-decimal? (first args)) fixed/f> >) args))
 
 (defn- h<= [& args]
-  (if (big-decimal? (first args))
-    (apply fixed/f<= args)
-    (apply <= args)))
+  (apply (if (fixed-decimal? (first args)) fixed/f<= <=) args))
 
 (defn- h>= [& args]
-  (if (big-decimal? (first args))
-    (apply fixed/f>= args)
-    (apply >= args)))
+  (apply (if (fixed-decimal? (first args)) fixed/f>= >=) args))
 
 (def ^:private decimal-sigs (mapcat (fn [s]
                                       [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
@@ -342,8 +320,8 @@
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (apply mk-builtin hquot (into [[:Integer :Integer] :Integer] decimal-sigs-single))
-     'mod* (deprecated-builtin (apply mk-builtin hmod (into [[:Integer :Integer] :Integer] decimal-sigs-binary)))
-     'mod (apply mk-builtin hmod (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
+     'mod* (deprecated-builtin (mk-builtin mod [:Integer :Integer] :Integer))
+     'mod (mk-builtin mod [:Integer :Integer] :Integer)
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
                            (throw (ex-info "Invalid exponent" {:p p})))
@@ -371,7 +349,7 @@
   (cond
     (boolean? expr) true
     (integer-or-long? expr) true
-    (big-decimal? expr) true
+    (fixed-decimal? expr) true
     (string? expr) true
     (symbol? expr) true
     (keyword? expr) true
@@ -839,11 +817,11 @@
   (cond
     (boolean? expr) :Boolean
     (integer-or-long? expr) :Integer
-    (big-decimal? expr) (let [scale (.scale ^BigDecimal expr)]
-                          (when-not (< 0 scale (inc fixed/max-scale))
-                            (throw (ex-info (str "Invalid fixed decimal scale: " [expr scale]) {:expr expr
-                                                                                                :scale scale})))
-                          (halite-types/decimal-type scale))
+    (fixed-decimal? expr) (let [scale (.scale ^BigDecimal (fixed/fixed->BigDecimal expr))]
+                            (when-not (< 0 scale (inc fixed/max-scale))
+                              (throw (ex-info (str "Invalid fixed decimal scale: " [expr scale]) {:expr expr
+                                                                                                  :scale scale})))
+                            (halite-types/decimal-type scale))
     (string? expr) :String
     (symbol? expr) (if (or (= 'no-value expr)
                            (and *legacy-salt-type-checking* (= 'no-value- expr)))
@@ -992,8 +970,7 @@
       (or (boolean? expr)
           (integer-or-long? expr)
           (string? expr)) expr
-      (big-decimal? expr) (do (fixed/extract-long expr) ;; check bounds
-                              expr)
+      (fixed-decimal? expr) expr
       (symbol? expr) (if (or (= 'no-value expr) (= 'no-value- expr))
                        :Unset
                        (get (halite-envs/bindings (:env ctx)) expr))
@@ -1006,14 +983,8 @@
                     'get (apply eval-get ctx (rest expr))
                     'get* (apply eval-get* ctx (rest expr)) ;; deprecated
                     'get-in (apply eval-get-in ctx (rest expr))
-                    '= (let [args (mapv eval-in-env (rest expr))]
-                         (if (big-decimal? (first args))
-                           (reduce fixed/f= (first args) (rest args))
-                           (apply = args)))
-                    'not= (let [args (mapv eval-in-env (rest expr))]
-                            (if (big-decimal? (first args))
-                              (not (reduce fixed/f= (first args) (rest args)))
-                              (apply not= args)))
+                    '= (apply = (mapv eval-in-env (rest expr)))
+                    'not= (apply not= (mapv eval-in-env (rest expr)))
                     'scale (fixed/set-scale (eval-in-env (first (rest expr)))
                                             (second (rest expr)))
                     'if (let [[pred then else] (rest expr)]

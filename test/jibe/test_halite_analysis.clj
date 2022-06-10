@@ -636,56 +636,56 @@
                                           :min 20
                                           :min-inclusive false}}}}]
 
-    '(or (and (> 1.5400M x)
-              (>= x 0.0000M))
+    '(or (and (> #d 1.5400M x)
+              (>= x #d 0.0000M))
 
-         (and (> x 20.0000M)
-              (< x 30.0000M))) ['(or (and (> 1.5400M x)
-                                          (>= x 0.0000M))
-                                     (and (> x 20.0000M)
-                                          (< x 30.0000M)))
-                                '{x (or (and (> 1.5400M x)
-                                             (>= x 0.0000M))
-                                        (and (> x 20.0000M)
-                                             (< x 30.0000M)))}
-                                '{x {:ranges #{{:max 1.5400M
-                                                :max-inclusive true
-                                                :min 0.0000M
-                                                :min-inclusive true}
-                                               {:min 20.0000M
-                                                :min-inclusive false
-                                                :max 30.0000M
-                                                :max-inclusive false}}}}]
+         (and (> x #d 20.0000M)
+              (< x #d 30.0000M))) ['(or (and (> #d 1.5400M x)
+                                             (>= x #d 0.0000M))
+                                        (and (> x #d 20.0000M)
+                                             (< x #d 30.0000M)))
+                                   '{x (or (and (> #d 1.5400M x)
+                                                (>= x #d 0.0000M))
+                                           (and (> x #d 20.0000M)
+                                                (< x #d 30.0000M)))}
+                                   '{x {:ranges #{{:max #d 1.5400M
+                                                   :max-inclusive true
+                                                   :min #d 0.0000M
+                                                   :min-inclusive true}
+                                                  {:min #d 20.0000M
+                                                   :min-inclusive false
+                                                   :max #d 30.0000M
+                                                   :max-inclusive false}}}}]
 
-    '(or (and (> 1.5500M x) ;; consistent data types not enforced by analysis
-              (>= x 0))
-         (and (> x 20)
-              (< x 30))) ['(or (and (> 1.5500M x)
-                                    (>= x 0))
-                               (and (> x 20)
-                                    (< x 30)))
-                          '{x (or (and (> 1.5500M x)
-                                       (>= x 0))
-                                  (and (> x 20)
-                                       (< x 30)))}
-                          '{x {:ranges #{{:max 1.5500M
-                                          :max-inclusive true
-                                          :min 0
-                                          :min-inclusive true}
-                                         {:min 20
-                                          :min-inclusive false
-                                          :max 30
-                                          :max-inclusive false}}}}]
+    #_'(or (and (> #d 1.5500M x) ;; inconsistent data types throw
+                (>= x 0))
+           (and (> x 20)
+                (< x 30))) #_['(or (and (> #d 1.5500M x)
+                                        (>= x 0))
+                                   (and (> x 20)
+                                        (< x 30)))
+                              '{x (or (and (> #d 1.5500M x)
+                                           (>= x 0))
+                                      (and (> x 20)
+                                           (< x 30)))}
+                              '{x {:ranges #{{:max #d 1.5500M
+                                              :max-inclusive true
+                                              :min 0
+                                              :min-inclusive true}
+                                             {:min 20
+                                              :min-inclusive false
+                                              :max 30
+                                              :max-inclusive false}}}}]
 
-    '(or (= 5600.12M x)
-         (= x 2.24M)
-         (contains? #{1.00M 2.00M} x)) ['(or (= 5600.12M x)
-                                             (= x 2.24M)
-                                             (contains? #{2.00M 1.00M} x))
-                                        '{x (or (= 5600.12M x)
-                                                (= x 2.24M)
-                                                (contains? #{2.00M 1.00M} x))}
-                                        '{x {:enum #{5600.12M 2.24M 2.00M 1.00M}}}]
+    '(or (= #d 5600.12M x)
+         (= x #d 2.24M)
+         (contains? #{#d 1.00M #d 2.00M} x)) ['(or (= #d 5600.12M x)
+                                                   (= x #d 2.24M)
+                                                   (contains? #{#d 2.00M #d 1.00M} x))
+                                              '{x (or (= #d 5600.12M x)
+                                                      (= x #d 2.24M)
+                                                      (contains? #{#d 2.00M #d 1.00M} x))}
+                                              '{x {:enum #{#d 5600.12M #d 2.24M #d 2.00M #d 1.00M}}}]
     '(or (= 5700 x)
          (= x 2)
          (contains? #{1 2} x)) ['(or (= 5700 x)
@@ -696,15 +696,15 @@
                                         (contains? #{1 2} x))}
                                 '{x {:enum #{1 2 5700}}}]
 
-    '(and (= 5800.12M x)
-          (= x 2.24M)
-          (contains? #{1.00M 2.00M} x)) ['(and (= 5800.12M x)
-                                               (= x 2.24M)
-                                               (contains? #{2.00M 1.00M} x))
-                                         '{x (and (= 5800.12M x)
-                                                  (= x 2.24M)
-                                                  (contains? #{2.00M 1.00M} x))}
-                                         '{x {:enum #{}}}]
+    '(and (= #d 5800.12M x)
+          (= x #d 2.24M)
+          (contains? #{#d 1.00M #d 2.00M} x)) ['(and (= #d 5800.12M x)
+                                                     (= x #d 2.24M)
+                                                     (contains? #{#d 2.00M #d 1.00M} x))
+                                               '{x (and (= #d 5800.12M x)
+                                                        (= x #d 2.24M)
+                                                        (contains? #{#d 2.00M #d 1.00M} x))}
+                                               '{x {:enum #{}}}]
     '(and (= 5900 x)
           (= x 2)
           (contains? #{1 2} x)) ['(and (= 5900 x) (= x 2) (contains? #{1 2} x))

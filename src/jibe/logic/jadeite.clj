@@ -7,6 +7,8 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [instaparse.core :as insta]
+            [jibe.halite :as halite]
+            [jibe.lib.fixed :as fixed]
             [jibe.logic.expression :as expression])
   (:import [java.math BigDecimal]))
 
@@ -98,7 +100,7 @@
                                 (list 'let (mapv toh (drop-last args)) (toh (last args)))
                                 (toh (last args)))
      [[:int & strs]]          (parse-long (apply str strs))
-     [[:dec & strs]]          (BigDecimal. ^String (apply str strs))
+     [[:dec & strs]]          (fixed/fixed-reader (BigDecimal. ^String (apply str strs)))
      [[:symbol "true"]]       true
      [[:symbol "false"]]      false
      [[:symbol s]]            (unwrap-symbol s)
@@ -169,6 +171,7 @@
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
+    (halite/fixed-decimal? x) (:value x)
     (keyword? x) (typename x)
     (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
                   (str "<" x ">")
