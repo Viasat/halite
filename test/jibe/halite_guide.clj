@@ -2357,8 +2357,10 @@
   (h (- 1.1M 0.1M 0.2M) [:Decimal 1] 0.8M "(1.1 - 0.1 - 0.2)" "0.8")
   (h (* 1.1M 2) [:Decimal 1] 2.2M "(1.1 * 2)" "2.2")
   (h (* 1.1M 2 3) [:Decimal 1] 6.6M "(1.1 * 2 * 3)" "6.6")
+  (h (* 2 1.1M) [:throws "no matching signature for '*'"])
   (h (div 1.1M 2) [:Decimal 1] 0.5M "(1.1 / 2)" "0.5")
   (h (div 1.1M 2 2) [:Decimal 1] 0.2M "(1.1 / 2 / 2)" "0.2")
+  (h (div 2 1.1M) [:throws "no matching signature for 'div'"])
 
   (h (mod 1.1M 2) [:Decimal 1] 1.1M "(1.1 % 2)" "1.1")
   (h (mod 3.1M 2) [:Decimal 1] 1.1M "(3.1 % 2)" "1.1")
