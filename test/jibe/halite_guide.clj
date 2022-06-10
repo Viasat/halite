@@ -2361,9 +2361,11 @@
   (h (div 1.1M 2) [:Decimal 1] 0.5M "(1.1 / 2)" "0.5")
   (h (div 1.1M 2 2) [:Decimal 1] 0.2M "(1.1 / 2 / 2)" "0.2")
   (h (div 2 1.1M) [:throws "no matching signature for 'div'"])
+  (h (div 1.1M 0) [:Decimal 1] [:throws "Divide by zero"] "(1.1 / 0)" [:throws "Divide by zero"])
 
   (h (mod 1.1M 2) [:Decimal 1] 1.1M "(1.1 % 2)" "1.1")
   (h (mod 3.1M 2) [:Decimal 1] 1.1M "(3.1 % 2)" "1.1")
+  (h (mod 3.1M 0) [:Decimal 1] [:throws "Divide by zero"] "(3.1 % 0)" [:throws "Divide by zero"])
 
   (h (abs 1.1M) [:Decimal 1] 1.1M "abs(1.1)" "1.1")
   (h (abs -1.1M) [:Decimal 1] 1.1M "abs(-1.1)" "1.1")
