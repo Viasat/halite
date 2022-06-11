@@ -194,15 +194,18 @@
                                             1 (first elem-types)
                                             (reduce halite-types/meet elem-types)))))
 
+(defn- type-check-fixed-decimal [value]
+  (let [scale (fixed/get-scale value)]
+    (when-not (< 0 scale (inc fixed/max-scale))
+      (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
+    (halite-types/decimal-type scale)))
+
 (s/defn ^:private type-of* :- halite-types/HaliteType
   [ctx :- TypeContext, value]
   (cond
     (boolean? value) :Boolean
     (integer-or-long? value) :Integer
-    (fixed-decimal? value) (let [scale (fixed/get-scale value)]
-                             (when-not (< 0 scale (inc fixed/max-scale))
-                               (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
-                             (halite-types/decimal-type scale))
+    (fixed-decimal? value) (type-check-fixed-decimal value)
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
@@ -803,11 +806,7 @@
   (cond
     (boolean? expr) :Boolean
     (integer-or-long? expr) :Integer
-    (fixed-decimal? expr) (let [scale (fixed/get-scale expr)]
-                            (when-not (< 0 scale (inc fixed/max-scale))
-                              (throw (ex-info (str "Invalid fixed decimal scale: " [expr scale]) {:expr expr
-                                                                                                  :scale scale})))
-                            (halite-types/decimal-type scale))
+    (fixed-decimal? expr) (type-check-fixed-decimal expr)
     (string? expr) :String
     (symbol? expr) (if (or (= 'no-value expr)
                            (and *legacy-salt-type-checking* (= 'no-value- expr)))
