@@ -245,32 +245,19 @@
 (defn- deprecated-builtin [builtin]
   (assoc builtin :deprecated? true))
 
-(defn- h+ [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/f+ +) args))
+(defmacro math-f [integer-f fixed-decimal-f]
+  `(fn [& args#]
+     (apply (if (fixed-decimal? (first args#)) ~fixed-decimal-f ~integer-f) args#)))
 
-(defn- h- [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/f- -) args))
-
-(defn- h* [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/f* *) args))
-
-(defn- hquot [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/f÷ quot) args))
-
-(defn- habs [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/fabs abs) args))
-
-(defn- h< [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/f< <) args))
-
-(defn- h> [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/f> >) args))
-
-(defn- h<= [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/f<= <=) args))
-
-(defn- h>= [& args]
-  (apply (if (fixed-decimal? (first args)) fixed/f>= >=) args))
+(def ^:private h+    (math-f +    fixed/f+))
+(def ^:private h-    (math-f -    fixed/f-))
+(def ^:private h*    (math-f *    fixed/f*))
+(def ^:private hquot (math-f quot fixed/fquot))
+(def ^:private habs  (math-f abs  fixed/fabs))
+(def ^:private h<    (math-f <    fixed/f<))
+(def ^:private h<=   (math-f <=   fixed/f<=))
+(def ^:private h>    (math-f >    fixed/f>))
+(def ^:private h>=   (math-f >=   fixed/f>=))
 
 (def ^:private decimal-sigs (mapcat (fn [s]
                                       [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
