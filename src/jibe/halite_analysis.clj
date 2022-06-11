@@ -182,16 +182,16 @@
 
 (defn- combine-mins [a b]
   (cond
-    (< (:min a) (:min b)) (merge a b)
-    (> (:min a) (:min b)) (merge b a)
+    (halite/h< (:min a) (:min b)) (merge a b)
+    (halite/h> (:min a) (:min b)) (merge b a)
     (= (:min a) (:min b)) (assoc (merge a b)
                                  :min-inclusive (and (:min-inclusive a)
                                                      (:min-inclusive b)))))
 
 (defn- combine-maxs [a b]
   (cond
-    (< (:max a) (:max b)) (merge b a)
-    (> (:max a) (:max b)) (merge a b)
+    (halite/h< (:max a) (:max b)) (merge b a)
+    (halite/h> (:max a) (:max b)) (merge a b)
     (= (:max a) (:max b)) (assoc (merge a b)
                                  :max-inclusive (and (:max-inclusive a)
                                                      (:max-inclusive b)))))
@@ -206,16 +206,16 @@
 
 (defn- combine-mins-or [a b]
   (cond
-    (< (get-min a) (get-min b)) (merge b a)
-    (> (get-min a) (get-min b)) (merge a b)
+    (halite/h< (get-min a) (get-min b)) (merge b a)
+    (halite/h> (get-min a) (get-min b)) (merge a b)
     (= (get-min a) (get-min b)) (assoc (merge a b)
                                        :min-inclusive (or (:min-inclusive a)
                                                           (:min-inclusive b)))))
 
 (defn- combine-maxs-or [a b]
   (cond
-    (< (get-max a) (get-max b)) (merge a b)
-    (> (get-max a) (get-max b)) (merge b a)
+    (halite/h< (get-max a) (get-max b)) (merge a b)
+    (halite/h> (get-max a) (get-max b)) (merge b a)
     (= (get-max a) (get-max b)) (assoc (merge a b)
                                        :max-inclusive (or (:max-inclusive a)
                                                           (:max-inclusive b)))))
@@ -332,11 +332,6 @@
                           set))
     x))
 
-(defn- lt [x y z]
-  (if (halite/fixed-decimal? x)
-    (fixed/f< x y z)
-    (< x y z)))
-
 (defn- ranges-overlap? [a b]
   (let [min-a (or (:min a)
                   Long/MIN_VALUE)
@@ -346,10 +341,10 @@
                   Long/MAX_VALUE)
         max-b (or (:max b)
                   Long/MAX_VALUE)]
-    (or (lt min-a min-b max-a)
-        (lt min-a max-b max-a)
-        (lt min-b min-a max-b)
-        (lt min-b max-a max-b))))
+    (or (halite/h< min-a min-b max-a)
+        (halite/h< min-a max-b max-a)
+        (halite/h< min-b min-a max-b)
+        (halite/h< min-b max-a max-b))))
 
 (defn- touch-min [a b]
   (= (:min a) (:min b)))

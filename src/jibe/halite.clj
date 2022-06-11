@@ -254,10 +254,10 @@
 (def ^:private h*    (math-f *    fixed/f*))
 (def ^:private hquot (math-f quot fixed/fquot))
 (def ^:private habs  (math-f abs  fixed/fabs))
-(def ^:private h<    (math-f <    fixed/f<))
 (def ^:private h<=   (math-f <=   fixed/f<=))
-(def ^:private h>    (math-f >    fixed/f>))
 (def ^:private h>=   (math-f >=   fixed/f>=))
+(def           h<    (math-f <    fixed/f<))
+(def           h>    (math-f >    fixed/f>))
 
 (def ^:private decimal-sigs (mapcat (fn [s]
                                       [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
