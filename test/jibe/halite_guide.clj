@@ -2415,17 +2415,21 @@
   (h (scale #d "1.23" #d "1.0") [:throws "Second argument to 'scale' must be an integer"])
   (h (scale #d "1.23" (+ 1 0)) [:throws "Second argument to 'scale' must be an integer literal"])
   (h (scale 1 1) [:throws "First argument to 'scale' must be a fixed point decimal"])
-  
+
   (h (intersection #{0 1 2} #{#d "0.0" #d "2.0" #d "1.0"}) [:Set :Nothing] #{} "#{0, 1, 2}.intersection(#{0.0, 1.0, 2.0})" "#{}")
   (h (intersection #{#d "0.0" #d "1.0" #d "2.0"} #{#d "2.00" #d "0.00" #d "1.00"}) [:Set :Nothing] #{} "#{0.0, 1.0, 2.0}.intersection(#{0.00, 1.00, 2.00})" "#{}")
   (h #{0 #d "2.00" #d "1.0"} [:Set :Object] #{0 #d "2.00" #d "1.0"} "#{0, 1.0, 2.00}" "#{0, 1.0, 2.00}")
 
   (h #{0 #d "0.0" #d "0.00"} [:Set :Object] #{0 #d "0.0" #d "0.00"} "#{0, 0.0, 0.00}" "#{0, 0.0, 0.00}")
   (hf #{0 #d "0.0"} [:Set :Object] #{0 #d "0.0"} "#{0, 0.0}" "#{0, 0.0}")
-  (h (reduce [a #{}] [x [0 #d "0.0" #d "0.00"]] (conj a x)) [:Set :Object] #{0 (fixed/fixed "0.00") (fixed/fixed "0.0")} "reduce( a = #{}; x in [0, 0.0, 0.00] ) { a.conj(x) }" "#{0, 0.0, 0.00}")
+  (h (reduce [a #{}] [x [0 #d "0.0" #d "0.00" 0 #d "0.0" #d "0.00"]] (conj a x)) [:Set :Object] #{0 #d "0.0" #d "0.00"} "reduce( a = #{}; x in [0, 0.0, 0.00, 0, 0.0, 0.00] ) { a.conj(x) }" "#{0, 0.0, 0.00}")
 
   (h (= 0 #d "0.0") [:throws "Result of '=' would always be false"])
   (h (= #d "0.0" #d "0.00") [:throws "Result of '=' would always be false"])
+  (h (= 1 #d "1.0") [:throws "Result of '=' would always be false"])
+  (h (= #d "1.00" #d "1.0") [:throws "Result of '=' would always be false"])
+  (h (= -1 #d "-1.0") [:throws "Result of '=' would always be false"])
+  (h (= #d "-1.00" #d "-1.0") [:throws "Result of '=' would always be false"])
   (hf (reduce conj #{} [1 #d "1.0" #d "1.00"]) [:Set :Object] #{1 #d "1.0" #d "1.00"} "#{1, 1.0, 1.00}" "#{1, 1.0, 1.00}"))
 
 ;; (time (run-tests))
