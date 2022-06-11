@@ -970,8 +970,8 @@
                     'get-in (apply eval-get-in ctx (rest expr))
                     '= (apply = (mapv eval-in-env (rest expr)))
                     'not= (apply not= (mapv eval-in-env (rest expr)))
-                    'scale (fixed/set-scale (eval-in-env (first (rest expr)))
-                                            (second (rest expr)))
+                    'scale (let [[_ f s] expr]
+                             (fixed/set-scale (eval-in-env f) s))
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
                     'when (let [[pred body] (rest expr)]
