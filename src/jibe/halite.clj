@@ -34,7 +34,7 @@
       (instance? Integer value)))
 
 (defn fixed-decimal? [value]
-  (fixed/fixed-decimal? value))
+  (fixed/fixed? value))
 
 (s/defn ^:private eval-predicate :- s/Bool
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- s/Str, bool-expr]
