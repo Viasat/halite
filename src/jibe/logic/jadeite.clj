@@ -9,8 +9,7 @@
             [instaparse.core :as insta]
             [jibe.halite :as halite]
             [jibe.lib.fixed :as fixed]
-            [jibe.logic.expression :as expression])
-  (:import [java.math BigDecimal]))
+            [jibe.logic.expression :as expression]))
 
 (set! *warn-on-reflection* true)
 
@@ -100,7 +99,7 @@
                                 (list 'let (mapv toh (drop-last args)) (toh (last args)))
                                 (toh (last args)))
      [[:int & strs]]          (parse-long (apply str strs))
-     [[:dec & strs]]          (fixed/fixed-reader (BigDecimal. ^String (apply str strs)))
+     [[:dec & strs]]          (fixed/fixed-reader (apply str strs))
      [[:symbol "true"]]       true
      [[:symbol "false"]]      false
      [[:symbol s]]            (unwrap-symbol s)

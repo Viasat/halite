@@ -11,8 +11,7 @@
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.lib.fixed :as fixed]
             [schema.core :as s])
-  (:import [clojure.lang ExceptionInfo]
-           [java.math BigDecimal]))
+  (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
 
@@ -200,7 +199,7 @@
   (cond
     (boolean? value) :Boolean
     (integer-or-long? value) :Integer
-    (fixed-decimal? value) (let [scale (.scale ^BigDecimal (fixed/fixed->BigDecimal value))]
+    (fixed-decimal? value) (let [scale (fixed/get-scale value)]
                              (when-not (< 0 scale (inc fixed/max-scale))
                                (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
                              (halite-types/decimal-type scale))
@@ -817,7 +816,7 @@
   (cond
     (boolean? expr) :Boolean
     (integer-or-long? expr) :Integer
-    (fixed-decimal? expr) (let [scale (.scale ^BigDecimal (fixed/fixed->BigDecimal expr))]
+    (fixed-decimal? expr) (let [scale (fixed/get-scale expr)]
                             (when-not (< 0 scale (inc fixed/max-scale))
                               (throw (ex-info (str "Invalid fixed decimal scale: " [expr scale]) {:expr expr
                                                                                                   :scale scale})))
