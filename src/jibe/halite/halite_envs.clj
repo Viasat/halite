@@ -5,6 +5,7 @@
   "Halite spec, type, and eval environment abstractions."
   (:require [clojure.string :as str]
             [jibe.halite.halite-types :as halite-types]
+            [jibe.lib.fixed :as fixed]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -13,12 +14,9 @@
   {:expr s/Any
    (s/optional-key :inverted?) s/Bool})
 
-(def primitive-types ["String" "Integer"
-                      "Decimal1" "Decimal2" "Decimal3" "Decimal4" "Decimal5"
-                      "Decimal6" "Decimal7" "Decimal8" "Decimal9" "Decimal10"
-                      "Decimal11" "Decimal12" "Decimal13" "Decimal14" "Decimal15"
-                      "Decimal16" "Decimal17" "Decimal18"
-                      "Boolean"])
+(def primitive-types (into ["String" "Integer"
+                            "Boolean"]
+                           (map #(str "Decimal" %) (range 1 (inc fixed/max-scale)))))
 
 (s/defschema MandatoryVarType
   (s/conditional
