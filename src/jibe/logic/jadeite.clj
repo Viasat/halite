@@ -170,7 +170,7 @@
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
-    (halite/fixed-decimal? x) (fixed/fixed-contents x)
+    (halite/fixed-decimal? x) (fixed/string-representation x)
     (keyword? x) (typename x)
     (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
                   (str "<" x ">")
