@@ -252,11 +252,16 @@
   `(fn [& args#]
      (apply (if (fixed-decimal? (first args#)) ~fixed-decimal-f ~integer-f) args#)))
 
+(def ^:private hstr  (math-f str  fixed/string-representation))
+(def ^:private hneg? (math-f neg? fixed/fneg?))
 (def ^:private h+    (math-f +    fixed/f+))
 (def ^:private h-    (math-f -    fixed/f-))
 (def ^:private h*    (math-f *    fixed/f*))
 (def ^:private hquot (math-f quot fixed/fquot))
-(def ^:private habs  (math-f abs  fixed/fabs))
+(def ^:private habs  (comp #(if (hneg? %)
+                              (throw (ex-info (str "Cannot compute absolute value of: " (hstr %)) {:value %}))
+                              %)
+                           (math-f abs  fixed/fabs)))
 (def ^:private h<=   (math-f <=   fixed/f<=))
 (def ^:private h>=   (math-f >=   fixed/f>=))
 (def           h<    (math-f <    fixed/f<))

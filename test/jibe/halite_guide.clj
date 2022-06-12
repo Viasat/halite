@@ -331,8 +331,6 @@
 
   (h (abs (- 1 4)) :Integer 3 "abs((1 - 4))" "3")
 
-  (h (abs -9223372036854775808) :Integer -9223372036854775808 "abs(-9223372036854775808)" "-9223372036854775808")
-
   (h (abs true) [:throws "no matching signature for 'abs'"]))
 
 (deftest test-int-equality-etc
@@ -436,7 +434,7 @@
 
   (h (inc -9223372036854775808) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807")
 
-  (h (abs -9223372036854775808) :Integer -9223372036854775808 "abs(-9223372036854775808)" "-9223372036854775808")
+  (h (abs -9223372036854775808) :Integer [:throws "Cannot compute absolute value of: -9223372036854775808"] "abs(-9223372036854775808)" [:throws "Cannot compute absolute value of: -9223372036854775808"])
 
   (h (= -9223372036854775808 -9223372036854775808) :Boolean true "(-9223372036854775808 == -9223372036854775808)" "true")
 
@@ -2378,8 +2376,9 @@
 
   (h (abs #d "1.1") [:Decimal 1] #d "1.1" "abs(1.1)" "1.1")
   (h (abs #d "-1.1") [:Decimal 1] #d "1.1" "abs(-1.1)" "1.1")
-  (h (abs #d "-922337203685477580.8") [:Decimal 1] #d "-922337203685477580.8" "abs(-922337203685477580.8)" "-922337203685477580.8")
-  (h (abs #d "-92233720368547758.08") [:Decimal 2] #d "-92233720368547758.08" "abs(-92233720368547758.08)" "-92233720368547758.08")
+  (h (abs #d "-922337203685477580.8") [:Decimal 1] [:throws "Cannot compute absolute value of: -922337203685477580.8"] "abs(-922337203685477580.8)" [:throws "Cannot compute absolute value of: -922337203685477580.8"])
+  (h (abs #d "-92233720368547758.08") [:Decimal 2] [:throws "Cannot compute absolute value of: -92233720368547758.08"] "abs(-92233720368547758.08)" [:throws "Cannot compute absolute value of: -92233720368547758.08"])
+  (h (abs #d "-9223372036854775.808") [:Decimal 3] [:throws "Cannot compute absolute value of: -9223372036854775.808"] "abs(-9223372036854775.808)" [:throws "Cannot compute absolute value of: -9223372036854775.808"])
 
   (h (+ #d "1.1" 1) [:throws "no matching signature for '+'"])
   (h (+ #d "1.1" #d "0.01") [:throws "no matching signature for '+'"])
