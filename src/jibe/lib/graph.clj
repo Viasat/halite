@@ -19,7 +19,8 @@
   checked nodes."
   [path checked x deps-f]
   (cond
-    (path-contains? path x) (throw (RuntimeException. (str "cycle detected: " (conj path x))))
+    (path-contains? path x) (throw (ex-info (str "cycle detected: " (conj path x))
+                                            {:path (conj path x)}))
     (contains? checked x) checked
     :default (loop [checked checked
                     [y & zs] (deps-f x)]
