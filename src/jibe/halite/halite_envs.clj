@@ -3,7 +3,9 @@
 
 (ns jibe.halite.halite-envs
   "Halite spec, type, and eval environment abstractions."
-  (:require [jibe.halite.halite-types :as halite-types]
+  (:require [clojure.string :as str]
+            [jibe.halite.halite-types :as halite-types]
+            [jibe.lib.fixed :as fixed]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -12,9 +14,13 @@
   {:expr s/Any
    (s/optional-key :inverted?) s/Bool})
 
+(def primitive-types (into ["String" "Integer"
+                            "Boolean"]
+                           (map #(str "Decimal" %) (range 1 (inc fixed/max-scale)))))
+
 (s/defschema MandatoryVarType
   (s/conditional
-   string? (s/enum "String" "Integer" "Boolean")
+   string? (apply s/enum primitive-types)
    vector? (s/constrained [(s/recursive #'MandatoryVarType)]
                           #(= 1 (count %))
                           "exactly one inner type")
@@ -107,9 +113,10 @@
                            %)]
     (cond
       (string? var-type)
-      (if (#{"Integer" "String" "Boolean"} var-type)
-        (keyword var-type)
-        (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
+      (cond
+        (#{"Integer" "String" "Boolean"} var-type) (keyword var-type)
+        (str/starts-with? var-type "Decimal") (halite-types/decimal-type (Long/parseLong (subs var-type 7)))
+        :default (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
 
       (optional-var-type? var-type)
       [:Maybe (halite-type-from-var-type senv (second var-type))]

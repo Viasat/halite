@@ -4,7 +4,10 @@
 (ns jibe.halite-analysis
   (:require [clojure.set :as set]
             [jibe.halite :as halite]
+            [jibe.lib.fixed :as fixed]
             [internal :as s]))
+
+(set! *warn-on-reflection* true)
 
 (declare replace-free-vars)
 
@@ -43,6 +46,7 @@
    (cond
      (boolean? expr) expr
      (halite/integer-or-long? expr) expr
+     (halite/fixed-decimal? expr) expr
      (string? expr) expr
      (symbol? expr) (if (context expr)
                       expr
@@ -94,6 +98,7 @@
    (cond
      (boolean? expr) #{}
      (halite/integer-or-long? expr) #{}
+     (halite/fixed-decimal? expr) #{}
      (string? expr) #{}
      (symbol? expr) (if (context expr)
                       #{}
@@ -110,15 +115,15 @@
 ;;;;
 
 (defn- simple-value-or-symbol? [expr]
-  (cond
-    (boolean? expr) true
-    (halite/integer-or-long? expr) true
-    (string? expr) true
-    (symbol? expr) true
-    (map? expr) true
-    (set? expr) true
-    (vector? expr) true
-    :default false))
+  (or
+   (boolean? expr)
+   (halite/integer-or-long? expr)
+   (halite/fixed-decimal? expr)
+   (string? expr)
+   (symbol? expr)
+   (map? expr)
+   (set? expr)
+   (vector? expr)))
 
 (defn- condense-boolean-logic [expr]
   (cond
@@ -177,16 +182,16 @@
 
 (defn- combine-mins [a b]
   (cond
-    (< (:min a) (:min b)) (merge a b)
-    (> (:min a) (:min b)) (merge b a)
+    (halite/h< (:min a) (:min b)) (merge a b)
+    (halite/h> (:min a) (:min b)) (merge b a)
     (= (:min a) (:min b)) (assoc (merge a b)
                                  :min-inclusive (and (:min-inclusive a)
                                                      (:min-inclusive b)))))
 
 (defn- combine-maxs [a b]
   (cond
-    (< (:max a) (:max b)) (merge b a)
-    (> (:max a) (:max b)) (merge a b)
+    (halite/h< (:max a) (:max b)) (merge b a)
+    (halite/h> (:max a) (:max b)) (merge a b)
     (= (:max a) (:max b)) (assoc (merge a b)
                                  :max-inclusive (and (:max-inclusive a)
                                                      (:max-inclusive b)))))
@@ -201,16 +206,16 @@
 
 (defn- combine-mins-or [a b]
   (cond
-    (< (get-min a) (get-min b)) (merge b a)
-    (> (get-min a) (get-min b)) (merge a b)
+    (halite/h< (get-min a) (get-min b)) (merge b a)
+    (halite/h> (get-min a) (get-min b)) (merge a b)
     (= (get-min a) (get-min b)) (assoc (merge a b)
                                        :min-inclusive (or (:min-inclusive a)
                                                           (:min-inclusive b)))))
 
 (defn- combine-maxs-or [a b]
   (cond
-    (< (get-max a) (get-max b)) (merge a b)
-    (> (get-max a) (get-max b)) (merge b a)
+    (halite/h< (get-max a) (get-max b)) (merge a b)
+    (halite/h> (get-max a) (get-max b)) (merge b a)
     (= (get-max a) (get-max b)) (assoc (merge a b)
                                        :max-inclusive (or (:max-inclusive a)
                                                           (:max-inclusive b)))))
@@ -336,10 +341,10 @@
                   Long/MAX_VALUE)
         max-b (or (:max b)
                   Long/MAX_VALUE)]
-    (or (< min-a min-b max-a)
-        (< min-a max-b max-a)
-        (< min-b min-a max-b)
-        (< min-b max-a max-b))))
+    (or (halite/h< min-a min-b max-a)
+        (halite/h< min-a max-b max-a)
+        (halite/h< min-b min-a max-b)
+        (halite/h< min-b max-a max-b))))
 
 (defn- touch-min [a b]
   (= (:min a) (:min b)))
