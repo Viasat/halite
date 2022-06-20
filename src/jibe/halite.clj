@@ -354,7 +354,7 @@
                           (map syntax-check)
                           dorun))
     (seq? expr) (and (or (#{'=
-                            'scale
+                            'rescale
                             'any?
                             'concat
                             'concrete?
@@ -510,17 +510,17 @@
   (let [[_ _ scale] expr
         arg-types (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/decimal-type? (first arg-types))
-      (throw (ex-info "First argument to 'scale' must be a fixed point decimal"
+      (throw (ex-info "First argument to 'rescale' must be a fixed point decimal"
                       {:expr expr})))
     (when-not (= :Integer (second arg-types))
-      (throw (ex-info "Second argument to 'scale' must be an integer"
+      (throw (ex-info "Second argument to 'rescale' must be an integer"
                       {:expr expr})))
     (when-not (integer-or-long? scale)
-      (throw (ex-info "Second argument to 'scale' must be an integer literal"
+      (throw (ex-info "Second argument to 'rescale' must be an integer literal"
                       {:expr expr})))
     (when-not (and (>= scale 0)
                    (< scale (inc fixed/max-scale)))
-      (throw (ex-info (str "Second argument to 'scale' must be an integer between 0 and " fixed/max-scale)
+      (throw (ex-info (str "Second argument to 'rescale' must be an integer between 0 and " fixed/max-scale)
                       {:expr expr})))
     (if (zero? scale)
       :Integer
@@ -824,7 +824,7 @@
                   'get-in (type-check-get-in ctx expr)
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
-                  'scale (type-check-set-scale ctx expr)
+                  'rescale (type-check-set-scale ctx expr)
                   'if (type-check-if ctx expr)
                   'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
@@ -975,8 +975,8 @@
                     'get-in (apply eval-get-in ctx (rest expr))
                     '= (apply = (mapv eval-in-env (rest expr)))
                     'not= (apply not= (mapv eval-in-env (rest expr)))
-                    'scale (let [[_ f s] expr]
-                             (fixed/set-scale (eval-in-env f) s))
+                    'rescale (let [[_ f s] expr]
+                               (fixed/set-scale (eval-in-env f) s))
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
                     'when (let [[pred body] (rest expr)]
