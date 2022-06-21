@@ -238,14 +238,24 @@
 
 (def max-string-length 1024)
 
-(s/defn check-string-length [s]
+(def ^:dynamic *limits* {:string-literal-length nil
+                         :string-runtime-length nil})
+
+(s/defn ^:private check-string-length [size-limit s]
   ;; does not enforce an explicit limit on byte count because users are expected to be dealing with
   ;; characters rather than bytes
   ;; (count (into [] (.getBytes s)))
-  (when (> (count s) max-string-length)
+  (when (> (count s) size-limit)
     (throw (ex-info (str "String length of " (count s) " exceeds the max allowed length of " max-string-length)
                     {:value s})))
   s)
+
+(s/defn ^:private check-limit [limit-key v]
+  (when-let [limit (get *limits* limit-key)]
+    (condp = limit-key
+      :string-literal-length (check-string-length limit v)
+      :string-runtime-length (check-string-length limit v)))
+  v)
 
 (def ^:private builtins
   (s/with-fn-validation
@@ -276,7 +286,7 @@
                            (throw (ex-info "Invalid exponent" {:p p})))
                          (expt x p)) [:Integer :Integer] :Integer)
      'abs (mk-builtin abs [:Integer] :Integer)
-     'str (mk-builtin (comp check-string-length str) [& :String] :String)
+     'str (mk-builtin (comp (partial check-limit :string-runtime-length) str) [& :String] :String)
      'subset? (mk-builtin set/subset? [(halite-types/set-type :Object) (halite-types/set-type :Object)] :Boolean)
      'sort (mk-builtin (comp vec sort)
                        [halite-types/empty-set] halite-types/empty-vector
@@ -298,7 +308,7 @@
   (cond
     (boolean? expr) true
     (integer-or-long? expr) true
-    (string? expr) (do (check-string-length expr) true)
+    (string? expr) (do (check-limit :string-literal-length expr) true)
     (symbol? expr) true
     (keyword? expr) true
     (map? expr) (and (or (:$type expr)
