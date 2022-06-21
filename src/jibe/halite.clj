@@ -239,22 +239,23 @@
 (def max-string-length 1024)
 
 (def ^:dynamic *limits* {:string-literal-length nil
-                         :string-runtime-length nil})
+                         :string-runtime-length nil
+                         :vector-literal-count nil
+                         :set-literal-count nil})
 
-(s/defn ^:private check-string-length [size-limit s]
-  ;; does not enforce an explicit limit on byte count because users are expected to be dealing with
-  ;; characters rather than bytes
-  ;; (count (into [] (.getBytes s)))
-  (when (> (count s) size-limit)
-    (throw (ex-info (str "String length of " (count s) " exceeds the max allowed length of " max-string-length)
-                    {:value s})))
-  s)
+(s/defn ^:private check-count [object-type count-limit c]
+  (when (> (count c) count-limit)
+    (throw (ex-info (str object-type " size of " (count c) " exceeds the max allowed size of " count-limit)
+                    {:value c})))
+  c)
 
 (s/defn ^:private check-limit [limit-key v]
   (when-let [limit (get *limits* limit-key)]
     (condp = limit-key
-      :string-literal-length (check-string-length limit v)
-      :string-runtime-length (check-string-length limit v)))
+      :string-literal-length (check-count "String" limit v)
+      :string-runtime-length (check-count "String" limit v)
+      :vector-literal-count (check-count "Vector" limit v)
+      :set-literal-count (check-count "set" limit v)))
   v)
 
 (def ^:private builtins
@@ -354,7 +355,11 @@
                           (map syntax-check)
                           dorun))
     (or (vector? expr)
-        (set? expr)) (->> (map syntax-check expr) dorun)
+        (set? expr)) (do (check-limit (cond
+                                        (vector? expr) :vector-literal-count
+                                        (set? expr) :set-literal-count)
+                                      expr)
+                         (->> (map syntax-check expr) dorun))
     :else (throw (ex-info "Syntax error" {:form expr
                                           :form-class (class expr)}))))
 
