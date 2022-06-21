@@ -99,7 +99,7 @@
                                 (list 'let (mapv toh (drop-last args)) (toh (last args)))
                                 (toh (last args)))
      [[:int & strs]]          (parse-long (apply str strs))
-     [[:dec & strs]]          (fixed/fixed-reader (apply str strs))
+     [[:decimal s]]           (fixed/fixed-reader (edn/read-string (second s)))
      [[:symbol "true"]]       true
      [[:symbol "false"]]      false
      [[:symbol s]]            (unwrap-symbol s)
@@ -170,7 +170,7 @@
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
-    (halite/fixed-decimal? x) (fixed/string-representation x)
+    (halite/fixed-decimal? x) (str "#d" " \"" (fixed/string-representation x) "\"")
     (keyword? x) (typename x)
     (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
                   (str "<" x ">")
