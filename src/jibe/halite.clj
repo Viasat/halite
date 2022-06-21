@@ -195,10 +195,7 @@
                                             (reduce halite-types/meet elem-types)))))
 
 (defn- type-check-fixed-decimal [value]
-  (let [scale (fixed/get-scale value)]
-    (when-not (< 0 scale (inc fixed/max-scale))
-      (throw (ex-info (str "Invalid fixed decimal scale: " value) {:value value})))
-    (halite-types/decimal-type scale)))
+  (halite-types/decimal-type (fixed/get-scale value)))
 
 (s/defn ^:private type-of* :- halite-types/HaliteType
   [ctx :- TypeContext, value]
@@ -313,7 +310,7 @@
                                               [[(halite-types/decimal-type s) (halite-types/decimal-type s)]
                                                :Boolean])
                                             (range 1 (inc fixed/max-scale))))
-  
+
 (def ^:private builtins
   (s/with-fn-validation
     {'+ (apply mk-builtin h+ (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
