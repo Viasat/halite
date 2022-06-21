@@ -5,6 +5,7 @@
   (:require [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
+            [jibe.lib.fixed :as fixed]
             [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]
@@ -344,8 +345,6 @@
 
   (h (abs (- 1 4)) :Integer 3 "abs((1 - 4))" "3")
 
-  (h (abs -9223372036854775808) :Integer -9223372036854775808 "abs(-9223372036854775808)" "-9223372036854775808")
-
   (h (abs true) [:throws "no matching signature for 'abs'"]))
 
 (deftest test-int-equality-etc
@@ -422,8 +421,6 @@
 
   (h 1.1 [:syntax-check-throws "Syntax error"])
 
-  (h 1.1M [:syntax-check-throws "Syntax error"])
-
   (h 1/2 [:syntax-check-throws "Syntax error"])
 
   (hf (byte 1) [:throws "Syntax error"])
@@ -451,7 +448,7 @@
 
   (h (inc -9223372036854775808) :Integer -9223372036854775807 "(-9223372036854775808 + 1)" "-9223372036854775807")
 
-  (h (abs -9223372036854775808) :Integer -9223372036854775808 "abs(-9223372036854775808)" "-9223372036854775808")
+  (h (abs -9223372036854775808) :Integer [:throws "Cannot compute absolute value of: -9223372036854775808"] "abs(-9223372036854775808)" [:throws "Cannot compute absolute value of: -9223372036854775808"])
 
   (h (= -9223372036854775808 -9223372036854775808) :Boolean true "(-9223372036854775808 == -9223372036854775808)" "true")
 
@@ -2400,5 +2397,97 @@
   (h (let [:x 1] x) [:throws "even-numbered forms in let binding vector must be symbols"])
   (h (let [[a b] [1 2]] a) [:throws "even-numbered forms in let binding vector must be symbols"])
   (h (let [x 1 y (inc x) z (inc y)] x z) [:throws "Wrong number of arguments to 'let': expected 2, but got 3"]))
+
+(deftest test-fixed-decimal
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (read-string "#d \"1\"")))
+  (h #d "922337203685477580.7" [:Decimal 1] #d "922337203685477580.7" "922337203685477580.7" "922337203685477580.7")
+
+  (h (+ #d "922337203685477580.7" #d "0.1") [:Decimal 1] [:throws "long overflow"] "(922337203685477580.7 + 0.1)" [:throws "long overflow"])
+
+  (is (thrown-with-msg? NumberFormatException #"For input string"
+                        (read-string "#d \"922337203685477580.8\"")))
+  (h #d "-922337203685477580.8" [:Decimal 1] #d "-922337203685477580.8" "-922337203685477580.8" "-922337203685477580.8")
+
+  (h (- #d "-922337203685477580.8" #d "0.1") [:Decimal 1] [:throws "long overflow"] "(-922337203685477580.8 - 0.1)" [:throws "long overflow"])
+
+  (is (thrown-with-msg? NumberFormatException #"For input string"
+                        (read-string "#d \"-922337203685477580.9\"")))
+  (h #d "9.223372036854775807" [:Decimal 18] #d "9.223372036854775807" "9.223372036854775807" "9.223372036854775807")
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (read-string "#d \"1.2233720368547758070\"")))
+  (h #d "1.1" [:Decimal 1] #d "1.1" "1.1" "1.1")
+  (h (+ #d "1.1" #d "0.1") [:Decimal 1] #d "1.2" "(1.1 + 0.1)" "1.2")
+  (h (+ #d "1.1" #d "0.1" #d "0.2") [:Decimal 1] #d "1.4" "(1.1 + 0.1 + 0.2)" "1.4")
+  (h (- #d "1.1" #d "0.1") [:Decimal 1] #d "1.0" "(1.1 - 0.1)" "1.0")
+  (h (- #d "1.1" #d "0.1" #d "0.2") [:Decimal 1] #d "0.8" "(1.1 - 0.1 - 0.2)" "0.8")
+  (h (* #d "1.1" 2) [:Decimal 1] #d "2.2" "(1.1 * 2)" "2.2")
+  (h (* #d "1.1" 2 3) [:Decimal 1] #d "6.6" "(1.1 * 2 * 3)" "6.6")
+  (h (* 2 #d "1.1") [:throws "no matching signature for '*'"])
+  (h (div #d "1.1" 2) [:Decimal 1] #d "0.5" "(1.1 / 2)" "0.5")
+  (h (div #d "1.1" 2 2) [:Decimal 1] #d "0.2" "(1.1 / 2 / 2)" "0.2")
+  (h (div 2 #d "1.1") [:throws "no matching signature for 'div'"])
+  (h (div #d "1.1" 0) [:Decimal 1] [:throws "Divide by zero"] "(1.1 / 0)" [:throws "Divide by zero"])
+
+  ;; (h (mod #d 1.1M 2) [:Decimal 1] #d 1.1M "(1.1 % 2)" "1.1")
+  ;; (h (mod #d 3.1M 2) [:Decimal 1] #d 1.1M "(3.1 % 2)" "1.1")
+  ;; (h (mod #d 3.1M 0) [:Decimal 1] [:throws "Divide by zero"] "(3.1 % 0)" [:throws "Divide by zero"])
+
+  (h (abs #d "1.1") [:Decimal 1] #d "1.1" "abs(1.1)" "1.1")
+  (h (abs #d "-1.1") [:Decimal 1] #d "1.1" "abs(-1.1)" "1.1")
+  (h (abs #d "-922337203685477580.8") [:Decimal 1] [:throws "Cannot compute absolute value of: -922337203685477580.8"] "abs(-922337203685477580.8)" [:throws "Cannot compute absolute value of: -922337203685477580.8"])
+  (h (abs #d "-92233720368547758.08") [:Decimal 2] [:throws "Cannot compute absolute value of: -92233720368547758.08"] "abs(-92233720368547758.08)" [:throws "Cannot compute absolute value of: -92233720368547758.08"])
+  (h (abs #d "-9223372036854775.808") [:Decimal 3] [:throws "Cannot compute absolute value of: -9223372036854775.808"] "abs(-9223372036854775.808)" [:throws "Cannot compute absolute value of: -9223372036854775.808"])
+
+  (h (+ #d "1.1" 1) [:throws "no matching signature for '+'"])
+  (h (+ #d "1.1" #d "0.01") [:throws "no matching signature for '+'"])
+  (h (- #d "1.1" 1) [:throws "no matching signature for '-'"])
+  (h (- #d "1.1" #d "2.01") [:throws "no matching signature for '-'"])
+
+  (h (* #d "1.1" #d "0.1") [:throws "no matching signature for '*'"])
+  (h (div #d "1.1" #d "0.1") [:throws "no matching signature for 'div'"])
+
+  (h (= #d "1.0" #d "1.0") :Boolean true "(1.0 == 1.0)" "true")
+  (h (= #d "1.0" 1.0) [:syntax-check-throws "Syntax error"])
+  (h (= #d "1.0" #d "1.00") [:throws "Result of '=' would always be false"])
+  (h (= #d "1.0" 1) [:throws "Result of '=' would always be false"])
+
+  (h (not= #d "1.0" #d "1.0") :Boolean false "(1.0 != 1.0)" "false")
+  (h (= #d "1.0" #d "1.0" #d "1.0") :Boolean true "equalTo(1.0, 1.0, 1.0)" "true")
+  (h (not= #d "1.0" #d "1.0" #d "1.0") :Boolean false "notEqualTo(1.0, 1.0, 1.0)" "false")
+  (h (not= #d "1.0" #d "1.0" #d "1.00") [:throws "Result of 'not=' would always be true"])
+
+  (h (< #d "1.0" #d "1.1") :Boolean true "(1.0 < 1.1)" "true")
+  (h (<= #d "1.0" #d "1.1") :Boolean true "(1.0 <= 1.1)" "true")
+  (h (<= #d "1.1" #d "1.1") :Boolean true "(1.1 <= 1.1)" "true")
+  (h (> #d "1.0" #d "1.1") :Boolean false "(1.0 > 1.1)" "false")
+  (h (>= #d "1.0" #d "1.1") :Boolean false "(1.0 >= 1.1)" "false")
+  (h (>= #d "1.1" #d "1.1") :Boolean true "(1.1 >= 1.1)" "true")
+
+  (h (rescale #d "1.23" 0) :Integer 1 "rescale(1.23, 0)" "1")
+  (h (rescale #d "1.23" 1) [:Decimal 1] #d "1.2" "rescale(1.23, 1)" "1.2")
+  (h (rescale #d "1.23" 2) [:Decimal 2] #d "1.23" "rescale(1.23, 2)" "1.23")
+  (h (rescale #d "1.23" 3) [:Decimal 3] #d "1.230" "rescale(1.23, 3)" "1.230")
+  (h (rescale #d "1.23" -1) [:throws "Second argument to 'rescale' must be an integer between 0 and 18"])
+  (h (rescale #d "1.23" 1.0) [:syntax-check-throws "Syntax error"])
+  (h (rescale #d "1.23" #d "1.0") [:throws "Second argument to 'rescale' must be an integer"])
+  (h (rescale #d "1.23" (+ 1 0)) [:throws "Second argument to 'rescale' must be an integer literal"])
+  (h (rescale 1 1) [:throws "First argument to 'rescale' must be a fixed point decimal"])
+
+  (h (intersection #{0 1 2} #{#d "0.0" #d "2.0" #d "1.0"}) [:Set :Nothing] #{} "#{0, 1, 2}.intersection(#{0.0, 1.0, 2.0})" "#{}")
+  (h (intersection #{#d "0.0" #d "1.0" #d "2.0"} #{#d "2.00" #d "0.00" #d "1.00"}) [:Set :Nothing] #{} "#{0.0, 1.0, 2.0}.intersection(#{0.00, 1.00, 2.00})" "#{}")
+  (h #{0 #d "2.00" #d "1.0"} [:Set :Object] #{0 #d "2.00" #d "1.0"} "#{0, 1.0, 2.00}" "#{0, 1.0, 2.00}")
+
+  (h #{0 #d "0.0" #d "0.00"} [:Set :Object] #{0 #d "0.0" #d "0.00"} "#{0, 0.0, 0.00}" "#{0, 0.0, 0.00}")
+  (hf #{0 #d "0.0"} [:Set :Object] #{0 #d "0.0"} "#{0, 0.0}" "#{0, 0.0}")
+  (h (reduce [a #{}] [x [0 #d "0.0" #d "0.00" 0 #d "0.0" #d "0.00"]] (conj a x)) [:Set :Object] #{0 #d "0.0" #d "0.00"} "reduce( a = #{}; x in [0, 0.0, 0.00, 0, 0.0, 0.00] ) { a.conj(x) }" "#{0, 0.0, 0.00}")
+
+  (h (= 0 #d "0.0") [:throws "Result of '=' would always be false"])
+  (h (= #d "0.0" #d "0.00") [:throws "Result of '=' would always be false"])
+  (h (= 1 #d "1.0") [:throws "Result of '=' would always be false"])
+  (h (= #d "1.00" #d "1.0") [:throws "Result of '=' would always be false"])
+  (h (= -1 #d "-1.0") [:throws "Result of '=' would always be false"])
+  (h (= #d "-1.00" #d "-1.0") [:throws "Result of '=' would always be false"])
+  (hf (reduce conj #{} [1 #d "1.0" #d "1.00"]) [:Set :Object] #{1 #d "1.0" #d "1.00"} "#{1, 1.0, 1.00}" "#{1, 1.0, 1.00}"))
 
 ;; (time (run-tests))

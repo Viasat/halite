@@ -7,6 +7,8 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [instaparse.core :as insta]
+            [jibe.halite :as halite]
+            [jibe.lib.fixed :as fixed]
             [jibe.logic.expression :as expression]))
 
 (set! *warn-on-reflection* true)
@@ -14,7 +16,7 @@
 (def global-fns
   "Set of halite operator names that are written as function calls in jadeite,
   otherwise method call syntax is used."
-  '#{abs error expt range str})
+  '#{abs error expt range str rescale})
 
 ;;;;
 ;; From Jadeite to Halite
@@ -97,6 +99,7 @@
                                 (list 'let (mapv toh (drop-last args)) (toh (last args)))
                                 (toh (last args)))
      [[:int & strs]]          (parse-long (apply str strs))
+     [[:dec & strs]]          (fixed/fixed-reader (apply str strs))
      [[:symbol "true"]]       true
      [[:symbol "false"]]      false
      [[:symbol s]]            (unwrap-symbol s)
@@ -167,6 +170,7 @@
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
+    (halite/fixed-decimal? x) (fixed/string-representation x)
     (keyword? x) (typename x)
     (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
                   (str "<" x ">")
