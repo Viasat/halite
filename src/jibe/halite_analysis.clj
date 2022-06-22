@@ -4,7 +4,7 @@
 (ns jibe.halite-analysis
   (:require [clojure.set :as set]
             [jibe.halite :as halite]
-            [jibe.lib.fixed :as fixed]
+            [jibe.lib.fixed-decimal :as fixed-decimal]
             [internal :as s]))
 
 (set! *warn-on-reflection* true)

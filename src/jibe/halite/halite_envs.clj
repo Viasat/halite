@@ -5,7 +5,7 @@
   "Halite spec, type, and eval environment abstractions."
   (:require [clojure.string :as str]
             [jibe.halite.halite-types :as halite-types]
-            [jibe.lib.fixed :as fixed]
+            [jibe.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -16,7 +16,7 @@
 
 (def primitive-types (into ["String" "Integer"
                             "Boolean"]
-                           (map #(str "Decimal" %) (range 1 (inc fixed/max-scale)))))
+                           (map #(str "Decimal" %) (range 1 (inc fixed-decimal/max-scale)))))
 
 (s/defschema MandatoryVarType
   (s/conditional

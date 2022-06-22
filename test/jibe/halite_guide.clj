@@ -5,7 +5,7 @@
   (:require [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
-            [jibe.lib.fixed :as fixed]
+            [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]

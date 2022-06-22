@@ -1,1 +1,1 @@
-{d jibe.lib.fixed/fixed-reader}
+{d jibe.lib.fixed-decimal/fixed-decimal-reader}

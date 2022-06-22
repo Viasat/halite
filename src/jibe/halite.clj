@@ -9,7 +9,7 @@
             [clojure.string :as str]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
-            [jibe.lib.fixed :as fixed]
+            [jibe.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]))
 
@@ -34,7 +34,7 @@
       (instance? Integer value)))
 
 (defn fixed-decimal? [value]
-  (fixed/fixed? value))
+  (fixed-decimal/fixed-decimal? value))
 
 (s/defn ^:private eval-predicate :- s/Bool
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- s/Str, bool-expr]
@@ -195,7 +195,7 @@
                                             (reduce halite-types/meet elem-types)))))
 
 (defn- type-check-fixed-decimal [value]
-  (halite-types/decimal-type (fixed/get-scale value)))
+  (halite-types/decimal-type (fixed-decimal/get-scale value)))
 
 (s/defn ^:private type-of* :- halite-types/HaliteType
   [ctx :- TypeContext, value]
@@ -271,45 +271,45 @@
   `(fn [& args#]
      (apply (if (fixed-decimal? (first args#)) ~fixed-decimal-f ~integer-f) args#)))
 
-(def ^:private hstr  (math-f str  fixed/string-representation))
-(def ^:private hneg? (math-f neg? fixed/fneg?))
-(def ^:private h+    (math-f +    fixed/f+))
-(def ^:private h-    (math-f -    fixed/f-))
-(def ^:private h*    (math-f *    fixed/f*))
-(def ^:private hquot (math-f quot fixed/fquot))
+(def ^:private hstr  (math-f str  fixed-decimal/string-representation))
+(def ^:private hneg? (math-f neg? fixed-decimal/fneg?))
+(def ^:private h+    (math-f +    fixed-decimal/f+))
+(def ^:private h-    (math-f -    fixed-decimal/f-))
+(def ^:private h*    (math-f *    fixed-decimal/f*))
+(def ^:private hquot (math-f quot fixed-decimal/fquot))
 (def ^:private habs  (comp #(if (hneg? %)
                               (throw (ex-info (str "Cannot compute absolute value of: " (hstr %)) {:value %}))
                               %)
-                           (math-f abs  fixed/fabs)))
-(def ^:private h<=   (math-f <=   fixed/f<=))
-(def ^:private h>=   (math-f >=   fixed/f>=))
-(def           h<    (math-f <    fixed/f<))
-(def           h>    (math-f >    fixed/f>))
+                           (math-f abs  fixed-decimal/fabs)))
+(def ^:private h<=   (math-f <=   fixed-decimal/f<=))
+(def ^:private h>=   (math-f >=   fixed-decimal/f>=))
+(def           h<    (math-f <    fixed-decimal/f<))
+(def           h>    (math-f >    fixed-decimal/f>))
 
 (def ^:private decimal-sigs (mapcat (fn [s]
                                       [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
                                        (halite-types/decimal-type s)])
-                                    (range 1 (inc fixed/max-scale))))
+                                    (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-single (mapcat (fn [s]
                                              [[(halite-types/decimal-type s) :Integer & :Integer]
                                               (halite-types/decimal-type s)])
-                                           (range 1 (inc fixed/max-scale))))
+                                           (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-unary (mapcat (fn [s]
                                             [[(halite-types/decimal-type s)]
                                              (halite-types/decimal-type s)])
-                                          (range 1 (inc fixed/max-scale))))
+                                          (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-binary (mapcat (fn [s]
                                              [[(halite-types/decimal-type s) :Integer]
                                               (halite-types/decimal-type s)])
-                                           (range 1 (inc fixed/max-scale))))
+                                           (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-boolean (mapcat (fn [s]
                                               [[(halite-types/decimal-type s) (halite-types/decimal-type s)]
                                                :Boolean])
-                                            (range 1 (inc fixed/max-scale))))
+                                            (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private builtins
   (s/with-fn-validation
@@ -542,8 +542,8 @@
       (throw (ex-info "Second argument to 'rescale' must be an integer literal"
                       {:expr expr})))
     (when-not (and (>= scale 0)
-                   (< scale (inc fixed/max-scale)))
-      (throw (ex-info (str "Second argument to 'rescale' must be an integer between 0 and " fixed/max-scale)
+                   (< scale (inc fixed-decimal/max-scale)))
+      (throw (ex-info (str "Second argument to 'rescale' must be an integer between 0 and " fixed-decimal/max-scale)
                       {:expr expr})))
     (if (zero? scale)
       :Integer
@@ -999,7 +999,7 @@
                     '= (apply = (mapv eval-in-env (rest expr)))
                     'not= (apply not= (mapv eval-in-env (rest expr)))
                     'rescale (let [[_ f s] expr]
-                               (fixed/set-scale (eval-in-env f) s))
+                               (fixed-decimal/set-scale (eval-in-env f) s))
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
                     'when (let [[pred body] (rest expr)]
