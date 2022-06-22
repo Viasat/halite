@@ -49,7 +49,12 @@
 
 (s/defn- fixed->BigDecimal :- BigDecimal
   [f :- FixedDecimal]
-  (BigDecimal. ^String (string-representation f)))
+  (let [s (string-representation f)]
+    (when (nil? (re-matches #"-?[0-9]+.?[0-9]*" s))
+      ;; manually throw NumberFormatException rather than relying on BigDecimal, because the error
+      ;; message from some JVMs was nil in this case
+      (throw (NumberFormatException. (str "Character is neither a decimal digit number nore a decimal point: " s))))
+    (BigDecimal. ^String s)))
 
 (def max-scale 18)
 
