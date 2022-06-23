@@ -142,7 +142,7 @@
                                             (s/one InnerType "inner-type")]
    :else InnerType))
 
-(s/defn ^:private strict-maybe-type? :- s/Bool
+(s/defn strict-maybe-type? :- s/Bool
   [t :- HaliteType]
   (and (vector? t) (= :Maybe (first t))))
 

@@ -138,7 +138,7 @@
                                          (assoc spec-id inst))))))
              {}))})))
 
-(s/defn ^:private check-instance :- halite-types/HaliteType
+(s/defn check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
               (throw (ex-info "instance literal must have :$type field" {error-key inst
@@ -179,7 +179,7 @@
     (set? coll) "set"
     :else nil))
 
-(s/defn ^:private check-coll :- halite-types/HaliteType
+(s/defn check-coll :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, coll]
   (let [elem-types (map (partial check-fn ctx) coll)
         coll-type-string (get-typestring-for-coll coll)]
@@ -194,7 +194,7 @@
                                             1 (first elem-types)
                                             (reduce halite-types/meet elem-types)))))
 
-(defn- type-check-fixed-decimal [value]
+(defn type-check-fixed-decimal [value]
   (halite-types/decimal-type (fixed-decimal/get-scale value)))
 
 (s/defn ^:private type-of* :- halite-types/HaliteType
@@ -262,7 +262,7 @@
                     (merge context {:value c}))))
   c)
 
-(s/defn ^:private check-limit [limit-key v]
+(s/defn check-limit [limit-key v]
   (when-let [limit (get *limits* limit-key)]
     (condp = limit-key
       :string-literal-length (check-count "String" limit v {})
@@ -318,7 +318,7 @@
                                                :Boolean])
                                             (range 1 (inc fixed-decimal/max-scale))))
 
-(def ^:private builtins
+(def builtins
   (s/with-fn-validation
     {'+ (apply mk-builtin h+ (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
      '- (apply mk-builtin h- (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
@@ -437,7 +437,7 @@
      :else (throw (ex-info "Syntax error" {:form expr
                                            :form-class (class expr)})))))
 
-(s/defn ^:private matches-signature?
+(s/defn matches-signature?
   [sig :- FnSignature, actual-types :- [halite-types/HaliteType]]
   (let [{:keys [arg-types variadic-tail]} sig]
     (and
@@ -458,11 +458,6 @@
               (and deprecated?
                    (not *legacy-salt-type-checking*)))
       (throw (ex-info (str "function '" op "' not found") {:form form})))
-    (doseq [[arg t] (map vector args actual-types)]
-      (when (= :Nothing t)
-        (throw (ex-info (str "Disallowed ':Nothing' expression: " (pr-str arg))
-                        {:form form
-                         :nothing-arg arg}))))
     (loop [[sig & more] signatures]
       (cond
         (nil? sig) (throw (ex-info (str "no matching signature for '" (name op) "'")
@@ -477,14 +472,14 @@
   (or (get (halite-envs/scope (:tenv ctx)) sym)
       (throw (ex-info (str "Undefined: '" (name sym) "'") {:form sym}))))
 
-(defn- arg-count-exactly
+(defn arg-count-exactly
   [n form]
   (when (not= n (count (rest form)))
     (throw (ex-info (format "Wrong number of arguments to '%s': expected %d, but got %d"
                             (name (first form)) n (count (rest form)))
                     {:form form}))))
 
-(defn- arg-count-at-least
+(defn arg-count-at-least
   [n form]
   (when (< (count (rest form)) n)
     (throw (ex-info (format "Wrong number of arguments to '%s': expected at least %d, but got %d"
@@ -495,8 +490,6 @@
   (cond
     (halite-types/halite-vector-type? subexpr-type)
     (let [index-type (type-check* ctx index)]
-      (when (= halite-types/empty-vector subexpr-type)
-        (throw (ex-info "Cannot index into empty vector" {:form form})))
       (when (not= :Integer index-type)
         (throw (ex-info "Index must be an integer when target is a vector"
                         {:form form, :index-form index, :expected :Integer, :actual-type index-type})))
@@ -533,17 +526,6 @@
 (s/defn ^:private type-check-equals :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
-  (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
-    (reduce
-     (fn [s t]
-       (let [j (halite-types/join s t)]
-         (when (= j :Nothing)
-           (throw (ex-info (format "Result of '%s' would always be %s"
-                                   (first expr)
-                                   (if (= '= (first expr)) "false" "true"))
-                           {:form expr})))
-         j))
-     arg-types))
   :Boolean)
 
 (s/defn ^:private type-check-set-scale :- halite-types/HaliteType
@@ -688,15 +670,10 @@
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
-                       (type-check* ctx unset-expr))]
-      (when-not (halite-types/maybe-type? sym-type)
-        (throw (ex-info (str "First argument to '" op "' must have an optional type")
-                        {:form sym :expected (halite-types/maybe-type :Any) :actual sym-type})))
+                       (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) unset-expr))]
       (if (= :Unset sym-type)
-        (do
-          (type-check* (update ctx :tenv halite-envs/extend-scope sym :Any) set-expr) ;; Should be :Unset?
-          unset-type)
-        (let [inner-type (second sym-type)
+        unset-type
+        (let [inner-type (halite-types/no-maybe sym-type)
               set-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) set-expr)]
           (halite-types/meet set-type unset-type))))))
 
@@ -707,19 +684,14 @@
     (when-not (and (symbol? sym) (halite-types/bare? sym))
       (throw (ex-info (str "Binding target for '" op "' must be a bare symbol") {:form sym})))
     (let [maybe-type (type-check* ctx maybe-expr)
-          else-type (type-check* ctx else-expr)]
-      (when-not (halite-types/maybe-type? maybe-type)
-        (throw (ex-info (str "Binding expression in '" op "' must have an optional type")
-                        {:form maybe-expr :expected (halite-types/maybe-type :Any) :actual maybe-type})))
+          else-type (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) else-expr)]
       (if (= :Unset maybe-type)
-        (do
-          (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) then-expr)
-          else-type)
-        (let [inner-type (second maybe-type)
+        else-type
+        (let [inner-type (halite-types/no-maybe maybe-type)
               then-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) then-expr)]
           (halite-types/meet then-type else-type))))))
 
-(defn- check-all-sets [[op :as expr] arg-types]
+(defn check-all-sets [[op :as expr] arg-types]
   (when-not (every? #(halite-types/subtype? % (halite-types/set-type :Object)) arg-types)
     (throw (ex-info (format "Arguments to '%s' must be sets" op) {:form expr}))))
 
@@ -819,7 +791,7 @@
       (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
     :Boolean))
 
-(s/defn ^:private type-check-concrete? :- halite-types/HaliteType
+(s/defn type-check-concrete? :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (arg-count-exactly 1 expr)
   :Boolean)
@@ -842,12 +814,6 @@
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
       :else (throw (ex-info "Argument to 'valid?' must be an instance of known type" {:form expr})))))
 
-(s/defn deprecated [f expr]
-  (if *legacy-salt-type-checking*
-    (f expr)
-    (throw (ex-info "Syntax error" {:form expr
-                                    :form-class (class expr)}))))
-
 (s/defn ^:private type-check* :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (cond
@@ -862,7 +828,7 @@
     (map? expr) (check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
-                  'get* (deprecated #(type-check-get ctx %) expr)
+                  'get* (type-check-get ctx expr) ;; deprecated
                   'get-in (type-check-get-in ctx expr)
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
@@ -871,7 +837,7 @@
                   'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
                   'if-value (type-check-if-value ctx expr)
-                  'if-value- (deprecated #(type-check-if-value ctx %) expr)
+                  'if-value- (type-check-if-value ctx expr) ;; deprecated
                   'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
                   'if-value-let (type-check-if-value-let ctx expr)
                   'union (type-check-union ctx expr)
@@ -880,7 +846,7 @@
                   'first (type-check-first ctx expr)
                   'rest (type-check-rest ctx expr)
                   'conj (type-check-conj ctx expr)
-                  'into (deprecated #(type-check-concat ctx %) expr)
+                  'into (type-check-concat ctx expr) ;; deprecated
                   'concat (type-check-concat ctx expr)
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)

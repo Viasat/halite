@@ -5,6 +5,7 @@
   (:require [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
+            [jibe.halite.halite-lint :as halite-lint]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
@@ -26,7 +27,7 @@
   (when-not (is-harness-error? result)
     (if (= :Unset result)
       (is (halite-types/maybe-type? t))
-      (let [result-type (halite/type-check senv tenv result)]
+      (let [result-type (halite-lint/type-check senv tenv result)]
         (when-not (is-harness-error? t)
           (is (halite-types/subtype? result-type t)))))))
 
@@ -51,7 +52,7 @@
                  nil
                  (catch RuntimeException e
                    [:syntax-check-throws (.getMessage e)]))
-          t (try (halite/type-check senv tenv expr)
+          t (try (halite-lint/type-check senv tenv expr)
                  (catch RuntimeException e
                    [:throws (.getMessage e)]))
           h-result (try (halite/eval-expr senv tenv env expr)
@@ -118,7 +119,7 @@
             j-expr (try (jadeite/to-jadeite expr)
                         (catch RuntimeException e
                           [:throws (.getMessage e)]))
-            t (try (halite/type-check senv tenv expr)
+            t (try (halite-lint/type-check senv tenv expr)
                    (catch RuntimeException e
                      [:throws (.getMessage e)]))
             h-result (try (halite/eval-expr senv tenv env expr)
@@ -1016,7 +1017,7 @@
         j-expr (try (jadeite/to-jadeite expr)
                     (catch RuntimeException e
                       [:throws (.getMessage e)]))
-        t (try (halite/type-check senv tenv expr)
+        t (try (halite-lint/type-check senv tenv expr)
                (catch RuntimeException e
                  [:throws (.getMessage e)]))
         h-result (try (halite/eval-expr senv tenv env expr)
@@ -1374,7 +1375,7 @@
 
   (hc :basic-2
       :spec
-      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)) w (if-value v v v)] (if-value w 1 2)) :Integer 2 "{ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); w = (ifValue(v) {v} else {v}); (ifValue(w) {1} else {2}) }" "2"])
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)) w (if-value v v v)] (if-value w 1 2)) [:throws "Disallowed use of Unset variable 'v'; you may want 'no-value'"]])
 
   (hc :basic-2
       :spec

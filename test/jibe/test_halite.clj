@@ -3,6 +3,7 @@
 
 (ns jibe.test-halite
   (:require [jibe.halite :as halite]
+            [jibe.halite.halite-lint :as halite-lint]
             [jibe.halite.halite-envs :as halite-envs]
             [clojure.test :refer [deftest is are test-vars]]
             [schema.test :refer [validate-schemas]])
@@ -90,9 +91,10 @@
     '(error (str "error" " message")) :Nothing)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
     '(error 10) #"no matching signature for 'error'"
-    '(error (error "foo")) #"Disallowed.*expression")
+    '(error (error "foo")) #"Disallowed.*expression"
+    '(let [x (error "Fail")] "Dead code") #"Disallowed binding 'x' to :Nothing")
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
@@ -146,7 +148,7 @@
     '(abs -10) :Integer)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
     '(foo) #"function 'foo' not found"
     '(+ 1 "two") #"no matching signature for '\+'"
@@ -250,7 +252,7 @@
       '(get* xs (+ 1 2)) :String) ;; deprecated
 
     (are [expr err-msg]
-         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
       'foo #"Undefined"
       '(get) #"Wrong number of arguments"
@@ -298,7 +300,7 @@
     '(= (when false 5) (when false "foo")) :Boolean)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
     '(= 1 "two") #"would always be false"
     '(= [] #{}) #"would always be false"
@@ -382,36 +384,31 @@
       {:$type :ws/Maybe$v1 :x 'no-value-} [:Instance :ws/Maybe$v1]
       '(get m :x) [:Maybe :Integer]
       '(if-value x (+ x 1) 1) :Integer
-      '(let [x no-value] (if-value x x 1)) :Integer
-      '(if-value no-value 42 "foo") :String
-      '(if-value- no-value 42 "foo") :String ;; deprecated
       '(if-value x "foo" true) :Object
       '(if-value- x "foo" true) :Object ;; deprecated
       '(if-value x x (when true "foo")) :Any
       '(when-value x "foo") [:Maybe :String]
       '(when-value x (+ x 1)) [:Maybe :Integer]
-      '(when-value no-value "foo") :Unset
       '(some? no-value) :Boolean
       '(some? x) :Boolean
       '(= no-value- x) :Boolean
       '(= 5 x) :Boolean
-      '(if-value-let [y no-value] 42 "foo") :String
-      '(if-value-let [y no-value] (if-value y 4 5) "foo") :String
       '(if-value-let [y x] "foo" true) :Object
       '(if-value-let [y (get m :x)] y 5) :Integer)
 
     (are [expr err-msg]
-         (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
+      '(let [x no-value] (if-value x x 1)) #"Disallowed binding.*to :Unset"
       '(let [no-value- 12] "ha") #"reserved word"
       '(let [no-value 12] "ha") #"reserved word"
       '(if-value 12 true false) #"must be a bare symbol"
       '(when-value 12 true) #"must be a bare symbol"
       '(+ 10 (if-value x no-value- 5)) #"no matching signature for '\+'"
+      '(if-value x 1 (+ x 5)) #"no matching signature for '\+'"
       '(let [y 22] (if-value y true false)) #"must have an optional type"
       '(let [y 22] (when-value y false)) #"must have an optional type"
       '(= "foo" x) #"would always be false"
-      '(if-value-let [y no-value-] 42 y) #"Undefined: 'y'"
       '(= no-value- 5) #"would always be false"
       '(= m 5) #"would always be false")
 
@@ -425,16 +422,12 @@
         {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
         '(get m :x) :Unset
         '(if-value x x 12) 12
-        '(let [y no-value] (if-value y "foo" true)) true
-        '(let [y no-value] (if-value- y "foo" true)) true ;; deprecated
         '(when-value x 12) :Unset
         '(let [y (when true "foo")] (when-value y 12)) 12
         '(= x (get m :x)) true
         '(= 5 (get m :x)) false
         '(some? x) false
         '(some? m) true
-        '(if-value-let [y no-value-] 42 "foo") "foo"
-        '(if-value-let [y no-value-] (if-value y 4 5) "foo") "foo"
         '(if-value-let [y x] "foo" true) true
         '(if-value-let [y (get m :x)] y 5) 5
         '(if-value-let [y (if true 10 no-value-)] y 5) 10))))
