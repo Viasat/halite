@@ -250,7 +250,9 @@
 (def ^:dynamic *limits* {:string-literal-length nil
                          :string-runtime-length nil
                          :vector-literal-count nil
-                         :set-literal-count nil})
+                         :vector-runtime-count nil
+                         :set-literal-count nil
+                         :set-runtime-count nil})
 
 (s/defn ^:private check-count [object-type count-limit c]
   (when (> (count c) count-limit)
@@ -264,7 +266,9 @@
       :string-literal-length (check-count "String" limit v)
       :string-runtime-length (check-count "String" limit v)
       :vector-literal-count (check-count "Vector" limit v)
-      :set-literal-count (check-count "set" limit v)))
+      :vector-runtime-count (check-count "Vector" limit v)
+      :set-literal-count (check-count "set" limit v)
+      :set-runtime-count (check-count "set" limit v)))
   v)
 
 (defmacro math-f [integer-f fixed-decimal-f]
@@ -976,6 +980,12 @@
                                             (symbol (:$type inst)) (symbol t)) {:form expr}))
       :else result)))
 
+(defn ^:private check-collection-runtime-count [x]
+  (check-limit (if (set? x)
+                 :set-runtime-count
+                 :vector-runtime-count)
+               x))
+
 (s/defn ^:private eval-expr* :- s/Any
   [ctx :- EvalContext, expr]
   (let [eval-in-env (partial eval-expr* ctx)]
@@ -1018,8 +1028,8 @@
                                (throw (ex-info "empty vector has no first element" {:form expr})))
                     'rest (let [arg (eval-in-env (second expr))]
                             (if (empty? arg) [] (subvec arg 1)))
-                    'conj (apply conj (map eval-in-env (rest expr)))
-                    'concat (apply into (map eval-in-env (rest expr)))
+                    'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))
+                    'concat (check-collection-runtime-count (apply into (map eval-in-env (rest expr))))
                     'into (apply into (map eval-in-env (rest expr))) ;; deprecated
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
