@@ -438,6 +438,12 @@
   [expr]
   (cond
     (and (seq? expr)
+         (= 'if-value (first expr))
+         (= 1 (count (gather-free-vars expr)))) (->> expr
+                                                     third
+                                                     (gather-tlfc*))
+
+    (and (seq? expr)
          (= 'and (first expr))) (->> expr
                                      rest
                                      (map gather-tlfc*)

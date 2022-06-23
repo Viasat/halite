@@ -709,6 +709,40 @@
           (= x 2)
           (contains? #{1 2} x)) ['(and (= 5900 x) (= x 2) (contains? #{1 2} x))
                                  '{x (and (= 5900 x) (= x 2) (contains? #{1 2} x))}
-                                 '{x {:enum #{}}}]))
+                                 '{x {:enum #{}}}]
+
+    '(if-value x (= x 6000) true) ['(= x 6000)
+                                   '{x (= x 6000)}
+                                   '{x {:enum #{6000}}}]
+
+    '(if-value x
+               (or (= x "6100")
+                   (= x "no")
+                   (= x "yes"))
+               true) ['(or (= x "6100")
+                           (= x "no")
+                           (= x "yes"))
+                      '{x (or (= x "6100")
+                              (= x "no")
+                              (= x "yes"))}
+                      '{x {:enum #{"6100" "yes" "no"}}}]
+
+    '(if-value y (= z 6200) true) [true nil {}]
+
+    '(if-value x (<= 6300 x) true) ['(<= 6300 x)
+                                    '{x (<= 6300 x)}
+                                    '{x {:ranges #{{:min 6300
+                                                    :min-inclusive false}}}}]
+
+    '(and (if-value x (<= 6400 x) true)
+          (if-value x (> 0 x) true)) ['(and (<= 6400 x) (> 0 x))
+                                      '{x (and (<= 6400 x) (> 0 x))}
+                                      '{x {:ranges #{{:min 6400
+                                                      :min-inclusive false
+                                                      :max 0
+                                                      :max-inclusive true}}}}]
+
+    '(or (if-value x (<= 6500 x) true)
+         (if-value x (> 0 x) true)) [true nil {}]))
 
 ;; (run-tests)
