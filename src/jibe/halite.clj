@@ -254,21 +254,21 @@
                          :set-literal-count nil
                          :set-runtime-count nil})
 
-(s/defn check-count [object-type count-limit c]
+(s/defn check-count [object-type count-limit c context]
   (when (> (count c) count-limit)
     (throw (ex-info (str object-type " size of " (count c) " exceeds the max allowed size of " count-limit)
-                    {:value c})))
+                    (merge context {:value c}))))
   c)
 
 (s/defn ^:private check-limit [limit-key v]
   (when-let [limit (get *limits* limit-key)]
     (condp = limit-key
-      :string-literal-length (check-count "String" limit v)
-      :string-runtime-length (check-count "String" limit v)
-      :vector-literal-count (check-count "Vector" limit v)
-      :vector-runtime-count (check-count "Vector" limit v)
-      :set-literal-count (check-count "set" limit v)
-      :set-runtime-count (check-count "set" limit v)))
+      :string-literal-length (check-count "String" limit v {})
+      :string-runtime-length (check-count "String" limit v {})
+      :vector-literal-count (check-count "Vector" limit v {})
+      :vector-runtime-count (check-count "Vector" limit v {})
+      :set-literal-count (check-count "set" limit v {})
+      :set-runtime-count (check-count "set" limit v {})))
   v)
 
 (defmacro math-f [integer-f fixed-decimal-f]
