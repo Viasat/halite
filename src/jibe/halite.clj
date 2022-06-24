@@ -254,7 +254,7 @@
                          :set-literal-count nil
                          :set-runtime-count nil})
 
-(s/defn ^:private check-count [object-type count-limit c]
+(s/defn check-count [object-type count-limit c]
   (when (> (count c) count-limit)
     (throw (ex-info (str object-type " size of " (count c) " exceeds the max allowed size of " count-limit)
                     {:value c})))
