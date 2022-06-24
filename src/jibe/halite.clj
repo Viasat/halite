@@ -252,7 +252,8 @@
                          :vector-literal-count nil
                          :vector-runtime-count nil
                          :set-literal-count nil
-                         :set-runtime-count nil})
+                         :set-runtime-count nil
+                         :list-literal-count nil})
 
 (s/defn check-count [object-type count-limit c context]
   (when (> (count c) count-limit)
@@ -268,7 +269,8 @@
       :vector-literal-count (check-count "Vector" limit v {})
       :vector-runtime-count (check-count "Vector" limit v {})
       :set-literal-count (check-count "set" limit v {})
-      :set-runtime-count (check-count "set" limit v {})))
+      :set-runtime-count (check-count "set" limit v {})
+      :list-literal-count (check-count "list" limit v {})))
   v)
 
 (defmacro math-f [integer-f fixed-decimal-f]
@@ -376,43 +378,46 @@
                           (mapcat identity)
                           (map syntax-check)
                           dorun))
-    (seq? expr) (and (or (#{'=
-                            'rescale
-                            'any?
-                            'concat
-                            'concrete?
-                            'conj
-                            'difference
-                            'every?
-                            'filter
-                            'first
-                            'get
-                            'get*
-                            'if
-                            'if-value
-                            'if-value-
-                            'if-value-let
-                            'intersection
-                            'into
-                            'let
-                            'map
-                            'not=
-                            'reduce
-                            'refine-to
-                            'refines-to?
-                            'rest
-                            'sort-by
-                            'union
-                            'valid
-                            'valid?
-                            'when
-                            'when-value} (first expr))
-                         (get builtins (first expr))
-                         (throw (ex-info "unknown function or operator" {:op (first expr)
-                                                                         :expr expr})))
-                     (->> (rest expr)
-                          (map syntax-check)
-                          dorun))
+    (seq? expr) (do
+                  (or (#{'=
+                         'rescale
+                         'any?
+                         'concat
+                         'concrete?
+                         'conj
+                         'difference
+                         'every?
+                         'filter
+                         'first
+                         'get
+                         'get*
+                         'if
+                         'if-value
+                         'if-value-
+                         'if-value-let
+                         'intersection
+                         'into
+                         'let
+                         'map
+                         'not=
+                         'reduce
+                         'refine-to
+                         'refines-to?
+                         'rest
+                         'sort-by
+                         'union
+                         'valid
+                         'valid?
+                         'when
+                         'when-value} (first expr))
+                      (get builtins (first expr))
+                      (throw (ex-info "unknown function or operator" {:op (first expr)
+                                                                      :expr expr})))
+                  (check-limit :list-literal-count expr)
+                  (->> (rest expr)
+                       (map syntax-check)
+                       dorun)
+                  true)
     (or (vector? expr)
         (set? expr)) (do (check-limit (cond
                                         (vector? expr) :vector-literal-count
