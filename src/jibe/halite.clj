@@ -253,7 +253,8 @@
                          :vector-runtime-count nil
                          :set-literal-count nil
                          :set-runtime-count nil
-                         :list-literal-count nil})
+                         :list-literal-count nil
+                         :expression-nesting-depth nil})
 
 (s/defn check-count [object-type count-limit c context]
   (when (> (count c) count-limit)
@@ -363,69 +364,78 @@
                                          {:spec-error-str %}))
                         [:String] :Nothing)}))
 
+(defn check-n [object-type n v error-context]
+  (when (and n
+             (> v n))
+    (throw (ex-info (str object-type " of " v " exceeds the max allowed value of " n)
+                    error-context))))
+
 (s/defn syntax-check
-  [expr]
-  (cond
-    (boolean? expr) true
-    (integer-or-long? expr) true
-    (fixed-decimal? expr) true
-    (string? expr) (do (check-limit :string-literal-length expr) true)
-    (symbol? expr) true
-    (keyword? expr) true
-    (map? expr) (and (or (:$type expr)
-                         (throw (ex-info "instance literal must have :$type field" {:expr expr})))
-                     (->> expr
-                          (mapcat identity)
-                          (map syntax-check)
-                          dorun))
-    (seq? expr) (do
-                  (or (#{'=
-                         'rescale
-                         'any?
-                         'concat
-                         'concrete?
-                         'conj
-                         'difference
-                         'every?
-                         'filter
-                         'first
-                         'get
-                         'get*
-                         'if
-                         'if-value
-                         'if-value-
-                         'if-value-let
-                         'intersection
-                         'into
-                         'let
-                         'map
-                         'not=
-                         'reduce
-                         'refine-to
-                         'refines-to?
-                         'rest
-                         'sort-by
-                         'union
-                         'valid
-                         'valid?
-                         'when
-                         'when-value} (first expr))
-                      (get builtins (first expr))
-                      (throw (ex-info "unknown function or operator" {:op (first expr)
-                                                                      :expr expr})))
-                  (check-limit :list-literal-count expr)
-                  (->> (rest expr)
-                       (map syntax-check)
-                       dorun)
-                  true)
-    (or (vector? expr)
-        (set? expr)) (do (check-limit (cond
-                                        (vector? expr) :vector-literal-count
-                                        (set? expr) :set-literal-count)
-                                      expr)
-                         (->> (map syntax-check expr) dorun))
-    :else (throw (ex-info "Syntax error" {:form expr
-                                          :form-class (class expr)}))))
+  ([expr]
+   (syntax-check 0 expr))
+  ([depth expr]
+   (check-n "expression nesting" (get *limits* :expression-nesting-depth) depth {})
+   (cond
+     (boolean? expr) true
+     (integer-or-long? expr) true
+     (fixed-decimal? expr) true
+     (string? expr) (do (check-limit :string-literal-length expr) true)
+     (symbol? expr) true
+     (keyword? expr) true
+     (map? expr) (and (or (:$type expr)
+                          (throw (ex-info "instance literal must have :$type field" {:expr expr})))
+                      (->> expr
+                           (mapcat identity)
+                           (map (partial syntax-check (inc depth)))
+                           dorun))
+     (seq? expr) (do
+                   (or (#{'=
+                          'rescale
+                          'any?
+                          'concat
+                          'concrete?
+                          'conj
+                          'difference
+                          'every?
+                          'filter
+                          'first
+                          'get
+                          'get*
+                          'if
+                          'if-value
+                          'if-value-
+                          'if-value-let
+                          'intersection
+                          'into
+                          'let
+                          'map
+                          'not=
+                          'reduce
+                          'refine-to
+                          'refines-to?
+                          'rest
+                          'sort-by
+                          'union
+                          'valid
+                          'valid?
+                          'when
+                          'when-value} (first expr))
+                       (get builtins (first expr))
+                       (throw (ex-info "unknown function or operator" {:op (first expr)
+                                                                       :expr expr})))
+                   (check-limit :list-literal-count expr)
+                   (->> (rest expr)
+                        (map (partial syntax-check (inc depth)))
+                        dorun)
+                   true)
+     (or (vector? expr)
+         (set? expr)) (do (check-limit (cond
+                                         (vector? expr) :vector-literal-count
+                                         (set? expr) :set-literal-count)
+                                       expr)
+                          (->> (map (partial syntax-check (inc depth)) expr) dorun))
+     :else (throw (ex-info "Syntax error" {:form expr
+                                           :form-class (class expr)})))))
 
 (s/defn ^:private matches-signature?
   [sig :- FnSignature, actual-types :- [halite-types/HaliteType]]
