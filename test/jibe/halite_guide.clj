@@ -37,7 +37,7 @@
                     :set-literal-count 1024
                     :set-runtime-count 1024
                     :list-literal-count 256
-                    :expression-nesting-depth 32})
+                    :expression-nesting-depth 10})
 
 (defn ^HInfo h* [expr]
   (binding [halite/*limits* halite-limits]
@@ -2519,7 +2519,7 @@
   (hf (into (range 256) '(+)) [:syntax-check-throws "list size of 257 exceeds the max allowed size of 256"]))
 
 (deftest test-expression-nesting-limit
-  (hf (reduce #(list* '+ %&) 0 (range 32)) :Integer 496 "((((((((((((((((((((((((((((((((0 + 0) + 1) + 2) + 3) + 4) + 5) + 6) + 7) + 8) + 9) + 10) + 11) + 12) + 13) + 14) + 15) + 16) + 17) + 18) + 19) + 20) + 21) + 22) + 23) + 24) + 25) + 26) + 27) + 28) + 29) + 30) + 31)" "496")
-  (hf (reduce #(list* '+ %&) 0 (range (inc 32))) [:syntax-check-throws "expression nesting of 33 exceeds the max allowed value of 32"]))
+  (hf (reduce #(list* '+ %&) 0 (range 10)) :Integer 45 "((((((((((0 + 0) + 1) + 2) + 3) + 4) + 5) + 6) + 7) + 8) + 9)" "45")
+  (hf (reduce #(list* '+ %&) 0 (range (inc 10))) [:syntax-check-throws "expression nesting of 11 exceeds the max allowed value of 10"]))
 
 ;; (time (run-tests))
