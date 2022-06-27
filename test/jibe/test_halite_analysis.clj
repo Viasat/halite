@@ -3,9 +3,30 @@
 
 (ns jibe.test-halite-analysis
   (:require [jibe.halite-analysis :as halite-analysis]
+            [internal :as s]
             [internal :refer :all]))
 
 (set! *warn-on-reflection* true)
+
+(deftest test-schema
+  (s/check halite-analysis/EnumConstraint {:enum #{100}})
+  (s/check halite-analysis/Range {:min 100
+                                  :min-inclusive true})
+  (s/check halite-analysis/Range {:max 100
+                                  :min-inclusive true})
+  (s/check halite-analysis/Range {:max 100
+                                  :max-inclusive true})
+  (s/check halite-analysis/Range {:min 1
+                                  :min-inclusive false
+                                  :max 100
+                                  :max-inclusive true})
+  (s/check halite-analysis/RangeConstraint {:ranges #{{:min 100
+                                                       :min-inclusive true}}})
+
+  (s/check halite-analysis/CollectionConstraint {:coll-size 5})
+  (s/check halite-analysis/CollectionConstraint {:coll-elements {:enum #{1 2}}})
+  (s/check halite-analysis/CollectionConstraint {:coll-size 5
+                                                 :coll-elements {:enum #{1 2}}}))
 
 (deftest test-gather-free-vars
   (are [v expected]

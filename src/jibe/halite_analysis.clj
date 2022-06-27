@@ -5,9 +5,48 @@
   (:require [clojure.set :as set]
             [jibe.halite :as halite]
             [jibe.lib.fixed-decimal :as fixed-decimal]
-            [internal :as s]))
+            [schema.core :as schema]
+            [internal :as s])
+  (:import [jibe.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
+
+(def NumericValue (schema/conditional
+                   halite/integer-or-long? Number
+                   halite/fixed-decimal? FixedDecimal))
+
+(def MinRange {:min NumericValue
+               :min-inclusive Boolean})
+
+(def MaxRange {:max NumericValue
+               :max-inclusive Boolean})
+
+(def MinMaxRange {:min NumericValue
+                  :min-inclusive Boolean
+                  :max NumericValue
+                  :max-inclusive Boolean})
+
+(def Range (schema/conditional
+            #(and (:min %) (:max %)) MinMaxRange
+            #(:min %) MinRange
+            #(:max %) MaxRange))
+
+(def RangeConstraint {:ranges #{Range}})
+
+(def EnumConstraint {:enum #{s/Any}})
+
+(def Natural (schema/constrained Number #(and (integer? %)
+                                              (>= % 0))))
+
+(declare TopLevelFieldConstraint)
+
+(def CollectionConstraint {(s/optional-key :coll-size) Natural
+                           (s/optional-key :coll-elements) (schema/recursive #'TopLevelFieldConstraint)})
+
+(def TopLevelFieldConstraint (schema/conditional
+                              :enum EnumConstraint
+                              :ranges RangeConstraint
+                              :else CollectionConstraint))
 
 (declare replace-free-vars)
 
@@ -402,7 +441,8 @@
        combine-single-leg-ranges
        remove-overlapping))
 
-(defn tlfc-data-map [m]
+(s/defn tlfc-data-map :- {schema/Symbol TopLevelFieldConstraint}
+  [m]
   (->> (update-vals m tlfc-data)
        (remove #(= true (second %)))
        (into {})))
@@ -491,7 +531,7 @@
 
     :default true))
 
-(defn gather-tlfc
+(s/defn gather-tlfc
   "Produce a map from symbols to sets of all of the 'top-level-field-constraints' contained in the
   boolean expr. These are expressions that are clauses of the expression which only refer to a
   single variable, which are of a form that can be understood simply. These are necessary, but not
