@@ -30,6 +30,10 @@
                         (read-string "#d \"922337203685477580.8\"")))
   (is (thrown-with-msg? NumberFormatException #"For input string"
                         (read-string "#d \"-922337203685477580.9\"")))
+  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+                        (read-string "#d \"1.23E3\"")))
+  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+                        (read-string "#d \"1.23e3\"")))
   (is (not (fixed-decimal/fixed-decimal? "1.0")))
   (is (not (fixed-decimal/fixed-decimal? 1.2)))
   (is (not (fixed-decimal/fixed-decimal? 1.2M)))
