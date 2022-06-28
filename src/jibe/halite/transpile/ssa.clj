@@ -387,7 +387,9 @@
      (int? form) (add-derivation dgraph [form :Integer])
      (boolean? form) (add-derivation dgraph [form :Boolean])
      (= :Unset form) (add-derivation dgraph [form :Unset])
-     (and (symbol? form) (or (= form 'no-value-) (= form 'no-value))) (add-derivation dgraph [:Unset :Unset])
+     (and (symbol? form) (or (= form 'no-value-)
+                             (= form 'no-value)
+                             (= form '$no-value))) (add-derivation dgraph [:Unset :Unset])
      (symbol? form) (symbol-to-ssa ctx form)
      (seq? form) (let [[op & args] form]
                    (when-not (contains? supported-halite-ops op)
@@ -615,7 +617,7 @@
     (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
       (cond
         (or (integer? form) (boolean? form)) form
-        (= :Unset form) 'no-value
+        (= :Unset form) '$no-value
         (symbol? form) (if (bound? form)
                          form
                          (form-from-ssa* dgraph guards bound? curr-guard form))

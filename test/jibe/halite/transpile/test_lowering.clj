@@ -207,11 +207,11 @@
 
       true true
 
-      '(valid? {:$type :ws/B :bn 1 :bp (= no-value (when (= an 1) 42))})
+      '(valid? {:$type :ws/B :bn 1 :bp (= $no-value (when (= an 1) 42))})
       '(if (and true (and true (if (and true true) (if (= an 1) true true) false)))
-         (let [$8 (= no-value (when (= an 1) 42))] (let [$1 1] (and (<= $1 10) (=> $8 (<= 0 $1)))))
+         (let [$8 (= $no-value (when (= an 1) 42))] (let [$1 1] (and (<= $1 10) (=> $8 (<= 0 $1)))))
          false)
-      #_(let [$8 (= no-value (when (= an 1) 42))]
+      #_(let [$8 (= $no-value (when (= an 1) 42))]
           (let [$1 1]
             (and (<= $1 10) (=> $8 (<= 0 $1)))))
 
@@ -484,10 +484,10 @@
     (are [expr lowered]
          (= lowered (rewrite-expr ctx lower-no-value-comparison-expr expr))
 
-      '(= no-value no-value) true
-      '(= no-value 1) false
-      '(= no-value x) false
-      '(= no-value u) '(= no-value u))))
+      '(= $no-value $no-value) true
+      '(= $no-value 1) false
+      '(= $no-value x) false
+      '(= $no-value u) '(= $no-value u))))
 
 (def lower-when-expr #'lowering/lower-when-expr)
 
@@ -496,7 +496,7 @@
     (are [expr result]
          (= result (rewrite-expr ctx lower-when-expr expr))
 
-      '(when (= 1 2) (+ 3 4)) '(if (= 1 2) (+ 3 4) no-value))))
+      '(when (= 1 2) (+ 3 4)) '(if (= 1 2) (+ 3 4) $no-value))))
 
 (def lower-maybe-comparisons #'lowering/lower-maybe-comparisons)
 (def lower-maybe-comparison-expr #'lowering/lower-maybe-comparison-expr)
@@ -508,17 +508,17 @@
 
       '(= v x)                '($do! x (if ($value? v) (= ($value! v) x) false))
       '(= x v y)              '($do! x y (if ($value? v) (= ($value! v) x y) false))
-      '(= v no-value)         '(if ($value? v) false true)
-      '(= v no-value x)       '($do! v x false)
-      '(= v no-value w)       '($do! w (if ($value? v) false (= no-value w)))
+      '(= v $no-value)        '(if ($value? v) false true)
+      '(= v $no-value x)      '($do! v x false)
+      '(= v $no-value w)      '($do! w (if ($value? v) false (= $no-value w)))
       '(not= v x)             '($do! x (if ($value? v) (not= ($value! v) x) true))
-      '(not= v no-value)      '(if ($value? v) true false)
-      '(not= v no-value x)    '($do! v x true)
+      '(not= v $no-value)     '(if ($value? v) true false)
+      '(not= v $no-value x)   '($do! v x true)
       '(not= x v y)           '($do! x y (if ($value? v) (not= ($value! v) x y) true))
       '(= v w)                '($do! w (if ($value? v) (= ($value! v) w) (if ($value? w) false true)))
       '(not= v w)             '($do! w (if ($value? v) (not= ($value! v) w) (if ($value? w) true false)))
       '(= x u y v w)          '($do! x y v w (if ($value? u) (= ($value! u) x y v w) (if ($value? v) false true)))
-      '(= no-value no-value)  '(= no-value no-value)
+      '(= $no-value $no-value)'(= $no-value $no-value)
       ;; TODO: Show this working on (get) forms.
 
       ;; cannot be lowered as-is
@@ -766,7 +766,7 @@
                 [["$all"
                   (let [$373 (= 0 (mod dx 2))]
                     (if (if $373 true true)
-                      (let [$376 (if $373 (div dx 2) no-value)
+                      (let [$376 (if $373 (div dx 2) $no-value)
                             $378 (+ dx 1)
                             $379 {:$type :ws/C, :cw dx, :cx dx}
                             $381 {:$type :ws/C, :cw 12, :cx dx}]
@@ -895,7 +895,7 @@
        (is (= num-to-check (:checked @*results*)))))))
 
 ;; TODO: (get {:$type :ws/B} :notset) => :Unset
-;; TODO: (from-ssa :Unset) => no-value-
+;; TODO: (from-ssa :Unset) => $no-value
 ;; TODO: Go back through the rules to see what needs to be added because of $do!
 
 ;; TODO: Test case where maybe comparisons lower to instance comparisons that lower to maybe comparisons.
