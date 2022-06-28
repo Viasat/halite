@@ -41,12 +41,14 @@
 (declare TopLevelFieldConstraint)
 
 (def CollectionConstraint {(s/optional-key :coll-size) Natural
-                           (s/optional-key :coll-elements) (schema/recursive #'TopLevelFieldConstraint)})
+                           (s/optional-key :coll-elements) (schema/recursive #'TopLevelFieldConstraint)
+                           (s/optional-key :enum) #{s/Any}})
 
 (def TopLevelFieldConstraint (schema/conditional
+                              :coll-size CollectionConstraint
+                              :coll-elements CollectionConstraint
                               :enum EnumConstraint
-                              :ranges RangeConstraint
-                              :else CollectionConstraint))
+                              :ranges RangeConstraint))
 
 (declare replace-free-vars)
 
@@ -275,7 +277,7 @@
         (when (every? #(and (map? %)
                             (or (:coll-size %)
                                 (:coll-elements %))) xs)
-          (reduce merge {} xs))
+          (reduce (partial merge-with merge) {} xs))
         {:ranges #{(reduce (fn [a b]
                              (cond
                                (and (:min a) (:min b)

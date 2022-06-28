@@ -595,6 +595,21 @@
                               (or (= y "a")
                                   (= y "b")))))) [true nil {}]
 
+    '(and (every? [v a]
+                  (or (= v ["a"])
+                      (= v ["a" "b"])))
+          (every? [v a]
+                  (every? [s v]
+                          (or (= s "a")
+                              (= s "b")
+                              (= s "4895"))))) ['(and [(or (= a ["a"]) (= a ["a" "b"]))]
+                                                      [[(or (= a "a") (= a "b") (= a "4895"))]])
+                                                '{a (and
+                                                     [(or (= a ["a"]) (= a ["a" "b"]))]
+                                                     [[(or (= a "a") (= a "b") (= a "4895"))]])}
+                                                '{a {:coll-elements {:coll-elements {:enum #{"a" "b" "4895"}}
+                                                                     :enum #{["a" "b"] ["a"]}}}}]
+
     '(or (= "a" x)
          (= x 4900)) ['(or (= "a" x) (= x 4900))
                       '{x (or (= "a" x) (= x 4900))}
@@ -766,6 +781,9 @@
                                                       :max-inclusive true}}}}]
 
     '(or (if-value x (<= 6500 x) true)
-         (if-value x (> 0 x) true)) [true nil {}]))
+         (if-value x (> 0 x) true)) [true nil {}]
+
+    '(any? [n #{1 6600}]
+           (= x n)) [true nil {}]))
 
 ;; (run-tests)
