@@ -5,7 +5,7 @@
   (:require [jibe.halite :as halite]
             [jibe.halite.halite-lint :as halite-lint]
             [jibe.halite.halite-envs :as halite-envs]
-            [clojure.test :refer [deftest is are test-vars]]
+            [clojure.test :as test :refer [deftest is are test-vars]]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 
@@ -340,7 +340,7 @@
 
 (deftest let-tests
   (are [expr etype]
-       (= etype (halite/type-check senv tenv expr))
+       (= etype (halite-lint/type-check senv tenv expr))
 
     '(let [] 1) :Integer
     '(let [x (+ 1 2)
@@ -352,13 +352,15 @@
        y) :Integer)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
     '(let) #"Wrong number of arguments"
     '(let [x] x) #"must have an even number of forms"
     '(let []) #"Wrong number of arguments"
     '(let [1 2] 1) #"must be symbols"
-    '(let [x "foo"] (+ x 1)) #"no matching signature")
+    '(let [x "foo"] (+ x 1)) #"no matching signature"
+    '(let [$type 7] 8) #"must not.*[$]"
+    '(let [$foo 7] 8) #"must not.*[$]")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -371,17 +373,20 @@
 (deftest maybe-tests
   (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
         tenv (-> tenv
+                 (halite-envs/extend-scope 'no-value- :Unset) ; deprecated
+                 (halite-envs/extend-scope 'no-value  :Unset) ; deprecated
                  (halite-envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (halite-envs/extend-scope 'x [:Maybe :Integer]))]
     (are [expr etype]
-         (= etype (halite/type-check senv tenv expr))
+         (= etype (halite-lint/type-check senv tenv expr))
 
+      '$no-value :Unset
       'no-value- :Unset ; deprecated
-      'no-value :Unset
+      'no-value :Unset  ; deprecated
       {:$type :ws/Maybe$v1} [:Instance :ws/Maybe$v1]
       {:$type :ws/Maybe$v1 :x 1} [:Instance :ws/Maybe$v1]
-      {:$type :ws/Maybe$v1 :x 'no-value} [:Instance :ws/Maybe$v1]
-      {:$type :ws/Maybe$v1 :x 'no-value-} [:Instance :ws/Maybe$v1]
+      {:$type :ws/Maybe$v1 :x '$no-value} [:Instance :ws/Maybe$v1]
+      {:$type :ws/Maybe$v1 :x 'no-value} [:Instance :ws/Maybe$v1] ; deprecated
       '(get m :x) [:Maybe :Integer]
       '(if-value x (+ x 1) 1) :Integer
       '(if-value x "foo" true) :Object
@@ -391,7 +396,7 @@
       '(when-value x (+ x 1)) [:Maybe :Integer]
       '(some? no-value) :Boolean
       '(some? x) :Boolean
-      '(= no-value- x) :Boolean
+      '(= $no-value x) :Boolean
       '(= 5 x) :Boolean
       '(if-value-let [y x] "foo" true) :Object
       '(if-value-let [y (get m :x)] y 5) :Integer)
@@ -400,8 +405,8 @@
          (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
       '(let [x no-value] (if-value x x 1)) #"Disallowed binding.*to :Unset"
-      '(let [no-value- 12] "ha") #"reserved word"
-      '(let [no-value 12] "ha") #"reserved word"
+      '(let [no-value $no-value] 2) #"Disallowed binding.*to :Unset"
+      '(let [$no-value 5] $no-value) #"must not.*[$]"
       '(if-value 12 true false) #"must be a bare symbol"
       '(when-value 12 true) #"must be a bare symbol"
       '(+ 10 (if-value x no-value- 5)) #"no matching signature for '\+'"
@@ -412,13 +417,16 @@
       '(= no-value- 5) #"would always be false"
       '(= m 5) #"would always be false")
 
-    (let [env (halite-envs/env {'m {:$type :ws/Maybe$v1}
+    (let [env (halite-envs/env {'no-value- :Unset ; deprecated
+                                'no-value  :Unset ; deprecated
+                                'm {:$type :ws/Maybe$v1}
                                 'x :Unset})]
       (are [expr v]
            (= v (halite/eval-expr senv tenv env expr))
 
         'no-value- :Unset
         'no-value :Unset
+        '$no-value :Unset
         {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
         '(get m :x) :Unset
         '(if-value x x 12) 12
@@ -1016,5 +1024,23 @@
         {"hi" "there"} {:$type :ws/JsonObj :entries
                         #{{:$type :ws/JsonObjEntry :key "hi" :val
                            {:$type :ws/JsonStr :s "there"}}}}))))
+
+(deftest test-embedding-env
+  (test/testing "Initial scope may bind plain symbols"
+    (let [tenv (-> tenv (halite-envs/extend-scope 'that :Integer))
+          env (-> empty-env (halite-envs/bind 'that 71))]
+      (is (= :Integer (halite-lint/type-check senv tenv '(+ that 25))))
+      (is (= 96 (halite/eval-expr senv tenv env '(+ that 25))))))
+
+  (test/testing "Initial scope may bind external-reserved-words"
+    (let [tenv (-> tenv (halite-envs/extend-scope '$this :Integer))
+          env (-> empty-env (halite-envs/bind '$this 71))]
+      (is (= :Integer (halite-lint/type-check senv tenv '(+ $this 25))))
+      (is (= 96 (halite/eval-expr senv tenv env '(+ $this 25))))))
+
+  (test/testing "Initial scope may not bind arbitrary $-words"
+    (let [tenv (-> tenv (halite-envs/extend-scope '$foo :Integer))]
+      (is (thrown-with-msg? ExceptionInfo #"disallowed symbol.*[$]foo"
+                            (halite-lint/type-check senv tenv '(+ $foo 25)))))))
 
 ;; (clojure.test/run-tests)

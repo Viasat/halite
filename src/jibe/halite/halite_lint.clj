@@ -44,8 +44,11 @@
   (let [t (get (halite-envs/scope (:tenv ctx)) sym)]
     (when-not t
       (throw (ex-info (str "Undefined: '" (name sym) "'") {:form sym})))
-    (when (= :Unset t)
-      (throw (ex-info (str "Disallowed use of Unset variable '" (name sym) "'; you may want 'no-value'")
+    (when (and (= :Unset t)
+               (not (or (= '$no-value sym)
+                        (and halite/*legacy-salt-type-checking*
+                             (contains? '#{no-value no-value-} sym)))))
+      (throw (ex-info (str "Disallowed use of Unset variable '" (name sym) "'; you may want '$no-value'")
                       {:form sym})))
     t))
 
@@ -136,9 +139,16 @@
     (type-check*
      (reduce
       (fn [ctx [sym body]]
+        (when-not (and (symbol? sym) (halite-types/bare? sym))
+          (throw (ex-info (format "Binding target for 'let' must be a bare symbol, not: %s"
+                                  (pr-str sym))
+                          {:form expr :sym sym})))
+        (when (re-find #"^[$]" (name sym))
+          (throw (ex-info (format "Binding target for 'let' must not start with '$': " sym)
+                          {:form expr :sym sym})))
         (let [t (type-check* ctx body)]
           (when (= t :Unset)
-            (throw (ex-info (format "Disallowed binding '%s' to :Unset value; just use 'no-value'" sym)
+            (throw (ex-info (format "Disallowed binding '%s' to :Unset value; just use '$no-value'" sym)
                             {:form expr :sym sym :body body})))
           (when (= t :Nothing)
             (throw (ex-info (format "Disallowed binding '%s' to :Nothing value; perhaps move to body of 'let'" sym)
@@ -157,7 +167,10 @@
                       {:form expr})))
     (when-not (and (symbol? sym) (halite-types/bare? sym))
       (throw (ex-info (str "Binding target for '" op "' must be a bare symbol, not: " (pr-str sym))
-                      {:form expr})))
+                      {:form expr, :sym sym})))
+    (when (re-find #"^[$]" (name sym))
+      (throw (ex-info (format "Binding target for '%s' must not start with '$': " op sym)
+                      {:form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
           et (halite-types/elem-type coll-type)
           _ (when-not et
@@ -384,10 +397,7 @@
     (halite/integer-or-long? expr) :Integer
     (halite/fixed-decimal? expr) (halite/type-check-fixed-decimal expr)
     (string? expr) :String
-    (symbol? expr) (if (or (= 'no-value expr)
-                           (and halite/*legacy-salt-type-checking* (= 'no-value- expr)))
-                     :Unset
-                     (type-check-symbol ctx expr))
+    (symbol? expr) (type-check-symbol ctx expr)
     (map? expr) (halite/check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
@@ -428,20 +438,31 @@
                                           :form-class (class expr)}))))
 
 (s/defn lint!
-  "Return nil if no violations found, or throw the first linting rule violation found."
+  "Assumes type-checked halite. Return nil if no violations found, or throw the
+  first linting rule violation found."
   [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
+  (some (fn [[sym t]]
+          (when (and (re-find #"^[$]" (name sym))
+                     (not (contains? halite/reserved-words sym))
+                     (not (contains? halite/external-reserved-words sym)))
+            (throw (ex-info (str "Bug: type environment contains disallowed symbol: " sym)
+                            {:sym sym :type t}))))
+        (halite-envs/scope tenv))
   (type-check* {:senv senv :tenv tenv} expr)
   nil)
 
 (s/defn type-check
-  "Return type if no lint violations found, otherwise throw the first linting rule violation found."
+  "Convenience function to run `lint!` and also `halite/type-check` in the
+  required order.  Returns the halite type of the expr if no lint violations
+  found, otherwise throw the first linting rule violation found."
   [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
   (let [t (halite/type-check senv tenv expr)]
     (lint! senv tenv expr)
     t))
 
 (s/defn lint :- halite-types/HaliteType
-  "Return nil if no violations found, or a seq of one or more linting rule violations."
+  "Assumes type-checked halite. Return nil if no violations found, or a seq of
+  one or more linting rule violations."
   [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
   (try
     (lint! senv tenv expr)

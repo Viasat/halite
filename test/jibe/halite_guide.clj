@@ -1375,7 +1375,7 @@
 
   (hc :basic-2
       :spec
-      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)) w (if-value v v v)] (if-value w 1 2)) [:throws "Disallowed use of Unset variable 'v'; you may want 'no-value'"]])
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)) w (if-value v v v)] (if-value w 1 2)) [:throws "Disallowed use of Unset variable 'v'; you may want '$no-value'"]])
 
   (hc :basic-2
       :spec

@@ -17,7 +17,16 @@
 
 (def ^:dynamic *legacy-salt-type-checking* true)
 
-(def reserved-words #{'no-value 'no-value-})
+(def reserved-words
+  "Symbols beginning with $ that are currently defined by halite."
+  '#{$no-value})
+
+(def external-reserved-words
+  "Any symbol beginning with $ may be defined in any future version of halite,
+  except for symbols in this list, which halite itself promises not to use so
+  that they can be safely added to environments by projects (such as jibe) that
+  _use_ halite."
+  '#{$this})
 
 (declare eval-expr)
 
@@ -577,8 +586,6 @@
       (fn [ctx [sym body]]
         (when-not (symbol? sym)
           (throw (ex-info "even-numbered forms in let binding vector must be symbols" {:form expr})))
-        (when (contains? reserved-words sym)
-          (throw (ex-info (format "cannot bind value to reserved word '%s'" sym) {:form expr})))
         (update ctx :tenv halite-envs/extend-scope sym (type-check* ctx body)))
       ctx
       (partition 2 bindings))
@@ -821,10 +828,7 @@
     (integer-or-long? expr) :Integer
     (fixed-decimal? expr) (type-check-fixed-decimal expr)
     (string? expr) :String
-    (symbol? expr) (if (or (= 'no-value expr)
-                           (and *legacy-salt-type-checking* (= 'no-value- expr)))
-                     :Unset
-                     (type-check-symbol ctx expr))
+    (symbol? expr) (type-check-symbol ctx expr)
     (map? expr) (check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
@@ -975,9 +979,7 @@
           (integer-or-long? expr)
           (string? expr)) expr
       (fixed-decimal? expr) expr
-      (symbol? expr) (if (or (= 'no-value expr) (= 'no-value- expr))
-                       :Unset
-                       (get (halite-envs/bindings (:env ctx)) expr))
+      (symbol? expr) (get (halite-envs/bindings (:env ctx)) expr)
       (map? expr) (->> (dissoc expr :$type)
                        (map (fn [[k v]] [k (eval-in-env v)]))
                        (remove (fn [[k v]] (= :Unset v)))
