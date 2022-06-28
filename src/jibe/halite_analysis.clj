@@ -538,3 +538,9 @@
   sufficient constraints for the entire expression to evaluate to 'true'."
   [expr]
   (->> expr gather-tlfc* condense-boolean-logic))
+
+(s/defn compute-tlfc-map [tree]
+  (-> tree
+      gather-tlfc
+      sort-tlfc
+      tlfc-data-map))

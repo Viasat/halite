@@ -133,8 +133,7 @@
        (= x
           [(halite-analysis/gather-tlfc v)
            (halite-analysis/sort-tlfc (halite-analysis/gather-tlfc v))
-           (-> (halite-analysis/sort-tlfc (halite-analysis/gather-tlfc v))
-               halite-analysis/tlfc-data-map)])
+           (halite-analysis/compute-tlfc-map v)])
 
     true [true
           nil
