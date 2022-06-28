@@ -345,7 +345,12 @@
     (and (seq? expr)
          (= 'contains? (first expr))) {:enum (second expr)}
 
-    (and (vector? expr)) {:coll-elements (tlfc-data* (first expr))}
+    (and (vector? expr)) {:coll-elements (let [result (tlfc-data* (first expr))]
+                                           (if (and (map? result)
+                                                    (or (contains? result :min)
+                                                        (contains? result :max)))
+                                             {:ranges #{result}}
+                                             result))}
 
     :default expr))
 

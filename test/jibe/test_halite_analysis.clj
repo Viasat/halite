@@ -530,17 +530,20 @@
 
     '(every? [x a]
              (every? [y x]
+                     (> y 4150))) ['[[(> a 4150)]]
+                                   '{a [[(> a 4150)]]}
+                                   '{a {:coll-elements {:coll-elements {:ranges #{{:min 4150
+                                                                                   :min-inclusive false}}}}}}]
+
+    '(every? [x a]
+             (every? [y x]
                      (or (and (> y 4200)
                               (<= y 4210))
                          (and (< y 5)
-                              (> y 0))))) ['[[(or (and (> a 4200)
-                                                       (<= a 4210))
-                                                  (and (< a 5)
-                                                       (> a 0)))]]
-                                           '{a [[(or (and (> a 4200)
-                                                          (<= a 4210))
-                                                     (and (< a 5)
-                                                          (> a 0)))]]}
+                              (> y 0))))) ['[[(or (and (> a 4200) (<= a 4210)) (and (< a 5) (> a 0)))]]
+                                           '{a [[(or
+                                                  (and (> a 4200) (<= a 4210))
+                                                  (and (< a 5) (> a 0)))]]}
                                            '{a {:coll-elements {:coll-elements {:ranges #{{:max 5
                                                                                            :max-inclusive false
                                                                                            :min 0
