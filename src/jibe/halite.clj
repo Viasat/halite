@@ -150,12 +150,15 @@
 (s/defn check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
-              (throw (ex-info "instance literal must have :$type field" {error-key inst
+              (throw (ex-info "instance literal must have :$type field" {:user-visible-error? true
+                                                                         error-key inst
                                                                          :inst-class (class inst)})))
         _ (when-not (halite-types/namespaced-keyword? t)
-            (throw (ex-info "expected namespaced keyword as value of :$type" {error-key inst})))
+            (throw (ex-info "expected namespaced keyword as value of :$type" {:user-visible-error? true
+                                                                              error-key inst})))
         spec-info (or (halite-envs/lookup-spec (:senv ctx) t)
-                      (throw (ex-info (str "resource spec not found: " t) {error-key inst})))
+                      (throw (ex-info (str "resource spec not found: " t) {:user-visible-error? true
+                                                                           error-key inst})))
         field-types (:spec-vars spec-info)
         fields (set (keys field-types))
         required-fields (->> field-types
@@ -168,10 +171,12 @@
 
     (when (seq missing-fields)
       (throw (ex-info (str "missing required variables: " (str/join "," missing-fields))
-                      {error-key inst :missing-vars missing-fields})))
+                      {:user-visible-error? true
+                       error-key inst :missing-vars missing-fields})))
     (when (seq invalid-fields)
       (throw (ex-info (str "variables not defined on spec: " (str/join "," invalid-fields))
-                      {error-key inst :invalid-vars invalid-fields})))
+                      {:user-visible-error? true
+                       error-key inst :invalid-vars invalid-fields})))
 
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
@@ -477,7 +482,8 @@
 (s/defn ^:private type-check-symbol :- halite-types/HaliteType
   [ctx :- TypeContext, sym]
   (or (get (halite-envs/scope (:tenv ctx)) sym)
-      (throw (ex-info (str "Undefined: '" (name sym) "'") {:form sym}))))
+      (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
+                                                           :form sym}))))
 
 (defn arg-count-exactly
   [n form]

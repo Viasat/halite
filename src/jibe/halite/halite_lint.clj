@@ -43,7 +43,8 @@
   [ctx :- TypeContext, sym]
   (let [t (get (halite-envs/scope (:tenv ctx)) sym)]
     (when-not t
-      (throw (ex-info (str "Undefined: '" (name sym) "'") {:form sym})))
+      (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
+                                                           :form sym})))
     (when (and (= :Unset t)
                (not (or (= '$no-value sym)
                         (and halite/*legacy-salt-type-checking*
@@ -102,7 +103,8 @@
            (throw (ex-info (format "Result of '%s' would always be %s"
                                    (first expr)
                                    (if (= '= (first expr)) "false" "true"))
-                           {:form expr})))
+                           {:user-visible-error? true
+                            :form expr})))
          j))
      arg-types))
   :Boolean)
