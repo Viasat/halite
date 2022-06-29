@@ -394,8 +394,7 @@
       '(if-value x x (when true "foo")) :Any
       '(when-value x "foo") [:Maybe :String]
       '(when-value x (+ x 1)) [:Maybe :Integer]
-      '(some? no-value) :Boolean
-      '(some? x) :Boolean
+      '(if-value x true false) :Boolean
       '(= $no-value x) :Boolean
       '(= 5 x) :Boolean
       '(if-value-let [y x] "foo" true) :Object
@@ -434,8 +433,8 @@
         '(let [y (when true "foo")] (when-value y 12)) 12
         '(= x (get m :x)) true
         '(= 5 (get m :x)) false
-        '(some? x) false
-        '(some? m) true
+        '(if-value x true false) false
+        '(if-value m true false) true
         '(if-value-let [y x] "foo" true) true
         '(if-value-let [y (get m :x)] y 5) 5
         '(if-value-let [y (if true 10 no-value-)] y 5) 10))))
@@ -622,7 +621,7 @@
   (let [senv (update senv :specs merge
                      {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
                                             :y "Boolean"}
-                                :constraints [["x-if-y" '(=> y (some? x))]]}
+                                :constraints [["x-if-y" '(=> y (if-value x true false))]]}
                       :ws/Invalid$v1 {:spec-vars {}
                                       :constraints [["broken" '(or y true)]]}})]
     ;; type-check cannot detect constraint violations, because that would often involve

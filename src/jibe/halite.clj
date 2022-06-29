@@ -363,8 +363,6 @@
                        [halite-types/empty-vector] halite-types/empty-vector
                        [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
                        [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer))
-     'some? (deprecated-builtin (mk-builtin (fn [v] (not= :Unset v))
-                                            [:Any] :Boolean))
      'range (mk-builtin (comp vec range)
                         [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer :Integer] (halite-types/vector-type :Integer)
