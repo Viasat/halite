@@ -518,7 +518,7 @@
       '(= v w)                '($do! w (if ($value? v) (= ($value! v) w) (if ($value? w) false true)))
       '(not= v w)             '($do! w (if ($value? v) (not= ($value! v) w) (if ($value? w) true false)))
       '(= x u y v w)          '($do! x y v w (if ($value? u) (= ($value! u) x y v w) (if ($value? v) false true)))
-      '(= $no-value $no-value)'(= $no-value $no-value)
+      '(= $no-value $no-value) '(= $no-value $no-value)
       ;; TODO: Show this working on (get) forms.
 
       ;; cannot be lowered as-is
