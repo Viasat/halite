@@ -808,42 +808,6 @@
       '(refines-to? ax :ws/A2) true
       '(refines-to? ax :ws/A1) false)))
 
-(deftest test-concrete?
-  (let [senv (->TestSpecEnv
-              {:ws/A {:spec-vars {:x "Integer"}
-                      :constraints '[["posX" (< 0 x)]
-                                     ["boundedX" (< x 10)]]
-                      :abstract? true}
-               :ws/A1 {:spec-vars {}
-                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
-               :ws/A2 {:spec-vars {:a "Integer"
-                                   :b "Integer"}
-                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
-               :ws/B {:spec-vars {:a :ws/A}}
-               :ws/C {:spec-vars {:as [:ws/A]}}
-               :ws/D {:spec-vars {}}})]
-
-    (are [expr etype]
-         (= etype (halite/type-check senv tenv expr))
-
-      '(concrete? 1) :Boolean
-      '(concrete? true) :Boolean
-      '(concrete? "foo") :Boolean
-      '(concrete? {:$type :ws/A :x 1}) :Boolean
-      '(concrete? [{:$type :ws/A :x 1}]) :Boolean)
-
-    (are [expr v]
-         (= v (halite/eval-expr senv tenv empty-env expr))
-
-      '(concrete? 1) true
-      '(concrete? true) true
-      '(concrete? "foo") true
-      '(concrete? {:$type :ws/A :x 1}) false
-      '(concrete? {:$type :ws/A1}) true
-      '(concrete? (refine-to {:$type :ws/A1} :ws/A)) false
-      '(concrete? [{:$type :ws/A :x 1}]) false
-      '(concrete? [{:$type :ws/A1}]) true)))
-
 (deftest test-valid
   (let [senv (->TestSpecEnv
               '{:ws/A {:spec-vars {:x "Integer", :y "Integer"}

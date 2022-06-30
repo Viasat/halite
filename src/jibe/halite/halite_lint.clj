@@ -412,7 +412,6 @@
                   'concat (type-check-concat ctx expr)
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)
-                  'concrete? (halite/type-check-concrete? ctx expr)
                   'every? (type-check-quantifier ctx expr)
                   'any? (type-check-quantifier ctx expr)
                   'map (type-check-map ctx expr)

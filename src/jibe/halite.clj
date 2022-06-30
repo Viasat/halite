@@ -397,7 +397,6 @@
                           'rescale
                           'any?
                           'concat
-                          'concrete?
                           'conj
                           'difference
                           'every?
@@ -789,11 +788,6 @@
       (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
     :Boolean))
 
-(s/defn type-check-concrete? :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
-  (arg-count-exactly 1 expr)
-  :Boolean)
-
 (s/defn ^:private type-check-valid :- halite-types/HaliteType
   [ctx :- TypeContext, [_valid subexpr :as expr]]
   (let [t (type-check* ctx subexpr)]
@@ -842,7 +836,6 @@
                   'concat (type-check-concat ctx expr)
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)
-                  'concrete? (type-check-concrete? ctx expr)
                   'every? (type-check-quantifier ctx expr)
                   'any? (type-check-quantifier ctx expr)
                   'map (type-check-map ctx expr)
@@ -996,7 +989,6 @@
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]
                                    (refines-to? inst (halite-types/concrete-spec-type kw)))
-                    'concrete? (concrete? (:senv ctx) (eval-in-env (second expr)))
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
                     'map (let [[coll result] (eval-comprehend ctx (rest expr))]
