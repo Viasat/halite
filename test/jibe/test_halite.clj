@@ -110,7 +110,7 @@
     '(and (< 1 2) (> (+ 5 6) 90) (or true (<= 1 4))) :Boolean
     '(=> true false) :Boolean
     '(not true) :Boolean
-    '(Cardinality [true true false]) :Integer
+    '(count [true true false]) :Integer
     '(contains? #{1 2 3} 2) :Boolean
     '(contains? #{1 2 3} "foo") :Boolean
     '(inc 12) :Integer
@@ -185,13 +185,13 @@
     '(=> true true) true
     '(=> false false) true
     '(=> false true) true
-    '(Cardinality [1 2 3 1]) 4
+    '(count [1 2 3 1]) 4
     '(and true false true) false
     '(or true false false) true
     '(or false false) false
     '(not false) true
     '(not true) false
-    '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (Cardinality #{1 2}) 3))) true
+    '(and (<= (+ 3 5) (* 2 2 2)) (or (> 0 1) (<= (count #{1 2}) 3))) true
     '(contains? #{1 2 3} 2) true
     '(inc 12) 13
     '(dec 12) 11
@@ -248,8 +248,7 @@
       '(get (get b :a) :x) :Integer
       '(get xs (+ 1 2)) :String
       '(get (get (get (get c :bs) 2) :a) :x) :Integer
-      '(get-in c [:bs 2 :a :x]) :Integer
-      '(get* xs (+ 1 2)) :String) ;; deprecated
+      '(get-in c [:bs 2 :a :x]) :Integer)
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
@@ -280,9 +279,7 @@
          (= v (halite/eval-expr senv tenv env expr))
       'c c
       '(get c :bs) (get c :bs)
-      '(get* c :bs) (get c :bs) ;; deprecated
       '(get (get c :bs) 2) (get-in c [:bs 2])
-      '(get* (get* c :bs) 3) (get-in c [:bs 2]) ;; deprecated
       '(get (get (get c :bs) 2) :a) (get-in c [:bs 2 :a])
       '(get-in c [:bs 2]) (get-in c [:bs 2])
       '(get-in c [:bs 2 :a]) (get-in c [:bs 2 :a]))
@@ -336,7 +333,7 @@
        (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(if true 1 2) 1
-    '(if (< 1 (Cardinality [])) 12 (+ 2 3)) 5))
+    '(if (< 1 (count [])) 12 (+ 2 3)) 5))
 
 (deftest let-tests
   (are [expr etype]
@@ -373,24 +370,18 @@
 (deftest maybe-tests
   (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
         tenv (-> tenv
-                 (halite-envs/extend-scope 'no-value- :Unset) ; deprecated
-                 (halite-envs/extend-scope 'no-value  :Unset) ; deprecated
                  (halite-envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (halite-envs/extend-scope 'x [:Maybe :Integer]))]
     (are [expr etype]
          (= etype (halite-lint/type-check senv tenv expr))
 
       '$no-value :Unset
-      'no-value- :Unset ; deprecated
-      'no-value :Unset  ; deprecated
       {:$type :ws/Maybe$v1} [:Instance :ws/Maybe$v1]
       {:$type :ws/Maybe$v1 :x 1} [:Instance :ws/Maybe$v1]
       {:$type :ws/Maybe$v1 :x '$no-value} [:Instance :ws/Maybe$v1]
-      {:$type :ws/Maybe$v1 :x 'no-value} [:Instance :ws/Maybe$v1] ; deprecated
       '(get m :x) [:Maybe :Integer]
       '(if-value x (+ x 1) 1) :Integer
       '(if-value x "foo" true) :Object
-      '(if-value- x "foo" true) :Object ;; deprecated
       '(if-value x x (when true "foo")) :Any
       '(when-value x "foo") [:Maybe :String]
       '(when-value x (+ x 1)) [:Maybe :Integer]
@@ -403,30 +394,26 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
-      '(let [x no-value] (if-value x x 1)) #"Disallowed binding.*to :Unset"
+      '(let [x $no-value] (if-value x x 1)) #"Disallowed binding.*to :Unset"
       '(let [no-value $no-value] 2) #"Disallowed binding.*to :Unset"
       '(let [$no-value 5] $no-value) #"must not.*[$]"
       '(if-value 12 true false) #"must be a bare symbol"
       '(when-value 12 true) #"must be a bare symbol"
-      '(+ 10 (if-value x no-value- 5)) #"no matching signature for '\+'"
+      '(+ 10 (if-value x $no-value 5)) #"no matching signature for '\+'"
       '(if-value x 1 (+ x 5)) #"no matching signature for '\+'"
       '(let [y 22] (if-value y true false)) #"must have an optional type"
       '(let [y 22] (when-value y false)) #"must have an optional type"
       '(= "foo" x) #"would always be false"
-      '(= no-value- 5) #"would always be false"
+      '(= $no-value 5) #"would always be false"
       '(= m 5) #"would always be false")
 
-    (let [env (halite-envs/env {'no-value- :Unset ; deprecated
-                                'no-value  :Unset ; deprecated
-                                'm {:$type :ws/Maybe$v1}
+    (let [env (halite-envs/env {'m {:$type :ws/Maybe$v1}
                                 'x :Unset})]
       (are [expr v]
            (= v (halite/eval-expr senv tenv env expr))
 
-        'no-value- :Unset
-        'no-value :Unset
         '$no-value :Unset
-        {:$type :ws/Maybe$v1 :x 'no-value-} {:$type :ws/Maybe$v1}
+        {:$type :ws/Maybe$v1 :x '$no-value} {:$type :ws/Maybe$v1}
         '(get m :x) :Unset
         '(if-value x x 12) 12
         '(when-value x 12) :Unset
@@ -437,7 +424,7 @@
         '(if-value m true false) true
         '(if-value-let [y x] "foo" true) true
         '(if-value-let [y (get m :x)] y 5) 5
-        '(if-value-let [y (if true 10 no-value-)] y 5) 10))))
+        '(if-value-let [y (if true 10 $no-value)] y 5) 10))))
 
 (deftest no-value-restrictions
   ;; We want to limit the ways in which [:Maybe <T>] can be used.
@@ -465,7 +452,7 @@
 
       '(when b 1) [:Maybe :Integer]
       '(when b x) [:Maybe :Integer]
-      '(when b (when (if-value- x true false) "Foo")) [:Maybe :String]
+      '(when b (when (if-value x true false) "Foo")) [:Maybe :String]
       '{:$type :ws/Maybe$v1 :x (when b 12)} [:Instance :ws/Maybe$v1])
 
     (are [expr err-msg]
@@ -570,7 +557,6 @@
     '(conj #{} "one") [:Set :String]
     '(concat [] []) [:Vec :Nothing]
     '(concat [1 2] [3]) [:Vec :Integer]
-    '(into [1 2] [3]) [:Vec :Integer] ;; deprecated
     '(concat #{} []) [:Set :Nothing]
     '(concat #{} #{}) [:Set :Nothing]
     '(concat #{"foo"} ["bar"]) [:Set :String]
@@ -594,7 +580,6 @@
     '(concat 1) #"Wrong number of arguments"
     '(concat 1 2) #"must be a set or vector"
     '(concat [] #{}) #"second argument must also be a vector"
-    '(into [] #{}) #"second argument must also be a vector" ;; deprecated
     '(sort) #"no matching signature"
     '(sort 1) #"no matching signature")
 
@@ -614,8 +599,7 @@
     '(concat [1 2] [1 2]) [1 2 1 2]
     '(concat #{} #{}) #{}
     '(concat #{} []) #{}
-    '(concat #{1 2} [1 2 3]) #{1 2 3}
-    '(into #{1 2} [1 2 3]) #{1 2 3})) ;; deprecated
+    '(concat #{1 2} [1 2 3]) #{1 2 3}))
 
 (deftest test-constraint-validation
   (let [senv (update senv :specs merge
@@ -873,7 +857,7 @@
          (= etype (halite/type-check senv tenv expr))
 
       '(valid {:$type :ws/A, :x 1, :y 0}) [:Maybe [:Instance :ws/A]]
-      '(let [a (valid {:$type :ws/A :x 1 :y 0})] (if-value- a 1 2)) :Integer
+      '(let [a (valid {:$type :ws/A :x 1 :y 0})] (if-value a 1 2)) :Integer
       '(valid {:$type :ws/C :a {:$type :ws/A :x 1 :y 0}}) [:Maybe [:Instance :ws/C]]
       '(let [a {:$type :ws/A :x 1 :y 0}] (valid a)) [:Maybe [:Instance :ws/A]]
       '(valid (let [a {:$type :ws/A :x 1 :y 0}] a)) [:Maybe [:Instance :ws/A]]

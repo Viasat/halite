@@ -21,9 +21,7 @@
         nargs (count args)
         {:keys [signatures impl deprecated?] :as builtin} (get halite/builtins op)
         actual-types (map (partial type-check* ctx) args)]
-    (when (or (nil? builtin)
-              (and deprecated?
-                   (not halite/*legacy-salt-type-checking*)))
+    (when (nil? builtin)
       (throw (ex-info (str "function '" op "' not found") {:form form})))
     (doseq [[arg t] (map vector args actual-types)]
       (when (= :Nothing t)
@@ -46,9 +44,7 @@
       (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
                                                            :form sym})))
     (when (and (= :Unset t)
-               (not (or (= '$no-value sym)
-                        (and halite/*legacy-salt-type-checking*
-                             (contains? '#{no-value no-value-} sym)))))
+               (not (= '$no-value sym)))
       (throw (ex-info (str "Disallowed use of Unset variable '" (name sym) "'; you may want '$no-value'")
                       {:form sym})))
     t))
@@ -386,12 +382,6 @@
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
       :else (throw (ex-info "Argument to 'valid?' must be an instance of known type" {:form expr})))))
 
-(s/defn deprecated [f expr]
-  (if halite/*legacy-salt-type-checking*
-    (f expr)
-    (throw (ex-info "Syntax error" {:form expr
-                                    :form-class (class expr)}))))
-
 (s/defn ^:private type-check* :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (cond
@@ -403,7 +393,6 @@
     (map? expr) (halite/check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
-                  'get* (deprecated #(type-check-get ctx %) expr)
                   'get-in (type-check-get-in ctx expr)
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
@@ -412,7 +401,6 @@
                   'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
                   'if-value (type-check-if-value ctx expr)
-                  'if-value- (deprecated #(type-check-if-value ctx %) expr)
                   'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
                   'if-value-let (type-check-if-value-let ctx expr)
                   'union (type-check-union ctx expr)
@@ -421,7 +409,6 @@
                   'first (type-check-first ctx expr)
                   'rest (type-check-rest ctx expr)
                   'conj (type-check-conj ctx expr)
-                  'into (deprecated #(type-check-concat ctx %) expr)
                   'concat (type-check-concat ctx expr)
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)

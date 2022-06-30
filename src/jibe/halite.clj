@@ -15,8 +15,6 @@
 
 (set! *warn-on-reflection* true)
 
-(def ^:dynamic *legacy-salt-type-checking* true)
-
 (def reserved-words
   "Symbols beginning with $ that are currently defined by halite."
   '#{$no-value})
@@ -238,8 +236,7 @@
 
 (s/defschema Builtin
   {:signatures (s/constrained [FnSignature] seq)
-   :impl clojure.lang.IFn
-   (s/optional-key :deprecated?) Boolean})
+   :impl clojure.lang.IFn})
 
 (def & :&)
 
@@ -255,9 +252,6 @@
           (cond-> {:arg-types (cond-> arg-types variadic? (subvec 0 (- n 2)))
                    :return-type return-type}
             variadic? (assoc :variadic-tail (last arg-types)))))})
-
-(defn- deprecated-builtin [builtin]
-  (assoc builtin :deprecated? true))
 
 (def max-string-length 1024)
 
@@ -341,7 +335,6 @@
      '<= (apply mk-builtin h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      '> (apply mk-builtin h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      '>= (apply mk-builtin h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     'Cardinality (deprecated-builtin (mk-builtin count [(halite-types/coll-type :Object)] :Integer))
      'count (mk-builtin count [(halite-types/coll-type :Object)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
@@ -354,7 +347,6 @@
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (apply mk-builtin hquot (into [[:Integer :Integer] :Integer] decimal-sigs-single))
-     'mod* (deprecated-builtin (mk-builtin mod [:Integer :Integer] :Integer))
      'mod (mk-builtin mod [:Integer :Integer] :Integer)
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
@@ -412,13 +404,10 @@
                           'filter
                           'first
                           'get
-                          'get*
                           'if
                           'if-value
-                          'if-value-
                           'if-value-let
                           'intersection
-                          'into
                           'let
                           'map
                           'not=
@@ -464,11 +453,9 @@
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
-        {:keys [signatures impl deprecated?] :as builtin} (get builtins op)
+        {:keys [signatures impl] :as builtin} (get builtins op)
         actual-types (map (partial type-check* ctx) args)]
-    (when (or (nil? builtin)
-              (and deprecated?
-                   (not *legacy-salt-type-checking*)))
+    (when (nil? builtin)
       (throw (ex-info (str "function '" op "' not found") {:form form})))
     (loop [[sig & more] signatures]
       (cond
@@ -836,7 +823,6 @@
     (map? expr) (check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
-                  'get* (type-check-get ctx expr) ;; deprecated
                   'get-in (type-check-get-in ctx expr)
                   '= (type-check-equals ctx expr)
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
@@ -845,7 +831,6 @@
                   'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
                   'if-value (type-check-if-value ctx expr)
-                  'if-value- (type-check-if-value ctx expr) ;; deprecated
                   'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
                   'if-value-let (type-check-if-value-let ctx expr)
                   'union (type-check-union ctx expr)
@@ -854,7 +839,6 @@
                   'first (type-check-first ctx expr)
                   'rest (type-check-rest ctx expr)
                   'conj (type-check-conj ctx expr)
-                  'into (type-check-concat ctx expr) ;; deprecated
                   'concat (type-check-concat ctx expr)
                   'refine-to (type-check-refine-to ctx expr)
                   'refines-to? (type-check-refines-to? ctx expr)
@@ -885,13 +869,6 @@
   (let [target (eval-expr* ctx target-expr)]
     (if (vector? target)
       (nth target (eval-expr* ctx index))
-      (get target index :Unset))))
-
-(s/defn ^:private eval-get* :- s/Any ;; deprecated
-  [ctx :- EvalContext, target-expr index]
-  (let [target (eval-expr* ctx target-expr)]
-    (if (vector? target)
-      (nth target (dec (eval-expr* ctx index))) ;; 1-based index
       (get target index :Unset))))
 
 (s/defn ^:private eval-get-in :- s/Any
@@ -991,7 +968,6 @@
                        (validate-instance (:senv ctx)))
       (seq? expr) (condp = (first expr)
                     'get (apply eval-get ctx (rest expr))
-                    'get* (apply eval-get* ctx (rest expr)) ;; deprecated
                     'get-in (apply eval-get-in ctx (rest expr))
                     '= (apply = (mapv eval-in-env (rest expr)))
                     'not= (apply not= (mapv eval-in-env (rest expr)))
@@ -1006,7 +982,6 @@
                     'let (apply eval-let ctx (rest expr))
                     'if-value (eval-if-value ctx expr)
                     'when-value (eval-if-value ctx expr) ; eval-if-value handles when-value
-                    'if-value- (eval-if-value ctx expr) ;; deprecated
                     'if-value-let (eval-if-value-let ctx expr)
                     'union (reduce set/union (map eval-in-env (rest expr)))
                     'intersection (reduce set/intersection (map eval-in-env (rest expr)))
@@ -1017,7 +992,6 @@
                             (if (empty? arg) [] (subvec arg 1)))
                     'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))
                     'concat (check-collection-runtime-count (apply into (map eval-in-env (rest expr))))
-                    'into (apply into (map eval-in-env (rest expr))) ;; deprecated
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]
