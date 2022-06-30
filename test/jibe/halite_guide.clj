@@ -2523,4 +2523,15 @@
   (hf (reduce #(list* '+ %&) 0 (range 10)) :Integer 45 "((((((((((0 + 0) + 1) + 2) + 3) + 4) + 5) + 6) + 7) + 8) + 9)" "45")
   (hf (reduce #(list* '+ %&) 0 (range (inc 10))) [:syntax-check-throws "expression nesting of 11 exceeds the max allowed value of 10"]))
 
+(deftest test-error
+  (h (error "fail") :Nothing [:throws "Spec threw error: fail"] "error(\"fail\")" [:throws "Spec threw error: fail"])
+
+  (h (error) [:throws "no matching signature for 'error'"])
+  (h (error 20) [:throws "no matching signature for 'error'"])
+  (h (error "my" "bad") [:throws "no matching signature for 'error'"])
+  (h (error []) [:throws "no matching signature for 'error'"])
+  (h (error #{}) [:throws "no matching signature for 'error'"])
+
+  (hc :basic :my [(error {:$type :my/Spec$v1, :n 1, :p 1}) [:throws "no matching signature for 'error'"]]))
+
 ;; (time (run-tests))
