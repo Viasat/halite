@@ -55,7 +55,8 @@
                  :constraints #{}
                  :refines-to {}}})]
     (is (=
-         '{x :Integer
+         '{$no-value :Unset
+           x :Integer
            w [:Maybe :Integer]
            as [:Maybe [:Set [:Instance :* #{:ws/A}]]]
            bs [:Vec [:Instance :ws/B]]}

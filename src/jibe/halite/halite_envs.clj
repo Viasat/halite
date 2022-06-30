@@ -145,7 +145,7 @@
       :spec-vars
       (update-keys symbol)
       (update-vals (partial halite-type-from-var-type senv))
-      (->TypeEnvImpl)))
+      (type-env)))
 
 (deftype EnvImpl [bindings]
   Env
@@ -158,7 +158,7 @@
 
 (s/defn env-from-inst :- (s/protocol Env)
   [spec-info :- SpecInfo, inst]
-  (->EnvImpl
+  (env
    (reduce
     (fn [m kw]
       (assoc m (symbol kw) (if (contains? inst kw) (kw inst) :Unset)))
