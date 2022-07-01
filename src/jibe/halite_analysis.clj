@@ -4,6 +4,7 @@
 (ns jibe.halite-analysis
   (:require [clojure.set :as set]
             [jibe.halite :as halite]
+            [jibe.halite.halite-types :as halite-types]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as schema]
             [internal :as s])
@@ -152,6 +153,57 @@
      (set? expr) (gather-collection-free-vars context expr)
      (vector? expr) (gather-collection-free-vars context expr)
      :default (throw (ex-info "unexpected expr to gather-free-vars" {:expr expr})))))
+
+;;
+
+(declare gather-referenced-spec-ids)
+
+(defn- gather-seq-referenced-spec-ids [expr]
+  (cond
+    (= 'let (first expr))
+    (let [[_ bindings body] expr
+          spec-ids (reduce
+                    (fn [spec-ids [sym e]]
+                      (into spec-ids (gather-referenced-spec-ids e)))
+                    #{}
+                    (partition 2 bindings))]
+      (into spec-ids (gather-referenced-spec-ids body)))
+
+    (#{'every? 'any?} (first expr))
+    (let [[_ [sym coll] body] expr]
+      (into (gather-referenced-spec-ids coll)
+            (gather-referenced-spec-ids body)))
+
+    :default
+    (->> expr
+         rest
+         (map gather-referenced-spec-ids)
+         (reduce into #{}))))
+
+(defn- gather-collection-referenced-spec-ids [expr]
+  (->> expr
+       (map gather-referenced-spec-ids)
+       (reduce into #{})))
+
+(defn gather-referenced-spec-ids
+  "Recursively find the set of spec-ids referenced by the expr."
+  [expr]
+  (cond
+    (boolean? expr) #{}
+    (halite/integer-or-long? expr) #{}
+    (halite/fixed-decimal? expr) #{}
+    (string? expr) #{}
+    (symbol? expr) #{}
+    (keyword? expr) (if (halite-types/namespaced-keyword? expr)
+                      #{expr}
+                      #{})
+    (map? expr) (->> (vals expr)
+                     (map gather-referenced-spec-ids)
+                     (reduce into #{}))
+    (seq? expr) (gather-seq-referenced-spec-ids expr)
+    (set? expr) (gather-collection-referenced-spec-ids expr)
+    (vector? expr) (gather-collection-referenced-spec-ids expr)
+    :default (throw (ex-info "unexpected expr to gather-referenced-spec-ids" {:expr expr}))))
 
 ;;;;
 
