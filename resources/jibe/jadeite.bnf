@@ -1,37 +1,38 @@
-expr         = conditional
-params       = symbol      | <'('> (symbol (<','> symbol)* <','>? )? <')'>
+expr           = conditional
+params         = symbol          | <'('> (symbol (<','> symbol)* <','>? )? <')'>
 
-conditional  = if-value-let| ('if' | 'ifValue' ) <'('> expr <')'> expr <'else'> expr
-if-value-let = when-value  | <'ifValueLet'> <'('> symbol <'='> expr <')'> expr <'else'> expr
-when-value   = optional    | <'whenValue'> <'('> symbol <')'> expr
-optional     = valid       | <'when'> <'('> expr <')'> expr
-valid        = implication | ('valid?' | 'valid') expr
-implication  = or          | or <'=>'> expr
-or           = and         | or '||' and
-and          = equality    | and '&&' equality
-equality     = relational  | relational ('==' | '!=') relational
-relational   = add         | relational ('<' | '<=' | '>=' | '>') add
-add          = mult        | add ('+' | '-') mult
-mult         = prefix      | mult ('*' | '/' | '%') prefix
-prefix       = postfix     | '!' prefix
+conditional    = if-value-let    | ('if' | 'ifValue' ) <'('> expr <')'> expr <'else'> expr
+if-value-let   = when-value-let  | <'ifValueLet'> <'('> symbol <'='> expr <')'> expr <'else'> expr
+when-value-let = when-value      | <'whenValueLet'> <'('> symbol <'='> expr <')'> expr
+when-value     = optional        | <'whenValue'> <'('> symbol <')'> expr
+optional       = valid           | <'when'> <'('> expr <')'> expr
+valid          = implication     | ('valid?' | 'valid') expr
+implication    = or              | or <'=>'> expr
+or             = and             | or '||' and
+and            = equality        | and '&&' equality
+equality       = relational      | relational ('==' | '!=') relational
+relational     = add             | relational ('<' | '<=' | '>=' | '>') add
+add            = mult            | add ('+' | '-') mult
+mult           = prefix          | mult ('*' | '/' | '%') prefix
+prefix         = postfix         | '!' prefix
 
-<postfix>    = primary | get-field | get-index | comprehend | reduce | call-fn | type-method | call-method
-get-field    = postfix <'.'> symbol
-get-index    = postfix <'['> expr <']'>
-comprehend   = symbol <'('> symbol <'in'> expr <')'> expr
-reduce       = <'reduce'> <'('> symbol <'='> expr <';'> symbol <'in'> expr <')'> expr
-call-fn      = symbol <'('> (expr (<','> expr)* <','>? )? <')'>
-type-method  = postfix <'.'> ( 'refineTo' | 'refinesTo?' ) <'('> typename <')'>
-call-method  = postfix <'.'> symbol <'('> (expr (<','> expr)* <','>? )? <')'>
+<postfix>      = primary | get-field | get-index | comprehend | reduce | call-fn | type-method | call-method
+get-field      = postfix <'.'> symbol
+get-index      = postfix <'['> expr <']'>
+comprehend     = symbol <'('> symbol <'in'> expr <')'> expr
+reduce         = <'reduce'> <'('> symbol <'='> expr <';'> symbol <'in'> expr <')'> expr
+call-fn        = symbol <'('> (expr (<','> expr)* <','>? )? <')'>
+type-method    = postfix <'.'> ( 'refineTo' | 'refinesTo?' ) <'('> typename <')'>
+call-method    = postfix <'.'> symbol <'('> (expr (<','> expr)* <','>? )? <')'>
 
-<primary>    = decimal | int | symbol | string | map | set | vec | let | <'('> expr <')'>
-map          = <'{'> ( map-entry ( <','> map-entry )* <','>? )? <'}'>
-map-entry    = '$type' <':'> typename | symbol <':'> expr
-set          = <'#{'> ( expr ( <','> expr )* <','>? )? <'}'>
-vec          = <'['> ( expr ( <','> expr )* <','>? )? <']'>
-let          = <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
-int          = "-"? #"\d+"
-decimal      = <'#d'> string
-symbol       = #"[a-zA-Z][a-zA-Z0-9_$?]*" | #"<\S+>"
-typename     = #"[a-zA-Z0-9./$]+" | symbol
-string       = #"\"([^\"\\]|\\.)*\""
+<primary>      = decimal | int | symbol | string | map | set | vec | let | <'('> expr <')'>
+map            = <'{'> ( map-entry ( <','> map-entry )* <','>? )? <'}'>
+map-entry      = '$type' <':'> typename | symbol <':'> expr
+set            = <'#{'> ( expr ( <','> expr )* <','>? )? <'}'>
+vec            = <'['> ( expr ( <','> expr )* <','>? )? <']'>
+let            = <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
+int            = "-"? #"\d+"
+decimal        = <'#d'> string
+symbol         = #"[a-zA-Z][a-zA-Z0-9_$?]*" | #"<\S+>"
+typename       = #"[a-zA-Z0-9./$]+" | symbol
+string         = #"\"([^\"\\]|\\.)*\""

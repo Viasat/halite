@@ -386,6 +386,8 @@
       '(if-value x x (when true "foo")) :Any
       '(when-value x "foo") [:Maybe :String]
       '(when-value x (+ x 1)) [:Maybe :Integer]
+      '(when-value-let [y x] y) [:Maybe :Integer]
+      '(when-value-let [y (get m :x)] y) [:Maybe :Integer]
       '(if-value x true false) :Boolean
       '(= $no-value x) :Boolean
       '(= 5 x) :Boolean
@@ -426,8 +428,11 @@
         '(if-value x true false) false
         '(if-value m true false) true
         '(if-value-let [y x] "foo" true) true
+        '(when-value-let [y x] "foo") :Unset
         '(if-value-let [y (get m :x)] y 5) 5
-        '(if-value-let [y (if true 10 $no-value)] y 5) 10))))
+        '(when-value-let [y (get m :x)] y) :Unset
+        '(if-value-let [y (if true 10 $no-value)] y 5) 10
+        '(when-value-let [y (if true 10 $no-value)] y) 10))))
 
 (deftest no-value-restrictions
   ;; We want to limit the ways in which [:Maybe <T>] can be used.

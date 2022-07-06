@@ -256,12 +256,14 @@
 
 (s/defn ^:private type-check-if-value-let :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
-  (halite/arg-count-exactly 3 expr)
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
+    (halite/arg-count-exactly (if (= 'when-value-let op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
       (throw (ex-info (str "Binding target for '" op "' must be a bare symbol") {:form sym})))
     (let [maybe-type (type-check* ctx maybe-expr)
-          else-type (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) else-expr)]
+          else-type (if (= 'when-value-let op)
+                      :Unset
+                      (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) else-expr))]
       (when-not (halite-types/strict-maybe-type? maybe-type)
         (throw (ex-info (str "Binding expression in '" op "' must have an optional type")
                         {:form maybe-expr :expected (halite-types/maybe-type :Any) :actual maybe-type})))
@@ -404,6 +406,7 @@
                   'if-value (type-check-if-value ctx expr)
                   'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
                   'if-value-let (type-check-if-value-let ctx expr)
+                  'when-value-let (type-check-if-value-let ctx expr) ; if-value-let type-checks when-value-let
                   'union (type-check-union ctx expr)
                   'intersection (type-check-intersection ctx expr)
                   'difference (type-check-difference ctx expr)

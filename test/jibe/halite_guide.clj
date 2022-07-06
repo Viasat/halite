@@ -1079,6 +1079,8 @@
 
   (hc :basic :my [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (div 5 0) 1) :Integer 1 "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(5 / 0)} else {1})" "1"])
 
+  (hc :basic :my [(when-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (div 5 0)) [:Maybe :Integer] :Unset "(whenValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(5 / 0)})" "Unset"])
+
   (hc :basic :my [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] 1 (div 5 0)) :Integer [:throws "Divide by zero"] "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {1} else {(5 / 0)})" [:throws "Divide by zero"]])
 
   (h (if true "yes" (div 5 0)) :Object "yes" "(if(true) {\"yes\"} else {(5 / 0)})" "\"yes\"")

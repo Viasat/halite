@@ -419,7 +419,8 @@
                           'valid
                           'valid?
                           'when
-                          'when-value} (first expr))
+                          'when-value
+                          'when-value-let} (first expr))
                        (get builtins (first expr))
                        (throw (ex-info "unknown function or operator" {:op (first expr)
                                                                        :expr expr})))
@@ -676,12 +677,14 @@
 
 (s/defn ^:private type-check-if-value-let :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
-  (arg-count-exactly 3 expr)
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
+    (arg-count-exactly (if (= 'when-value-let op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
       (throw (ex-info (str "Binding target for '" op "' must be a bare symbol") {:form sym})))
     (let [maybe-type (type-check* ctx maybe-expr)
-          else-type (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) else-expr)]
+          else-type (if (= 'when-value-let op)
+                      :Unset
+                      (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) else-expr))]
       (if (= :Unset maybe-type)
         else-type
         (let [inner-type (halite-types/no-maybe maybe-type)
@@ -827,6 +830,7 @@
                   'if-value (type-check-if-value ctx expr)
                   'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
                   'if-value-let (type-check-if-value-let ctx expr)
+                  'when-value-let (type-check-if-value-let ctx expr) ; if-value-let type-checks when-value-let
                   'union (type-check-union ctx expr)
                   'intersection (type-check-intersection ctx expr)
                   'difference (type-check-difference ctx expr)
@@ -899,7 +903,9 @@
         maybe-val (eval-expr* ctx maybe)]
     (if (not= :Unset maybe-val)
       (eval-expr* (update ctx :env halite-envs/bind sym maybe-val) then)
-      (eval-expr* ctx else))))
+      (if (= 4 (count expr))
+        (eval-expr* ctx else)
+        :Unset))))
 
 (s/defn ^:private eval-quantifier-bools :- [s/Bool]
   [ctx :- EvalContext,
@@ -976,6 +982,7 @@
                     'if-value (eval-if-value ctx expr)
                     'when-value (eval-if-value ctx expr) ; eval-if-value handles when-value
                     'if-value-let (eval-if-value-let ctx expr)
+                    'when-value-let (eval-if-value-let ctx expr) ; eval-if-value-let handles when-value-let
                     'union (reduce set/union (map eval-in-env (rest expr)))
                     'intersection (reduce set/intersection (map eval-in-env (rest expr)))
                     'difference (apply set/difference (map eval-in-env (rest expr)))
