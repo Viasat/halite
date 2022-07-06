@@ -376,6 +376,7 @@
          (= etype (halite-lint/type-check senv tenv expr))
 
       '$no-value :Unset
+      'no-value :Unset
       {:$type :ws/Maybe$v1} [:Instance :ws/Maybe$v1]
       {:$type :ws/Maybe$v1 :x 1} [:Instance :ws/Maybe$v1]
       {:$type :ws/Maybe$v1 :x '$no-value} [:Instance :ws/Maybe$v1]
@@ -388,6 +389,7 @@
       '(if-value x true false) :Boolean
       '(= $no-value x) :Boolean
       '(= 5 x) :Boolean
+      '(let [no-value 42] no-value) :Integer
       '(if-value-let [y x] "foo" true) :Object
       '(if-value-let [y (get m :x)] y 5) :Integer)
 
@@ -420,6 +422,7 @@
         '(let [y (when true "foo")] (when-value y 12)) 12
         '(= x (get m :x)) true
         '(= 5 (get m :x)) false
+        '(let [no-value 42] no-value) 42
         '(if-value x true false) false
         '(if-value m true false) true
         '(if-value-let [y x] "foo" true) true

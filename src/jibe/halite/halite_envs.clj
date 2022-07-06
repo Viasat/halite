@@ -98,7 +98,8 @@
 
 (s/defn type-env :- (s/protocol TypeEnv)
   [scope :- {halite-types/BareSymbol halite-types/HaliteType}]
-  (->TypeEnvImpl (merge '{$no-value :Unset}
+  (->TypeEnvImpl (merge '{no-value :Unset
+                          $no-value :Unset}
                         scope)))
 
 (s/defn halite-type-from-var-type :- halite-types/HaliteType
@@ -154,7 +155,8 @@
 
 (s/defn env :- (s/protocol Env)
   [bindings :- {halite-types/BareSymbol s/Any}]
-  (->EnvImpl (merge '{$no-value :Unset} bindings)))
+  (->EnvImpl (merge '{no-value :Unset
+                      $no-value :Unset} bindings)))
 
 (s/defn env-from-inst :- (s/protocol Env)
   [spec-info :- SpecInfo, inst]

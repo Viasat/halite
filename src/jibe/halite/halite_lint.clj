@@ -44,7 +44,8 @@
       (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
                                                            :form sym})))
     (when (and (= :Unset t)
-               (not (= '$no-value sym)))
+               (not (or (= 'no-value sym)
+                        (= '$no-value sym))))
       (throw (ex-info (str "Disallowed use of Unset variable '" (name sym) "'; you may want '$no-value'")
                       {:form sym})))
     t))
