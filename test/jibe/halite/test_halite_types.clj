@@ -192,12 +192,14 @@
                            s)])))
 
 (defspec prop-ptn-round-trip
-  {:num-tests 1000}
+  {:num-tests 1001
+   :reporter-fn (fn [_])}
   (prop/for-all [t gen-type]
                 (= t (halite-types/ptn-type (halite-types/type-ptn t)))))
 
 (defspec prop-subtype-one-way
-  {:num-tests 1000}
+  {:num-tests 1002
+   :reporter-fn (fn [_])}
   (prop/for-all [s gen-type
                  t gen-type]
                 (cond
@@ -215,7 +217,8 @@
        [:Instance :ws/B #{:ws/A}])))
 
 (defspec prop-meet-subtype
-  {:num-tests 1000}
+  {:num-tests 1003
+   :reporter-fn (fn [_])}
   (prop/for-all [s gen-type
                  t gen-type]
                 (let [m (halite-types/meet s t)]
@@ -267,7 +270,7 @@
     (is (prop-meet-implication s t o))))
 
 (defspec test-prop-meet-implication
-  {:num-tests 1000
+  {:num-tests 1004
    :reporter-fn (fn [{:keys [type fail]}]
                   (when-let [[s t o] (and (= :shrunk type) fail)]
                     (prn :s s :t t :o o :m (halite-types/meet s t))))}
@@ -277,7 +280,8 @@
                 (prop-meet-implication s t o)))
 
 (defspec test-prop-join-subtype
-  {:num-tests 1000}
+  {:num-tests 1005
+   :reporter-fn (fn [_])}
   (prop/for-all [s gen-type
                  t gen-type]
                 (try
@@ -316,7 +320,7 @@
       :else true)))
 
 (defspec test-prop-join-implication
-  {:num-tests 1000
+  {:num-tests 1006
    :reporter-fn (fn [{:keys [type fail]}]
                   (when-let [[s t o] (and (= :shrunk type) fail)]
                     (prn :s s :t t :o o :j (halite-types/join s t))))}
