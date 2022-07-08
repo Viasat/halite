@@ -7,6 +7,7 @@
             [jibe.halite.halite-types :as halite-types]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as schema]
+            [internal :as coll]
             [internal :as s])
   (:import [jibe.lib.fixed_decimal FixedDecimal]))
 
@@ -313,38 +314,67 @@
                                        :max-inclusive (or (:max-inclusive a)
                                                           (:max-inclusive b)))))
 
+(defn- tlfc-data-and-enum [xs]
+  (-> (reduce (fn [a b]
+                {:enum (cond
+                         (and (:enum a) (:enum b)) (set/intersection (:enum a) (:enum b))
+                         (:enum a) (:enum a)
+                         (:enum b) (:enum b))})
+              {}
+              xs)
+      coll/no-nil
+      coll/no-empty))
+
+(defn- tlfc-data-and-ranges [xs]
+  (-> (if-let [r (some #(:ranges %) xs)]
+        {:ranges r}
+        (if (some #(and (map? %)
+                        (or (:coll-size %)
+                            (:coll-elements %))) xs)
+          (when (every? #(and (map? %)
+                              (or (:coll-size %)
+                                  (:coll-elements %))) xs)
+            (reduce (partial merge-with merge) {} xs))
+          {:ranges #{(dissoc (reduce (fn [a b]
+                                       (cond
+                                         (and (:min a) (:min b)
+                                              (:max a) (:max b))
+                                         (merge (select-keys (combine-mins a b) [:min :min-inclusive])
+                                                (select-keys (combine-maxs a b) [:max :max-inclusive]))
+
+                                         (and (:min a) (:min b))
+                                         (combine-mins a b)
+
+                                         (and (:max a) (:max b))
+                                         (combine-maxs a b)
+
+                                         :default
+                                         (merge a b))) {} xs) :enum)}}))
+      coll/no-nil
+      coll/no-empty))
+
+(defn- range-to-predicate [r]
+  (let [{:keys [max max-inclusive min min-inclusive]} r]
+    (fn [x]
+      (and (cond
+             (and max max-inclusive) (<= x max)
+             max (< x max)
+             :default true)
+           (cond
+             (and min min-inclusive) (>= x min)
+             min (> x min)
+             :default true)))))
+
+(defn- apply-range-to-enum
+  [enum r]
+  (set (filter (range-to-predicate r) enum)))
+
 (defn- tlfc-data-and [xs]
-  (if (some #(not (nil? (:enum %))) xs)
-    (reduce (fn [a b]
-              {:enum (if (= (:enum a) :any)
-                       (:enum b)
-                       (set/intersection (:enum a) (:enum b)))})
-            {:enum :any}
-            (filter #(not (nil? (:enum %))) xs))
-    (if-let [r (some #(:ranges %) xs)]
-      {:ranges r}
-      (if (some #(and (map? %)
-                      (or (:coll-size %)
-                          (:coll-elements %))) xs)
-        (when (every? #(and (map? %)
-                            (or (:coll-size %)
-                                (:coll-elements %))) xs)
-          (reduce (partial merge-with merge) {} xs))
-        {:ranges #{(reduce (fn [a b]
-                             (cond
-                               (and (:min a) (:min b)
-                                    (:max a) (:max b))
-                               (merge (select-keys (combine-mins a b) [:min :min-inclusive])
-                                      (select-keys (combine-maxs a b) [:max :max-inclusive]))
-
-                               (and (:min a) (:min b))
-                               (combine-mins a b)
-
-                               (and (:max a) (:max b))
-                               (combine-maxs a b)
-
-                               :default
-                               (merge a b))) {} xs)}}))))
+  (let [aggregate-enum (tlfc-data-and-enum xs)
+        aggregate-ranges (tlfc-data-and-ranges xs)]
+    (if (and aggregate-enum aggregate-ranges)
+      {:enum (apply-range-to-enum (:enum aggregate-enum) (first (:ranges aggregate-ranges)))}
+      (or aggregate-enum aggregate-ranges))))
 
 (defn- tlfc-data* [expr]
   (cond

@@ -288,7 +288,7 @@
                 z (and (= z 1) (<= z 20) (> z 10)),
                 y (= y 1)}
               '{x {:enum #{1400 3 2}}
-                z {:enum #{1}}
+                z {:enum #{}}
                 y {:enum #{1}}}]
 
     '(= [1 1500] [x 1500]) [true
@@ -489,7 +489,7 @@
                                    '{x (and (= x 0)
                                             (or (and (> x 3400) (<= x 3450))
                                                 (and (> x 3440) (<= x 3460))))}
-                                   '{x {:enum #{0}}} ;; not smart enough to figure out this violates the ranges
+                                   '{x {:enum #{}}} ;; empty because of the range
                                    ]
 
     '(and (= x 3500)
@@ -497,7 +497,14 @@
           (< x 16)
           (>= x 10)) ['(and (= x 3500) (= x 3500) (< x 16) (>= x 10))
                       '{x (and (= x 3500) (= x 3500) (< x 16) (>= x 10))}
-                      '{x {:enum #{3500}}}]
+                      '{x {:enum #{}}}]
+
+    '(and (< x 3501)
+          (or (= x 10)
+              (= x 20))
+          (> x 16)) ['(and (< x 3501) (or (= x 10) (= x 20)) (> x 16))
+                     '{x (and (< x 3501) (or (= x 10) (= x 20)) (> x 16))}
+                     '{x {:enum #{20}}}]
 
     '(or ;; or at the root with mixed enum and ranges foils the logic to pull out direct field constraints
       (or (= x 3600)
