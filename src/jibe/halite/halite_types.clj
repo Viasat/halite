@@ -317,35 +317,37 @@
     (subtype? t m)
     For all types l, (implies (and (subtype? s l) (subtype? t l)) (subtype? l m))"
   [s :- HaliteType, t :- HaliteType]
-  (let [sp (type-ptn s)
-        tp (type-ptn t)
-        gsp (genericize-ptn sp)
-        gtp (genericize-ptn tp)
-        s-super-ptns (@*ptn-supertypes-set gsp)
-        ;;_ (prn :supers (map ptn-type (@*ptn-supertypes gtp)))
-        meet-ptn (if (= :Instance (:kind sp) (:kind tp))
-                   (instance-meet sp tp)
-                   (some (fn [gtp-super]
-                           (when (contains? s-super-ptns gtp-super)
-                             ;; gtp-super is a graph node that is the meet node
-                             ;;(prn :consider gtp-super)
-                             (if (symbol? (:arg gtp-super))
-                               ;; If shared node has type param, compare original type params
-                               (case (:kind gtp-super)
-                                 (:Vec :Set :Coll) (when-let [arg (if (and (:arg sp) (:arg tp))
-                                                                    (meet (:arg sp) (:arg tp))
-                                                                    (or (:arg sp) (:arg tp)))]
-                                                     (assoc gtp-super :arg arg))
-                                 (:Instance) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
-                                               (assoc gtp-super
-                                                      :arg (some :arg [sp tp])
-                                                      :r2 (some :r2 [sp tp])))
-                                 (:Decimal) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
-                                              (assoc gtp-super :arg (some :arg [sp tp]))))
-                               ;; No param in meet, return unmodified
-                               gtp-super)))
-                         (get @*ptn-supertypes gtp)))]
-    (ptn-type meet-ptn)))
+  (if (= s t)
+    s ;; easy answer, for performance
+    (let [sp (type-ptn s)
+          tp (type-ptn t)
+          gsp (genericize-ptn sp)
+          gtp (genericize-ptn tp)
+          s-super-ptns (@*ptn-supertypes-set gsp)
+          ;;_ (prn :supers (map ptn-type (@*ptn-supertypes gtp)))
+          meet-ptn (if (= :Instance (:kind sp) (:kind tp))
+                     (instance-meet sp tp)
+                     (some (fn [gtp-super]
+                             (when (contains? s-super-ptns gtp-super)
+                               ;; gtp-super is a graph node that is the meet node
+                               ;;(prn :consider gtp-super)
+                               (if (symbol? (:arg gtp-super))
+                                 ;; If shared node has type param, compare original type params
+                                 (case (:kind gtp-super)
+                                   (:Vec :Set :Coll) (when-let [arg (if (and (:arg sp) (:arg tp))
+                                                                      (meet (:arg sp) (:arg tp))
+                                                                      (or (:arg sp) (:arg tp)))]
+                                                       (assoc gtp-super :arg arg))
+                                   (:Instance) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
+                                                 (assoc gtp-super
+                                                        :arg (some :arg [sp tp])
+                                                        :r2 (some :r2 [sp tp])))
+                                   (:Decimal) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
+                                                (assoc gtp-super :arg (some :arg [sp tp]))))
+                                 ;; No param in meet, return unmodified
+                                 gtp-super)))
+                           (get @*ptn-supertypes gtp)))]
+      (ptn-type meet-ptn))))
 
 (s/defn join :- HaliteType
   "The 'greatest' subtype of s and t. Formally, return the type m such that all are true:
