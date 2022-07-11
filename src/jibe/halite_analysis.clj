@@ -325,9 +325,29 @@
       coll/no-nil
       coll/no-empty))
 
+(defn- reduce-ranges [xs]
+  (reduce (fn [a b]
+            (cond
+              (and (:min a) (:min b)
+                   (:max a) (:max b))
+              (merge (select-keys (combine-mins a b) [:min :min-inclusive])
+                     (select-keys (combine-maxs a b) [:max :max-inclusive]))
+
+              (and (:min a) (:min b))
+              (combine-mins a b)
+
+              (and (:max a) (:max b))
+              (combine-maxs a b)
+
+              :default
+              (merge a b))) {} xs))
+
 (defn- tlfc-data-and-ranges [xs]
   (-> (if-let [r (some #(:ranges %) xs)]
-        {:ranges r}
+        {:ranges (let [reduced-range (select-keys (reduce-ranges xs) [:min :min-inclusive :max :max-inclusive])]
+                   (->> r
+                        (map #(reduce-ranges [% reduced-range]))
+                        set))}
         (if (some #(and (map? %)
                         (or (:coll-size %)
                             (:coll-elements %))) xs)
@@ -335,21 +355,7 @@
                               (or (:coll-size %)
                                   (:coll-elements %))) xs)
             (reduce (partial merge-with merge) {} xs))
-          {:ranges #{(dissoc (reduce (fn [a b]
-                                       (cond
-                                         (and (:min a) (:min b)
-                                              (:max a) (:max b))
-                                         (merge (select-keys (combine-mins a b) [:min :min-inclusive])
-                                                (select-keys (combine-maxs a b) [:max :max-inclusive]))
-
-                                         (and (:min a) (:min b))
-                                         (combine-mins a b)
-
-                                         (and (:max a) (:max b))
-                                         (combine-maxs a b)
-
-                                         :default
-                                         (merge a b))) {} xs) :enum)}}))
+          {:ranges #{(dissoc (reduce-ranges xs) :enum)}}))
       coll/no-nil
       coll/no-empty))
 

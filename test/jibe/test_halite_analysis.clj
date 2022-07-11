@@ -448,7 +448,7 @@
                                                    :max 3160
                                                    :max-inclusive true}}}}]
 
-    '(and (> x 3225) ;; this falls out and is not included in the range, ranges are assumed to be more specific
+    '(and (> x 3225) ;; this is folded into the rest of the range restriction
           (= b x) ;; this is ignored, but it is in an 'and', so the other expressions remain
           (or (and (> x 3200)
                    (<= x 3250))
@@ -461,10 +461,38 @@
                                             (or
                                              (and (> x 3200) (<= x 3250))
                                              (and (> x 3240) (<= x 3260))))}
-                                   '{x {:ranges #{{:min 3200
+                                   '{x {:ranges #{{:min 3225
                                                    :min-inclusive false
                                                    :max 3260
                                                    :max-inclusive true}}}}]
+
+    '(and (> x 3275)
+          (= b x)
+          (or (and (> x 3270)
+                   (<= x 3280))
+              (and (> x 3285)
+                   (<= x 3295))
+              (and (> x 3260)
+                   (<= x 3265)))
+          (< x 3290)) ['(and (> x 3275)
+                             (or (and (> x 3270) (<= x 3280))
+                                 (and (> x 3285) (<= x 3295))
+                                 (and (> x 3260) (<= x 3265)))
+                             (< x 3290))
+                       '{x (and (> x 3275)
+                                (or (and (> x 3270) (<= x 3280))
+                                    (and (> x 3285) (<= x 3295))
+                                    (and (> x 3260) (<= x 3265)))
+                                (< x 3290))}
+                       '{x {:ranges
+                            #{{:min 3275
+                               :min-inclusive false
+                               :max 3280
+                               :max-inclusive true}
+                              {:min 3285
+                               :min-inclusive false
+                               :max 3290
+                               :max-inclusive false}}}}]
 
     '(and ;; extra 'and' at root makes no difference
       (and (= x 3325)
