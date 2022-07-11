@@ -506,6 +506,31 @@
                      '{x (and (< x 3501) (or (= x 10) (= x 20)) (> x 16))}
                      '{x {:enum #{20}}}]
 
+    '(and
+      (or (= x 10)
+          (= x 20)
+          (= x 0))
+      (or (and
+           (< x 3550)
+           (> x 16))
+          (and
+           (< x 15)
+           (> x 5)))) ['(and (or (= x 10)
+                                 (= x 20)
+                                 (= x 0))
+                             (or (and (< x 3550)
+                                      (> x 16))
+                                 (and (< x 15)
+                                      (> x 5))))
+                       '{x (and (or (= x 10)
+                                    (= x 20)
+                                    (= x 0))
+                                (or (and (< x 3550)
+                                         (> x 16))
+                                    (and (< x 15)
+                                         (> x 5))))}
+                       '{x {:enum #{20 10}}}] ;; if enum values fall in any of the alternate ranges they are included
+
     '(or ;; or at the root with mixed enum and ranges foils the logic to pull out direct field constraints
       (or (= x 3600)
           (= x 1))

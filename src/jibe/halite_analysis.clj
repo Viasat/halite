@@ -365,15 +365,17 @@
              min (> x min)
              :default true)))))
 
-(defn- apply-range-to-enum
-  [enum r]
-  (set (filter (range-to-predicate r) enum)))
+(defn- apply-ranges-to-enum
+  [enum ranges]
+  (set (filter #(some (fn [p]
+                        (p %))
+                      (map range-to-predicate ranges)) enum)))
 
 (defn- tlfc-data-and [xs]
   (let [aggregate-enum (tlfc-data-and-enum xs)
         aggregate-ranges (tlfc-data-and-ranges xs)]
     (if (and aggregate-enum aggregate-ranges)
-      {:enum (apply-range-to-enum (:enum aggregate-enum) (first (:ranges aggregate-ranges)))}
+      {:enum (apply-ranges-to-enum (:enum aggregate-enum) (:ranges aggregate-ranges))}
       (or aggregate-enum aggregate-ranges))))
 
 (defn- tlfc-data* [expr]
