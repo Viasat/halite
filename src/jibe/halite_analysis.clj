@@ -143,7 +143,9 @@
      (halite/integer-or-long? expr) #{}
      (halite/fixed-decimal? expr) #{}
      (string? expr) #{}
-     (symbol? expr) (if (context expr)
+     (symbol? expr) (if (or (context expr)
+                            (= \$ (first (name expr))) ;; halite reserved symbols start with \$
+                            )
                       #{}
                       #{expr})
      (keyword? expr) #{}
@@ -398,9 +400,12 @@
                                   (and (seq? (third expr))
                                        (integer? (second expr))) {:coll-size (second expr)}
                                   :default true)
-                                {:enum (->> (rest expr)
-                                            (remove symbol?)
-                                            set)})
+                                {:enum (if (and (= '= (first expr))
+                                                (some #(= '$no-value %) (rest expr)))
+                                         #{}
+                                         (->> (rest expr)
+                                              (remove symbol?)
+                                              set))})
 
     (and (seq? expr)
          (#{'< '<= '> '>=} (first expr))) (if (symbol? (second expr))

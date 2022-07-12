@@ -1026,6 +1026,28 @@
          (if-value x (> 0 x) true)) [true nil {} {}]
 
     '(any? [n #{1 6600}]
-           (= x n)) [true nil {} {}]))
+           (= x n)) [true nil {} {}]
+
+    '(and (= x $no-value)
+          (= x 6700))
+    ['(and (= x $no-value) (= x 6700))
+     '{x (and (= x $no-value) (= x 6700))}
+     '{x {:enum #{}}}
+     '{x {:enum #{}}}]
+
+    '(= x $no-value)
+    ['(= x $no-value)
+     '{x (= x $no-value)}
+     '{x {:enum #{}}}
+     '{x {:enum #{}}}]
+
+    '(and (= x $no-value)
+          (> x 6900))
+    ['(and (= x $no-value)
+           (> x 6900))
+     '{x (and (= x $no-value)
+              (> x 6900))}
+     '{x {:enum #{}}}
+     '{x {:enum #{}}}]))
 
 ;; (run-tests)
