@@ -243,3 +243,15 @@
     (if (pos? scale)
       (BigDecimal->fixed result-big-decimal)
       (extract-long-from-big-decimal result-big-decimal))))
+
+(s/defn shift-scale :- (s/conditional
+                        fixed-decimal? FixedDecimal
+                        :else Long)
+  [f :- FixedDecimal
+   shift :- s/Int]
+  (when (neg? shift)
+    (throw (ex-info (str "shift amount cannot be negative: " shift) {:f f
+                                                                     :shift shift})))
+  (let [scale (get-scale f)]
+    (set-scale (f* f (ten-to-the shift))
+               (- scale shift))))
