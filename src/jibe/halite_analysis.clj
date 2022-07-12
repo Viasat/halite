@@ -636,8 +636,54 @@
   [expr]
   (->> expr gather-tlfc* condense-boolean-logic))
 
+;;;;
+
+(s/defn- range-size [r :- Range]
+  (let [{:keys [min max min-inclusive max-inclusive]} r]
+    (when (and (halite/integer-or-long? min) (halite/integer-or-long? max))
+      (clojure.core/max (- (+ (- max min) (if max-inclusive 1 0))
+                           (if (not min-inclusive)
+                             1
+                             0))
+                        0))))
+
+(s/defn- range-set-size [rs :- #{Range}]
+  (let [sizes (map range-size rs)]
+    (when (every? identity sizes)
+      (apply + sizes))))
+
+(s/defn- enumerate-range [r :- Range]
+  (let [{:keys [min max min-inclusive max-inclusive]} r]
+    (range (if min-inclusive
+             min
+             (inc min))
+           (if max-inclusive
+             (inc max)
+             max))))
+
+(s/defn- enumerate-range-set [rs :- #{Range}]
+  (->> rs
+       (mapcat enumerate-range)
+       set))
+
+(def ^:dynamic *max-enum-size* 1000)
+
+(s/defn- small-ranges-to-enums [tlfc-map :- {schema/Symbol TopLevelFieldConstraint}]
+  (-> tlfc-map
+      (update-vals (fn [tlfc]
+                     (if (and (:ranges tlfc)
+                              (range-set-size (:ranges tlfc))
+                              (< (range-set-size (:ranges tlfc)) *max-enum-size*))
+                       (-> tlfc
+                           (assoc :enum (enumerate-range-set (:ranges tlfc)))
+                           (dissoc :ranges))
+                       tlfc)))))
+
+;;;;
+
 (s/defn compute-tlfc-map [tree]
   (-> tree
       gather-tlfc
       sort-tlfc
-      tlfc-data-map))
+      tlfc-data-map
+      small-ranges-to-enums))
