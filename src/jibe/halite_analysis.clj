@@ -672,7 +672,7 @@
     (when (every? identity sizes)
       (apply + sizes))))
 
-(s/defn- make-fixed-decimal-string [n scale]
+(s/defn make-fixed-decimal-string [n scale]
   (str (BigDecimal. (BigInteger. (str n))
                     ^int scale)))
 
