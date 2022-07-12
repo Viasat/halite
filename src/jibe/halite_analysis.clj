@@ -638,13 +638,28 @@
 
 ;;;;
 
+(s/defn- fixed-decimal-to-long [f]
+  (let [scale (fixed-decimal/get-scale f)]
+    (fixed-decimal/shift-scale f scale)))
+
+(s/defn- range-size* [min max]
+  (if (halite/integer-or-long? min)
+    (- max min)
+    (fixed-decimal-to-long (fixed-decimal/f- max min))))
+
 (s/defn- range-size [r :- Range]
   (let [{:keys [min max min-inclusive max-inclusive]} r]
-    (when (and (halite/integer-or-long? min) (halite/integer-or-long? max))
-      (clojure.core/max (- (+ (- max min) (if max-inclusive 1 0))
-                           (if (not min-inclusive)
-                             1
-                             0))
+    (when (or (and (halite/integer-or-long? min)
+                   (halite/integer-or-long? max))
+              (and (halite/fixed-decimal? min)
+                   (halite/fixed-decimal? max)
+                   (= (fixed-decimal/get-scale min)
+                      (fixed-decimal/get-scale max))))
+      (clojure.core/max (let [{:keys [min max min-inclusive max-inclusive]} r]
+                          (- (+ (range-size* min max) (if max-inclusive 1 0))
+                             (if (not min-inclusive)
+                               1
+                               0)))
                         0))))
 
 (s/defn- range-set-size [rs :- #{Range}]
@@ -652,14 +667,28 @@
     (when (every? identity sizes)
       (apply + sizes))))
 
+(s/defn- make-fixed-decimal-string [n scale]
+  (str (BigDecimal. (BigInteger. (str n))
+                    ^int scale)))
+
 (s/defn- enumerate-range [r :- Range]
   (let [{:keys [min max min-inclusive max-inclusive]} r]
-    (range (if min-inclusive
-             min
-             (inc min))
-           (if max-inclusive
-             (inc max)
-             max))))
+    (if (halite/integer-or-long? min)
+      (range (if min-inclusive
+               min
+               (inc min))
+             (if max-inclusive
+               (inc max)
+               max))
+      (let [scale (fixed-decimal/get-scale min)]
+        (->> (range (if min-inclusive
+                      (fixed-decimal-to-long min)
+                      (inc (fixed-decimal-to-long min)))
+                    (if max-inclusive
+                      (inc (fixed-decimal-to-long max))
+                      (fixed-decimal-to-long max)))
+             (map #(make-fixed-decimal-string % scale))
+             (map fixed-decimal/fixed-decimal-reader))))))
 
 (s/defn- enumerate-range-set [rs :- #{Range}]
   (->> rs

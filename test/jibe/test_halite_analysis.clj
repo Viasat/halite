@@ -584,6 +584,35 @@
                        '{x {:enum #{3276 3277 3278 3279 3280
                                     3286 3287 3288 3289}}}]
 
+    '(and (> x #d "32.75")
+          (= b x)
+          (or (and (> x #d "32.70")
+                   (<= x #d "32.80"))
+              (and (> x #d "32.85")
+                   (<= x #d "32.95"))
+              (and (> x #d "32.60")
+                   (<= x #d "32.65")))
+          (< x #d "32.90")) ['(and (> x #d "32.75")
+                                   (or (and (> x #d "32.70") (<= x #d "32.80"))
+                                       (and (> x #d "32.85") (<= x #d "32.95"))
+                                       (and (> x #d "32.60") (<= x #d "32.65")))
+                                   (< x #d "32.90"))
+                             '{x (and (> x #d "32.75")
+                                      (or (and (> x #d "32.70") (<= x #d "32.80"))
+                                          (and (> x #d "32.85") (<= x #d "32.95"))
+                                          (and (> x #d "32.60") (<= x #d "32.65")))
+                                      (< x #d "32.90"))}
+                             '{x {:ranges #{{:min #d "32.75"
+                                             :min-inclusive false
+                                             :max #d "32.80"
+                                             :max-inclusive true}
+                                            {:min #d "32.85"
+                                             :min-inclusive false
+                                             :max #d "32.90"
+                                             :max-inclusive false}}}}
+                             '{x {:enum #{#d "32.76" #d "32.77" #d "32.78" #d "32.79" #d "32.80"
+                                          #d "32.86" #d "32.87" #d "32.88" #d "32.89"}}}]
+
     '(and ;; extra 'and' at root makes no difference
       (and (= x 3325)
            (or (and (> x 3300)
@@ -835,6 +864,14 @@
                                 (> z 5200))}
                        '{z {:enum #{}}}
                        '{z {:enum #{}}}]
+
+    '(and (<= z #d "1.1") ;; what to do if the min is greater than the max?
+          (> z #d "5250.1")) ['(and (<= z #d "1.1")
+                                    (> z #d "5250.1"))
+                              '{z (and (<= z #d "1.1")
+                                       (> z #d "5250.1"))}
+                              '{z {:enum #{}}}
+                              '{z {:enum #{}}}]
 
     '(or (and (<= z 10) ;; sensible ranges are not combined with non-sensical ranges
               (> z 5300))
