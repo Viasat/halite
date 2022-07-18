@@ -50,7 +50,8 @@
                               :coll-size CollectionConstraint
                               :coll-elements CollectionConstraint
                               :enum EnumConstraint
-                              :ranges RangeConstraint))
+                              :ranges RangeConstraint
+                              :else (s/eq :none)))
 
 (declare replace-free-vars)
 
@@ -317,19 +318,28 @@
                                                           (:max-inclusive b)))))
 
 (defn- tlfc-data-and-enum [xs]
-  (-> (reduce (fn [a b]
-                {:enum (cond
-                         (and (:enum a) (:enum b)) (set/intersection (:enum a) (:enum b))
-                         (:enum a) (:enum a)
-                         (:enum b) (:enum b))})
-              {}
-              xs)
-      coll/no-nil
-      coll/no-empty))
+  (let [result (reduce (fn [a b]
+                         (if (or (= :none a)
+                                 (= :none b))
+                           :none
+                           {:enum (cond
+                                    (and (:enum a) (:enum b)) (set/intersection (:enum a) (:enum b))
+                                    (:enum a) (:enum a)
+                                    (:enum b) (:enum b))}))
+                       {}
+                       xs)]
+    (if (= :none result)
+      result
+      (-> result
+          coll/no-nil
+          coll/no-empty))))
 
 (defn- reduce-ranges [xs]
   (reduce (fn [a b]
             (cond
+              (or (= :none b)
+                  (= :none a)) :none
+
               (and (:min a) (:min b)
                    (:max a) (:max b))
               (merge (select-keys (combine-mins a b) [:min :min-inclusive])
@@ -345,21 +355,25 @@
               (merge a b))) {} xs))
 
 (defn- tlfc-data-and-ranges [xs]
-  (-> (if-let [r (some #(:ranges %) xs)]
-        {:ranges (let [reduced-range (select-keys (reduce-ranges xs) [:min :min-inclusive :max :max-inclusive])]
+  (if-let [r (some #(:ranges %) xs)]
+    (let [reduced-ranges0 (reduce-ranges xs)]
+      (if (= :none reduced-ranges0)
+        :none
+        {:ranges (let [reduced-range (select-keys reduced-ranges0 [:min :min-inclusive :max :max-inclusive])]
                    (->> r
                         (map #(reduce-ranges [% reduced-range]))
-                        set))}
-        (if (some #(and (map? %)
-                        (or (:coll-size %)
-                            (:coll-elements %))) xs)
-          (when (every? #(and (map? %)
-                              (or (:coll-size %)
-                                  (:coll-elements %))) xs)
-            (reduce (partial merge-with merge) {} xs))
-          {:ranges #{(dissoc (reduce-ranges xs) :enum)}}))
-      coll/no-nil
-      coll/no-empty))
+                        set))}))
+    (if (some #(and (map? %)
+                    (or (:coll-size %)
+                        (:coll-elements %))) xs)
+      (when (every? #(and (map? %)
+                          (or (:coll-size %)
+                              (:coll-elements %))) xs)
+        (reduce (partial merge-with merge) {} xs))
+      (let [reduced-ranges (reduce-ranges xs)]
+        (if (= :none reduced-ranges)
+          :none
+          {:ranges #{(dissoc reduced-ranges :enum)}})))))
 
 (defn- range-to-predicate [r]
   (let [{:keys [max max-inclusive min min-inclusive]} r]
@@ -382,9 +396,11 @@
 (defn- tlfc-data-and [xs]
   (let [aggregate-enum (tlfc-data-and-enum xs)
         aggregate-ranges (tlfc-data-and-ranges xs)]
-    (if (and aggregate-enum aggregate-ranges)
-      {:enum (apply-ranges-to-enum (:enum aggregate-enum) (:ranges aggregate-ranges))}
-      (or aggregate-enum aggregate-ranges))))
+    (if (= :none aggregate-enum)
+      :none
+      (if (and aggregate-enum aggregate-ranges)
+        {:enum (apply-ranges-to-enum (:enum aggregate-enum) (:ranges aggregate-ranges))}
+        (or aggregate-enum aggregate-ranges)))))
 
 (defn- tlfc-data* [expr]
   (cond
@@ -400,12 +416,12 @@
                                   (and (seq? (third expr))
                                        (integer? (second expr))) {:coll-size (second expr)}
                                   :default true)
-                                {:enum (if (and (= '= (first expr))
-                                                (some #(= '$no-value %) (rest expr)))
-                                         #{}
-                                         (->> (rest expr)
+                                (if (and (= '= (first expr))
+                                         (some #(= '$no-value %) (rest expr)))
+                                  :none
+                                  {:enum (->> (rest expr)
                                               (remove symbol?)
-                                              set))})
+                                              set)}))
 
     (and (seq? expr)
          (#{'< '<= '> '>=} (first expr))) (if (symbol? (second expr))

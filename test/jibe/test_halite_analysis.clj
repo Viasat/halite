@@ -1032,14 +1032,14 @@
           (= x 6700))
     ['(and (= x $no-value) (= x 6700))
      '{x (and (= x $no-value) (= x 6700))}
-     '{x {:enum #{}}}
-     '{x {:enum #{}}}]
+     '{x :none}
+     '{x :none}]
 
     '(= x $no-value)
     ['(= x $no-value)
      '{x (= x $no-value)}
-     '{x {:enum #{}}}
-     '{x {:enum #{}}}]
+     '{x :none}
+     '{x :none}]
 
     '(and (= x $no-value)
           (> x 6900))
@@ -1047,7 +1047,7 @@
            (> x 6900))
      '{x (and (= x $no-value)
               (> x 6900))}
-     '{x {:enum #{}}}
-     '{x {:enum #{}}}]))
+     '{x :none}
+     '{x :none}]))
 
 ;; (run-tests)
