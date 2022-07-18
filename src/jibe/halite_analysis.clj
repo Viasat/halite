@@ -18,15 +18,18 @@
                    halite/fixed-decimal? FixedDecimal))
 
 (def MinRange {:min NumericValue
-               :min-inclusive Boolean})
+               :min-inclusive Boolean
+               (s/optional-key :optional) (s/eq true)})
 
 (def MaxRange {:max NumericValue
-               :max-inclusive Boolean})
+               :max-inclusive Boolean
+               (s/optional-key :optional)  (s/eq true)})
 
 (def MinMaxRange {:min NumericValue
                   :min-inclusive Boolean
                   :max NumericValue
-                  :max-inclusive Boolean})
+                  :max-inclusive Boolean
+                  (s/optional-key :optional)  (s/eq true)})
 
 (def Range (schema/conditional
             #(and (:min %) (:max %)) MinMaxRange
@@ -35,7 +38,8 @@
 
 (def RangeConstraint {:ranges #{Range}})
 
-(def EnumConstraint {:enum #{s/Any}})
+(def EnumConstraint {:enum #{s/Any}
+                     (s/optional-key :optional) (s/eq true)})
 
 (def Natural (schema/constrained Number #(and (integer? %)
                                               (>= % 0))))
@@ -51,7 +55,8 @@
                               :coll-elements CollectionConstraint
                               :enum EnumConstraint
                               :ranges RangeConstraint
-                              :else (s/eq :none)))
+                              #(= :none %) (s/eq :none)
+                              #(= :some %) (s/eq :some)))
 
 (declare replace-free-vars)
 
@@ -266,16 +271,30 @@
 (defn- third [s]
   (second (rest s)))
 
-(defn- tlfc-data-or [xs]
-  (if (some #(not (nil? (:enum %))) xs)
-    (if (every? #(not (nil? (:enum %))) xs)
-      (reduce (fn [a b]
-                {:enum (set/union (:enum a) (:enum b))}) {:enum #{}} xs)
-      true)
-    {:ranges (set (mapcat
-                   #(or (:ranges %)
-                        [%])
-                   xs))}))
+(defn- tlfc-data-or [xs0]
+  (let [no-value-predicate (fn [x]
+                             (= x :none))
+        optional? (some no-value-predicate xs0)
+        xs (remove no-value-predicate xs0)
+        result
+        (if (some #(not (nil? (:enum %))) xs)
+          (if (every? #(not (nil? (:enum %))) xs)
+            (reduce (fn [a b]
+                      (coll/no-nil {:enum (set/union (:enum a) (:enum b))
+                                    :optional (when (and (or (:optional a)
+                                                             (= :unknown a))
+                                                         (:optional b))
+                                                true)}))
+                    {:enum #{}
+                     :optional :unkown} xs)
+            nil)
+          {:ranges (set (mapcat
+                         #(or (:ranges %)
+                              [%])
+                         xs))})]
+    (if optional?
+      (assoc result :optional true)
+      result)))
 
 (defn- combine-mins [a b]
   (cond
@@ -322,10 +341,15 @@
                          (if (or (= :none a)
                                  (= :none b))
                            :none
-                           {:enum (cond
-                                    (and (:enum a) (:enum b)) (set/intersection (:enum a) (:enum b))
-                                    (:enum a) (:enum a)
-                                    (:enum b) (:enum b))}))
+                           (let [combined {:enum (cond
+                                                   (and (:enum a) (:enum b)) (set/intersection (:enum a) (:enum b))
+                                                   (:enum a) (:enum a)
+                                                   (:enum b) (:enum b))}]
+                             (coll/no-nil (assoc combined
+                                                 :optional (when (or (and (:enum a) (:optional a) (= nil (:enum b)))
+                                                                     (and (:enum b) (:optional b) (= nil (:enum a)))
+                                                                     (and (:enum a) (:enum b) (:optional a) (:optional b)))
+                                                             true))))))
                        {}
                        xs)]
     (if (= :none result)
@@ -339,6 +363,10 @@
             (cond
               (or (= :none b)
                   (= :none a)) :none
+
+              (= :some a) b
+
+              (= :some b) a
 
               (and (:min a) (:min b)
                    (:max a) (:max b))
@@ -355,25 +383,32 @@
               (merge a b))) {} xs))
 
 (defn- tlfc-data-and-ranges [xs]
-  (if-let [r (some #(:ranges %) xs)]
-    (let [reduced-ranges0 (reduce-ranges xs)]
-      (if (= :none reduced-ranges0)
-        :none
-        {:ranges (let [reduced-range (select-keys reduced-ranges0 [:min :min-inclusive :max :max-inclusive])]
-                   (->> r
-                        (map #(reduce-ranges [% reduced-range]))
-                        set))}))
-    (if (some #(and (map? %)
-                    (or (:coll-size %)
-                        (:coll-elements %))) xs)
-      (when (every? #(and (map? %)
-                          (or (:coll-size %)
-                              (:coll-elements %))) xs)
-        (reduce (partial merge-with merge) {} xs))
-      (let [reduced-ranges (reduce-ranges xs)]
-        (if (= :none reduced-ranges)
-          :none
-          {:ranges #{(dissoc reduced-ranges :enum)}})))))
+  (let [result (if-let [r (some #(:ranges %) xs)]
+                 (let [reduced-ranges0 (reduce-ranges xs)]
+                   (if (= :none reduced-ranges0)
+                     :none
+                     {:ranges (let [reduced-range (select-keys reduced-ranges0 [:min :min-inclusive :max :max-inclusive])]
+                                (->> r
+                                     (map #(reduce-ranges [% reduced-range]))
+                                     set))}))
+                 (if (some #(and (map? %)
+                                 (or (:coll-size %)
+                                     (:coll-elements %))) xs)
+                   (when (every? #(and (map? %)
+                                       (or (:coll-size %)
+                                           (:coll-elements %))) xs)
+                     (reduce (partial merge-with merge) {} xs))
+                   (let [reduced-ranges (reduce-ranges xs)]
+                     (if (= :none reduced-ranges)
+                       :none
+                       {:ranges #{(dissoc reduced-ranges :enum)}}))))
+        some? (some #(= :some %) xs)]
+    (if some?
+      (update-in result [:ranges]
+                 (fn [ranges]
+                   (->> ranges
+                        (map #(dissoc % :optional)))))
+      result)))
 
 (defn- range-to-predicate [r]
   (let [{:keys [max max-inclusive min min-inclusive]} r]
@@ -399,11 +434,16 @@
     (if (= :none aggregate-enum)
       :none
       (if (and aggregate-enum aggregate-ranges)
-        {:enum (apply-ranges-to-enum (:enum aggregate-enum) (:ranges aggregate-ranges))}
+        (coll/no-nil {:enum (apply-ranges-to-enum (:enum aggregate-enum) (:ranges aggregate-ranges))
+                      :optional (when (= true (:optional aggregate-enum)) true)})
         (or aggregate-enum aggregate-ranges)))))
 
-(defn- tlfc-data* [expr]
+(defn- tlfc-data* [optional-vars expr]
   (cond
+    (and (seq? expr)
+         (= 'if-value (first expr))) (tlfc-data* (conj optional-vars (second expr))
+                                                 (third expr))
+
     (and (seq? expr)
          (= '= (first expr))) (if (some (fn [x]
                                           (and (seq? x)
@@ -416,49 +456,61 @@
                                   (and (seq? (third expr))
                                        (integer? (second expr))) {:coll-size (second expr)}
                                   :default true)
-                                (if (and (= '= (first expr))
-                                         (some #(= '$no-value %) (rest expr)))
+                                (if (some #(= '$no-value %) (rest expr))
                                   :none
-                                  {:enum (->> (rest expr)
-                                              (remove symbol?)
-                                              set)}))
+                                  (coll/no-nil {:enum (->> (rest expr)
+                                                           (remove symbol?)
+                                                           set)
+                                                :optional (when-let [v (first (filter symbol? (rest expr)))]
+                                                            (when (optional-vars v)
+                                                              true))})))
 
     (and (seq? expr)
-         (#{'< '<= '> '>=} (first expr))) (if (symbol? (second expr))
-                                            (condp = (first expr)
-                                              '< {:max (third expr)
-                                                  :max-inclusive false}
-                                              '<= {:max (third expr)
-                                                   :max-inclusive true}
-                                              '> {:min (third expr)
-                                                  :min-inclusive false}
-                                              '>= {:min (third expr)
-                                                   :min-inclusive true})
-                                            (condp = (first expr)
-                                              '< {:min (second expr)
-                                                  :min-inclusive true}
+         (= 'not= (first expr))) (if (some #(= '$no-value %) (rest expr))
+                                   :some
+                                   true)
 
-                                              '<= {:min (second expr)
-                                                   :min-inclusive false}
-                                              '> {:max (second expr)
-                                                  :max-inclusive true}
-                                              '>= {:max (second expr)
-                                                   :max-inclusive false}))
+    (and (seq? expr)
+         (#{'< '<= '> '>=} (first expr))) (let [range (if (symbol? (second expr))
+                                                        (condp = (first expr)
+                                                          '< {:max (third expr)
+                                                              :max-inclusive false}
+                                                          '<= {:max (third expr)
+                                                               :max-inclusive true}
+                                                          '> {:min (third expr)
+                                                              :min-inclusive false}
+                                                          '>= {:min (third expr)
+                                                               :min-inclusive true})
+                                                        (condp = (first expr)
+                                                          '< {:min (second expr)
+                                                              :min-inclusive true}
+
+                                                          '<= {:min (second expr)
+                                                               :min-inclusive false}
+                                                          '> {:max (second expr)
+                                                              :max-inclusive true}
+                                                          '>= {:max (second expr)
+                                                               :max-inclusive false}))
+                                                s (if (symbol? (second expr))
+                                                    (second expr)
+                                                    (third expr))]
+                                            (coll/no-nil (assoc range :optional (when (optional-vars s)
+                                                                                  true))))
 
     (and (seq? expr)
          (= 'and (first expr))) (->> (rest expr)
-                                     (map tlfc-data*)
+                                     (map (partial tlfc-data* optional-vars))
                                      tlfc-data-and)
 
     (and (seq? expr)
          (= 'or (first expr))) (->> (rest expr)
-                                    (map tlfc-data*)
+                                    (map (partial tlfc-data* optional-vars))
                                     tlfc-data-or)
 
     (and (seq? expr)
          (= 'contains? (first expr))) {:enum (second expr)}
 
-    (and (vector? expr)) {:coll-elements (let [result (tlfc-data* (first expr))]
+    (and (vector? expr)) {:coll-elements (let [result (tlfc-data* optional-vars (first expr))]
                                            (if (and (map? result)
                                                     (or (contains? result :min)
                                                         (contains? result :max)))
@@ -550,7 +602,7 @@
     x))
 
 (defn- tlfc-data [expr]
-  (->> (let [result (tlfc-data* expr)]
+  (->> (let [result (tlfc-data* #{} expr)]
          (if (and (map? result)
                   (or (contains? result :min)
                       (contains? result :max)))
@@ -562,7 +614,8 @@
 (s/defn tlfc-data-map :- {schema/Symbol TopLevelFieldConstraint}
   [m]
   (->> (update-vals m tlfc-data)
-       (remove #(= true (second %)))
+       coll/no-nil
+                    ;; (remove #(= true (second %)))
        (into {})))
 
 (defn- gather-tlfc-single*
@@ -578,7 +631,7 @@
          (#{'= '< '<= '> '>=} (first expr))) (if (and (= 1 (count (gather-free-vars expr)))
                                                       (->> (rest expr)
                                                            (every? simple-value-or-symbol?))
-                                                      (some symbol? (rest expr)))
+                                                      (first (filter symbol? (rest expr))))
                                                expr
                                                true)
 
@@ -597,9 +650,11 @@
   (cond
     (and (seq? expr)
          (= 'if-value (first expr))
-         (= 1 (count (gather-free-vars expr)))) (->> expr
-                                                     third
-                                                     (gather-tlfc*))
+         (= 1 (count (gather-free-vars expr)))) (list 'if-value
+                                                      (second expr)
+                                                      (->> expr
+                                                           third
+                                                           (gather-tlfc*)))
 
     (and (seq? expr)
          (= 'and (first expr))) (->> expr
@@ -617,7 +672,7 @@
          (#{'= '< '<= '> '>=} (first expr))) (if (and (= 1 (count (gather-free-vars expr)))
                                                       (or (and (->> (rest expr)
                                                                     (every? simple-value-or-symbol?))
-                                                               (some symbol? (rest expr)))
+                                                               (first (filter symbol? (rest expr))))
                                                           (and (= '= (first expr))
                                                                (some (fn [x]
                                                                        (and (seq? x)
@@ -626,6 +681,13 @@
                                                                             (symbol? (second x)))) (rest expr)))))
                                                expr
                                                true)
+
+    (and (seq? expr)
+         (= 'not= (first expr))) (if (and (= 3 (count expr))
+                                          (= 1 (count (gather-free-vars expr)))
+                                          (some #(= '$no-value %) (rest expr)))
+                                   expr
+                                   true)
 
     (and (seq? expr)
          (= 'contains? (first expr))) (let [[_ coll e] expr]
@@ -725,7 +787,10 @@
                               (range-set-size (:ranges tlfc))
                               (< (range-set-size (:ranges tlfc)) *max-enum-size*))
                        (-> tlfc
-                           (assoc :enum (enumerate-range-set (:ranges tlfc)))
+                           (assoc :enum (enumerate-range-set (:ranges tlfc))
+                                  :optional (when (some :optional (:ranges tlfc))
+                                              true))
+                           coll/no-nil
                            (dissoc :ranges))
                        tlfc)))))
 

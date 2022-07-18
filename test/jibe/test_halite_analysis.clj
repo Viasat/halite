@@ -989,38 +989,42 @@
                                  '{x {:enum #{}}}
                                  '{x {:enum #{}}}]
 
-    '(if-value x (= x 6000) true) ['(= x 6000)
-                                   '{x (= x 6000)}
-                                   '{x {:enum #{6000}}}
-                                   '{x {:enum #{6000}}}]
+    '(if-value x (= x 6000) true) ['(if-value x (= x 6000))
+                                   '{x (if-value x (= x 6000))}
+                                   '{x {:enum #{6000} :optional true}}
+                                   '{x {:enum #{6000} :optional true}}]
 
     '(if-value x
                (or (= x "6100")
                    (= x "no")
                    (= x "yes"))
-               true) ['(or (= x "6100")
-                           (= x "no")
-                           (= x "yes"))
-                      '{x (or (= x "6100")
-                              (= x "no")
-                              (= x "yes"))}
-                      '{x {:enum #{"6100" "yes" "no"}}}
-                      '{x {:enum #{"6100" "yes" "no"}}}]
+               true) ['(if-value x (or (= x "6100")
+                                       (= x "no")
+                                       (= x "yes")))
+                      '{x (if-value x (or (= x "6100")
+                                          (= x "no")
+                                          (= x "yes")))}
+                      '{x {:enum #{"6100" "yes" "no"}
+                           :optional true}}
+                      '{x {:enum #{"6100" "yes" "no"}
+                           :optional true}}]
 
     '(if-value y (= z 6200) true) [true nil {} {}]
 
-    '(if-value x (<= 6300 x) true) ['(<= 6300 x)
-                                    '{x (<= 6300 x)}
+    '(if-value x (<= 6300 x) true) ['(if-value x (<= 6300 x))
+                                    '{x (if-value x (<= 6300 x))}
                                     '{x {:ranges #{{:min 6300
-                                                    :min-inclusive false}}}}
+                                                    :min-inclusive false
+                                                    :optional true}}}}
                                     '{x {:ranges #{{:min 6300
-                                                    :min-inclusive false}}}}]
+                                                    :min-inclusive false
+                                                    :optional true}}}}]
 
     '(and (if-value x (<= 6400 x) true)
-          (if-value x (> 0 x) true)) ['(and (<= 6400 x) (> 0 x))
-                                      '{x (and (<= 6400 x) (> 0 x))}
-                                      '{x {:enum #{}}}
-                                      '{x {:enum #{}}}]
+          (if-value x (> 0 x) true)) ['(and (if-value x (<= 6400 x)) (if-value x (> 0 x)))
+                                      '{x (and (if-value x (<= 6400 x)) (if-value x (> 0 x)))}
+                                      '{x {:enum #{} :optional true}}
+                                      '{x {:enum #{} :optional true}}]
 
     '(or (if-value x (<= 6500 x) true)
          (if-value x (> 0 x) true)) [true nil {} {}]
@@ -1041,6 +1045,12 @@
      '{x :none}
      '{x :none}]
 
+    '(not= x $no-value)
+    ['(not= x $no-value)
+     '{x (not= x $no-value)}
+     '{x :some}
+     '{x :some}]
+
     '(and (= x $no-value)
           (> x 6900))
     ['(and (= x $no-value)
@@ -1048,6 +1058,26 @@
      '{x (and (= x $no-value)
               (> x 6900))}
      '{x :none}
-     '{x :none}]))
+     '{x :none}]
+
+    '(or (= x $no-value)
+         (contains? #{7000} x))
+    ['(or (= x $no-value)
+          (contains? #{7000} x))
+     '{x (or (= x $no-value)
+             (contains? #{7000} x))}
+     '{x {:enum #{7000}
+          :optional true}}
+     '{x {:enum #{7000}
+          :optional true}}]
+
+    '(and (not= x $no-value)
+          (if-value x (contains? #{7100} x) true))
+    ['(and (not= x $no-value)
+           (if-value x (contains? #{7100} x)))
+     '{x (and (not= x $no-value)
+              (if-value x (contains? #{7100} x)))}
+     '{x {:enum #{7100}}}
+     '{x {:enum #{7100}}}]))
 
 ;; (run-tests)
