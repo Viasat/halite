@@ -337,7 +337,8 @@
                                                           (:max-inclusive b)))))
 
 (defn- tlfc-data-and-enum [xs]
-  (let [result (reduce (fn [a b]
+  (let [some? (some #(= :some %) xs)
+        result (reduce (fn [a b]
                          (if (or (= :none a)
                                  (= :none b))
                            :none
@@ -346,9 +347,10 @@
                                                    (:enum a) (:enum a)
                                                    (:enum b) (:enum b))}]
                              (coll/no-nil (assoc combined
-                                                 :optional (when (or (and (:enum a) (:optional a) (= nil (:enum b)))
-                                                                     (and (:enum b) (:optional b) (= nil (:enum a)))
-                                                                     (and (:enum a) (:enum b) (:optional a) (:optional b)))
+                                                 :optional (when (and (not some?)
+                                                                      (or (and (:enum a) (:optional a) (= nil (:enum b)))
+                                                                          (and (:enum b) (:optional b) (= nil (:enum a)))
+                                                                          (and (:enum a) (:enum b) (:optional a) (:optional b))))
                                                              true))))))
                        {}
                        xs)]
@@ -360,35 +362,50 @@
 
 (defn- reduce-ranges [xs]
   (reduce (fn [a b]
-            (cond
-              (or (= :none b)
-                  (= :none a)) :none
+            (let [result (cond
+                           (or (= :none b)
+                               (= :none a)) :none
 
-              (= :some a) b
+                           (= :some a) b
 
-              (= :some b) a
+                           (= :some b) a
 
-              (and (:min a) (:min b)
-                   (:max a) (:max b))
-              (merge (select-keys (combine-mins a b) [:min :min-inclusive])
-                     (select-keys (combine-maxs a b) [:max :max-inclusive]))
+                           (and (:min a) (:min b)
+                                (:max a) (:max b))
+                           (merge (select-keys (combine-mins a b) [:min :min-inclusive :optional])
+                                  (select-keys (combine-maxs a b) [:max :max-inclusive :optional]))
 
-              (and (:min a) (:min b))
-              (combine-mins a b)
+                           (and (:min a) (:min b))
+                           (combine-mins a b)
 
-              (and (:max a) (:max b))
-              (combine-maxs a b)
+                           (and (:max a) (:max b))
+                           (combine-maxs a b)
 
-              :default
-              (merge a b))) {} xs))
+                           :default
+                           (merge a b))]
+              (let [a {:max 205, :max-inclusive true, :min 155, :min-inclusive true, :optional true}
+                    b {:max 500, :max-inclusive false, :min 150, :min-inclusive true, :optional true}])
+              (if (and (map? result)
+                       (not (and (or (:optional a)
+                                     (= :unknown (:optional a)))
+                                 (:optional b))))
+                (dissoc result :optional)
+                result))) {:optional :unknown} (remove nil? xs)))
 
 (defn- tlfc-data-and-ranges [xs]
   (let [result (if-let [r (some #(:ranges %) xs)]
                  (let [reduced-ranges0 (reduce-ranges xs)]
                    (if (= :none reduced-ranges0)
                      :none
-                     {:ranges (let [reduced-range (select-keys reduced-ranges0 [:min :min-inclusive :max :max-inclusive])]
-                                (->> r
+                     {:ranges (let [reduced-range (coll/no-empty (select-keys reduced-ranges0 [:min :min-inclusive :max :max-inclusive :optional]))]
+                                (->> (let [range-sets (->> (filter :ranges xs)
+                                                           (map :ranges)
+                                                           (sort-by count))]
+                                       (reduce (fn [r1 r2]
+                                                 (let [reduced-r1 (reduce-ranges r1)]
+                                                   (map #(reduce-ranges [% reduced-r1]) r2)))
+                                               (first range-sets)
+                                               (rest range-sets)))
                                      (map #(reduce-ranges [% reduced-range]))
                                      set))}))
                  (if (some #(and (map? %)
@@ -508,7 +525,10 @@
                                     tlfc-data-or)
 
     (and (seq? expr)
-         (= 'contains? (first expr))) {:enum (second expr)}
+         (= 'contains? (first expr))) (let [core-result {:enum (second expr)}]
+                                        (if (optional-vars (third expr))
+                                          (assoc core-result :optional true)
+                                          core-result))
 
     (and (vector? expr)) {:coll-elements (let [result (tlfc-data* optional-vars (first expr))]
                                            (if (and (map? result)
@@ -615,7 +635,7 @@
   [m]
   (->> (update-vals m tlfc-data)
        coll/no-nil
-                    ;; (remove #(= true (second %)))
+       ;; (remove #(= true (second %)))
        (into {})))
 
 (defn- gather-tlfc-single*
