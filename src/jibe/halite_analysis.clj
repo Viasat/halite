@@ -383,14 +383,18 @@
 
                            :default
                            (merge a b))]
-              (let [a {:max 205, :max-inclusive true, :min 155, :min-inclusive true, :optional true}
-                    b {:max 500, :max-inclusive false, :min 150, :min-inclusive true, :optional true}])
               (if (and (map? result)
                        (not (and (or (:optional a)
-                                     (= :unknown (:optional a)))
-                                 (:optional b))))
+                                     (= :unknown (:optional a))
+                                     (and (seq? (:ranges a))
+                                          (every? :optional (:ranges a))))
+                                 (or (:optional b)
+                                     (and (seq? (:ranges a))
+                                          (every? :optional (:ranges b)))))))
                 (dissoc result :optional)
-                result))) {:optional :unknown} (remove nil? xs)))
+                result)))
+          {:optional :unknown}
+          (remove nil? xs)))
 
 (defn- tlfc-data-and-ranges [xs]
   (let [result (if-let [r (some #(:ranges %) xs)]
