@@ -13,6 +13,9 @@
 
 (set! *warn-on-reflection* true)
 
+(defn- third [s]
+  (second (rest s)))
+
 (def NumericValue (schema/conditional
                    halite/integer-or-long? Number
                    halite/fixed-decimal? FixedDecimal))
@@ -60,6 +63,14 @@
 
 (declare replace-free-vars)
 
+(defn- as-optional-var [expr]
+  (when (and (seq? expr)
+             (= 3 (count expr))
+             (= 'when-value (first expr))
+             (= (second expr) (third expr))
+             (symbol? (second expr)))
+    (second expr)))
+
 (defn- replace-seq-free-vars [var-map context expr]
   (cond
     (= 'let (first expr))
@@ -76,6 +87,46 @@
     (let [[_ [sym coll] body] expr]
       (list (first expr) [sym (replace-free-vars var-map context coll)]
             (replace-free-vars var-map (conj context sym) body)))
+
+    (= 'if-value (first expr))
+    (let [[_ s then else] expr
+          replacement-expr (var-map s)
+          optional-var (as-optional-var replacement-expr)]
+
+      (cond
+        optional-var
+        (let [new-var-map (assoc var-map s optional-var)]
+          (list 'if-value optional-var
+                (replace-free-vars new-var-map context then)
+                (replace-free-vars new-var-map context else)))
+
+        (seq? replacement-expr)
+        (let [new-var-map (assoc var-map s s)]
+          (list 'if-value-let [s replacement-expr]
+                (replace-free-vars new-var-map context then)
+                (replace-free-vars new-var-map context else)))
+
+        :default
+        (replace-free-vars var-map context then)))
+
+    (= 'when-value (first expr))
+    (let [[_ s then] expr
+          replacement-expr (var-map s)
+          optional-var (as-optional-var replacement-expr)]
+
+      (cond
+        optional-var
+        (let [new-var-map (assoc var-map s optional-var)]
+          (list 'when-value optional-var
+                (replace-free-vars new-var-map context then)))
+
+        (seq? replacement-expr)
+        (let [new-var-map (assoc var-map s s)]
+          (list 'when-value-let [s replacement-expr]
+                (replace-free-vars new-var-map context then)))
+
+        :default
+        (replace-free-vars var-map context then)))
 
     :default
     (apply list (first expr) (->> expr
@@ -267,9 +318,6 @@
                                            expr}
 
     :default (throw (ex-info "unexpected expression" {:expr expr}))))
-
-(defn- third [s]
-  (second (rest s)))
 
 (defn- tlfc-data-or [xs0]
   (let [no-value-predicate (fn [x]

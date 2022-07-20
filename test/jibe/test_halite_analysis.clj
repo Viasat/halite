@@ -126,7 +126,109 @@
     '{x p
       y q
       z r}
-    '(+ p a b r)))
+    '(+ p a b r)
+
+    ;;
+
+    '(if-value x 1 0)
+    '{x a}
+    '1
+
+    '(if-value x 1 0)
+    '{x 99}
+    '1
+
+    '(if-value x 1 0)
+    '{x (when-value a a)}
+    '(if-value a 1 0)
+
+    '(if-value x 1 0)
+    '{x (when-value a (+ a 1))}
+    '(if-value-let [x (when-value a (+ a 1))]
+                   1 0)
+
+    '(if-value x 1 0)
+    '{x (if-value a (when-value b b) c)}
+    '(if-value-let [x (if-value a (when-value b b) c)] 1 0)
+
+    ;;
+
+    '(if-value x x y)
+    '{x a
+      y b}
+    'a
+
+    '(if-value x x y)
+    '{x 99
+      y b}
+    '99
+
+    '(if-value x x y)
+    '{x (when-value a a)
+      y b}
+    '(if-value a a b)
+
+    '(if-value x x y)
+    '{x (when-value a (+ a 1))
+      y b}
+    '(if-value-let [x (when-value a (+ a 1))]
+                   x b)
+
+    '(if-value x x y)
+    '{x (if-value a (when-value b b) c)
+      y b}
+    '(if-value-let [x (if-value a (when-value b b) c)] x b)
+
+    ;;
+
+    '(when-value x y)
+    '{x a
+      y b}
+    'b
+
+    '(when-value x y)
+    '{x 99
+      y b}
+    'b
+
+    '(when-value x y)
+    '{x (when-value a a)
+      y b}
+    '(when-value a b)
+
+    '(when-value x y)
+    '{x (when-value a (+ a 1))
+      y b}
+    '(when-value-let [x (when-value a (+ a 1))]
+                     b)
+
+    '(when-value x y)
+    '{x (if-value a (when-value b b) c)
+      y b}
+    '(when-value-let [x (if-value a (when-value b b) c)] b)
+
+    ;;
+
+    '(when-value x 1)
+    '{x a}
+    '1
+
+    '(when-value x 1)
+    '{x 99}
+    '1
+
+    '(when-value x 1)
+    '{x (when-value a a)}
+    '(when-value a 1)
+
+    '(when-value x 1)
+    '{x (when-value a (+ a 1))}
+    '(when-value-let [x (when-value a (+ a 1))]
+                     1)
+
+    '(when-value x 1)
+    '{x (if-value a (when-value b b) c)}
+    '(when-value-let [x (if-value a (when-value b b) c)] 1)))
 
 (deftest test-gather-tlfc
   (are [v x]
