@@ -1075,6 +1075,21 @@
 
   (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o 1 (div 5 0))) :Integer [:throws "Divide by zero"] "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {1} else {(5 / 0)}) }" [:throws "Divide by zero"]])
 
+  (hc :basic :my
+      [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o o 1)) :Integer 1 "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {o} else {1}) }" "1"])
+
+  (hc :basic :my
+      [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)] (if-value o o 1)) :Integer 3 "{ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (ifValue(o) {o} else {1}) }" "3"])
+
+  (hc :basic :my
+      [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (if-value o o o)) [:throws "Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
+
+  (hc :basic :my
+      [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)] (if-value o o o)) [:throws "Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
+
+  (hc :basic :my
+      [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)] o) [:Maybe :Integer] 3 "{ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; o }" "3"])
+
   (hc :basic :my [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (when-value o (div 5 0))) [:Maybe :Integer] :Unset "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(5 / 0)}) }" "Unset"])
 
   (hc :basic :my [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (div 5 0) 1) :Integer 1 "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(5 / 0)} else {1})" "1"])
