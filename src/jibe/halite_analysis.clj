@@ -483,12 +483,12 @@
   (let [{:keys [max max-inclusive min min-inclusive]} r]
     (fn [x]
       (and (cond
-             (and max max-inclusive) (<= x max)
-             max (< x max)
+             (and max max-inclusive) (halite/h<= x max)
+             max (halite/h< x max)
              :default true)
            (cond
-             (and min min-inclusive) (>= x min)
-             min (> x min)
+             (and min min-inclusive) (halite/h>= x min)
+             min (halite/h> x min)
              :default true)))))
 
 (defn- apply-ranges-to-enum
@@ -929,3 +929,43 @@
                                                     coll/invert-map
                                                     (update-vals first)))))
     expr'))
+
+;;;;
+
+(declare encode-fixed-decimals)
+
+(defn- encode-seq-fixed-decimals [expr]
+  (cond
+    (= 'let (first expr))
+    (let [[_ bindings body] expr]
+      (list 'let (->> bindings
+                      (map encode-fixed-decimals)
+                      vec)
+            (encode-fixed-decimals body)))
+
+    (#{'every? 'any?} (first expr))
+    (let [[op [sym coll] body] expr]
+      (list op [sym (encode-fixed-decimals coll)] (encode-fixed-decimals body)))
+
+    :default
+    (apply list (first expr) (->> (rest expr)
+                                  (map encode-fixed-decimals)))))
+
+(defn- encode-collection-fixed-decimals [expr]
+  (->> expr
+       (map encode-fixed-decimals)))
+
+(defn encode-fixed-decimals
+  [expr]
+  (cond
+    (boolean? expr) expr
+    (halite/integer-or-long? expr) expr
+    (halite/fixed-decimal? expr) (fixed-decimal-to-long expr)
+    (string? expr) expr
+    (symbol? expr) expr
+    (keyword? expr) expr
+    (map? expr) (-> expr (update-vals encode-fixed-decimals))
+    (seq? expr) (encode-seq-fixed-decimals expr)
+    (set? expr) (set (encode-collection-fixed-decimals expr))
+    (vector? expr) (vec (encode-collection-fixed-decimals expr))
+    :default (throw (ex-info "unexpected expr to encode-fixed-decimals" {:expr expr}))))
