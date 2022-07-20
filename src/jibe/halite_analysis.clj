@@ -874,3 +874,58 @@
       sort-tlfc
       tlfc-data-map
       small-ranges-to-enums))
+
+;;;;
+
+(declare process-strings)
+
+(defn- process-seq-strings [encoder-atom expr]
+  (cond
+    (= 'let (first expr))
+    (let [[_ bindings body] expr]
+      (list 'let (->> bindings
+                      (map (partial process-strings encoder-atom))
+                      vec)
+            (process-strings encoder-atom body)))
+
+    (#{'every? 'any?} (first expr))
+    (let [[op [sym coll] body] expr]
+      (list op [sym (process-strings encoder-atom coll)] (process-strings encoder-atom body)))
+
+    :default
+    (apply list (first expr) (->> (rest expr)
+                                  (map (partial process-strings encoder-atom))))))
+
+(defn- process-collection-strings [encoder-atom expr]
+  (->> expr
+       (map (partial process-strings encoder-atom))))
+
+(defn- process-strings
+  [encoder-atom expr]
+  (cond
+    (boolean? expr) expr
+    (halite/integer-or-long? expr) expr
+    (halite/fixed-decimal? expr) expr
+    (string? expr) (if-let [looked-up ((@encoder-atom :encoder-map) expr)]
+                     looked-up
+                     (dec (:counter (swap! encoder-atom (fn [{:keys [encoder-map counter]}]
+                                                          {:encoder-map (assoc encoder-map expr counter)
+                                                           :counter (inc counter)})))))
+    (symbol? expr) expr
+    (keyword? expr) expr
+    (map? expr) (-> expr (update-vals (partial process-strings encoder-atom)))
+    (seq? expr) (process-seq-strings encoder-atom expr)
+    (set? expr) (set (process-collection-strings encoder-atom expr))
+    (vector? expr) (vec (process-collection-strings encoder-atom expr))
+    :default (throw (ex-info "unexpected expr to process-strings" {:expr expr}))))
+
+(defn encode-strings
+  [encoder-atom expr-tree]
+  (swap! encoder-atom (fn [m]
+                        (update-in m [:encoder-map] merge {})))
+  (let [expr' (process-strings encoder-atom expr-tree)]
+    (swap! encoder-atom (fn [m]
+                          (assoc m :decoder-map (-> (m :encoder-map)
+                                                    coll/invert-map
+                                                    (update-vals first)))))
+    expr'))

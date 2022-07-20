@@ -1182,4 +1182,70 @@
      '{x {:enum #{7100}}}
      '{x {:enum #{7100}}}]))
 
+(deftest test-process-strings
+  (let [encoder-atom (atom nil)]
+    (reset! encoder-atom {:counter 0})
+    (is (= 19
+           (halite-analysis/encode-strings encoder-atom 19)))
+    (is (= {:counter 0
+            :decoder-map {}
+            :encoder-map {}}
+           @encoder-atom))
+
+    (reset! encoder-atom {:counter 0})
+    (is (= 0
+           (halite-analysis/encode-strings encoder-atom "hi")))
+    (is (= {:counter 1
+            :decoder-map {0 "hi"}
+            :encoder-map {"hi" 0}}
+           @encoder-atom))
+
+    (reset! encoder-atom {:counter 1})
+    (is (= 1
+           (halite-analysis/encode-strings encoder-atom "hi")))
+    (is (= {:counter 2
+            :decoder-map {1 "hi"}
+            :encoder-map {"hi" 1}}
+           @encoder-atom))
+
+    (reset! encoder-atom {:counter 1})
+    (is (= '(or (= a 1)
+                (= 2 b)
+                (contains #{4 3 5} c))
+           (halite-analysis/encode-strings encoder-atom '(or (= a "hi")
+                                                             (= "bye" b)
+                                                             (contains #{"x" "y" "z"} c)))))
+    (is (= {:counter 6
+            :decoder-map {1 "hi"
+                          2 "bye"
+                          3 "z"
+                          4 "x"
+                          5 "y"}
+            :encoder-map {"hi" 1
+                          "bye" 2
+                          "z" 3
+                          "x" 4
+                          "y" 5}}
+           @encoder-atom))
+
+    (reset! encoder-atom {:counter 1})
+    (is (= '(let [x [1 2]]
+              (every? [q [3 4]]
+                      (= q 5)))
+           (halite-analysis/encode-strings encoder-atom '(let [x ["a" "b"]]
+                                                           (every? [q ["c" "d"]]
+                                                                   (= q "e"))))))
+    (is (= {:counter 6
+            :decoder-map {1 "a"
+                          2 "b"
+                          3 "c"
+                          4 "d"
+                          5 "e"}
+            :encoder-map {"a" 1
+                          "b" 2
+                          "c" 3
+                          "d" 4
+                          "e" 5}}
+           @encoder-atom))))
+
 ;; (run-tests)
