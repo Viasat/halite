@@ -783,6 +783,32 @@
                   :ws/D
                   (ssa/spec-from-ssa))))))))
 
+(deftest test-refine-optional
+  ;; The 'features' that interact here: valid? and instance literals w/ unassigned variables.
+  (rewriting/with-tracing [traces]
+    (binding [ssa/*next-id* (atom 0)]
+      (let [senv (halite-envs/spec-env
+                  '{:my/A {:abstract? true
+                           :spec-vars {:a1 [:Maybe "Integer"]
+                                       :a2 [:Maybe "Integer"]}
+                           :constraints [["a1_pos" (if-value a1 (> a1 0) true)]
+                                         ["a2_pos" (if-value a2 (> a2 0) true)]]
+                           :refines-to {}}
+                    :my/B {:abstract? false
+                           :spec-vars {:b [:Maybe "Integer"]}
+                           :constraints []
+                           :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}})
+            sctx (ssa/build-spec-ctx senv :my/B)]
+        (is (= '{:abstract? false,
+                 :constraints [["$all" (let [$47 $no-value] (if-value b (< 0 b) true))]],
+                 :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}},
+                 :spec-vars {:b [:Maybe "Integer"]}}
+               (-> senv
+                   (ssa/build-spec-ctx :my/B)
+                   (lowering/lower)
+                   :my/B
+                   (ssa/spec-from-ssa))))))))
+
 (defonce ^:dynamic *results* (atom nil))
 (defonce ^:dynamic *trace* (atom nil))
 

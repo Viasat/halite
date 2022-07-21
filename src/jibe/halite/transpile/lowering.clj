@@ -154,30 +154,32 @@
 
 (s/defn ^:private validity-guard-inst :- ssa/DerivResult
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, [ssa-form htype] :- ssa/Derivation]
-  (let [{:keys [derivations constraints] :as spec-info} (sctx (:$type ssa-form))
-        inst-entries (->> (dissoc ssa-form :$type) (sort-by first))
+  (let [{:keys [spec-vars derivations constraints] :as spec-info} (sctx (:$type ssa-form))
+        inst-entries (dissoc ssa-form :$type)
         [dgraph pred-clauses] (reduce
                                (fn [[dgraph pred-clauses] [var-kw var-expr-id]]
                                  (let [[dgraph clause-id] (validity-guard sctx (assoc ctx :dgraph dgraph) var-expr-id)]
                                    [dgraph (conj pred-clauses clause-id)]))
                                [dgraph []]
-                               inst-entries)
+                               (sort-by first  inst-entries))
         [dgraph bindings] (reduce
-                           (fn [[dgraph bindings] [var-kw var-expr-id]]
-                             [dgraph (conj bindings (symbol var-kw) var-expr-id)])
+                           (fn [[dgraph bindings] var-kw]
+                             (let [var-expr-id-or-no-value (or (inst-entries var-kw) '$no-value)]
+                               [dgraph (conj bindings (symbol var-kw) var-expr-id-or-no-value)]))
                            [dgraph []]
-                           inst-entries)
-        scope (->> spec-info :spec-vars keys (map symbol) set)]
+                           (->> spec-vars keys sort))
+        scope (->> spec-info :spec-vars keys (map symbol) set)
+        the-form (list 'if
+                       (mk-junct 'and pred-clauses)
+                       (list 'let (vec bindings)
+                             (mk-junct 'and
+                                       (map (fn [[cname id]]
+                                              (ssa/form-from-ssa scope derivations id))
+                                            constraints)))
+                       false)]
     (ssa/form-to-ssa
      (assoc ctx :dgraph dgraph)
-     (list 'if
-           (mk-junct 'and pred-clauses)
-           (list 'let (vec bindings)
-                 (mk-junct 'and
-                           (map (fn [[cname id]]
-                                  (ssa/form-from-ssa scope derivations id))
-                                constraints)))
-           false))))
+     the-form)))
 
 (s/defn ^:private validity-guard-if :- ssa/DerivResult
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, [[_if pred-id then-id else-id] htype] :- ssa/Derivation]
