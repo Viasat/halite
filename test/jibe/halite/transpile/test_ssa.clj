@@ -225,28 +225,52 @@
         $6 [(not= $1 $4) :Boolean $5]}
       '[$5]
 
-      ;; if-value produces if, value? and value! nodes to facilitate semantics-preserving rewrites.
-      ;; form-from-ssa must always collapse these back to an if-value form.
+      ;; ;; if-value produces if, value? and value! nodes to facilitate semantics-preserving rewrites.
+      ;; ;; form-from-ssa must always collapse these back to an if-value form.
       '[(if-value w w 1)]  ; (if ($value? w) ($value! w) 1)
-      '{$1 [w [:Maybe :Integer]]
-        $2 [($value? $1) :Boolean $3]
-        $3 [(not $2) :Boolean $2]
-        $4 [($value! $1) :Integer]
-        $5 [1 :Integer]
-        $6 [(if $2 $4 $5) :Integer]}
-      '[$6]
+      '{$1 [:Unset :Unset]
+        $2 [w [:Maybe :Integer]]
+        $3 [($value? $2) :Boolean $4]
+        $4 [(not $3) :Boolean $3]
+        $5 [($value! $2) :Integer]
+        $6 [1 :Integer]
+        $7 [(if $3 $5 $6) :Integer]}
+      '[$7]
+
+      ;; !!!!!
+      ;; While the linter won't allow users to write (if-value $no-value ...),
+      ;; the type checker and evaluator will allow it, and there are rewrite rules
+      ;; that could produce it.
+      ;; The nature of the type system is such that the 'then' branch does not generally even HAVE a type!
+      ;; We therefore simply *drop the then branch on the floor* and add the else branch.
+      '[(if-value $no-value (+ 1 true) false)]
+      '{$1 [:Unset :Unset]
+        $2 [true :Boolean $3]
+        $3 [false :Boolean $2]}
+      '[$3]
+
+      '[(if-value w w (if-value w (+ 1 true) 12))]
+      '{$1 [:Unset :Unset]
+        $2 [w [:Maybe :Integer]]
+        $3 [($value? $2) :Boolean $4]
+        $4 [(not $3) :Boolean $3]
+        $5 [($value! $2) :Integer]
+        $6 [12 :Integer]
+        $7 [(if $3 $5 $6) :Integer]}
+      '[$7]
 
       '[(if-value- w w 1)]  ; deprecated
-      '{$1 [w [:Maybe :Integer]]
-        $2 [($value? $1) :Boolean $3]
-        $3 [(not $2) :Boolean $2]
-        $4 [($value! $1) :Integer]
-        $5 [1 :Integer]
-        $6 [(if $2 $4 $5) :Integer]}
-      '[$6]
+      '{$1 [:Unset :Unset]
+        $2 [w [:Maybe :Integer]]
+        $3 [($value? $2) :Boolean $4]
+        $4 [(not $3) :Boolean $3]
+        $5 [($value! $2) :Integer]
+        $6 [1 :Integer]
+        $7 [(if $3 $5 $6) :Integer]}
+      '[$7]
 
-      ;; We also need to be able to accept the internal nodes, which
-      ;; may be produced by rewrite rules.
+      ;; ;; We also need to be able to accept the internal nodes, which
+      ;; ;; may be produced by rewrite rules.
       '[(if ($value? w) ($value! w) 1)]
       '{$1 [w [:Maybe :Integer]]
         $2 [($value? $1) :Boolean $3]
@@ -281,40 +305,42 @@
         $3 [v [:Maybe :Integer]],
         $4 [w [:Maybe :Integer]],
         $5 [(if $1 $3 $4) [:Maybe :Integer]],
-        $6 [($value? $5) :Boolean $7],
-        $7 [(not $6) :Boolean $6],
-        $8 [($value! $5) :Integer],
-        $9 [10 :Integer]
-        $10 [(< $8 $9) :Boolean $11],
-        $11 [(<= $9 $8) :Boolean $10],
-        $12 [true :Boolean $13],
-        $13 [false :Boolean $12],
-        $14 [(if $6 $10 $12) :Boolean $15],
-        $15 [(not $14) :Boolean $14],
-        $16 [($do! $5 $14) :Boolean $17],
-        $17 [(not $16) :Boolean $16]}
-      '[$16]
+        $6 [:Unset :Unset]
+        $7 [($value? $5) :Boolean $8],
+        $8 [(not $7) :Boolean $7],
+        $9 [($value! $5) :Integer],
+        $10 [10 :Integer]
+        $11 [(< $9 $10) :Boolean $12],
+        $12 [(<= $10 $9) :Boolean $11],
+        $13 [true :Boolean $14],
+        $14 [false :Boolean $13],
+        $15 [(if $7 $11 $13) :Boolean $16],
+        $16 [(not $15) :Boolean $15],
+        $17 [($do! $5 $15) :Boolean $18],
+        $18 [(not $17) :Boolean $17]}
+      '[$17]
 
       '[(if-value v
                   (let [u (get c :cn)]
                     (if-value u (+ u 1) 0))
                   1)]
-      '{$1 [v [:Maybe :Integer]],
-        $2 [($value? $1) :Boolean $3],
-        $3 [(not $2) :Boolean $2],
-        $4 [($value! $1) :Integer],
-        $5 [c [:Instance :ws/C]],
-        $6 [(get $5 :cn) [:Maybe :Integer]],
-        $7 [($value? $6) :Boolean $8],
-        $8 [(not $7) :Boolean $7],
-        $9 [($value! $6) :Integer]
-        $10 [1 :Integer],
-        $11 [(+ $9 $10) :Integer],
-        $12 [0 :Integer],
-        $13 [(if $7 $11 $12) :Integer],
-        $14 [($do! $6 $13) :Integer],
-        $15 [(if $2 $14 $10) :Integer]}
-      '[$15])))
+      '{$1 [:Unset :Unset]
+        $2 [v [:Maybe :Integer]],
+        $3 [($value? $2) :Boolean $4],
+        $4 [(not $3) :Boolean $3],
+        $5 [($value! $2) :Integer],
+        $6 [c [:Instance :ws/C]],
+        $7 [(get $6 :cn) [:Maybe :Integer]],
+        $8 [($value? $7) :Boolean $9],
+        $9 [(not $8) :Boolean $8],
+        $10 [($value! $7) :Integer]
+        $11 [1 :Integer],
+        $12 [(+ $10 $11) :Integer],
+        $13 [0 :Integer],
+        $14 [(if $8 $12 $13) :Integer],
+        $15 [($do! $7 $14) :Integer],
+        $16 [(if $3 $15 $11) :Integer]}
+      '[$16])))
 
 (def form-from-ssa* #'ssa/form-from-ssa*)
 
