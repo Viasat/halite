@@ -37,7 +37,29 @@
                    (str/join ", " (map name (:invalid-vars data))))})
 
 (deferr halite-resource-spec-not-found [data]
-        {:msg (str "resource spec not found: " (:spec-id data))})
+        {:msg (str "resource spec not found: " (pr-str (:spec-id data)))})
+
+(deferr halite-not-a-value [data]
+        {:msg (format "BUG! Not a value: %s" (pr-str (:value data)))})
+
+(deferr halite-no-active-refinement-path [data]
+        {:msg (format "No active refinement path from '%s' to '%s'"
+                      (symbol (:$type (:value data)))
+                      (symbol (:declared-type data)))})
+
+(deferr halite-no-abstract [data]
+        {:msg "instance cannot contain abstract value"})
+
+(deferr halite-invalid-instance [data]
+        {:msg (format "invalid instance of '%s', violates constraints %s"
+                      (symbol (:spec-id data))
+                      (str/join ", " (map first (:violated-constraints data))))})
+
+(deferr halite-missing-type-field [data]
+        {:msg "instance literal must have :$type field"})
+
+(deferr halite-invalid-type-value [data]
+        {:msg "expected namespaced keyword as value of :$type"})
 
 (declare eval-expr)
 
@@ -86,7 +108,7 @@
                (and (not (:abstract? spec-info))
                     (every? (partial concrete? senv) (vals (dissoc v :$type)))))
     (coll? v) (every? (partial concrete? senv) v)
-    :else (throw (ex-info (format "BUG! Not a value: %s" (pr-str v)) {:value v}))))
+    :else (throw-err (halite-not-a-value {:value v}))))
 
 (s/defn- check-against-declared-type
   "Runtime check that v conforms to the given type, which is the type of v as declared in a resource spec.
@@ -98,10 +120,9 @@
   (let [declared-type (halite-types/no-maybe declared-type)]
     (cond
       (halite-types/spec-id declared-type) (when-not (refines-to? v declared-type)
-                                             (throw (ex-info (format "No active refinement path from '%s' to '%s'"
-                                                                     (symbol (:$type v))
-                                                                     (symbol (halite-types/spec-id declared-type)))
-                                                             {:value v})))
+                                             (throw-err (halite-no-active-refinement-path
+                                                         {:value v
+                                                          :declared-type (halite-types/spec-id declared-type)})))
       :else (if-let [elem-type (halite-types/elem-type declared-type)]
               (dorun (map (partial check-against-declared-type elem-type) v))
               nil))))
@@ -125,16 +146,15 @@
             :let [declared-type (->> kw spec-vars (halite-envs/halite-type-from-var-type senv))]]
       ;; TODO: consider letting instances of abstract spec contain abstract values
       (when-not (concrete? senv v)
-        (throw (ex-info "instance cannot contain abstract value" {:value v})))
+        (throw-err (halite-no-abstract {:value v})))
       (check-against-declared-type declared-type v))
 
     ;; check all constraints
-    (let [violated-constraints (->> spec-info :constraints (remove satisfied?))]
+    (let [violated-constraints (->> spec-info :constraints (remove satisfied?) vec)]
       (when (seq violated-constraints)
-        (throw (ex-info (format "invalid instance of '%s', violates constraints %s"
-                                (symbol spec-id) (str/join ", " (map first violated-constraints)))
-                        {:value inst
-                         :halite-error :constraint-violation}))))
+        (throw-err (halite-invalid-instance (s/convey spec-id violated-constraints
+                                                      :value inst
+                                                      :halite-error :constraint-violation)))))
 
     ;; fully explore all active refinement paths, and store the results
     (with-meta
@@ -159,15 +179,13 @@
 (s/defn check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
-              (throw (ex-info "instance literal must have :$type field" {:user-visible-error? true
-                                                                         error-key inst
-                                                                         :inst-class (class inst)})))
+              (throw-err (halite-missing-type-field {error-key inst
+                                                     :inst-class (class inst)})))
         _ (when-not (halite-types/namespaced-keyword? t)
-            (throw (ex-info "expected namespaced keyword as value of :$type" {:user-visible-error? true
-                                                                              error-key inst})))
+            (throw-err (halite-invalid-type-value {error-key inst})))
         spec-info (or (halite-envs/lookup-spec (:senv ctx) t)
-                      (throw (ex-info (str "resource spec not found: " t) {:user-visible-error? true
-                                                                           error-key inst})))
+                      (throw-err (halite-resource-spec-not-found {:spec-id t
+                                                                  error-key inst})))
         field-types (:spec-vars spec-info)
         fields (set (keys field-types))
         required-fields (->> field-types
