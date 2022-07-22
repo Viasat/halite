@@ -24,11 +24,21 @@
 
 (defmacro with-exception-data
   "Merge extra-data into any ex-info thrown from inside body"
-  [extra-data & body]
-  (assert (map? extra-data))
-  `(try
-     ~@body
-     (catch clojure.lang.ExceptionInfo e#
-       (throw (ex-info (.getMessage e#)
-                       (merge ~extra-data (ex-data e#))
-                       e#)))))
+  ([& args]
+   (let [[message extra-data body] (if (map? (first args))
+                                     [nil (first args) (rest args)]
+                                     [(first args) (second args) (rest (rest args))])]
+     (assert (map? extra-data))
+     (if message
+       `(try
+          ~@body
+          (catch clojure.lang.ExceptionInfo e#
+            (throw (ex-info ~message
+                            (merge ~extra-data (ex-data e#))
+                            e#))))
+       `(try
+          ~@body
+          (catch clojure.lang.ExceptionInfo e#
+            (throw (ex-info (.getMessage e#)
+                            (merge ~extra-data (ex-data e#))
+                            e#))))))))
