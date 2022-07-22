@@ -15,24 +15,6 @@
 
 (use-fixtures :once schema.test/validate-schemas)
 
-(defn- print-trace-item [{:keys [rule op pruned-ids form form']}]
-  (if rule
-    (println (format "%s:  %s\n |->%s%s"
-                     rule form (apply str (repeat (dec (count rule)) \space)) form'))
-    (println "--- prune" (count pruned-ids) "---")))
-
-(defn- print-trace-summary* [trace]
-  (doseq [item trace]
-    (print-trace-item item)))
-
-(defmacro ^:private print-trace-summary
-  [body spec-id]
-  `(rewriting/with-tracing [traces#]
-     (let [spec-id# ~spec-id
-           result# ~body]
-       (print-trace-summary* (get @traces# spec-id#))
-       result#)))
-
 (defn- troubleshoot* [trace]
   (let [last-item (last trace)]
     (clojure.pprint/pprint
@@ -47,7 +29,7 @@
     (ssa/pprint-dgraph (:dgraph' last-item))))
 
 (defmacro ^:private troubleshoot [body spec-id]
-  `(lowering/with-tracing [traces#]
+  `(rewriting/with-tracing [traces#]
      (try
        ~body
        (catch Exception ex#
@@ -60,18 +42,29 @@
   [ctx rewrite-fn form]
   (binding [ssa/*next-id* (atom 0), ssa/*hide-non-halite-ops* false]
     (let [[dgraph id] (ssa/form-to-ssa ctx form)
-          new-expr (rewrite-fn (assoc ctx :dgraph dgraph) id (ssa/deref-id dgraph id))
+          new-expr (rewrite-fn {}  (assoc ctx :dgraph dgraph) id (ssa/deref-id dgraph id))
           [dgraph id] (if (not= nil new-expr) (ssa/form-to-ssa (assoc ctx :dgraph dgraph) id new-expr) [dgraph id])
           scope (set (keys (halite-envs/scope (:tenv ctx))))]
       (ssa/form-from-ssa scope dgraph id))))
+
+(defn- bogus-spec-info [dgraph id]
+  {:spec-vars {}
+   :constraints [["foo" id]]
+   :derivations dgraph
+   :refines-to {}})
 
 (defn- rewrite-expr-deeply
   [ctx rewrite-fn form]
   (binding [ssa/*next-id* (atom 0), ssa/*hide-non-halite-ops* false]
     (let [[dgraph id] (ssa/form-to-ssa ctx form)
-          dgraph (rewriting/rewrite-dgraph (assoc ctx :dgraph dgraph) "<rule>" rewrite-fn)
+          spec-info (rewriting/rewrite-spec
+                     {:rule-name "<rule>"
+                      :rewrite-fn rewrite-fn
+                      :nodes :all}
+                     {:foo/Bar (bogus-spec-info dgraph id)}
+                     :foo/Bar)
           scope (set (keys (halite-envs/scope (:tenv ctx))))]
-      (ssa/form-from-ssa scope dgraph id))))
+      (ssa/form-from-ssa scope (:derivations spec-info) id))))
 
 (defn- make-ssa-ctx
   ([] (make-ssa-ctx {}))
@@ -892,7 +885,7 @@
                  (throw (ex-info "Stopping" {:r1 r1 :r2 r2 :inst a})))
 
                (doseq [{:keys [dgraph dgraph'] :as item} @*trace*]
-                 (print-trace-item item)
+                 (rewriting/print-trace-item item)
                  (let [sctx' (assoc-in sctx [:ws/A :derivations] dgraph)
                        sctx'' (assoc-in sctx [:ws/A :derivations] dgraph')
                        r3 (check-a (ssa/build-spec-env sctx'') a)]

@@ -9,7 +9,7 @@
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
              :refer [DerivationName Derivations SpecInfo SpecCtx make-ssa-ctx]]
-            [jibe.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx]]
+            [jibe.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as halite-rewriting]
             [jibe.halite.transpile.simplify :refer [simplify]]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
             [schema.core :as s]
@@ -46,7 +46,7 @@
        first))
 
 (s/defn ^:private bubble-up-do-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (cond
     (map? form)
     (let [[match? done-ids inst]
@@ -76,7 +76,7 @@
 ;; Finally, we can 'flatten' $do! forms.
 
 (s/defn ^:private flatten-do-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (when (do-form? form)
     (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
       (concat (take i form) (rest nested-do-form) (drop (inc i) form)))))
@@ -84,7 +84,7 @@
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
 (s/defn ^:private lower-instance-comparison-expr
-  [{:keys [dgraph senv] :as ctx} id [form type]]
+  [sctx :- SpecCtx, {:keys [dgraph senv] :as ctx} id [form type]]
   (when (and (seq? form) (#{'= 'not=} (first form)))
     (let [comparison-op (first form)
           logical-op (if (= comparison-op '=) 'and 'or)
@@ -108,7 +108,7 @@
 ;;;;;;;;; Push gets inside instance-valued ifs ;;;;;;;;;;;
 
 (s/defn ^:private push-gets-into-ifs-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (when (and (seq? form) (= 'get (first form)))
     (let [[_get arg-id var-kw] form
           [subform htype] (ssa/deref-id dgraph (second form))]
@@ -121,26 +121,6 @@
   (rewrite-sctx sctx push-gets-into-ifs-expr))
 
 ;;;;;;;;; Lower valid? ;;;;;;;;;;;;;;;;;
-
-(s/defn ^:private rewrite-in-dependency-order :- SpecCtx
-  [sctx :- SpecCtx, deps-fn, rewrite-fn]
-  (as-> (dep/graph) dg
-    ;; ensure that everything is in the dependency graph, depending on :nothing
-    (reduce #(dep/depend %1 %2 :nothing) dg (keys sctx))
-    ;; add the deps for each spec
-    (reduce
-     (fn [dg [spec-id spec]]
-       (reduce #(dep/depend %1 spec-id %2) dg (deps-fn spec)))
-     dg
-     sctx)
-    ;; rewrite in the correct order
-    (->> dg
-         (dep/topo-sort)
-         (remove #(= :nothing %))
-         (reduce
-          (fn [sctx spec-id]
-            (->> spec-id (sctx) (rewrite-fn sctx) (assoc sctx spec-id)))
-          sctx))))
 
 (s/defn ^:private deps-via-instance-literal :- #{halite-types/NamespacedKeyword}
   [{:keys [derivations] :as spec-info} :- SpecInfo]
@@ -236,7 +216,7 @@
   (validity-guard (<op> <...expr_i>)) => (and <...(validity-guard expr_i)>)
   (validity-guard {<...kw_i expr_i>})
   => (if (and <...(validity-guard expr_i)>)
-       (let [<...kw_i expr_i>]
+       (let [<...kw_i (or expr_i $no-value)>]
          <inlined constraints>)
        false)"
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id :- DerivationName]
@@ -256,25 +236,21 @@
                           (validity-guard-app sctx ctx deriv)))
       :else (throw (ex-info "BUG! Cannot compute validity-guard" {:dgraph dgraph :id id :deriv deriv})))))
 
-(s/defn ^:private lower-valid?-in-spec :- SpecInfo
-  "We can trivially lower (valid? <expr>) forms as <(validity-guard expr)>."
-  [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
-  (let [ctx (make-ssa-ctx sctx spec-info)]
-    (->> derivations
-         (filter
-          (fn [[id [form htype]]]
-            (and (seq? form) (= 'valid? (first form)))))
-         (reduce
-          (fn [dgraph [id [[_valid? expr-id] htype]]]
-            (let [[dgraph new-id] (validity-guard sctx (assoc ctx :dgraph dgraph) expr-id)
-                  deriv (ssa/deref-id dgraph new-id)]
-              (assoc dgraph id (assoc deriv 0 new-id))))
-          derivations)
-         (assoc spec-info :derivations))))
+(s/defn ^:private lower-valid?-expr
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (when (and (seq? form) (= 'valid? (first form)))
+    (let [[_valid? expr-id] form]
+      (let [[dgraph new-id] (validity-guard sctx ctx expr-id)]
+        (vary-meta new-id assoc :dgraph dgraph)))))
 
 (s/defn ^:private lower-valid? :- SpecCtx
   [sctx :- SpecCtx]
-  (rewrite-in-dependency-order sctx deps-via-instance-literal lower-valid?-in-spec))
+  (halite-rewriting/rewrite-in-dependency-order*
+   {:rule-name "lower-valid?"
+    :rewrite-fn lower-valid?-expr
+    :nodes :all}
+   deps-via-instance-literal
+   sctx))
 
 ;;;;;;;;;; Lower refine-to ;;;;;;;;;;;;;;;
 
@@ -342,28 +318,43 @@
 
 ;;;;;;;;;; Lower Refinement Constraints ;;;;;;;;;;;;;;;
 
-(s/defn ^:private lower-refinement-constraints-in-spec :- SpecInfo
-  [sctx :- SpecCtx, {:keys [refines-to derivations] :as spec-info} :- SpecInfo]
-  (let [ctx (make-ssa-ctx sctx spec-info)]
-    (->> refines-to
-         (reduce
-          (fn [{:keys [derivations] :as spec-info} [target-id {:keys [expr inverted?]}]]
-            (when inverted?
-              (throw (ex-info "BUG! Lowering inverted refinements not yet supported" {:spec-info spec-info})))
-            (let [[dgraph id] (ssa/form-to-ssa (assoc ctx :dgraph derivations) (list 'valid? expr))]
-              (-> spec-info
-                  (assoc :derivations dgraph)
-                  (update :constraints conj [(str target-id) id]))))
-          spec-info))))
+(s/defn ^:private lower-refinement-constraints-in-spec :- [(s/one s/Keyword "spec-id") (s/one SpecInfo "spec-info")]
+  [sctx :- SpecCtx
+   [spec-id  {:keys [refines-to derivations] :as spec-info}] :- [(s/one s/Keyword "spec-id") (s/one SpecInfo "spec-info")]]
+  (let [ctx (make-ssa-ctx sctx spec-info)
+        scope (->> ctx :tenv (halite-envs/scope) keys set)]
+    [spec-id
+     (->> refines-to
+          (reduce
+           (fn [{:keys [derivations] :as spec-info} [target-id {:keys [expr inverted?]}]]
+             (when inverted?
+               (throw (ex-info "BUG! Lowering inverted refinements not yet supported" {:spec-info spec-info})))
+             (let [[dgraph id] (ssa/form-to-ssa (assoc ctx :dgraph derivations) (list 'valid? expr))]
+               (halite-rewriting/trace!
+                {:op :add-constraint
+                 :rule "lower-refinement-to-constraint"
+                 :spec-id spec-id
+                 :dgraph derivations
+                 :dgraph' dgraph
+                 :id' id
+                 :form expr
+                 :form' (ssa/form-from-ssa scope dgraph id)
+                 :spec-info spec-info})
+               (-> spec-info
+                   (assoc :derivations dgraph)
+                   (update :constraints conj [(str target-id) id]))))
+           spec-info))]))
 
 (s/defn ^:private lower-refinement-constraints :- SpecCtx
   [sctx :- SpecCtx]
-  (update-vals sctx (partial lower-refinement-constraints-in-spec sctx)))
+  (->> sctx
+       (map (partial lower-refinement-constraints-in-spec sctx))
+       (into {})))
 
 ;;;;;;;;;; Lowering Optionality ;;;;;;;;;;;;
 
 (s/defn ^:private lower-no-value-comparison-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
   (when (and (seq? form) (contains? #{'= 'not=} (first form)))
     (let [[op & arg-ids] form
           args (map (partial ssa/deref-id dgraph) arg-ids)
@@ -376,13 +367,13 @@
 ;; doesn't type check whenever the inner type is not a maybe type :( I think we'll need
 ;; to change them.
 (s/defn ^:private lower-when-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (when (and (seq? form) (= 'when (first form)))
     (let [[_when pred-id body-id] form]
       (list 'if pred-id body-id :Unset))))
 
 (s/defn ^:private lower-maybe-comparison-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (let [opt-arg? (fn [[form htype]]
                    (halite-types/maybe-type? htype))
         if-form? (fn [[form htype]]
@@ -441,7 +432,7 @@
   (rewrite-sctx sctx lower-maybe-comparison-expr))
 
 (s/defn ^:private push-comparison-into-maybe-if-in-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
   (let [maybe-if? (fn [[form htype]]
                     (and (seq? form)
                          (= 'if (first form))
@@ -459,7 +450,7 @@
   (rewrite-sctx sctx push-comparison-into-maybe-if-in-expr))
 
 (s/defn ^:private push-if-value-into-if-in-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_if val?-id then-id else-id] form
           [val?-form] (ssa/deref-id dgraph val?-id)]
@@ -511,24 +502,13 @@
 
 ;;;;;;;;;; Semantics-modifying passes ;;;;;;;;;;;;;;;;
 
-(s/defn ^:private eliminate-runtime-constraint-violations-in-spec :- SpecInfo
-  [sctx :- SpecCtx, {:keys [derivations constraints] :as spec-info} :- SpecInfo]
-  (let [ctx (make-ssa-ctx sctx spec-info)]
-    (->> constraints
-         (reduce
-          (fn [acc [cname cid]]
-            (let [[dgraph guard-id] (validity-guard sctx (assoc ctx :dgraph (:derivations acc)) cid)
-                  [dgraph id] (->> (list 'if guard-id cid false)
-                                   (ssa/form-to-ssa (assoc ctx :dgraph dgraph)))]
-              (-> acc
-                  (assoc :derivations dgraph)
-                  (update :constraints conj [cname id]))))
-          {:derivations derivations
-           :constraints []})
-         (merge spec-info))))
+(s/defn ^:private eliminate-runtime-constraint-violations-in-expr
+  [sctx :- SpecCtx, ctx :- ssa/SSACtx, id, [form htype]]
+  (let [[dgraph guard-id] (validity-guard sctx ctx id)]
+    (vary-meta (list 'if guard-id id false) assoc :dgraph dgraph)))
 
 (s/defn ^:private explode-side-effect-instances
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [side-effects (->> form (rest) (butlast))
           side-effects' (->> side-effects
@@ -546,10 +526,15 @@
   Every constraint expression <expr> is rewritten as (if <(validity-guard expr)> <expr> false).
   Afterwards, all instance literals that are in $do! forms, but not at the tail, are 'exploded'."
   [sctx :- SpecCtx]
-  (-> sctx
-      (rewrite-in-dependency-order deps-via-instance-literal eliminate-runtime-constraint-violations-in-spec)
-      (rewrite-sctx explode-side-effect-instances)
-      (simplify)))
+  (->> sctx
+      ;; Does this actually have to be done in dependency order? Why or why not?
+       (halite-rewriting/rewrite-in-dependency-order*
+        {:rule-name "eliminate-runtime-constraint-violations"
+         :rewrite-fn eliminate-runtime-constraint-violations-in-expr
+         :nodes :constraints}
+        deps-via-instance-literal)
+       (halite-rewriting/->>rewrite-sctx explode-side-effect-instances)
+       (simplify)))
 
 (s/defn ^:private cancel-get-of-instance-literal-in-spec :- SpecInfo
   "Replace (get {... :k <subexpr>} :k) with <subexpr>."
@@ -577,7 +562,7 @@
   (update-vals sctx cancel-get-of-instance-literal-in-spec))
 
 (s/defn ^:private eliminate-do-expr
-  [{:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [tail-id (last form)]
       (first (ssa/deref-id dgraph tail-id)))))
