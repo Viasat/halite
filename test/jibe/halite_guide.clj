@@ -1122,7 +1122,7 @@
 
   (hc :basic
       :my
-      [{:$type :my/Spec$v1} [:throws "missing required variables: :n,:p"]])
+      [{:$type :my/Spec$v1} [:throws "missing required variables: n,p"]])
 
   (hc :basic
       :my
@@ -1271,15 +1271,15 @@
 (deftest test-instances-valid
   (hc :basic
       :my
-      [{:$type :my/Spec$v1, :p 1} [:throws "missing required variables: :n"]])
+      [{:$type :my/Spec$v1, :p 1} [:throws "missing required variables: n"]])
 
   (hc :basic
       :my
-      [(valid {:$type :my/Spec$v1, :p 0}) [:throws "missing required variables: :n"]])
+      [(valid {:$type :my/Spec$v1, :p 0}) [:throws "missing required variables: n"]])
 
   (hc :basic
       :my
-      [(valid? {:$type :my/Spec$v1, :p 0}) [:throws "missing required variables: :n"]])
+      [(valid? {:$type :my/Spec$v1, :p 0}) [:throws "missing required variables: n"]])
 
   (hc :basic
       :my

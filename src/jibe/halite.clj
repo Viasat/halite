@@ -29,12 +29,12 @@
   '#{$this})
 
 (deferr halite-missing-required-vars [data]
-  {:msg (str "missing required variables: "
-             (str/join "," (map name (:missing-vars data))))})
+        {:msg (str "missing required variables: "
+                   (str/join "," (map name (:missing-vars data))))})
 
 (deferr halite-variables-not-in-spec [data]
-  {:msg (str "variables not defined on spec: "
-             (str/join ", " (map name (:invalid-vars data))))})
+        {:msg (str "variables not defined on spec: "
+                   (str/join ", " (map name (:invalid-vars data))))})
 
 (declare eval-expr)
 

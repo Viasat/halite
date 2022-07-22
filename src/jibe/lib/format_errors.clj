@@ -22,7 +22,6 @@
      (throw (ex-info (:msg data#)
                      (extend-err-data data#)))))
 
-
 (defmacro with-exception-data
   "Merge extra-data into any ex-info thrown from inside body"
   [extra-data & body]
