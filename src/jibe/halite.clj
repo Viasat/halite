@@ -61,6 +61,48 @@
 (deferr halite-invalid-type-value [data]
         {:msg "expected namespaced keyword as value of :$type"})
 
+(deferr halite-invalid-field-value [data]
+        {:msg (str "value of " (:variable data) " has wrong type")})
+
+(deferr halite-invalid-value [data]
+        {:msg "Invalid value"})
+
+(deferr halite-literal-may-not-evaluate [data]
+        {:msg (format "%s literal element may not always evaluate to a value" (:coll-type-string data))})
+
+(deferr halite-argument-count-must-be-even [data]
+        {:msg "argument count must be a multiple of 2"})
+
+(deferr halite-size-exceeded [data]
+        {:msg (format "%s size of %s exceeds the max allowed size of %s"
+                      (:object-type data)
+                      (:actual-count data)
+                      (:count-limit data))})
+
+(deferr halite-limit-exceeded [data]
+        {:msg (format "%s of %s exceeds the max allowed value of %s"
+                      (:object-type data)
+                      (:value data)
+                      (:limit data))})
+
+(deferr halite-abs-failure [data]
+        {:msg (format "Cannot compute absolute value of: %s" (:value-string data))})
+
+(deferr halite-invalid-exponent [data]
+        {:msg (format "Invalid exponent: %s" (:exponent data))})
+
+(deferr halite-spec-threw [data]
+        {:msg (format "Spec threw error: %s" (:spec-error-str data))})
+
+(deferr halite-unknown-function-or-operator [data]
+        {:msg (format "unknown function or operator: %s" (:op data))})
+
+(deferr halite-syntax-error [data]
+        {:msg "Syntax error"})
+
+(deferr halite-no-matching-signature [data]
+        {:msg (format "no matching signature for '%s'" (:op data))})
+
 (declare eval-expr)
 
 (declare type-check*)
@@ -179,8 +221,7 @@
 (s/defn check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
-              (throw-err (halite-missing-type-field {error-key inst
-                                                     :inst-class (class inst)})))
+              (throw-err (halite-missing-type-field {error-key inst})))
         _ (when-not (halite-types/namespaced-keyword? t)
             (throw-err (halite-invalid-type-value {error-key inst})))
         spec-info (or (halite-envs/lookup-spec (:senv ctx) t)
@@ -208,8 +249,10 @@
       (let [field-type (halite-envs/halite-type-from-var-type (:senv ctx) (get field-types field-kw))
             actual-type (check-fn ctx field-val)]
         (when-not (halite-types/subtype? actual-type field-type)
-          (throw (ex-info (str "value of " field-kw " has wrong type")
-                          {error-key inst :variable field-kw :expected field-type :actual actual-type})))))
+          (throw-err (halite-invalid-field-value {error-key inst
+                                                  :variable field-kw
+                                                  :expected field-type
+                                                  :actual actual-type})))))
     (halite-types/concrete-spec-type t)))
 
 (s/defn- get-typestring-for-coll [coll]
@@ -223,11 +266,11 @@
   (let [elem-types (map (partial check-fn ctx) coll)
         coll-type-string (get-typestring-for-coll coll)]
     (when (not coll-type-string)
-      (throw (ex-info "Invalid value" {error-key coll})))
+      (throw-err (halite-invalid-value  {error-key coll})))
     (doseq [[elem elem-type] (map vector coll elem-types)]
       (when (halite-types/maybe-type? elem-type)
-        (throw (ex-info (format "%s literal element may not always evaluate to a value" coll-type-string)
-                        {error-key elem}))))
+        (throw-err (halite-literal-may-not-evaluate {:coll-type-string coll-type-string
+                                                     error-key elem}))))
     (halite-types/vector-or-set-type coll (condp = (count coll)
                                             0 :Nothing
                                             1 (first elem-types)
@@ -248,7 +291,7 @@
                    (validate-instance (:senv ctx) value)
                    t)
     (coll? value) (check-coll type-of* :value ctx value)
-    :else (throw (ex-info "Invalid value" {:value value}))))
+    :else (throw-err (halite-invalid-value {:value value}))))
 
 (s/defn type-of :- halite-types/HaliteType
   "Return the type of the given runtime value, or throw an error if the value is invalid and cannot be typed.
@@ -270,7 +313,7 @@
 (s/defn- mk-builtin :- Builtin
   [impl & signatures]
   (when (not= 0 (mod (count signatures) 2))
-    (throw (ex-info "argument count must be a multiple of 2" {})))
+    (throw-err (halite-argument-count-must-be-even)))
   {:impl impl
    :signatures
    (vec (for [[arg-types return-type] (partition 2 signatures)
@@ -293,8 +336,10 @@
 
 (s/defn check-count [object-type count-limit c context]
   (when (> (count c) count-limit)
-    (throw (ex-info (str object-type " size of " (count c) " exceeds the max allowed size of " count-limit)
-                    (merge context {:value c}))))
+    (throw-err (halite-size-exceeded (merge context {:object-type object-type
+                                                     :actual-count (count c)
+                                                     :count-limit count-limit
+                                                     :value c}))))
   c)
 
 (s/defn check-limit [limit-key v]
@@ -320,7 +365,8 @@
 (def ^:private h*    (math-f *    fixed-decimal/f*))
 (def ^:private hquot (math-f quot fixed-decimal/fquot))
 (def ^:private habs  (comp #(if (hneg? %)
-                              (throw (ex-info (str "Cannot compute absolute value of: " (hstr %)) {:value %}))
+                              (throw-err (halite-abs-failure {:value-string (hstr %)
+                                                              :value %}))
                               %)
                            (math-f abs  fixed-decimal/fabs)))
 (def           h<=   (math-f <=   fixed-decimal/f<=))
@@ -377,7 +423,7 @@
      'mod (mk-builtin mod [:Integer :Integer] :Integer)
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
-                           (throw (ex-info "Invalid exponent" {:p p})))
+                           (throw-err (halite-invalid-exponent {:exponent p})))
                          (expt x p)) [:Integer :Integer] :Integer)
      'abs (apply mk-builtin habs (into [[:Integer] :Integer] decimal-sigs-unary))
      'str (mk-builtin (comp (partial check-limit :string-runtime-length) str) [& :String] :String)
@@ -391,15 +437,15 @@
                         [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer] (halite-types/vector-type :Integer))
-     'error (mk-builtin #(throw (ex-info (str "Spec threw error: " %)
-                                         {:spec-error-str %}))
+     'error (mk-builtin #(throw-err (halite-spec-threw {:spec-error-str %}))
                         [:String] :Nothing)}))
 
 (defn check-n [object-type n v error-context]
   (when (and n
              (> v n))
-    (throw (ex-info (str object-type " of " v " exceeds the max allowed value of " n)
-                    error-context))))
+    (throw-err (halite-limit-exceeded {:object-type object-type
+                                       :value v
+                                       :limit n}))))
 
 (s/defn syntax-check
   ([expr]
@@ -414,7 +460,7 @@
      (symbol? expr) true
      (keyword? expr) true
      (map? expr) (and (or (:$type expr)
-                          (throw (ex-info "instance literal must have :$type field" {:expr expr})))
+                          (throw-err (halite-missing-type-field {:expr expr})))
                       (->> expr
                            (mapcat identity)
                            (map (partial syntax-check (inc depth)))
@@ -449,8 +495,8 @@
                           'when-value
                           'when-value-let} (first expr))
                        (get builtins (first expr))
-                       (throw (ex-info "unknown function or operator" {:op (first expr)
-                                                                       :expr expr})))
+                       (throw-err (halite-unknown-function-or-operator {:op (first expr)
+                                                                        :expr expr})))
                    (check-limit :list-literal-count expr)
                    (->> (rest expr)
                         (map (partial syntax-check (inc depth)))
@@ -462,8 +508,8 @@
                                          (set? expr) :set-literal-count)
                                        expr)
                           (->> (map (partial syntax-check (inc depth)) expr) dorun))
-     :else (throw (ex-info "Syntax error" {:form expr
-                                           :form-class (class expr)})))))
+     :else (throw-err (halite-syntax-error {:form expr
+                                            :form-class (class expr)})))))
 
 (s/defn matches-signature?
   [sig :- FnSignature, actual-types :- [halite-types/HaliteType]]
@@ -483,13 +529,14 @@
         {:keys [signatures impl] :as builtin} (get builtins op)
         actual-types (map (partial type-check* ctx) args)]
     (when (nil? builtin)
-      (throw (ex-info (str "function '" op "' not found") {:form form})))
+      (throw-err (halite-unknown-function-or-operator {:op op
+                                                       :form form})))
     (loop [[sig & more] signatures]
       (cond
-        (nil? sig) (throw (ex-info (str "no matching signature for '" (name op) "'")
-                                   {:form form
-                                    :actual-types actual-types
-                                    :signatures signatures}))
+        (nil? sig) (throw-err (halite-no-matching-signature {:op op
+                                                             :form form
+                                                             :actual-types actual-types
+                                                             :signatures signatures}))
         (matches-signature? sig actual-types) (:return-type sig)
         :else (recur more)))))
 

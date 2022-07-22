@@ -150,7 +150,7 @@
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
-    '(foo) #"function 'foo' not found"
+    '(foo) #"unknown function or operator: foo"
     '(+ 1 "two") #"no matching signature for '\+'"
     '(+ 1) #"no matching signature for '\+'"
     '(any? [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"

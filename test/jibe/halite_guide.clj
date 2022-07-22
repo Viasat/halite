@@ -318,7 +318,7 @@
 
   (h (expt 2 0) :Integer 1 "expt(2, 0)" "1")
 
-  (h (expt 2 -1) :Integer [:throws "Invalid exponent"] "expt(2, -1)" [:throws "Invalid exponent"])
+  (h (expt 2 -1) :Integer [:throws "Invalid exponent: -1"] "expt(2, -1)" [:throws "Invalid exponent: -1"])
 
   (h (expt -2 3) :Integer -8 "expt(-2, 3)" "-8")
 
@@ -328,7 +328,7 @@
 
   (h (expt -2 0) :Integer 1 "expt(-2, 0)" "1")
 
-  (h (expt -2 -3) :Integer [:throws "Invalid exponent"] "expt(-2, -3)" [:throws "Invalid exponent"])
+  (h (expt -2 -3) :Integer [:throws "Invalid exponent: -3"] "expt(-2, -3)" [:throws "Invalid exponent: -3"])
 
   (h (inc 1) :Integer 2 "(1 + 1)" "2")
 
@@ -872,7 +872,7 @@
 
   (h (first (sort [2 1 3])) :Integer 1 "[2, 1, 3].sort().first()" "1")
 
-  (h (sort (quote (3 1 2))) [:syntax-check-throws "unknown function or operator"])
+  (h (sort (quote (3 1 2))) [:syntax-check-throws "unknown function or operator: quote"])
 
   (h (sort []) [:Vec :Nothing] [] "[].sort()" "[]")
 
@@ -1454,8 +1454,8 @@
   (h #"a" [:syntax-check-throws "Syntax error"])
   (h \a [:syntax-check-throws "Syntax error"])
   (h :a [:throws "Syntax error"])
-  (h (1 2 3) [:syntax-check-throws "unknown function or operator"])
-  (h () [:syntax-check-throws "unknown function or operator"])
+  (h (1 2 3) [:syntax-check-throws "unknown function or operator: 1"])
+  (h () [:syntax-check-throws "unknown function or operator: null"])
   (h nil [:syntax-check-throws "Syntax error"])
   (hf (ex-info "fail" {}) [:throws "Syntax error"])
   (hf (fn []) [:throws "Syntax error"])
