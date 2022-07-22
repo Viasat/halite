@@ -55,8 +55,7 @@
                  :constraints #{}
                  :refines-to {}}})]
     (is (=
-         '{$no-value :Unset
-           no-value :Unset
+         '{no-value :Unset
            x :Integer
            w [:Maybe :Integer]
            as [:Maybe [:Set [:Instance :* #{:ws/A}]]]

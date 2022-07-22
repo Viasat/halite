@@ -39,16 +39,18 @@
 
 (s/defn ^:private type-check-symbol :- halite-types/HaliteType
   [ctx :- TypeContext, sym]
-  (let [t (get (halite-envs/scope (:tenv ctx)) sym)]
-    (when-not t
-      (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
-                                                           :form sym})))
-    (when (and (= :Unset t)
-               (not (or (= 'no-value sym)
-                        (= '$no-value sym))))
-      (throw (ex-info (str "Disallowed use of Unset variable '" (name sym) "'; you may want '$no-value'")
-                      {:form sym})))
-    t))
+  (if (= '$no-value sym)
+    :Unset
+    (let [t (get (halite-envs/scope (:tenv ctx)) sym)]
+      (when-not t
+        (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
+                                                             :form sym})))
+      (when (and (= :Unset t)
+                 (not (or (= 'no-value sym)
+                          (= '$no-value sym))))
+        (throw (ex-info (str "Disallowed use of Unset variable '" (name sym) "'; you may want '$no-value'")
+                        {:form sym})))
+      t)))
 
 (defn ^:private type-check-lookup [ctx form subexpr-type index]
   (cond
