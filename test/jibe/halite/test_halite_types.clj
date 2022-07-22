@@ -90,16 +90,16 @@
     [:Maybe :Integer] :Any
     [:Maybe [:Decimal 1]] :Any
     [:Set :Integer] [:Maybe [:Set :Integer]]
-    [:Set :Nothing] [:Coll :Object]
-    [:Set :Nothing] [:Maybe [:Coll :Object]]
+    [:Set :Nothing] [:Coll :Value]
+    [:Set :Nothing] [:Maybe [:Coll :Value]]
     [:Set :Nothing] [:Set :Integer]
     [:Set :String] :Any
     [:Set [:Instance :ws/A]] [:Coll [:Instance :ws/A]]
-    [:Set [:Instance :ws/A]] [:Maybe [:Coll :Object]]
+    [:Set [:Instance :ws/A]] [:Maybe [:Coll :Value]]
     [:Set [:Instance :ws/A]] [:Maybe [:Set [:Instance :*]]]
-    [:Vec :String] [:Maybe [:Coll :Object]]
-    [:Vec [:Set [:Vec :Integer]]] [:Vec [:Set [:Coll :Object]]]
-    [:Vec [:Set [:Vec [:Decimal 4]]]] [:Vec [:Set [:Coll :Object]]]
+    [:Vec :String] [:Maybe [:Coll :Value]]
+    [:Vec [:Set [:Vec :Integer]]] [:Vec [:Set [:Coll :Value]]]
+    [:Vec [:Set [:Vec [:Decimal 4]]]] [:Vec [:Set [:Coll :Value]]]
     [:Instance :ws/C #{:ws/A :ws/B}] [:Instance :* #{:ws/A}]))
 
 (deftest not-subtypes
@@ -119,10 +119,10 @@
   (are [a b m] (= m (halite-types/meet a b) (halite-types/meet b a))
     :String :String :String
     [:Maybe :String] :String [:Maybe :String]
-    :Integer :String :Object
+    :Integer :String :Value
     [:Decimal 3] [:Decimal 3] [:Decimal 3]
-    [:Decimal 3] :String :Object
-    [:Decimal 3] [:Decimal 2] :Object
+    [:Decimal 3] :String :Value
+    [:Decimal 3] [:Decimal 2] :Value
     [:Decimal 3] [:Maybe [:Decimal 2]] :Any
     [:Decimal 2] [:Maybe [:Decimal 2]] [:Maybe [:Decimal 2]]
     :Integer [:Maybe :Integer] [:Maybe :Integer]
@@ -134,16 +134,16 @@
     [:Vec [:Decimal 9]] [:Maybe [:Vec [:Decimal 9]]] [:Maybe [:Vec [:Decimal 9]]]
     [:Set :Nothing] :Unset [:Maybe [:Set :Nothing]]
     [:Set :Nothing] [:Vec :Integer] [:Coll :Integer]
-    [:Vec :String] [:Vec :Integer] [:Vec :Object]
+    [:Vec :String] [:Vec :Integer] [:Vec :Value]
     [:Vec [:Set :Integer]] [:Vec [:Set :Nothing]] [:Vec [:Set :Integer]]
-    [:Vec [:Set :Integer]] [:Vec [:Set :String]]  [:Vec [:Set :Object]]
-    [:Vec [:Set :Integer]] [:Vec [:Coll :Object]] [:Vec [:Coll :Object]]
+    [:Vec [:Set :Integer]] [:Vec [:Set :String]]  [:Vec [:Set :Value]]
+    [:Vec [:Set :Integer]] [:Vec [:Coll :Value]] [:Vec [:Coll :Value]]
     [:Vec [:Set [:Decimal 2]]] [:Vec [:Set :Nothing]] [:Vec [:Set [:Decimal 2]]]
     [:Instance :ws/A] [:Instance :ws/A] [:Instance :ws/A]
     [:Instance :ws/A] [:Instance :ws/B] [:Instance :*]
     [:Instance :ws/A] [:Instance :*] [:Instance :*]
     [:Maybe [:Instance :ws/A]] [:Instance :*] [:Maybe [:Instance :*]]
-    [:Maybe [:Vec :Object]] :Nothing [:Maybe [:Vec :Object]]
+    [:Maybe [:Vec :Value]] :Nothing [:Maybe [:Vec :Value]]
     [:Maybe [:Set [:Instance :ws/B]]] [:Maybe [:Set :Nothing]] [:Maybe [:Set [:Instance :ws/B]]]
     [:Instance :ws/B] :Nothing [:Instance :ws/B]
     [:Maybe [:Instance :ws/B]] :Nothing [:Maybe [:Instance :ws/B]]
@@ -157,11 +157,11 @@
   (are [a b m] (= m (halite-types/join a b) (halite-types/join b a))
     :String :String :String
     [:Maybe :String] :String :String
-    :Object [:Maybe [:Coll :Integer]] [:Coll :Integer]
-    :Object [:Maybe [:Coll [:Decimal 1]]] [:Coll [:Decimal 1]]
+    :Value [:Maybe [:Coll :Integer]] [:Coll :Integer]
+    :Value [:Maybe [:Coll [:Decimal 1]]] [:Coll [:Decimal 1]]
     [:Maybe [:Vec :Integer]] [:Maybe [:Set :Integer]] :Unset
     [:Coll :Integer] [:Maybe [:Set :Integer]] [:Set :Integer]
-    [:Coll :Object] [:Maybe [:Set [:Instance :*]]] [:Set [:Instance :*]]
+    [:Coll :Value] [:Maybe [:Set [:Instance :*]]] [:Set [:Instance :*]]
     :Integer [:Maybe :String] :Nothing
     [:Decimal 2] [:Decimal 2] [:Decimal 2]
     [:Decimal 2] [:Maybe :String] :Nothing
@@ -176,7 +176,7 @@
                                (gen/one-of [(gen/fmap (fn [i] [:Vec i]) inner)
                                             (gen/fmap (fn [i] [:Set i]) inner)
                                             (gen/fmap (fn [i] [:Coll i]) inner)]))
-                             (gen/one-of [(gen/elements [:Integer :String :Boolean :Nothing :Object])
+                             (gen/one-of [(gen/elements [:Integer :String :Boolean :Nothing :Value])
                                           (gen/fmap (fn [[a r2]] [:Instance a (disj r2 a)])
                                                     (gen/tuple (gen/elements [:* :ws/A :ws/B :ws/C])
                                                                (gen/set (gen/elements [:ws/A :ws/B :ws/C]))))
@@ -187,7 +187,7 @@
     (gen/one-of [s
                  (gen/fmap (fn [t]
                              (case t
-                               (:Unset :Nothing :Any :Object) t
+                               (:Unset :Nothing :Any :Value) t
                                [:Maybe t]))
                            s)])))
 

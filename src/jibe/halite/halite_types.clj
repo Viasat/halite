@@ -18,12 +18,12 @@
         KW 'KW
         R2 'R2
         tv list]
-    #{(tv :Nothing #{(tv :Integer :Object :Any)
-                     (tv [:Decimal S] :Object)
-                     (tv :String :Object)
-                     (tv :Boolean :Object)
-                     (tv [:Instance KW R2] :Object)
-                     (tv [:Set T] [:Coll T] :Object)
+    #{(tv :Nothing #{(tv :Integer :Value :Any)
+                     (tv [:Decimal S] :Value)
+                     (tv :String :Value)
+                     (tv :Boolean :Value)
+                     (tv [:Instance KW R2] :Value)
+                     (tv [:Set T] [:Coll T] :Value)
                      (tv [:Vec T] [:Coll T])})
       (tv :Nothing :Unset #{(tv (m :Integer) :Any)
                             (tv (m [:Decimal S]) :Any)
@@ -114,7 +114,7 @@
 
 (s/defschema TypeAtom
   "Type atoms are always unqualified keywords."
-  (s/enum :Integer :String :Boolean :Object :Nothing :Any :Unset))
+  (s/enum :Integer :String :Boolean :Value :Nothing :Any :Unset))
 
 (declare maybe-type?)
 
@@ -443,7 +443,7 @@
 (s/defn halite-vector-type? :- s/Bool
   "Return true if this type corresponds to vector values."
   [t :- HaliteType]
-  (subtype? t [:Vec :Object]))
+  (subtype? t [:Vec :Value]))
 
 (s/defn set-type :- HaliteType
   "Construct a type representing sets of the given type."

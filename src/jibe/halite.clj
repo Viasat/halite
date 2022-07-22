@@ -335,7 +335,7 @@
      '<= (apply mk-builtin h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      '> (apply mk-builtin h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      '>= (apply mk-builtin h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     'count (mk-builtin count [(halite-types/coll-type :Object)] :Integer)
+     'count (mk-builtin count [(halite-types/coll-type :Value)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
      'or (mk-builtin (fn [& args] (true? (some true? args)))
@@ -343,7 +343,7 @@
      'not (mk-builtin not [:Boolean] :Boolean)
      '=> (mk-builtin (fn [a b] (if a b true))
                      [:Boolean :Boolean] :Boolean)
-     'contains? (mk-builtin contains? [(halite-types/set-type :Object) :Object] :Boolean)
+     'contains? (mk-builtin contains? [(halite-types/set-type :Value) :Value] :Boolean)
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
      'div (apply mk-builtin hquot (into [[:Integer :Integer] :Integer] decimal-sigs-single))
@@ -354,7 +354,7 @@
                          (expt x p)) [:Integer :Integer] :Integer)
      'abs (apply mk-builtin habs (into [[:Integer] :Integer] decimal-sigs-unary))
      'str (mk-builtin (comp (partial check-limit :string-runtime-length) str) [& :String] :String)
-     'subset? (mk-builtin set/subset? [(halite-types/set-type :Object) (halite-types/set-type :Object)] :Boolean)
+     'subset? (mk-builtin set/subset? [(halite-types/set-type :Value) (halite-types/set-type :Value)] :Boolean)
      'sort (mk-builtin (comp vec sort)
                        [halite-types/empty-set] halite-types/empty-vector
                        [halite-types/empty-vector] halite-types/empty-vector
@@ -650,7 +650,7 @@
     (let [init-type (type-check* ctx init)
           coll-type (type-check* ctx coll)
           et (halite-types/elem-type coll-type)]
-      (when-not (halite-types/subtype? coll-type (halite-types/vector-type :Object))
+      (when-not (halite-types/subtype? coll-type (halite-types/vector-type :Value))
         (throw (ex-info (str "Second binding expression to 'reduce' must be a vector.")
                         {:form expr, :actual-coll-type coll-type})))
       (type-check* (update ctx :tenv #(-> %
@@ -692,7 +692,7 @@
           (halite-types/meet then-type else-type))))))
 
 (defn check-all-sets [[op :as expr] arg-types]
-  (when-not (every? #(halite-types/subtype? % (halite-types/set-type :Object)) arg-types)
+  (when-not (every? #(halite-types/subtype? % (halite-types/set-type :Value)) arg-types)
     (throw (ex-info (format "Arguments to '%s' must be sets" op) {:form expr}))))
 
 (s/defn ^:private type-check-union :- halite-types/HaliteType
@@ -722,7 +722,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
-    (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Object))
+    (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
       (throw (ex-info "Argument to 'first' must be a vector" {:form expr})))
     (when (= halite-types/empty-vector arg-type)
       (throw (ex-info "argument to first is always empty" {:form expr})))
@@ -732,7 +732,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
-    (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Object))
+    (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
       (throw (ex-info "Argument to 'rest' must be a vector" {:form expr})))
     arg-type))
 
@@ -740,7 +740,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (halite-types/subtype? base-type (halite-types/coll-type :Object))
+    (when-not (halite-types/subtype? base-type (halite-types/coll-type :Value))
       (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
     (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
       (when (halite-types/maybe-type? elem-type)
@@ -755,11 +755,11 @@
   (arg-count-exactly 2 expr)
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (halite-types/subtype? s (halite-types/coll-type :Object))
+    (when-not (halite-types/subtype? s (halite-types/coll-type :Value))
       (throw (ex-info (format "First argument to '%s' must be a set or vector" op) {:form expr})))
-    (when-not (halite-types/subtype? t (halite-types/coll-type :Object))
+    (when-not (halite-types/subtype? t (halite-types/coll-type :Value))
       (throw (ex-info (format "Second argument to '%s' must be a set or vector" op) {:form expr})))
-    (when (and (halite-types/subtype? s (halite-types/vector-type :Object)) (not (halite-types/subtype? t (halite-types/vector-type :Object))))
+    (when (and (halite-types/subtype? s (halite-types/vector-type :Value)) (not (halite-types/subtype? t (halite-types/vector-type :Value))))
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
                       {:form expr})))
     (halite-types/meet s

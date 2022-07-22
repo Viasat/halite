@@ -228,7 +228,7 @@
     (let [init-type (type-check* ctx init)
           coll-type (type-check* ctx coll)
           et (halite-types/elem-type coll-type)]
-      (when-not (halite-types/subtype? coll-type (halite-types/vector-type :Object))
+      (when-not (halite-types/subtype? coll-type (halite-types/vector-type :Value))
         (throw (ex-info (str "Second binding expression to 'reduce' must be a vector.")
                         {:form expr, :actual-coll-type coll-type})))
       (type-check* (update ctx :tenv #(-> %
@@ -298,7 +298,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (halite/arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
-    (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Object))
+    (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
       (throw (ex-info "Argument to 'first' must be a vector" {:form expr})))
     (when (= halite-types/empty-vector arg-type)
       (throw (ex-info "argument to first is always empty" {:form expr})))
@@ -308,7 +308,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (halite/arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
-    (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Object))
+    (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
       (throw (ex-info "Argument to 'rest' must be a vector" {:form expr})))
     arg-type))
 
@@ -316,7 +316,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (halite/arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (halite-types/subtype? base-type (halite-types/coll-type :Object))
+    (when-not (halite-types/subtype? base-type (halite-types/coll-type :Value))
       (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
     (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
       (when (halite-types/maybe-type? elem-type)
@@ -331,11 +331,11 @@
   (halite/arg-count-exactly 2 expr)
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
-    (when-not (halite-types/subtype? s (halite-types/coll-type :Object))
+    (when-not (halite-types/subtype? s (halite-types/coll-type :Value))
       (throw (ex-info (format "First argument to '%s' must be a set or vector" op) {:form expr})))
-    (when-not (halite-types/subtype? t (halite-types/coll-type :Object))
+    (when-not (halite-types/subtype? t (halite-types/coll-type :Value))
       (throw (ex-info (format "Second argument to '%s' must be a set or vector" op) {:form expr})))
-    (when (and (halite-types/subtype? s (halite-types/vector-type :Object)) (not (halite-types/subtype? t (halite-types/vector-type :Object))))
+    (when (and (halite-types/subtype? s (halite-types/vector-type :Value)) (not (halite-types/subtype? t (halite-types/vector-type :Value))))
       (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
                       {:form expr})))
     (halite-types/meet s

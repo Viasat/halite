@@ -525,7 +525,7 @@
 
   (h (if (> 2 1) false true) :Boolean false "(if((2 > 1)) {false} else {true})" "false")
 
-  (h (if (> 2 1) 9 true) :Object 9 "(if((2 > 1)) {9} else {true})" "9")
+  (h (if (> 2 1) 9 true) :Value 9 "(if((2 > 1)) {9} else {true})" "9")
 
   (h (if (or (> 2 1) (= 4 5)) (+ 1 2) 99) :Integer 3 "(if(((2 > 1) || (4 == 5))) {(1 + 2)} else {99})" "3"))
 
@@ -621,7 +621,7 @@
 
   (h #{"☺" "a"} [:Set :String] #{"☺" "a"} "#{\"a\", \"☺\"}" "#{\"a\", \"☺\"}")
 
-  (h #{1 "a"} [:Set :Object] #{1 "a"} "#{\"a\", 1}" "#{\"a\", 1}")
+  (h #{1 "a"} [:Set :Value] #{1 "a"} "#{\"a\", 1}" "#{\"a\", 1}")
 
   (h (count #{1 true "a"}) :Integer 3 "#{\"a\", 1, true}.count()" "3")
 
@@ -653,7 +653,7 @@
 
   (h (concat #{} #{}) [:Set :Nothing] #{} "#{}.concat(#{})" "#{}")
 
-  (h (concat #{"a" "b"} #{1 2}) [:Set :Object] #{1 "a" 2 "b"} "#{\"a\", \"b\"}.concat(#{1, 2})" "#{\"a\", \"b\", 1, 2}")
+  (h (concat #{"a" "b"} #{1 2}) [:Set :Value] #{1 "a" 2 "b"} "#{\"a\", \"b\"}.concat(#{1, 2})" "#{\"a\", \"b\", 1, 2}")
 
   (h #{#{4 3} #{1}} [:Set [:Set :Integer]] #{#{4 3} #{1}} "#{#{1}, #{3, 4}}" "#{#{1}, #{3, 4}}")
 
@@ -731,7 +731,7 @@
 
   (h (conj #{} 1) [:Set :Integer] #{1} "#{}.conj(1)" "#{1}")
 
-  (h (conj #{} 1 #{3 2}) [:Set :Object] #{1 #{3 2}} "#{}.conj(1, #{2, 3})" "#{#{2, 3}, 1}")
+  (h (conj #{} 1 #{3 2}) [:Set :Value] #{1 #{3 2}} "#{}.conj(1, #{2, 3})" "#{#{2, 3}, 1}")
 
   (hf (reduce conj #{} (range 1024))
       [:Set :Integer]
@@ -842,7 +842,7 @@
 
   (h [1 2] [:Vec :Integer] [1 2] "[1, 2]" "[1, 2]")
 
-  (h [[] [1] ["a" true]] [:Vec [:Vec :Object]] [[] [1] ["a" true]] "[[], [1], [\"a\", true]]" "[[], [1], [\"a\", true]]")
+  (h [[] [1] ["a" true]] [:Vec [:Vec :Value]] [[] [1] ["a" true]] "[[], [1], [\"a\", true]]" "[[], [1], [\"a\", true]]")
 
   (h [[1] []] [:Vec [:Vec :Integer]] [[1] []] "[[1], []]" "[[1], []]")
 
@@ -854,9 +854,9 @@
 
   (h (first [10]) :Integer 10 "[10].first()" "10")
 
-  (h (first [10 true "b"]) :Object 10 "[10, true, \"b\"].first()" "10")
+  (h (first [10 true "b"]) :Value 10 "[10, true, \"b\"].first()" "10")
 
-  (h (rest [10 true "b"]) [:Vec :Object] [true "b"] "[10, true, \"b\"].rest()" "[true, \"b\"]")
+  (h (rest [10 true "b"]) [:Vec :Value] [true "b"] "[10, true, \"b\"].rest()" "[true, \"b\"]")
 
   (h (concat [] []) [:Vec :Nothing] [] "[].concat([])" "[]")
 
@@ -892,7 +892,7 @@
 
   (h (conj [] 30) [:Vec :Integer] [30] "[].conj(30)" "[30]")
 
-  (h (conj [10 20] []) [:Vec :Object] [10 20 []] "[10, 20].conj([])" "[10, 20, []]")
+  (h (conj [10 20] []) [:Vec :Value] [10 20 []] "[10, 20].conj([])" "[10, 20, []]")
 
   (h (conj [10]) [:throws "Wrong number of arguments to 'conj': expected at least 2, but got 1"])
 
@@ -1098,9 +1098,9 @@
 
   (hc :basic :my [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] 1 (div 5 0)) :Integer [:throws "Divide by zero"] "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {1} else {(5 / 0)})" [:throws "Divide by zero"]])
 
-  (h (if true "yes" (div 5 0)) :Object "yes" "(if(true) {\"yes\"} else {(5 / 0)})" "\"yes\"")
+  (h (if true "yes" (div 5 0)) :Value "yes" "(if(true) {\"yes\"} else {(5 / 0)})" "\"yes\"")
 
-  (h (if false "yes" (div 5 0)) :Object [:throws "Divide by zero"] "(if(false) {\"yes\"} else {(5 / 0)})" [:throws "Divide by zero"])
+  (h (if false "yes" (div 5 0)) :Value [:throws "Divide by zero"] "(if(false) {\"yes\"} else {(5 / 0)})" [:throws "Divide by zero"])
 
   (h (when false (div 5 0)) [:Maybe :Integer] :Unset "(when(false) {(5 / 0)})" "Unset")
 
@@ -1376,11 +1376,11 @@
 
   (hc :basic-2
       :spec
-      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] "no")) :Object [1] "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {\"no\"}) }" "[1]"])
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] "no")) :Value [1] "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {\"no\"}) }" "[1]"])
 
   (hc :basic-2
       :spec
-      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] ["no"])) [:Vec :Object] [1] "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[\"no\"]}) }" "[1]"])
+      [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] ["no"])) [:Vec :Value] [1] "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[\"no\"]}) }" "[1]"])
 
   (hc :basic-2
       :spec
@@ -2297,7 +2297,7 @@
   (h (map [x [[1 2] [3 4 5]]] x) [:Vec [:Vec :Integer]] [[1 2] [3 4 5]] "map(x in [[1, 2], [3, 4, 5]])x" "[[1, 2], [3, 4, 5]]")
   (h (map [x [[1 2] [3 4 5]]] (count x)) [:Vec :Integer] [2 3] "map(x in [[1, 2], [3, 4, 5]])x.count()" "[2, 3]")
   (h (map [x [#{1 2} #{4 3 5}]] (count x)) [:Vec :Integer] [2 3] "map(x in [#{1, 2}, #{3, 4, 5}])x.count()" "[2, 3]")
-  (h (map [x [1 "a"]] x) [:Vec :Object] [1 "a"] "map(x in [1, \"a\"])x" "[1, \"a\"]")
+  (h (map [x [1 "a"]] x) [:Vec :Value] [1 "a"] "map(x in [1, \"a\"])x" "[1, \"a\"]")
   (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
       [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] x) [:Vec [:Instance :*]] [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}] "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x" "[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]"])
   (hc [(workspace :spec {:spec/A [] :spec/B []} (spec :A :concrete (variables [:x "Integer"])) (spec :B :concrete (variables [:x "String"])))] :spec
@@ -2340,7 +2340,7 @@
   (h (filter [x #{0 1}] (> (div 1 x) 1)) [:Set :Integer] [:throws "Divide by zero"] "filter(x in #{0, 1})((1 / x) > 1)" [:throws "Divide by zero"])
 
   (h (filter [x ["a" "b"]] (+ x 1)) [:throws "no matching signature for '+'"])
-  (h (filter [x [1 "a"]] true) [:Vec :Object] [1 "a"] "filter(x in [1, \"a\"])true" "[1, \"a\"]")
+  (h (filter [x [1 "a"]] true) [:Vec :Value] [1 "a"] "filter(x in [1, \"a\"])true" "[1, \"a\"]")
   (h (filter [x #{true false}] x) [:Set :Boolean] #{true} "filter(x in #{false, true})x" "#{true}")
   (h (filter [x [true false false true]] (not x)) [:Vec :Boolean] [false false] "filter(x in [true, false, false, true])!x" "[false, false]")
 
@@ -2518,11 +2518,11 @@
 
   (h (intersection #{0 1 2} #{#d "0.0" #d "1.0" #d "2.0"}) [:Set :Nothing] #{} "#{0, 1, 2}.intersection(#{#d \"0.0\", #d \"1.0\", #d \"2.0\"})" "#{}")
   (h (intersection #{#d "0.0" #d "1.0" #d "2.0"} #{#d "2.00" #d "1.00" #d "0.00"}) [:Set :Nothing] #{} "#{#d \"0.0\", #d \"1.0\", #d \"2.0\"}.intersection(#{#d \"0.00\", #d \"1.00\", #d \"2.00\"})" "#{}")
-  (h #{0 #d "1.0" #d "2.00"} [:Set :Object] #{0 #d "1.0" #d "2.00"} "#{#d \"1.0\", #d \"2.00\", 0}" "#{#d \"1.0\", #d \"2.00\", 0}")
+  (h #{0 #d "1.0" #d "2.00"} [:Set :Value] #{0 #d "1.0" #d "2.00"} "#{#d \"1.0\", #d \"2.00\", 0}" "#{#d \"1.0\", #d \"2.00\", 0}")
 
-  (h #{0 #d "0.0" #d "0.00"} [:Set :Object] #{0 #d "0.0" #d "0.00"} "#{#d \"0.0\", #d \"0.00\", 0}" "#{#d \"0.0\", #d \"0.00\", 0}")
-  (hf #{0 #d "0.0"} [:Set :Object] #{0 #d "0.0"} "#{#d \"0.0\", 0}" "#{#d \"0.0\", 0}")
-  (h (reduce [a #{}] [x [0 #d "0.0" #d "0.00" 0 #d "0.0" #d "0.00"]] (conj a x)) [:Set :Object] #{0 #d "0.0" #d "0.00"} "reduce( a = #{}; x in [0, #d \"0.0\", #d \"0.00\", 0, #d \"0.0\", #d \"0.00\"] ) { a.conj(x) }" "#{#d \"0.0\", #d \"0.00\", 0}")
+  (h #{0 #d "0.0" #d "0.00"} [:Set :Value] #{0 #d "0.0" #d "0.00"} "#{#d \"0.0\", #d \"0.00\", 0}" "#{#d \"0.0\", #d \"0.00\", 0}")
+  (hf #{0 #d "0.0"} [:Set :Value] #{0 #d "0.0"} "#{#d \"0.0\", 0}" "#{#d \"0.0\", 0}")
+  (h (reduce [a #{}] [x [0 #d "0.0" #d "0.00" 0 #d "0.0" #d "0.00"]] (conj a x)) [:Set :Value] #{0 #d "0.0" #d "0.00"} "reduce( a = #{}; x in [0, #d \"0.0\", #d \"0.00\", 0, #d \"0.0\", #d \"0.00\"] ) { a.conj(x) }" "#{#d \"0.0\", #d \"0.00\", 0}")
 
   (h (= 0 #d "0.0") [:throws "Result of '=' would always be false"])
   (h (= #d "0.0" #d "0.00") [:throws "Result of '=' would always be false"])
@@ -2530,7 +2530,7 @@
   (h (= #d "1.00" #d "1.0") [:throws "Result of '=' would always be false"])
   (h (= -1 #d "-1.0") [:throws "Result of '=' would always be false"])
   (h (= #d "-1.00" #d "-1.0") [:throws "Result of '=' would always be false"])
-  (hf (reduce conj #{} [1 #d "1.0" #d "1.00"]) [:Set :Object] #{1 #d "1.0" #d "1.00"} "#{#d \"1.0\", #d \"1.00\", 1}" "#{#d \"1.0\", #d \"1.00\", 1}"))
+  (hf (reduce conj #{} [1 #d "1.0" #d "1.00"]) [:Set :Value] #{1 #d "1.0" #d "1.00"} "#{#d \"1.0\", #d \"1.00\", 1}" "#{#d \"1.0\", #d \"1.00\", 1}"))
 
 (deftest test-function-call-limits
   (hf (into (range (dec 256)) '(+)) :Integer 32385 "(0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16 + 17 + 18 + 19 + 20 + 21 + 22 + 23 + 24 + 25 + 26 + 27 + 28 + 29 + 30 + 31 + 32 + 33 + 34 + 35 + 36 + 37 + 38 + 39 + 40 + 41 + 42 + 43 + 44 + 45 + 46 + 47 + 48 + 49 + 50 + 51 + 52 + 53 + 54 + 55 + 56 + 57 + 58 + 59 + 60 + 61 + 62 + 63 + 64 + 65 + 66 + 67 + 68 + 69 + 70 + 71 + 72 + 73 + 74 + 75 + 76 + 77 + 78 + 79 + 80 + 81 + 82 + 83 + 84 + 85 + 86 + 87 + 88 + 89 + 90 + 91 + 92 + 93 + 94 + 95 + 96 + 97 + 98 + 99 + 100 + 101 + 102 + 103 + 104 + 105 + 106 + 107 + 108 + 109 + 110 + 111 + 112 + 113 + 114 + 115 + 116 + 117 + 118 + 119 + 120 + 121 + 122 + 123 + 124 + 125 + 126 + 127 + 128 + 129 + 130 + 131 + 132 + 133 + 134 + 135 + 136 + 137 + 138 + 139 + 140 + 141 + 142 + 143 + 144 + 145 + 146 + 147 + 148 + 149 + 150 + 151 + 152 + 153 + 154 + 155 + 156 + 157 + 158 + 159 + 160 + 161 + 162 + 163 + 164 + 165 + 166 + 167 + 168 + 169 + 170 + 171 + 172 + 173 + 174 + 175 + 176 + 177 + 178 + 179 + 180 + 181 + 182 + 183 + 184 + 185 + 186 + 187 + 188 + 189 + 190 + 191 + 192 + 193 + 194 + 195 + 196 + 197 + 198 + 199 + 200 + 201 + 202 + 203 + 204 + 205 + 206 + 207 + 208 + 209 + 210 + 211 + 212 + 213 + 214 + 215 + 216 + 217 + 218 + 219 + 220 + 221 + 222 + 223 + 224 + 225 + 226 + 227 + 228 + 229 + 230 + 231 + 232 + 233 + 234 + 235 + 236 + 237 + 238 + 239 + 240 + 241 + 242 + 243 + 244 + 245 + 246 + 247 + 248 + 249 + 250 + 251 + 252 + 253 + 254)" "32385")

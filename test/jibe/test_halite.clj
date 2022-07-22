@@ -49,7 +49,7 @@
     #{1 2 3} [:Set :Integer]
     [[]] [:Vec [:Vec :Nothing]]
     [#{} #{"foo"}] [:Vec [:Set :String]]
-    [1 "two"] [:Vec :Object]
+    [1 "two"] [:Vec :Value]
     #{[] #{}} [:Set [:Coll :Nothing]]
     #{[1] #{}} [:Set [:Coll :Integer]]
     {:$type :ws/C$v1 :xs []} [:Instance :ws/C$v1]
@@ -318,9 +318,9 @@
        (= etype (halite/type-check senv tenv expr))
     '(if true 1 2) :Integer
     '(if false [[]] [[1]]) [:Vec [:Vec :Integer]]
-    '(if true 1 "two") :Object
-    '(conj #{} (if true 1 "two")) [:Set :Object]
-    '(conj (if true #{} []) (if true 1 "two")) [:Coll :Object])
+    '(if true 1 "two") :Value
+    '(conj #{} (if true 1 "two")) [:Set :Value]
+    '(conj (if true #{} []) (if true 1 "two")) [:Coll :Value])
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
@@ -382,7 +382,7 @@
       {:$type :ws/Maybe$v1 :x '$no-value} [:Instance :ws/Maybe$v1]
       '(get m :x) [:Maybe :Integer]
       '(if-value x (+ x 1) 1) :Integer
-      '(if-value x "foo" true) :Object
+      '(if-value x "foo" true) :Value
       '(if-value x x (when true "foo")) :Any
       '(when-value x "foo") [:Maybe :String]
       '(when-value x (+ x 1)) [:Maybe :Integer]
@@ -392,7 +392,7 @@
       '(= $no-value x) :Boolean
       '(= 5 x) :Boolean
       '(let [no-value 42] no-value) :Integer
-      '(if-value-let [y x] "foo" true) :Object
+      '(if-value-let [y x] "foo" true) :Value
       '(if-value-let [y (get m :x)] y 5) :Integer)
 
     (are [expr err-msg]
@@ -489,7 +489,7 @@
 
     '(union #{1 2 3} #{3 4 5}) [:Set :Integer]
     '(union #{} #{"foo"}) [:Set :String]
-    '(union #{1} #{"foo"}) [:Set :Object]
+    '(union #{1} #{"foo"}) [:Set :Value]
     '(union #{[]} #{#{}}) [:Set [:Coll :Nothing]]
     '(union #{1} #{2} #{3} #{4}) [:Set :Integer]
     '(union #{#{}} #{#{3}}) [:Set [:Set :Integer]])
@@ -561,7 +561,7 @@
     '(conj [] 1) [:Vec :Integer]
     '(conj [1] 2) [:Vec :Integer]
     '(conj [] "one" "two") [:Vec :String]
-    '(conj [1] "two") [:Vec :Object]
+    '(conj [1] "two") [:Vec :Value]
     '(conj #{} "one") [:Set :String]
     '(concat [] []) [:Vec :Nothing]
     '(concat [1 2] [3]) [:Vec :Integer]
