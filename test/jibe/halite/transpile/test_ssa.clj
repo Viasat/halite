@@ -13,6 +13,15 @@
 
 (use-fixtures :once schema.test/validate-schemas)
 
+(deftest test-cycle?
+  (let [cycle-graph '{$1 [$2 :Integer]
+                      $2 [$1 :Integer]}]
+    (is (= true (ssa/cycle? cycle-graph))))
+
+  (let [non-cycle-graph '{$1 [$2 :Integer]
+                          $2 [$3 :Integer]}]
+    (is (= false (ssa/cycle? non-cycle-graph)))))
+
 (deftest test-spec-to-ssa
   (let [senv '{:ws/A
                {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}

@@ -601,6 +601,32 @@
       #{#{}} ; true
       guards)))
 
+(s/defn dgraph->dep-graph :- (s/protocol dep/DependencyGraph)
+  "Return a weavejester.dependency graph of the given dgraph, where
+  the nodes are derivation ids."
+  [derivations :- Derivations]
+  (->> derivations
+       (reduce
+        (fn [g [id d]]
+          (reduce #(dep/depend %1 id %2) g (referenced-derivations d)))
+        (dep/graph))))
+
+(s/defn cycle? :- s/Bool
+  "Returns true iff the given dgraph contains a cycle. dgraphs with
+  cycles are incorrect!"
+  [dgraph :- Derivations]
+  (try
+    (dgraph->dep-graph dgraph)
+    false
+    (catch clojure.lang.ExceptionInfo ex
+      (if (-> ex ex-data :reason (= ::dep/circular-dependency))
+        true
+        (throw ex)))))
+
+(s/defn ^:private topo-sort :- [DerivationName]
+  [derivations :- Derivations]
+  (dep/topo-sort (dgraph->dep-graph derivations)))
+
 (s/defn compute-guards :- Guards
   [dgraph :- Derivations, roots :- #{DerivationName}]
   (-> (reduce
@@ -610,15 +636,6 @@
       (update-vals (partial simplify-guards dgraph))))
 
 ;;;;;;;;; Converting from SSA back into a more readable form ;;;;;;;;
-
-(s/defn ^:private topo-sort :- [DerivationName]
-  [derivations :- Derivations]
-  (->> derivations
-       (reduce
-        (fn [g [id d]]
-          (reduce #(dep/depend %1 id %2) g (referenced-derivations d)))
-        (dep/graph))
-       (dep/topo-sort)))
 
 (declare let-bindable-exprs)
 
