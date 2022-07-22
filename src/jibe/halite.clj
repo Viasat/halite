@@ -468,9 +468,11 @@
 
 (s/defn ^:private type-check-symbol :- halite-types/HaliteType
   [ctx :- TypeContext, sym]
-  (or (get (halite-envs/scope (:tenv ctx)) sym)
-      (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
-                                                           :form sym}))))
+  (if (= '$no-value sym)
+    :Unset
+    (or (get (halite-envs/scope (:tenv ctx)) sym)
+        (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
+                                                             :form sym})))))
 
 (defn arg-count-exactly
   [n form]
@@ -577,6 +579,8 @@
       (fn [ctx [sym body]]
         (when-not (symbol? sym)
           (throw (ex-info "even-numbered forms in let binding vector must be symbols" {:form expr})))
+        (when (= '$no-value sym)
+          (throw (ex-info "Cannot bind a value to the symbol: $no-value" {:bindings bindings :body body})))
         (update ctx :tenv halite-envs/extend-scope sym (type-check* ctx body)))
       ctx
       (partition 2 bindings))
@@ -882,6 +886,8 @@
   (eval-expr*
    (reduce
     (fn [ctx [sym body]]
+      (when (= '$no-value sym)
+        (throw (ex-info "Cannot bind a value to the symbol: $no-value" {:bindings bindings :body body})))
       (update ctx :env halite-envs/bind sym (eval-expr* ctx body)))
     ctx
     (partition 2 bindings))
@@ -959,7 +965,9 @@
           (integer-or-long? expr)
           (string? expr)) expr
       (fixed-decimal? expr) expr
-      (symbol? expr) (get (halite-envs/bindings (:env ctx)) expr)
+      (symbol? expr) (if (= '$no-value expr)
+                       :Unset
+                       (get (halite-envs/bindings (:env ctx)) expr))
       (map? expr) (->> (dissoc expr :$type)
                        (map (fn [[k v]] [k (eval-in-env v)]))
                        (remove (fn [[k v]] (= :Unset v)))
