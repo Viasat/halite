@@ -10,7 +10,9 @@
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.lib.fixed-decimal :as fixed-decimal]
-            [schema.core :as s])
+            [jibe.lib.format-errors :as format-errors :refer [deferr throw-err]]
+            [schema.core :as s]
+            [internal :refer [convey]])
   (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
@@ -25,6 +27,14 @@
   that they can be safely added to environments by projects (such as jibe) that
   _use_ halite."
   '#{$this})
+
+(deferr halite-missing-required-vars [data]
+  {:msg (str "missing required variables: "
+             (str/join "," (map name (:missing-vars data))))})
+
+(deferr halite-variables-not-in-spec [data]
+  {:msg (str "variables not defined on spec: "
+             (str/join ", " (map name (:invalid-vars data))))})
 
 (declare eval-expr)
 
@@ -164,17 +174,15 @@
                              keys
                              set)
         supplied-fields (disj (set (keys inst)) :$type)
-        missing-fields (set/difference required-fields supplied-fields)
-        invalid-fields (set/difference supplied-fields fields)]
+        missing-vars (set/difference required-fields supplied-fields)
+        invalid-vars (set/difference supplied-fields fields)]
 
-    (when (seq missing-fields)
-      (throw (ex-info (str "missing required variables: " (str/join "," missing-fields))
-                      {:user-visible-error? true
-                       error-key inst :missing-vars missing-fields})))
-    (when (seq invalid-fields)
-      (throw (ex-info (str "variables not defined on spec: " (str/join "," invalid-fields))
-                      {:user-visible-error? true
-                       error-key inst :invalid-vars invalid-fields})))
+    (when (seq missing-vars)
+      (throw-err (halite-missing-required-vars (convey missing-vars :form inst))))
+    (when (seq invalid-vars)
+      (throw-err (halite-variables-not-in-spec (convey invalid-vars
+                                                       :instance inst
+                                                       :form (get inst (first invalid-vars))))))
 
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
