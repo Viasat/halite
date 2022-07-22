@@ -1150,7 +1150,7 @@
 
   (hc :basic
       :my
-      [(get {:$type :my/Spec$v1, :p 1, :n -1} :q) [:throws "No such variable 'q' on spec ':my/Spec$v1'"]])
+      [(get {:$type :my/Spec$v1, :p 1, :n -1} :q) [:throws "variables not defined on spec: q"]])
 
   (hc :basic
       :my
@@ -1428,7 +1428,7 @@
 
   (hc :basic-2
       :spec
-      [(get {:$type :spec/A$v1, :p 1, :n -1} :$type) [:throws "No such variable '$type' on spec ':spec/A$v1'"]])
+      [(get {:$type :spec/A$v1, :p 1, :n -1} :$type) [:throws "variables not defined on spec: $type"]])
 
   (hc :basic-2
       :spec
@@ -1455,7 +1455,7 @@
   (h \a [:syntax-check-throws "Syntax error"])
   (h :a [:throws "Syntax error"])
   (h (1 2 3) [:syntax-check-throws "unknown function or operator: 1"])
-  (h () [:syntax-check-throws "unknown function or operator: null"])
+  (h () [:syntax-check-throws "unknown function or operator: nil"])
   (h nil [:syntax-check-throws "Syntax error"])
   (hf (ex-info "fail" {}) [:throws "Syntax error"])
   (hf (fn []) [:throws "Syntax error"])
@@ -2477,9 +2477,9 @@
 
   (h (abs #d "1.1") [:Decimal 1] #d "1.1" "abs(#d \"1.1\")" "#d \"1.1\"")
   (h (abs #d "-1.1") [:Decimal 1] #d "1.1" "abs(#d \"-1.1\")" "#d \"1.1\"")
-  (h (abs #d "-922337203685477580.8") [:Decimal 1] [:throws "Cannot compute absolute value of: -922337203685477580.8"] "abs(#d \"-922337203685477580.8\")" [:throws "Cannot compute absolute value of: -922337203685477580.8"])
-  (h (abs #d "-92233720368547758.08") [:Decimal 2] [:throws "Cannot compute absolute value of: -92233720368547758.08"] "abs(#d \"-92233720368547758.08\")" [:throws "Cannot compute absolute value of: -92233720368547758.08"])
-  (h (abs #d "-9223372036854775.808") [:Decimal 3] [:throws "Cannot compute absolute value of: -9223372036854775.808"] "abs(#d \"-9223372036854775.808\")" [:throws "Cannot compute absolute value of: -9223372036854775.808"])
+  (h (abs #d "-922337203685477580.8") [:Decimal 1] [:throws "Cannot compute absolute value of: #d \"-922337203685477580.8\""] "abs(#d \"-922337203685477580.8\")" [:throws "Cannot compute absolute value of: #d \"-922337203685477580.8\""])
+  (h (abs #d "-92233720368547758.08") [:Decimal 2] [:throws "Cannot compute absolute value of: #d \"-92233720368547758.08\""] "abs(#d \"-92233720368547758.08\")" [:throws "Cannot compute absolute value of: #d \"-92233720368547758.08\""])
+  (h (abs #d "-9223372036854775.808") [:Decimal 3] [:throws "Cannot compute absolute value of: #d \"-9223372036854775.808\""] "abs(#d \"-9223372036854775.808\")" [:throws "Cannot compute absolute value of: #d \"-9223372036854775.808\""])
 
   (h (+ #d "1.1" 1) [:throws "no matching signature for '+'"])
   (h (+ #d "1.1" #d "0.01") [:throws "no matching signature for '+'"])
@@ -2541,7 +2541,7 @@
   (hf (reduce #(list* '+ %&) 0 (range (inc 10))) [:syntax-check-throws "expression nesting of 11 exceeds the max allowed value of 10"]))
 
 (deftest test-error
-  (h (error "fail") :Nothing [:throws "Spec threw error: fail"] "error(\"fail\")" [:throws "Spec threw error: fail"])
+  (h (error "fail") :Nothing [:throws "Spec threw error: \"fail\""] "error(\"fail\")" [:throws "Spec threw error: \"fail\""])
 
   (h (error) [:throws "no matching signature for 'error'"])
   (h (error 20) [:throws "no matching signature for 'error'"])

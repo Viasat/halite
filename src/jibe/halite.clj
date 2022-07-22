@@ -44,15 +44,15 @@
 
 (deferr halite-no-active-refinement-path [data]
         {:msg (format "No active refinement path from '%s' to '%s'"
-                      (symbol (:$type (:value data)))
-                      (symbol (:declared-type data)))})
+                      (pr-str (symbol (:$type (:value data))))
+                      (pr-str (symbol (:declared-type data))))})
 
 (deferr halite-no-abstract [data]
         {:msg "instance cannot contain abstract value"})
 
 (deferr halite-invalid-instance [data]
         {:msg (format "invalid instance of '%s', violates constraints %s"
-                      (symbol (:spec-id data))
+                      (pr-str (symbol (:spec-id data)))
                       (str/join ", " (map first (:violated-constraints data))))})
 
 (deferr halite-missing-type-field [data]
@@ -62,46 +62,114 @@
         {:msg "expected namespaced keyword as value of :$type"})
 
 (deferr halite-invalid-field-value [data]
-        {:msg (str "value of " (:variable data) " has wrong type")})
+        {:msg (str "value of " (pr-str (:variable data)) " has wrong type")})
 
 (deferr halite-invalid-value [data]
         {:msg "Invalid value"})
 
 (deferr halite-literal-may-not-evaluate [data]
-        {:msg (format "%s literal element may not always evaluate to a value" (:coll-type-string data))})
-
-(deferr halite-argument-count-must-be-even [data]
-        {:msg "argument count must be a multiple of 2"})
+        {:msg (format "%s literal element may not always evaluate to a value"
+                      (:coll-type-string data))})
 
 (deferr halite-size-exceeded [data]
-        {:msg (format "%s size of %s exceeds the max allowed size of %s"
+        {:msg (format "%s size of %d exceeds the max allowed size of %d"
                       (:object-type data)
                       (:actual-count data)
                       (:count-limit data))})
 
 (deferr halite-limit-exceeded [data]
-        {:msg (format "%s of %s exceeds the max allowed value of %s"
+        {:msg (format "%s of %d exceeds the max allowed value of %d"
                       (:object-type data)
                       (:value data)
                       (:limit data))})
 
 (deferr halite-abs-failure [data]
-        {:msg (format "Cannot compute absolute value of: %s" (:value-string data))})
+        {:msg (format "Cannot compute absolute value of: %s" (pr-str (:value data)))})
 
 (deferr halite-invalid-exponent [data]
-        {:msg (format "Invalid exponent: %s" (:exponent data))})
+        {:msg (format "Invalid exponent: %d" (:exponent data))})
 
 (deferr halite-spec-threw [data]
-        {:msg (format "Spec threw error: %s" (:spec-error-str data))})
+        {:msg (format "Spec threw error: %s" (pr-str (:spec-error-str data)))})
 
 (deferr halite-unknown-function-or-operator [data]
-        {:msg (format "unknown function or operator: %s" (:op data))})
+        {:msg (format "unknown function or operator: %s" (pr-str (:op data)))})
 
 (deferr halite-syntax-error [data]
         {:msg "Syntax error"})
 
 (deferr halite-no-matching-signature [data]
-        {:msg (format "no matching signature for '%s'" (:op data))})
+        {:msg (format "no matching signature for '%s'" (pr-str (:op data)))})
+
+(deferr halite-undefined-symbol [data]
+        {:msg (format "Undefined: '%s'" (pr-str (:form data)))})
+
+(deferr halite-wrong-arg-count [data]
+        {:msg (format "Wrong number of arguments to '%s': expected %d, but got %d"
+                      (:op data)
+                      (:expected-arg-count data)
+                      (:actual-arg-count data))})
+
+(deferr halite-wrong-arg-count-min [data]
+        {:msg (format "Wrong number of arguments to '%s': expected at least %d, but got %d"
+                      (:op data)
+                      (:minimum-arg-count data)
+                      (:actual-arg-count data))})
+
+(deferr halite-invalid-vector-index [data]
+        {:msg "Index must be an integer when target is a vector"})
+
+(deferr halite-invalid-instance-index [data]
+        {:msg "Index must be a variable name (as a keyword) when target is an instance"})
+
+(deferr halite-invalid-lookup-target [data]
+        {:msg "Lookup target must be an instance of known type or non-empty vector"})
+
+(deferr halite-arg-type-mismatch [data]
+        {:msg (format "%s argument to '%s' must be %s"
+                      (condp = (:position data)
+                        0 "First"
+                        1 "Second"
+                        "An")
+                      (pr-str (:op data))
+                      (:expected-type-description data))})
+
+(deferr halite-let-bindings-even-count [data]
+        {:msg "let bindings form must have an even number of forms"})
+
+(deferr halite-let-symbols [data]
+        {:msg "even-numbered forms in let binding vector must be symbols"})
+
+(deferr halite-cannot-bind-no-value [data]
+        {:msg "Cannot bind a value to the symbol: $no-value"})
+
+(deferr halite-comprehend-binding [data]
+        {:msg (format "Binding form for '%s' must have one variable and one collection" (pr-str (:op data)))})
+
+(deferr halite-comprehend-binding-target [data]
+        {:msg (format "Binding target for '%s' must be a bare symbol, not: %s"
+                      (pr-str (:op data))
+                      (pr-str (:sym data)))})
+
+(deferr halite-comprehend-collection-type [data]
+        {:msg (format "collection required for '%s', not %s"
+                      (pr-str (:op data))
+                      (pr-str (:actual-type data)))})
+
+(deferr halite-not-boolean-body [data]
+        {:msg (format "Body expression in '%s' must be boolean" (pr-str (:op data)))})
+
+(deferr halite-not-integer-body [data]
+        {:msg (format "Body expression in '%s' must be Integer, not %s"
+                      (pr-str (:op data))
+                      (pr-str (:actual-type data)))})
+
+(deferr halite-accumulator-target [data]
+        {:msg (format "Accumulator binding target for '%s' must be a bare symbol, not: %s"
+                      (pr-str (:op data))
+                      (pr-str (:accumulator data)))})
+
+clojure.pprint/cl-format
 
 (declare eval-expr)
 
@@ -313,7 +381,7 @@
 (s/defn- mk-builtin :- Builtin
   [impl & signatures]
   (when (not= 0 (mod (count signatures) 2))
-    (throw-err (halite-argument-count-must-be-even)))
+    (throw (ex-info "argument count must be a multiple of 2" {})))
   {:impl impl
    :signatures
    (vec (for [[arg-types return-type] (partition 2 signatures)
@@ -365,8 +433,7 @@
 (def ^:private h*    (math-f *    fixed-decimal/f*))
 (def ^:private hquot (math-f quot fixed-decimal/fquot))
 (def ^:private habs  (comp #(if (hneg? %)
-                              (throw-err (halite-abs-failure {:value-string (hstr %)
-                                                              :value %}))
+                              (throw-err (halite-abs-failure {:value %}))
                               %)
                            (math-f abs  fixed-decimal/fabs)))
 (def           h<=   (math-f <=   fixed-decimal/f<=))
@@ -545,30 +612,30 @@
   (if (= '$no-value sym)
     :Unset
     (or (get (halite-envs/scope (:tenv ctx)) sym)
-        (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
-                                                             :form sym})))))
+        (throw-err (halite-undefined-symbol {:form sym})))))
 
 (defn arg-count-exactly
   [n form]
   (when (not= n (count (rest form)))
-    (throw (ex-info (format "Wrong number of arguments to '%s': expected %d, but got %d"
-                            (name (first form)) n (count (rest form)))
-                    {:form form}))))
+    (throw-err (halite-wrong-arg-count {:op (name (first form))
+                                        :expected-arg-count n
+                                        :actual-arg-count (count (rest form))
+                                        :form form}))))
 
 (defn arg-count-at-least
   [n form]
   (when (< (count (rest form)) n)
-    (throw (ex-info (format "Wrong number of arguments to '%s': expected at least %d, but got %d"
-                            (name (first form)) n (count (rest form)))
-                    {:form form}))))
+    (throw-err (halite-wrong-arg-count-min {:op (name (first form))
+                                            :minimum-arg-count n
+                                            :actual-arg-count (count (rest form))
+                                            :form form}))))
 
 (defn ^:private type-check-lookup [ctx form subexpr-type index]
   (cond
     (halite-types/halite-vector-type? subexpr-type)
     (let [index-type (type-check* ctx index)]
       (when (not= :Integer index-type)
-        (throw (ex-info "Index must be an integer when target is a vector"
-                        {:form form, :index-form index, :expected :Integer, :actual-type index-type})))
+        (throw-err (halite-invalid-vector-index {:form form :index-form index, :expected :Integer, :actual-type index-type})))
       (halite-types/elem-type subexpr-type))
 
     (and (halite-types/spec-type? subexpr-type)
@@ -577,15 +644,12 @@
     (let [field-types (-> (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)
                           (update-vals (partial halite-envs/halite-type-from-var-type (:senv ctx))))]
       (when-not (and (keyword? index) (halite-types/bare? index))
-        (throw (ex-info "Index must be a variable name (as a keyword) when target is an instance"
-                        {:form form, :index-form index})))
+        (throw-err (halite-invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
-        (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) (halite-types/spec-id subexpr-type))
-                        {:form form, :index-form index})))
+        (throw-err (halite-variables-not-in-spec {:form form, :invalid-vars #{index}})))
       (get field-types index))
 
-    :else (throw (ex-info "Lookup target must be an instance of known type or non-empty vector"
-                          {:form form, :actual-type subexpr-type}))))
+    :else (throw-err (halite-invalid-lookup-target {:form form, :actual-type subexpr-type}))))
 
 (s/defn- type-check-get :- halite-types/HaliteType
   [ctx :- TypeContext, form]
@@ -610,18 +674,16 @@
   (let [[_ _ scale] expr
         arg-types (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/decimal-type? (first arg-types))
-      (throw (ex-info "First argument to 'rescale' must be a fixed point decimal"
-                      {:expr expr})))
+      (throw-err (halite-arg-type-mismatch {:position 0 :op 'rescale :expected-type-description "a fixed point decimal" :expr expr})))
     (when-not (= :Integer (second arg-types))
-      (throw (ex-info "Second argument to 'rescale' must be an integer"
-                      {:expr expr})))
+      (throw-err (halite-arg-type-mismatch {:position 1 :op 'rescale :expected-type-description "an integer" :expr expr})))
     (when-not (integer-or-long? scale)
-      (throw (ex-info "Second argument to 'rescale' must be an integer literal"
-                      {:expr expr})))
+      (throw-err (halite-arg-type-mismatch {:position 1 :op 'rescale :expected-type-description "an integer literal" :expr expr})))
     (when-not (and (>= scale 0)
                    (< scale (inc fixed-decimal/max-scale)))
-      (throw (ex-info (str "Second argument to 'rescale' must be an integer between 0 and " fixed-decimal/max-scale)
-                      {:expr expr})))
+      (throw-err (halite-arg-type-mismatch {:position 1 :op 'rescale
+                                            :expected-type-description (format "an integer between 0 and %s" fixed-decimal/max-scale)
+                                            :expr expr})))
     (if (zero? scale)
       :Integer
       (halite-types/decimal-type scale))))
@@ -631,7 +693,7 @@
   (arg-count-exactly 3 expr)
   (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw (ex-info "First argument to 'if' must be boolean" {:form expr})))
+      (throw-err (halite-arg-type-mismatch {:position 0 :op 'if :expected-type-description "boolean" :expr expr})))
     (halite-types/meet s t)))
 
 (s/defn- type-check-when :- halite-types/HaliteType
@@ -639,7 +701,7 @@
   (arg-count-exactly 2 expr)
   (let [[pred-type body-type] (map (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw (ex-info "First argument to 'when' must be boolean" {:form expr})))
+      (throw-err (halite-arg-type-mismatch {:position 0 :op 'when :expected-type-description "boolean" :expr expr})))
     (halite-types/maybe-type body-type)))
 
 (s/defn- type-check-let :- halite-types/HaliteType
@@ -647,14 +709,14 @@
   (arg-count-exactly 2 expr)
   (let [[bindings body] (rest expr)]
     (when-not (zero? (mod (count bindings) 2))
-      (throw (ex-info "let bindings form must have an even number of forms" {:form expr})))
+      (throw-err (halite-let-bindings-even-count {:form expr})))
     (type-check*
      (reduce
       (fn [ctx [sym body]]
         (when-not (symbol? sym)
-          (throw (ex-info "even-numbered forms in let binding vector must be symbols" {:form expr})))
+          (throw-err (halite-let-symbols {:form expr})))
         (when (= '$no-value sym)
-          (throw (ex-info "Cannot bind a value to the symbol: $no-value" {:bindings bindings :body body})))
+          (throw-err (halite-cannot-bind-no-value {:form expr})))
         (update ctx :tenv halite-envs/extend-scope sym (type-check* ctx body)))
       ctx
       (partition 2 bindings))
@@ -665,16 +727,14 @@
   (arg-count-exactly 2 expr)
   (let [[op [sym expr :as bindings] body] expr]
     (when-not (= 2 (count bindings))
-      (throw (ex-info (str "Binding form for '" op "' must have one variable and one collection")
-                      {:form expr})))
+      (throw-err (halite-comprehend-binding {:op op :form expr})))
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw (ex-info (str "Binding target for '" op "' must be a bare symbol, not: " (pr-str sym))
-                      {:form expr})))
+      (throw-err (halite-comprehend-binding-target {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
           et (halite-types/elem-type coll-type)
           _ (when-not et
-              (throw (ex-info (str "collection required for '" op "', not " (pr-str (or (halite-types/spec-id coll-type) coll-type)))
-                              {:form expr, :expr-type coll-type})))
+              (throw-err (halite-comprehend-collection-type {:op op, :expr-type coll-type, :form expr
+                                                             :actual-type (or (halite-types/spec-id coll-type) coll-type)})))
           body-type (type-check* (update ctx :tenv halite-envs/extend-scope sym et) body)]
       {:coll-type coll-type
        :body-type body-type})))
@@ -682,8 +742,8 @@
 (s/defn- type-check-quantifier :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (when (not= :Boolean (:body-type (type-check-comprehend ctx expr)))
-    (throw (ex-info (str "Body expression in '" (first expr) "' must be boolean")
-                    {:form expr})))
+    (throw-err (halite-not-boolean-body {:op (first expr)
+                                         :form expr})))
   :Boolean)
 
 (s/defn- type-check-map :- halite-types/HaliteType
@@ -697,16 +757,15 @@
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     (when (not= :Boolean body-type)
-      (throw (ex-info "Body expression in 'filter' must be boolean" {:form expr})))
+      (throw-err (halite-not-boolean-body {:op 'filter
+                                           :form expr})))
     coll-type))
 
 (s/defn- type-check-sort-by :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     (when (not= :Integer body-type)
-      (throw (ex-info (str "Body expression in 'sort-by' must be Integer, not "
-                           (pr-str body-type))
-                      {:form expr})))
+      (throw-err (halite-not-integer-body {:op 'sort-by :form expr :actual-type body-type})))
     (halite-types/vector-type (halite-types/elem-type coll-type))))
 
 (s/defn- type-check-reduce :- halite-types/HaliteType
@@ -714,9 +773,9 @@
   (arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
     (when-not (and (symbol? acc) (halite-types/bare? acc))
-      (throw (ex-info (str "Accumulator binding target for '" op "' must be a bare symbol, not: "
-                           (pr-str acc))
-                      {:form expr :accumulator acc})))
+      (throw-err (halite-accumulator-target {:op op
+                                             :accumulator acc
+                                             :form expr})))
     (when-not (and (symbol? elem) (halite-types/bare? elem))
       (throw (ex-info (str "Element binding target for '" op "' must be a bare symbol, not: "
                            (pr-str elem))

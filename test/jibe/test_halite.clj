@@ -98,8 +98,8 @@
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
-    '(error "You cannot pass") #"Spec threw error: You cannot pass"
-    '(error (str "error" " message")) #"Spec threw error: error message"))
+    '(error "You cannot pass") #"Spec threw error: \"You cannot pass\""
+    '(error (str "error" " message")) #"Spec threw error: \"error message\""))
 
 (deftest application-tests
   (are [expr etype]
@@ -259,7 +259,7 @@
       '(get xs (< 1 2)) #"must be an integer"
       '(get a :foo/bar) #"must be a variable name"
       '(get a 12) #"must be a variable name"
-      '(get a :b) #"No such variable"
+      '(get a :b) #"variables not defined on spec: b"
       '(get #{} 1) #"must be an instance of known type or non-empty vector")))
 
 (deftest get-eval-tests
