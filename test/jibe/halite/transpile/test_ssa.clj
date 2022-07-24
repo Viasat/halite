@@ -258,6 +258,19 @@
         $3 [false :Boolean $2]}
       '[$3]
 
+      ;; In this case, x is known statically to have a value.
+      ;; No ($value! x) wrapper is necessary in the body of the then branch.
+      '[(if-value x (+ x 1) y)]
+      '{$1 [:Unset :Unset]
+        $2 [x :Integer]
+        $3 [($value? $2) :Boolean $4]
+        $4 [(not $3) :Boolean $3]
+        $5 [1 :Integer]
+        $6 [(+ $2 $5) :Integer]
+        $7 [y :Integer]
+        $8 [(if $3 $6 $7) :Integer]}
+      '[$8]
+
       '[(if-value w w (if-value w (+ 1 true) 12))]
       '{$1 [:Unset :Unset]
         $2 [w [:Maybe :Integer]]

@@ -278,12 +278,22 @@
   (let [[dgraph no-value-id] (add-derivation (:dgraph ctx) [:Unset :Unset])
         [dgraph unguarded-id] (symbol-to-ssa (assoc ctx :dgraph dgraph) var-sym)
         type (get-in dgraph [unguarded-id 1])]
-    (if (= type :Unset)
+    (cond
+      (= type :Unset)
       (-> ctx
           (assoc :dgraph dgraph)
           (cond-> (not (contains? no-value-symbols var-sym)) (update :tenv halite-envs/extend-scope var-sym :Unset))
           (update :env assoc var-sym no-value-id)
           (form-to-ssa else))
+
+      (not (halite-types/maybe-type? type))
+      (let [[dgraph guard-id] (add-derivation dgraph [(list '$value? unguarded-id) :Boolean])
+            [dgraph then-id] (-> ctx (assoc :dgraph dgraph) (form-to-ssa then))
+            [dgraph else-id] (-> ctx (assoc :dgraph dgraph) (form-to-ssa else))
+            htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
+        (add-derivation dgraph [(list 'if guard-id then-id else-id) htype]))
+
+      :else
       (let [[dgraph guard-id] (add-derivation dgraph [(list '$value? unguarded-id) :Boolean])
             inner-type (halite-types/no-maybe type)
             [dgraph value-id] (add-derivation dgraph [(list '$value! unguarded-id) inner-type])
