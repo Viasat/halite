@@ -567,7 +567,7 @@
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [tail-id (last form)]
-      (first (ssa/deref-id dgraph tail-id)))))
+      tail-id)))
 
 (s/defn eliminate-dos :- SpecCtx
   [sctx :- SpecCtx]
