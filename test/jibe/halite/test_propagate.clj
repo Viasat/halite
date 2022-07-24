@@ -943,6 +943,22 @@
       (is (= {:$type :ws/A, :b1 {:$type :ws/B, :bx 4}, :b2 {:$type :ws/B, :bx 4}}
              (hp/propagate senv opts {:$type :ws/A :b1 {:$type :ws/B :bx 4}}))))))
 
+(deftest test-refine-optional
+  ;; The 'features' that interact here: valid? and instance literals w/ unassigned variables.
+  (let [senv (halite-envs/spec-env
+              '{:my/A {:abstract? true
+                       :spec-vars {:a1 [:Maybe "Integer"]
+                                   :a2 [:Maybe "Integer"]}
+                       :constraints [["a1_pos" (if-value a1 (> a1 0) true)]
+                                     ["a2_pos" (if-value a2 (> a2 0) true)]]
+                       :refines-to {}}
+                :my/B {:abstract? false
+                       :spec-vars {:b "Integer"}
+                       :constraints []
+                       :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}})]
+    (is (= {:$type :my/B :b {:$in [1 100]}}
+           (hp/propagate senv {:$type :my/B :b {:$in [-100 100]}})))))
+
 (def inline-gets #'hp/inline-gets)
 
 (deftest test-inline-gets

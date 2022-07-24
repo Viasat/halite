@@ -4,7 +4,8 @@
 (ns jibe.halite.transpile.simplify
   "Simplify halite specs by evaluating those parts of the spec
   that are statically evaluable."
-  (:require [jibe.halite.halite-envs :as halite-envs]
+  (:require [jibe.halite.halite-types :as halite-types]
+            [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.transpile.rewriting :as rewriting]
             [jibe.halite.transpile.ssa :as ssa]
             [jibe.halite.transpile.util :refer [fixpoint]]
@@ -88,6 +89,11 @@
   (when (and (seq? form) (= '$value? (first form)) (= :Unset (deref-form dgraph (second form))))
     false))
 
+(s/defn ^:private simplify-statically-known-value?
+  [sctx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  (when (and (seq? form) (= '$value? (first form)) (not (halite-types/maybe-type? (second (ssa/deref-id dgraph (second form))))))
+    true))
+
 (s/defn ^:private simplify-step :- ssa/SpecCtx
   [sctx :- ssa/SpecCtx]
   (-> sctx
@@ -96,7 +102,8 @@
       (rewriting/rewrite-sctx simplify-if-static-pred)
       (rewriting/rewrite-sctx simplify-if-static-branches)
       (rewriting/rewrite-sctx simplify-do)
-      (rewriting/rewrite-sctx simplify-no-value)))
+      (rewriting/rewrite-sctx simplify-no-value)
+      (rewriting/rewrite-sctx simplify-statically-known-value?)))
 
 (s/defn simplify :- ssa/SpecCtx
   "Perform semantics-preserving simplifications on the expressions in the specs."
