@@ -329,7 +329,10 @@
            (fn [{:keys [derivations] :as spec-info} [target-id {:keys [expr inverted?]}]]
              (when inverted?
                (throw (ex-info "BUG! Lowering inverted refinements not yet supported" {:spec-info spec-info})))
-             (let [[dgraph id] (ssa/form-to-ssa (assoc ctx :dgraph derivations) (list 'valid? expr))]
+             (let [[dgraph id] (ssa/form-to-ssa (assoc ctx :dgraph derivations) (list 'valid? expr))
+                   result (-> spec-info
+                              (assoc :derivations dgraph)
+                              (update :constraints conj [(str target-id) id]))]
                (halite-rewriting/trace!
                 {:op :add-constraint
                  :rule "lower-refinement-to-constraint"
@@ -339,10 +342,9 @@
                  :id' id
                  :form expr
                  :form' (ssa/form-from-ssa scope dgraph id)
-                 :spec-info spec-info})
-               (-> spec-info
-                   (assoc :derivations dgraph)
-                   (update :constraints conj [(str target-id) id]))))
+                 :spec-info spec-info
+                 :spec-info' result})
+               result))
            spec-info))]))
 
 (s/defn ^:private lower-refinement-constraints :- SpecCtx

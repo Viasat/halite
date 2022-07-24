@@ -37,20 +37,20 @@
   (if rule
     (println (format "%s:  %s\n |->%s%s"
                      rule form (apply str (repeat (dec (count rule)) \space)) form'))
-    (println "--- prune" (count pruned-ids) "---")))
+    (println "<<prune" (count pruned-ids) ">>")))
 
-(defn print-trace-summary* [trace]
+(defn print-trace-summary [trace]
   (doseq [item trace]
     (print-trace-item item)))
 
-(defmacro print-trace-summary
-  [body spec-id]
+(defmacro with-summarized-trace-for
+  [spec-id body]
   `(rewriting/with-tracing [traces#]
      (let [spec-id# ~spec-id]
        (try
          ~body
          (finally
-           (print-trace-summary* (get @traces# spec-id#)))))))
+           (print-trace-summary (get @traces# spec-id#)))))))
 
 (defn- prune
   [spec-id after {:keys [derivations] :as spec-info}]
@@ -63,6 +63,8 @@
        (binding [ssa/*elide-top-level-bindings* true]
          {:op :prune
           :spec-id spec-id
+          :spec-info spec-info
+          :spec-info' spec-info'
           :dgraph derivations
           :dgraph' derivations'
           :pruned-ids pruned-ids
@@ -102,7 +104,11 @@
              :form (ssa/form-from-ssa scope dgraph id)
              :id' id'
              :result form
-             :form' (ssa/form-from-ssa scope dgraph' id')}
+             :form' (ssa/form-from-ssa scope dgraph' id')
+             :spec-id spec-id
+             :spec-info (assoc spec-info :derivations dgraph)
+             :spec-info' (cond-> (assoc spec-info :derivations dgraph')
+                           (not replace?) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' id)]) %)))}
              spec-id (assoc :spec-id spec-id)
              spec-info (assoc :spec-info (assoc spec-info :derivations dgraph)))))
         [dgraph' id'])
@@ -114,13 +120,14 @@
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (->> tenv (halite-envs/scope) keys set)]
     (->> (:constraints spec-info)
-         (reduce (fn [spec-info [cname cid]]
+         (map-indexed vector)
+         (reduce (fn [spec-info [i [cname cid]]]
                    (let [dgraph (:derivations spec-info)
                          [dgraph' cid'] (apply-rule-to-id rule sctx (assoc ctx :dgraph dgraph) scope spec-id spec-info cid)]
                      (-> spec-info
                          (assoc :derivations dgraph')
-                         (update :constraints conj [cname cid']))))
-                 (assoc spec-info :constraints []))
+                         (assoc-in [:constraints i] [cname cid']))))
+                 spec-info)
          (prune spec-id (:rule-name rule)))))
 
 (s/defn rewrite-spec-derivations :- SpecInfo
