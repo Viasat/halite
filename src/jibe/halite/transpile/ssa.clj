@@ -72,11 +72,11 @@
       (recur (dgraph form))
       d)))
 
-(s/defn reachable-derivations :- #{DerivationName}
+(s/defn ^:private reachable-nodes :- #{DerivationName}
   "Return the set of derivation nodes transitively reachable from the given id. For reachable boolean
   nodes, their negation nodes are included when include-negations? is true."
   ([dgraph :- Derivations, include-negations? :- s/Bool, id :- DerivationName]
-   (reachable-derivations dgraph include-negations? #{} id))
+   (reachable-nodes dgraph include-negations? #{} id))
   ([dgraph :- Derivations, include-negations? :- s/Bool, reached :- #{DerivationName}, id :- DerivationName]
    (loop [[next-id & ids] [id]
           reached reached]
@@ -95,6 +95,14 @@
   (assoc halite-envs/SpecInfo
          :derivations Derivations
          :constraints [[(s/one s/Str :cname) (s/one DerivationName :deriv)]]))
+
+(s/defn reachable-derivations :- #{DerivationName}
+  [{:keys [derivations constraints] :as spec-info} :- SpecInfo]
+  (reduce
+   (fn [reachable id]
+     (reachable-nodes derivations false reachable id))
+   #{}
+   (map second constraints)))
 
 (s/defschema DerivResult [(s/one Derivations :derivs) (s/one DerivationName :id)])
 
@@ -540,7 +548,7 @@
   [dgraph :- Derivations, roots :- #{DerivationName}, prune-negations? :- s/Bool]
   (let [reachable (reduce
                    (fn [reachable id]
-                     (reachable-derivations dgraph (not prune-negations?) reachable id))
+                     (reachable-nodes dgraph (not prune-negations?) reachable id))
                    #{}
                    roots)]
     (->> dgraph
@@ -747,9 +755,9 @@
   We need to ensure that our rewritten expressions never evaluate a form when the original
   expressions would not have evaluated it."
   [dgraph :- Derivations, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
-  (let [subdgraph (select-keys dgraph (reachable-derivations dgraph true id))
+  (let [subdgraph (select-keys dgraph (reachable-nodes dgraph true id))
         reachable-subdgraph (->> id
-                                 (reachable-derivations subdgraph false)
+                                 (reachable-nodes subdgraph false)
                                  (select-keys subdgraph))
         amap (aliases reachable-subdgraph)
         usage-counts (->> reachable-subdgraph

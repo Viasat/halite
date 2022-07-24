@@ -134,8 +134,10 @@
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
   (let [spec-info (get sctx spec-id)
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
-        scope (->> tenv (halite-envs/scope) keys set)]
+        scope (->> tenv (halite-envs/scope) keys set)
+        reachable? (ssa/reachable-derivations spec-info)]
     (->> (keys (:derivations spec-info))
+         (filter reachable?)
          (reduce
           (fn [{:keys [dgraph] :as ctx} id]
             (let [[dgraph' id'] (apply-rule-to-id rule sctx ctx scope spec-id spec-info id :replace)]

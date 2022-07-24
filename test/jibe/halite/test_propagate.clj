@@ -29,9 +29,9 @@
 
     (is (= '{:spec-vars {:x "Integer", :y "Integer", :b "Boolean"}
              :constraints
-             [["$all" (let [$44 (abs (- x y))]
-                        (and (and (< 5 $44)
-                                  (< $44 10))
+             [["$all" (let [$42 (abs (- x y))]
+                        (and (and (< 5 $42)
+                                  (< $42 10))
                              (= b (< x y))))]]
              :refines-to {}}
            (hp/spec-ify-bound senv {:$type :ws/A})))))
@@ -128,8 +128,8 @@
       (is (= '{:spec-vars {:c|m "Integer", :c|n "Integer", :m "Integer"}
                :refines-to {}
                :constraints
-               [["$all" (let [$80 (* 2 m), $83 (<= $80 c|n)]
-                          (and (if $83 (and (= c|m c|n) (= c|n $80)) false) (<= c|n c|m)))]]}
+               [["$all" (let [$64 (* 2 m), $67 (<= $64 c|n)]
+                          (and (if $67 (and (= c|m c|n) (= c|n $64)) false) (<= c|n c|m)))]]}
              (hp/spec-ify-bound senv {:$type :ws/D})))))
 
   (testing "composition of recursive specs"
@@ -453,27 +453,27 @@
 
        :ws/A '{:spec-vars {:an "Integer"}
                :constraints
-               [["$all" (let [$107 (+ 1 an)]
+               [["$all" (let [$101 (+ 1 an)]
                           (and (< an 10)
-                               (and (< 0 $107)
-                                    (= 0 (mod $107 2)))))]]
+                               (and (< 0 $101)
+                                    (= 0 (mod $101 2)))))]]
                :refines-to {}}
 
        :ws/D '{:spec-vars {:a|an "Integer", :dm "Integer", :dn "Integer"}
                :constraints
                [["$all"
-                 (let [$269 (+ 1 dn)
-                       $278 (= 0 (mod $269 2))
-                       $280 (and (< 0 $269) $278)
-                       $282 (and (< dn 10) $280)
-                       $286 (if $282 $280 false)
-                       $302 (+ 1 a|an)
-                       $308 (and (< 0 $302) (= 0 (mod $302 2)))]
+                 (let [$245 (+ 1 dn)
+                       $278 (+ 1 a|an)
+                       $284 (and (< 0 $278) (= 0 (mod $278 2)))
+                       $254 (= 0 (mod $245 2))
+                       $256 (and (< 0 $245) $254)
+                       $258 (and (< dn 10) $256)
+                       $262 (if $258 $256 false)]
                    (and
-                    (if (and $282 $282 $286 (if $286 $278 false)) (= dm $269) false)
-                    (if $308 (= $269 $302) false)
+                    (if (and $258 $262 $258 (if $262 $254 false)) (= dm $245) false)
+                    (if $284 (= $245 $278) false)
                     (< a|an 10)
-                    $308))
+                    $284))
                  ;; hand simplification of the above, for validation purposes
                  #_(and
                     (< dn 10)                ; a1 as instantiated from d1
@@ -516,11 +516,11 @@
               s {:$type :ws/Simpler :x (- (get s :x) 2) :b true}]
           {:$type :ws/Simpler :x 12 :b (get s :b)})
         :b)
-      '(let [$135 (+ 1 2)
-             $136 (+ $135 1)
-             $145 (and (< 0 $136) (= false (= (mod $136 2) 1)))
-             $159 (if $145 (let [$147 (- $136 2)] (and (< 0 $147) (= true (= (mod $147 2) 1)))) false)]
-         (if (and true $145 $159 (if $159 (and (< 0 12) (= true (= (mod 12 2) 1))) false))
+      '(let [$129 (+ 1 2)
+             $130 (+ $129 1)
+             $139 (and (< 0 $130) (= false (= (mod $130 2) 1)))
+             $153 (if $139 (let [$141 (- $130 2)] (and (< 0 $141) (= true (= (mod $141 2) 1)))) false)]
+         (if (and true $139 $153 (if $153 (and (< 0 12) (= true (= (mod 12 2) 1))) false))
            true
            false))
       ;; hand-simplified

@@ -148,10 +148,10 @@
                    :constraints [["d1" (= b1 b2)]]
                    :refines-to {}}})
           sctx (ssa/build-spec-ctx senv :ws/A)]
-      (is (= '[["$all" (let [$6 (get b2 :c1)
-                             $5 (get b1 :c1)
-                             $9 (get b1 :c2)
-                             $10 (get b2 :c2)]
+      (is (= '[["$all" (let [$9 (get b1 :c2)
+                             $10 (get b2 :c2)
+                             $6 (get b2 :c1)
+                             $5 (get b1 :c1)]
                          (or
                           (or
                            (not= (get $5 :x) (get $6 :x))
@@ -574,12 +574,12 @@
 
         '(= (if p v w)
             (if-value v (+ 1 v) w))
-        '(let [$48 (if ($value? v)
+        '(let [$44 (if ($value? v)
                      (+ 1 ($value! v))
                      w)]
            (if p
-             (= v $48)
-             (= w $48))))
+             (= v $44)
+             (= w $44))))
 
       (let [expr '(= (if p v w) (if-value v (+ 1 v) w))]
         (is (= '(if p
@@ -713,36 +713,36 @@
                    (if-value b1
                              (let [$26 b1]
                                (if-value b2
-                                         (let [$94 (get $26 :bw)
-                                               $93 (get b2 :bw)
-                                               $105 (get b2 :c2)
-                                               $106 (get $26 :c2)
-                                               $102 (get $26 :c1)
-                                               $160 (get $102 :cw)
-                                               $101 (get b2 :c1)
-                                               $159 (get $101 :cw)]
+                                         (let [$82 (get $26 :c2)
+                                               $81 (get b2 :c2)
+                                               $70 (get $26 :bw)
+                                               $69 (get b2 :bw)
+                                               $78 (get $26 :c1)
+                                               $118 (get $78 :cw)
+                                               $77 (get b2 :c1)
+                                               $117 (get $77 :cw)]
                                            (and
                                             (= (get b2 :bp) (get $26 :bp))
-                                            (if-value $93
-                                                      (let [$134 $93] (if-value $94 (= $94 $134) false))
-                                                      (if-value $94 false true))
+                                            (if-value $69
+                                                      (let [$89 $69] (if-value $70 (= $70 $89) false))
+                                                      (if-value $70 false true))
                                             (= (get b2 :bx) (get $26 :bx))
                                             (and
-                                             (if-value $159
-                                                       (let [$180 $159] (if-value $160 (= $160 $180) false))
-                                                       (if-value $160 false true))
-                                             (= (get $101 :cx) (get $102 :cx)))
-                                            (if-value $105
-                                                      (let [$115 $105]
-                                                        (if-value $106
-                                                                  (let [$231 (get $115 :cw) $230 (get $106 :cw)]
+                                             (if-value $117
+                                                       (let [$136 $117] (if-value $118 (= $118 $136) false))
+                                                       (if-value $118 false true))
+                                             (= (get $77 :cx) (get $78 :cx)))
+                                            (if-value $81
+                                                      (let [$102 $81]
+                                                        (if-value $82
+                                                                  (let [$164 (get $82 :cw) $165 (get $102 :cw)]
                                                                     (and
-                                                                     (if-value $230
-                                                                               (let [$255 $230] (if-value $231 (= $231 $255) false))
-                                                                               (if-value $231 false true))
-                                                                     (= (get $106 :cx) (get $115 :cx))))
+                                                                     (if-value $164
+                                                                               (let [$176 $164] (if-value $165 (= $165 $176) false))
+                                                                               (if-value $165 false true))
+                                                                     (= (get $82 :cx) (get $102 :cx))))
                                                                   false))
-                                                      (if-value $106 false true))))
+                                                      (if-value $82 false true))))
                                          false))
                              (if-value b2 false true))
                    (=> ap (if-value b1 true false)))]]
@@ -756,13 +756,13 @@
        (is (= '{:spec-vars {:dx "Integer"}
                 :constraints
                 [["$all"
-                  (let [$424 (= 0 (mod dx 2))]
-                    (if (if $424 true true)
-                      (let [$427 (if $424 (div dx 2) $no-value)
-                            $429 (+ dx 1)
-                            $430 {:$type :ws/C, :cw dx, :cx dx}
-                            $432 {:$type :ws/C, :cw 12, :cx dx}]
-                        (if $424 false true))
+                  (let [$226 (= 0 (mod dx 2))]
+                    (if (if $226 true true)
+                      (let [$229 (if $226 (div dx 2) $no-value)
+                            $231 (+ dx 1)
+                            $232 {:$type :ws/C, :cw dx, :cx dx}
+                            $234 {:$type :ws/C, :cw 12, :cx dx}]
+                        (if $226 false true))
                       false))]],
                 :refines-to {:ws/B {:expr {:$type :ws/B,
                                            :bp false,
