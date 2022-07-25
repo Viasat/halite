@@ -231,7 +231,7 @@
 
   (h (if-value-let [y] false true) [:throws "Syntax error"])
 
-  (h (if-value-let [true false] false true) [:throws "Binding target for 'if-value-let' must be a bare symbol"])
+  (h (if-value-let [true false] false true) [:throws "Binding target for 'if-value-let' must be a bare symbol, not: true"])
 
   (h (if-value-let [x false] false true) [:throws "Binding expression in 'if-value-let' must have an optional type"]))
 
@@ -519,7 +519,7 @@
 
   (h (when-value 3 1) [:throws "First argument to 'when-value' must be a bare symbol"])
 
-  (h (if-value-let [3 4] 1 2) [:throws "Binding target for 'if-value-let' must be a bare symbol"])
+  (h (if-value-let [3 4] 1 2) [:throws "Binding target for 'if-value-let' must be a bare symbol, not: 3"])
 
   (h (if-value-let [x 3] 1 2) [:throws "Binding expression in 'if-value-let' must have an optional type"])
 
