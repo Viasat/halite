@@ -4,6 +4,8 @@
 (ns jibe.lib.graph
   (:require [clojure.set :as set]))
 
+(set! *warn-on-reflection* true)
+
 ;; dependency cycle detection
 
 (defn- path-contains? [path x]

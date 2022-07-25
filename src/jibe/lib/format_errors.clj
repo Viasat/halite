@@ -5,6 +5,8 @@
   (:require [clojure.string :as string]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (defmacro deferr [err-id [data-arg] data]
   `(defn ~err-id [~data-arg]
      (merge ~data-arg
