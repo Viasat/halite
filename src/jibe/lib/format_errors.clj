@@ -17,12 +17,18 @@
 (defn extend-err-data [data]
   (-> (merge (-> data :form meta (select-keys [:row :col :end-row :end-col]))
              data)
-      (dissoc :msg)))
+      (dissoc :message)))
 
-(defmacro throw-err [data]
-  `(let [data# ~data]
-     (throw (ex-info (:msg data#)
-                     (extend-err-data data#)))))
+(defmacro throw-err
+  ([data]
+   `(let [data# ~data]
+      (throw (ex-info (:message data#)
+                      (extend-err-data data#)))))
+  ([data ex]
+   `(let [data# ~data]
+      (throw (ex-info (:message data#)
+                      (extend-err-data data#)
+                      ~ex)))))
 
 (defmacro with-exception-data
   "Merge extra-data into any ex-info thrown from inside body"

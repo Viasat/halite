@@ -29,192 +29,192 @@
   '#{$this})
 
 (deferr halite-missing-required-vars [data]
-        {:msg (str "missing required variables: "
-                   (str/join "," (map name (:missing-vars data))))})
+        {:message (str "missing required variables: "
+                       (str/join "," (map name (:missing-vars data))))})
 
 (deferr halite-variables-not-in-spec [data]
-        {:msg (str "variables not defined on spec: "
-                   (str/join ", " (map name (:invalid-vars data))))})
+        {:message (str "variables not defined on spec: "
+                       (str/join ", " (map name (:invalid-vars data))))})
 
 (deferr halite-resource-spec-not-found [data]
-        {:msg (format "resource spec not found: %s" (pr-str (:spec-id data)))})
+        {:message (format "resource spec not found: %s" (pr-str (:spec-id data)))})
 
 (deferr halite-not-a-value [data]
-        {:msg (format "BUG! Not a value: %s" (pr-str (:value data)))})
+        {:message (format "BUG! Not a value: %s" (pr-str (:value data)))})
 
 (deferr halite-no-active-refinement-path [data]
-        {:msg (format "No active refinement path from '%s' to '%s'"
-                      (pr-str (:type data))
-                      (pr-str (:target-type data)))})
+        {:message (format "No active refinement path from '%s' to '%s'"
+                          (pr-str (:type data))
+                          (pr-str (:target-type data)))})
 
 (deferr halite-no-abstract [data]
-        {:msg "instance cannot contain abstract value"})
+        {:message "instance cannot contain abstract value"})
 
 (deferr halite-invalid-instance [data]
-        {:msg (format "invalid instance of '%s', violates constraints %s"
-                      (pr-str (symbol (:spec-id data)))
-                      (str/join ", " (map first (:violated-constraints data))))})
+        {:message (format "invalid instance of '%s', violates constraints %s"
+                          (pr-str (symbol (:spec-id data)))
+                          (str/join ", " (map first (:violated-constraints data))))})
 
 (deferr halite-missing-type-field [data]
-        {:msg "instance literal must have :$type field"})
+        {:message "instance literal must have :$type field"})
 
 (deferr halite-invalid-type-value [data]
-        {:msg "expected namespaced keyword as value of :$type"})
+        {:message "expected namespaced keyword as value of :$type"})
 
 (deferr halite-invalid-field-value [data]
-        {:msg (format "value of '%s' has wrong type" (:variable data))})
+        {:message (format "value of '%s' has wrong type" (:variable data))})
 
 (deferr halite-invalid-value-for-context [data]
-        {:msg (format "value of '%s has wrong type" (pr-str (:sym data)))})
+        {:message (format "value of '%s has wrong type" (pr-str (:sym data)))})
 
 (deferr halite-invalid-value [data]
-        {:msg "Invalid value"})
+        {:message "Invalid value"})
 
 (deferr halite-invalid-expression [data]
-        {:msg "Invalid expression"})
+        {:message "Invalid expression"})
 
 (deferr halite-literal-must-evaluate-to-value [data]
-        {:msg (format "%s literal element must always evaluate to a value"
-                      (:coll-type-string data))})
+        {:message (format "%s literal element must always evaluate to a value"
+                          (:coll-type-string data))})
 
 (deferr halite-size-exceeded [data]
-        {:msg (format "%s size of %d exceeds the max allowed size of %d"
-                      (:object-type data)
-                      (:actual-count data)
-                      (:count-limit data))})
+        {:message (format "%s size of %d exceeds the max allowed size of %d"
+                          (:object-type data)
+                          (:actual-count data)
+                          (:count-limit data))})
 
 (deferr halite-limit-exceeded [data]
-        {:msg (format "%s of %d exceeds the max allowed value of %d"
-                      (:object-type data)
-                      (:value data)
-                      (:limit data))})
+        {:message (format "%s of %d exceeds the max allowed value of %d"
+                          (:object-type data)
+                          (:value data)
+                          (:limit data))})
 
 (deferr halite-abs-failure [data]
-        {:msg (format "Cannot compute absolute value of: %s" (pr-str (:value data)))})
+        {:message (format "Cannot compute absolute value of: %s" (pr-str (:value data)))})
 
 (deferr halite-invalid-exponent [data]
-        {:msg (format "Invalid exponent: %d" (:exponent data))})
+        {:message (format "Invalid exponent: %d" (:exponent data))})
 
 (deferr halite-spec-threw [data]
-        {:msg (format "Spec threw error: %s" (pr-str (:spec-error-str data)))})
+        {:message (format "Spec threw error: %s" (pr-str (:spec-error-str data)))})
 
 (deferr halite-unknown-function-or-operator [data]
-        {:msg (format "unknown function or operator: %s" (pr-str (:op data)))})
+        {:message (format "unknown function or operator: %s" (pr-str (:op data)))})
 
 (deferr halite-syntax-error [data]
-        {:msg "Syntax error"})
+        {:message "Syntax error"})
 
 (deferr halite-no-matching-signature [data]
-        {:msg (format "no matching signature for '%s'" (pr-str (:op data)))})
+        {:message (format "no matching signature for '%s'" (pr-str (:op data)))})
 
 (deferr halite-undefined-symbol [data]
-        {:msg (format "Undefined: '%s'" (pr-str (:form data)))})
+        {:message (format "Undefined: '%s'" (pr-str (:form data)))})
 
 (deferr halite-wrong-arg-count [data]
-        {:msg (format "Wrong number of arguments to '%s': expected %d, but got %d"
-                      (:op data)
-                      (:expected-arg-count data)
-                      (:actual-arg-count data))})
+        {:message (format "Wrong number of arguments to '%s': expected %d, but got %d"
+                          (:op data)
+                          (:expected-arg-count data)
+                          (:actual-arg-count data))})
 
 (deferr halite-wrong-arg-count-min [data]
-        {:msg (format "Wrong number of arguments to '%s': expected at least %d, but got %d"
-                      (:op data)
-                      (:minimum-arg-count data)
-                      (:actual-arg-count data))})
+        {:message (format "Wrong number of arguments to '%s': expected at least %d, but got %d"
+                          (:op data)
+                          (:minimum-arg-count data)
+                          (:actual-arg-count data))})
 
 (deferr halite-invalid-vector-index [data]
-        {:msg "Index must be an integer when target is a vector"})
+        {:message "Index must be an integer when target is a vector"})
 
 (deferr halite-invalid-instance-index [data]
-        {:msg "Index must be a variable name (as a keyword) when target is an instance"})
+        {:message "Index must be a variable name (as a keyword) when target is an instance"})
 
 (deferr halite-invalid-lookup-target [data]
-        {:msg "Lookup target must be an instance of known type or non-empty vector"})
+        {:message "Lookup target must be an instance of known type or non-empty vector"})
 
 (deferr halite-arg-type-mismatch [data]
-        {:msg (format "%s to '%s' must be %s"
-                      (condp = (:position data)
-                        nil "Argument"
-                        0 "First argument"
-                        1 "Second argument"
-                        "An argument")
-                      (pr-str (:op data))
-                      (:expected-type-description data))})
+        {:message (format "%s to '%s' must be %s"
+                          (condp = (:position data)
+                            nil "Argument"
+                            0 "First argument"
+                            1 "Second argument"
+                            "An argument")
+                          (pr-str (:op data))
+                          (:expected-type-description data))})
 
 (deferr halite-arg-types-both-vectors [data]
-        {:msg (format "When first argument to '%s' is a vector, second argument must also be a vector" (pr-str (:op data)))})
+        {:message (format "When first argument to '%s' is a vector, second argument must also be a vector" (pr-str (:op data)))})
 
 (deferr halite-let-bindings-odd-count [data]
-        {:msg "let bindings form must have an even number of forms"})
+        {:message "let bindings form must have an even number of forms"})
 
 (deferr halite-let-symbols-required [data]
-        {:msg "even-numbered forms in let binding vector must be symbols"})
+        {:message "even-numbered forms in let binding vector must be symbols"})
 
 (deferr halite-cannot-bind-reserved-word [data]
-        {:msg (format "Cannot bind a value to the reserved word: %s" (:sym data))})
+        {:message (format "Cannot bind a value to the reserved word: %s" (:sym data))})
 
 (deferr halite-comprehend-binding-wrong-types [data]
-        {:msg (format "Binding form for '%s' must have one variable and one collection" (pr-str (:op data)))})
+        {:message (format "Binding form for '%s' must have one variable and one collection" (pr-str (:op data)))})
 
 (deferr halite-binding-target-must-be-symbol [data]
-        {:msg (format "Binding target for '%s' must be a bare symbol, not: %s"
-                      (pr-str (:op data))
-                      (pr-str (:sym data)))})
+        {:message (format "Binding target for '%s' must be a bare symbol, not: %s"
+                          (pr-str (:op data))
+                          (pr-str (:sym data)))})
 
 (deferr halite-element-binding-target-must-be-symbol [data]
-        {:msg (format "Element binding target for '%s' must be a bare symbol, not: %s"
-                      (pr-str (:op data))
-                      (pr-str (:element data)))})
+        {:message (format "Element binding target for '%s' must be a bare symbol, not: %s"
+                          (pr-str (:op data))
+                          (pr-str (:element data)))})
 
 (deferr halite-element-accumulator-same-symbol [data]
-        {:msg (format "Cannot use the same symbol for accumulator and element binding: %s"
-                      (pr-str (:element data)))})
+        {:message (format "Cannot use the same symbol for accumulator and element binding: %s"
+                          (pr-str (:element data)))})
 
 (deferr halite-comprehend-collection-invalid-type [data]
-        {:msg (format "collection required for '%s', not %s"
-                      (pr-str (:op data))
-                      (pr-str (:actual-type data)))})
+        {:message (format "collection required for '%s', not %s"
+                          (pr-str (:op data))
+                          (pr-str (:actual-type data)))})
 
 (deferr halite-not-boolean-body [data]
-        {:msg (format "Body expression in '%s' must be boolean" (pr-str (:op data)))})
+        {:message (format "Body expression in '%s' must be boolean" (pr-str (:op data)))})
 
 (deferr halite-not-integer-body [data]
-        {:msg (format "Body expression in '%s' must be Integer, not %s"
-                      (pr-str (:op data))
-                      (pr-str (:actual-type data)))})
+        {:message (format "Body expression in '%s' must be Integer, not %s"
+                          (pr-str (:op data))
+                          (pr-str (:actual-type data)))})
 
 (deferr halite-accumulator-target-must-be-bare-symbol [data]
-        {:msg (format "Accumulator binding target for '%s' must be a bare symbol, not: %s"
-                      (pr-str (:op data))
-                      (pr-str (:accumulator data)))})
+        {:message (format "Accumulator binding target for '%s' must be a bare symbol, not: %s"
+                          (pr-str (:op data))
+                          (pr-str (:accumulator data)))})
 
 (deferr halite-reduce-not-vector [data]
-        {:msg "Second binding expression to 'reduce' must be a vector."})
+        {:message "Second binding expression to 'reduce' must be a vector."})
 
 (deferr halite-if-value-must-be-bare-symbol [data]
-        {:msg (format "First argument to '%s' must be a bare symbol" (pr-str (:op data)))})
+        {:message (format "First argument to '%s' must be a bare symbol" (pr-str (:op data)))})
 
 (deferr halite-arguments-not-sets [data]
-        {:msg (format "Arguments to '%s' must be sets" (pr-str (:op data)))})
+        {:message (format "Arguments to '%s' must be sets" (pr-str (:op data)))})
 
 (deferr halite-argument-not-vector [data]
-        {:msg (format "Argument to '%s' must be a vector" (:op data))})
+        {:message (format "Argument to '%s' must be a vector" (:op data))})
 
 (deferr halite-argument-empty [data]
-        {:msg "argument to first is always empty"})
+        {:message "argument to first is always empty"})
 
 (deferr halite-argument-not-set-or-vector [data]
-        {:msg "First argument to 'conj' must be a set or vector"})
+        {:message "First argument to 'conj' must be a set or vector"})
 
 (deferr halite-cannot-conj-unset [data]
-        {:msg (format "cannot conj possibly unset value to %s" (:type-string data))})
+        {:message (format "cannot conj possibly unset value to %s" (:type-string data))})
 
 (deferr halite-refinement-error [data]
-        {:msg (format "Refinement from '%s' failed unexpectedly: %s"
-                      (:type data) (:underlying-error-message data))})
+        {:message (format "Refinement from '%s' failed unexpectedly: %s"
+                          (:type data) (:underlying-error-message data))})
 
 (deferr halite-symbols-not-bound [data]
-        {:msg (format "symbols in type environment are not bound: %s" (str/join " ", (:unbound-symbols data)))})
+        {:message (format "symbols in type environment are not bound: %s" (str/join " ", (:unbound-symbols data)))})
 
 clojure.pprint/cl-format
 
