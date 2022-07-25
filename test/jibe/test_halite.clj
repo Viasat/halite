@@ -445,8 +445,8 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
-      '[x] #"vector literal element may not always evaluate to a value"
-      '#{x} #"set literal element may not always evaluate to a value"
+      '[x] #"vector literal element must always evaluate to a value"
+      '#{x} #"set literal element must always evaluate to a value"
       '(conj [] x) #"cannot conj possibly unset value to vector")))
 
 (deftest when-tests
@@ -466,8 +466,8 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
-      '[(when b 1)] #"may not always evaluate to a value"
-      '#{(when b 1)} #"may not always evaluate to a value"
+      '[(when b 1)] #"must always evaluate to a value"
+      '#{(when b 1)} #"must always evaluate to a value"
       '(when 1 2) #"must be boolean"
       '(when) #"Wrong number of arguments"
       '(when b 1 2) #"Wrong number of arguments")

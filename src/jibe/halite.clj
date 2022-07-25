@@ -73,8 +73,8 @@
 (deferr halite-invalid-expression [data]
         {:msg "Invalid expression"})
 
-(deferr halite-literal-may-not-evaluate [data]
-        {:msg (format "%s literal element may not always evaluate to a value"
+(deferr halite-literal-must-evaluate-to-value [data]
+        {:msg (format "%s literal element must always evaluate to a value"
                       (:coll-type-string data))})
 
 (deferr halite-size-exceeded [data]
@@ -141,36 +141,36 @@
                       (pr-str (:op data))
                       (:expected-type-description data))})
 
-(deferr halite-conditional-type [data]
+(deferr halite-arg-types-both-vectors [data]
         {:msg (format "When first argument to '%s' is a vector, second argument must also be a vector" (pr-str (:op data)))})
 
-(deferr halite-let-bindings-even-count [data]
+(deferr halite-let-bindings-odd-count [data]
         {:msg "let bindings form must have an even number of forms"})
 
-(deferr halite-let-symbols [data]
+(deferr halite-let-symbols-required [data]
         {:msg "even-numbered forms in let binding vector must be symbols"})
 
 (deferr halite-cannot-bind-reserved-word [data]
         {:msg (format "Cannot bind a value to the reserved word: %s" (:sym data))})
 
-(deferr halite-comprehend-binding [data]
+(deferr halite-comprehend-binding-wrong-types [data]
         {:msg (format "Binding form for '%s' must have one variable and one collection" (pr-str (:op data)))})
 
-(deferr halite-binding-target [data]
+(deferr halite-binding-target-must-be-symbol [data]
         {:msg (format "Binding target for '%s' must be a bare symbol, not: %s"
                       (pr-str (:op data))
                       (pr-str (:sym data)))})
 
-(deferr halite-element-binding-target [data]
+(deferr halite-element-binding-target-must-be-symbol [data]
         {:msg (format "Element binding target for '%s' must be a bare symbol, not: %s"
                       (pr-str (:op data))
                       (pr-str (:element data)))})
 
-(deferr halite-element-accumulator-different [data]
+(deferr halite-element-accumulator-same-symbol [data]
         {:msg (format "Cannot use the same symbol for accumulator and element binding: %s"
                       (pr-str (:element data)))})
 
-(deferr halite-comprehend-collection-type [data]
+(deferr halite-comprehend-collection-invalid-type [data]
         {:msg (format "collection required for '%s', not %s"
                       (pr-str (:op data))
                       (pr-str (:actual-type data)))})
@@ -183,34 +183,31 @@
                       (pr-str (:op data))
                       (pr-str (:actual-type data)))})
 
-(deferr halite-accumulator-target [data]
+(deferr halite-accumulator-target-must-be-bare-symbol [data]
         {:msg (format "Accumulator binding target for '%s' must be a bare symbol, not: %s"
                       (pr-str (:op data))
                       (pr-str (:accumulator data)))})
 
-(deferr halite-reduce-vector [data]
+(deferr halite-reduce-not-vector [data]
         {:msg "Second binding expression to 'reduce' must be a vector."})
 
-(deferr halite-if-value-symbol [data]
+(deferr halite-if-value-must-be-bare-symbol [data]
         {:msg (format "First argument to '%s' must be a bare symbol" (pr-str (:op data)))})
 
-(deferr halite-arguments-sets [data]
+(deferr halite-arguments-not-sets [data]
         {:msg (format "Arguments to '%s' must be sets" (pr-str (:op data)))})
 
-(deferr halite-vector-argument [data]
+(deferr halite-argument-not-vector [data]
         {:msg (format "Argument to '%s' must be a vector" (:op data))})
 
-(deferr halite-first-empty [data]
+(deferr halite-argument-empty [data]
         {:msg "argument to first is always empty"})
 
-(deferr halite-conj-set-or-vector [data]
+(deferr halite-argument-not-set-or-vector [data]
         {:msg "First argument to 'conj' must be a set or vector"})
 
-(deferr halite-conj-unset [data]
+(deferr halite-cannot-conj-unset [data]
         {:msg (format "cannot conj possibly unset value to %s" (:type-string data))})
-
-(deferr halite-empty-has-no-first [data]
-        {:msg "empty vector has no first element"})
 
 (deferr halite-refinement-error [data]
         {:msg (format "Refinement from '%s' failed unexpectedly: %s"
@@ -388,8 +385,8 @@ clojure.pprint/cl-format
       (throw-err (halite-invalid-value  {error-key coll})))
     (doseq [[elem elem-type] (map vector coll elem-types)]
       (when (halite-types/maybe-type? elem-type)
-        (throw-err (halite-literal-may-not-evaluate {:coll-type-string coll-type-string
-                                                     error-key elem}))))
+        (throw-err (halite-literal-must-evaluate-to-value {:coll-type-string coll-type-string
+                                                           error-key elem}))))
     (halite-types/vector-or-set-type coll (condp = (count coll)
                                             0 :Nothing
                                             1 (first elem-types)
@@ -760,12 +757,12 @@ clojure.pprint/cl-format
   (arg-count-exactly 2 expr)
   (let [[bindings body] (rest expr)]
     (when-not (zero? (mod (count bindings) 2))
-      (throw-err (halite-let-bindings-even-count {:form expr})))
+      (throw-err (halite-let-bindings-odd-count {:form expr})))
     (type-check*
      (reduce
       (fn [ctx [sym body]]
         (when-not (symbol? sym)
-          (throw-err (halite-let-symbols {:form expr})))
+          (throw-err (halite-let-symbols-required {:form expr})))
         (when (reserved-words sym)
           (throw-err (halite-cannot-bind-reserved-word {:sym sym
                                                         :form expr})))
@@ -779,14 +776,14 @@ clojure.pprint/cl-format
   (arg-count-exactly 2 expr)
   (let [[op [sym expr :as bindings] body] expr]
     (when-not (= 2 (count bindings))
-      (throw-err (halite-comprehend-binding {:op op :form expr})))
+      (throw-err (halite-comprehend-binding-wrong-types {:op op :form expr})))
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (halite-binding-target {:op op :form expr :sym sym})))
+      (throw-err (halite-binding-target-must-be-symbol {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
           et (halite-types/elem-type coll-type)
           _ (when-not et
-              (throw-err (halite-comprehend-collection-type {:op op, :expr-type coll-type, :form expr
-                                                             :actual-type (or (halite-types/spec-id coll-type) coll-type)})))
+              (throw-err (halite-comprehend-collection-invalid-type {:op op, :expr-type coll-type, :form expr
+                                                                     :actual-type (or (halite-types/spec-id coll-type) coll-type)})))
           body-type (type-check* (update ctx :tenv halite-envs/extend-scope sym et) body)]
       {:coll-type coll-type
        :body-type body-type})))
@@ -825,16 +822,16 @@ clojure.pprint/cl-format
   (arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
     (when-not (and (symbol? acc) (halite-types/bare? acc))
-      (throw-err (halite-accumulator-target {:op op, :accumulator acc, :form expr})))
+      (throw-err (halite-accumulator-target-must-be-bare-symbol {:op op, :accumulator acc, :form expr})))
     (when-not (and (symbol? elem) (halite-types/bare? elem))
-      (throw-err (halite-element-binding-target {:op op, :form expr, :element elem})))
+      (throw-err (halite-element-binding-target-must-be-symbol {:op op, :form expr, :element elem})))
     (when (= acc elem)
-      (throw-err (halite-element-accumulator-different {:form expr, :accumulator acc, :element elem})))
+      (throw-err (halite-element-accumulator-same-symbol {:form expr, :accumulator acc, :element elem})))
     (let [init-type (type-check* ctx init)
           coll-type (type-check* ctx coll)
           et (halite-types/elem-type coll-type)]
       (when-not (halite-types/subtype? coll-type (halite-types/vector-type :Value))
-        (throw-err (halite-reduce-vector {:form expr, :actual-coll-type coll-type})))
+        (throw-err (halite-reduce-not-vector {:form expr, :actual-coll-type coll-type})))
       (type-check* (update ctx :tenv #(-> %
                                           (halite-envs/extend-scope acc init-type)
                                           (halite-envs/extend-scope elem et)))
@@ -846,8 +843,8 @@ clojure.pprint/cl-format
   (let [[op sym set-expr unset-expr] expr]
     (arg-count-exactly (if (= 'when-value op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (halite-if-value-symbol {:op op
-                                          :form expr})))
+      (throw-err (halite-if-value-must-be-bare-symbol {:op op
+                                                       :form expr})))
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
@@ -863,8 +860,8 @@ clojure.pprint/cl-format
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
     (arg-count-exactly (if (= 'when-value-let op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (halite-binding-target {:op op
-                                         :sym sym})))
+      (throw-err (halite-binding-target-must-be-symbol {:op op
+                                                        :sym sym})))
     (let [maybe-type (type-check* ctx maybe-expr)
           else-type (if (= 'when-value-let op)
                       :Unset
@@ -877,7 +874,7 @@ clojure.pprint/cl-format
 
 (defn check-all-sets [[op :as expr] arg-types]
   (when-not (every? #(halite-types/subtype? % (halite-types/set-type :Value)) arg-types)
-    (throw-err (halite-arguments-sets {:op op, :form expr}))))
+    (throw-err (halite-arguments-not-sets {:op op, :form expr}))))
 
 (s/defn- type-check-union :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
@@ -907,9 +904,9 @@ clojure.pprint/cl-format
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
     (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
-      (throw-err (halite-vector-argument {:op 'first, :form expr})))
+      (throw-err (halite-argument-not-vector {:op 'first, :form expr})))
     (when (= halite-types/empty-vector arg-type)
-      (throw-err (halite-first-empty {:form expr})))
+      (throw-err (halite-argument-empty {:form expr})))
     (second arg-type)))
 
 (s/defn- type-check-rest :- halite-types/HaliteType
@@ -917,7 +914,7 @@ clojure.pprint/cl-format
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
     (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
-      (throw-err (halite-vector-argument {:op 'rest, :form expr})))
+      (throw-err (halite-argument-not-vector {:op 'rest, :form expr})))
     arg-type))
 
 (s/defn- type-check-conj :- halite-types/HaliteType
@@ -925,10 +922,10 @@ clojure.pprint/cl-format
   (arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/subtype? base-type (halite-types/coll-type :Value))
-      (throw-err (halite-conj-set-or-vector {:form expr})))
+      (throw-err (halite-argument-not-set-or-vector {:form expr})))
     (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
       (when (halite-types/maybe-type? elem-type)
-        (throw-err (halite-conj-unset {:type-string (halite-types/coll-type-string base-type), :form elem}))))
+        (throw-err (halite-cannot-conj-unset {:type-string (halite-types/coll-type-string base-type), :form elem}))))
     (halite-types/change-elem-type
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
@@ -943,7 +940,7 @@ clojure.pprint/cl-format
     (when-not (halite-types/subtype? t (halite-types/coll-type :Value))
       (throw-err (halite-arg-type-mismatch {:op op, :position 1, :expected-type-description "a set or vector", :form expr})))
     (when (and (halite-types/subtype? s (halite-types/vector-type :Value)) (not (halite-types/subtype? t (halite-types/vector-type :Value))))
-      (throw-err (halite-conditional-type {:op op, :form expr})))
+      (throw-err (halite-arg-types-both-vectors {:op op, :form expr})))
     (halite-types/meet s
                        (halite-types/change-elem-type s (halite-types/elem-type t)))))
 
@@ -1173,7 +1170,7 @@ clojure.pprint/cl-format
                     'intersection (reduce set/intersection (map eval-in-env (rest expr)))
                     'difference (apply set/difference (map eval-in-env (rest expr)))
                     'first (or (first (eval-in-env (second expr)))
-                               (throw-err (halite-empty-has-no-first {:form expr})))
+                               (throw-err (halite-argument-empty {:form expr})))
                     'rest (let [arg (eval-in-env (second expr))]
                             (if (empty? arg) [] (subvec arg 1)))
                     'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))
