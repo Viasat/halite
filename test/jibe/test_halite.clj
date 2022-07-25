@@ -65,10 +65,10 @@
     {:$type :bar} #"expected namespaced keyword as value of :\$type"
     {:$type :foo/bar} #"resource spec not found"
     {:$type :ws/A$v1} #"missing required variables"
-    {:$type :ws/A$v1 :x 1 :y 1 :c {:$type :ws2/B$v1 :s "foo"}} #"value of :y has wrong type"
-    {:$type :ws/A$v1 :x 1 :y false :c {:$type :ws2/B$v1 :s 12}} #"value of :s has wrong type"
+    {:$type :ws/A$v1 :x 1 :y 1 :c {:$type :ws2/B$v1 :s "foo"}} #"value of 'y' has wrong type"
+    {:$type :ws/A$v1 :x 1 :y false :c {:$type :ws2/B$v1 :s 12}} #"value of 's' has wrong type"
     {:$type :ws2/B$v1 :s "foo" :foo "bar"} #"variables not defined on spec"
-    {:$type :ws/C$v1 :xs [1 "two"]} #"value of :xs has wrong type"))
+    {:$type :ws/C$v1 :xs [1 "two"]} #"value of 'xs' has wrong type"))
 
 (deftest literal-eval-tests
   (are [expr]

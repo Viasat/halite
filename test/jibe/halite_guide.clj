@@ -1138,7 +1138,7 @@
 
   (hc :basic
       :my
-      [{:$type :my/Spec$v1, :p "0", :n -1} [:throws "value of :p has wrong type"]])
+      [{:$type :my/Spec$v1, :p "0", :n -1} [:throws "value of 'p' has wrong type"]])
 
   (hc :basic-abstract
       :my
@@ -1554,7 +1554,7 @@
                   (spec :V :concrete
                         (variables [:t :spec/T$v1])))]
       :spec
-      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of :t has wrong type"]])
+      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of 't' has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T []
@@ -1606,7 +1606,7 @@
                   (spec :T :abstract
                         (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
-      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of :s has wrong type"]])
+      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of 's' has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T []
@@ -1618,7 +1618,7 @@
                   (spec :T :concrete
                         (refinements [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
-      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of :s has wrong type"]])
+      [{:$type :spec/U$v1, :s {:$type :spec/T$v1}} [:throws "value of 's' has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T []
@@ -1663,7 +1663,7 @@
                         (refinements [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
                   (spec :T :abstract))]
       :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :s has wrong type"]])
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of 's' has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T []
@@ -1681,7 +1681,7 @@
                   (spec :T :concrete))]
       :spec
       "Since T is concrete, cannot use another type in its place"
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :t has wrong type"]])
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of 't' has wrong type"]])
   (hc [(workspace :spec
                   {:spec/T []
                    :spec/S []
@@ -1725,7 +1725,7 @@
                   (spec :T :concrete))]
       :spec
       "Nonsense to try and use an abstract instance in a place that needs a concrete instance"
-      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of :t has wrong type"]])
+      [{:$type :spec/V$v1, :t {:$type :spec/C$v1}} [:throws "value of 't' has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T []
@@ -1758,7 +1758,7 @@
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
       "This should fail because s is concrete, so it cannot hold a C"
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of :s has wrong type"]])
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)} [:throws "value of 's' has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T []
@@ -1774,7 +1774,7 @@
                   (spec :T :abstract
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
-      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/S$v1}} :t)} [:throws "value of :s has wrong type"]])
+      [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/S$v1}} :t)} [:throws "value of 's' has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T []
@@ -1876,7 +1876,7 @@
                   (spec :T :abstract
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
-      [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:throws "value of :s has wrong type"]])
+      [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:throws "value of 's' has wrong type"]])
 
   (hc [(workspace :spec
                   {:spec/T []
@@ -1891,7 +1891,7 @@
                   (spec :T :concrete
                         (refinements [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
       :spec
-      [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:throws "value of :s has wrong type"]])
+      [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)} [:throws "value of 's' has wrong type"]])
 
   ;; S = T => T concrete
   (hc [(workspace :spec

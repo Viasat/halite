@@ -37,15 +37,15 @@
                    (str/join ", " (map name (:invalid-vars data))))})
 
 (deferr halite-resource-spec-not-found [data]
-        {:msg (str "resource spec not found: " (pr-str (:spec-id data)))})
+        {:msg (format "resource spec not found: %s" (pr-str (:spec-id data)))})
 
 (deferr halite-not-a-value [data]
         {:msg (format "BUG! Not a value: %s" (pr-str (:value data)))})
 
 (deferr halite-no-active-refinement-path [data]
         {:msg (format "No active refinement path from '%s' to '%s'"
-                      (pr-str (symbol (:$type (:value data))))
-                      (pr-str (symbol (:declared-type data))))})
+                      (pr-str (:type data))
+                      (pr-str (:target-type data)))})
 
 (deferr halite-no-abstract [data]
         {:msg "instance cannot contain abstract value"})
@@ -62,7 +62,10 @@
         {:msg "expected namespaced keyword as value of :$type"})
 
 (deferr halite-invalid-field-value [data]
-        {:msg (str "value of " (pr-str (:variable data)) " has wrong type")})
+        {:msg (format "value of '%s' has wrong type" (:variable data))})
+
+(deferr halite-invalid-value-for-context [data]
+        {:msg (format "value of '%s has wrong type" (pr-str (:sym data)))})
 
 (deferr halite-invalid-value [data]
         {:msg "Invalid value"})
@@ -209,6 +212,13 @@
 (deferr halite-empty-has-no-first [data]
         {:msg "empty vector has no first element"})
 
+(deferr halite-refinement-error [data]
+        {:msg (format "Refinement from '%s' failed unexpectedly: %s"
+                      (:type data) (:underlying-error-message data))})
+
+(deferr halite-symbols-not-bound [data]
+        {:msg (format "symbols in type environment are not bound: %s" (str/join " ", (:unbound-symbols data)))})
+
 clojure.pprint/cl-format
 
 (declare eval-expr)
@@ -271,8 +281,9 @@ clojure.pprint/cl-format
     (cond
       (halite-types/spec-id declared-type) (when-not (refines-to? v declared-type)
                                              (throw-err (halite-no-active-refinement-path
-                                                         {:value v
-                                                          :declared-type (halite-types/spec-id declared-type)})))
+                                                         {:type (symbol (:$type v))
+                                                          :value v
+                                                          :target-type (symbol (halite-types/spec-id declared-type))})))
       :else (if-let [elem-type (halite-types/elem-type declared-type)]
               (dorun (map (partial check-against-declared-type elem-type) v))
               nil))))
@@ -358,7 +369,7 @@ clojure.pprint/cl-format
             actual-type (check-fn ctx field-val)]
         (when-not (halite-types/subtype? actual-type field-type)
           (throw-err (halite-invalid-field-value {error-key inst
-                                                  :variable field-kw
+                                                  :variable (name field-kw)
                                                   :expected field-type
                                                   :actual actual-type})))))
     (halite-types/concrete-spec-type t)))
@@ -1111,12 +1122,11 @@ clojure.pprint/cl-format
         result (cond-> inst
                  (not= t (:$type inst)) (-> meta :refinements t))]
     (cond
-      (instance? Exception result) (throw (ex-info (format "Refinement from '%s' failed unexpectedly: %s"
-                                                           (symbol (:$type inst)) (.getMessage ^Exception result))
-                                                   {:form expr}
-                                                   result))
-      (nil? result) (throw (ex-info (format "No active refinement path from '%s' to '%s'"
-                                            (symbol (:$type inst)) (symbol t)) {:form expr}))
+      (instance? Exception result) (throw-err (halite-refinement-error {:type (symbol (:$type inst))
+                                                                        :instance inst
+                                                                        :underlying-error-message (.getMessage ^Exception result)
+                                                                        :form expr}))
+      (nil? result) (throw-err (halite-no-active-refinement-path {:type (symbol (:$type inst)), :value inst, :target-type (symbol t), :form expr}))
       :else result)))
 
 (defn ^:private check-collection-runtime-count [x]
@@ -1189,8 +1199,7 @@ clojure.pprint/cl-format
                                (mapv #(nth % 1) (sort (map vector indexes coll))))
                     'reduce (eval-reduce ctx expr)
                     (apply (or (:impl (get builtins (first expr)))
-                               (throw-err (halite-unknown-function-or-operator {:op (first expr)
-                                                                                :form expr})))
+                               (throw-err (halite-unknown-function-or-operator {:op (first expr), :form expr})))
                            (mapv eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)
       (set? expr) (set (map eval-in-env expr))
@@ -1215,12 +1224,11 @@ clojure.pprint/cl-format
              empty-env
              (halite-envs/bindings env))]
     (when (seq unbound-symbols)
-      (throw (ex-info (str "symbols in type environment are not bound: " (str/join " ", unbound-symbols)) {:tenv tenv :env env})))
+      (throw-err (halite-symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
     (doseq [sym declared-symbols]
       (let [declared-type (get (halite-envs/scope tenv) sym)
             value (eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym))
             actual-type (type-of senv tenv value)]
         (when-not (halite-types/subtype? actual-type declared-type)
-          (throw (ex-info (format "Supplied value of '%s' has wrong type" (name sym))
-                          {:value value :expected declared-type :actual actual-type})))))
+          (throw-err (halite-invalid-field-value {:variable (name sym) :value value :expected declared-type :actual actual-type})))))
     (eval-expr* {:env env :senv senv} expr)))
