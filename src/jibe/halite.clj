@@ -140,8 +140,8 @@
 (deferr halite-let-symbols [data]
         {:msg "even-numbered forms in let binding vector must be symbols"})
 
-(deferr halite-cannot-bind-no-value [data]
-        {:msg "Cannot bind a value to the symbol: $no-value"})
+(deferr halite-cannot-bind-reserved-word [data]
+        {:msg (format "Cannot bind a value to the reserved word: %s" (:sym data))})
 
 (deferr halite-comprehend-binding [data]
         {:msg (format "Binding form for '%s' must have one variable and one collection" (pr-str (:op data)))})
@@ -715,8 +715,9 @@ clojure.pprint/cl-format
       (fn [ctx [sym body]]
         (when-not (symbol? sym)
           (throw-err (halite-let-symbols {:form expr})))
-        (when (= '$no-value sym)
-          (throw-err (halite-cannot-bind-no-value {:form expr})))
+        (when (reserved-words sym)
+          (throw-err (halite-cannot-bind-reserved-word {:sym sym
+                                                        :form expr})))
         (update ctx :tenv halite-envs/extend-scope sym (type-check* ctx body)))
       ctx
       (partition 2 bindings))
@@ -1019,8 +1020,10 @@ clojure.pprint/cl-format
   (eval-expr*
    (reduce
     (fn [ctx [sym body]]
-      (when (= '$no-value sym)
-        (throw (ex-info "Cannot bind a value to the symbol: $no-value" {:bindings bindings :body body})))
+      (when (reserved-words sym)
+        (throw-err (halite-cannot-bind-reserved-word {:sym sym
+                                                      :bindings bindings
+                                                      :body body})))
       (update ctx :env halite-envs/bind sym (eval-expr* ctx body)))
     ctx
     (partition 2 bindings))

@@ -400,7 +400,7 @@
 
       '(let [x $no-value] (if-value x x 1)) #"Disallowed binding.*to :Unset"
       '(let [no-value $no-value] 2) #"Disallowed binding.*to :Unset"
-      '(let [$no-value 5] $no-value) #"Cannot bind a value to the symbol"
+      '(let [$no-value 5] $no-value) #"Cannot bind a value to the reserved word"
       '(if-value 12 true false) #"must be a bare symbol"
       '(when-value 12 true) #"must be a bare symbol"
       '(+ 10 (if-value x $no-value 5)) #"no matching signature for '\+'"
