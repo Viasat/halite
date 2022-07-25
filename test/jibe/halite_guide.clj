@@ -1324,7 +1324,7 @@
 
   (hc :basic
       :my
-      [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :other/Spec$v1) [:throws "Spec not found: 'other/Spec$v1'"]])
+      [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :other/Spec$v1) [:throws "resource spec not found: other/Spec$v1"]])
 
   (hc :basic-2
       :spec
@@ -1424,7 +1424,7 @@
 
   (hc :basic-2
       :spec
-      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/X$v1) [:throws "Spec not found: 'spec/X$v1'"]])
+      [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/X$v1) [:throws "resource spec not found: spec/X$v1"]])
 
   (hc :basic-2
       :spec

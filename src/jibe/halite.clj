@@ -126,13 +126,17 @@
         {:msg "Lookup target must be an instance of known type or non-empty vector"})
 
 (deferr halite-arg-type-mismatch [data]
-        {:msg (format "%s argument to '%s' must be %s"
+        {:msg (format "%s to '%s' must be %s"
                       (condp = (:position data)
-                        0 "First"
-                        1 "Second"
-                        "An")
+                        nil "Argument"
+                        0 "First argument"
+                        1 "Second argument"
+                        "An argument")
                       (pr-str (:op data))
                       (:expected-type-description data))})
+
+(deferr halite-conditional-type [data]
+        {:msg (format "When first argument to '%s' is a vector, second argument must also be a vector" (pr-str (:op data)))})
 
 (deferr halite-let-bindings-even-count [data]
         {:msg "let bindings form must have an even number of forms"})
@@ -198,9 +202,6 @@
 
 (deferr halite-conj-unset [data]
         {:msg (format "cannot conj possibly unset value to %s" (:type-string data))})
-
-(deferr halite-first-argument-set-or-vector [data]
-        {:msg (format "First argument to '%s' must be a set or vector" (pr-str (:op data)))})
 
 clojure.pprint/cl-format
 
@@ -921,12 +922,11 @@ clojure.pprint/cl-format
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/subtype? s (halite-types/coll-type :Value))
-      (throw-err (halite-first-argument-set-or-vector {:op op, :form expr})))
+      (throw-err (halite-arg-type-mismatch {:op op, :position 0, :expected-type-description "a set or vector", :form expr})))
     (when-not (halite-types/subtype? t (halite-types/coll-type :Value))
-      (throw (ex-info (format "Second argument to '%s' must be a set or vector" op) {:form expr})))
+      (throw-err (halite-arg-type-mismatch {:op op, :position 1, :expected-type-description "a set or vector", :form expr})))
     (when (and (halite-types/subtype? s (halite-types/vector-type :Value)) (not (halite-types/subtype? t (halite-types/vector-type :Value))))
-      (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
-                      {:form expr})))
+      (throw-err (halite-conditional-type {:op op, :form expr})))
     (halite-types/meet s
                        (halite-types/change-elem-type s (halite-types/elem-type t)))))
 
@@ -936,11 +936,11 @@ clojure.pprint/cl-format
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     (when-not (halite-types/subtype? s (halite-types/instance-type))
-      (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr :actual s})))
+      (throw-err (halite-arg-type-mismatch {:op 'refine-to, :position 0, :expected-type-description "an instance", :form expr, :actual s})))
     (when-not (halite-types/namespaced-keyword? kw)
-      (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
+      (throw-err (halite-arg-type-mismatch {:op 'refine-to, :position 1, :expected-type-description "a spec id", :form expr})))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
-      (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
+      (throw-err (halite-resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     (halite-types/concrete-spec-type kw)))
 
 (s/defn- type-check-refines-to? :- halite-types/HaliteType
@@ -949,11 +949,11 @@ clojure.pprint/cl-format
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     (when-not (halite-types/subtype? s (halite-types/instance-type))
-      (throw (ex-info "First argument to 'refines-to?' must be an instance" {:form expr})))
+      (throw-err (halite-arg-type-mismatch {:op 'refines-to?, :position 0, :expected-type-description "an instance", :form expr})))
     (when-not (halite-types/namespaced-keyword? kw)
-      (throw (ex-info "Second argument to 'refines-to?' must be a spec id" {:form expr})))
+      (throw-err (halite-arg-type-mismatch {:op 'refines-to?, :position 1, :expected-type-description "a spec id", :form expr})))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
-      (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
+      (throw-err (halite-resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     :Boolean))
 
 (s/defn- type-check-valid :- halite-types/HaliteType
@@ -963,7 +963,7 @@ clojure.pprint/cl-format
       (halite-types/spec-type? t) (halite-types/maybe-type t)
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) t
-      :else (throw (ex-info "Argument to 'valid' must be an instance of known type" {:form expr})))))
+      :else (throw-err (halite-arg-type-mismatch {:op 'valid, :expected-type-description "an instance of known type", :form expr})))))
 
 (s/defn- type-check-valid? :- halite-types/HaliteType
   [ctx :- TypeContext, [_valid? subexpr :as expr]]
@@ -972,7 +972,7 @@ clojure.pprint/cl-format
       (halite-types/spec-type? t) :Boolean
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
-      :else (throw (ex-info "Argument to 'valid?' must be an instance of known type" {:form expr})))))
+      :else (throw-err (halite-arg-type-mismatch {:op 'valid?, :expected-type-description "an instance of known type", :form expr})))))
 
 (s/defn- type-check* :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
@@ -1015,8 +1015,7 @@ clojure.pprint/cl-format
                   'reduce (type-check-reduce ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
-    :else (throw (ex-info "Syntax error" {:form expr
-                                          :form-class (class expr)}))))
+    :else (throw-err (halite-syntax-error {:form expr, :form-class (class expr)}))))
 
 (s/defn type-check :- halite-types/HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,

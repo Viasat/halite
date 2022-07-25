@@ -682,7 +682,7 @@
            ExceptionInfo #"No active refinement path from 'ws/D' to 'ws/E'"
            (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/D :x 1} :ws/E))))
       (is (thrown-with-msg?
-           ExceptionInfo #"Spec not found: 'foo/Bar'"
+           ExceptionInfo #"resource spec not found: foo/Bar"
            (halite/type-check senv tenv '(refine-to {:$type :ws/E} :foo/Bar))))
       (is (thrown-with-msg?
            ExceptionInfo #"First argument to 'refine-to' must be an instance"
@@ -805,7 +805,7 @@
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv2 expr))
 
       '(refines-to? ax) #"Wrong number of arguments"
-      '(refines-to? ax :foo/Bar) #"Spec not found: 'foo/Bar'"
+      '(refines-to? ax :foo/Bar) #"resource spec not found: foo/Bar"
       '(refines-to? (+ 1 2) :ws/A) #"First argument to 'refines-to\?' must be an instance"
       '(refines-to? ax "foo") #"Second argument to 'refines-to\?' must be a spec id")
 
