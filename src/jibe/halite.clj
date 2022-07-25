@@ -67,6 +67,9 @@
 (deferr halite-invalid-value [data]
         {:msg "Invalid value"})
 
+(deferr halite-invalid-expression [data]
+        {:msg "Invalid expression"})
+
 (deferr halite-literal-may-not-evaluate [data]
         {:msg (format "%s literal element may not always evaluate to a value"
                       (:coll-type-string data))})
@@ -202,6 +205,9 @@
 
 (deferr halite-conj-unset [data]
         {:msg (format "cannot conj possibly unset value to %s" (:type-string data))})
+
+(deferr halite-empty-has-no-first [data]
+        {:msg "empty vector has no first element"})
 
 clojure.pprint/cl-format
 
@@ -1157,7 +1163,7 @@ clojure.pprint/cl-format
                     'intersection (reduce set/intersection (map eval-in-env (rest expr)))
                     'difference (apply set/difference (map eval-in-env (rest expr)))
                     'first (or (first (eval-in-env (second expr)))
-                               (throw (ex-info "empty vector has no first element" {:form expr})))
+                               (throw-err (halite-empty-has-no-first {:form expr})))
                     'rest (let [arg (eval-in-env (second expr))]
                             (if (empty? arg) [] (subvec arg 1)))
                     'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))
@@ -1183,13 +1189,13 @@ clojure.pprint/cl-format
                                (mapv #(nth % 1) (sort (map vector indexes coll))))
                     'reduce (eval-reduce ctx expr)
                     (apply (or (:impl (get builtins (first expr)))
-                               (throw (ex-info (str "Undefined operator: " (pr-str (first expr)))
-                                               {:form expr})))
+                               (throw-err (halite-unknown-function-or-operator {:op (first expr)
+                                                                                :form expr})))
                            (mapv eval-in-env (rest expr))))
       (vector? expr) (mapv eval-in-env expr)
       (set? expr) (set (map eval-in-env expr))
       (= :Unset expr) :Unset
-      :else (throw (ex-info "Invalid expression" {:form expr})))))
+      :else (throw-err (halite-invalid-expression {:form expr})))))
 
 (s/defn eval-expr :- s/Any
   "Type check a halite expression against the given type environment,
