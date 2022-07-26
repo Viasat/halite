@@ -4,8 +4,11 @@
 (ns jibe.halite.test-propagate
   (:require [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.propagate :as hp]
+            [jibe.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [jibe.halite.transpile.ssa :as ssa]
-            [schema.test])
+            [schema.core :as s]
+            [schema.test]
+            [viasat.choco-clj-opt :as choco-clj])
   (:use clojure.test))
 
 ;; Prismatic schema validation is too slow to leave on by default for these tests.
@@ -971,3 +974,75 @@
     '(get foo :bar) '(get foo :bar)
     '(let [x (get foo :bar)] (get x :baz)) '(get (get foo :bar) :baz)))
 
+#_(deftest example-abstract-propagation
+  (s/with-fn-validation
+    (let [senv (halite-envs/spec-env
+                '{:ws/W ; 0
+                  {:abstract? true
+                   :spec-vars {:wn "Integer"}
+                   :constraints [["wn_range" (and (< 2 wn) (< wn 8))]]
+                   :refines-to {}}
+                  :ws/A ; 1
+                  {:spec-vars {:a "Integer"}
+                   :constraints [["ca" (< a 6)]]
+                   :refines-to
+                   {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
+                  :ws/B ; 2
+                  {:spec-vars {:b "Integer"}
+                   :constraints [["cb" (< 5 b)]]
+                   :refines-to
+                   {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
+                  :ws/C ; 3
+                  {:spec-vars {:w :ws/W}
+                   :constraints []
+                   :refines-to {}}})
+          ;; Hand-written choco spec for bound {:$type :ws/C}
+          choco-spec '{:vars {w<-? #{1 2}
+                              w<-ws$A|a :Int
+                              w<-ws$B|b :Int}
+                       :optionals #{w<-ws$A|a w<-ws$B|b}
+                       :constraints
+                       #{(if (= 1 w<-?) ; ws/A
+                           (if-value w<-ws$A|a
+                             (and
+                              (< w<-ws$A|a 6)
+                              (< 2 (+ w<-ws$A|a 1))
+                              (< (+ w<-ws$A|a 1) 8))
+                             false)
+                           (if (= 2 w<-?) ; ws/B
+                             (if-value w<-ws$B|b
+                               (and
+                                (< 5 w<-ws$B|b)
+                                (< 2 (- w<-ws$B|b 2))
+                                (< (- w<-ws$B|b 2) 8))
+                               false)
+                             false))}}
+          ;; Other possible bounds: {:$type :ws/C :w {:$type :ws/A}}
+          ;;                        {:$type :ws/C :w {:$in {:ws/A {}, :ws/B {}}}}
+          ;;                        {:$type :ws/C :w {:$refines-to {:ws/W {:w 7}}}}
+          ]
+      (are [in out]
+          (= out (choco-clj/propagate choco-spec in))
+
+        {} '{w<-? #{1 2}, w<-ws$A|a [-1000 1000 :Unset], w<-ws$B|b [-1000 1000 :Unset]}
+        '{w<-? 1} nil
+        '{w<-? 2} nil
+        ))))
+
+(comment "
+Stuff to do/remember regarding abstractness!
+
+We'll need to extend the representation of a bound to handle alternative concrete types.
+
+We'll need to handle that extension on the INPUT side, as well as producing the output.
+")
+
+(comment
+  {:$type :ws/A}
+  =>
+  {:$type :ws/A
+   :a {:$in [1 100]}
+   :$refines-to
+   {:ws/B {:b 12 :d {:$refines-to ...} :$expr {}}
+    :ws/C {:c {:$in #{1 3 5}}}}
+   })
