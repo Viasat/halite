@@ -12,6 +12,7 @@
 
 (s/defschema Refinement
   {:expr s/Any
+   (s/optional-key :name) s/Str
    (s/optional-key :inverted?) s/Bool})
 
 (def primitive-types (into ["String" "Integer"

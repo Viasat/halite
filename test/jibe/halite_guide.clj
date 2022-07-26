@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite-guide
-  (:require [jibe.halite :as halite]
+  (:require [jibe.data.model :as model]
+            [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-lint :as halite-lint]
@@ -2550,5 +2551,31 @@
   (h (error #{}) [:throws "no matching signature for 'error'"])
 
   (hc :basic :my [(error {:$type :my/Spec$v1, :n 1, :p 1}) [:throws "no matching signature for 'error'"]]))
+
+(deftest test-col-row-in-exceptions
+  (try
+    (test-setup-specs/setup-specs [(workspace :my
+                                              {:my/Spec []}
+                                              (spec :Spec :concrete
+                                                    (variables [:p "Integer"]
+                                                               [:n "Integer"]
+                                                               [:o "Integer" :optional])
+                                                    (refinements [:as_b :to :spec/B$v1 [:halite "
+(+ p
+   n asdf o
+   p)"]])))])
+    (catch ExceptionInfo e
+      (is (= "Exception validating spec "
+             (ex-message e)))
+      (is (= #{:end-row :user-visible-error? :col :jibe.data.model/spec-name :err-id :form :end-col :refinement-name :row}
+             (set (keys (ex-data e)))))
+      (is (= {:err-id :halite-undefined-symbol
+              :jibe.data.model/spec-name :my/Spec
+              :refinement-name "as_b"
+              :row 3
+              :end-row 3
+              :col 6
+              :end-col 10}
+             (select-keys (ex-data e) [:row :end-row :col :end-col :err-id :refinement-name ::model/spec-name]))))))
 
 ;; (time (run-tests))
