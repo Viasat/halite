@@ -65,7 +65,7 @@
     (throw (ex-info "Invalid optional specs" {:optionals (filter (comp symbol?) optionals)})))
   (doseq [var-sym optionals]
     (when-not (contains? vars var-sym)
-      (throw (ex-info (format "Variable not defined: '%s' var-sym") {}))))
+      (throw (ex-info (format "Variable not defined: '%s'" var-sym) {}))))
 
   ;; TODO: Deal with name collisions
   (let [witness-map (zipmap optionals (map #(symbol (str (name %) "?")) optionals))
