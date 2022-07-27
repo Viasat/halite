@@ -460,7 +460,7 @@
         (let [[_value? nested-if-id] val?-form
               [nested-if-form] (ssa/deref-id dgraph nested-if-id)
               value!-nested-if-id (ssa/find-form dgraph (list '$value! nested-if-id))]
-          (when (and (some? value!-nested-if-id) (seq? nested-if-form) (= 'if (first nested-if-form)))
+          (when (and (seq? nested-if-form) (= 'if (first nested-if-form)))
             (let [[[_if nested-pred-id nested-then-id nested-else-id]] (ssa/deref-id dgraph nested-if-id)
                   rewrite-branch (fn [dgraph branch-id]
                                    (let [[_ branch-htype] (ssa/deref-id dgraph branch-id)]
@@ -470,7 +470,9 @@
                                                           (list 'if (list '$value? branch-id)
                                                                 rewritten-then-id
                                                                 else-id)))
-                                       (ssa/replace-in-expr dgraph then-id {value!-nested-if-id branch-id}))))
+                                       (if value!-nested-if-id
+                                         (ssa/replace-in-expr dgraph then-id {value!-nested-if-id branch-id})
+                                         [dgraph then-id]))))
                   [dgraph new-then-id] (rewrite-branch dgraph nested-then-id)
                   [dgraph new-else-id] (rewrite-branch dgraph nested-else-id)]
               (with-meta (list 'if nested-pred-id new-then-id new-else-id) {:dgraph dgraph}))))))))

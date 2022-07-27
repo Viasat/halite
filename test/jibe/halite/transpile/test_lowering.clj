@@ -606,7 +606,9 @@
     (let [senv '{:ws/A
                  {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :p "Boolean"}
                   :constraints []
-                  :refines-to {}}}]
+                  :refines-to {}}
+                 :ws/B
+                 {:spec-vars {} :constraints [] :refines-to {}}}]
 
       (are [expr lowered]
            (= lowered
@@ -653,7 +655,15 @@
                    0)
                  (if ($value? v)
                    (+ ($value! v) 1)
-                   0)))))))
+                   0)))
+
+        '(let [b (if p {:$type :ws/B} $no-value)]
+           (if-value b true false))
+        '($do!
+          (if p {:$type :ws/B} $no-value)
+          (if p
+            true
+            (if ($value? $no-value) true false)))))))
 
 (deftest test-lowering-when-example
   (binding [ssa/*next-id* (atom 0)
