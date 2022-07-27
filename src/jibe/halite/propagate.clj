@@ -331,7 +331,8 @@
   [senv :- (s/protocol halite-envs/SpecEnv), flattened-vars :- FlattenedVars]
   (let [witness-var (->> flattened-vars :$witness first symbol)
         mandatory-vars (::mandatory flattened-vars)
-        mandatory-clause (apply list '= witness-var (map #(list 'if-value (symbol %) true false) (sort mandatory-vars)))
+        mandatory-clause (when (seq mandatory-vars)
+                           (apply list '= witness-var (map #(list 'if-value (symbol %) true false) (sort mandatory-vars))))
         optional-clauses (->> (dissoc flattened-vars ::spec-id)
                               (remove (comp mandatory-vars first second))
                               (filter (fn [[var-kw info]]
@@ -345,7 +346,8 @@
                                              (list 'if-value (symbol (first info)) true false)
                                              (symbol (first (:$witness info))))
                                            witness-var))))]
-    (mk-junct 'and (cons mandatory-clause optional-clauses))))
+    (mk-junct 'and (cond->> optional-clauses
+                     mandatory-clause (cons mandatory-clause)))))
 
 (s/defn ^:private optionality-constraints :- SpecInfo
   [sctx :- SpecCtx, flattened-vars :- FlattenedVars, spec-info :- SpecInfo]
