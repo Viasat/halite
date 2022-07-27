@@ -381,6 +381,7 @@
       [dgraph new-id]
       (cond
         (or (int? form) (boolean? form)) [dgraph id]
+        (= :Unset form) [dgraph id]
         (symbol? form) (if-let [replacement (replacements form)]
                          (add-derivation dgraph [(assoc d 0 replacement) htype])
                          [dgraph id])

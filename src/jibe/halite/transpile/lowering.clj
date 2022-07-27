@@ -477,7 +477,7 @@
                   [dgraph new-else-id] (rewrite-branch dgraph nested-else-id)]
               (with-meta (list 'if nested-pred-id new-then-id new-else-id) {:dgraph dgraph}))))))))
 
-(s/defn ^:private push-if-value-into-if :- SpecCtx
+(s/defn push-if-value-into-if :- SpecCtx
   [sctx :- SpecCtx]
   (rewrite-sctx sctx push-if-value-into-if-in-expr))
 
@@ -511,24 +511,11 @@
   (let [[dgraph guard-id] (validity-guard sctx ctx id)]
     (vary-meta (list 'if guard-id id false) assoc :dgraph dgraph)))
 
-(s/defn ^:private explode-side-effect-instances
-  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
-  (when (and (seq? form) (= '$do! (first form)))
-    (let [side-effects (->> form (rest) (butlast))
-          side-effects' (->> side-effects
-                             (mapcat #(let [[arg] (ssa/deref-id dgraph %)]
-                                        (if (map? arg)
-                                          (vals (dissoc arg :$type))
-                                          [%]))))]
-      (when (not= side-effects side-effects')
-        `(~'$do! ~@side-effects' ~(last form))))))
-
 (s/defn eliminate-runtime-constraint-violations :- SpecCtx
   "Rewrite the constraints of every spec to eliminate the possibility of runtime constraint
   violations (but NOT runtime errors in general!). This is not a semantics-preserving operation.
 
-  Every constraint expression <expr> is rewritten as (if <(validity-guard expr)> <expr> false).
-  Afterwards, all instance literals that are in $do! forms, but not at the tail, are 'exploded'."
+  Every constraint expression <expr> is rewritten as (if <(validity-guard expr)> <expr> false)."
   [sctx :- SpecCtx]
   (->> sctx
       ;; Does this actually have to be done in dependency order? Why or why not?
@@ -537,7 +524,6 @@
          :rewrite-fn eliminate-runtime-constraint-violations-in-expr
          :nodes :constraints}
         deps-via-instance-literal)
-       (halite-rewriting/->>rewrite-sctx explode-side-effect-instances)
        (simplify)))
 
 (s/defn ^:private cancel-get-of-instance-literal-in-spec :- SpecInfo

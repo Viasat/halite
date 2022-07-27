@@ -116,138 +116,6 @@
     (mapcat leaves (vals m))
     [m]))
 
-(s/defn ^:private inline-gets
-  ([expr] (inline-gets {} expr))
-  ([bound-gets :- {s/Symbol s/Any} expr]
-   (cond
-     (or (boolean? expr) (integer? expr)) expr
-     (symbol? expr) (get bound-gets expr expr)
-     (seq? expr) (let [[op & args] expr]
-                   (condp = op
-                     'let (let [[bindings body] args
-                                [bound-gets bindings] (reduce
-                                                       (fn [[bound-gets bindings] [var-sym expr]]
-                                                         (let [expr' (inline-gets bound-gets expr)]
-                                                           (if (or (symbol? expr') (and (seq? expr') (= 'get (first expr'))))
-                                                             [(assoc bound-gets var-sym expr') bindings]
-                                                             [bound-gets (conj bindings var-sym expr')])))
-                                                       [bound-gets []]
-                                                       (partition 2 bindings))]
-                            (cond->> (inline-gets bound-gets body)
-                              (seq bindings) (list 'let bindings)))
-                     'get (let [[subexpr kw] args]
-                            (list 'get (inline-gets bound-gets subexpr) kw))
-                     (->> args (map (partial inline-gets bound-gets)) (apply list op))))
-     :else (throw (ex-info "BUG! Cannot inline gets" {:bound-gets bound-gets :expr expr})))))
-
-(s/defn ^:private collapse-get-chain :- (s/cond-pre FlattenedVar FlattenedVars)
-  [vars :- FlattenedVars get-chain]
-  (let [[_get expr var-kw] get-chain
-        info (cond
-               (symbol? expr)
-               (or (vars (keyword expr))
-                   (throw (ex-info "Undefined" {:symbol expr :vars vars :skip-constraint? true})))
-
-               (and (seq? expr) (= 'get (first expr)))
-               (collapse-get-chain vars expr)
-
-               :else (throw (ex-info "Not a get chain" {:expr get-chain})))]
-    (or (some-> var-kw info)
-        (throw (ex-info "Couldn't flatten get chain, sub-expr doesn't have var"
-                        {:info info :var-kw var-kw :skip-constraint? true})))))
-
-(s/defn ^:private flatten-expr
-  [vars :- FlattenedVars, scope :- #{s/Symbol}, expr]
-  (cond
-    (or (boolean? expr) (integer? expr) (contains? scope expr)) expr
-    (symbol? expr) (if (scope expr)
-                     expr
-                     (let [info (or (some-> expr keyword vars)
-                                    (throw (ex-info "Undefined" {:symbol expr :vars vars :skip-constraint? true :scope scope})))]
-                       (if (vector? info)
-                         (symbol (first info))
-                         (throw (ex-info "BUG! Naked composite symbol" {:symbol expr :vars vars})))))
-    (seq? expr) (let [[op & args] expr]
-                  (condp = op
-                    'let (let [[bindings body] args
-                               [bindings scope] (reduce
-                                                 (fn [[bindings scope] [var-sym expr]]
-                                                   [(conj bindings var-sym (flatten-expr vars scope expr)) (conj scope var-sym)])
-                                                 [[] scope]
-                                                 (partition 2 bindings))]
-                           (list 'let bindings (flatten-expr vars scope body)))
-                    'get (let [info (collapse-get-chain vars expr)]
-                           (if (vector? info)
-                             (symbol (first info))
-                             (throw (ex-info "BUG! get chain collapsed to composite var"
-                                             {:vars vars :expr expr :info info}))))
-                    'if-value (let [[value then else] args
-                                    then' (flatten-expr vars scope then)
-                                    else' (flatten-expr vars scope else)
-                                    info (if (and (seq? value) (= 'get (first value)))
-                                           (collapse-get-chain vars value)
-                                           (or (some-> value keyword vars)
-                                               (throw (ex-info "Undefined" {:symbol value :vars vars :skip-constraint? true}))))]
-                                (if (vector? info)
-                                  (list 'if-value (symbol (first info)) then' else')
-                                  (list 'if (symbol (first (:$witness info)))
-                                        (reduce
-                                         (fn [then mandatory]
-                                           (list 'if-value (symbol mandatory) then else'))
-                                         then'
-                                         (::mandatory info))
-                                        else')))
-                    (->> args (map (partial flatten-expr vars scope)) (apply list op))))
-    :else (throw (ex-info "BUG! Cannot flatten expr" {:vars vars :expr expr}))))
-
-(s/defn ^:private guard-constraint-in-optional-context
-  [witnesses :- [halite-types/BareSymbol]
-   mandatories :- #{halite-types/BareSymbol}
-   boolean-expr]
-  (as-> boolean-expr expr
-    (reduce
-     (fn [expr var-sym] (list 'if-value var-sym expr false))
-     expr
-     (sort mandatories))
-    (list 'if (mk-junct 'and witnesses) expr true)))
-
-(s/defn ^:private inline-spec-constraints
-  [sctx :- SpecCtx
-   tenv :- (s/protocol halite-envs/TypeEnv)
-   vars :- FlattenedVars
-   witnesses :- [halite-types/BareSymbol]
-   mandatories :- #{halite-types/BareSymbol}
-   spec-info :- SpecInfo]
-  (let [senv (ssa/as-spec-env sctx)
-        spec-to-inline (-> vars ::spec-id sctx)
-        old-scope (->> spec-to-inline :spec-vars keys (map symbol) set)]
-    (reduce
-     (fn [{:keys [derivations] :as spec-info} [cname id]]
-       (let [expr (ssa/form-from-ssa old-scope (:derivations spec-to-inline) id)]
-         (if-let [expr (try
-                         (->> expr (inline-gets) (flatten-expr vars #{'no-value}))
-                         ;; TODO: This keeps masking implementation errors, we need a safer way to exclude constraints!
-                         (catch clojure.lang.ExceptionInfo ex
-                           (when-not (:skip-constraint? (ex-data ex))
-                             (throw ex))))]
-           (let [[dgraph id] (->> expr
-                                  (guard-constraint-in-optional-context witnesses mandatories)
-                                  (ssa/form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations}))]
-             (-> spec-info
-                 (assoc :derivations dgraph)
-                 (update :constraints conj [cname id])))
-           spec-info)))
-     spec-info
-     (:constraints spec-to-inline))))
-
-(defn- add-constraint
-  [sctx {:keys [derivations] :as spec-info} cname form]
-  (let [ctx (ssa/make-ssa-ctx sctx spec-info)
-        [dgraph id] (ssa/form-to-ssa ctx form)]
-    (-> spec-info
-        (assoc :derivations dgraph)
-        (update :constraints conj [cname id]))))
-
 (s/defn ^:private lower-spec-bound :- choco-clj/VarBounds
   ([vars :- FlattenedVars, spec-bound :- SpecBound]
    (lower-spec-bound vars false spec-bound))
@@ -306,27 +174,6 @@
     {}
     (dissoc spec-bound :$type))))
 
-(s/defn ^:private flatten-constraints :- SpecInfo
-  ([sctx :- SpecCtx, tenv :- (s/protocol halite-envs/TypeEnv), vars :- FlattenedVars, spec-info :- SpecInfo]
-   (flatten-constraints sctx tenv vars [] #{} spec-info))
-  ([sctx :- SpecCtx
-    tenv :- (s/protocol halite-envs/TypeEnv)
-    vars :- FlattenedVars
-    witnesses :- [halite-types/BareSymbol]
-    mandatories :- #{halite-types/BareSymbol}
-    spec-info :- SpecInfo]
-   (let [senv (ssa/as-spec-env sctx)
-         spec-vars (-> vars ::spec-id sctx :spec-vars)]
-     (->> (dissoc vars ::spec-id ::mandatory :$witness)
-          (filter (comp map? second))
-          (reduce
-           (fn [spec-info [var-kw nested-vars]]
-             (let [witness-var (some-> nested-vars :$witness first symbol)
-                   witnesses (cond-> witnesses witness-var (conj witness-var))
-                   mandatories (cond-> mandatories witness-var (into (map symbol (::mandatory nested-vars))))]
-               (flatten-constraints sctx tenv nested-vars witnesses mandatories spec-info)))
-           (inline-spec-constraints sctx tenv vars witnesses mandatories spec-info))))))
-
 (s/defn ^:private optionality-constraint :- s/Any
   [senv :- (s/protocol halite-envs/SpecEnv), flattened-vars :- FlattenedVars]
   (let [witness-var (->> flattened-vars :$witness first symbol)
@@ -349,17 +196,41 @@
     (mk-junct 'and (cond->> optional-clauses
                      mandatory-clause (cons mandatory-clause)))))
 
-(s/defn ^:private optionality-constraints :- SpecInfo
-  [sctx :- SpecCtx, flattened-vars :- FlattenedVars, spec-info :- SpecInfo]
-  (let [senv (ssa/as-spec-env sctx)]
-    (->> flattened-vars
-         (filter (fn [[var-kw info]] (and (map? info) (contains? info :$witness))))
-         (reduce
-          (fn [spec-info [var-kw info]]
-            (->> (optionality-constraint senv info)
-                 (add-constraint sctx spec-info (str "$" (name (first (:$witness info)))))
-                 (optionality-constraints sctx info)))
-          spec-info))))
+(s/defn ^:private optionality-constraints :- halite-envs/SpecInfo
+  [senv :- (s/protocol halite-envs/SpecEnv), flattened-vars :- FlattenedVars, spec-info :- halite-envs/SpecInfo]
+  (->> flattened-vars
+       (filter (fn [[var-kw info]] (and (map? info) (contains? info :$witness))))
+       (reduce
+        (fn [spec-info [var-kw info]]
+          (let [cexpr (optionality-constraint senv info)
+                spec-info (if (= true cexpr)
+                            spec-info
+                            (->> [(str "$" (name (first (:$witness info)))) cexpr]
+                                 (update spec-info :constraints conj)))]
+            (optionality-constraints senv info spec-info)))
+        spec-info)))
+
+(s/defn ^:private guard-optional-instance-literal
+  [[witness-kw htype] mandatory inst-expr]
+  (->> mandatory
+       (reduce
+        (fn [inst-expr var-kw]
+          (list 'if-value (symbol var-kw) inst-expr '$no-value))
+        inst-expr)
+       (list 'when (symbol witness-kw))))
+
+(s/defn ^:private flattened-vars-as-instance-literal
+  [{::keys [mandatory spec-id] :keys [$witness] :as flattened-vars} :- FlattenedVars]
+  (cond->>
+   (reduce
+    (fn [inst-expr [var-kw v]]
+      (assoc inst-expr var-kw
+             (if (vector? v)
+               (symbol (first v))
+               (flattened-vars-as-instance-literal v))))
+    {:$type spec-id}
+    (dissoc flattened-vars ::spec-id ::mandatory :$witness))
+    $witness (guard-optional-instance-literal $witness mandatory)))
 
 (s/defn spec-ify-bound :- halite-envs/SpecInfo
   "Compile the spec-bound into a self-contained halite spec that explicitly states the constraints
@@ -372,28 +243,13 @@
   However, the expressed bound is generally not 'tight': there will usually be valid instances of the bound
   that do not correspond to any valid instance of the bounded spec."
   [senv :- (s/protocol halite-envs/SpecEnv), spec-bound :- SpecBound]
-  (binding [ssa/*next-id* (atom 0)]
-    (let [spec-id (:$type spec-bound)
-          sctx (->> spec-id
-                    (ssa/build-spec-ctx senv)
-                    (lowering/lower)
-                    ;; below this line, we're changing semantics
-                    (lowering/eliminate-runtime-constraint-violations)
-                    (fixpoint lowering/cancel-get-of-instance-literal)
-                    (lowering/eliminate-dos))
-          flattened-vars (flatten-vars senv spec-bound)
-          new-spec {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
-                    :constraints []
-                    :refines-to {}}
-          tenv (halite-envs/type-env-from-spec senv new-spec)]
-      (-> new-spec
-          (assoc :derivations {})
-          (->> (flatten-constraints sctx tenv flattened-vars)
-               (optionality-constraints sctx flattened-vars)
-               (assoc {} :new/spec)
-               (simplify)
-               :new/spec)
-          (ssa/spec-from-ssa)))))
+  ;; First, flatten out the variables we'll need.
+  (let [flattened-vars (flatten-vars senv spec-bound)]
+    (->>
+     {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
+      :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]
+      :refines-to {}}
+     (optionality-constraints senv flattened-vars))))
 
 ;;;;;;;;;;; Conversion to Choco ;;;;;;;;;
 
@@ -505,11 +361,24 @@
   ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- SpecBound]
    (propagate senv default-options initial-bound))
   ([senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, initial-bound :- SpecBound]
-   (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
+   (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)
+             ssa/*next-id* (atom 0)]
      (let [flattened-vars (flatten-vars senv initial-bound)
-           lowered-bounds (lower-spec-bound flattened-vars initial-bound)]
-       (->> initial-bound
-            (spec-ify-bound senv)
-            (to-choco-spec senv)
-            (#(choco-clj/propagate % lowered-bounds))
-            (to-spec-bound senv (:$type initial-bound)))))))
+           lowered-bounds (lower-spec-bound flattened-vars initial-bound)
+           spec-ified-bound (spec-ify-bound senv initial-bound)]
+       (-> senv
+           (ssa/build-spec-ctx (:$type initial-bound))
+           (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound))
+           (lowering/lower)
+           (lowering/eliminate-runtime-constraint-violations)
+           (lowering/eliminate-dos)
+           ;; TODO: Figure out why these have to be done together to get the tests to pass...
+           (->> (fixpoint #(-> %
+                               lowering/cancel-get-of-instance-literal
+                               lowering/push-if-value-into-if
+                               simplify)))
+           :$propagate/Bounds
+           (ssa/spec-from-ssa)
+           (->> (to-choco-spec senv))
+           (choco-clj/propagate lowered-bounds)
+           (->> (to-spec-bound senv (:$type initial-bound))))))))

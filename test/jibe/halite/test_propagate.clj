@@ -6,6 +6,9 @@
             [jibe.halite.propagate :as hp]
             [jibe.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [jibe.halite.transpile.ssa :as ssa]
+            [jibe.halite.transpile.lowering :as lowering]
+            [jibe.halite.transpile.util :refer [fixpoint]]
+            [jibe.halite.transpile.simplify :as simplify]
             [schema.core :as s]
             [schema.test]
             [viasat.choco-clj-opt :as choco-clj])
@@ -32,65 +35,8 @@
 
     (is (= '{:spec-vars {:x "Integer", :y "Integer", :b "Boolean"}
              :constraints
-             [["$all" (let [$42 (abs (- x y))]
-                        (and (and (< 5 $42)
-                                  (< $42 10))
-                             (= b (< x y))))]]
+             [["vars" (valid? {:$type :ws/A :x x :y y :b b})]]
              :refines-to {}}
-           (hp/spec-ify-bound senv {:$type :ws/A})))))
-
-(deftest test-spec-ify-bound-on-instance-valued-exprs
-  ;; only integer and boolean valued variables, but expressions may be instance valued
-  (let [senv (halite-envs/spec-env
-              '{:ws/A
-                {:spec-vars {:an "Integer"}
-                 :constraints [["a1" (< an 10)]
-                               ["a2" (< an (get {:$type :ws/B :bn (+ 1 an)} :bn))]]
-                 :refines-to {}}
-                :ws/B
-                {:spec-vars {:bn "Integer"}
-                 :constraints [["b1" (< 0 (get {:$type :ws/C :cn bn} :cn))]]
-                 :refines-to {}}
-                :ws/C
-                {:spec-vars {:cn "Integer"}
-                 :constraints [["c1" (= 0 (mod cn 2))]]
-                 :refines-to {}}})]
-    (is (= '{:spec-vars {:an "Integer"}
-             :refines-to {}
-             :constraints
-             [["$all" (let [$96 (+ 1 an)]
-                        (and (< an 10)
-                             (if (if (= 0 (mod $96 2))
-                                   (< 0 $96)
-                                   false)
-                               (< an $96)
-                               false)))]]}
-           (hp/spec-ify-bound senv {:$type :ws/A})))))
-
-(deftest test-spec-ify-bound-on-ifs-and-instance-literals
-  (let [senv (halite-envs/spec-env
-              '{:ws/A
-                {:spec-vars {:an "Integer", :ab "Boolean"}
-                 :constraints [["a1" (not=
-                                      (if ab
-                                        {:$type :ws/B :bn an}
-                                        {:$type :ws/B :bn 12})
-                                      {:$type :ws/B :bn (+ an 1)})]]
-                 :refines-to {}}
-                :ws/B
-                {:spec-vars {:bn "Integer"}
-                 :constraints [["b1" (<= (div 10 bn) 10)]]
-                 :refines-to {}}})]
-    (is (= '{:spec-vars {:an "Integer" :ab "Boolean"}
-             :refines-to {}
-             :constraints
-             [["$all"  (let [$91 (+ an 1)]
-                         (if (and (if ab
-                                    (<= (div 10 an) 10)
-                                    (<= (div 10 12) 10))
-                                  (<= (div 10 $91) 10))
-                           (not= (if ab an 12) $91)
-                           false))]]}
            (hp/spec-ify-bound senv {:$type :ws/A})))))
 
 (deftest test-spec-ify-bound-with-composite-specs
@@ -107,161 +53,10 @@
       (is (= '{:spec-vars {:a1|x "Integer", :a1|y "Integer", :a2|x "Integer", :a2|y "Integer"}
                :refines-to {}
                :constraints
-               [["$all" (and
-                         (and (< a1|x a2|x) (< a1|y a2|y))
-                         (and (< 0 a1|x) (< 0 a1|y))
-                         (< (+ a1|x a1|y) 20)
-                         (and (< 0 a2|x) (< 0 a2|y))
-                         (< (+ a2|x a2|y) 20))]]}
-             (hp/spec-ify-bound senv {:$type :ws/B})))))
-
-  (testing "composition and instance literals"
-    (let [senv (halite-envs/spec-env
-                '{:ws/C
-                  {:spec-vars {:m "Integer", :n "Integer"}
-                   :constraints [["c1" (>= m n)]]
-                   :refines-to {}}
-
-                  :ws/D
-                  {:spec-vars {:c :ws/C :m "Integer"}
-                   :constraints [["c1" (= c (let [a 2
-                                                  c {:$type :ws/C :m (get c :n) :n (* a m)}
-                                                  b 3] c))]]
-                   :refines-to {}}})]
-      (is (= '{:spec-vars {:c|m "Integer", :c|n "Integer", :m "Integer"}
-               :refines-to {}
-               :constraints
-               [["$all" (let [$64 (* 2 m), $67 (<= $64 c|n)]
-                          (and (if $67 (and (= c|m c|n) (= c|n $64)) false) (<= c|n c|m)))]]}
-             (hp/spec-ify-bound senv {:$type :ws/D})))))
-
-  (testing "composition of recursive specs"
-    ;; Note that due to unconditional recursion there are no finite valid instances of A or C!
-    ;; That doesn't prevent us from making the idea of a bound on a recursive spec finite and
-    ;; well-defined.
-    (let [senv (halite-envs/spec-env
-                '{:ws/A
-                  {:spec-vars {:b :ws/B :c :ws/C}
-                   :constraints [["a1" (= (get b :bn) (get c :cn))]
-                                 ["a2" (if (> (get b :bn) 0)
-                                         (< (get b :bn)
-                                            (get (get (get c :a) :b) :bn))
-                                         true)]]
-                   :refines-to {}}
-                  :ws/B
-                  {:spec-vars {:bn "Integer" :bp "Boolean"}
-                   :constraints [["b1" (if bp (<= bn 10) (>= bn 10))]]
-                   :refines-to {}}
-                  :ws/C
-                  {:spec-vars {:a :ws/A :cn "Integer"}
-                   :constraints []
-                   :refines-to {}}})]
-      (are [bound choco-spec]
-           (= choco-spec (hp/spec-ify-bound senv bound))
-
-        {:$type :ws/A}
-        '{:spec-vars {:b|bn "Integer", :b|bp "Boolean", :c|cn "Integer"}
-          :refines-to {}
-          :constraints
-          [["$all" (and
-                    (= b|bn c|cn)
-                    (if b|bp (<= b|bn 10) (<= 10 b|bn)))]]}
-
-        {:$type :ws/A :b {:$type :ws/B :bn {:$in [2 8]}}}
-        '{:spec-vars {:b|bn "Integer", :b|bp "Boolean", :c|cn "Integer"}
-          :refines-to {}
-          :constraints
-          [["$all" (and
-                    (= b|bn c|cn)
-                    (if b|bp (<= b|bn 10) (<= 10 b|bn)))]]}
-
-        {:$type :ws/A :b {:$type :ws/B :bn {:$in #{3 4 5}}}}
-        '{:spec-vars {:b|bn "Integer", :b|bp "Boolean", :c|cn "Integer"}
-          :constraints
-          [["$all" (and
-                    (= b|bn c|cn)
-                    (if b|bp (<= b|bn 10) (<= 10 b|bn)))]]
-          :refines-to {}}
-
-        {:$type :ws/A
-         :c {:$type :ws/C :cn 14}}
-        '{:spec-vars {:b|bn "Integer", :b|bp "Boolean", :c|cn "Integer"}
-          :refines-to {}
-          :constraints
-          [["$all" (and
-                    (= b|bn c|cn)
-                    (if b|bp (<= b|bn 10) (<= 10 b|bn)))]]}
-
-        {:$type :ws/A
-         :b {:$type :ws/B :bp true}
-         :c {:$type :ws/C
-             :a {:$type :ws/A}}}
-        '{:spec-vars {:b|bn "Integer", :b|bp "Boolean", :c|a|b|bn "Integer", :c|a|b|bp "Boolean", :c|cn "Integer"}
-          :refines-to {}
-          :constraints
-          [["$all" (let [$58 (< 0 b|bn)]
-                     (and
-                      (= b|bn c|cn)
-                      (if (if $58 true true) (if $58 (< b|bn c|a|b|bn) true) false)
-                      (if b|bp (<= b|bn 10) (<= 10 b|bn))
-                      (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]}))))
-
-(deftest test-spec-ify-bound-on-recursive-composition
-  (let [senv (halite-envs/spec-env
-              '{:ws/A
-                {:spec-vars {:b :ws/B :c :ws/C}
-                 :constraints [["a1" (= (get b :bn) (get c :cn))]
-                               ["a2" (if (> (get b :bn) 0)
-                                       (< (get b :bn)
-                                          (get (get (get c :a) :b) :bn))
-                                       true)]]
-                 :refines-to {}}
-                :ws/B
-                {:spec-vars {:bn "Integer" :bp "Boolean"}
-                 :constraints [["b1" (if bp (<= bn 10) (>= bn 10))]]
-                 :refines-to {}}
-                :ws/C
-                {:spec-vars {:a :ws/A :cn "Integer"}
-                 :constraints []
-                 :refines-to {}}})]
-
-    (are [b-bound constraint]
-         (= {:spec-vars {:bn "Integer", :bp "Boolean"}
-             :constraints
-             [["$all" constraint]]
-             :refines-to {}}
-            (hp/spec-ify-bound senv b-bound))
-
-      {:$type :ws/B} '(if bp (<= bn 10) (<= 10 bn))
-      {:$type :ws/B :bn 12} '(if bp (<= bn 10) (<= 10 bn)))
-
-    (is (= '{:spec-vars {:b|bn "Integer" :b|bp "Boolean"
-                         :c|cn "Integer"}
-             :constraints
-             [["$all" (and
-                       (= b|bn c|cn)
-                       (if b|bp
-                         (<= b|bn 10)
-                         (<= 10 b|bn)))]]
-             :refines-to {}}
-           (->> {:$type :ws/A}
-                (hp/spec-ify-bound senv))))
-
-    (is (= '{:spec-vars {:b|bn "Integer" :b|bp "Boolean"
-                         :c|cn "Integer"
-                         :c|a|b|bn "Integer" :c|a|b|bp "Boolean"}
-             :constraints
-             [["$all" (let [$58 (< 0 b|bn)]
-                        (and
-                         (= b|bn c|cn)
-                         (if (if $58 true true) (if $58 (< b|bn c|a|b|bn) true) false)
-                         (if b|bp (<= b|bn 10) (<= 10 b|bn))
-                         (if c|a|b|bp (<= c|a|b|bn 10) (<= 10 c|a|b|bn))))]]
-             :refines-to {}}
-           (->> '{:$type :ws/A
-                  :b {:$type :ws/B :bp true}
-                  :c {:$type :ws/C :a {:$type :ws/A}}}
-                (hp/spec-ify-bound senv))))))
+               [["vars" (valid? {:$type :ws/B
+                                 :a1 {:$type :ws/A :x a1|x :y a1|y}
+                                 :a2 {:$type :ws/A :x a2|x :y a2|y}})]]}
+             (hp/spec-ify-bound senv {:$type :ws/B}))))))
 
 (deftest test-propagation-of-trivial-spec
   (let [senv (halite-envs/spec-env
@@ -296,16 +91,6 @@
                                                        (< (get a1 :y) (get a2 :y)))]]
                        :refines-to {}}})
         opts {:default-int-bounds [-100 100]}]
-    (is (= '{:spec-vars {:a1|x "Integer", :a1|y "Integer", :a2|x "Integer", :a2|y "Integer"}
-             :constraints [["$all"
-                            (and
-                             (and (< a1|x a2|x) (< a1|y a2|y))
-                             (and (< 0 a1|x) (< 0 a1|y))
-                             (< (+ a1|x a1|y) 20)
-                             (and (< 0 a2|x) (< 0 a2|y))
-                             (< (+ a2|x a2|y) 20))]]
-             :refines-to {}}
-           (hp/spec-ify-bound senv {:$type :ws/B})))
 
     (are [in out]
          (= out (hp/propagate senv opts in))
@@ -329,67 +114,6 @@
        :a2 {:$type :ws/A
             :x {:$in [16 17]}
             :y {:$in [2 3]}}})))
-
-(deftest test-recursive-composition
-  (schema.core/without-fn-validation
-   (let [senv (halite-envs/spec-env
-               '{:ws/A
-                 {:spec-vars {:b :ws/B :c :ws/C}
-                  :constraints [["a1" (= (get b :bn) (get c :cn))]
-                                ["a2" (if (> (get b :bn) 0)
-                                        (< (get b :bn)
-                                           (get (get (get c :a) :b) :bn))
-                                        true)]]
-                  :refines-to {}}
-                 :ws/B
-                 {:spec-vars {:bn "Integer" :bp "Boolean"}
-                  :constraints [["b1" (if bp (<= bn 10) (>= bn 10))]]
-                  :refines-to {}}
-                 :ws/C
-                 {:spec-vars {:a :ws/A :cn "Integer"}
-                  :constraints []
-                  :refines-to {}}})
-         opts {:default-int-bounds [-100 100]}]
-     (are [in out]
-          (= out (hp/propagate senv opts in))
-
-       {:$type :ws/A}
-       {:$type :ws/A
-        :b {:$type :ws/B
-            :bn {:$in [-100 100]}
-            :bp {:$in #{false true}}}
-        :c {:$type :ws/C
-            :a {:$type :ws/A}
-            :cn {:$in [-100 100]}}}
-
-       {:$type :ws/A :c {:$type :ws/C :cn 12}}
-       {:$type :ws/A
-        :b {:$type :ws/B, :bn 12, :bp false}
-        :c {:$type :ws/C
-            :cn 12
-            :a {:$type :ws/A}}}
-
-       {:$type :ws/A :c {:$type :ws/C :a {:$type :ws/A}}}
-       {:$type :ws/A,
-        :b {:$type :ws/B,
-            :bn {:$in [-100 100]},
-            :bp {:$in #{false true}}},
-        :c {:$type :ws/C,
-            :a {:$type :ws/A,
-                :b {:$type :ws/B,
-                    :bn {:$in [-100 100]},
-                    :bp {:$in #{false true}}},
-                :c {:$type :ws/C}},
-            :cn {:$in [-100 100]}}}
-
-       {:$type :ws/A :b {:$type :ws/B :bp true} :c {:$type :ws/C :a {:$type :ws/A}}}
-       {:$type :ws/A,
-        :b {:$type :ws/B, :bn {:$in [-100 10]}, :bp true},
-        :c {:$type :ws/C,
-            :a {:$type :ws/A,
-                :b {:$type :ws/B, :bn {:$in [-100 100]}, :bp {:$in #{false true}}},
-                :c {:$type :ws/C}},
-            :cn {:$in [-100 10]}}}))))
 
 (deftest test-instance-literals
   (let [senv (halite-envs/spec-env
@@ -417,12 +141,12 @@
       {:$type :ws/B} {:$type :ws/B :by {:$in [1 4]} :bz {:$in [1 4]}}
       {:$type :ws/B :by 2} {:$type :ws/B :by 2 :bz 2})))
 
-(deftest test-spec-ify-bound-for-refinement
+(deftest test-propagate-and-refinement
   (schema.core/without-fn-validation
    (let [senv (halite-envs/spec-env
                '{:ws/A
                  {:spec-vars {:an "Integer"}
-                  :constraints [["a1" (< an 10)]]
+                  :constraints [["a1" (<= an 6)]]
                   :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
 
                  :ws/B
@@ -441,114 +165,31 @@
                                 ["d2" (= (+ 1 dn) (get (refine-to a :ws/B) :bn))]]
                   :refines-to {}}})]
 
-     (are [spec-id spec]
-          (= spec (hp/spec-ify-bound senv {:$type spec-id}))
+     (are [in out]
+          (= out (hp/propagate senv in))
 
-       :ws/C '{:spec-vars {:cn "Integer"}
-               :constraints [["$all" (= 0 (mod cn 2))]]
-               :refines-to {}}
+       {:$type :ws/C :cn {:$in (set (range 10))}} {:$type :ws/C :cn {:$in #{0 2 4 6 8}}}
 
-       :ws/B '{:spec-vars {:bn "Integer"}
-               :constraints
-               [["$all" (and (< 0 bn)
-                             (= 0 (mod bn 2)))]]
-               :refines-to {}}
+       {:$type :ws/B :bn {:$in (set (range 10))}} {:$type :ws/B :bn {:$in #{2 4 6 8}}}
 
-       :ws/A '{:spec-vars {:an "Integer"}
-               :constraints
-               [["$all" (let [$101 (+ 1 an)]
-                          (and (< an 10)
-                               (and (< 0 $101)
-                                    (= 0 (mod $101 2)))))]]
-               :refines-to {}}
+       {:$type :ws/A :an {:$in (set (range 10))}} {:$type :ws/A :an {:$in #{1 3 5}}}
 
-       :ws/D '{:spec-vars {:a|an "Integer", :dm "Integer", :dn "Integer"}
-               :constraints
-               [["$all"
-                 (let [$245 (+ 1 dn)
-                       $278 (+ 1 a|an)
-                       $284 (and (< 0 $278) (= 0 (mod $278 2)))
-                       $254 (= 0 (mod $245 2))
-                       $256 (and (< 0 $245) $254)
-                       $258 (and (< dn 10) $256)
-                       $262 (if $258 $256 false)]
-                   (and
-                    (if (and $258 $262 $258 (if $262 $254 false)) (= dm $245) false)
-                    (if $284 (= $245 $278) false)
-                    (< a|an 10)
-                    $284))
-                 ;; hand simplification of the above, for validation purposes
-                 #_(and
-                    (< dn 10)                ; a1 as instantiated from d1
-                    (< 0 (+ 1 dn))           ; b1 as instantiated from d1 thru A->B
-                    (= 0 (mod (+ 1 dn) 2))   ; c1 as instantiated from d1 thru A->B->C
-                    (= dm (+ 1 dn))          ; d1 itself
-                    (< 0 (+ 1 a|an))         ; b1 as instanted on a thru A->B
-                    (= 0 (mod (+ 1 a|an) 2)) ; c1 as instantiated on a thru A->B->C
-                    (= (+ 1 dn) (+ 1 a|an))  ; d2 itself
-                    (< a|an 10))]]           ; a1 as instantiated on a thru A->B->C
-               :refines-to {}}))))
+       {:$type :ws/D} {:$type :ws/D, :a {:$type :ws/A, :an {:$in [1 5]}}, :dm {:$in [2 6]}, :dn {:$in [1 5]}}))))
 
-(deftest test-spec-ify-for-various-instance-literal-cases
-  (let [senv '{:ws/Simpler
-               {:spec-vars {:x "Integer", :b "Boolean"}
-                :constraints [["posX" (< 0 x)]
-                              ["bIfOddX" (= b (= (mod* x 2) 1))]]
+(deftest test-spec-ify-bound-for-primitive-optionals
+  (s/without-fn-validation
+   (binding [ssa/*next-id* (atom 0)]
+     (let [senv (halite-envs/spec-env
+                 '{:ws/A
+                   {:spec-vars {:an "Integer", :aw [:Maybe "Integer"], :p "Boolean"}
+                    :constraints [["a1" (= aw (when p an))]]
+                    :refines-to {}}})
+           opts {:default-int-bounds [-10 10]}]
+
+       (is (= '{:spec-vars {:an "Integer", :aw [:Maybe "Integer"], :p "Boolean"}
+                :constraints [["vars" (valid? {:$type :ws/A :an an :aw aw :p p})]]
                 :refines-to {}}
-
-               :ws/Simpler2
-               {:spec-vars {:y "Integer"}
-                :constraints [["likeSimpler" (= y (get {:$type :ws/Simpler :x y :b false} :x))]]
-                :refines-to {}}
-
-               :ws/Test
-               {:spec-vars {}
-                :constraints []
-                :refines-to {}}}]
-    (are [constraint choco-spec]
-         (= choco-spec
-            (-> senv
-                (update-in [:ws/Test :constraints] conj ["c1" constraint])
-                (halite-envs/spec-env)
-                (hp/spec-ify-bound {:$type :ws/Test})
-                :constraints first second))
-
-      '(get
-        (let [x (+ 1 2)
-              s {:$type :ws/Simpler :x (+ x 1) :b false}
-              s {:$type :ws/Simpler :x (- (get s :x) 2) :b true}]
-          {:$type :ws/Simpler :x 12 :b (get s :b)})
-        :b)
-      '(let [$129 (+ 1 2)
-             $130 (+ $129 1)
-             $139 (and (< 0 $130) (= false (= (mod $130 2) 1)))
-             $153 (if $139 (let [$141 (- $130 2)] (and (< 0 $141) (= true (= (mod $141 2) 1)))) false)]
-         (if (and true $139 $153 (if $153 (and (< 0 12) (= true (= (mod 12 2) 1))) false))
-           true
-           false))
-      ;; hand-simplified
-      #_'(and (< 0 (+ (+ 1 2) 1))
-              (= false (= (mod (+ (+ 1 2) 1) 2) 1))
-              (< 0 (- (+ (+ 1 2) 1) 2))
-              (= true (= (mod (- (+ (+ 1 2) 1) 2) 2) 1))
-              (< 0 12)
-              (= true (= (mod 12 2) 1)))
-
-      '(get {:$type :ws/Simpler :x (get {:$type :ws/Simpler :x 14 :b false} :x) :b true} :b)
-      '(let [$87 (< 0 14)
-             $92 (= (mod 14 2) 1)]
-         (if (if (and $87 (= false $92))
-               (and $87 (= true $92))
-               false)
-           true
-           false))
-
-      '(not= 10 (get {:$type :ws/Simpler2 :y 12} :y))
-      '(if (if (and (< 0 12) (= false (= (mod 12 2) 1)))
-             (= 12 12)
-             false)
-         (not= 10 12)
-         false))))
+              (hp/spec-ify-bound senv {:$type :ws/A})))))))
 
 (deftest test-propagate-for-primitive-optionals
   (let [senv (halite-envs/spec-env
@@ -557,16 +198,6 @@
                  :constraints [["a1" (= aw (when p an))]]
                  :refines-to {}}})
         opts {:default-int-bounds [-10 10]}]
-
-    (is (= '{:spec-vars {:an "Integer", :aw [:Maybe "Integer"], :p "Boolean"}
-             :constraints [["$all"
-                            (if (if-value aw true true)
-                              (if p
-                                (if-value aw (= aw an) false)
-                                (if-value aw false true))
-                              false)]]
-             :refines-to {}}
-           (hp/spec-ify-bound senv {:$type :ws/A})))
 
     (are [in out]
          (= out (hp/propagate senv opts in))
@@ -583,7 +214,9 @@
                    ["a2" (=> ap (if-value b1 true false))]]
      :refines-to {}}
     :ws/B
-    {:spec-vars {:bx "Integer", :bw [:Maybe "Integer"], :bp "Boolean", :c1 :ws/C, :c2 [:Maybe :ws/C]}
+    {:spec-vars {:bx "Integer", :bw [:Maybe "Integer"], :bp "Boolean"
+                 :c1 :ws/C
+                 :c2 [:Maybe :ws/C]}
      :constraints [["b1" (= bw (when bp bx))]
                    ["b2" (< bx 15)]]
      :refines-to {}}
@@ -931,20 +564,39 @@
        {:$type :ws/D :dx {:$in #{-5 -3 -1 1 3 5}}}))))
 
 (deftest simpler-composite-optional-test
-  (schema.core/with-fn-validation
-    (let [senv (halite-envs/spec-env
-                '{:ws/A
-                  {:spec-vars {:b1 [:Maybe :ws/B] :b2 [:Maybe :ws/B]}
-                   :constraints [["a1" (= b1 b2)]]
-                   :refines-to {}}
-                  :ws/B
-                  {:spec-vars {:bx "Integer"}
-                   :constraints [["b1" (< 0 bx)]]
-                   :refines-to {}}})
-          opts {:default-int-bounds [-10 10]}]
+  (schema.core/without-fn-validation
+   (let [senv (halite-envs/spec-env
+               '{:ws/A
+                 {:spec-vars {:b1 :ws/B :b2 [:Maybe :ws/B]}
+                  :constraints [["a1" (= b1 b2)]]
+                  :refines-to {}}
+                 :ws/B
+                 {:spec-vars {:bx "Integer", :by [:Maybe "Integer"]}
+                  :constraints [["b1" (< 0 bx)]]
+                  :refines-to {}}})
+         opts {:default-int-bounds [-10 10]}]
 
-      (is (= {:$type :ws/A, :b1 {:$type :ws/B, :bx 4}, :b2 {:$type :ws/B, :bx 4}}
-             (hp/propagate senv opts {:$type :ws/A :b1 {:$type :ws/B :bx 4}}))))))
+     (is (= '{:spec-vars {:b1|bx "Integer"
+                          :b1|by [:Maybe "Integer"]
+                          :b2? "Boolean"
+                          :b2|bx [:Maybe "Integer"]
+                          :b2|by [:Maybe "Integer"]}
+              :constraints [["vars" (valid?
+                                     {:$type :ws/A
+                                      :b1 {:$type :ws/B :bx b1|bx :by b1|by}
+                                      :b2 (when b2?
+                                            (if-value b2|bx
+                                                      {:$type :ws/B :bx b2|bx :by b2|by}
+                                                      $no-value))})]
+                            ["$b2?" (and (= b2? (if-value b2|bx true false))
+                                         (=> (if-value b2|by true false) b2?))]]
+              :refines-to {}}
+            (hp/spec-ify-bound senv {:$type :ws/A})))
+
+     (is (= '{:$type :ws/A,
+              :b1 {:$type :ws/B, :bx {:$in [1 1000]}, :by {:$in [-1000 1000 :Unset]}},
+              :b2 {:$type :ws/B, :bx {:$in [1 1000]}, :by {:$in [-1000 1000 :Unset]}}}
+            (hp/propagate senv {:$type :ws/A}))))))
 
 (deftest test-refine-optional
   ;; The 'features' that interact here: valid? and instance literals w/ unassigned variables.
@@ -962,72 +614,72 @@
     (is (= {:$type :my/B :b {:$in [1 100]}}
            (hp/propagate senv {:$type :my/B :b {:$in [-100 100]}})))))
 
-(def inline-gets #'hp/inline-gets)
-
-(deftest test-inline-gets
-  (are [expr result]
-       (= result (inline-gets expr))
-
-    1 1
-    true true
-    'foo 'foo
-    '(get foo :bar) '(get foo :bar)
-    '(let [x (get foo :bar)] (get x :baz)) '(get (get foo :bar) :baz)))
-
 #_(deftest example-abstract-propagation
-  (s/with-fn-validation
-    (let [senv (halite-envs/spec-env
-                '{:ws/W ; 0
-                  {:abstract? true
-                   :spec-vars {:wn "Integer"}
-                   :constraints [["wn_range" (and (< 2 wn) (< wn 8))]]
-                   :refines-to {}}
-                  :ws/A ; 1
-                  {:spec-vars {:a "Integer"}
-                   :constraints [["ca" (< a 6)]]
-                   :refines-to
-                   {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
-                  :ws/B ; 2
-                  {:spec-vars {:b "Integer"}
-                   :constraints [["cb" (< 5 b)]]
-                   :refines-to
-                   {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
-                  :ws/C ; 3
-                  {:spec-vars {:w :ws/W}
-                   :constraints []
-                   :refines-to {}}})
+    (s/with-fn-validation
+      (let [senv (halite-envs/spec-env
+                  '{:ws/W ; 0
+                    {:abstract? true
+                     :spec-vars {:wn "Integer"}
+                     :constraints [["wn_range" (and (< 2 wn) (< wn 8))]]
+                     :refines-to {}}
+                    :ws/A ; 1
+                    {:spec-vars {:a "Integer"}
+                     :constraints [["ca" (< a 6)]]
+                     :refines-to
+                     {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
+                    :ws/B ; 2
+                    {:spec-vars {:b "Integer"}
+                     :constraints [["cb" (< 5 b)]]
+                     :refines-to
+                     {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
+                    :ws/C ; 3
+                    {:spec-vars {:w :ws/W}
+                     :constraints []
+                     :refines-to {}}})
           ;; Hand-written choco spec for bound {:$type :ws/C}
-          choco-spec '{:vars {w<-? #{1 2}
-                              w<-ws$A|a :Int
-                              w<-ws$B|b :Int}
-                       :optionals #{w<-ws$A|a w<-ws$B|b}
-                       :constraints
-                       #{(if (= 1 w<-?) ; ws/A
-                           (if-value w<-ws$A|a
-                             (and
-                              (< w<-ws$A|a 6)
-                              (< 2 (+ w<-ws$A|a 1))
-                              (< (+ w<-ws$A|a 1) 8))
-                             false)
-                           (if (= 2 w<-?) ; ws/B
-                             (if-value w<-ws$B|b
-                               (and
-                                (< 5 w<-ws$B|b)
-                                (< 2 (- w<-ws$B|b 2))
-                                (< (- w<-ws$B|b 2) 8))
-                               false)
-                             false))}}
+            choco-spec '{:vars {w<-? #{1 2}
+                                w<-ws$A|a :Int
+                                w<-ws$B|b :Int}
+                         :optionals #{w<-ws$A|a w<-ws$B|b}
+                         :constraints
+                         #{(if (= 1 w<-?) ; ws/A
+                             (if-value w<-ws$A|a
+                                       (and
+                                        (< w<-ws$A|a 6)
+                                        (< 2 (+ w<-ws$A|a 1))
+                                        (< (+ w<-ws$A|a 1) 8))
+                                       false)
+                             (if (= 2 w<-?) ; ws/B
+                               (if-value w<-ws$B|b
+                                         (and
+                                          (< 5 w<-ws$B|b)
+                                          (< 2 (- w<-ws$B|b 2))
+                                          (< (- w<-ws$B|b 2) 8))
+                                         false)
+                               false))}}
           ;; Other possible bounds: {:$type :ws/C :w {:$type :ws/A}}
           ;;                        {:$type :ws/C :w {:$in {:ws/A {}, :ws/B {}}}}
           ;;                        {:$type :ws/C :w {:$refines-to {:ws/W {:w 7}}}}
-          ]
-      (are [in out]
-          (= out (choco-clj/propagate choco-spec in))
+            ]
+        (are [in out]
+             (= out (choco-clj/propagate choco-spec in))
 
-        {} '{w<-? #{1 2}, w<-ws$A|a [-1000 1000 :Unset], w<-ws$B|b [-1000 1000 :Unset]}
-        '{w<-? 1} nil
-        '{w<-? 2} nil
-        ))))
+          {} '{w<-? #{1 2}, w<-ws$A|a [-1000 1000 :Unset], w<-ws$B|b [-1000 1000 :Unset]}
+          '{w<-? 1} nil
+          '{w<-? 2} nil))))
+
+(deftest test-tricky-inst-literal-simplification
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:b1 [:Maybe :ws/B]}
+                 :constraints [["a2" (if-value b1 true false)]]
+                 :refines-to {}}
+                :ws/B
+                {:spec-vars {}
+                 :constraints []
+                 :refines-to {}}})]
+    (is (= {:$type :ws/A :b1 {:$type :ws/B}}
+           (hp/propagate senv {:$type :ws/A})))))
 
 (comment "
 Stuff to do/remember regarding abstractness!
@@ -1044,5 +696,4 @@ We'll need to handle that extension on the INPUT side, as well as producing the 
    :a {:$in [1 100]}
    :$refines-to
    {:ws/B {:b 12 :d {:$refines-to ...} :$expr {}}
-    :ws/C {:c {:$in #{1 3 5}}}}
-   })
+    :ws/C {:c {:$in #{1 3 5}}}}})
