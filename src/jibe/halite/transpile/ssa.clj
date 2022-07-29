@@ -73,23 +73,33 @@
       (recur (dgraph form))
       d)))
 
-(s/defn ^:private reachable-nodes :- #{DerivationName}
+(s/defschema ReachableNodesOpts
+  {(s/optional-key :include-negations?) s/Bool
+   (s/optional-key :conditionally?) s/Bool})
+
+(s/defn reachable-nodes :- #{DerivationName}
   "Return the set of derivation nodes transitively reachable from the given id. For reachable boolean
-  nodes, their negation nodes are included when include-negations? is true."
-  ([dgraph :- Derivations, include-negations? :- s/Bool, id :- DerivationName]
-   (reachable-nodes dgraph include-negations? #{} id))
-  ([dgraph :- Derivations, include-negations? :- s/Bool, reached :- #{DerivationName}, id :- DerivationName]
-   (loop [[next-id & ids] [id]
-          reached reached]
-     (cond
-       (nil? next-id) reached
-       (reached next-id) (recur ids reached)
-       :else (let [[form htype neg-id :as d] (dgraph next-id)]
-               (recur
-                (cond->
-                 (into ids (referenced-derivations d))
-                  (and include-negations? neg-id) (conj neg-id))
-                (conj reached next-id)))))))
+  nodes, their negation nodes are included when include-negations? is true.
+  When conditionally? is false, the reachability analysis stops at conditional
+  forms (if, when). The conditional nodes themselves are included, but their branches are not."
+  ([dgraph :- Derivations, id :- DerivationName]
+   (reachable-nodes dgraph id {}))
+  ([dgraph :- Derivations, id :- DerivationName, opts :- ReachableNodesOpts]
+   (reachable-nodes dgraph #{} id opts))
+  ([dgraph :- Derivations, reached :- #{DerivationName}, id :- DerivationName, opts :- ReachableNodesOpts]
+   (let [{:keys [include-negations? conditionally?]
+          :or {include-negations? false, conditionally? true}} opts]
+     (loop [[next-id & ids] [id]
+            reached reached]
+       (cond
+         (nil? next-id) reached
+         (reached next-id) (recur ids reached)
+         :else (let [[form htype neg-id :as d] (dgraph next-id)]
+                 (recur
+                  (cond-> ids
+                    (or conditionally? (not (and (seq? form) (#{'if 'when} (first form))))) (into (referenced-derivations d))
+                    (and include-negations? neg-id) (conj neg-id))
+                  (conj reached next-id))))))))
 
 (s/defschema SpecInfo
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
@@ -101,7 +111,7 @@
   [{:keys [derivations constraints] :as spec-info} :- SpecInfo]
   (reduce
    (fn [reachable id]
-     (reachable-nodes derivations false reachable id))
+     (reachable-nodes derivations reachable id {:include-negations? false, :conditionally? true}))
    #{}
    (map second constraints)))
 
@@ -560,7 +570,8 @@
   [dgraph :- Derivations, roots :- #{DerivationName}, prune-negations? :- s/Bool]
   (let [reachable (reduce
                    (fn [reachable id]
-                     (reachable-nodes dgraph (not prune-negations?) reachable id))
+                     (reachable-nodes dgraph reachable id {:include-negations? (not prune-negations?)
+                                                           :conditionally? true}))
                    #{}
                    roots)]
     (->> dgraph
@@ -767,9 +778,9 @@
   We need to ensure that our rewritten expressions never evaluate a form when the original
   expressions would not have evaluated it."
   [dgraph :- Derivations, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
-  (let [subdgraph (select-keys dgraph (reachable-nodes dgraph true id))
+  (let [subdgraph (select-keys dgraph (reachable-nodes dgraph id {:include-negations? true}))
         reachable-subdgraph (->> id
-                                 (reachable-nodes subdgraph false)
+                                 (reachable-nodes subdgraph)
                                  (select-keys subdgraph))
         amap (aliases reachable-subdgraph)
         usage-counts (->> reachable-subdgraph
