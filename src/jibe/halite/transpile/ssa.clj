@@ -19,7 +19,7 @@
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when error
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
       $do!
       ;; These are not available to halite users; they serve as the internal representation of if-value forms.
@@ -34,6 +34,7 @@
    s/Int
    s/Bool
    s/Symbol
+   s/Str
    (s/enum :Unset)))
 
 (s/defschema SSAOp (apply s/enum (disj supported-halite-ops 'let)))
@@ -365,6 +366,13 @@
                       {:dgraph dgraph :form form})))
     (add-derivation dgraph [(list '$value! arg-id) (second htype)])))
 
+(s/defn ^:private error-to-ssa :- DerivResult
+  [{:keys [dgraph] :as ctx} :- SSACtx form]
+  (when-not (string? (second form))
+    (throw (ex-info "Only string literals currently allowed in error forms" {:form form :dgraph dgraph})))
+  (let [[dgraph arg-id] (form-to-ssa ctx (second form))]
+    (add-derivation dgraph [(list 'error arg-id) :Nothing])))
+
 (s/defn rewrite-node :- Derivations
   "Rewrite id node in place to be an alias of aliased-id"
   [dgraph :- Derivations, id :- DerivationName, aliased-id :- DerivationName]
@@ -422,6 +430,7 @@
    (cond
      (int? form) (add-derivation dgraph [form :Integer])
      (boolean? form) (add-derivation dgraph [form :Boolean])
+     (string? form) (add-derivation dgraph [form :String])
      (= :Unset form) (add-derivation dgraph [form :Unset])
      (symbol? form) (symbol-to-ssa ctx form)
      (seq? form) (let [[op & args] form]
@@ -436,6 +445,7 @@
                      '$do! (do!-to-ssa ctx form)
                      'if-value (if-value-to-ssa ctx form)
                      '$value! (value!-to-ssa ctx form)
+                     'error (error-to-ssa ctx form)
                      (app-to-ssa ctx form)))
      (map? form) (inst-literal-to-ssa ctx form)
      :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
@@ -490,6 +500,7 @@
     (integer? expr) #{}
     (boolean? expr) #{}
     (symbol? expr) #{}
+    (string? expr) #{}
     (map? expr) (->> (dissoc expr :$type) vals (map spec-refs-from-expr) (apply set/union #{(:$type expr)}))
     (seq? expr) (let [[op & args] expr]
                   (condp = (get renamed-ops op op)
@@ -585,7 +596,7 @@
   (let [[form htype] (dgraph id)
         result (update result id update-guards current)]
     (cond
-      (or (integer? form) (boolean? form) (= :Unset form)) result
+      (or (integer? form) (boolean? form) (= :Unset form) (string? form)) result
       (and (symbol? form) (nil? (s/check DerivationName form))) (compute-guards* dgraph current result form)
       (symbol? form) result
       (seq? form) (let [[op & args] form]
@@ -666,7 +677,7 @@
     id
     (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
       (cond
-        (or (integer? form) (boolean? form)) form
+        (or (integer? form) (boolean? form) (string? form)) form
         (= :Unset form) '$no-value
         (symbol? form) (if (bound? form)
                          form

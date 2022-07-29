@@ -222,10 +222,7 @@
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id :- DerivationName]
   (let [[ssa-form htype :as deriv] (ssa/deref-id dgraph id)]
     (cond
-      (int? ssa-form) (ssa/form-to-ssa ctx true)
-      (boolean? ssa-form) (ssa/form-to-ssa ctx true)
-      (= :Unset ssa-form) (ssa/form-to-ssa ctx true)
-      (symbol? ssa-form) (ssa/form-to-ssa ctx true)
+      (or (int? ssa-form) (boolean? ssa-form) (= :Unset ssa-form) (symbol? ssa-form) (string? ssa-form)) (ssa/form-to-ssa ctx true)
       (map? ssa-form) (validity-guard-inst sctx ctx deriv)
       (seq? ssa-form) (let [[op & args] ssa-form]
                         (condp = op
