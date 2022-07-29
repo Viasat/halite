@@ -614,6 +614,24 @@
     (is (= {:$type :my/B :b {:$in [1 100]}}
            (hp/propagate senv {:$type :my/B :b {:$in [-100 100]}})))))
 
+(deftest test-propagate-with-errors
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:an "Integer" :ap [:Maybe "Boolean"]}
+                       :refines-to {}
+                       :constraints [["a1" (if (< an 10)
+                                             (if (< an 1)
+                                               (error "an is too small")
+                                               (if-value ap ap false))
+                                             (= ap (when (< an 20)
+                                                     (error "not big enough"))))]]}})]
+    (are [in out]
+         (= out (hp/propagate senv in))
+
+      {:$type :ws/A} {:$type :ws/A, :an {:$in [1 1000]}, :ap {:$in #{true :Unset}}}
+      {:$type :ws/A :an {:$in (set (range 7 22))}} {:$type :ws/A,:an {:$in #{7 8 9 20 21}},:ap {:$in #{true :Unset}}}
+      {:$type :ws/A :an 21} {:$type :ws/A :an 21 :ap :Unset}
+      {:$type :ws/A :an {:$in (set (range 7 22))} :ap :Unset} {:$type :ws/A :an {:$in #{20 21}} :ap :Unset})))
+
 #_(deftest example-abstract-propagation
     (s/with-fn-validation
       (let [senv (halite-envs/spec-env

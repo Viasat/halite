@@ -367,9 +367,6 @@
          (->> args (remove no-value-literal?) (map (comp (partial nth arg-ids) first)))
          (every? #(= :Unset (second (second %))) args))))))
 
-;; FIXME: The current halite typing rules mean that the if generated from this rule
-;; doesn't type check whenever the inner type is not a maybe type :( I think we'll need
-;; to change them.
 (s/defn ^:private lower-when-expr
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
   (when (and (seq? form) (= 'when (first form)))
@@ -565,3 +562,68 @@
 (s/defn eliminate-dos :- SpecCtx
   [sctx :- SpecCtx]
   (rewrite-sctx sctx eliminate-do-expr))
+
+(defn- find-error-ids [dgraph]
+  (->> dgraph
+       (filter (fn [[id [form]]] (and (seq? form) (= 'error (first form)))))
+       (map first)))
+
+(s/defn ^:private add-error-guards-as-constraints
+  [sctx :- SpecCtx {:keys [derivations constraints] :as spec-info} :- SpecInfo]
+  (let [guards (ssa/compute-guards derivations (set (map second constraints)))
+        ctx (ssa/make-ssa-ctx sctx spec-info)]
+    (->> (find-error-ids derivations)
+         (reduce
+          (fn [{:keys [derivations] :as spec-info} error-id]
+            (let [[[_error subexpr-id]] (ssa/deref-id derivations error-id)
+                  ;; This bit currently depends on the ssa namespace not allowing (error ...) forms
+                  ;; with anything other than string literals inside.
+                  [message] (ssa/deref-id derivations subexpr-id)
+                  guard (guards error-id)
+                  guard-form (->> guard (map (comp (partial mk-junct 'and) seq)) (mk-junct 'or))
+                  [dgraph guard-id] (ssa/form-to-ssa (assoc ctx :dgraph derivations) guard-form)]
+              (-> spec-info
+                  (assoc :derivations dgraph)
+                  (update :constraints conj [message (ssa/negated dgraph guard-id)]))))
+          spec-info))))
+
+(s/defn ^:private drop-branches-containing-unguarded-errors-rewrite-fn
+  [unguarded-error? sctx {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  (when (and (seq? form) (= 'when (first form)))
+    (throw (ex-info "BUG! Applied drop-branches-containing-ungaurded-errors rule without lowering 'when'"
+                    {:dgraph dgraph :id id})))
+  (when (and (seq? form) (= 'if (first form)))
+    (let [[_if pred-id then-id else-id] form
+          then-error? (unguarded-error? dgraph then-id)
+          else-error? (unguarded-error? dgraph else-id)]
+      (cond
+        (and then-error? else-error?) (list 'error "both branches error")
+        then-error? else-id
+        else-error? then-id
+        :else nil))))
+
+(s/defn ^:private drop-branches-containing-unguarded-errors
+  [sctx :- SpecCtx [spec-id {:keys [derivations constraints] :as spec-info}]]
+  ;; TODO: This is dumb. Refactor rewriting machinery so that we can compute spec-level info that is passed to rewriting rule.
+  (let [guards (ssa/compute-guards derivations (set (map second constraints)))
+        error-ids (set (find-error-ids derivations))
+        unguarded-error? (fn [dgraph id]
+                           (let [unconditionally-reachable (ssa/reachable-nodes dgraph id {:conditionally? false})]
+                             (seq (set/intersection error-ids unconditionally-reachable))))]
+    [spec-id
+     (halite-rewriting/rewrite-spec
+      {:rule-name "drop-branches-containing-unguarded-errors"
+       :rewrite-fn (partial drop-branches-containing-unguarded-errors-rewrite-fn unguarded-error?)
+       :nodes :all}
+      sctx
+      spec-id)]))
+
+(s/defn eliminate-error-forms :- SpecCtx
+  [sctx :- SpecCtx]
+  (let [sctx (update-vals sctx (partial add-error-guards-as-constraints sctx))]
+    (fixpoint
+     (fn [sctx]
+       (->> sctx
+            (map (partial drop-branches-containing-unguarded-errors sctx))
+            (into {})))
+     sctx)))

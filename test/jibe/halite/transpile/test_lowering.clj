@@ -814,6 +814,55 @@
                    :my/B
                    (ssa/spec-from-ssa))))))))
 
+(deftest test-eliminate-error-forms
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:an "Integer" :ap [:Maybe "Boolean"]}
+                       :refines-to {}
+                       :constraints [["a1" (if (< an 10)
+                                             (if (< an 1)
+                                               (error "an is too small")
+                                               (if-value ap ap false))
+                                             (= ap (when (< an 20)
+                                                     (error "not big enough"))))]]}})]
+    (binding [ssa/*next-id* (atom 0)]
+      (is (= '{:spec-vars {:an "Integer" :ap [:Maybe "Boolean"]}
+               :refines-to {}
+               :constraints
+               [["$all"
+                 (let [$3 (< an 10)]
+                   (and
+                    (if $3
+                      (if-value ap ap false)
+                      (= ap $no-value))
+                    (not (and (<= 10 an) (< an 20)))
+                    (not (and (< an 1) $3))))]]}
+             (-> senv
+                 (ssa/build-spec-ctx :ws/A)
+                 (rewriting/rewrite-sctx lower-when-expr)
+                 (lowering/eliminate-error-forms)
+                 :ws/A
+                 (ssa/spec-from-ssa))))))
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:an "Integer" :ap "Boolean"}
+                       :constraints [["a1" (if ap
+                                             (if (< an 10)
+                                               (error "too small")
+                                               (not (= 42 (+ 1 (* an (error "too big"))))))
+                                             (= an 42))]]
+                       :refines-to {}}})]
+    (binding [ssa/*next-id* (atom 0)]
+      (is (= '(and (= an 42)
+                   (not (and (<= 10 an) ap))
+                   (not (and (< an 10) ap)))
+             (-> senv
+                 (ssa/build-spec-ctx :ws/A)
+                 (rewriting/rewrite-sctx lower-when-expr)
+                 (lowering/eliminate-error-forms)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints
+                 first second))))))
+
 (defonce ^:dynamic *results* (atom nil))
 (defonce ^:dynamic *trace* (atom nil))
 
