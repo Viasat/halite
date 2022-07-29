@@ -478,9 +478,11 @@
          (= lowered (rewrite-expr ctx lower-no-value-comparison-expr expr))
 
       '(= $no-value $no-value) true
-      '(= $no-value 1) false
-      '(= $no-value x) false
-      '(= $no-value u) '(= $no-value u))))
+      '(= $no-value 1) '($do! 1 false)
+      '(= $no-value x) '($do! x false)
+      '(= $no-value u) '(= $no-value u)
+      '(= (if p $no-value (error "foo")) $no-value) '($do! (if p $no-value (error "foo")) true)
+      '(= (if p $no-value (error "foo")) x) '($do! (if p $no-value (error "foo")) x false))))
 
 (def lower-when-expr #'lowering/lower-when-expr)
 
@@ -772,7 +774,7 @@
                             $231 (+ dx 1)
                             $232 {:$type :ws/C, :cw dx, :cx dx}
                             $234 {:$type :ws/C, :cw 12, :cx dx}]
-                        (if $226 false true))
+                        (if $226 (let [$228 (div dx 2)] false) true))
                       false))]],
                 :refines-to {:ws/B {:expr {:$type :ws/B,
                                            :bp false,

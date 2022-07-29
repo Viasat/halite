@@ -19,7 +19,9 @@
 
 (defn- make-do
   [side-effects body]
-  `(~'$do! ~@side-effects ~body))
+  (if (empty? side-effects)
+    body
+    `(~'$do! ~@side-effects ~body)))
 
 ;; We don't generally want to have to invent rewrite rules for
 ;; all the various forms as combined with $do!, so we'll write
@@ -356,11 +358,14 @@
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
   (when (and (seq? form) (contains? #{'= 'not=} (first form)))
     (let [[op & arg-ids] form
-          args (map (partial ssa/deref-id dgraph) arg-ids)
-          no-value-args (filter #(= :Unset (first %)) args)
-          maybe-typed-args (filter #(and (halite-types/maybe-type? (second %)) (not= :Unset (first %))) args)]
+          args (map-indexed vector (mapv (partial ssa/deref-id dgraph) arg-ids))
+          no-value-args (filter #(= :Unset (second (second %))) args)
+          no-value-literal? #(= :Unset (first (second %)))
+          maybe-typed-args (filter #(and (halite-types/maybe-type? (second (second %))) (not= :Unset (second (second %)))) args)]
       (when (and (seq no-value-args) (empty? maybe-typed-args))
-        (every? #(= :Unset (first %)) args)))))
+        (make-do
+         (->> args (remove no-value-literal?) (map (comp (partial nth arg-ids) first)))
+         (every? #(= :Unset (second (second %))) args))))))
 
 ;; FIXME: The current halite typing rules mean that the if generated from this rule
 ;; doesn't type check whenever the inner type is not a maybe type :( I think we'll need
@@ -381,7 +386,8 @@
       (let [[op & arg-ids] form
             args (map-indexed vector (mapv (partial ssa/deref-id dgraph) arg-ids))
             opt-args (filter #(and (opt-arg? (second %)) (not= :Unset (second (second %)))) args)
-            no-value-args (filter #(= :Unset (first (second %))) args)
+            no-value-args (filter #(= :Unset (second (second %))) args)
+            no-value-literal? #(= :Unset (first (second %)))
             valued-args (filter #(not (opt-arg? (second %))) args)]
         (when (and (seq opt-args) (empty? (filter (comp if-form? second) opt-args)))
           (cond
@@ -390,8 +396,10 @@
               (make-do (->> arg-ids (remove no-value-ids)) (= 'not= op)))
 
             (and (seq no-value-args) (= 1 (count opt-args)))
-            (let [[i [form htype]] (first opt-args)]
-              (list 'if (list '$value? (nth arg-ids i)) (= 'not= op) (not= 'not= op)))
+            (let [[i [form htype]] (first opt-args)
+                  no-value-ids (->> no-value-args (remove no-value-literal?) (map (comp (partial nth arg-ids) first)))]
+              (make-do no-value-ids
+                       (list 'if (list '$value? (nth arg-ids i)) (= 'not= op) (not= 'not= op))))
 
             (seq no-value-args)
             (let [[i [form htype]] (first opt-args)
