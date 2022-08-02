@@ -440,8 +440,6 @@ clojure.pprint/cl-format
                    :return-type return-type}
             variadic? (assoc :variadic-tail (last arg-types)))))})
 
-(def max-string-length 1024)
-
 (def ^:dynamic *limits* {:string-literal-length nil
                          :string-runtime-length nil
                          :vector-literal-count nil
