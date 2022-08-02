@@ -702,6 +702,8 @@
 
   (h (intersection #{} #{3 2}) [:Set :Nothing] #{} "#{}.intersection(#{2, 3})" "#{}")
 
+  (h (intersection #{"a"} #{3 2}) [:Set :Nothing] #{} "#{\"a\"}.intersection(#{2, 3})" "#{}")
+
   (h (union #{} #{}) [:Set :Nothing] #{} "#{}.union(#{})" "#{}")
 
   (h (union #{2}) [:throws "Wrong number of arguments to 'union': expected at least 2, but got 1"])
