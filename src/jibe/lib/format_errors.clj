@@ -42,11 +42,11 @@
           ~@body
           (catch clojure.lang.ExceptionInfo e#
             (throw (ex-info ~message
-                            (merge ~extra-data (ex-data e#))
+                            (merge (extend-err-data ~extra-data) (ex-data e#))
                             e#))))
        `(try
           ~@body
           (catch clojure.lang.ExceptionInfo e#
             (throw (ex-info (.getMessage e#)
-                            (merge ~extra-data (ex-data e#))
+                            (merge (extend-err-data ~extra-data) (ex-data e#))
                             e#))))))))
