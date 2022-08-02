@@ -218,6 +218,9 @@
 (deferr halite-symbols-not-bound [data]
         {:message (format "symbols in type environment are not bound: %s" (str/join " ", (:unbound-symbols data)))})
 
+(deferr halite-symbol-undefined [data]
+        {:message (format "symbol '%s' is undefined" (:form data))})
+
 (deferr halite-invalid-refinement-expression [data]
   {:message (format "Invalid refinement expression: %s"
                     (:form data))})
@@ -1156,7 +1159,10 @@ clojure.pprint/cl-format
       (fixed-decimal? expr) expr
       (symbol? expr) (if (= '$no-value expr)
                        :Unset
-                       (get (halite-envs/bindings (:env ctx)) expr))
+                       (let [b (halite-envs/bindings (:env ctx))]
+                         (if (contains? b expr)
+                           (get b expr)
+                           (throw-err (halite-symbol-undefined {:form expr})))))
       (map? expr) (->> (dissoc expr :$type)
                        (map (fn [[k v]] [k (eval-in-env v)]))
                        (remove (fn [[k v]] (= :Unset v)))
