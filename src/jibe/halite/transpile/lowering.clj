@@ -502,30 +502,18 @@
         deps-via-instance-literal)
        (simplify)))
 
-(s/defn ^:private cancel-get-of-instance-literal-in-spec :- SpecInfo
-  "Replace (get {... :k <subexpr>} :k) with <subexpr>."
-  [{:keys [derivations] :as spec-info} :- SpecInfo]
-  (->
-   (->> spec-info
-        :derivations
-        (filter (fn [[id [form htype]]]
-                  (if (and (seq? form) (= 'get (first form)))
-                    (let [[subform] (ssa/deref-id derivations (second form))]
-                      (map? subform)))))
-        (reduce
-         (fn [dgraph [id [[_get subid var-kw] htype]]]
-           (let [[inst-form] (ssa/deref-id dgraph subid)
-                 field-node (ssa/deref-id dgraph (get inst-form var-kw))]
-             (assoc dgraph id field-node)))
-         derivations)
-        (assoc spec-info :derivations))
-   (ssa/prune-derivations false)))
+(s/defn ^:private cancel-get-of-instance-literal-expr
+  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  (when-let [[_get coll-id var-kw] (and (seq? form) (= 'get (first form)) form)]
+    (let [[coll] (ssa/deref-id dgraph coll-id)]
+      (when (map? coll)
+        (get coll var-kw)))))
 
 (s/defn cancel-get-of-instance-literal :- SpecCtx
   "Replace (get {... :k <subexpr>} :k) with <subexpr>. Not semantics preserving, in that
   the possible runtime constraint violations of the instance literal are eliminated."
   [sctx :- SpecCtx]
-  (update-vals sctx cancel-get-of-instance-literal-in-spec))
+  (rewrite-sctx sctx cancel-get-of-instance-literal-expr))
 
 (s/defn ^:private eliminate-do-expr
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
