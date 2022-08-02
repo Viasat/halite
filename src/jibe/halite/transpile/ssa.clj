@@ -415,9 +415,12 @@
   [{:keys [ssa-graph senv] :as ctx} :- SSACtx, [_ subexpr var-kw :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)
         spec-id (->> id (deref-id ssa-graph) node-type halite-types/spec-id)
-        htype (or (->> spec-id (halite-envs/lookup-spec senv) :spec-vars var-kw (halite-envs/halite-type-from-var-type senv))
+        vtype (or (->> spec-id (halite-envs/lookup-spec senv) :spec-vars var-kw)
+                  (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
+                                  {:form form, :var-kw var-kw, :spec-id spec-id})))
+        htype (or (halite-envs/halite-type-from-var-type senv vtype)
                   (throw (ex-info (format "BUG! Couldn't determine type of field '%s' of spec '%s'" var-kw spec-id)
-                                  {:form form})))]
+                                  {:form form, :var-kw var-kw, :spec-id spec-id})))]
     (ensure-node ssa-graph (list 'get id var-kw) htype)))
 
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph

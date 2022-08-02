@@ -41,9 +41,12 @@
   [var-type :- VarType]
   (and (vector? var-type) (= :Maybe (first var-type))))
 
+(s/defschema NamedConstraint
+  [(s/one s/Str :name) (s/one s/Any :expr)])
+
 (s/defschema SpecInfo
   {:spec-vars {halite-types/BareKeyword VarType}
-   :constraints [[(s/one s/Str :name) (s/one s/Any :expr)]]
+   :constraints [NamedConstraint]
    :refines-to {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 

@@ -4,11 +4,11 @@
 (ns jibe.halite.test-propagate
   (:require [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.propagate :as hp]
-            [jibe.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
-            [jibe.halite.transpile.ssa :as ssa]
             [jibe.halite.transpile.lowering :as lowering]
-            [jibe.halite.transpile.util :refer [fixpoint]]
+            [jibe.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [jibe.halite.transpile.simplify :as simplify]
+            [jibe.halite.transpile.ssa :as ssa]
+            [jibe.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
             [schema.test]
             [viasat.choco-clj-opt :as choco-clj])
@@ -170,11 +170,22 @@
 
        {:$type :ws/C :cn {:$in (set (range 10))}} {:$type :ws/C :cn {:$in #{0 2 4 6 8}}}
 
-       {:$type :ws/B :bn {:$in (set (range 10))}} {:$type :ws/B :bn {:$in #{2 4 6 8}}}
+       {:$type :ws/B :bn {:$in (set (range 10))}} {:$type :ws/B
+                                                   :bn {:$in #{2 4 6 8}}
+                                                   :$refines-to {:ws/C {:cn {:$in [2 8]}}}}
 
-       {:$type :ws/A :an {:$in (set (range 10))}} {:$type :ws/A :an {:$in #{1 3 5}}}
+       {:$type :ws/A :an {:$in (set (range 10))}} {:$type :ws/A
+                                                   :an {:$in #{1 3 5}}
+                                                   :$refines-to {:ws/B {:bn {:$in [2 6]}}
+                                                                 :ws/C {:cn {:$in [2 6]}}}}
 
-       {:$type :ws/D} {:$type :ws/D, :a {:$type :ws/A, :an {:$in [1 5]}}, :dm {:$in [2 6]}, :dn {:$in [1 5]}}))))
+       {:$type :ws/D} {:$type :ws/D,
+                       :a {:$type :ws/A,
+                           :an {:$in [1 5]}
+                           :$refines-to {:ws/B {:bn {:$in [2 6]}}
+                                         :ws/C {:cn {:$in [2 6]}}}},
+                       :dm {:$in [2 6]},
+                       :dn {:$in [1 5]}}))))
 
 (deftest test-spec-ify-bound-for-primitive-optionals
   (s/without-fn-validation
@@ -264,7 +275,7 @@
                                       (div dx 2))
                                 :bp false
                                 :c1 {:$type :ws/C :cx dx :cw dx}
-                                :c2 {:$type :ws/C :cx dx :cw 12}}}}}})
+                                :c2 {:$type :ws/C :cx dx :cw 8}}}}}})
 
 (def flatten-vars #'hp/flatten-vars)
 
@@ -278,6 +289,7 @@
       {::hp/spec-id :ws/C
        :cx [:cx "Integer"]
        :cw [:cw [:Maybe "Integer"]]
+       ::hp/refines-to {}
        ::hp/mandatory #{}}
 
       {:$type :ws/B}
@@ -288,12 +300,15 @@
        :c1 {::hp/spec-id :ws/C
             :cx [:c1|cx "Integer"]
             :cw [:c1|cw [:Maybe "Integer"]]
+            ::hp/refines-to {}
             ::hp/mandatory #{}}
        :c2 {::hp/spec-id :ws/C
             :$witness [:c2? "Boolean"]
             :cx [:c2|cx [:Maybe "Integer"]]
             :cw [:c2|cw [:Maybe "Integer"]]
+            ::hp/refines-to {}
             ::hp/mandatory #{:c2|cx}}
+       ::hp/refines-to {}
        ::hp/mandatory #{}}
 
       {:$type :ws/A}
@@ -306,12 +321,15 @@
             :c1 {::hp/spec-id :ws/C
                  :cx [:b1|c1|cx [:Maybe "Integer"]]
                  :cw [:b1|c1|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b1|c1|cx}}
             :c2 {::hp/spec-id :ws/C
                  :$witness [:b1|c2? "Boolean"]
                  :cx [:b1|c2|cx [:Maybe "Integer"]]
                  :cw [:b1|c2|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b1|c2|cx}}
+            ::hp/refines-to {}
             ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
        :b2 {::hp/spec-id :ws/B
             :$witness [:b2? "Boolean"]
@@ -321,14 +339,18 @@
             :c1 {::hp/spec-id :ws/C
                  :cx [:b2|c1|cx [:Maybe "Integer"]]
                  :cw [:b2|c1|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b2|c1|cx}}
             :c2 {::hp/spec-id :ws/C
                  :$witness [:b2|c2? "Boolean"]
                  :cx [:b2|c2|cx [:Maybe "Integer"]]
                  :cw [:b2|c2|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b2|c2|cx}}
+            ::hp/refines-to {}
             ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
        :ap [:ap "Boolean"]
+       ::hp/refines-to {}
        ::hp/mandatory #{}}
 
       {:$type :ws/A :b1 {:$type [:Maybe :ws/B]}}
@@ -341,12 +363,15 @@
             :c1 {::hp/spec-id :ws/C
                  :cx [:b1|c1|cx [:Maybe "Integer"]]
                  :cw [:b1|c1|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b1|c1|cx}}
             :c2 {::hp/spec-id :ws/C
                  :$witness [:b1|c2? "Boolean"]
                  :cx [:b1|c2|cx [:Maybe "Integer"]]
                  :cw [:b1|c2|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b1|c2|cx}}
+            ::hp/refines-to {}
             ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
        :b2 {::hp/spec-id :ws/B
             :$witness [:b2? "Boolean"]
@@ -356,14 +381,18 @@
             :c1 {::hp/spec-id :ws/C
                  :cx [:b2|c1|cx [:Maybe "Integer"]]
                  :cw [:b2|c1|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b2|c1|cx}}
             :c2 {::hp/spec-id :ws/C
                  :$witness [:b2|c2? "Boolean"]
                  :cx [:b2|c2|cx [:Maybe "Integer"]]
                  :cw [:b2|c2|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b2|c2|cx}}
+            ::hp/refines-to {}
             ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
        :ap [:ap "Boolean"]
+       ::hp/refines-to {}
        ::hp/mandatory #{}}
 
       {:$type :ws/A :b1 :Unset}
@@ -376,12 +405,15 @@
             :c1 {::hp/spec-id :ws/C
                  :cx [:b1|c1|cx [:Maybe "Integer"]]
                  :cw [:b1|c1|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b1|c1|cx}}
             :c2 {::hp/spec-id :ws/C
                  :$witness [:b1|c2? "Boolean"]
                  :cx [:b1|c2|cx [:Maybe "Integer"]]
                  :cw [:b1|c2|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b1|c2|cx}}
+            ::hp/refines-to {}
             ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
        :b2 {::hp/spec-id :ws/B
             :$witness [:b2? "Boolean"]
@@ -391,14 +423,18 @@
             :c1 {::hp/spec-id :ws/C
                  :cx [:b2|c1|cx [:Maybe "Integer"]]
                  :cw [:b2|c1|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b2|c1|cx}}
             :c2 {::hp/spec-id :ws/C
                  :$witness [:b2|c2? "Boolean"]
                  :cx [:b2|c2|cx [:Maybe "Integer"]]
                  :cw [:b2|c2|cw [:Maybe "Integer"]]
+                 ::hp/refines-to {}
                  ::hp/mandatory #{:b2|c2|cx}}
+            ::hp/refines-to {}
             ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
        :ap [:ap "Boolean"]
+       ::hp/refines-to {}
        ::hp/mandatory #{}})))
 
 (def lower-spec-bound #'hp/lower-spec-bound)
@@ -585,10 +621,22 @@
              :c2 {:$type [:Maybe :ws/C], :cw {:$in [-10 10 :Unset]}, :cx {:$in [-10 10]}}}}
 
        {:$type :ws/D}
-       {:$type :ws/D :dx {:$in [-9 9]}}
+       {:$type :ws/D
+        :dx {:$in [-9 9]}
+        :$refines-to {:ws/B {:bp false,
+                             :bw :Unset,
+                             :bx {:$in [-8 10]},
+                             :c1 {:$type :ws/C, :cw {:$in [-9 9]}, :cx {:$in [-9 9]}},
+                             :c2 {:$type :ws/C, :cw 8, :cx {:$in [-9 9]}}}}}
 
        {:$type :ws/D :dx {:$in (set (range -5 6))}}
-       {:$type :ws/D :dx {:$in #{-5 -3 -1 1 3 5}}}))))
+       {:$type :ws/D
+        :dx {:$in #{-5 -3 -1 1 3 5}}
+        :$refines-to {:ws/B {:bp false,
+                             :bw :Unset,
+                             :bx {:$in [-4 6]},
+                             :c1 {:$type :ws/C, :cw {:$in [-5 5]}, :cx {:$in [-5 5]}},
+                             :c2 {:$type :ws/C, :cw 8, :cx {:$in [-5 5]}}}}}))))
 
 (deftest simpler-composite-optional-test
   (schema.core/without-fn-validation
@@ -638,7 +686,9 @@
                        :spec-vars {:b "Integer"}
                        :constraints []
                        :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}})]
-    (is (= {:$type :my/B :b {:$in [1 100]}}
+    (is (= {:$type :my/B
+            :b {:$in [1 100]}
+            :$refines-to {:my/A {:a1 {:$in [1 100]}, :a2 :Unset}}}
            (hp/propagate senv {:$type :my/B :b {:$in [-100 100]}})))))
 
 (deftest test-propagate-with-errors
@@ -658,6 +708,165 @@
       {:$type :ws/A :an {:$in (set (range 7 22))}} {:$type :ws/A,:an {:$in #{7 8 9 20 21}},:ap {:$in #{true :Unset}}}
       {:$type :ws/A :an 21} {:$type :ws/A :an 21 :ap :Unset}
       {:$type :ws/A :an {:$in (set (range 7 22))} :ap :Unset} {:$type :ws/A :an {:$in #{20 21}} :ap :Unset})))
+
+(defn spec-env [env-map]
+  (-> env-map
+      (update-vals #(merge {:spec-vars {}, :constraints [], :refines-to {}} %))
+      halite-envs/spec-env))
+
+(deftest test-basic-refines-to-bounds
+  (let [senv (spec-env
+              '{:my/A {:spec-vars {:a1 "Integer"}
+                       :constraints [["a1_pos" (< 0 a1)]]}
+                :my/B {:spec-vars {:b1 "Integer"}
+                       :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
+                :my/C {:spec-vars {:cb :my/B}}})]
+
+    (testing "Refiment bounds can be given and will influence resulting bound"
+      (is (= {:$type :my/C,
+              :cb {:$type :my/B,
+                   :b1 -5
+                   :$refines-to {:my/A {:a1 5}}}}
+             (hp/propagate senv {:$type :my/C,
+                                 :cb {:$type :my/B
+                                      :$refines-to {:my/A {:a1 5}}}}))))
+
+    (testing "Refinment bounds are generated even when not given."
+      (is (= {:$type :my/C,
+              :cb {:$type :my/B
+                   :b1 {:$in [-9 990]}
+                   :$refines-to {:my/A {:a1 {:$in [1 1000]}}}}}
+             (hp/propagate senv {:$type :my/C}))))
+
+    (testing "Refinment bounds at top level of composition"
+      (is (= {:$type :my/B
+              :b1 -7
+              :$refines-to {:my/A {:a1 3}}}
+             (hp/propagate senv {:$type :my/B
+                                 :$refines-to {:my/A {:a1 3}}}))))))
+
+(deftest test-refines-to-bounds-with-optionals
+  (let [env-map '{:my/A {:spec-vars {:a1 "Integer", :a2 [:Maybe "Integer"]}
+                         :constraints [["a1_pos" (< 0 a1)]]}
+                  :my/B {:spec-vars {:b1 "Integer"}
+                         :refines-to {:my/A {:expr {:$type :my/A,
+                                                    :a1 (+ 10 b1),
+                                                    :a2 (when (< 5 b1) (+ 2 b1))}}}}
+                  :my/C {:spec-vars {:cb [:Maybe :my/B]}}}
+        senv (spec-env env-map)]
+
+    (testing "basic optionals"
+      (is (= {:$type :my/B
+              :b1 {:$in [-9 990]}
+              :$refines-to {:my/A {:a1 {:$in [1 1000]}
+                                   :a2 {:$in [8 992 :Unset]}}}}
+             (hp/propagate senv {:$type :my/B})))
+
+      (is (= {:$type :my/B,
+              :b1 -5
+              :$refines-to {:my/A {:a1 5, :a2 :Unset}}}
+             (hp/propagate senv {:$type :my/B
+                                 :$refines-to {:my/A {:a1 5}}})))
+
+      (is (= {:$type :my/B,
+              :b1 {:$in [-9 5]}
+              :$refines-to {:my/A {:a1 {:$in [1 15]},
+                                   :a2 :Unset}}}
+             (hp/propagate senv {:$type :my/B
+                                 :$refines-to {:my/A {:a2 :Unset}}})))
+
+      (is (= {:$type :my/C,
+              :cb {:$type [:Maybe :my/B],
+                   :b1 {:$in [-9 990]},
+                   :$refines-to {:my/A {:a1 {:$in [-1000 1000]},
+                                        :a2 {:$in [-1000 1000 :Unset]}}}}}
+             (hp/propagate senv {:$type :my/C}))))
+
+    (testing "transitive refinement bounds"
+      (let [senv (spec-env (merge env-map
+                                  '{:my/D {:spec-vars {:d1 "Integer"}
+                                           :refines-to {:my/B {:expr {:$type :my/B,
+                                                                      :b1 (* 2 d1)}}}}
+                                    :my/E {:spc-vars {:ed [:Maybe :my/D]}}}))]
+
+        (is (= {:$type :my/D,
+                :d1 {:$in [-4 495]},
+                :$refines-to {:my/B {:b1 {:$in [-8 990]}},
+                              :my/A {:a1 {:$in [2 1000]},
+                                     :a2 {:$in [8 992 :Unset]}}}}
+               (hp/propagate senv {:$type :my/D})))
+
+        (is (= {:$type :my/D,
+                :d1 {:$in [3 6]},
+                :$refines-to {:my/B {:b1 {:$in [6 12]}},
+                              :my/A {:a1 {:$in [16 22]},
+                                     :a2 {:$in [8 14]}}}}
+               (hp/propagate senv {:$type :my/D,
+                                   :$refines-to {:my/A {:a2 {:$in [-5 15]}}}})))
+
+        (is (= {:$type :my/D,
+                :d1 {:$in [3 6]},
+                :$refines-to {:my/B {:b1 {:$in [6 12]}},
+                              :my/A {:a1 {:$in [16 22]},
+                                     :a2 {:$in [8 14]}}}}
+               (hp/propagate senv {:$type :my/D,
+                                   :$refines-to {:my/A {:a2 {:$in [-5 15]}}
+                                                 :my/B {:b1 {:$in [-5 15]}}}})))))
+
+    (testing "nested refinement bounds"
+      (let [senv (spec-env (merge env-map
+                                  '{:my/D {:spec-vars {:d1 "Integer"}
+                                           :refines-to {:my/C {:expr {:$type :my/C,
+                                                                      :cb {:$type :my/B
+                                                                           :b1 (* d1 2)}}}}}
+                                    :my/E {:spc-vars {:ed [:Maybe :my/D]}}}))]
+
+        (is (= {:$type :my/D,
+                :d1 {:$in [-4 495]},
+                :$refines-to {:my/C {:cb {:$type :my/B,
+                                          :b1 {:$in [-8 990]},
+                                          :$refines-to {:my/A {:a1 {:$in [2 1000]},
+                                                               :a2 {:$in [8 992 :Unset]}}}}}}}
+               (hp/propagate senv {:$type :my/D})))
+
+        (is (= {:$type :my/D,
+                :d1 3,
+                :$refines-to {:my/C {:cb {:$type :my/B,
+                                          :b1 6,
+                                          :$refines-to {:my/A {:a1 16,
+                                                               :a2 8}}}}}}
+               (hp/propagate senv {:$type :my/D,
+                                   :$refines-to {:my/C {:cb {:$type :my/B,
+                                                             :$refines-to {:my/A {:a2 {:$in [-9 9]}}}}}}})))))))
+
+(deftest test-refines-to-bounds-errors
+  (let [senv (spec-env
+              '{:my/A {:spec-vars {:a1 "Integer"}
+                       :constraints [["a1_pos" (< 0 a1)]]}
+                :my/B {:spec-vars {:b1 "Integer"}
+                       :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
+                :my/C {:spec-vars {:c1 "Integer"}
+                       :refines-to {:my/B {:expr {:$type :my/B, :b1 (+ 5 c1)}}}}})]
+
+    (testing "transitive refinements can be listed directly"
+      (is (= {:$type :my/C,
+              :c1 -10,
+              :$refines-to {:my/B {:b1 -5},
+                            :my/A {:a1 5}}}
+             (hp/propagate senv {:$type :my/C
+                                 :$refines-to {:my/B {:b1 {:$in [-20 50]}}
+                                               :my/A {:a1 5}}}))))
+
+    (testing "transitive refinements cannot be nested"
+      (is (thrown? Exception
+                   (hp/propagate senv {:$type :my/C
+                                       :$refines-to {:my/B {:b1 {:$in [20 50]}
+                                                            :$refines-to {:my/A {:a1 5}}}}}))))
+
+    (testing "disallow refinement bound on non-existant refinement path"
+      (is (thrown? Exception
+                   (hp/propagate senv {:$type :my/A
+                                       :$refines-to {:my/C {:c1 {:$in [20 50]}}}}))))))
 
 #_(deftest example-abstract-propagation
     (s/with-fn-validation
