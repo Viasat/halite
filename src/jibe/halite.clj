@@ -177,6 +177,9 @@
 (deferr halite-not-boolean-body [data]
         {:message (format "Body expression in '%s' must be boolean" (pr-str (:op data)))})
 
+(deferr halite-not-boolean-constraint [data]
+        {:message (format "Constraint expression '%s' must have Boolean type" (pr-str (:expr data)))})
+
 (deferr halite-not-integer-body [data]
         {:message (format "Body expression in '%s' must be Integer, not %s"
                           (pr-str (:op data))
@@ -215,9 +218,14 @@
 (deferr halite-symbols-not-bound [data]
         {:message (format "symbols in type environment are not bound: %s" (str/join " ", (:unbound-symbols data)))})
 
+(deferr halite-invalid-refinement-expression [data]
+  {:message (format "Invalid refinement expression: %s"
+                    (:form data))})
+
 clojure.pprint/cl-format
 
 (declare eval-expr)
+(declare eval-expr*)
 
 (declare type-check*)
 
@@ -237,7 +245,10 @@ clojure.pprint/cl-format
 (s/defn ^:private eval-predicate :- Boolean
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
   (with-exception-data err-msg {:form bool-expr}
-    (true? (eval-expr (:senv ctx) tenv (:env ctx) bool-expr))))
+    (let [t (type-check* {:senv (:senv ctx) :tenv tenv} bool-expr)]
+      (when (not= :Boolean t)
+        (throw-err (halite-not-boolean-constraint {:type t}))))
+    (true? (eval-expr* ctx bool-expr))))
 
 (s/defn ^:private eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
@@ -245,7 +256,11 @@ clojure.pprint/cl-format
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv),  spec-id :- halite-types/NamespacedKeyword, expr]
   (if (contains? *refinements* spec-id)
     (*refinements* spec-id) ;; cache hit
-    (eval-expr (:senv ctx) tenv (:env ctx) expr)))
+    (let [expected-type (halite-types/maybe-type (halite-types/concrete-spec-type spec-id))
+          t (type-check* {:senv (:senv ctx) :tenv tenv} expr)]
+      (when-not (halite-types/subtype? t expected-type)
+        (throw-err (halite-invalid-refinement-expression {:form expr})))
+      (eval-expr* ctx expr))))
 
 (s/defn ^:private refines-to? :- Boolean
   [inst spec-type :- halite-types/HaliteType]
