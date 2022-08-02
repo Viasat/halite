@@ -2543,6 +2543,7 @@
 
 (deftest test-error
   (h (error "fail") :Nothing [:throws "Spec threw error: \"fail\""] "error(\"fail\")" [:throws "Spec threw error: \"fail\""])
+  (h (if true (error "fail") "hello") :String [:throws "Spec threw error: \"fail\""] "(if(true) {error(\"fail\")} else {\"hello\"})" [:throws "Spec threw error: \"fail\""])
 
   (h (error) [:throws "no matching signature for 'error'"])
   (h (error 20) [:throws "no matching signature for 'error'"])
@@ -2571,7 +2572,7 @@
              (set (keys (ex-data e)))))
       (is (= {:err-id :halite-undefined-symbol
               :jibe.data.model/spec-name :my/Spec
-              :refinement-name "as_b"
+              :refinement-name "my/Spec$v1/as_b"
               :row 3
               :end-row 3
               :col 6

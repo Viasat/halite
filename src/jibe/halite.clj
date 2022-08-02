@@ -321,13 +321,15 @@ clojure.pprint/cl-format
        (->> refines-to
             (sort-by first)
             (reduce
-             (fn [transitive-refinements [spec-id {:keys [expr inverted?]}]]
+             (fn [transitive-refinements [spec-id {:keys [expr inverted? name]}]]
                (binding [*refinements* transitive-refinements]
-                 (let [inst (try (eval-refinement ctx spec-tenv spec-id expr)
-                                 (catch ExceptionInfo ex
-                                   (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
-                                     ex
-                                     (throw ex))))]
+                 (let [inst (try
+                              (with-exception-data {:refinement name}
+                                (eval-refinement ctx spec-tenv spec-id expr))
+                              (catch ExceptionInfo ex
+                                (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
+                                  ex
+                                  (throw ex))))]
                    (cond-> transitive-refinements
                      (not= :Unset inst) (->
                                          (merge (:refinements (meta inst)))
