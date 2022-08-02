@@ -11,8 +11,7 @@
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.lib.format-errors :as format-errors :refer [deferr throw-err with-exception-data]]
-            [schema.core :as schema]
-            [internal :as s])
+            [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
@@ -222,9 +221,9 @@ clojure.pprint/cl-format
 
 (declare type-check*)
 
-(schema/defschema ^:private TypeContext {:senv (schema/protocol halite-envs/SpecEnv) :tenv (schema/protocol halite-envs/TypeEnv)})
+(s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
 
-(schema/defschema ^:private EvalContext {:senv (schema/protocol halite-envs/SpecEnv) :env (schema/protocol halite-envs/Env)})
+(s/defschema ^:private EvalContext {:senv (s/protocol halite-envs/SpecEnv) :env (s/protocol halite-envs/Env)})
 
 (def ^:private ^:dynamic *refinements*)
 
@@ -235,39 +234,39 @@ clojure.pprint/cl-format
 (defn fixed-decimal? [value]
   (fixed-decimal/fixed-decimal? value))
 
-(s/defn- eval-predicate :- Boolean
-  [ctx :- EvalContext, tenv :- (schema/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
+(s/defn ^:private eval-predicate :- Boolean
+  [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
   (with-exception-data err-msg {:form bool-expr}
     (true? (eval-expr (:senv ctx) tenv (:env ctx) bool-expr))))
 
-(s/defn- eval-refinement :- (s/maybe s/Any)
+(s/defn ^:private eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
-  [ctx :- EvalContext, tenv :- (schema/protocol halite-envs/TypeEnv),  spec-id :- halite-types/NamespacedKeyword, expr]
+  [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv),  spec-id :- halite-types/NamespacedKeyword, expr]
   (if (contains? *refinements* spec-id)
     (*refinements* spec-id) ;; cache hit
     (eval-expr (:senv ctx) tenv (:env ctx) expr)))
 
-(s/defn- refines-to? :- Boolean
+(s/defn ^:private refines-to? :- Boolean
   [inst spec-type :- halite-types/HaliteType]
   (let [spec-id (halite-types/spec-id spec-type)]
     (or (= spec-id (:$type inst))
         (boolean (get (:refinements (meta inst)) spec-id)))))
 
-(s/defn- concrete? :- Boolean
+(s/defn ^:private concrete? :- Boolean
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
-  [senv :- (schema/protocol halite-envs/SpecEnv), v]
+  [senv :- (s/protocol halite-envs/SpecEnv), v]
   (cond
     (or (integer-or-long? v) (fixed-decimal? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
                    spec-info (or (halite-envs/lookup-spec senv spec-id)
-                                 (halite-resource-spec-not-found (s/convey spec-id)))]
+                                 (halite-resource-spec-not-found {:spec-id spec-id}))]
                (and (not (:abstract? spec-info))
                     (every? (partial concrete? senv) (vals (dissoc v :$type)))))
     (coll? v) (every? (partial concrete? senv) v)
     :else (throw-err (halite-not-a-value {:value v}))))
 
-(s/defn- check-against-declared-type
+(s/defn ^:private check-against-declared-type
   "Runtime check that v conforms to the given type, which is the type of v as declared in a resource spec.
   This function supports the semantics of abstract specs. A declared type of :foo/Bar is replaced by :Instance
   during type checking when the spec foo/Bar is abstract. The type system ensures that v is some instance,
@@ -285,11 +284,11 @@ clojure.pprint/cl-format
               (dorun (map (partial check-against-declared-type elem-type) v))
               nil))))
 
-(s/defn- validate-instance :- s/Any
+(s/defn ^:private validate-instance :- s/Any
   "Check that an instance satisfies all applicable constraints.
   Return the instance if so, throw an exception if not.
   Assumes that the instance has been type-checked successfully against the given type environment."
-  [senv :- (schema/protocol halite-envs/SpecEnv), inst :- s/Any]
+  [senv :- (s/protocol halite-envs/SpecEnv), inst :- s/Any]
   (let [spec-id (:$type inst)
         {:keys [spec-vars refines-to] :as spec-info} (halite-envs/lookup-spec senv spec-id)
         spec-tenv (halite-envs/type-env-from-spec senv spec-info)
@@ -310,9 +309,9 @@ clojure.pprint/cl-format
     ;; check all constraints
     (let [violated-constraints (->> spec-info :constraints (remove satisfied?) vec)]
       (when (seq violated-constraints)
-        (throw-err (halite-invalid-instance (s/convey spec-id violated-constraints
-                                                      :value inst
-                                                      :halite-error :constraint-violation)))))
+        (throw-err (halite-invalid-instance {:spec-id spec-id :violated-constraints violated-constraints
+                                             :value inst
+                                             :halite-error :constraint-violation}))))
 
     ;; fully explore all active refinement paths, and store the results
     (with-meta
@@ -356,11 +355,11 @@ clojure.pprint/cl-format
         invalid-vars (set/difference supplied-fields fields)]
 
     (when (seq missing-vars)
-      (throw-err (halite-missing-required-vars (s/convey missing-vars :form inst))))
+      (throw-err (halite-missing-required-vars {:missing-vars missing-vars :form inst})))
     (when (seq invalid-vars)
-      (throw-err (halite-variables-not-in-spec (s/convey invalid-vars
-                                                         :instance inst
-                                                         :form (get inst (first invalid-vars))))))
+      (throw-err (halite-variables-not-in-spec {:invalid-vars invalid-vars
+                                                :instance inst
+                                                :form (get inst (first invalid-vars))})))
 
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
@@ -373,7 +372,7 @@ clojure.pprint/cl-format
                                                   :actual actual-type})))))
     (halite-types/concrete-spec-type t)))
 
-(s/defn- get-typestring-for-coll [coll]
+(s/defn ^:private get-typestring-for-coll [coll]
   (cond
     (vector? coll) "vector"
     (set? coll) "set"
@@ -397,7 +396,7 @@ clojure.pprint/cl-format
 (defn type-check-fixed-decimal [value]
   (halite-types/decimal-type (fixed-decimal/get-scale value)))
 
-(s/defn- type-of* :- halite-types/HaliteType
+(s/defn ^:private type-of* :- halite-types/HaliteType
   [ctx :- TypeContext, value]
   (cond
     (boolean? value) :Boolean
@@ -414,21 +413,21 @@ clojure.pprint/cl-format
 (s/defn type-of :- halite-types/HaliteType
   "Return the type of the given runtime value, or throw an error if the value is invalid and cannot be typed.
   For instances, this function checks all applicable constraints. Any constraint violations result in a thrown exception."
-  [senv :- (schema/protocol halite-envs/SpecEnv), tenv :- (schema/protocol halite-envs/TypeEnv), value :- s/Any]
+  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), value :- s/Any]
   (type-of* {:senv senv :tenv tenv} value))
 
-(schema/defschema FnSignature
+(s/defschema FnSignature
   {:arg-types [halite-types/HaliteType]
    (s/optional-key :variadic-tail) halite-types/HaliteType
    :return-type halite-types/HaliteType})
 
-(schema/defschema Builtin
-  {:signatures (schema/constrained [FnSignature] seq)
+(s/defschema Builtin
+  {:signatures (s/constrained [FnSignature] seq)
    :impl clojure.lang.IFn})
 
 (def & :&)
 
-(s/defn- mk-builtin :- Builtin
+(s/defn ^:private mk-builtin :- Builtin
   [impl & signatures]
   (when (not= 0 (mod (count signatures) 2))
     (throw (ex-info "argument count must be a multiple of 2" {})))
@@ -517,7 +516,7 @@ clojure.pprint/cl-format
                                             (range 1 (inc fixed-decimal/max-scale))))
 
 (def builtins
-  (schema/with-fn-validation
+  (s/with-fn-validation
     {'+ (apply mk-builtin h+ (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
      '- (apply mk-builtin h- (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
      '* (apply mk-builtin h* (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
@@ -639,7 +638,7 @@ clojure.pprint/cl-format
          (every? true? (map #(when variadic-tail (halite-types/subtype? %1 variadic-tail))
                             (drop (count arg-types) actual-types)))))))
 
-(s/defn- type-check-fn-application :- halite-types/HaliteType
+(s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
@@ -657,7 +656,7 @@ clojure.pprint/cl-format
         (matches-signature? sig actual-types) (:return-type sig)
         :else (recur more)))))
 
-(s/defn- type-check-symbol :- halite-types/HaliteType
+(s/defn ^:private type-check-symbol :- halite-types/HaliteType
   [ctx :- TypeContext, sym]
   (if (= '$no-value sym)
     :Unset
@@ -701,24 +700,24 @@ clojure.pprint/cl-format
 
     :else (throw-err (halite-invalid-lookup-target {:form form, :actual-type subexpr-type}))))
 
-(s/defn- type-check-get :- halite-types/HaliteType
+(s/defn ^:private type-check-get :- halite-types/HaliteType
   [ctx :- TypeContext, form]
   (arg-count-exactly 2 form)
   (let [[_ subexpr index] form]
     (type-check-lookup ctx form (type-check* ctx subexpr) index)))
 
-(s/defn- type-check-get-in :- halite-types/HaliteType
+(s/defn ^:private type-check-get-in :- halite-types/HaliteType
   [ctx :- TypeContext, form]
   (arg-count-exactly 2 form)
   (let [[_ subexpr indexes] form]
     (reduce (partial type-check-lookup ctx form) (type-check* ctx subexpr) indexes)))
 
-(s/defn- type-check-equals :- halite-types/HaliteType
+(s/defn ^:private type-check-equals :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
   :Boolean)
 
-(s/defn- type-check-set-scale :- halite-types/HaliteType
+(s/defn ^:private type-check-set-scale :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
   (let [[_ _ scale] expr
@@ -738,7 +737,7 @@ clojure.pprint/cl-format
       :Integer
       (halite-types/decimal-type scale))))
 
-(s/defn- type-check-if :- halite-types/HaliteType
+(s/defn ^:private type-check-if :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 3 expr)
   (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
@@ -746,7 +745,7 @@ clojure.pprint/cl-format
       (throw-err (halite-arg-type-mismatch {:position 0 :op 'if :expected-type-description "boolean" :expr expr})))
     (halite-types/meet s t)))
 
-(s/defn- type-check-when :- halite-types/HaliteType
+(s/defn ^:private type-check-when :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (arg-count-exactly 2 expr)
   (let [[pred-type body-type] (map (partial type-check* ctx) (rest expr))]
@@ -754,7 +753,7 @@ clojure.pprint/cl-format
       (throw-err (halite-arg-type-mismatch {:position 0 :op 'when :expected-type-description "boolean" :expr expr})))
     (halite-types/maybe-type body-type)))
 
-(s/defn- type-check-let :- halite-types/HaliteType
+(s/defn ^:private type-check-let :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
   (let [[bindings body] (rest expr)]
@@ -773,7 +772,7 @@ clojure.pprint/cl-format
       (partition 2 bindings))
      body)))
 
-(s/defn- type-check-comprehend
+(s/defn ^:private type-check-comprehend
   [ctx :- TypeContext, expr]
   (arg-count-exactly 2 expr)
   (let [[op [sym expr :as bindings] body] expr]
@@ -790,21 +789,21 @@ clojure.pprint/cl-format
       {:coll-type coll-type
        :body-type body-type})))
 
-(s/defn- type-check-quantifier :- halite-types/HaliteType
+(s/defn ^:private type-check-quantifier :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (when (not= :Boolean (:body-type (type-check-comprehend ctx expr)))
     (throw-err (halite-not-boolean-body {:op (first expr)
                                          :form expr})))
   :Boolean)
 
-(s/defn- type-check-map :- halite-types/HaliteType
+(s/defn ^:private type-check-map :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     [(first coll-type) (if (halite-types/subtype? coll-type halite-types/empty-coll)
                          :Nothing
                          body-type)]))
 
-(s/defn- type-check-filter :- halite-types/HaliteType
+(s/defn ^:private type-check-filter :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     (when (not= :Boolean body-type)
@@ -812,14 +811,14 @@ clojure.pprint/cl-format
                                            :form expr})))
     coll-type))
 
-(s/defn- type-check-sort-by :- halite-types/HaliteType
+(s/defn ^:private type-check-sort-by :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     (when (not= :Integer body-type)
       (throw-err (halite-not-integer-body {:op 'sort-by :form expr :actual-type body-type})))
     (halite-types/vector-type (halite-types/elem-type coll-type))))
 
-(s/defn- type-check-reduce :- halite-types/HaliteType
+(s/defn ^:private type-check-reduce :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
@@ -839,7 +838,7 @@ clojure.pprint/cl-format
                                           (halite-envs/extend-scope elem et)))
                    body))))
 
-(s/defn- type-check-if-value :- halite-types/HaliteType
+(s/defn ^:private type-check-if-value :- halite-types/HaliteType
   "handles if-value and when-value"
   [ctx :- TypeContext, expr :- s/Any]
   (let [[op sym set-expr unset-expr] expr]
@@ -857,7 +856,7 @@ clojure.pprint/cl-format
               set-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) set-expr)]
           (halite-types/meet set-type unset-type))))))
 
-(s/defn- type-check-if-value-let :- halite-types/HaliteType
+(s/defn ^:private type-check-if-value-let :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
     (arg-count-exactly (if (= 'when-value-let op) 2 3) expr)
@@ -878,14 +877,14 @@ clojure.pprint/cl-format
   (when-not (every? #(halite-types/subtype? % (halite-types/set-type :Value)) arg-types)
     (throw-err (halite-arguments-not-sets {:op op, :form expr}))))
 
-(s/defn- type-check-union :- halite-types/HaliteType
+(s/defn ^:private type-check-union :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (reduce halite-types/meet halite-types/empty-set arg-types)))
 
-(s/defn- type-check-intersection :- halite-types/HaliteType
+(s/defn ^:private type-check-intersection :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
@@ -894,14 +893,14 @@ clojure.pprint/cl-format
       halite-types/empty-set
       (reduce halite-types/join arg-types))))
 
-(s/defn- type-check-difference :- halite-types/HaliteType
+(s/defn ^:private type-check-difference :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (check-all-sets expr arg-types)
     (first arg-types)))
 
-(s/defn- type-check-first :- halite-types/HaliteType
+(s/defn ^:private type-check-first :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
@@ -911,7 +910,7 @@ clojure.pprint/cl-format
       (throw-err (halite-argument-empty {:form expr})))
     (second arg-type)))
 
-(s/defn- type-check-rest :- halite-types/HaliteType
+(s/defn ^:private type-check-rest :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
@@ -919,7 +918,7 @@ clojure.pprint/cl-format
       (throw-err (halite-argument-not-vector {:op 'rest, :form expr})))
     arg-type))
 
-(s/defn- type-check-conj :- halite-types/HaliteType
+(s/defn ^:private type-check-conj :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
@@ -932,7 +931,7 @@ clojure.pprint/cl-format
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
 
-(s/defn- type-check-concat :- halite-types/HaliteType
+(s/defn ^:private type-check-concat :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
   (let [op (first expr)
@@ -946,7 +945,7 @@ clojure.pprint/cl-format
     (halite-types/meet s
                        (halite-types/change-elem-type s (halite-types/elem-type t)))))
 
-(s/defn- type-check-refine-to :- halite-types/HaliteType
+(s/defn ^:private type-check-refine-to :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
@@ -959,7 +958,7 @@ clojure.pprint/cl-format
       (throw-err (halite-resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     (halite-types/concrete-spec-type kw)))
 
-(s/defn- type-check-refines-to? :- halite-types/HaliteType
+(s/defn ^:private type-check-refines-to? :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (arg-count-exactly 2 expr)
   (let [[subexpr kw] (rest expr)
@@ -972,7 +971,7 @@ clojure.pprint/cl-format
       (throw-err (halite-resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     :Boolean))
 
-(s/defn- type-check-valid :- halite-types/HaliteType
+(s/defn ^:private type-check-valid :- halite-types/HaliteType
   [ctx :- TypeContext, [_valid subexpr :as expr]]
   (let [t (type-check* ctx subexpr)]
     (cond
@@ -981,7 +980,7 @@ clojure.pprint/cl-format
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) t
       :else (throw-err (halite-arg-type-mismatch {:op 'valid, :expected-type-description "an instance of known type", :form expr})))))
 
-(s/defn- type-check-valid? :- halite-types/HaliteType
+(s/defn ^:private type-check-valid? :- halite-types/HaliteType
   [ctx :- TypeContext, [_valid? subexpr :as expr]]
   (let [t (type-check* ctx subexpr)]
     (cond
@@ -990,7 +989,7 @@ clojure.pprint/cl-format
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
       :else (throw-err (halite-arg-type-mismatch {:op 'valid?, :expected-type-description "an instance of known type", :form expr})))))
 
-(s/defn- type-check* :- halite-types/HaliteType
+(s/defn ^:private type-check* :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (cond
     (boolean? expr) :Boolean
@@ -1036,19 +1035,19 @@ clojure.pprint/cl-format
 (s/defn type-check :- halite-types/HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
-  [senv :- (schema/protocol halite-envs/SpecEnv) tenv :- (schema/protocol halite-envs/TypeEnv) expr :- s/Any]
+  [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
   (type-check* {:senv senv :tenv tenv} expr))
 
 (declare eval-expr*)
 
-(s/defn- eval-get :- s/Any
+(s/defn ^:private eval-get :- s/Any
   [ctx :- EvalContext, target-expr index]
   (let [target (eval-expr* ctx target-expr)]
     (if (vector? target)
       (nth target (eval-expr* ctx index))
       (get target index :Unset))))
 
-(s/defn- eval-get-in :- s/Any
+(s/defn ^:private eval-get-in :- s/Any
   [ctx :- EvalContext, target-expr indexes]
   (reduce (fn [target index]
             (if (vector? target)
@@ -1057,7 +1056,7 @@ clojure.pprint/cl-format
           (eval-expr* ctx target-expr)
           indexes))
 
-(s/defn- eval-let :- s/Any
+(s/defn ^:private eval-let :- s/Any
   [ctx :- EvalContext, bindings body]
   (eval-expr*
    (reduce
@@ -1071,7 +1070,7 @@ clojure.pprint/cl-format
     (partition 2 bindings))
    body))
 
-(s/defn- eval-if-value :- s/Any
+(s/defn ^:private eval-if-value :- s/Any
   "handles if-value and when-value"
   [ctx :- EvalContext, expr]
   (let [[sym then else] (rest expr)]
@@ -1081,7 +1080,7 @@ clojure.pprint/cl-format
         (eval-expr* ctx else)
         :Unset))))
 
-(s/defn- eval-if-value-let :- s/Any
+(s/defn ^:private eval-if-value-let :- s/Any
   [ctx :- EvalContext, expr]
   (let [[[sym maybe] then else] (rest expr)
         maybe-val (eval-expr* ctx maybe)]
@@ -1091,20 +1090,20 @@ clojure.pprint/cl-format
         (eval-expr* ctx else)
         :Unset))))
 
-(s/defn- eval-quantifier-bools :- [Boolean]
+(s/defn ^:private eval-quantifier-bools :- [Boolean]
   [ctx :- EvalContext,
    [[sym coll] pred]]
   (mapv #(eval-expr* (update ctx :env halite-envs/bind sym %) pred)
         (eval-expr* ctx coll)))
 
-(s/defn- eval-comprehend :- [s/Any]
+(s/defn ^:private eval-comprehend :- [s/Any]
   [ctx :- EvalContext,
    [[sym coll] expr]]
   (let [coll-val (eval-expr* ctx coll)]
     [coll-val
      (map #(eval-expr* (update ctx :env halite-envs/bind sym %) expr) coll-val)]))
 
-(s/defn- eval-reduce :- s/Any
+(s/defn ^:private eval-reduce :- s/Any
   [ctx :- EvalContext,
    [op [acc init] [elem coll] body]]
   (reduce (fn [a b]
@@ -1114,7 +1113,7 @@ clojure.pprint/cl-format
           (eval-expr* ctx init)
           (eval-expr* ctx coll)))
 
-(s/defn- eval-refine-to :- s/Any
+(s/defn ^:private eval-refine-to :- s/Any
   [ctx :- EvalContext, expr]
   (let [[subexp t] (rest expr)
         inst (eval-expr* ctx subexp)
@@ -1134,7 +1133,7 @@ clojure.pprint/cl-format
                  :vector-runtime-count)
                x))
 
-(s/defn- eval-expr* :- s/Any
+(s/defn ^:private eval-expr* :- s/Any
   [ctx :- EvalContext, expr]
   (let [eval-in-env (partial eval-expr* ctx)]
     (cond
@@ -1210,7 +1209,7 @@ clojure.pprint/cl-format
   "Type check a halite expression against the given type environment,
   evaluate it in the given environment, and return the result. The bindings
   in the environment are checked against the type environment before evaluation."
-  [senv :- (schema/protocol halite-envs/SpecEnv), tenv :- (schema/protocol halite-envs/TypeEnv), env :- (schema/protocol halite-envs/Env), expr]
+  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), env :- (s/protocol halite-envs/Env), expr]
   (type-check senv tenv expr)
   (let [declared-symbols (set (keys (halite-envs/scope tenv)))
         bound-symbols (set (keys (halite-envs/bindings env)))
