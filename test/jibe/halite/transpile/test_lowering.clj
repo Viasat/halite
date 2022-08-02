@@ -447,23 +447,26 @@
                   :ws/D
                   {:spec-vars {:dm "Integer", :dn "Integer"}
                    :constraints [["d1" (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))]
-                                 ["d2" (= dn (get (refine-to {:$type :ws/B :bn dn} :ws/B) :bn))]]
+                                 ["d2" (= dn (get (refine-to {:$type :ws/B :bn dn} :ws/B) :bn))]
+                                 ["d3" (not= 72 (get {:$type :ws/A :an dn} :an))]]
                    :refines-to {}}})
           sctx (ssa/build-spec-ctx senv :ws/D)]
-      (is (= '(let [$28 (get {:$type :ws/A, :an dn} :an)
-                    $34 (get {:$type :ws/B, :bn (+ 1 $28)} :bn)]
-                (and (= dm (get {:$type :ws/C, :cn $34} :cn))
-                     (= dn (get {:$type :ws/B, :bn dn} :bn))))
+      (is (= '(let [$14 (get {:$type :ws/A, :an dn} :an)
+                    $35 (get {:$type :ws/B, :bn (+ 1 $14)} :bn)]
+                (and (= dm (get {:$type :ws/C, :cn $35} :cn))
+                     (= dn (get {:$type :ws/B, :bn dn} :bn))
+                     (not= 72 $14)))
              (-> sctx
                  (lower-refine-to)
                  :ws/D
                  (ssa/spec-from-ssa)
                  :constraints first second)))
 
-      (is (= '(let [$40 (get {:$type :ws/A, :an dn} :an)
-                    $88 (get {:$type :ws/B, :bn (+ 1 $40)} :bn)]
+      (is (= '(let [$14 (get {:$type :ws/A, :an dn} :an)
+                    $88 (get {:$type :ws/B, :bn (+ 1 $14)} :bn)]
                 (and (= dm (get {:$type :ws/C, :cn $88} :cn))
-                     (= dn (get {:$type :ws/B, :bn dn} :bn))))
+                     (= dn (get {:$type :ws/B, :bn dn} :bn))
+                     (not= 72 $14)))
              (-> sctx
                  (lowering/lower)
                  :ws/D
