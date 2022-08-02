@@ -1195,9 +1195,10 @@ clojure.pprint/cl-format
                     'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
                                (mapv #(nth % 1) (sort (map vector indexes coll))))
                     'reduce (eval-reduce ctx expr)
-                    (apply (or (:impl (get builtins (first expr)))
-                               (throw-err (halite-unknown-function-or-operator {:op (first expr), :form expr})))
-                           (mapv eval-in-env (rest expr))))
+                    (with-exception-data {:form expr}
+                      (apply (or (:impl (get builtins (first expr)))
+                                 (throw-err (halite-unknown-function-or-operator {:op (first expr), :form expr})))
+                             (mapv eval-in-env (rest expr)))))
       (vector? expr) (mapv eval-in-env expr)
       (set? expr) (set (map eval-in-env expr))
       (= :Unset expr) :Unset
