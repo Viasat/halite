@@ -44,97 +44,94 @@
     (symbol s)))
 
 (defprotocol AddMetadata
-  (add-metadata [obj metadata]))
+  (add-source-metadata-when-possible [obj source-tree]))
 
-(extend-type clojure.lang.IObj
-  AddMetadata
-  (add-metadata [obj metadata]
-    (with-meta obj (merge (meta obj) metadata))))
+(extend-protocol AddMetadata
+  clojure.lang.IObj
+  (add-source-metadata-when-possible [obj source-tree]
+    (let [{:instaparse.gll/keys [start-line start-column end-line end-column]} (meta source-tree)]
+      (if start-line
+        (with-meta obj (merge (meta obj) {:row start-line
+                                          :col start-column
+                                          :end-row end-line
+                                          :end-col end-column}))
+        obj)))
 
-(extend-type Object
-  AddMetadata
-  (add-metadata [obj metadata]
+  Object
+  ;; default implementation for clojure objects that do not support metadata
+  (add-source-metadata-when-possible [obj source-tree]
     obj))
-
-(defn- add-source-metadata [tree h]
-  (let [{:instaparse.gll/keys [start-line start-column end-line end-column]} (meta tree)]
-    (add-metadata h (merge {}
-                           (when start-line {:row start-line})
-                           (when start-column {:col start-column})
-                           (when end-line {:end-row end-line})
-                           (when end-column {:end-col end-column})))))
 
 (defn toh
   "Translate from tree of expression objects created by instaparse (hiccup) into halite"
   [tree]
-  (add-source-metadata
-   tree
-   (flatten-variadics
-    (match [tree]
-      [[:lambda [:params & params] body]]  (list 'fn (mapv toh params) (toh body))
-      [[:conditional op a b c]]      (list (if (= "if" op) 'if 'if-value) (toh a) (toh b) (toh c))
-      [[:if-value-let sym m t e]]    (list 'if-value-let [(toh sym) (toh m)] (toh t) (toh e))
-      [[:when-value-let sym m t]]    (list 'when-value-let [(toh sym) (toh m)] (toh t))
-      [[:when-value sym t]]          (list 'when-value (toh sym) (toh t))
-      [[:optional pred body]]        (list 'when (toh pred) (toh body))
-      [[:valid op body]]             (list (symbol op) (toh body))
-      [[:implication a b]]           (list '=> (toh a) (toh b))
-      [[:or  a "||" b]]              (list 'or (toh a) (toh b))
-      [[:and a "&&" b]]              (list 'and (toh a) (toh b))
-      [[:equality a "==" b]]         (list '= (toh a) (toh b))
-      [[:equality a "!=" b]]         (list 'not= (toh a) (toh b))
-      [[:relational a op b]]         (list (symbol op) (toh a) (toh b))
-      [[:add a op b]] (let [hb (toh b)]
-                        (match [op hb]
-                          ["+" 1] (list 'inc (toh a))
-                          ["-" 1] (list 'dec (toh a))
-                          :else (list (symbol op) (toh a) hb)))
-      [[:mult a "*" b]]            (list '* (toh a) (toh b))
-      [[:mult a "/" b]]            (list 'div (toh a) (toh b))
-      [[:mult a "%" b]]            (list 'mod (toh a) (toh b))
-      [[:prefix "!" a]]            (list 'not (toh a))
-      [[:get-field a [:symbol b]]] (list 'get (toh a) (keyword (unwrap-symbol b)))
-      [[:get-index a b]]           (list 'get (toh a) (toh b))
-      [[:comprehend [:symbol "sortBy"] s bind pred]] (list 'sort-by [(toh s) (toh bind)] (toh pred))
-      [[:comprehend [:symbol op] s bind pred]] (list (symbol op) [(toh s) (toh bind)] (toh pred))
-      [[:reduce acc init elem coll body]] (list 'reduce [(toh acc) (toh init)]
-                                                [(toh elem) (toh coll)] (toh body))
-      [[:call-fn [:symbol "equalTo"] & args]]    (list* '= (map toh args))
-      [[:call-fn [:symbol "notEqualTo"] & args]] (list* 'not= (map toh args))
-      [[:call-fn op & args]]                     (let [s (toh op)]
-                                                   (if (global-fns s)
-                                                     (list* s (map toh args))
-                                                     (throw (ex-info (str "No such global function: " s)
-                                                                     {:op s :args args}))))
-      [[:call-method a [:symbol "reduce"] & args]] (concat ['reduce-] (map toh args) [(toh a)])
-      [[:call-method a op & args]]                 (let [s (toh op)]
+  (-> (match [tree]
+        [[:lambda [:params & params] body]]  (list 'fn (mapv toh params) (toh body))
+        [[:conditional op a b c]]      (list (if (= "if" op) 'if 'if-value) (toh a) (toh b) (toh c))
+        [[:if-value-let sym m t e]]    (list 'if-value-let [(toh sym) (toh m)] (toh t) (toh e))
+        [[:when-value-let sym m t]]    (list 'when-value-let [(toh sym) (toh m)] (toh t))
+        [[:when-value sym t]]          (list 'when-value (toh sym) (toh t))
+        [[:optional pred body]]        (list 'when (toh pred) (toh body))
+        [[:valid op body]]             (list (symbol op) (toh body))
+        [[:implication a b]]           (list '=> (toh a) (toh b))
+        [[:or  a "||" b]]              (list 'or (toh a) (toh b))
+        [[:and a "&&" b]]              (list 'and (toh a) (toh b))
+        [[:equality a "==" b]]         (list '= (toh a) (toh b))
+        [[:equality a "!=" b]]         (list 'not= (toh a) (toh b))
+        [[:relational a op b]]         (list (symbol op) (toh a) (toh b))
+        [[:add a op b]] (let [hb (toh b)]
+                          (match [op hb]
+                            ["+" 1] (list 'inc (toh a))
+                            ["-" 1] (list 'dec (toh a))
+                            :else (list (symbol op) (toh a) hb)))
+        [[:mult a "*" b]]            (list '* (toh a) (toh b))
+        [[:mult a "/" b]]            (list 'div (toh a) (toh b))
+        [[:mult a "%" b]]            (list 'mod (toh a) (toh b))
+        [[:prefix "!" a]]            (list 'not (toh a))
+        [[:get-field a [:symbol b]]] (list 'get (toh a) (keyword (unwrap-symbol b)))
+        [[:get-index a b]]           (list 'get (toh a) (toh b))
+        [[:comprehend [:symbol "sortBy"] s bind pred]] (list 'sort-by [(toh s) (toh bind)] (toh pred))
+        [[:comprehend [:symbol op] s bind pred]] (list (symbol op) [(toh s) (toh bind)] (toh pred))
+        [[:reduce acc init elem coll body]] (list 'reduce [(toh acc) (toh init)]
+                                                  [(toh elem) (toh coll)] (toh body))
+        [[:call-fn [:symbol "equalTo"] & args]]    (list* '= (map toh args))
+        [[:call-fn [:symbol "notEqualTo"] & args]] (list* 'not= (map toh args))
+        [[:call-fn op & args]]                     (let [s (toh op)]
                                                      (if (global-fns s)
-                                                       (throw (ex-info (str "No such method: " s)
-                                                                       {:op s :args args}))
-                                                       (list* s (toh a) (map toh args))))
-      [[:type-method a "refineTo" & args]]         (list* 'refine-to (toh a) (map toh args))
-      [[:type-method a "refinesTo?" & args]]       (list* 'refines-to? (toh a) (map toh args))
-      [[:map & args]]          (into {} (map toh) args)
-      [[:map-entry "$type" v]] [:$type (toh v)]
-      [[:map-entry [_ k] v]]   [(keyword k) (toh v)]
-      [[:set & args]]          (set (map toh args))
-      [[:vec & args]]          (vec (map toh args))
-      [[:let & args]]          (if (next args)
-                                 (list 'let (mapv toh (drop-last args)) (toh (last args)))
-                                 (toh (last args)))
-      [[:int & strs]]          (parse-long (apply str strs))
-      [[:decimal s]]           (fixed-decimal/fixed-decimal-reader (edn/read-string (second s)))
-      [[:symbol "true"]]       true
-      [[:symbol "false"]]      false
-      [[:symbol s]]            (unwrap-symbol s)
-      [[:typename [_ s]]]      (keyword (unwrap-symbol s))
-      [[:typename s]]          (keyword s)
-      [[:string s]]            (edn/read-string s)
+                                                       (list* s (map toh args))
+                                                       (throw (ex-info (str "No such global function: " s)
+                                                                       {:op s :args args}))))
+        [[:call-method a [:symbol "reduce"] & args]] (concat ['reduce-] (map toh args) [(toh a)])
+        [[:call-method a op & args]]                 (let [s (toh op)]
+                                                       (if (global-fns s)
+                                                         (throw (ex-info (str "No such method: " s)
+                                                                         {:op s :args args}))
+                                                         (list* s (toh a) (map toh args))))
+        [[:type-method a "refineTo" & args]]         (list* 'refine-to (toh a) (map toh args))
+        [[:type-method a "refinesTo?" & args]]       (list* 'refines-to? (toh a) (map toh args))
+        [[:map & args]]          (into {} (map toh) args)
+        [[:map-entry "$type" v]] [:$type (toh v)]
+        [[:map-entry [_ k] v]]   [(keyword k) (toh v)]
+        [[:set & args]]          (set (map toh args))
+        [[:vec & args]]          (vec (map toh args))
+        [[:let & args]]          (if (next args)
+                                   (list 'let (mapv toh (drop-last args)) (toh (last args)))
+                                   (toh (last args)))
+        [[:int & strs]]          (parse-long (apply str strs))
+        [[:decimal s]]           (fixed-decimal/fixed-decimal-reader (edn/read-string (second s)))
+        [[:symbol "true"]]       true
+        [[:symbol "false"]]      false
+        [[:symbol s]]            (unwrap-symbol s)
+        [[:typename [_ s]]]      (keyword (unwrap-symbol s))
+        [[:typename s]]          (keyword s)
+        [[:string s]]            (edn/read-string s)
 
-           ;; Default to descending through intermediate grammar nodes
-      [[(_ :guard keyword?) (kid :guard vector?)]] (toh kid)
-      :else (throw (ex-info (str "Unhandled parse tree:\n" (pr-str tree))
-                            {:tree tree}))))))
+             ;; Default to descending through intermediate grammar nodes
+        [[(_ :guard keyword?) (kid :guard vector?)]] (toh kid)
+        :else (throw (ex-info (str "Unhandled parse tree:\n" (pr-str tree))
+                              {:tree tree})))
+      flatten-variadics
+      (add-source-metadata-when-possible tree)))
 
 (def whitespace-or-comments
   (insta/parser
