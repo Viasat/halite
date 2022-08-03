@@ -71,7 +71,7 @@
   (loop [[form :as d] (dgraph id)]
     (if (nil? (s/check DerivationName form))
       (recur (dgraph form))
-      d)))
+      (or d (throw (ex-info "BUG! Failed to deref dgraph id." {:id id}))))))
 
 (s/defschema ReachableNodesOpts
   {(s/optional-key :include-negations?) s/Bool
@@ -424,7 +424,7 @@
         :else (throw (ex-info "Unrecognized derivation" {:dgraph dgraph :form form}))))))
 
 (s/defn dup-node :- DerivResult
-  "Create a copy of the given node, and return its id."
+  "Create a copy of the given node (a shallow copy, no subnodes are duplicated), and return its id."
   [dgraph :- Derivations, id :- DerivationName]
   (let [node (dgraph id)
         new-id (fresh-id!)]

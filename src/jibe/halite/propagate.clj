@@ -286,7 +286,7 @@
                 [var-kw (if (= [var-kw] var-kws)
                           var-bound
                           (-> bounds
-                              (update-keys #(drop 1 %))
+                              (update-keys rest)
                               (unflatten-choco-bounds)))])))
        (into {})))
 
