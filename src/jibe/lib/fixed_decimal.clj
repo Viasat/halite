@@ -79,7 +79,7 @@
         Long/parseLong)))
 
 (schema/defn ^:private extract-long :- [(schema/one schema/Int :scale)
-                          (schema/one Long :long)]
+                                        (schema/one Long :long)]
   [f :- FixedDecimal]
   (let [n (fixed->BigDecimal f)
         scale (.scale ^BigDecimal n)]
@@ -219,8 +219,8 @@
     (package-long scale (long (apply / n args)))))
 
 (schema/defn set-scale :- (schema/conditional
-                      fixed-decimal? FixedDecimal
-                      :else Long)
+                           fixed-decimal? FixedDecimal
+                           :else Long)
   "Produce a fixed decimal or integer value by changing the scale of the fixed decimal number, 'f', to
   'scale'. The scale argument must be an integer. If the effect of changing the scale is to add
   precision then the original value is padded with zeros. If the effect is to reduce precision then
@@ -245,8 +245,8 @@
       (extract-long-from-big-decimal result-big-decimal))))
 
 (schema/defn shift-scale :- (schema/conditional
-                        fixed-decimal? FixedDecimal
-                        :else Long)
+                             fixed-decimal? FixedDecimal
+                             :else Long)
   [f :- FixedDecimal
    shift :- schema/Int]
   (when (neg? shift)

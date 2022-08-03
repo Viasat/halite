@@ -638,10 +638,10 @@
       {:$type :ws/E$v1, :y false} {:$type :ws/E$v1, :y false})
 
     (are [expr err-msg]
-          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
 
-        {:$type :ws/E$v1, :y true} #"invalid instance"
-        {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")))
+      {:$type :ws/E$v1, :y true} #"invalid instance"
+      {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")))
 
 (deftest test-refinement-validation
   (let [senv (->TestSpecEnv

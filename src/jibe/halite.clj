@@ -222,8 +222,8 @@
         {:message (format "symbol '%s' is undefined" (:form data))})
 
 (deferr halite-invalid-refinement-expression [data]
-  {:message (format "Invalid refinement expression: %s"
-                    (:form data))})
+        {:message (format "Invalid refinement expression: %s"
+                          (:form data))})
 
 clojure.pprint/cl-format
 
