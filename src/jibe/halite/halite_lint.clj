@@ -143,6 +143,21 @@
 (deferr lint-argument-empty [data]
         {:message "argument to first is always empty"})
 
+(deferr lint-rest-needs-vector [data]
+        {:message "Argument to 'rest' must be a vector"})
+
+(deferr lint-needs-collection [data]
+        {:message (format "First argument to '%s' must be a set or vector" (:op data))})
+
+(deferr lint-needs-collection-second [data]
+        {:message (format "Second argument to '%s' must be a set or vector" (:op data))})
+
+(deferr lint-cannot-conj-unset [data]
+        {:message (format "cannot conj possibly unset value to %s" (pr-str (:type-string data)))})
+
+(deferr lint-argument-mis-match [data]
+        {:message (format "When first argument to '%s' is a vector, second argument must also be a vector" (:op data))})
+
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
@@ -413,7 +428,7 @@
   (halite/arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
     (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
-      (throw (ex-info "Argument to 'rest' must be a vector" {:form expr})))
+      (throw-err (lint-rest-needs-vector {:form expr})))
     arg-type))
 
 (s/defn ^:private type-check-conj :- halite-types/HaliteType
@@ -421,11 +436,10 @@
   (halite/arg-count-at-least 2 expr)
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/subtype? base-type (halite-types/coll-type :Value))
-      (throw (ex-info "First argument to 'conj' must be a set or vector" {:form expr})))
+      (throw-err (lint-needs-collection {:op 'conj :form expr})))
     (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
       (when (halite-types/maybe-type? elem-type)
-        (throw (ex-info (format "cannot conj possibly unset value to %s" (halite-types/coll-type-string base-type))
-                        {:form elem}))))
+        (throw-err (lint-cannot-conj-unset {:form elem :type-string (halite-types/coll-type-string base-type)}))))
     (halite-types/change-elem-type
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
@@ -436,12 +450,11 @@
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/subtype? s (halite-types/coll-type :Value))
-      (throw (ex-info (format "First argument to '%s' must be a set or vector" op) {:form expr})))
+      (throw-err (lint-needs-collection {:op op :form expr})))
     (when-not (halite-types/subtype? t (halite-types/coll-type :Value))
-      (throw (ex-info (format "Second argument to '%s' must be a set or vector" op) {:form expr})))
+      (throw-err (lint-needs-collection-second {:op op :form expr})))
     (when (and (halite-types/subtype? s (halite-types/vector-type :Value)) (not (halite-types/subtype? t (halite-types/vector-type :Value))))
-      (throw (ex-info (format "When first argument to '%s' is a vector, second argument must also be a vector" op)
-                      {:form expr})))
+      (throw-err (lint-argument-mis-match {:op op :form expr})))
     (halite-types/meet s
                        (halite-types/change-elem-type s (halite-types/elem-type t)))))
 
