@@ -125,6 +125,24 @@
 (deferr lint-reduce-needs-vector [data]
         {:message "Second binding expression to 'reduce' must be a vector."})
 
+(deferr lint-first-argument-not-bare-symbol [data]
+        {:message (format "First argument to '%s' must be a bare symbol"
+                          (pr-str (:op data)))})
+
+(deferr lint-first-agument-not-optional [data]
+        {:message (format "First argument to '%s' must have an optional type"
+                          (pr-str (:op data)))})
+
+(deferr lint-binding-expression-not-optional [data]
+        {:message (format "Binding expression in '%s' must have an optional type"
+                          (pr-str (:op data)))})
+
+(deferr lint-first-needs-vector [data]
+        {:message "Argument to 'first' must be a vector"})
+
+(deferr lint-argument-empty [data]
+        {:message "argument to first is always empty"})
+
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
@@ -330,14 +348,13 @@
   (let [[op sym set-expr unset-expr] expr]
     (halite/arg-count-exactly (if (= 'when-value op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw (ex-info (str "First argument to '" op "' must be a bare symbol") {:form expr})))
+      (throw-err (lint-first-argument-not-bare-symbol {:op op :form expr})))
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
                        (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) unset-expr))]
       (when-not (halite-types/strict-maybe-type? sym-type)
-        (throw (ex-info (str "First argument to '" op "' must have an optional type")
-                        {:form sym :expected (halite-types/maybe-type :Any) :actual sym-type})))
+        (throw-err (lint-first-agument-not-optional {:op op :form sym :expected (halite-types/maybe-type :Any) :actual sym-type})))
       (let [inner-type (halite-types/no-maybe sym-type)
             set-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) set-expr)]
         (halite-types/meet set-type unset-type)))))
@@ -347,14 +364,13 @@
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
     (halite/arg-count-exactly (if (= 'when-value-let op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw (ex-info (str "Binding target for '" op "' must be a bare symbol") {:form sym})))
+      (throw-err (lint-invalid-binding-target {:op op :form expr :sym sym})))
     (let [maybe-type (type-check* ctx maybe-expr)
           else-type (if (= 'when-value-let op)
                       :Unset
                       (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) else-expr))]
       (when-not (halite-types/strict-maybe-type? maybe-type)
-        (throw (ex-info (str "Binding expression in '" op "' must have an optional type")
-                        {:form maybe-expr :expected (halite-types/maybe-type :Any) :actual maybe-type})))
+        (throw-err (lint-binding-expression-not-optional {:op op :form maybe-expr :expected (halite-types/maybe-type :Any) :actual maybe-type})))
       (let [inner-type (halite-types/no-maybe maybe-type)
             then-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) then-expr)]
         (halite-types/meet then-type else-type)))))
@@ -387,9 +403,9 @@
   (halite/arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
     (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
-      (throw (ex-info "Argument to 'first' must be a vector" {:form expr})))
+      (throw-err (lint-first-needs-vector {:form expr})))
     (when (= halite-types/empty-vector arg-type)
-      (throw (ex-info "argument to first is always empty" {:form expr})))
+      (throw-err (lint-argument-empty {:form expr})))
     (second arg-type)))
 
 (s/defn ^:private type-check-rest :- halite-types/HaliteType
