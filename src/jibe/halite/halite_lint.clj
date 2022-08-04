@@ -30,7 +30,7 @@
         {:message (format (str "no matching signature for '" (pr-str {:op data}) "'"))})
 
 (deferr lint-undefined [data]
-        {:message (format "Undefined: '%s"
+        {:message (format "Undefined: '%s'"
                           (pr-str (:form data)))})
 
 (deferr lint-undefined-use-of-unset-variable [data]
@@ -58,6 +58,72 @@
         {:message (format "Result of '%s' would always be %s"
                           (pr-str (:op data))
                           (:value data))})
+
+(deferr lint-if-expects-boolean [data]
+        {:message "First argument to 'if' must be boolean"})
+
+(deferr lint-when-expectes-boolean [data]
+        {:message "First argument to 'when' must be boolean"})
+
+(deferr lint-let-needs-bare-symbol [data]
+        {:message (format "Binding target for 'let' must be a bare symbol, not: %s"
+                          (pr-str (:sym data)))})
+
+(deferr lint-let-invalid-symbol [data]
+        {:message (format "Binding target for 'let' must not start with '$': %s"
+                          (pr-str (:sym data)))})
+
+(deferr lint-cannot-bind-unset [data]
+        {:message (format "Disallowed binding '%s' to :Unset value; just use '$no-value'"
+                          (pr-str (:sym data)))})
+
+(deferr lint-cannot-bind-nothing [data]
+        {:message (format "Disallowed binding '%s' to :Nothing value; perhaps move to body of 'let'"
+                          (pr-str (:sym data)))})
+
+(deferr lint-invalid-binding-form [data]
+        {:message (format "Binding form for '%s' must have one variable and one collection"
+                          (pr-str (:op data)))})
+
+(deferr lint-invalid-binding-target [data]
+        {:message (format "Binding target for '%s' must be a bare symbol, not: %s"
+                          (pr-str (:op data))
+                          (pr-str (:sym data)))})
+
+(deferr lint-binding-target-invalid-symbol [data]
+        {:message (format "Binding target for '%s' must not start with '$': "
+                          (pr-str (:op data))
+                          (pr-str (:sym data)))})
+
+(deferr lint-collection-required [data]
+        {:message (format "collection required for '%s', not %s"
+                          (pr-str (:op data))
+                          (pr-str (:expr-type-string data)))})
+
+(deferr lint-body-must-be-boolean [data]
+        {:message (format "Body expression in '%s' must be boolean"
+                          (pr-str (:op data)))})
+
+(deferr lint-body-must-be-integer [data]
+        {:message (format "Body expression in 'sort-by' must be Integer, not %s"
+                          (pr-str (:body-type data)))})
+
+(deferr lint-invalid-accumulator [data]
+        {:message (format "Accumulator binding target for '%s' must be a bare symbol, not: %s"
+                          (pr-str (:op data))
+                          (pr-str (:accumulator data)))})
+
+(deferr lint-invalid-element-binding-target [data]
+        {:message (format "Element binding target for '%s' must be a bare symbol, not: %s"
+                          (pr-str (:op data))
+                          (pr-str (:element data)))})
+
+(deferr lint-cannot-use-same-symbol [data]
+        {:message (format "Cannot use the same symbol for accumulator and element binding: %s"
+                          (pr-str (:element data)))})
+
+(deferr lint-reduce-needs-vector [data]
+        {:message "Second binding expression to 'reduce' must be a vector."})
 
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
@@ -158,7 +224,7 @@
   (halite/arg-count-exactly 3 expr)
   (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw (ex-info "First argument to 'if' must be boolean" {:form expr})))
+      (throw-err (lint-if-expects-boolean {:form expr})))
     (halite-types/meet s t)))
 
 (s/defn ^:private type-check-when :- halite-types/HaliteType
@@ -166,7 +232,7 @@
   (halite/arg-count-exactly 2 expr)
   (let [[pred-type body-type] (map (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw (ex-info "First argument to 'when' must be boolean" {:form expr})))
+      (throw-err (lint-when-expectes-boolean {:form expr})))
     (halite-types/maybe-type body-type)))
 
 (s/defn ^:private type-check-let :- halite-types/HaliteType
@@ -177,19 +243,14 @@
      (reduce
       (fn [ctx [sym body]]
         (when-not (and (symbol? sym) (halite-types/bare? sym))
-          (throw (ex-info (format "Binding target for 'let' must be a bare symbol, not: %s"
-                                  (pr-str sym))
-                          {:form expr :sym sym})))
+          (throw-err (lint-let-needs-bare-symbol {:form expr :sym sym})))
         (when (re-find #"^[$]" (name sym))
-          (throw (ex-info (format "Binding target for 'let' must not start with '$': " sym)
-                          {:form expr :sym sym})))
+          (throw-err (lint-let-invalid-symbol {:form expr :sym sym})))
         (let [t (type-check* ctx body)]
           (when (= t :Unset)
-            (throw (ex-info (format "Disallowed binding '%s' to :Unset value; just use '$no-value'" sym)
-                            {:form expr :sym sym :body body})))
+            (throw-err (lint-cannot-bind-unset {:form expr :sym sym :body body})))
           (when (= t :Nothing)
-            (throw (ex-info (format "Disallowed binding '%s' to :Nothing value; perhaps move to body of 'let'" sym)
-                            {:form expr :sym sym :body body})))
+            (throw-err (lint-cannot-bind-nothing {:form expr :sym sym :body body})))
           (update ctx :tenv halite-envs/extend-scope sym t)))
       ctx
       (partition 2 bindings))
@@ -200,19 +261,18 @@
   (halite/arg-count-exactly 2 expr)
   (let [[op [sym expr :as bindings] body] expr]
     (when-not (= 2 (count bindings))
-      (throw (ex-info (str "Binding form for '" op "' must have one variable and one collection")
-                      {:form expr})))
+      (throw-err (lint-invalid-binding-form {:op op :form expr})))
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw (ex-info (str "Binding target for '" op "' must be a bare symbol, not: " (pr-str sym))
-                      {:form expr, :sym sym})))
+      (throw-err (lint-invalid-binding-target {:op op :form expr :sym sym})))
     (when (re-find #"^[$]" (name sym))
-      (throw (ex-info (format "Binding target for '%s' must not start with '$': " op sym)
-                      {:form expr :sym sym})))
+      (throw-err (lint-binding-target-invalid-symbol {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
           et (halite-types/elem-type coll-type)
           _ (when-not et
-              (throw (ex-info (str "collection required for '" op "', not " (pr-str (or (halite-types/spec-id coll-type) coll-type)))
-                              {:form expr, :expr-type coll-type})))
+              (throw-err (lint-collection-required {:op op
+                                                    :form expr
+                                                    :expr-type coll-type
+                                                    :expr-type-string (or (halite-types/spec-id coll-type) coll-type)})))
           body-type (type-check* (update ctx :tenv halite-envs/extend-scope sym et) body)]
       {:coll-type coll-type
        :body-type body-type})))
@@ -220,8 +280,7 @@
 (s/defn ^:private type-check-quantifier :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (when (not= :Boolean (:body-type (type-check-comprehend ctx expr)))
-    (throw (ex-info (str "Body expression in '" (first expr) "' must be boolean")
-                    {:form expr})))
+    (throw-err (lint-body-must-be-boolean {:op (first expr) :form expr})))
   :Boolean)
 
 (s/defn ^:private type-check-map :- halite-types/HaliteType
@@ -235,16 +294,14 @@
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     (when (not= :Boolean body-type)
-      (throw (ex-info "Body expression in 'filter' must be boolean" {:form expr})))
+      (throw-err (lint-body-must-be-boolean {:op 'filter :form expr})))
     coll-type))
 
 (s/defn ^:private type-check-sort-by :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     (when (not= :Integer body-type)
-      (throw (ex-info (str "Body expression in 'sort-by' must be Integer, not "
-                           (pr-str body-type))
-                      {:form expr})))
+      (throw-err (lint-body-must-be-integer {:body-type body-type :form expr})))
     (halite-types/vector-type (halite-types/elem-type coll-type))))
 
 (s/defn ^:private type-check-reduce :- halite-types/HaliteType
@@ -252,23 +309,16 @@
   (halite/arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
     (when-not (and (symbol? acc) (halite-types/bare? acc))
-      (throw (ex-info (str "Accumulator binding target for '" op "' must be a bare symbol, not: "
-                           (pr-str acc))
-                      {:form expr :accumulator acc})))
+      (throw-err (lint-invalid-accumulator {:op op :form expr :accumulator acc})))
     (when-not (and (symbol? elem) (halite-types/bare? elem))
-      (throw (ex-info (str "Element binding target for '" op "' must be a bare symbol, not: "
-                           (pr-str elem))
-                      {:form expr :element elem})))
+      (throw-err (lint-invalid-element-binding-target {:op op :form expr :element elem})))
     (when (= acc elem)
-      (throw (ex-info (str "Cannot use the same symbol for accumulator and element binding: "
-                           (pr-str elem))
-                      {:form expr :accumulator acc :element elem})))
+      (throw-err (lint-cannot-use-same-symbol {:form expr :accumulator acc :element elem})))
     (let [init-type (type-check* ctx init)
           coll-type (type-check* ctx coll)
           et (halite-types/elem-type coll-type)]
       (when-not (halite-types/subtype? coll-type (halite-types/vector-type :Value))
-        (throw (ex-info (str "Second binding expression to 'reduce' must be a vector.")
-                        {:form expr, :actual-coll-type coll-type})))
+        (throw-err (lint-reduce-needs-vector {:form expr :actual-coll-type coll-type})))
       (type-check* (update ctx :tenv #(-> %
                                           (halite-envs/extend-scope acc init-type)
                                           (halite-envs/extend-scope elem et)))
