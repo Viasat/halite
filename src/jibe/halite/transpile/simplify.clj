@@ -94,6 +94,13 @@
   (when (and (seq? form) (= '$value? (first form)) (not (halite-types/maybe-type? (second (ssa/deref-id dgraph (second form))))))
     true))
 
+(s/defn ^:private simplify-redundant-value!
+  [sctx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  (when (and (seq? form) (= '$value! (first form)))
+    (let [[_ inner-htype] (ssa/deref-id dgraph (second form))]
+      (when-not (halite-types/maybe-type? inner-htype)
+        (second form)))))
+
 (s/defn ^:private simplify-step :- ssa/SpecCtx
   [sctx :- ssa/SpecCtx]
   (-> sctx
@@ -103,7 +110,8 @@
       (rewriting/rewrite-sctx simplify-if-static-branches)
       (rewriting/rewrite-sctx simplify-do)
       (rewriting/rewrite-sctx simplify-no-value)
-      (rewriting/rewrite-sctx simplify-statically-known-value?)))
+      (rewriting/rewrite-sctx simplify-statically-known-value?)
+      (rewriting/rewrite-sctx simplify-redundant-value!)))
 
 (s/defn simplify :- ssa/SpecCtx
   "Perform semantics-preserving simplifications on the expressions in the specs."
