@@ -207,6 +207,38 @@
       {:$type :ws/A :p false}   {:$type :ws/A :an {:$in [-10 10]} :aw :Unset, :p false}
       {:$type :ws/A :aw :Unset} {:$type :ws/A :an {:$in [-10 10]} :aw :Unset, :p false})))
 
+(deftest test-push-if-value-with-refinement
+  (binding [ssa/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/B
+                  {:spec-vars {:bw [:Maybe "Integer"], :c2 [:Maybe :ws/C]}
+                   :constraints []
+                   :refines-to {}}
+                  :ws/C
+                  {:spec-vars {:cw [:Maybe "Integer"]}
+                   :constraints []
+                   :refines-to {}}
+                  :ws/D
+                  {:spec-vars {:dx "Integer"}
+                   :constraints []
+                   :refines-to {:ws/B {:expr {:$type :ws/B
+                                              :bw (when (= 0 dx) 5)
+                                              :c2 {:$type :ws/C :cw 6}}}}}
+                  :ws/E {:spec-vars
+                         {:dx "Integer",
+                          :bw [:Maybe "Integer"],
+                          :cw [:Maybe "Integer"]},
+                         :constraints
+                         [["$all" (= (refine-to {:dx dx, :$type :ws/D} :ws/B)
+                                     {:bw bw,
+                                      :c2 (if-value cw
+                                            {:cw cw, :$type :ws/C}
+                                            $no-value),
+                                      :$type :ws/B})]],
+                         :refines-to {}}})]
+      (is (= {:$type :ws/E, :bw {:$in #{5 :Unset}}, :cw 6, :dx {:$in [-10 10]}}
+             (hp/propagate senv {:default-int-bounds [-10 10]} {:$type :ws/E}))))))
+
 (def nested-optionals-spec-env
   '{:ws/A
     {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :ap "Boolean"}

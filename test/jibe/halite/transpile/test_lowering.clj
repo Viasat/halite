@@ -668,7 +668,7 @@
           (if p {:$type :ws/B} $no-value)
           (if p
             true
-            (if ($value? $no-value) true false)))))))
+            false))))))
 
 (deftest test-lowering-when-example
   (binding [ssa/*next-id* (atom 0)
