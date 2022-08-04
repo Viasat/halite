@@ -8,12 +8,56 @@
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.lib.fixed-decimal :as fixed-decimal]
+            [jibe.lib.format-errors :as format-errors :refer [deferr throw-err with-exception-data]]
             [clojure.string :as string]
             [clojure.set :as set]
             [schema.core :as s]))
+
+(set! *warn-on-reflection* true)
+
 (declare type-check*)
 
 (s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
+
+(deferr lint-function-not-found [data]
+        {:message (format "function '%s' not found"
+                          (pr-str (:op data)))})
+
+(deferr lint-disallowed-nothing [data]
+        {:message (format "Disallowed ':Nothing' expression: %s" (pr-str (:nothing-arg data)))})
+
+(deferr lint-no-matching-signature [data]
+        {:message (format (str "no matching signature for '" (pr-str {:op data}) "'"))})
+
+(deferr lint-undefined [data]
+        {:message (format "Undefined: '%s"
+                          (pr-str (:form data)))})
+
+(deferr lint-undefined-use-of-unset-variable [data]
+        {:message (format "Disallowed use of Unset variable '%s'; you may want '$no-value'"
+                          (pr-str (:form data)))})
+
+(deferr lint-cannot-index-into-empty-vector [data]
+        {:message "Cannot index into empty vector"})
+
+(deferr lint-index-not-integer [data]
+        {:message "Index must be an integer when target is a vector"})
+
+(deferr lint-index-not-variable-name [data]
+        {:message "Index must be a variable name (as a keyword) when target is an instance"})
+
+(deferr lint-no-such-variable [data]
+        {:message (format "No such variable '%s' on spec '%s'"
+                          (pr-str (:index-form data))
+                          (pr-str (:spec-id data)))})
+
+(deferr lint-invalid-lookup-target [data]
+        {:message "Lookup target must be an instance of known type or non-empty vector"})
+
+(deferr lint-result-always [data]
+        {:message (format "Result of '%s' would always be %s"
+                          (pr-str (:op data))
+                          (:value data))})
 
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
@@ -22,18 +66,18 @@
         {:keys [signatures impl deprecated?] :as builtin} (get halite/builtins op)
         actual-types (map (partial type-check* ctx) args)]
     (when (nil? builtin)
-      (throw (ex-info (str "function '" op "' not found") {:form form})))
+      (throw-err (lint-function-not-found {:op op
+                                           :form form})))
     (doseq [[arg t] (map vector args actual-types)]
       (when (= :Nothing t)
-        (throw (ex-info (str "Disallowed ':Nothing' expression: " (pr-str arg))
-                        {:form form
-                         :nothing-arg arg}))))
+        (throw-err (lint-disallowed-nothing {:form form
+                                             :nothing-arg arg}))))
     (loop [[sig & more] signatures]
       (cond
-        (nil? sig) (throw (ex-info (str "no matching signature for '" (name op) "'")
-                                   {:form form
-                                    :actual-types actual-types
-                                    :signatures signatures}))
+        (nil? sig) (throw-err (lint-no-matching-signature {:form form
+                                                           :op (name op)
+                                                           :actual-types actual-types
+                                                           :signatures signatures}))
         (halite/matches-signature? sig actual-types) (:return-type sig)
         :else (recur more)))))
 
@@ -43,13 +87,11 @@
     :Unset
     (let [t (get (halite-envs/scope (:tenv ctx)) sym)]
       (when-not t
-        (throw (ex-info (str "Undefined: '" (name sym) "'") {:user-visible-error? true
-                                                             :form sym})))
+        (throw-err (lint-undefined {:form sym})))
       (when (and (= :Unset t)
                  (not (or (= 'no-value sym)
                           (= '$no-value sym))))
-        (throw (ex-info (str "Disallowed use of Unset variable '" (name sym) "'; you may want '$no-value'")
-                        {:form sym})))
+        (throw-err (lint-undefined-use-of-unset-variable {:form sym})))
       t)))
 
 (defn ^:private type-check-lookup [ctx form subexpr-type index]
@@ -57,10 +99,9 @@
     (halite-types/halite-vector-type? subexpr-type)
     (let [index-type (type-check* ctx index)]
       (when (= halite-types/empty-vector subexpr-type)
-        (throw (ex-info "Cannot index into empty vector" {:form form})))
+        (throw-err (lint-cannot-index-into-empty-vector {:form form})))
       (when (not= :Integer index-type)
-        (throw (ex-info "Index must be an integer when target is a vector"
-                        {:form form, :index-form index, :expected :Integer, :actual-type index-type})))
+        (throw-err (lint-index-not-integer {:form form, :index-form index, :expected :Integer, :actual-type index-type})))
       (halite-types/elem-type subexpr-type))
 
     (and (halite-types/spec-type? subexpr-type)
@@ -69,15 +110,12 @@
     (let [field-types (-> (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)
                           (update-vals (partial halite-envs/halite-type-from-var-type (:senv ctx))))]
       (when-not (and (keyword? index) (halite-types/bare? index))
-        (throw (ex-info "Index must be a variable name (as a keyword) when target is an instance"
-                        {:form form, :index-form index})))
+        (throw-err (lint-index-not-variable-name {:form form, :index-form index})))
       (when-not (contains? field-types index)
-        (throw (ex-info (format "No such variable '%s' on spec '%s'" (name index) (halite-types/spec-id subexpr-type))
-                        {:form form, :index-form index})))
+        (throw-err (lint-no-such-variable {:form form, :index-form index, :spec-id (halite-types/spec-id subexpr-type)})))
       (get field-types index))
 
-    :else (throw (ex-info "Lookup target must be an instance of known type or non-empty vector"
-                          {:form form, :actual-type subexpr-type}))))
+    :else (throw-err (lint-invalid-lookup-target {:form form, :actual-type subexpr-type}))))
 
 (s/defn ^:private type-check-get :- halite-types/HaliteType
   [ctx :- TypeContext, form]
@@ -99,11 +137,9 @@
      (fn [s t]
        (let [j (halite-types/join s t)]
          (when (= j :Nothing)
-           (throw (ex-info (format "Result of '%s' would always be %s"
-                                   (first expr)
-                                   (if (= '= (first expr)) "false" "true"))
-                           {:user-visible-error? true
-                            :form expr})))
+           (throw-err (lint-result-always {:op (first expr)
+                                           :value (if (= '= (first expr)) "false" "true")
+                                           :form expr})))
          j))
      arg-types))
   :Boolean)
