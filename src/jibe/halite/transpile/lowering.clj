@@ -430,8 +430,8 @@
                   #_(if ($value? (if <nested-pred-id>
                                    <nested-then-id>
                                    <nested-else-id>) :- <nested-if-id>) :- <val?-id>
-                      <then-id>
-                      <else-id>)
+                        <then-id>
+                        <else-id>)
                   rewrite-branch (fn [dgraph branch-id]
                                    (let [[_ branch-htype] (ssa/deref-id dgraph branch-id)]
                                      (cond

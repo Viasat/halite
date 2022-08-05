@@ -232,8 +232,8 @@
                          [["$all" (= (refine-to {:dx dx, :$type :ws/D} :ws/B)
                                      {:bw bw,
                                       :c2 (if-value cw
-                                            {:cw cw, :$type :ws/C}
-                                            $no-value),
+                                                    {:cw cw, :$type :ws/C}
+                                                    $no-value),
                                       :$type :ws/B})]],
                          :refines-to {}}})]
       (is (= {:$type :ws/E, :bw {:$in #{5 :Unset}}, :cw 6, :dx {:$in [-10 10]}}
