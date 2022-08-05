@@ -549,7 +549,7 @@
   (when-let [[_get coll-id var-kw] (and (seq? form) (= 'get (first form)) form)]
     (let [[coll] (ssa/deref-id ssa-graph coll-id)]
       (when (map? coll)
-        (get coll var-kw)))))
+        (get coll var-kw '$no-value)))))
 
 (s/defn cancel-get-of-instance-literal :- SpecCtx
   "Replace (get {... :k <subexpr>} :k) with <subexpr>. Not semantics preserving, in that

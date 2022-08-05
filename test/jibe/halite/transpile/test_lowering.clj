@@ -315,18 +315,21 @@
                 {:spec-vars {:an "Integer" :b :ws/B}
                  :constraints [["a1" (< an (get (get {:$type :ws/B :c {:$type :ws/C :cn (get {:$type :ws/C :cn (+ 1 an)} :cn)}} :c) :cn))]
                                ["a2" (= (get (get b :c) :cn)
-                                        (get {:$type :ws/C :cn 12} :cn))]]
+                                        (get {:$type :ws/C :cn 12} :cn))]
+                               ["a3" (let [cmn (get {:$type :ws/C, :cn 8} :cmn)]
+                                       (if-value cmn (< cmn 3) false))]]
                  :refines-to {}}
                 :ws/B
                 {:spec-vars {:c :ws/C}
                  :constraints [] :refines-to {}}
                 :ws/C
-                {:spec-vars {:cn "Integer"}
+                {:spec-vars {:cn "Integer", :cmn [:Maybe "Integer"]}
                  :constraints [] :refines-to {}}})
         sctx (ssa/build-spec-ctx senv :ws/A)]
     (is (= '[["$all" (and
                       (< an (+ 1 an))
-                      (= (get (get b :c) :cn) 12))]]
+                      (= (get (get b :c) :cn) 12)
+                      (let [v1 $no-value] (if-value v1 (< v1 3) false)))]]
            (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A ssa/spec-from-ssa :constraints)))))
 
 (deftest test-eliminate-runtime-constraint-violations
