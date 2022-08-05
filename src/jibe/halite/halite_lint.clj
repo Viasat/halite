@@ -27,7 +27,8 @@
         {:message (format "Disallowed ':Nothing' expression: %s" (pr-str (:nothing-arg data)))})
 
 (deferr lint-no-matching-signature [data]
-        {:message (format (str "no matching signature for '" (pr-str {:op data}) "'"))})
+        {:message (format (str "no matching signature for '%s'")
+                          (pr-str (:op data)))})
 
 (deferr lint-undefined [data]
         {:message (format "Undefined: '%s'"
