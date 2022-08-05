@@ -63,7 +63,7 @@
 (deferr lint-if-expects-boolean [data]
         {:message "First argument to 'if' must be boolean"})
 
-(deferr lint-when-expectes-boolean [data]
+(deferr lint-when-expects-boolean [data]
         {:message "First argument to 'when' must be boolean"})
 
 (deferr lint-let-needs-bare-symbol [data]
@@ -281,7 +281,7 @@
   (halite/arg-count-exactly 2 expr)
   (let [[pred-type body-type] (map (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw-err (lint-when-expectes-boolean {:form expr})))
+      (throw-err (lint-when-expects-boolean {:form expr})))
     (halite-types/maybe-type body-type)))
 
 (s/defn ^:private type-check-let :- halite-types/HaliteType
