@@ -7,7 +7,11 @@
 
 (set! *warn-on-reflection* true)
 
+(def trace-err-definitions? false)
+
 (defmacro deferr [err-id [data-arg] data]
+  (when trace-err-definitions?
+    (prn [:deferr err-id (:message data)]))
   `(defn ~err-id [~data-arg]
      (merge ~data-arg
             ~(merge {:err-id (keyword (name err-id))
@@ -21,10 +25,14 @@
 
 (defmacro throw-err
   ([data]
+   (when trace-err-definitions?
+     (prn [:throw-err (first data) (second data)]))
    `(let [data# ~data]
       (throw (ex-info (:message data#)
                       (extend-err-data data#)))))
   ([data ex]
+   (when trace-err-definitions?
+     (prn [:throw-err (first data) (second data)]))
    `(let [data# ~data]
       (throw (ex-info (:message data#)
                       (extend-err-data data#)
@@ -36,6 +44,8 @@
    (let [[message extra-data body] (if (map? (first args))
                                      [nil (first args) (rest args)]
                                      [(first args) (second args) (rest (rest args))])]
+     (when trace-err-definitions?
+       (prn [:with-exception-data extra-data]))
      (assert (map? extra-data))
      (if message
        `(try
