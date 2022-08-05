@@ -158,6 +158,21 @@
 (deferr lint-argument-mis-match [data]
         {:message (format "When first argument to '%s' is a vector, second argument must also be a vector" (:op data))})
 
+(deferr lint-must-be-instance [data]
+        {:message (format "First argument to '%s' must be an instance" (pr-str (:op data)))})
+
+(deferr lint-must-be-spec-id [data]
+        {:message (format "Second argument to '%s' must be a spec id" (pr-str (:op data)))})
+
+(deferr lint-spec-not-found [data]
+        {:message (format "Spec not found: '%s'" (pr-str (:spec-id data)))})
+
+(deferr lint-unknown-type [data]
+        {:message (format "Argument to '%s' must be an instance of known type" (pr-str (:op data)))})
+
+(deferr lint-syntax-error [data]
+        {:message "Syntax error"})
+
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
@@ -464,11 +479,11 @@
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     (when-not (halite-types/subtype? s (halite-types/instance-type))
-      (throw (ex-info "First argument to 'refine-to' must be an instance" {:form expr :actual s})))
+      (throw-err (lint-must-be-instance {:op 'refine-to :form expr :actual s})))
     (when-not (halite-types/namespaced-keyword? kw)
-      (throw (ex-info "Second argument to 'refine-to' must be a spec id" {:form expr})))
+      (throw-err (lint-must-be-spec-id {:op 'refine-to :form expr})))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
-      (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
+      (throw-err (lint-spec-not-found {:spec-id (symbol kw) :form expr})))
     (halite-types/concrete-spec-type kw)))
 
 (s/defn ^:private type-check-refines-to? :- halite-types/HaliteType
@@ -477,11 +492,11 @@
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     (when-not (halite-types/subtype? s (halite-types/instance-type))
-      (throw (ex-info "First argument to 'refines-to?' must be an instance" {:form expr})))
+      (throw-err (lint-must-be-instance {:op 'refines-to? :form expr})))
     (when-not (halite-types/namespaced-keyword? kw)
-      (throw (ex-info "Second argument to 'refines-to?' must be a spec id" {:form expr})))
+      (throw-err (lint-must-be-spec-id {:op 'refines-to? :form expr})))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
-      (throw (ex-info (format "Spec not found: '%s'" (symbol kw)) {:form expr})))
+      (throw-err (lint-spec-not-found {:spec-id (symbol kw) :form expr})))
     :Boolean))
 
 (s/defn ^:private type-check-valid :- halite-types/HaliteType
@@ -491,7 +506,7 @@
       (halite-types/spec-type? t) (halite-types/maybe-type t)
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) t
-      :else (throw (ex-info "Argument to 'valid' must be an instance of known type" {:form expr})))))
+      :else (throw-err (lint-unknown-type {:op 'valid :form expr})))))
 
 (s/defn ^:private type-check-valid? :- halite-types/HaliteType
   [ctx :- TypeContext, [_valid? subexpr :as expr]]
@@ -500,7 +515,8 @@
       (halite-types/spec-type? t) :Boolean
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
-      :else (throw (ex-info "Argument to 'valid?' must be an instance of known type" {:form expr})))))
+      :else
+      (throw-err (lint-unknown-type {:op 'valid? :form expr})))))
 
 (s/defn ^:private type-check* :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
@@ -543,8 +559,7 @@
                   'reduce (type-check-reduce ctx expr)
                   (type-check-fn-application ctx expr))
     (coll? expr) (halite/check-coll type-check* :form ctx expr)
-    :else (throw (ex-info "Syntax error" {:form expr
-                                          :form-class (class expr)}))))
+    :else (throw-err (lint-syntax-error {:form expr :form-class (class expr)}))))
 
 (s/defn lint!
   "Assumes type-checked halite. Return nil if no violations found, or throw the
