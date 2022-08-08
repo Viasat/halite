@@ -42,29 +42,10 @@
   [ctx rewrite-fn form]
   (binding [ssa/*next-id* (atom 0), ssa/*hide-non-halite-ops* false]
     (let [[dgraph id] (ssa/form-to-ssa ctx form)
-          new-expr (rewrite-fn {}  (assoc ctx :dgraph dgraph) id (ssa/deref-id dgraph id))
+          new-expr (rewrite-fn {:sctx {} :ctx (assoc ctx :dgraph dgraph) :guard #{}} id (ssa/deref-id dgraph id))
           [dgraph id] (if (not= nil new-expr) (ssa/form-to-ssa (assoc ctx :dgraph dgraph) id new-expr) [dgraph id])
           scope (set (keys (halite-envs/scope (:tenv ctx))))]
       (ssa/form-from-ssa scope dgraph id))))
-
-(defn- bogus-spec-info [dgraph id]
-  {:spec-vars {}
-   :constraints [["foo" id]]
-   :derivations dgraph
-   :refines-to {}})
-
-(defn- rewrite-expr-deeply
-  [ctx rewrite-fn form]
-  (binding [ssa/*next-id* (atom 0), ssa/*hide-non-halite-ops* false]
-    (let [[dgraph id] (ssa/form-to-ssa ctx form)
-          spec-info (rewriting/rewrite-spec
-                     {:rule-name "<rule>"
-                      :rewrite-fn rewrite-fn
-                      :nodes :all}
-                     {:foo/Bar (bogus-spec-info dgraph id)}
-                     :foo/Bar)
-          scope (set (keys (halite-envs/scope (:tenv ctx))))]
-      (ssa/form-from-ssa scope (:derivations spec-info) id))))
 
 (defn- make-ssa-ctx
   ([] (make-ssa-ctx {}))
@@ -499,54 +480,74 @@
 (def lower-maybe-comparison-expr #'lowering/lower-maybe-comparison-expr)
 
 (deftest test-lower-maybe-comparisons
-  (let [ctx (make-ssa-ctx {:tenv '{u [:Maybe :Integer], v [:Maybe :Integer], w [:Maybe :Integer], x :Integer, y :Integer}})]
-    (are [expr lowered]
-         (= lowered (rewrite-expr ctx lower-maybe-comparison-expr expr))
+  (binding [ssa/*next-id* (atom 0)]
+    (let [sctx '{:ws/A {:spec-vars {:u [:Maybe "Integer"], :v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer"}
+                        :constraints []
+                        :refines-to {}
+                        :derivations {}}}
+          ctx (ssa/make-ssa-ctx sctx (:ws/A sctx))]
+      (are [expr lowered]
+           (= lowered
+              (let [[dgraph cid] (ssa/form-to-ssa ctx expr)]
+                (-> sctx
+                    (update :ws/A assoc :derivations dgraph :constraints [["c" cid]])
+                    (lower-maybe-comparisons)
+                    :ws/A
+                    (#(binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa %)))
+                    :constraints
+                    first second)))
 
-      '(= v x)                '($do! x (if ($value? v) (= ($value! v) x) false))
-      '(= x v y)              '($do! x y (if ($value? v) (= ($value! v) x y) false))
-      '(= v $no-value)        '(if ($value? v) false true)
-      '(= v $no-value x)      '($do! v x false)
-      '(= v $no-value w)      '($do! w (if ($value? v) false (= $no-value w)))
-      '(not= v x)             '($do! x (if ($value? v) (not= ($value! v) x) true))
-      '(not= v $no-value)     '(if ($value? v) true false)
-      '(not= v $no-value x)   '($do! v x true)
-      '(not= x v y)           '($do! x y (if ($value? v) (not= ($value! v) x y) true))
-      '(= v w)                '($do! w (if ($value? v) (= ($value! v) w) (if ($value? w) false true)))
-      '(not= v w)             '($do! w (if ($value? v) (not= ($value! v) w) (if ($value? w) true false)))
-      '(= x u y v w)          '($do! x y v w (if ($value? u) (= ($value! u) x y v w) (if ($value? v) false true)))
-      '(= $no-value $no-value) '(= $no-value $no-value)
-      ;; TODO: Show this working on (get) forms.
+        '(= v x)                '($do! x (if ($value? v) (= ($value! v) x) false))
+        '(= x v y)              '($do! x y (if ($value? v) (= ($value! v) x y) false))
+        '(= v $no-value)        '(if ($value? v) false true)
+        '(= v $no-value x)      '($do! v x false)
+        '(= v $no-value w)      '($do! w (if ($value? v) false (= $no-value w)))
+        '(not= v x)             '($do! x (if ($value? v) (not= ($value! v) x) true))
+        '(not= v $no-value)     '(if ($value? v) true false)
+        '(not= v $no-value x)   '($do! v x true)
+        '(not= x v y)           '($do! x y (if ($value? v) (not= ($value! v) x y) true))
+        '(= v w)                '($do! w (if ($value? v) (= ($value! v) w) (if ($value? w) false true)))
+        '(not= v w)             '($do! w (if ($value? v) (not= ($value! v) w) (if ($value? w) true false)))
+        '(= x u y v w)          '($do! x y v w (if ($value? u) (= ($value! u) x y v w) (if ($value? v) false true)))
+        '(= $no-value $no-value) '(= $no-value $no-value)
+        ;; TODO: Show this working on (get) forms.
 
-      ;; cannot be lowered as-is
-      '(= x (if-value v (+ 1 v) w))
-      '(= x (if ($value? v)
-              (+ 1 ($value! v))
-              w)))
+        ;; cannot be lowered as-is
+        '(= x (if-value v (+ 1 v) w))
+        '(= x (if ($value? v)
+                (+ 1 ($value! v))
+                w)))
 
-;; Test that the rule iterates as expected
-    (is (= '($do!
-             x y v w
-             (if ($value? u)
-               ($do!
-                ($value! u)
-                x y w
-                (if ($value? v)
-                  ($do!
-                   ($value! v) ($value! u) x y
-                   (if ($value? w)
-                     (= ($value! w) ($value! v) ($value! u) x y)
-                     false))
-                  (if ($value? w)
-                    false
-                    true)))
-               (if ($value? v)
-                 false
-                 true)))
-           (fixpoint #(rewrite-expr-deeply ctx lower-maybe-comparison-expr %) '(= x u y v w))))
+      ;; Test that the rule iterates as expected
+      (let [[dgraph cid] (ssa/form-to-ssa ctx '(= x u y v w))]
+        (is (= '($do!
+                 x y v w
+                 (if ($value? u)
+                   ($do!
+                    ($value! u)
+                    x y w
+                    (if ($value? v)
+                      ($do!
+                       ($value! v) ($value! u) x y
+                       (if ($value? w)
+                         (= ($value! w) ($value! v) ($value! u) x y)
+                         false))
+                      (if ($value? w)
+                        false
+                        true)))
+                   (if ($value? v)
+                     false
+                     true)))
+               (-> sctx
+                   (update :ws/A assoc :derivations dgraph :constraints [["c" cid]])
+                   (->> (fixpoint lower-maybe-comparisons))
+                   :ws/A
+                   (#(binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa %)))
+                   :constraints
+                   first second))))
 
-    ;; TODO: Add tests of semantics preservation!
-    ))
+      ;; TODO: Add tests of semantics preservation!
+      )))
 
 (def push-comparisons-into-maybe-ifs #'lowering/push-comparisons-into-maybe-ifs)
 

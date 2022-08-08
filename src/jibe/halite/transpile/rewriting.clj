@@ -71,6 +71,11 @@
           :pruned (map #(ssa/form-from-ssa spec-info %) pruned-ids)})))
     spec-info'))
 
+(s/defschema RewriteFnCtx
+  {:sctx SpecCtx
+   :ctx SSACtx
+   :guard #{ssa/DerivationName}})
+
 (s/defschema RewriteRule
   {:rule-name s/Str
    :rewrite-fn (s/pred ifn?)
@@ -81,7 +86,7 @@
   (let [{:keys [rule-name rewrite-fn nodes]} rule
         dgraph (:dgraph ctx)
         deriv (dgraph id)
-        form (rewrite-fn sctx ctx id deriv)
+        form (rewrite-fn {:sctx sctx :ctx ctx :guard #{}} id deriv)
         replace? (= :replace replacement)]
     (when (and replace? (->> form (tree-seq coll? seq) (some #(= % id))))
       (throw (ex-info (format  "BUG! Rewrite rule %s used rewritten node id in replacement form!"

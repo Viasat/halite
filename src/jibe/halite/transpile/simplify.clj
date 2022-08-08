@@ -15,7 +15,7 @@
   (some->> id (ssa/deref-id dgraph) first))
 
 (s/defn ^:private simplify-and
-  [sctx {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype :as d]]
+  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype :as d]]
   (when (and (seq? form) (= 'and (first form)))
     (let [child-terms (->> (rest form)
                            (map #(vector % (deref-form dgraph %)))
@@ -38,14 +38,14 @@
         (apply list 'and false (map first (remove (comp false? second) child-terms)))))))
 
 (s/defn ^:private simplify-not
-  [sctx {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'not (first form)))
     (let [subform (deref-form dgraph (second form))]
       (when (boolean? subform)
         (not subform)))))
 
 (s/defn ^:private simplify-if-static-pred
-  [sctx {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_if pred-id then-id else-id] form
           subform (deref-form dgraph pred-id)]
@@ -61,7 +61,7 @@
    (symbol? form)))
 
 (s/defn ^:private simplify-if-static-branches
-  [sctx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_ pred-id then-id else-id] form
           pred (deref-form dgraph pred-id)]
@@ -76,7 +76,7 @@
             (= then else) then-id))))))
 
 (s/defn ^:private simplify-do
-  [sctx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id, [form htype]]
+  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [side-effects (->> form (rest) (butlast)
                             (remove (comp always-evaluates? (partial deref-form dgraph))))]
@@ -85,17 +85,17 @@
         (< (count side-effects) (- (count form) 2)) `(~'$do! ~@side-effects ~(last form))))))
 
 (s/defn ^:private simplify-no-value
-  [sctx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$value? (first form)) (= :Unset (deref-form dgraph (second form))))
     false))
 
 (s/defn ^:private simplify-statically-known-value?
-  [sctx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$value? (first form)) (not (halite-types/maybe-type? (second (ssa/deref-id dgraph (second form))))))
     true))
 
 (s/defn ^:private simplify-redundant-value!
-  [sctx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id [form htype]]
+  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$value! (first form)))
     (let [[_ inner-htype] (ssa/deref-id dgraph (second form))]
       (when-not (halite-types/maybe-type? inner-htype)
