@@ -378,7 +378,10 @@
 
 (s/defn ^:private error-to-ssa :- DerivResult
   [{:keys [dgraph] :as ctx} :- SSACtx form]
-  (when-not (string? (second form))
+  (when-not (or (string? (second form))
+                (and (symbol? (second form))
+                     (contains? dgraph (second form))
+                     (string? (first (deref-id dgraph (second form))))))
     (throw (ex-info "Only string literals currently allowed in error forms" {:form form :dgraph dgraph})))
   (let [[dgraph arg-id] (form-to-ssa ctx (second form))]
     (add-derivation dgraph [(list 'error arg-id) :Nothing])))
