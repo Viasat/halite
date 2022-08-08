@@ -641,21 +641,21 @@
         $3 [(not $2) :Boolean $2]}
       '($value? $no-value)))
 
-      '[$3]
-      '{$1 ["foo" :String]
-        $2 [s :String]
-        $3 [(= $1 $2) :Boolean $4]
-        $4 [(not= $1 $2) :Boolean $3]}
-      '(= "foo" s)
+  '[$3]
+  '{$1 ["foo" :String]
+    $2 [s :String]
+    $3 [(= $1 $2) :Boolean $4]
+    $4 [(not= $1 $2) :Boolean $3]}
+  '(= "foo" s)
 
-      '[$5]
-      '{$1 [true :Boolean $2]
-        $2 [false :Boolean $1]
-        $3 ["nope" :String]
-        $4 [(error $3) :Nothing]
-        $5 [(if $1 $4 $1) :Boolean $6]
-        $6 [(not $5) :Boolean $5]}
-      '(if true (error "nope") true))
+  '[$5]
+  '{$1 [true :Boolean $2]
+    $2 [false :Boolean $1]
+    $3 ["nope" :String]
+    $4 [(error $3) :Nothing]
+    $5 [(if $1 $4 $1) :Boolean $6]
+    $6 [(not $5) :Boolean $5]}
+  '(if true (error "nope") true))
 
 (deftest test-spec-from-ssa-preserves-guards
   (binding [ssa/*next-id* (atom 0)]
