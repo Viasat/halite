@@ -371,10 +371,10 @@
   [{:keys [dgraph] :as ctx} :- SSACtx, form]
   (let [[dgraph arg-id] (form-to-ssa ctx (second form))
         [subform htype] (deref-id dgraph arg-id)]
-    (when (or (not (halite-types/maybe-type? htype)) (not (vector? htype)))
-      (throw (ex-info "Invalid $value! form: type of inner expression is not [:Maybe T]"
-                      {:dgraph dgraph :form form})))
-    (add-derivation dgraph [(list '$value! arg-id) (second htype)])))
+    (when (= :Unset htype)
+      (throw (ex-info "Invalid $value! form: type of inner expression is :Unset"
+                      {:dgraph dgraph :form form :subform subform})))
+    (add-derivation dgraph [(list '$value! arg-id) (halite-types/no-maybe htype)])))
 
 (s/defn ^:private error-to-ssa :- DerivResult
   [{:keys [dgraph] :as ctx} :- SSACtx form]
