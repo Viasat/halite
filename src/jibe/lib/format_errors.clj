@@ -118,7 +118,8 @@
 (defn extend-err-data [data]
   (-> (merge (-> data :form meta (select-keys [:row :col :end-row :end-col]))
              data)
-      (dissoc :message)))
+      (dissoc :message)
+      (assoc :message-template (:message data))))
 
 (defn format-msg* [msg-str data-map]
   (string/replace msg-str

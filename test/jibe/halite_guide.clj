@@ -10069,7 +10069,8 @@
           :end-col
           :refinement-name
           :row
-          :throw-site}
+          :throw-site
+          :message-template}
         (set (keys (ex-data e)))))
       (is
        (=
