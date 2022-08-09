@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite-guide
-  (:require [jibe.data.model :as model]
+  (:require [clojure.string :as string]
+            [jibe.data.model :as model]
             [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
@@ -164,6 +165,111 @@
                     j-expr
                     j-result)))
           (list 'hf expr s))))))
+
+(def workspaces-map {:basic [(workspace :my
+                                        {:my/Spec []}
+                                        (spec :Spec :concrete
+                                              (variables [:p "Integer"]
+                                                         [:n "Integer"]
+                                                         [:o "Integer" :optional])
+                                              (constraints [:pc [:halite "(> p 0)"]]
+                                                           [:pn [:halite "(< n 0)"]])))]
+                     :basic-abstract [(workspace :my
+                                                 {:my/Spec []}
+                                                 (spec :Spec :abstract
+                                                       (variables [:p "Integer"]
+                                                                  [:n "Integer"]
+                                                                  [:o "Integer" :optional])
+                                                       (constraints [:pc [:halite "(> p 0)"]]
+                                                                    [:pn [:halite "(< n 0)"]])))]
+                     :basic-2 [(workspace :spec
+                                          {:spec/A []
+                                           :spec/B []
+                                           :spec/C []
+                                           :spec/D []
+                                           :spec/E []}
+                                          (spec :A :concrete
+                                                (variables [:p "Integer"]
+                                                           [:n "Integer"]
+                                                           [:o "Integer" :optional])
+                                                (constraints [:pc [:halite "(> p 0)"]]
+                                                             [:pn [:halite "(< n 0)"]])
+                                                (refinements [:as_b :to :spec/B$v1 [:halite "{:$type :spec/B$v1, :x (* 10 p), :y n, :z o}"]]))
+
+                                          (spec :B :abstract
+                                                (variables [:x "Integer"]
+                                                           [:y "Integer"]
+                                                           [:z "Integer" :optional])
+                                                (constraints [:px [:halite "(< x 100)"]]
+                                                             [:py [:halite "(> y -100)"]]
+                                                             [:pz [:halite "(not= z 0)"]]))
+                                          (spec :C :concrete)
+                                          (spec :D :concrete
+                                                (variables [:ao :spec/A$v1 :optional]
+                                                           [:co :spec/C$v1 :optional]))
+                                          (spec :E :concrete
+                                                (variables [:co :spec/C$v1 :optional])
+                                                (refinements [:as_c :to :spec/C$v1 [:halite "co"]])))]})
+
+(deftype HCInfo [t h-result j-expr jh-result j-result])
+
+(defn ^HCInfo hc* [workspace-id expr]
+  (let [senv (spec-env/for-workspace *spec-store* workspace-id)
+        tenv (halite-envs/type-env {})
+        env (halite-envs/env {})
+        j-expr (try (jadeite/to-jadeite expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)]))
+        t (try (halite-lint/type-check senv tenv expr)
+               (catch RuntimeException e
+                 [:throws (.getMessage e)]))
+        h-result (try (halite/eval-expr senv tenv env expr)
+                      (catch RuntimeException e
+                        [:throws (.getMessage e)]))
+        jh-expr (when (string? j-expr)
+                  (try
+                    (jadeite/to-halite j-expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)])))
+
+        jh-result (try
+                    (halite/eval-expr senv tenv env jh-expr)
+                    (catch RuntimeException e
+                      [:throws (.getMessage e)]))
+        j-result (try
+                   (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
+                   (catch RuntimeException e
+                     [:throws (.getMessage e)]))]
+
+    (HCInfo. t h-result j-expr jh-result j-result)))
+
+(defmacro hc [workspaces workspace-id comment? & raw-args]
+  (let [raw-args (if (string? comment?)
+                   (first raw-args)
+                   comment?)
+        [expr & args] raw-args
+        [expected-t result-expected j-expr-expected j-result-expected] args]
+    `(test-setup-specs/setup-specs ~(if (keyword? workspaces)
+                                      `(workspaces-map ~workspaces)
+                                      workspaces)
+                                   (let [i# (hc* ~workspace-id '~expr)]
+                                     (is (= ~expected-t (.-t i#)))
+                                     (if (is-harness-error? (.-t i#))
+                                       (vector (quote ~expr)
+                                               (.-t i#))
+                                       (do
+                                         (is (= ~result-expected (.-h-result i#)))
+                                         (when (string? (.-j-expr i#))
+                                           (is (= ~result-expected (.-jh-result i#)))
+                                           (is (= ~j-result-expected (.-j-result i#))))
+                                         (is (= ~j-expr-expected (.-j-expr i#)))
+                                         (vector (quote ~expr)
+                                                 (.-t i#)
+                                                 (.-h-result i#)
+                                                 (.-j-expr i#)
+                                                 (.-j-result i#))))))))
+
+;; deftest-start
 
 (deftest test-bool
   (h true :Boolean true "true" "true")
@@ -965,109 +1071,6 @@
   (h (count (get [#{[3 4] [1 2]} #{#{9 8} #{7} [5 6]}] 1)) :Integer 3 "[#{[1, 2], [3, 4]}, #{#{7}, #{8, 9}, [5, 6]}][1].count()" "3")
 
   (h #{#{[#{[true false] [true true]}] [#{[false]}]} #{[#{[true false] [true true]}] [#{[false]} #{[true]}]}} [:Set [:Set [:Vec [:Set [:Vec :Boolean]]]]] #{#{[#{[true false] [true true]}] [#{[false]}]} #{[#{[true false] [true true]}] [#{[false]} #{[true]}]}} "#{#{[#{[false]}, #{[true]}], [#{[true, false], [true, true]}]}, #{[#{[false]}], [#{[true, false], [true, true]}]}}" "#{#{[#{[false]}, #{[true]}], [#{[true, false], [true, true]}]}, #{[#{[false]}], [#{[true, false], [true, true]}]}}"))
-
-(def workspaces-map {:basic [(workspace :my
-                                        {:my/Spec []}
-                                        (spec :Spec :concrete
-                                              (variables [:p "Integer"]
-                                                         [:n "Integer"]
-                                                         [:o "Integer" :optional])
-                                              (constraints [:pc [:halite "(> p 0)"]]
-                                                           [:pn [:halite "(< n 0)"]])))]
-                     :basic-abstract [(workspace :my
-                                                 {:my/Spec []}
-                                                 (spec :Spec :abstract
-                                                       (variables [:p "Integer"]
-                                                                  [:n "Integer"]
-                                                                  [:o "Integer" :optional])
-                                                       (constraints [:pc [:halite "(> p 0)"]]
-                                                                    [:pn [:halite "(< n 0)"]])))]
-                     :basic-2 [(workspace :spec
-                                          {:spec/A []
-                                           :spec/B []
-                                           :spec/C []
-                                           :spec/D []
-                                           :spec/E []}
-                                          (spec :A :concrete
-                                                (variables [:p "Integer"]
-                                                           [:n "Integer"]
-                                                           [:o "Integer" :optional])
-                                                (constraints [:pc [:halite "(> p 0)"]]
-                                                             [:pn [:halite "(< n 0)"]])
-                                                (refinements [:as_b :to :spec/B$v1 [:halite "{:$type :spec/B$v1, :x (* 10 p), :y n, :z o}"]]))
-
-                                          (spec :B :abstract
-                                                (variables [:x "Integer"]
-                                                           [:y "Integer"]
-                                                           [:z "Integer" :optional])
-                                                (constraints [:px [:halite "(< x 100)"]]
-                                                             [:py [:halite "(> y -100)"]]
-                                                             [:pz [:halite "(not= z 0)"]]))
-                                          (spec :C :concrete)
-                                          (spec :D :concrete
-                                                (variables [:ao :spec/A$v1 :optional]
-                                                           [:co :spec/C$v1 :optional]))
-                                          (spec :E :concrete
-                                                (variables [:co :spec/C$v1 :optional])
-                                                (refinements [:as_c :to :spec/C$v1 [:halite "co"]])))]})
-
-(deftype HCInfo [t h-result j-expr jh-result j-result])
-
-(defn ^HCInfo hc* [workspace-id expr]
-  (let [senv (spec-env/for-workspace *spec-store* workspace-id)
-        tenv (halite-envs/type-env {})
-        env (halite-envs/env {})
-        j-expr (try (jadeite/to-jadeite expr)
-                    (catch RuntimeException e
-                      [:throws (.getMessage e)]))
-        t (try (halite-lint/type-check senv tenv expr)
-               (catch RuntimeException e
-                 [:throws (.getMessage e)]))
-        h-result (try (halite/eval-expr senv tenv env expr)
-                      (catch RuntimeException e
-                        [:throws (.getMessage e)]))
-        jh-expr (when (string? j-expr)
-                  (try
-                    (jadeite/to-halite j-expr)
-                    (catch RuntimeException e
-                      [:throws (.getMessage e)])))
-
-        jh-result (try
-                    (halite/eval-expr senv tenv env jh-expr)
-                    (catch RuntimeException e
-                      [:throws (.getMessage e)]))
-        j-result (try
-                   (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
-                   (catch RuntimeException e
-                     [:throws (.getMessage e)]))]
-
-    (HCInfo. t h-result j-expr jh-result j-result)))
-
-(defmacro hc [workspaces workspace-id comment? & raw-args]
-  (let [raw-args (if (string? comment?)
-                   (first raw-args)
-                   comment?)
-        [expr & args] raw-args
-        [expected-t result-expected j-expr-expected j-result-expected] args]
-    `(test-setup-specs/setup-specs ~(if (keyword? workspaces)
-                                      `(workspaces-map ~workspaces)
-                                      workspaces)
-                                   (let [i# (hc* ~workspace-id '~expr)]
-                                     (is (= ~expected-t (.-t i#)))
-                                     (if (is-harness-error? (.-t i#))
-                                       (vector (quote ~expr)
-                                               (.-t i#))
-                                       (do
-                                         (is (= ~result-expected (.-h-result i#)))
-                                         (when (string? (.-j-expr i#))
-                                           (is (= ~result-expected (.-jh-result i#)))
-                                           (is (= ~j-result-expected (.-j-result i#))))
-                                         (is (= ~j-expr-expected (.-j-expr i#)))
-                                         (vector (quote ~expr)
-                                                 (.-t i#)
-                                                 (.-h-result i#)
-                                                 (.-j-expr i#)
-                                                 (.-j-result i#))))))))
 
 (deftest test-stuff
   (h (get (if true #{} [9 8 7 6]) (+ 1 2)) [:throws "Lookup target must be an instance of known type or non-empty vector"])
@@ -2580,5 +2583,39 @@
               :col 6
               :end-col 10}
              (select-keys (ex-data e) [:row :end-row :col :end-col :err-id :refinement-name ::model/spec-name]))))))
+
+;; deftest-end
+
+(defn- update-expected-results []
+  (->> (read-string
+        (str "[" (slurp "test/jibe/halite_guide.clj") "]"))
+       (map (fn [form]
+              (when (and (seq? form)
+                         (= 'deftest (first form)))
+                (let [test-name (second form)]
+                  (apply list 'deftest test-name
+                         (->> (drop 2 form)
+                              (map (fn [t]
+                                     (cond
+                                       (and (seq? t) (= 'h (first t)))
+                                       (eval t)
+
+                                       (and (seq? t) (= 'hc (first t)))
+                                       (let [r (eval t)
+                                             [_ workspaces workspace-id] t]
+                                         (list 'hc workspaces workspace-id r))
+
+                                       (and (seq? t) (= 'hf (first t)))
+                                       (let [r (eval t)
+                                             [_ t-form] t]
+                                         (apply list 'hf t-form (drop 2 r)))
+
+                                       :default
+                                       t)))
+                              doall))))))
+       (remove nil?)
+       (map #(with-out-str (clojure.pprint/pprint %)))
+       (string/join "\n")
+       (spit "test/jibe/halite_guide2.clj")))
 
 ;; (time (run-tests))

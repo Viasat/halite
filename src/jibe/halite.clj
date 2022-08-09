@@ -38,9 +38,6 @@
 (deferr halite-resource-spec-not-found [data]
         {:message (format "resource spec not found: %s" (pr-str (:spec-id data)))})
 
-(deferr halite-not-a-value [data]
-        {:message (format "BUG! Not a value: %s" (pr-str (:value data)))})
-
 (deferr halite-no-active-refinement-path [data]
         {:message (format "No active refinement path from '%s' to '%s'"
                           (pr-str (:type data))
@@ -282,7 +279,7 @@ clojure.pprint/cl-format
                (and (not (:abstract? spec-info))
                     (every? (partial concrete? senv) (vals (dissoc v :$type)))))
     (coll? v) (every? (partial concrete? senv) v)
-    :else (throw-err (halite-not-a-value {:value v}))))
+    :else (throw (ex-info (format "BUG! Not a value: %s" (pr-str v)) {:value v}))))
 
 (s/defn ^:private check-against-declared-type
   "Runtime check that v conforms to the given type, which is the type of v as declared in a resource spec.
