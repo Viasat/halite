@@ -20,23 +20,19 @@
 (s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
 
 (deferr lint-function-not-found [data]
-        {:message (format "function '%s' not found"
-                          (pr-str (:op data)))})
+        {:message "function ':op' not found"})
 
 (deferr lint-disallowed-nothing [data]
-        {:message (format "Disallowed ':Nothing' expression: %s" (pr-str (:nothing-arg data)))})
+        {:message "Disallowed ':Nothing' expression: :nothing-arg"})
 
 (deferr lint-no-matching-signature [data]
-        {:message (format (str "no matching signature for '%s'")
-                          (pr-str (:op data)))})
+        {:message (str "no matching signature for ':op'")})
 
 (deferr lint-undefined [data]
-        {:message (format "Undefined: '%s'"
-                          (pr-str (:form data)))})
+        {:message "Undefined: ':form'"})
 
 (deferr lint-undefined-use-of-unset-variable [data]
-        {:message (format "Disallowed use of Unset variable '%s'; you may want '$no-value'"
-                          (pr-str (:form data)))})
+        {:message "Disallowed use of Unset variable ':form'; you may want '$no-value'"})
 
 (deferr lint-cannot-index-into-empty-vector [data]
         {:message "Cannot index into empty vector"})
@@ -48,17 +44,13 @@
         {:message "Index must be a variable name (as a keyword) when target is an instance"})
 
 (deferr lint-no-such-variable [data]
-        {:message (format "No such variable '%s' on spec '%s'"
-                          (pr-str (:index-form data))
-                          (pr-str (:spec-id data)))})
+        {:message "No such variable ':index-form' on spec ':spec-id'"})
 
 (deferr lint-invalid-lookup-target [data]
         {:message "Lookup target must be an instance of known type or non-empty vector"})
 
 (deferr lint-result-always [data]
-        {:message (format "Result of '%s' would always be %s"
-                          (pr-str (:op data))
-                          (:value data))})
+        {:message "Result of ':op' would always be :value"})
 
 (deferr lint-if-expects-boolean [data]
         {:message "First argument to 'if' must be boolean"})
@@ -67,76 +59,55 @@
         {:message "First argument to 'when' must be boolean"})
 
 (deferr lint-let-needs-bare-symbol [data]
-        {:message (format "Binding target for 'let' must be a bare symbol, not: %s"
-                          (pr-str (:sym data)))})
+        {:message "Binding target for 'let' must be a bare symbol, not: :sym"})
 
 (deferr lint-let-invalid-symbol [data]
-        {:message (format "Binding target for 'let' must not start with '$': %s"
-                          (pr-str (:sym data)))})
+        {:message "Binding target for 'let' must not start with '$': :sym"})
 
 (deferr lint-cannot-bind-unset [data]
-        {:message (format "Disallowed binding '%s' to :Unset value; just use '$no-value'"
-                          (pr-str (:sym data)))})
+        {:message "Disallowed binding ':sym' to :Unset value; just use '$no-value'"})
 
 (deferr lint-cannot-bind-nothing [data]
-        {:message (format "Disallowed binding '%s' to :Nothing value; perhaps move to body of 'let'"
-                          (pr-str (:sym data)))})
+        {:message "Disallowed binding ':sym' to :Nothing value; perhaps move to body of 'let'"})
 
 (deferr lint-invalid-binding-form [data]
-        {:message (format "Binding form for '%s' must have one variable and one collection"
-                          (pr-str (:op data)))})
+        {:message "Binding form for ':op' must have one variable and one collection"})
 
 (deferr lint-invalid-binding-target [data]
-        {:message (format "Binding target for '%s' must be a bare symbol, not: %s"
-                          (pr-str (:op data))
-                          (pr-str (:sym data)))})
+        {:message "Binding target for ':op' must be a bare symbol, not: :sym"})
 
 (deferr lint-binding-target-invalid-symbol [data]
-        {:message (format "Binding target for '%s' must not start with '$': "
-                          (pr-str (:op data))
-                          (pr-str (:sym data)))})
+        {:message "Binding target for ':op' must not start with '$': :sym"})
 
 (deferr lint-collection-required [data]
-        {:message (format "collection required for '%s', not %s"
-                          (pr-str (:op data))
-                          (pr-str (:expr-type-string data)))})
+        {:message "collection required for ':op', not :expr-type-string"})
 
 (deferr lint-body-must-be-boolean [data]
-        {:message (format "Body expression in '%s' must be boolean"
-                          (pr-str (:op data)))})
+        {:message "Body expression in ':op' must be boolean"})
 
 (deferr lint-body-must-be-integer [data]
-        {:message (format "Body expression in 'sort-by' must be Integer, not %s"
-                          (pr-str (:body-type data)))})
+        {:message "Body expression in 'sort-by' must be Integer, not :body-type"})
 
 (deferr lint-invalid-accumulator [data]
-        {:message (format "Accumulator binding target for '%s' must be a bare symbol, not: %s"
-                          (pr-str (:op data))
-                          (pr-str (:accumulator data)))})
+        {:message "Accumulator binding target for ':op' must be a bare symbol, not: :accumulator"})
 
 (deferr lint-invalid-element-binding-target [data]
-        {:message (format "Element binding target for '%s' must be a bare symbol, not: %s"
-                          (pr-str (:op data))
-                          (pr-str (:element data)))})
+        {:message "Element binding target for ':op' must be a bare symbol, not: :element"})
 
 (deferr lint-cannot-use-same-symbol [data]
-        {:message (format "Cannot use the same symbol for accumulator and element binding: %s"
-                          (pr-str (:element data)))})
+        {:message "Cannot use the same symbol for accumulator and element binding: :element"})
 
 (deferr lint-reduce-needs-vector [data]
         {:message "Second binding expression to 'reduce' must be a vector."})
 
 (deferr lint-first-argument-not-bare-symbol [data]
-        {:message (format "First argument to '%s' must be a bare symbol"
-                          (pr-str (:op data)))})
+        {:message "First argument to ':op' must be a bare symbol"})
 
 (deferr lint-first-agument-not-optional [data]
-        {:message (format "First argument to '%s' must have an optional type"
-                          (pr-str (:op data)))})
+        {:message "First argument to ':op' must have an optional type"})
 
 (deferr lint-binding-expression-not-optional [data]
-        {:message (format "Binding expression in '%s' must have an optional type"
-                          (pr-str (:op data)))})
+        {:message "Binding expression in ':op' must have an optional type"})
 
 (deferr lint-first-needs-vector [data]
         {:message "Argument to 'first' must be a vector"})
@@ -148,28 +119,28 @@
         {:message "Argument to 'rest' must be a vector"})
 
 (deferr lint-needs-collection [data]
-        {:message (format "First argument to '%s' must be a set or vector" (:op data))})
+        {:message "First argument to ':op' must be a set or vector"})
 
 (deferr lint-needs-collection-second [data]
-        {:message (format "Second argument to '%s' must be a set or vector" (:op data))})
+        {:message "Second argument to ':op' must be a set or vector"})
 
 (deferr lint-cannot-conj-unset [data]
-        {:message (format "cannot conj possibly unset value to %s" (pr-str (:type-string data)))})
+        {:message "cannot conj possibly unset value to :type-string"})
 
 (deferr lint-argument-mis-match [data]
-        {:message (format "When first argument to '%s' is a vector, second argument must also be a vector" (:op data))})
+        {:message "When first argument to ':op' is a vector, second argument must also be a vector"})
 
 (deferr lint-must-be-instance [data]
-        {:message (format "First argument to '%s' must be an instance" (pr-str (:op data)))})
+        {:message "First argument to ':op' must be an instance"})
 
 (deferr lint-must-be-spec-id [data]
-        {:message (format "Second argument to '%s' must be a spec id" (pr-str (:op data)))})
+        {:message "Second argument to ':op' must be a spec id"})
 
 (deferr lint-spec-not-found [data]
-        {:message (format "Spec not found: '%s'" (pr-str (:spec-id data)))})
+        {:message "Spec not found: ':spec-id'"})
 
 (deferr lint-unknown-type [data]
-        {:message (format "Argument to '%s' must be an instance of known type" (pr-str (:op data)))})
+        {:message "Argument to ':op' must be an instance of known type"})
 
 (deferr lint-syntax-error [data]
         {:message "Syntax error"})
@@ -253,7 +224,7 @@
        (let [j (halite-types/join s t)]
          (when (= j :Nothing)
            (throw-err (lint-result-always {:op (first expr)
-                                           :value (if (= '= (first expr)) "false" "true")
+                                           :value (if (= '= (first expr)) 'false 'true)
                                            :form expr})))
          j))
      arg-types))
