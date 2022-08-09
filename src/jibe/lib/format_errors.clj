@@ -7,7 +7,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def trace-err-defs? true)
+(def trace-err-defs? false)
 
 (def trace-atom (atom []))
 
