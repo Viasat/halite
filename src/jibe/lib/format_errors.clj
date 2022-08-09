@@ -158,7 +158,10 @@
       (throw (ex-info (str (name (:err-id data#)) " " (if *squash-throw-site*
                                                         "0-0"
                                                         site-code#) " : " (format-msg (:message data#) data#))
-                      (extend-err-data data#)))))
+                      (assoc (extend-err-data data#)
+                             :throw-site (if *squash-throw-site*
+                                           "0-0"
+                                           site-code#))))))
   ([data ex]
    (when trace-err-defs?
      (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
@@ -168,7 +171,10 @@
       (throw (ex-info (str (name (:err-id data#)) " " (if *squash-throw-site*
                                                         "0-0"
                                                         site-code#) " : " (format-msg (:message data#) data#))
-                      (extend-err-data data#)
+                      (assoc (extend-err-data data#)
+                             :throw-site (if *squash-throw-site*
+                                           "0-0"
+                                           site-code#))
                       ~ex)))))
 
 (defmacro with-exception-data

@@ -10068,7 +10068,8 @@
           :form
           :end-col
           :refinement-name
-          :row}
+          :row
+          :throw-site}
         (set (keys (ex-data e)))))
       (is
        (=
