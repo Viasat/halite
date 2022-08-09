@@ -3,7 +3,9 @@
 
 (ns jibe.lib.format-errors
   (:require [clojure.string :as string]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import [clojure.lang Namespace]
+           [java.lang StackTraceElement]))
 
 (set! *warn-on-reflection* true)
 
@@ -141,20 +143,31 @@
 (defn format-msg [msg-str data-map]
   (format-msg* msg-str (format-data-map data-map)))
 
+(defn site-code [^Namespace ns form]
+  (str (mod (.hashCode (str (.getName ns))) 1000) "-" (:line (meta form))))
+
+(def ^:dynamic *squash-throw-site* false)
+
 (defmacro throw-err
   ([data]
    (when trace-err-defs?
      (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
        (swap! trace-atom conj t)))
-   `(let [data# ~data]
-      (throw (ex-info (str (name (:err-id data#)) " : " (format-msg (:message data#) data#))
+   `(let [data# ~data
+          site-code# ~(site-code *ns* &form)]
+      (throw (ex-info (str (name (:err-id data#)) " " (if *squash-throw-site*
+                                                        "0-0"
+                                                        site-code#) " : " (format-msg (:message data#) data#))
                       (extend-err-data data#)))))
   ([data ex]
    (when trace-err-defs?
      (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
        (swap! trace-atom conj t)))
-   `(let [data# ~data]
-      (throw (ex-info (str (name (:err-id data#)) " : " (format-msg (:message data#) data#))
+   `(let [data# ~data
+          site-code# ~(site-code *ns* &form)]
+      (throw (ex-info (str (name (:err-id data#)) " " (if *squash-throw-site*
+                                                        "0-0"
+                                                        site-code#) " : " (format-msg (:message data#) data#))
                       (extend-err-data data#)
                       ~ex)))))
 

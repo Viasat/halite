@@ -5,6 +5,7 @@
   (:require [jibe.halite :as halite]
             [jibe.halite.halite-lint :as halite-lint]
             [jibe.halite.halite-envs :as halite-envs]
+            [jibe.lib.format-errors :as format-errors]
             [clojure.test :as test :refer [deftest is are test-vars]]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
@@ -690,8 +691,9 @@
       (is (thrown-with-msg?
            ExceptionInfo #"Second argument to 'refine-to' must be a spec id"
            (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/A :x 2} (+ 1 2)))))
-      (is (thrown-with-msg? ExceptionInfo #"Refinement from 'ws/A' failed unexpectedly: \"halite-invalid-instance : Invalid instance of 'ws/C'"
-                            (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/C))))
+      (is (thrown-with-msg? ExceptionInfo #"Refinement from 'ws/A' failed unexpectedly: \"halite-invalid-instance 0-0 : Invalid instance of 'ws/C'"
+                            (binding [format-errors/*squash-throw-site* true]
+                              (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/C)))))
       (is (= {:$type :ws/B :x 20}
              (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/B))))
       (is (= {:$type :ws/E} (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/E} :ws/E)))))))
