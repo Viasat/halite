@@ -28,40 +28,34 @@
   '#{$this})
 
 (deferr halite-missing-required-vars [data]
-        {:message (str "missing required variables: "
-                       (str/join "," (map name (:missing-vars data))))})
+        {:message "Missing required variables: :missing-vars"})
 
 (deferr halite-variables-not-in-spec [data]
-        {:message (str "variables not defined on spec: "
-                       (str/join ", " (map name (:invalid-vars data))))})
+        {:message "Variables not defined on spec: :invalid-vars"})
 
 (deferr halite-resource-spec-not-found [data]
-        {:message (format "resource spec not found: %s" (pr-str (:spec-id data)))})
+        {:message "Resource spec not found: :spec-id"})
 
 (deferr halite-no-active-refinement-path [data]
-        {:message (format "No active refinement path from '%s' to '%s'"
-                          (pr-str (:type data))
-                          (pr-str (:target-type data)))})
+        {:message "No active refinement path from ':type' to ':target-type'"})
 
 (deferr halite-no-abstract [data]
-        {:message "instance cannot contain abstract value"})
+        {:message "Instance cannot contain abstract value"})
 
 (deferr halite-invalid-instance [data]
-        {:message (format "invalid instance of '%s', violates constraints %s"
-                          (pr-str (symbol (:spec-id data)))
-                          (str/join ", " (map first (:violated-constraints data))))})
+        {:message "Invalid instance of ':spec-id', violates constraints :violated-constraints"})
 
 (deferr halite-missing-type-field [data]
-        {:message "instance literal must have :$type field"})
+        {:message "Instance literal must have :$type field"})
 
 (deferr halite-invalid-type-value [data]
-        {:message "expected namespaced keyword as value of :$type"})
+        {:message "Expected namespaced keyword as value of :$type"})
 
 (deferr halite-invalid-field-value [data]
-        {:message (format "value of '%s' has wrong type" (:variable data))})
+        {:message "Value of ':variable' has wrong type"})
 
 (deferr halite-invalid-value-for-context [data]
-        {:message (format "value of '%s has wrong type" (pr-str (:sym data)))})
+        {:message "Value of ':sym has wrong type"})
 
 (deferr halite-invalid-value [data]
         {:message "Invalid value"})
@@ -70,53 +64,40 @@
         {:message "Invalid expression"})
 
 (deferr halite-literal-must-evaluate-to-value [data]
-        {:message (format "%s literal element must always evaluate to a value"
-                          (:coll-type-string data))})
+        {:message ":coll-type-string literal element must always evaluate to a value"})
 
 (deferr halite-size-exceeded [data]
-        {:message (format "%s size of %d exceeds the max allowed size of %d"
-                          (:object-type data)
-                          (:actual-count data)
-                          (:count-limit data))})
+        {:message ":object-type size of :actual-count exceeds the max allowed size of :count-limit"})
 
 (deferr halite-limit-exceeded [data]
-        {:message (format "%s of %d exceeds the max allowed value of %d"
-                          (:object-type data)
-                          (:value data)
-                          (:limit data))})
+        {:message ":object-type of :value exceeds the max allowed value of :limit"})
 
 (deferr halite-abs-failure [data]
-        {:message (format "Cannot compute absolute value of: %s" (pr-str (:value data)))})
+        {:message "Cannot compute absolute value of: :value"})
 
 (deferr halite-invalid-exponent [data]
-        {:message (format "Invalid exponent: %d" (:exponent data))})
+        {:message "Invalid exponent: :exponent"})
 
 (deferr halite-spec-threw [data]
-        {:message (format "Spec threw error: %s" (pr-str (:spec-error-str data)))})
+        {:message "Spec threw error: :spec-error-str"})
 
 (deferr halite-unknown-function-or-operator [data]
-        {:message (format "unknown function or operator: %s" (pr-str (:op data)))})
+        {:message "Unknown function or operator: :op"})
 
 (deferr halite-syntax-error [data]
         {:message "Syntax error"})
 
 (deferr halite-no-matching-signature [data]
-        {:message (format "no matching signature for '%s'" (pr-str (:op data)))})
+        {:message "No matching signature for ':op'"})
 
 (deferr halite-undefined-symbol [data]
-        {:message (format "Undefined: '%s'" (pr-str (:form data)))})
+        {:message "Undefined: ':form'"})
 
 (deferr halite-wrong-arg-count [data]
-        {:message (format "Wrong number of arguments to '%s': expected %d, but got %d"
-                          (:op data)
-                          (:expected-arg-count data)
-                          (:actual-arg-count data))})
+        {:message "Wrong number of arguments to ':op': expected :expected-arg-count, but got :actual-arg-count"})
 
 (deferr halite-wrong-arg-count-min [data]
-        {:message (format "Wrong number of arguments to '%s': expected at least %d, but got %d"
-                          (:op data)
-                          (:minimum-arg-count data)
-                          (:actual-arg-count data))})
+        {:message "Wrong number of arguments to ':op': expected at least :minimum-arg-count, but got :actual-arg-count"})
 
 (deferr halite-invalid-vector-index [data]
         {:message "Index must be an integer when target is a vector"})
@@ -128,101 +109,79 @@
         {:message "Lookup target must be an instance of known type or non-empty vector"})
 
 (deferr halite-arg-type-mismatch [data]
-        {:message (format "%s to '%s' must be %s"
-                          (condp = (:position data)
-                            nil "Argument"
-                            0 "First argument"
-                            1 "Second argument"
-                            "An argument")
-                          (pr-str (:op data))
-                          (:expected-type-description data))})
+        {:message ":position to ':op' must be :expected-type-description"})
 
 (deferr halite-arg-types-both-vectors [data]
-        {:message (format "When first argument to '%s' is a vector, second argument must also be a vector" (pr-str (:op data)))})
+        {:message "When first argument to ':op' is a vector, second argument must also be a vector"})
 
 (deferr halite-let-bindings-odd-count [data]
         {:message "let bindings form must have an even number of forms"})
 
 (deferr halite-let-symbols-required [data]
-        {:message "even-numbered forms in let binding vector must be symbols"})
+        {:message "Even-numbered forms in let binding vector must be symbols"})
 
 (deferr halite-cannot-bind-reserved-word [data]
-        {:message (format "Cannot bind a value to the reserved word: %s" (:sym data))})
+        {:message "Cannot bind a value to the reserved word: :sym"})
 
 (deferr halite-comprehend-binding-wrong-types [data]
-        {:message (format "Binding form for '%s' must have one variable and one collection" (pr-str (:op data)))})
+        {:message "Binding form for 'op' must have one variable and one collection"})
 
 (deferr halite-binding-target-must-be-symbol [data]
-        {:message (format "Binding target for '%s' must be a bare symbol, not: %s"
-                          (pr-str (:op data))
-                          (pr-str (:sym data)))})
+        {:message "Binding target for ':op' must be a bare symbol, not: :sym"})
 
 (deferr halite-element-binding-target-must-be-symbol [data]
-        {:message (format "Element binding target for '%s' must be a bare symbol, not: %s"
-                          (pr-str (:op data))
-                          (pr-str (:element data)))})
+        {:message "Element binding target for ':op' must be a bare symbol, not: :element"})
 
 (deferr halite-element-accumulator-same-symbol [data]
-        {:message (format "Cannot use the same symbol for accumulator and element binding: %s"
-                          (pr-str (:element data)))})
+        {:message "Cannot use the same symbol for accumulator and element binding: :element"})
 
 (deferr halite-comprehend-collection-invalid-type [data]
-        {:message (format "collection required for '%s', not %s"
-                          (pr-str (:op data))
-                          (pr-str (:actual-type data)))})
+        {:message "Collection required for ':op', not :actual-type"})
 
 (deferr halite-not-boolean-body [data]
-        {:message (format "Body expression in '%s' must be boolean" (pr-str (:op data)))})
+        {:message "Body expression in ':op' must be boolean"})
 
 (deferr halite-not-boolean-constraint [data]
-        {:message (format "Constraint expression '%s' must have Boolean type" (pr-str (:expr data)))})
+        {:message "Constraint expression ':expr' must have Boolean type"})
 
 (deferr halite-not-integer-body [data]
-        {:message (format "Body expression in '%s' must be Integer, not %s"
-                          (pr-str (:op data))
-                          (pr-str (:actual-type data)))})
+        {:message "Body expression in ':op' must be Integer, not :actual-type"})
 
 (deferr halite-accumulator-target-must-be-bare-symbol [data]
-        {:message (format "Accumulator binding target for '%s' must be a bare symbol, not: %s"
-                          (pr-str (:op data))
-                          (pr-str (:accumulator data)))})
+        {:message "Accumulator binding target for ':op' must be a bare symbol, not: :accumulator"})
 
 (deferr halite-reduce-not-vector [data]
         {:message "Second binding expression to 'reduce' must be a vector."})
 
 (deferr halite-if-value-must-be-bare-symbol [data]
-        {:message (format "First argument to '%s' must be a bare symbol" (pr-str (:op data)))})
+        {:message "First argument to ':op' must be a bare symbol"})
 
 (deferr halite-arguments-not-sets [data]
-        {:message (format "Arguments to '%s' must be sets" (pr-str (:op data)))})
+        {:message "Arguments to ':op' must be sets"})
 
 (deferr halite-argument-not-vector [data]
-        {:message (format "Argument to '%s' must be a vector" (:op data))})
+        {:message "Argument to ':op' must be a vector"})
 
 (deferr halite-argument-empty [data]
-        {:message "argument to first is always empty"})
+        {:message "Argument to first is always empty"})
 
 (deferr halite-argument-not-set-or-vector [data]
         {:message "First argument to 'conj' must be a set or vector"})
 
 (deferr halite-cannot-conj-unset [data]
-        {:message (format "cannot conj possibly unset value to %s" (:type-string data))})
+        {:message "Cannot conj possibly unset value to :type-string"})
 
 (deferr halite-refinement-error [data]
-        {:message (format "Refinement from '%s' failed unexpectedly: %s"
-                          (:type data) (:underlying-error-message data))})
+        {:message "Refinement from ':type' failed unexpectedly: :underlying-error-message"})
 
 (deferr halite-symbols-not-bound [data]
-        {:message (format "symbols in type environment are not bound: %s" (str/join " ", (:unbound-symbols data)))})
+        {:message "symbols in type environment are not bound: :unbound-symbols"})
 
 (deferr halite-symbol-undefined [data]
-        {:message (format "symbol '%s' is undefined" (:form data))})
+        {:message "Symbol ':form' is undefined"})
 
 (deferr halite-invalid-refinement-expression [data]
-        {:message (format "Invalid refinement expression: %s"
-                          (:form data))})
-
-clojure.pprint/cl-format
+        {:message "Invalid refinement expression: :form"})
 
 (declare eval-expr)
 (declare eval-expr*)
@@ -324,7 +283,7 @@ clojure.pprint/cl-format
     ;; check all constraints
     (let [violated-constraints (->> spec-info :constraints (remove satisfied?) vec)]
       (when (seq violated-constraints)
-        (throw-err (halite-invalid-instance {:spec-id spec-id :violated-constraints violated-constraints
+        (throw-err (halite-invalid-instance {:spec-id (symbol spec-id) :violated-constraints (mapv (comp symbol first) violated-constraints)
                                              :value inst
                                              :halite-error :constraint-violation}))))
 
@@ -370,9 +329,9 @@ clojure.pprint/cl-format
         invalid-vars (set/difference supplied-fields fields)]
 
     (when (seq missing-vars)
-      (throw-err (halite-missing-required-vars {:missing-vars missing-vars :form inst})))
+      (throw-err (halite-missing-required-vars {:missing-vars (mapv symbol missing-vars) :form inst})))
     (when (seq invalid-vars)
-      (throw-err (halite-variables-not-in-spec {:invalid-vars invalid-vars
+      (throw-err (halite-variables-not-in-spec {:invalid-vars (mapv symbol invalid-vars)
                                                 :instance inst
                                                 :form (get inst (first invalid-vars))})))
 
@@ -382,7 +341,7 @@ clojure.pprint/cl-format
             actual-type (check-fn ctx field-val)]
         (when-not (halite-types/subtype? actual-type field-type)
           (throw-err (halite-invalid-field-value {error-key inst
-                                                  :variable (name field-kw)
+                                                  :variable (symbol field-kw)
                                                   :expected field-type
                                                   :actual actual-type})))))
     (halite-types/concrete-spec-type t)))
@@ -401,7 +360,7 @@ clojure.pprint/cl-format
       (throw-err (halite-invalid-value  {error-key coll})))
     (doseq [[elem elem-type] (map vector coll elem-types)]
       (when (halite-types/maybe-type? elem-type)
-        (throw-err (halite-literal-must-evaluate-to-value {:coll-type-string coll-type-string
+        (throw-err (halite-literal-must-evaluate-to-value {:coll-type-string (symbol coll-type-string)
                                                            error-key elem}))))
     (halite-types/vector-or-set-type coll (condp = (count coll)
                                             0 :Nothing
@@ -475,13 +434,13 @@ clojure.pprint/cl-format
 (s/defn check-limit [limit-key v]
   (when-let [limit (get *limits* limit-key)]
     (condp = limit-key
-      :string-literal-length (check-count "String" limit v {})
-      :string-runtime-length (check-count "String" limit v {})
-      :vector-literal-count (check-count "Vector" limit v {})
-      :vector-runtime-count (check-count "Vector" limit v {})
-      :set-literal-count (check-count "set" limit v {})
-      :set-runtime-count (check-count "set" limit v {})
-      :list-literal-count (check-count "list" limit v {})))
+      :string-literal-length (check-count 'String limit v {})
+      :string-runtime-length (check-count 'String limit v {})
+      :vector-literal-count (check-count 'Vector limit v {})
+      :vector-runtime-count (check-count 'Vector limit v {})
+      :set-literal-count (check-count 'Set limit v {})
+      :set-runtime-count (check-count 'Set limit v {})
+      :list-literal-count (check-count 'List limit v {})))
   v)
 
 (defmacro math-f [integer-f fixed-decimal-f]
@@ -679,7 +638,7 @@ clojure.pprint/cl-format
 (defn arg-count-exactly
   [n form]
   (when (not= n (count (rest form)))
-    (throw-err (halite-wrong-arg-count {:op (name (first form))
+    (throw-err (halite-wrong-arg-count {:op (first form)
                                         :expected-arg-count n
                                         :actual-arg-count (count (rest form))
                                         :form form}))))
@@ -687,7 +646,7 @@ clojure.pprint/cl-format
 (defn arg-count-at-least
   [n form]
   (when (< (count (rest form)) n)
-    (throw-err (halite-wrong-arg-count-min {:op (name (first form))
+    (throw-err (halite-wrong-arg-count-min {:op (first form)
                                             :minimum-arg-count n
                                             :actual-arg-count (count (rest form))
                                             :form form}))))
@@ -708,7 +667,7 @@ clojure.pprint/cl-format
       (when-not (and (keyword? index) (halite-types/bare? index))
         (throw-err (halite-invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
-        (throw-err (halite-variables-not-in-spec {:form form, :invalid-vars #{index}})))
+        (throw-err (halite-variables-not-in-spec {:form form, :invalid-vars #{(symbol index)}})))
       (get field-types index))
 
     :else (throw-err (halite-invalid-lookup-target {:form form, :actual-type subexpr-type}))))
@@ -939,7 +898,7 @@ clojure.pprint/cl-format
       (throw-err (halite-argument-not-set-or-vector {:form expr})))
     (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
       (when (halite-types/maybe-type? elem-type)
-        (throw-err (halite-cannot-conj-unset {:type-string (halite-types/coll-type-string base-type), :form elem}))))
+        (throw-err (halite-cannot-conj-unset {:type-string (symbol (halite-types/coll-type-string base-type)), :form elem}))))
     (halite-types/change-elem-type
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
@@ -1245,5 +1204,5 @@ clojure.pprint/cl-format
             value (eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym))
             actual-type (type-of senv tenv value)]
         (when-not (halite-types/subtype? actual-type declared-type)
-          (throw-err (halite-invalid-field-value {:variable (name sym) :value value :expected declared-type :actual actual-type})))))
+          (throw-err (halite-invalid-field-value {:variable sym :value value :expected declared-type :actual actual-type})))))
     (eval-expr* {:env env :senv senv} expr)))

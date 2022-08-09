@@ -60,15 +60,15 @@
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
-    {} #"instance literal must have :\$type field"
-    {:$type "foo"} #"expected namespaced keyword as value of :\$type"
-    {:$type :bar} #"expected namespaced keyword as value of :\$type"
-    {:$type :foo/bar} #"resource spec not found"
-    {:$type :ws/A$v1} #"missing required variables"
-    {:$type :ws/A$v1 :x 1 :y 1 :c {:$type :ws2/B$v1 :s "foo"}} #"value of 'y' has wrong type"
-    {:$type :ws/A$v1 :x 1 :y false :c {:$type :ws2/B$v1 :s 12}} #"value of 's' has wrong type"
-    {:$type :ws2/B$v1 :s "foo" :foo "bar"} #"variables not defined on spec"
-    {:$type :ws/C$v1 :xs [1 "two"]} #"value of 'xs' has wrong type"))
+    {} #"Instance literal must have :\$type field"
+    {:$type "foo"} #"Expected namespaced keyword as value of :\$type"
+    {:$type :bar} #"Expected namespaced keyword as value of :\$type"
+    {:$type :foo/bar} #"Resource spec not found"
+    {:$type :ws/A$v1} #"Missing required variables"
+    {:$type :ws/A$v1 :x 1 :y 1 :c {:$type :ws2/B$v1 :s "foo"}} #"Value of 'y' has wrong type"
+    {:$type :ws/A$v1 :x 1 :y false :c {:$type :ws2/B$v1 :s 12}} #"Value of 's' has wrong type"
+    {:$type :ws2/B$v1 :s "foo" :foo "bar"} #"Variables not defined on spec: foo"
+    {:$type :ws/C$v1 :xs [1 "two"]} #"Value of 'xs' has wrong type"))
 
 (deftest literal-eval-tests
   (are [expr]
@@ -92,7 +92,7 @@
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
-    '(error 10) #"no matching signature for 'error'"
+    '(error 10) #"No matching signature for 'error'"
     '(error (error "foo")) #"Disallowed.*expression"
     '(let [x (error "Fail")] "Dead code") #"Disallowed binding 'x' to :Nothing")
 
@@ -150,19 +150,19 @@
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
 
-    '(foo) #"unknown function or operator: foo"
-    '(+ 1 "two") #"no matching signature for '\+'"
-    '(+ 1) #"no matching signature for '\+'"
-    '(any? [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
+    '(foo) #"Unknown function or operator: foo"
+    '(+ 1 "two") #"No matching signature for '\+'"
+    '(+ 1) #"No matching signature for '\+'"
+    '(any? [x #{"nan"}] (+ x 10)) #"No matching signature for '\+'"
     '(any? [x #{}] x) #"must be boolean"
     '(any? [x #{}] (< x 5)) #":Nothing"
-    '(map [x #{"nan"}] (+ x 10)) #"no matching signature for '\+'"
+    '(map [x #{"nan"}] (+ x 10)) #"No matching signature for '\+'"
     '(map [x #{}] (+ x 10)) #":Nothing"
-    '(filter [x #{"nan"}] (< x 10)) #"no matching signature for '\<'"
+    '(filter [x #{"nan"}] (< x 10)) #"No matching signature for '\<'"
     '(filter [x #{}] (< x 10)) #":Nothing"
-    '(sort 5) #"no matching signature"
+    '(sort 5) #"No matching signature"
     '(sort-by [x []] x) #"must be Integer"
-    '(sort-by [x 5] 1) #"collection required"
+    '(sort-by [x 5] 1) #"Collection required"
     '(sort-by [1 5] 1) #"must be a bare symbol"
     '(reduce [0 1] [x []] 2) #"must be a bare symbol"
     '(reduce [a 1] [2 []] 3) #"must be a bare symbol"
@@ -259,7 +259,7 @@
       '(get xs (< 1 2)) #"must be an integer"
       '(get a :foo/bar) #"must be a variable name"
       '(get a 12) #"must be a variable name"
-      '(get a :b) #"variables not defined on spec: b"
+      '(get a :b) #"Variables not defined on spec: b"
       '(get #{} 1) #"must be an instance of known type or non-empty vector")))
 
 (deftest get-eval-tests
@@ -355,7 +355,7 @@
     '(let [x] x) #"must have an even number of forms"
     '(let []) #"Wrong number of arguments"
     '(let [1 2] 1) #"must be symbols"
-    '(let [x "foo"] (+ x 1)) #"no matching signature"
+    '(let [x "foo"] (+ x 1)) #"No matching signature"
     '(let [$type 7] 8) #"must not.*[$]"
     '(let [$foo 7] 8) #"must not.*[$]")
 
@@ -403,8 +403,8 @@
       '(let [$no-value 5] $no-value) #"Cannot bind a value to the reserved word"
       '(if-value 12 true false) #"must be a bare symbol"
       '(when-value 12 true) #"must be a bare symbol"
-      '(+ 10 (if-value x $no-value 5)) #"no matching signature for '\+'"
-      '(if-value x 1 (+ x 5)) #"no matching signature for '\+'"
+      '(+ 10 (if-value x $no-value 5)) #"No matching signature for '\+'"
+      '(if-value x 1 (+ x 5)) #"No matching signature for '\+'"
       '(let [y 22] (if-value y true false)) #"must have an optional type"
       '(let [y 22] (when-value y false)) #"must have an optional type"
       '(= "foo" x) #"would always be false"
@@ -447,7 +447,7 @@
 
       '[x] #"vector literal element must always evaluate to a value"
       '#{x} #"set literal element must always evaluate to a value"
-      '(conj [] x) #"cannot conj possibly unset value to vector")))
+      '(conj [] x) #"Cannot conj possibly unset value to vector")))
 
 (deftest when-tests
   (let [senv (assoc-in senv [:specs :ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
@@ -577,7 +577,7 @@
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
     '(first) #"Wrong number of arguments"
     '(first [] []) #"Wrong number of arguments"
-    '(first []) #"argument to first is always empty"
+    '(first []) #"Argument to first is always empty"
     '(first 12) #"must be a vector"
     '(rest) #"Wrong number of arguments"
     '(rest #{}) #"must be a vector"
@@ -588,8 +588,8 @@
     '(concat 1) #"Wrong number of arguments"
     '(concat 1 2) #"must be a set or vector"
     '(concat [] #{}) #"second argument must also be a vector"
-    '(sort) #"no matching signature"
-    '(sort 1) #"no matching signature")
+    '(sort) #"No matching signature"
+    '(sort 1) #"No matching signature")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -629,7 +629,7 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-of senv tenv expr))
 
-      {:$type :ws/E$v1, :y true} #"invalid instance"
+      {:$type :ws/E$v1, :y true} #"Invalid instance"
       {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")
 
     ;; eval-expr also must check constraints
@@ -640,7 +640,7 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
 
-      {:$type :ws/E$v1, :y true} #"invalid instance"
+      {:$type :ws/E$v1, :y true} #"Invalid instance"
       {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")))
 
 (deftest test-refinement-validation
@@ -661,7 +661,7 @@
     (let [invalid-a {:$type :ws/A :x -10}
           sketchy-a {:$type :ws/A :x 20}]
       (is (= [:Instance :ws/A] (halite/type-check senv tenv invalid-a)))
-      (is (thrown-with-msg? ExceptionInfo #"invalid instance"
+      (is (thrown-with-msg? ExceptionInfo #"Invalid instance"
                             (halite/eval-expr senv tenv empty-env invalid-a)))
       (let [a (halite/eval-expr senv tenv empty-env sketchy-a)]
         (is (= a sketchy-a))
@@ -670,7 +670,7 @@
                (-> a meta :refinements (dissoc :ws/C)))))
 
       (is (thrown-with-msg?
-           ExceptionInfo #"invalid instance"
+           ExceptionInfo #"Invalid instance"
            (halite/eval-expr senv
                              (halite-envs/extend-scope tenv 'a [:Instance :ws/A])
                              (halite-envs/bind empty-env 'a invalid-a)
@@ -682,7 +682,7 @@
            ExceptionInfo #"No active refinement path from 'ws/D' to 'ws/E'"
            (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/D :x 1} :ws/E))))
       (is (thrown-with-msg?
-           ExceptionInfo #"resource spec not found: foo/Bar"
+           ExceptionInfo #"Resource spec not found: foo/Bar"
            (halite/type-check senv tenv '(refine-to {:$type :ws/E} :foo/Bar))))
       (is (thrown-with-msg?
            ExceptionInfo #"First argument to 'refine-to' must be an instance"
@@ -690,9 +690,8 @@
       (is (thrown-with-msg?
            ExceptionInfo #"Second argument to 'refine-to' must be a spec id"
            (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/A :x 2} (+ 1 2)))))
-      (is (thrown-with-msg?
-           ExceptionInfo #"Refinement from 'ws/A' failed unexpectedly: invalid instance of 'ws/C'"
-           (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/C))))
+      (is (thrown-with-msg? ExceptionInfo #"Refinement from 'ws/A' failed unexpectedly: \"halite-invalid-instance : Invalid instance of 'ws/C'"
+                            (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/C))))
       (is (= {:$type :ws/B :x 20}
              (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/B))))
       (is (= {:$type :ws/E} (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/E} :ws/E)))))))
@@ -769,7 +768,7 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
 
-      {:$type :ws/A2 :a 7 :b 8} #"invalid instance"
+      {:$type :ws/A2 :a 7 :b 8} #"Invalid instance"
       '(refine-to (get {:$type :ws/B :a {:$type :ws/D}} :a) :ws/A) #"No active refinement path from 'ws/D' to 'ws/A'")))
 
 (deftest test-refines-to?
@@ -805,7 +804,7 @@
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv2 expr))
 
       '(refines-to? ax) #"Wrong number of arguments"
-      '(refines-to? ax :foo/Bar) #"resource spec not found: foo/Bar"
+      '(refines-to? ax :foo/Bar) #"Resource spec not found: foo/Bar"
       '(refines-to? (+ 1 2) :ws/A) #"First argument to 'refines-to\?' must be an instance"
       '(refines-to? ax "foo") #"Second argument to 'refines-to\?' must be a spec id")
 
@@ -916,7 +915,7 @@
       {:$type :ws/B :a {:$type :ws/A :x 4}} #"cannot contain abstract value"
       {:$type :ws/B :a {:$type :ws/D}} #"No active refinement path from 'ws/D' to 'ws/A'"
       '{:$type :ws/C :as (conj (get c :as) {:$type :ws/D})} #"No active refinement path from 'ws/D' to 'ws/A'"
-      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/A :x 9})} #"instance cannot contain abstract value")
+      '{:$type :ws/C :as (conj (get c :as) {:$type :ws/A :x 9})} #"Instance cannot contain abstract value")
 
     (are [expr v]
          (= v (halite/eval-expr senv tenv2 env2 expr))

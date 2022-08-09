@@ -7,7 +7,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def trace-err-defs? false)
+(def trace-err-defs? true)
 
 (def trace-atom (atom []))
 
@@ -118,20 +118,43 @@
              data)
       (dissoc :message)))
 
+(defn format-msg* [msg-str data-map]
+  (string/replace msg-str
+                  #":([a-zA-Z][a-zA-Z0-9-]*)"
+                  (fn [[k n]]
+                    (get data-map (keyword n) k))))
+
+(defn format-data-map [data-map]
+  (->> data-map
+       (mapcat (fn [[k v]]
+                 [k (cond
+                      (or (seq? v) (vector? v) (set? v)) (string/join ", " (map pr-str v))
+                      (= :position k) (condp = v
+                                        nil "Argument"
+                                        0 "First argument"
+                                        1 "Second argument"
+                                        "An argument")
+                      (= :expected-type-description k) v
+                      :default (pr-str v))]))
+       (apply hash-map)))
+
+(defn format-msg [msg-str data-map]
+  (format-msg* msg-str (format-data-map data-map)))
+
 (defmacro throw-err
   ([data]
    (when trace-err-defs?
      (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
        (swap! trace-atom conj t)))
    `(let [data# ~data]
-      (throw (ex-info (:message data#)
+      (throw (ex-info (str (name (:err-id data#)) " : " (format-msg (:message data#) data#))
                       (extend-err-data data#)))))
   ([data ex]
    (when trace-err-defs?
      (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
        (swap! trace-atom conj t)))
    `(let [data# ~data]
-      (throw (ex-info (:message data#)
+      (throw (ex-info (str (name (:err-id data#)) " : " (format-msg (:message data#) data#))
                       (extend-err-data data#)
                       ~ex)))))
 
