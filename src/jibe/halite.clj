@@ -115,7 +115,7 @@
         {:message "When first argument to ':op' is a vector, second argument must also be a vector"})
 
 (deferr halite-let-bindings-odd-count [data]
-        {:message "let bindings form must have an even number of forms"})
+        {:message "Let bindings form must have an even number of forms"})
 
 (deferr halite-let-symbols-required [data]
         {:message "Even-numbered forms in let binding vector must be symbols"})
@@ -175,7 +175,7 @@
         {:message "Refinement from ':type' failed unexpectedly: :underlying-error-message"})
 
 (deferr halite-symbols-not-bound [data]
-        {:message "symbols in type environment are not bound: :unbound-symbols"})
+        {:message "Symbols in type environment are not bound: :unbound-symbols"})
 
 (deferr halite-symbol-undefined [data]
         {:message "Symbol ':form' is undefined"})

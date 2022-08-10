@@ -20,13 +20,13 @@
 (s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
 
 (deferr lint-function-not-found [data]
-        {:message "function ':op' not found"})
+        {:message "Function ':op' not found"})
 
 (deferr lint-disallowed-nothing [data]
         {:message "Disallowed ':Nothing' expression: :nothing-arg"})
 
 (deferr lint-no-matching-signature [data]
-        {:message (str "no matching signature for ':op'")})
+        {:message "No matching signature for ':op'"})
 
 (deferr lint-undefined [data]
         {:message "Undefined: ':form'"})
@@ -80,7 +80,7 @@
         {:message "Binding target for ':op' must not start with '$': :sym"})
 
 (deferr lint-collection-required [data]
-        {:message "collection required for ':op', not :expr-type-string"})
+        {:message "Collection required for ':op', not :expr-type-string"})
 
 (deferr lint-body-must-be-boolean [data]
         {:message "Body expression in ':op' must be boolean"})
@@ -113,7 +113,7 @@
         {:message "Argument to 'first' must be a vector"})
 
 (deferr lint-argument-empty [data]
-        {:message "argument to first is always empty"})
+        {:message "Argument to first is always empty"})
 
 (deferr lint-rest-needs-vector [data]
         {:message "Argument to 'rest' must be a vector"})
@@ -125,7 +125,7 @@
         {:message "Second argument to ':op' must be a set or vector"})
 
 (deferr lint-cannot-conj-unset [data]
-        {:message "cannot conj possibly unset value to :type-string"})
+        {:message "Cannot conj possibly unset value to :type-string"})
 
 (deferr lint-argument-mis-match [data]
         {:message "When first argument to ':op' is a vector, second argument must also be a vector"})
