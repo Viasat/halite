@@ -145,7 +145,7 @@
   (format-msg* msg-str (format-data-map data-map)))
 
 (defn site-code [^Namespace ns form]
-  (str (mod (.hashCode (str (.getName ns))) 1000) "-" (:line (meta form))))
+  (str (mod (.hashCode (str (ns-name ns))) 1000) "-" (:line (meta form))))
 
 (def ^:dynamic *squash-throw-site* false)
 
