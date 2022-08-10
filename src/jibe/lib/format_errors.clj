@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns jibe.lib.format-errors
-  (:require [clojure.string :as string]
+  (:require [clojure.pprint :as pprint]
+            [clojure.string :as string]
             [schema.core :as s])
   (:import [clojure.lang Namespace]
            [java.lang StackTraceElement]))
@@ -95,15 +96,15 @@
 (comment
   (analyze-err-defs)
 
-  (clojure.pprint/pprint (:systems (analyze-err-defs)))
-  (clojure.pprint/pprint (assemble-err-ids))
+  (pprint/pprint (:systems (analyze-err-defs)))
+  (pprint/pprint (assemble-err-ids))
   (map prn (assemble-err-messages))
 
-  (clojure.pprint/pprint (fields-by-frequency))
-  (clojure.pprint/pprint (fields-by-name))
+  (pprint/pprint (fields-by-frequency))
+  (pprint/pprint (fields-by-name))
 
-  (clojure.pprint/pprint (:field-index (analyze-err-defs)))
-  (clojure.pprint/pprint (field-used-by ...)))
+  (pprint/pprint (:field-index (analyze-err-defs)))
+  (pprint/pprint (field-used-by ...)))
 
 (defmacro deferr [err-id [data-arg] data]
   (when trace-err-defs?
@@ -128,6 +129,39 @@
                   (fn [[k n]]
                     (get data-map (keyword n) k))))
 
+;;
+
+(deftype Text [s]
+  ;; contains a string value, which when printed omits surrounding quotes
+  Object
+  (equals [_ t]
+    (and (isa? (class t) Text)
+         (.equals s (.s ^Text t))))
+  (hashCode [_]
+    (.hashCode s))
+  (toString [_]
+    s))
+
+(defn print-text [t ^java.io.Writer writer]
+  (.write writer (str t)))
+
+(defmethod print-method Text [t writer]
+  (print-text t writer))
+
+(defmethod print-dup Text [t writer]
+  (print-text t writer))
+
+(.addMethod ^clojure.lang.MultiFn pprint/simple-dispatch Text
+            (fn [t]
+              (print-text t *out*)))
+
+(defn text
+  "Package up a string such that it will be interpolated into string templates without surrounding quotes"
+  [s]
+  (Text. s))
+
+;;
+
 (defn format-data-map [data-map]
   (->> data-map
        (mapcat (fn [[k v]]
@@ -138,7 +172,6 @@
                                         0 "First argument"
                                         1 "Second argument"
                                         "An argument")
-                      (= :expected-type-description k) v
                       :default (pr-str v))]))
        (apply hash-map)))
 
