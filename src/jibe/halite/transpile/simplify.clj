@@ -68,7 +68,7 @@
                                       true
                                       arg-ids)]
                   (case op
-                    (< <= > >= and or not => abs = not= get valid? if $do!) args-evaluate?
+                    (< <= > >= and or not => abs = not= get valid? $value? $value! if $do!) args-evaluate?
                     ;; when divisor is statically known not to be zero, we know mod will evaluate
                     mod (and args-evaluate?
                              (let [[form htype] (ssa/deref-id dgraph (second arg-ids))]
@@ -84,12 +84,13 @@
           pred (deref-form dgraph pred-id)]
       (when (always-evaluates? dgraph pred)
         (let [then (deref-form dgraph then-id)
-              else (deref-form dgraph else-id)]
+              else (deref-form dgraph else-id)
+              if-value? (and (seq? pred) (= '$value? (first pred)))]
           (cond
             (and (true? then) (true? else)) true
             (and (false? then) (false? else)) false
-            (and (true? then) (false? else)) pred-id
-            (and (false? then) (true? else)) (ssa/negated dgraph pred-id)
+            (and (true? then) (false? else) (not if-value?)) pred-id
+            (and (false? then) (true? else) (not if-value?)) (ssa/negated dgraph pred-id)
             (= then else) then-id))))))
 
 (s/defn ^:private simplify-do
