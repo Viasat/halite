@@ -111,7 +111,8 @@
       (swap! trace-atom conj t)))
   `(defn ~err-id [~data-arg]
      (merge ~data-arg
-            ~(merge {:err-id (keyword (name err-id))
+            ~(merge {:err-id (keyword (last (string/split (str (ns-name *ns*)) #"\."))
+                                      (name err-id))
                      :user-visible-error? true}
                     data))))
 
@@ -156,9 +157,9 @@
        (swap! trace-atom conj t)))
    `(let [data# ~data
           site-code# ~(site-code *ns* &form)]
-      (throw (ex-info (str (name (:err-id data#)) " " (if *squash-throw-site*
-                                                        "0-0"
-                                                        site-code#) " : " (format-msg (:message data#) data#))
+      (throw (ex-info (str (namespace (:err-id data#)) "/" (name (:err-id data#)) " " (if *squash-throw-site*
+                                                                                        "0-0"
+                                                                                        site-code#) " : " (format-msg (:message data#) data#))
                       (assoc (extend-err-data data#)
                              :throw-site (if *squash-throw-site*
                                            "0-0"
@@ -169,9 +170,9 @@
        (swap! trace-atom conj t)))
    `(let [data# ~data
           site-code# ~(site-code *ns* &form)]
-      (throw (ex-info (str (name (:err-id data#)) " " (if *squash-throw-site*
-                                                        "0-0"
-                                                        site-code#) " : " (format-msg (:message data#) data#))
+      (throw (ex-info (str (namespace (:err-id data#)) "/" (name (:err-id data#)) " " (if *squash-throw-site*
+                                                                                        "0-0"
+                                                                                        site-code#) " : " (format-msg (:message data#) data#))
                       (assoc (extend-err-data data#)
                              :throw-site (if *squash-throw-site*
                                            "0-0"

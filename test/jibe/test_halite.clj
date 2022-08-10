@@ -691,7 +691,7 @@
       (is (thrown-with-msg?
            ExceptionInfo #"Second argument to 'refine-to' must be a spec id"
            (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/A :x 2} (+ 1 2)))))
-      (is (thrown-with-msg? ExceptionInfo #"Refinement from 'ws/A' failed unexpectedly: \"h-err-invalid-instance 0-0 : Invalid instance of 'ws/C'"
+      (is (thrown-with-msg? ExceptionInfo #"Refinement from 'ws/A' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'ws/C'"
                             (binding [format-errors/*squash-throw-site* true]
                               (halite/eval-expr senv tenv empty-env (list 'refine-to sketchy-a :ws/C)))))
       (is (= {:$type :ws/B :x 20}

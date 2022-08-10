@@ -286,7 +286,7 @@
   (h
    (and)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'and'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'and'"])
   (h
    (and true false true)
    :Boolean
@@ -306,7 +306,7 @@
   (h
    (or)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'or'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'or'"])
   (h
    (or true false true)
    :Boolean
@@ -320,20 +320,20 @@
   (h
    (=>)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '=>'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '=>'"])
   (h
    (=> true)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '=>'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '=>'"])
   (h
    (=> true false true)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '=>'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '=>'"])
   (h (= true false) :Boolean false "(true == false)" "false")
   (h
    (= true)
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to '=': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to '=': expected at least 2, but got 1"])
   (h
    (= true false false)
    :Boolean
@@ -343,7 +343,7 @@
   (h
    (not= true)
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'not=': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'not=': expected at least 2, but got 1"])
   (h (not= true false) :Boolean true "(true != false)" "true")
   (h
    (if true false true)
@@ -354,30 +354,30 @@
   (h
    (if true false)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'if': expected 3, but got 2"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'if': expected 3, but got 2"])
   (h
    (if-value true false true)
    [:throws
-    "h-err-if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
+    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
   (h
    (when-value true false)
    [:throws
-    "h-err-if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
+    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
   (h
    (if-value-let [y false] false)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'if-value-let': expected 3, but got 2"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'if-value-let': expected 3, but got 2"])
   (h
    (if-value-let [y] false true)
-   [:throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (if-value-let [true false] false true)
    [:throws
-    "h-err-binding-target-must-be-symbol 0-0 : Binding target for 'if-value-let' must be a bare symbol, not: true"])
+    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'if-value-let' must be a bare symbol, not: true"])
   (h
    (if-value-let [x false] false true)
    [:throws
-    "l-err-binding-expression-not-optional 0-0 : Binding expression in 'if-value-let' must have an optional type"]))
+    "l-err/binding-expression-not-optional 0-0 : Binding expression in 'if-value-let' must have an optional type"]))
 
 (deftest
   test-int
@@ -385,27 +385,27 @@
   (h
    (+ 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '+'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '+'"])
   (h (+ 1 2) :Integer 3 "(1 + 2)" "3")
   (h (+ 1 2 3) :Integer 6 "(1 + 2 + 3)" "6")
   (h
    (+)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '+'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '+'"])
   (h (- 3 2) :Integer 1 "(3 - 2)" "1")
   (h
    (- 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '-'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '-'"])
   (h
    (-)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '-'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '-'"])
   (h
    (- 3 false)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '-'"])
-  (h (+ 1 -) [:throws "h-err-undefined-symbol 0-0 : Undefined: '-'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '-'"])
+  (h (+ 1 -) [:throws "h-err/undefined-symbol 0-0 : Undefined: '-'"])
   (h (- 3 2 1) :Integer 0 "(3 - 2 - 1)" "0")
   (h -1 :Integer -1 "-1" "-1")
   (h (+ 1 -1) :Integer 0 "(1 + -1)" "0")
@@ -414,30 +414,30 @@
   (h
    (* 2)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '*'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '*'"])
   (h
    (*)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '*'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '*'"])
   (h (* 2 3 4) :Integer 24 "(2 * 3 * 4)" "24")
   (h (div 6 2) :Integer 3 "(6 / 2)" "3")
   (h
    (div 6)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'div'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'div'"])
   (h
    (div)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'div'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'div'"])
   (h
    (div 20 2 3)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'div'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'div'"])
   (h (div 7 2) :Integer 3 "(7 / 2)" "3")
   (h (div 1 2) :Integer 0 "(1 / 2)" "0")
   (h
    (div 1 9223372036854775808N)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (div 1 9223372036854775807)
    :Integer
@@ -448,12 +448,12 @@
   (h
    (mod 3)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'mod'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'mod'"])
   (h (mod 3 1) :Integer 0 "(3 % 1)" "0")
   (h
    (mod 6 3 2)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'mod'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'mod'"])
   (h (mod -3 2) :Integer 1 "(-3 % 2)" "1")
   (h (mod 3 -2) :Integer -1 "(3 % -2)" "-1")
   (h (mod -3 -2) :Integer -1 "(-3 % -2)" "-1")
@@ -471,7 +471,7 @@
    "1")
   (h
    (mod 1 9223372036854775808N)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h (expt 2 3) :Integer 8 "expt(2, 3)" "8")
   (h
    (expt 1 9223372036854775807)
@@ -481,18 +481,18 @@
    "1")
   (h
    (expt 1 9223372036854775808N)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (expt 2 3 4)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'expt'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'expt'"])
   (h (expt 2 0) :Integer 1 "expt(2, 0)" "1")
   (h
    (expt 2 -1)
    :Integer
-   [:throws "h-err-invalid-exponent 0-0 : Invalid exponent: -1"]
+   [:throws "h-err/invalid-exponent 0-0 : Invalid exponent: -1"]
    "expt(2, -1)"
-   [:throws "h-err-invalid-exponent 0-0 : Invalid exponent: -1"])
+   [:throws "h-err/invalid-exponent 0-0 : Invalid exponent: -1"])
   (h (expt -2 3) :Integer -8 "expt(-2, 3)" "-8")
   (h (expt -2 1) :Integer -2 "expt(-2, 1)" "-2")
   (h (expt -2 4) :Integer 16 "expt(-2, 4)" "16")
@@ -500,42 +500,42 @@
   (h
    (expt -2 -3)
    :Integer
-   [:throws "h-err-invalid-exponent 0-0 : Invalid exponent: -3"]
+   [:throws "h-err/invalid-exponent 0-0 : Invalid exponent: -3"]
    "expt(-2, -3)"
-   [:throws "h-err-invalid-exponent 0-0 : Invalid exponent: -3"])
+   [:throws "h-err/invalid-exponent 0-0 : Invalid exponent: -3"])
   (h (inc 1) :Integer 2 "(1 + 1)" "2")
   (h
    (inc 1 2)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'inc'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'inc'"])
   (h (dec 1) :Integer 0 "(1 - 1)" "0")
   (h
    (dec 1 2)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'dec'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'dec'"])
   (h
    (abs)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'abs'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'abs'"])
   (h (abs 0) :Integer 0 "abs(0)" "0")
   (h (abs 1) :Integer 1 "abs(1)" "1")
   (h (abs -1) :Integer 1 "abs(-1)" "1")
   (h
    (abs 1 2 3)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'abs'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'abs'"])
   (h (abs (- 1 4)) :Integer 3 "abs((1 - 4))" "3")
   (h
    (abs true)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'abs'"]))
+    "h-err/no-matching-signature 0-0 : No matching signature for 'abs'"]))
 
 (deftest
   test-int-equality-etc
   (h
    (= 1)
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to '=': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to '=': expected at least 2, but got 1"])
   (h (= 1 1) :Boolean true "(1 == 1)" "true")
   (h (= 0 0) :Boolean true "(0 == 0)" "true")
   (h
@@ -547,117 +547,117 @@
   (h (= 1 0) :Boolean false "(1 == 0)" "false")
   (h
    (= 1 true)
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (h (= 1 1 1) :Boolean true "equalTo(1, 1, 1)" "true")
   (h (not= 1 2) :Boolean true "(1 != 2)" "true")
   (h
    (not= 1)
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'not=': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'not=': expected at least 2, but got 1"])
   (h
    (not=)
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'not=': expected at least 2, but got 0"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'not=': expected at least 2, but got 0"])
   (h
    (not= false 3)
    [:throws
-    "l-err-result-always 0-0 : Result of 'not=' would always be true"])
+    "l-err/result-always 0-0 : Result of 'not=' would always be true"])
   (h (not= 1 2 3) :Boolean true "notEqualTo(1, 2, 3)" "true")
   (h (not= 1 1 1) :Boolean false "notEqualTo(1, 1, 1)" "false")
   (h (> 1 0) :Boolean true "(1 > 0)" "true")
   (h
    (> 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '>'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '>'"])
   (h
    (> 3 2 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '>'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '>'"])
   (h (> 1 1) :Boolean false "(1 > 1)" "false")
   (h
    (>)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '>'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '>'"])
   (h
    (> 3 true)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '>'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '>'"])
   (h (< 1 0) :Boolean false "(1 < 0)" "false")
   (h (< 0 1) :Boolean true "(0 < 1)" "true")
   (h
    (< 3 2 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '<'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '<'"])
   (h
    (< 3)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '<'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '<'"])
   (h
    (<)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '<'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '<'"])
   (h
    (< 4 false)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '<'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '<'"])
   (h
    (<= 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '<='"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '<='"])
   (h
    (<=)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '<='"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '<='"])
   (h
    (<= true 3)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '<='"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '<='"])
   (h
    (<= 1 2 3)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '<='"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '<='"])
   (h (>= 1 1) :Boolean true "(1 >= 1)" "true")
   (h
    (>=)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '>='"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '>='"])
   (h
    (>= 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '>='"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '>='"])
   (h
    (>= 1 2 3)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '>='"]))
+    "h-err/no-matching-signature 0-0 : No matching signature for '>='"]))
 
 (deftest
   test-int-other-types
   (hf
    (short 1)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
-  (h 1N [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
+  (h 1N [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    1.1
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    1/2
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (byte 1)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf (int 2) :Integer 2 "2" "2")
   (h
    ##NaN
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    Double/NaN
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    ##Inf
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    ##-Inf
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"]))
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"]))
 
 (deftest
   test-int-overflow
@@ -691,10 +691,10 @@
    (abs -9223372036854775808)
    :Integer
    [:throws
-    "h-err-abs-failure 0-0 : Cannot compute absolute value of: -9223372036854775808"]
+    "h-err/abs-failure 0-0 : Cannot compute absolute value of: -9223372036854775808"]
    "abs(-9223372036854775808)"
    [:throws
-    "h-err-abs-failure 0-0 : Cannot compute absolute value of: -9223372036854775808"])
+    "h-err/abs-failure 0-0 : Cannot compute absolute value of: -9223372036854775808"])
   (h
    (= -9223372036854775808 -9223372036854775808)
    :Boolean
@@ -717,13 +717,13 @@
    "9223372036854775807")
   (h
    9223372036854775808N
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    9223372036854775808N
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (+ 9223372036854775808N 0)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    -9223372036854775808
    :Integer
@@ -768,7 +768,7 @@
    [:throws "long overflow"])
   (h
    -9223372036854775809N
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (+ -9223372036854775808 -1)
    :Integer
@@ -787,63 +787,63 @@
   (h
    (and 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'and'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'and'"])
   (h
    (or 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'or'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'or'"])
   (h
    (=> 1 true)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '=>'"]))
+    "h-err/no-matching-signature 0-0 : No matching signature for '=>'"]))
 
 (deftest
   test-int-bool
   (h
    (+ true 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '+'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '+'"])
   (h
    (* true)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '*'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '*'"])
   (h
    (div 1 false)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'div'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'div'"])
   (h
    (mod true 3)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'mod'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'mod'"])
   (h
    (expt true false)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'expt'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'expt'"])
   (h
    (inc false)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'inc'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'inc'"])
   (h
    (dec true)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'dec'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'dec'"])
   (h (if true 1 3) :Integer 1 "(if(true) {1} else {3})" "1")
   (h
    (if-value 3 1 2)
    [:throws
-    "h-err-if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
+    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
   (h
    (when-value 3 1)
    [:throws
-    "h-err-if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
+    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
   (h
    (if-value-let [3 4] 1 2)
    [:throws
-    "h-err-binding-target-must-be-symbol 0-0 : Binding target for 'if-value-let' must be a bare symbol, not: 3"])
+    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'if-value-let' must be a bare symbol, not: 3"])
   (h
    (if-value-let [x 3] 1 2)
    [:throws
-    "l-err-binding-expression-not-optional 0-0 : Binding expression in 'if-value-let' must have an optional type"])
+    "l-err/binding-expression-not-optional 0-0 : Binding expression in 'if-value-let' must have an optional type"])
   (h
    (if (> 2 1) false true)
    :Boolean
@@ -874,20 +874,20 @@
   (h
    "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234"
    [:syntax-check-throws
-    "h-err-size-exceeded 0-0 : String size of 1025 exceeds the max allowed size of 1024"])
+    "h-err/size-exceeded 0-0 : String size of 1025 exceeds the max allowed size of 1024"])
   (do
     (h
      (concat "" "")
      [:throws
-      "h-err-arg-type-mismatch 0-0 : First argument to 'concat' must be a set or vector"])
+      "h-err/arg-type-mismatch 0-0 : First argument to 'concat' must be a set or vector"])
     (h
      (count "")
      [:throws
-      "h-err-no-matching-signature 0-0 : No matching signature for 'count'"])
+      "h-err/no-matching-signature 0-0 : No matching signature for 'count'"])
     (h
      (count "a")
      [:throws
-      "h-err-no-matching-signature 0-0 : No matching signature for 'count'"])
+      "h-err/no-matching-signature 0-0 : No matching signature for 'count'"])
     (h (= "" "") :Boolean true "(\"\" == \"\")" "true")
     (h (= "a" "") :Boolean false "(\"a\" == \"\")" "false")
     (h (= "a" "b") :Boolean false "(\"a\" == \"b\")" "false")
@@ -895,31 +895,31 @@
     (h
      (first "")
      [:throws
-      "h-err-argument-not-vector 0-0 : Argument to 'first' must be a vector"])
+      "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
     (h
      (first "a")
      [:throws
-      "h-err-argument-not-vector 0-0 : Argument to 'first' must be a vector"])
+      "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
     (h
      (rest "ab")
      [:throws
-      "h-err-argument-not-vector 0-0 : Argument to 'rest' must be a vector"])
+      "h-err/argument-not-vector 0-0 : Argument to 'rest' must be a vector"])
     (h
      (contains? "ab" "a")
      [:throws
-      "h-err-no-matching-signature 0-0 : No matching signature for 'contains?'"])
+      "h-err/no-matching-signature 0-0 : No matching signature for 'contains?'"])
     (h
      (union "" "a")
      [:throws
-      "h-err-arguments-not-sets 0-0 : Arguments to 'union' must be sets"])
+      "h-err/arguments-not-sets 0-0 : Arguments to 'union' must be sets"])
     (h
      (get "" 0)
      [:throws
-      "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])
+      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])
     (h
      (get "ab" 1)
      [:throws
-      "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])))
+      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])))
 
 (deftest
   test-string-concatenation
@@ -936,11 +936,11 @@
   (h
    (str "a" 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'str'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'str'"])
   (h
    (str 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'str'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'str'"])
   (h
    (str
     "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123"
@@ -955,21 +955,21 @@
     "4")
    :String
    [:throws
-    "h-err-size-exceeded 0-0 : String size of 1025 exceeds the max allowed size of 1024"]
+    "h-err/size-exceeded 0-0 : String size of 1025 exceeds the max allowed size of 1024"]
    "str(\"0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123\", \"4\")"
    [:throws
-    "h-err-size-exceeded 0-0 : String size of 1025 exceeds the max allowed size of 1024"]))
+    "h-err/size-exceeded 0-0 : String size of 1025 exceeds the max allowed size of 1024"]))
 
 (deftest
   test-string-bool
   (h
    (and "true" false)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'and'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'and'"])
   (h
    (=> true "hi")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '=>'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '=>'"])
   (h
    (if (= "a" "b") (= (+ 1 3) 5) false)
    :Boolean
@@ -982,11 +982,11 @@
   (h
    (count true)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'count'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'count'"])
   (h
    (concat "" false)
    [:throws
-    "h-err-arg-type-mismatch 0-0 : First argument to 'concat' must be a set or vector"]))
+    "h-err/arg-type-mismatch 0-0 : First argument to 'concat' must be a set or vector"]))
 
 (deftest
   test-sets
@@ -1006,12 +1006,12 @@
   (h
    (count)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'count'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'count'"])
   (h (count #{20 30 10}) :Integer 3 "#{10, 20, 30}.count()" "3")
   (h
    (count #{} #{2})
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'count'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'count'"])
   (h
    (contains? #{"a" "b"} "a")
    :Boolean
@@ -1021,11 +1021,11 @@
   (h
    (contains? #{"a" "b"})
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'contains?'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'contains?'"])
   (h
    (contains?)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'contains?'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'contains?'"])
   (h
    (contains? #{1 2} "b")
    :Boolean
@@ -1035,11 +1035,11 @@
   (h
    (contains? #{1 2} "b" "c")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'contains?'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'contains?'"])
   (h
    (concat #{1})
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 1"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 1"])
   (h
    (concat #{1} #{2})
    [:Set :Integer]
@@ -1049,11 +1049,11 @@
   (h
    (concat #{1} #{2} #{3})
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 3"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 3"])
   (h
    (concat)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 0"])
   (h (concat #{} #{}) [:Set :Nothing] #{} "#{}.concat(#{})" "#{}")
   (h
    (concat #{"a" "b"} #{1 2})
@@ -1088,11 +1088,11 @@
   (h
    (subset? #{1 2})
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'subset?'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'subset?'"])
   (h
    (subset?)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'subset?'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'subset?'"])
   (h
    (subset? #{1 2} #{1 4 3 2})
    :Boolean
@@ -1138,15 +1138,15 @@
   (h
    (intersection #{})
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'intersection': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'intersection': expected at least 2, but got 1"])
   (h
    (intersection #{1 2})
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'intersection': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'intersection': expected at least 2, but got 1"])
   (h
    (intersection)
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'intersection': expected at least 2, but got 0"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'intersection': expected at least 2, but got 0"])
   (h
    (intersection #{1 2} #{3 2})
    [:Set :Integer]
@@ -1169,7 +1169,7 @@
   (h
    (union #{2})
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'union': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'union': expected at least 2, but got 1"])
   (h (union #{1} #{}) [:Set :Integer] #{1} "#{1}.union(#{})" "#{1}")
   (h
    (union #{1} #{3 2} #{4})
@@ -1192,31 +1192,31 @@
   (h
    (difference #{1 2})
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'difference': expected 2, but got 1"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'difference': expected 2, but got 1"])
   (h
    (difference)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'difference': expected 2, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'difference': expected 2, but got 0"])
   (h
    (first #{})
    [:throws
-    "h-err-argument-not-vector 0-0 : Argument to 'first' must be a vector"])
+    "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
   (h
    (first #{1})
    [:throws
-    "h-err-argument-not-vector 0-0 : Argument to 'first' must be a vector"])
+    "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
   (h
    (rest #{})
    [:throws
-    "h-err-argument-not-vector 0-0 : Argument to 'rest' must be a vector"])
+    "h-err/argument-not-vector 0-0 : Argument to 'rest' must be a vector"])
   (h
    (rest #{1 2})
    [:throws
-    "h-err-argument-not-vector 0-0 : Argument to 'rest' must be a vector"])
+    "h-err/argument-not-vector 0-0 : Argument to 'rest' must be a vector"])
   (h
    (conj #{})
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'conj': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'conj': expected at least 2, but got 1"])
   (h (conj #{} 1 2) [:Set :Integer] #{1 2} "#{}.conj(1, 2)" "#{1, 2}")
   (h (conj #{} 1) [:Set :Integer] #{1} "#{}.conj(1)" "#{1}")
   (h
@@ -2257,7 +2257,7 @@
   (hf
    (reduce conj #{} (range 1025))
    [:syntax-check-throws
-    "h-err-size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"])
+    "h-err/size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"])
   (h
    (conj
     #{0
@@ -3287,10 +3287,10 @@
     1024)
    [:Set :Integer]
    [:throws
-    "h-err-size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"]
+    "h-err/size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"]
    "#{0, 1, 10, 100, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 101, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 102, 1020, 1021, 1022, 1023, 103, 104, 105, 106, 107, 108, 109, 11, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 12, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 13, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 14, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 15, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 16, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 17, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 18, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 19, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 2, 20, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 21, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 22, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 23, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 24, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 25, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 26, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 27, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 28, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 29, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 3, 30, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 31, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 32, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 33, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 34, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 35, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 36, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 37, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 38, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 39, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 4, 40, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 41, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 42, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 43, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 44, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 45, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 46, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 47, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 48, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 49, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 5, 50, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 51, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 52, 520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 53, 530, 531, 532, 533, 534, 535, 536, 537, 538, 539, 54, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 55, 550, 551, 552, 553, 554, 555, 556, 557, 558, 559, 56, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 57, 570, 571, 572, 573, 574, 575, 576, 577, 578, 579, 58, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 59, 590, 591, 592, 593, 594, 595, 596, 597, 598, 599, 6, 60, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 61, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 62, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 63, 630, 631, 632, 633, 634, 635, 636, 637, 638, 639, 64, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 65, 650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 66, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 67, 670, 671, 672, 673, 674, 675, 676, 677, 678, 679, 68, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 69, 690, 691, 692, 693, 694, 695, 696, 697, 698, 699, 7, 70, 700, 701, 702, 703, 704, 705, 706, 707, 708, 709, 71, 710, 711, 712, 713, 714, 715, 716, 717, 718, 719, 72, 720, 721, 722, 723, 724, 725, 726, 727, 728, 729, 73, 730, 731, 732, 733, 734, 735, 736, 737, 738, 739, 74, 740, 741, 742, 743, 744, 745, 746, 747, 748, 749, 75, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 76, 760, 761, 762, 763, 764, 765, 766, 767, 768, 769, 77, 770, 771, 772, 773, 774, 775, 776, 777, 778, 779, 78, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 79, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 8, 80, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 81, 810, 811, 812, 813, 814, 815, 816, 817, 818, 819, 82, 820, 821, 822, 823, 824, 825, 826, 827, 828, 829, 83, 830, 831, 832, 833, 834, 835, 836, 837, 838, 839, 84, 840, 841, 842, 843, 844, 845, 846, 847, 848, 849, 85, 850, 851, 852, 853, 854, 855, 856, 857, 858, 859, 86, 860, 861, 862, 863, 864, 865, 866, 867, 868, 869, 87, 870, 871, 872, 873, 874, 875, 876, 877, 878, 879, 88, 880, 881, 882, 883, 884, 885, 886, 887, 888, 889, 89, 890, 891, 892, 893, 894, 895, 896, 897, 898, 899, 9, 90, 900, 901, 902, 903, 904, 905, 906, 907, 908, 909, 91, 910, 911, 912, 913, 914, 915, 916, 917, 918, 919, 92, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 93, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 94, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 95, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 96, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 97, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 98, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 99, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999}.conj(1024)"
    [:throws
-    "h-err-size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"])
+    "h-err/size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"])
   (h
    (conj
     #{0
@@ -4320,10 +4320,10 @@
     1024)
    [:Set :Integer]
    [:throws
-    "h-err-size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"]
+    "h-err/size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"]
    "#{0, 1, 10, 100, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 101, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 102, 1020, 1021, 1022, 1023, 103, 104, 105, 106, 107, 108, 109, 11, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 12, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 13, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 14, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 15, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 16, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 17, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 18, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 19, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 2, 20, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 21, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 22, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 23, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 24, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 25, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 26, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 27, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 28, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 29, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 3, 30, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 31, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 32, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 33, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 34, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 35, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 36, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 37, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 38, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 39, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 4, 40, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 41, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 42, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 43, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 44, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 45, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 46, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 47, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 48, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 49, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 5, 50, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 51, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 52, 520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 53, 530, 531, 532, 533, 534, 535, 536, 537, 538, 539, 54, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 55, 550, 551, 552, 553, 554, 555, 556, 557, 558, 559, 56, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 57, 570, 571, 572, 573, 574, 575, 576, 577, 578, 579, 58, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 59, 590, 591, 592, 593, 594, 595, 596, 597, 598, 599, 6, 60, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 61, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 62, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 63, 630, 631, 632, 633, 634, 635, 636, 637, 638, 639, 64, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 65, 650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 66, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 67, 670, 671, 672, 673, 674, 675, 676, 677, 678, 679, 68, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 69, 690, 691, 692, 693, 694, 695, 696, 697, 698, 699, 7, 70, 700, 701, 702, 703, 704, 705, 706, 707, 708, 709, 71, 710, 711, 712, 713, 714, 715, 716, 717, 718, 719, 72, 720, 721, 722, 723, 724, 725, 726, 727, 728, 729, 73, 730, 731, 732, 733, 734, 735, 736, 737, 738, 739, 74, 740, 741, 742, 743, 744, 745, 746, 747, 748, 749, 75, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 76, 760, 761, 762, 763, 764, 765, 766, 767, 768, 769, 77, 770, 771, 772, 773, 774, 775, 776, 777, 778, 779, 78, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 79, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 8, 80, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 81, 810, 811, 812, 813, 814, 815, 816, 817, 818, 819, 82, 820, 821, 822, 823, 824, 825, 826, 827, 828, 829, 83, 830, 831, 832, 833, 834, 835, 836, 837, 838, 839, 84, 840, 841, 842, 843, 844, 845, 846, 847, 848, 849, 85, 850, 851, 852, 853, 854, 855, 856, 857, 858, 859, 86, 860, 861, 862, 863, 864, 865, 866, 867, 868, 869, 87, 870, 871, 872, 873, 874, 875, 876, 877, 878, 879, 88, 880, 881, 882, 883, 884, 885, 886, 887, 888, 889, 89, 890, 891, 892, 893, 894, 895, 896, 897, 898, 899, 9, 90, 900, 901, 902, 903, 904, 905, 906, 907, 908, 909, 91, 910, 911, 912, 913, 914, 915, 916, 917, 918, 919, 92, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 93, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 94, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 95, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 96, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 97, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 98, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 99, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999}.conj(1024)"
    [:throws
-    "h-err-size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"])
+    "h-err/size-exceeded 0-0 : Set size of 1025 exceeds the max allowed size of 1024"])
   (h
    (conj
     [0
@@ -5353,10 +5353,10 @@
     1024)
    [:Vec :Integer]
    [:throws
-    "h-err-size-exceeded 0-0 : Vector size of 1025 exceeds the max allowed size of 1024"]
+    "h-err/size-exceeded 0-0 : Vector size of 1025 exceeds the max allowed size of 1024"]
    "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 538, 539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551, 552, 553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575, 576, 577, 578, 579, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 590, 591, 592, 593, 594, 595, 596, 597, 598, 599, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633, 634, 635, 636, 637, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 650, 651, 652, 653, 654, 655, 656, 657, 658, 659, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670, 671, 672, 673, 674, 675, 676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 694, 695, 696, 697, 698, 699, 700, 701, 702, 703, 704, 705, 706, 707, 708, 709, 710, 711, 712, 713, 714, 715, 716, 717, 718, 719, 720, 721, 722, 723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 738, 739, 740, 741, 742, 743, 744, 745, 746, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 767, 768, 769, 770, 771, 772, 773, 774, 775, 776, 777, 778, 779, 780, 781, 782, 783, 784, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814, 815, 816, 817, 818, 819, 820, 821, 822, 823, 824, 825, 826, 827, 828, 829, 830, 831, 832, 833, 834, 835, 836, 837, 838, 839, 840, 841, 842, 843, 844, 845, 846, 847, 848, 849, 850, 851, 852, 853, 854, 855, 856, 857, 858, 859, 860, 861, 862, 863, 864, 865, 866, 867, 868, 869, 870, 871, 872, 873, 874, 875, 876, 877, 878, 879, 880, 881, 882, 883, 884, 885, 886, 887, 888, 889, 890, 891, 892, 893, 894, 895, 896, 897, 898, 899, 900, 901, 902, 903, 904, 905, 906, 907, 908, 909, 910, 911, 912, 913, 914, 915, 916, 917, 918, 919, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023].conj(1024)"
    [:throws
-    "h-err-size-exceeded 0-0 : Vector size of 1025 exceeds the max allowed size of 1024"]))
+    "h-err/size-exceeded 0-0 : Vector size of 1025 exceeds the max allowed size of 1024"]))
 
 (deftest
   test-set-every?
@@ -5381,19 +5381,19 @@
   (h
    (every? [x #{3 2}] (> (count x) 1))
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'count'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'count'"])
   (h
    (every? [] true)
    [:throws
-    "h-err-comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (every? [#{1 2}] true)
    [:throws
-    "h-err-comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (every? [x #{} y #{1}] (> x y))
    [:throws
-    "h-err-comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (every? [x #{4 3}] (every? [y #{1 2}] (< y x)))
    :Boolean
@@ -5409,15 +5409,15 @@
   (h
    (every?)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'every?': expected 2, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'every?': expected 2, but got 0"])
   (h
    (every? [x #{}] true false)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'every?': expected 2, but got 3"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'every?': expected 2, but got 3"])
   (h
    (every? [x #{} 1] false)
    [:throws
-    "h-err-comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (every? [_ #{}] false)
    :Boolean
@@ -5427,7 +5427,7 @@
   (h
    (every? [_ #{}] _)
    [:throws
-    "h-err-not-boolean-body 0-0 : Body expression in 'every?' must be boolean"])
+    "h-err/not-boolean-body 0-0 : Body expression in 'every?' must be boolean"])
   (h
    (every? [_ #{true}] _)
    :Boolean
@@ -5458,18 +5458,18 @@
   (h
    (every? [x true] false)
    [:throws
-    "h-err-comprehend-collection-invalid-type 0-0 : Collection required for 'every?', not :Boolean"])
+    "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'every?', not :Boolean"])
   (h
    (every? [19 true] false)
    [:throws
-    "h-err-binding-target-must-be-symbol 0-0 : Binding target for 'every?' must be a bare symbol, not: 19"])
+    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'every?' must be a bare symbol, not: 19"])
   (h
    (every? [19 #{"a"}] true)
    [:throws
-    "h-err-binding-target-must-be-symbol 0-0 : Binding target for 'every?' must be a bare symbol, not: 19"])
+    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'every?' must be a bare symbol, not: 19"])
   (h
    (every? [if +] true)
-   [:throws "h-err-undefined-symbol 0-0 : Undefined: '+'"])
+   [:throws "h-err/undefined-symbol 0-0 : Undefined: '+'"])
   (h
    (every? [if #{1 2}] (> 0 if))
    :Boolean
@@ -5478,18 +5478,18 @@
    "false")
   (h
    (every? [if if] (> 0 if))
-   [:throws "h-err-undefined-symbol 0-0 : Undefined: 'if'"])
+   [:throws "h-err/undefined-symbol 0-0 : Undefined: 'if'"])
   (h
    (every? [x "ab"] (= x x))
    [:throws
-    "h-err-comprehend-collection-invalid-type 0-0 : Collection required for 'every?', not :String"]))
+    "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'every?', not :String"]))
 
 (deftest
   test-set-any?
   (h
    (any? [x #{}] (> x 1))
    [:throws
-    "l-err-disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
+    "l-err/disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
   (h
    (any? [x #{1 2}] (> x 1))
    :Boolean
@@ -5505,15 +5505,15 @@
   (h
    (any? ["a" #{1 3 2}] true)
    [:throws
-    "h-err-binding-target-must-be-symbol 0-0 : Binding target for 'any?' must be a bare symbol, not: \"a\""])
+    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'any?' must be a bare symbol, not: \"a\""])
   (h
    (any?)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'any?': expected 2, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'any?': expected 2, but got 0"])
   (h
    (any? [x #{1 2} y #{4 3}] (= x y))
    [:throws
-    "h-err-comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (any? [x #{1 3 2}] (any? [y #{4 6 2}] (= x y)))
    :Boolean
@@ -5532,13 +5532,13 @@
   (h
    (any? [x "test"] true)
    [:throws
-    "h-err-comprehend-collection-invalid-type 0-0 : Collection required for 'any?', not :String"]))
+    "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'any?', not :String"]))
 
 (deftest
   test-vector
   (h [] [:Vec :Nothing] [] "[]" "[]")
-  (hf ['x 'y] [:throws "h-err-undefined-symbol 0-0 : Undefined: 'x'"])
-  (h [:x :y] [:throws "h-err-syntax-error 0-0 : Syntax error"])
+  (hf ['x 'y] [:throws "h-err/undefined-symbol 0-0 : Undefined: 'x'"])
+  (h [:x :y] [:throws "h-err/syntax-error 0-0 : Syntax error"])
   (h [1 2] [:Vec :Integer] [1 2] "[1, 2]" "[1, 2]")
   (h
    [[] [1] ["a" true]]
@@ -5550,15 +5550,15 @@
   (h
    (first [])
    [:throws
-    "h-err-argument-empty 0-0 : Argument to first is always empty"])
+    "h-err/argument-empty 0-0 : Argument to first is always empty"])
   (h
    (first)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'first': expected 1, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'first': expected 1, but got 0"])
   (h
    (first [0] [1])
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'first': expected 1, but got 2"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'first': expected 1, but got 2"])
   (h (first [10]) :Integer 10 "[10].first()" "10")
   (h (first [10 true "b"]) :Value 10 "[10, true, \"b\"].first()" "10")
   (h
@@ -5572,15 +5572,15 @@
   (h
    (concat [1 2] [3] [4 5 6])
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 3"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 3"])
   (h
    (concat [1])
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 1"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 1"])
   (h
    (concat)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'concat': expected 2, but got 0"])
   (h
    (sort [2 1 3])
    [:Vec :Integer]
@@ -5591,20 +5591,20 @@
   (h
    (sort '(3 1 2))
    [:syntax-check-throws
-    "h-err-unknown-function-or-operator 0-0 : Unknown function or operator: quote"])
+    "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: quote"])
   (h (sort []) [:Vec :Nothing] [] "[].sort()" "[]")
   (h
    (sort [1] [2 3])
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'sort'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
   (h
    (sort)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'sort'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
   (h
    (range)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'range'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'range'"])
   (h (range 1) [:Vec :Integer] [0] "range(1)" "[0]")
   (h (range 1 2) [:Vec :Integer] [1] "range(1, 2)" "[1]")
   (h (range 1 2 3) [:Vec :Integer] [1] "range(1, 2, 3)" "[1]")
@@ -5624,11 +5624,11 @@
   (h
    (conj [10])
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'conj': expected at least 2, but got 1"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'conj': expected at least 2, but got 1"])
   (h
    (conj)
    [:throws
-    "h-err-wrong-arg-count-min 0-0 : Wrong number of arguments to 'conj': expected at least 2, but got 0"])
+    "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'conj': expected at least 2, but got 0"])
   (h
    (conj [] 1 2 3)
    [:Vec :Integer]
@@ -5645,12 +5645,12 @@
   (h
    (get [] 0)
    [:throws
-    "l-err-cannot-index-into-empty-vector 0-0 : Cannot index into empty vector"])
+    "l-err/cannot-index-into-empty-vector 0-0 : Cannot index into empty vector"])
   (h (get [10 20 30] 1) :Integer 20 "[10, 20, 30][1]" "20")
   (h
    (get (get (get [[10 20 [300 302]] [30 40]] 0) 2) 1)
    [:throws
-    "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])
+    "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])
   (h
    (get (get (get [[[10] [20] [300 302]] [[30] [40]]] 0) 2) 1)
    :Integer
@@ -5668,7 +5668,7 @@
   (h
    (count (get [[10 20] "hi" [40 50 60]] 2))
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'count'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'count'"])
   (h (= [1] [1] [1]) :Boolean true "equalTo([1], [1], [1])" "true")
   (h
    (not= [1] [1] [1])
@@ -6708,7 +6708,7 @@
   (hf
    (vec (range 1025))
    [:syntax-check-throws
-    "h-err-size-exceeded 0-0 : Vector size of 1025 exceeds the max allowed size of 1024"]))
+    "h-err/size-exceeded 0-0 : Vector size of 1025 exceeds the max allowed size of 1024"]))
 
 (deftest
   test-vector-every?
@@ -6789,13 +6789,13 @@
   (h
    (get (if true #{} [9 8 7 6]) (+ 1 2))
    [:throws
-    "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])
+    "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])
   (hc
    :basic
    :my
    [(get (if true {:$type :my/Spec$v1, :n -3, :p 2} [9 8 7 6]) (+ 1 2))
     [:throws
-     "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
+     "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
   (hc
    :basic
    :my
@@ -6843,7 +6843,7 @@
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (if-value o o o))
     [:throws
-     "l-err-undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
+     "l-err/undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
   (hc
    :basic
    :my
@@ -6851,7 +6851,7 @@
      [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)]
       (if-value o o o))
     [:throws
-     "l-err-undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
+     "l-err/undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
   (hc
    :basic
    :my
@@ -6931,18 +6931,18 @@
    :my
    [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2}))
     [:throws
-     "h-err-arg-type-mismatch 0-0 : :position to 'valid?' must be an instance of known type"]]))
+     "h-err/arg-type-mismatch 0-0 : :position to 'valid?' must be an instance of known type"]]))
 
 (deftest
   test-instances
   (h
    {}
    [:syntax-check-throws
-    "h-err-missing-type-field 0-0 : Instance literal must have :$type field"])
+    "h-err/missing-type-field 0-0 : Instance literal must have :$type field"])
   (h
    {:$type :my/Spec$v1}
    [:throws
-    "h-err-resource-spec-not-found 0-0 : Resource spec not found: :my/Spec$v1"])
+    "h-err/resource-spec-not-found 0-0 : Resource spec not found: :my/Spec$v1"])
   (hc
    [(workspace :my #:my{:Spec []} (spec :Spec :concrete))]
    :my
@@ -6956,7 +6956,7 @@
    :my
    [{:$type :my/Spec$v1}
     [:throws
-     "h-err-missing-required-vars 0-0 : Missing required variables: n, p"]])
+     "h-err/missing-required-vars 0-0 : Missing required variables: n, p"]])
   (hc
    :basic
    :my
@@ -6970,23 +6970,23 @@
    :other
    [{:$type :my/Spec$v1, :p 1, :n -1}
     [:throws
-     "h-err-resource-spec-not-found 0-0 : Resource spec not found: :my/Spec$v1"]])
+     "h-err/resource-spec-not-found 0-0 : Resource spec not found: :my/Spec$v1"]])
   (hc
    :basic
    :my
    [{:$type :my/Spec$v1, :p 0, :n -1}
     [:Instance :my/Spec$v1]
     [:throws
-     "h-err-invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints pc"]
+     "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints pc"]
     "{$type: my/Spec$v1, n: -1, p: 0}"
     [:throws
-     "h-err-invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints pc"]])
+     "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints pc"]])
   (hc
    :basic
    :my
    [{:$type :my/Spec$v1, :p "0", :n -1}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 'p' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 'p' has wrong type"]])
   (hc
    :basic-abstract
    :my
@@ -7008,19 +7008,19 @@
    :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} :q)
     [:throws
-     "h-err-variables-not-in-spec 0-0 : Variables not defined on spec: q"]])
+     "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
    :basic
    :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} 0)
     [:throws
-     "h-err-invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
+     "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
   (hc
    :basic
    :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} "p")
     [:throws
-     "h-err-invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
+     "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
   (hc
    :basic-2
    :spec
@@ -7046,7 +7046,7 @@
    :spec
    [(= {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1})
     [:throws
-     "l-err-result-always 0-0 : Result of '=' would always be false"]])
+     "l-err/result-always 0-0 : Result of '=' would always be false"]])
   (hc
    :basic-2
    :spec
@@ -7064,7 +7064,7 @@
      {:$type :spec/A$v1, :p 1, :n -1}
      (get {:$type :spec/B$v1, :x 10, :y -1} :z))
     [:throws
-     "l-err-result-always 0-0 : Result of '=' would always be false"]])
+     "l-err/result-always 0-0 : Result of '=' would always be false"]])
   (hc
    :basic-2
    :spec
@@ -7109,7 +7109,7 @@
      (if true {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1})
      :p)
     [:throws
-     "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
+     "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
   (hc
    :basic-2
    :spec
@@ -7210,7 +7210,7 @@
      (get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 0)
      :p)
     [:throws
-     "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
+     "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
   (hc
    :basic-2
    :spec
@@ -7233,10 +7233,10 @@
      :p)
     :Integer
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}][1].refineTo( spec/A$v1 ).p"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]])
   (hc
    :basic-2
    :spec
@@ -7271,13 +7271,13 @@
    :my
    [(inc (get {:$type :my/Spec$v1, :p 1, :n -1} :o))
     [:throws
-     "h-err-no-matching-signature 0-0 : No matching signature for 'inc'"]])
+     "h-err/no-matching-signature 0-0 : No matching signature for 'inc'"]])
   (hc
    :basic
    :my
    [(if-value (get {:$type :my/Spec$v1, :p 1, :n -1} :o) 19 32)
     [:throws
-     "h-err-if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"]])
+     "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"]])
   (hc
    :basic
    :my
@@ -7306,19 +7306,19 @@
    :my
    [{:$type :my/Spec$v1, :p 1}
     [:throws
-     "h-err-missing-required-vars 0-0 : Missing required variables: n"]])
+     "h-err/missing-required-vars 0-0 : Missing required variables: n"]])
   (hc
    :basic
    :my
    [(valid {:$type :my/Spec$v1, :p 0})
     [:throws
-     "h-err-missing-required-vars 0-0 : Missing required variables: n"]])
+     "h-err/missing-required-vars 0-0 : Missing required variables: n"]])
   (hc
    :basic
    :my
    [(valid? {:$type :my/Spec$v1, :p 0})
     [:throws
-     "h-err-missing-required-vars 0-0 : Missing required variables: n"]])
+     "h-err/missing-required-vars 0-0 : Missing required variables: n"]])
   (hc
    :basic
    :my
@@ -7413,7 +7413,7 @@
    :my
    [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :other/Spec$v1)
     [:throws
-     "h-err-resource-spec-not-found 0-0 : Resource spec not found: other/Spec$v1"]])
+     "h-err/resource-spec-not-found 0-0 : Resource spec not found: other/Spec$v1"]])
   (hc
    :basic-2
    :spec
@@ -7444,10 +7444,10 @@
    [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1)
     [:Instance :spec/C$v1]
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
     "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 )"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
@@ -7462,20 +7462,20 @@
    [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     :Boolean
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
     "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
    [(refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)
     [:Instance :spec/B$v1]
     [:throws
-     "h-err-invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
     "{$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )"
     [:throws
-     "h-err-invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
   (hc
    :basic-2
    :spec
@@ -7499,7 +7499,7 @@
      [v (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)]
       (if-value v [1] [2]))
     [:throws
-     "l-err-first-agument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]])
+     "l-err/first-agument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]])
   (hc
    :basic-2
    :spec
@@ -7572,27 +7572,27 @@
       (if-value v v v)]
       (if-value w 1 2))
     [:throws
-     "l-err-undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'v'; you may want '$no-value'"]])
+     "l-err/undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'v'; you may want '$no-value'"]])
   (hc
    :basic-2
    :spec
    [{:$type :spec/A$v1, :p 10, :n -1}
     [:Instance :spec/A$v1]
     [:throws
-     "h-err-invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
     "{$type: spec/A$v1, n: -1, p: 10}"
     [:throws
-     "h-err-invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
   (hc
    :basic-2
    :spec
    [(refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/A$v1)
     [:Instance :spec/A$v1]
     [:throws
-     "h-err-invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
     "{$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/A$v1 )"
     [:throws
-     "h-err-invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
   (hc
    :basic-2
    :spec
@@ -7607,20 +7607,20 @@
    [(valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     [:Maybe [:Instance :spec/C$v1]]
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
     "(valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
    [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     :Boolean
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
     "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
@@ -7642,23 +7642,23 @@
    :spec
    [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/X$v1)
     [:throws
-     "h-err-resource-spec-not-found 0-0 : Resource spec not found: spec/X$v1"]])
+     "h-err/resource-spec-not-found 0-0 : Resource spec not found: spec/X$v1"]])
   (hc
    :basic-2
    :spec
    [(get {:$type :spec/A$v1, :p 1, :n -1} :$type)
     [:throws
-     "h-err-variables-not-in-spec 0-0 : Variables not defined on spec: $type"]])
+     "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: $type"]])
   (hc
    :basic-2
    :spec
    [(refine-to {:$type :spec/E$v1} :spec/C$v1)
     [:Instance :spec/C$v1]
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]
     "{$type: spec/E$v1}.refineTo( spec/C$v1 )"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
@@ -7690,48 +7690,48 @@
    :spec
    [(let [v {:$type :spec/A$v1, :p 10, :n -1}] (if-value v 1 2))
     [:throws
-     "l-err-first-agument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]]))
+     "l-err/first-agument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]]))
 
 (deftest
   test-misc-types
   (h
    #"a"
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
-  (h \a [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
-  (h :a [:throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
+  (h \a [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
+  (h :a [:throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (1 2 3)
    [:syntax-check-throws
-    "h-err-unknown-function-or-operator 0-0 : Unknown function or operator: 1"])
+    "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: 1"])
   (h
    ()
    [:syntax-check-throws
-    "h-err-unknown-function-or-operator 0-0 : Unknown function or operator: nil"])
+    "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: nil"])
   (h
    nil
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (ex-info "fail" {})
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (fn [])
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (random-uuid)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (make-array String 1)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    #inst "2018-03-28T10:48:00.000-00:00"
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    java.lang.String
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (range 10)
    [:syntax-check-throws
-    "h-err-unknown-function-or-operator 0-0 : Unknown function or operator: 0"])
+    "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: 0"])
   (hf
    (clojure.core/seq
     (clojure.core/concat
@@ -7745,7 +7745,7 @@
          (clojure.core/list (range 10))))))
      (clojure.core/list 'true)))
    [:syntax-check-throws
-    "h-err-unknown-function-or-operator 0-0 : Unknown function or operator: 0"])
+    "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: 0"])
   (hf
    (clojure.core/seq
     (clojure.core/concat
@@ -7753,19 +7753,19 @@
      (clojure.core/list (range 10))
      (clojure.core/list 'true)))
    [:syntax-check-throws
-    "h-err-unknown-function-or-operator 0-0 : Unknown function or operator: 0"])
+    "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: 0"])
   (hf
    (filter odd?)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (promise)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (atom nil)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf
    (agent nil)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (hf (map identity ['+ 1 2]) :Integer 3 "(1 + 2)" "3")
   (hf (vals {:a '+, :b 1, :c 2}) :Integer 3 "(1 + 2)" "3")
   (hf (cons '+ (cons 2 (cons 3 '()))) :Integer 5 "(2 + 3)" "5"))
@@ -7889,7 +7889,7 @@
    :spec
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 't' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 't' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -7905,10 +7905,10 @@
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]])
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
   (hc
    [(workspace
      :spec
@@ -7944,10 +7944,10 @@
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     [:Instance :spec/U$v1]
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]
     "{$type: spec/U$v1, s: {$type: spec/T$v1}}"
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]])
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
   (hc
    [(workspace
      :spec
@@ -7962,7 +7962,7 @@
    :spec
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 's' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 's' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -7977,7 +7977,7 @@
    :spec
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 's' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 's' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -8026,7 +8026,7 @@
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 's' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 's' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -8044,7 +8044,7 @@
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 't' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 't' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -8095,7 +8095,7 @@
    :spec
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 't' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 't' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -8111,10 +8111,10 @@
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]])
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
   (hc
    [(workspace
      :spec
@@ -8137,7 +8137,7 @@
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 's' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 's' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -8158,7 +8158,7 @@
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/S$v1}} :t)}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 's' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 's' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -8246,10 +8246,10 @@
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:Instance :spec/U$v1]
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]
     "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]])
   (hc
    [(workspace
      :spec
@@ -8270,10 +8270,10 @@
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:Instance :spec/U$v1]
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]
     "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}"
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]])
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
   (hc
    [(workspace
      :spec
@@ -8293,7 +8293,7 @@
    :spec
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 's' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 's' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -8313,7 +8313,7 @@
    :spec
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:throws
-     "h-err-invalid-field-value 0-0 : Value of 's' has wrong type"]])
+     "h-err/invalid-field-value 0-0 : Value of 's' has wrong type"]])
   (hc
    [(workspace
      :spec
@@ -8346,10 +8346,10 @@
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:Instance :spec/U$v1]
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]
     "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}"
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]]))
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]]))
 
 (deftest
   test-component-refinement
@@ -8423,10 +8423,10 @@
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1)
     [:Instance :spec/T$v1]
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]
     "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/T$v1 )"
     [:throws
-     "h-err-no-abstract 0-0 : Instance cannot contain abstract value"]])
+     "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
   (hc
    [(workspace
      :spec
@@ -8450,10 +8450,10 @@
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1)
     [:Instance :spec/T$v1]
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
   (hc
    [(workspace
      :spec
@@ -8472,10 +8472,10 @@
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]])
   (hc
    [(workspace
      :spec
@@ -8707,10 +8707,10 @@
      :spec/N$v1)
     [:Instance :spec/N$v1]
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]])
   (hc
    [(workspace
      :spec
@@ -8759,10 +8759,10 @@
      [{:$type :spec/Inc$v1, :x 1, :y 1}
       [:Instance :spec/Inc$v1]
       [:throws
-       "h-err-invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints main"]
+       "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints main"]
       "{$type: spec/Inc$v1, x: 1, y: 1}"
       [:throws
-       "h-err-invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints main"]])
+       "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints main"]])
     (hc
      ws
      :spec
@@ -8879,10 +8879,10 @@
      [(refine-to {:$type :spec/Inc$v1, :x 1, :y 2} :spec/BigInc$v1)
       [:Instance :spec/BigInc$v1]
       [:throws
-       "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]
+       "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]
       "{$type: spec/Inc$v1, x: 1, y: 2}.refineTo( spec/BigInc$v1 )"
       [:throws
-       "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]])
+       "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]])
     (hc
      ws
      :spec
@@ -8938,26 +8938,26 @@
   (h
    (map [x])
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'map': expected 2, but got 1"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'map': expected 2, but got 1"])
   (h
    (map [x] x)
    [:throws
-    "h-err-comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (map [x []])
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'map': expected 2, but got 1"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'map': expected 2, but got 1"])
   (h
    (map)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'map': expected 2, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'map': expected 2, but got 0"])
   (h
    (map (inc x))
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'map': expected 2, but got 1"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'map': expected 2, but got 1"])
   (h
    (map (inc x) [x []])
-   [:throws "h-err-undefined-symbol 0-0 : Undefined: 'x'"])
+   [:throws "h-err/undefined-symbol 0-0 : Undefined: 'x'"])
   (hc
    [(workspace
      :spec
@@ -8966,7 +8966,7 @@
    :spec
    [(map [x {:$type :spec/A$v1, :x 1}] true)
     [:throws
-     "h-err-comprehend-collection-invalid-type 0-0 : Collection required for 'map', not :spec/A$v1"]])
+     "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'map', not :spec/A$v1"]])
   (h
    (map [x [10 11 12]] (inc x))
    [:Vec :Integer]
@@ -8982,17 +8982,17 @@
   (h
    (map [x []] (inc x))
    [:throws
-    "l-err-disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
+    "l-err/disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
   (h (map [x []] x) [:Vec :Nothing] [] "map(x in [])x" "[]")
   (h (map [x []] (+ 1 2)) [:Vec :Nothing] [] "map(x in [])(1 + 2)" "[]")
   (h
    (map [x "abc"] x)
    [:throws
-    "h-err-comprehend-collection-invalid-type 0-0 : Collection required for 'map', not :String"])
+    "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'map', not :String"])
   (h
    (map [x 1] x)
    [:throws
-    "h-err-comprehend-collection-invalid-type 0-0 : Collection required for 'map', not :Integer"])
+    "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'map', not :Integer"])
   (h
    (map [x [[1 2] [3 4 5]]] x)
    [:Vec [:Vec :Integer]]
@@ -9040,7 +9040,7 @@
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
      (get x :x))
     [:throws
-     "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
+     "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
   (hc
    [(workspace
      :spec
@@ -9053,10 +9053,10 @@
      (get (refine-to x :spec/A$v1) :x))
     [:Vec :Integer]
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]
     "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x"
     [:throws
-     "h-err-no-active-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
+     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
   (hc
    [(workspace
      :spec
@@ -9068,7 +9068,7 @@
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
      (valid x))
     [:throws
-     "h-err-arg-type-mismatch 0-0 : :position to 'valid' must be an instance of known type"]])
+     "h-err/arg-type-mismatch 0-0 : :position to 'valid' must be an instance of known type"]])
   (h (map [x #{}] x) [:Set :Nothing] #{} "map(x in #{})x" "#{}")
   (h
    (map [x #{1 3 2}] x)
@@ -9117,7 +9117,7 @@
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}]
      (valid x))
     [:throws
-     "h-err-arg-type-mismatch 0-0 : :position to 'valid' must be an instance of known type"]])
+     "h-err/arg-type-mismatch 0-0 : :position to 'valid' must be an instance of known type"]])
   (hc
    [(workspace
      :spec
@@ -9144,12 +9144,12 @@
   (h
    (filter)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'filter': expected 2, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'filter': expected 2, but got 0"])
   (h (filter 1 2) [:throws "nth not supported on this type: Long"])
   (h
    (filter [x []] x 1)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'filter': expected 2, but got 3"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'filter': expected 2, but got 3"])
   (h (filter 1 [x []]) [:throws "nth not supported on this type: Long"])
   (hc
    [(workspace
@@ -9159,7 +9159,7 @@
    :spec
    [(filter [x {:$type :spec/A$v1, :x 1}] true)
     [:throws
-     "h-err-comprehend-collection-invalid-type 0-0 : Collection required for 'filter', not :spec/A$v1"]])
+     "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'filter', not :spec/A$v1"]])
   (h (filter [x []] true) [:Vec :Nothing] [] "filter(x in [])true" "[]")
   (h
    (filter [x #{}] true)
@@ -9170,7 +9170,7 @@
   (h
    (filter [x "abs"] true)
    [:throws
-    "h-err-comprehend-collection-invalid-type 0-0 : Collection required for 'filter', not :String"])
+    "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'filter', not :String"])
   (h
    (filter [x [1 2 3]] (> x 2))
    [:Vec :Integer]
@@ -9198,7 +9198,7 @@
   (h
    (filter [x ["a" "b"]] (+ x 1))
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '+'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '+'"])
   (h
    (filter [x [1 "a"]] true)
    [:Vec :Value]
@@ -9227,7 +9227,7 @@
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}]
      (valid x))
     [:throws
-     "h-err-not-boolean-body 0-0 : Body expression in 'filter' must be boolean"]])
+     "h-err/not-boolean-body 0-0 : Body expression in 'filter' must be boolean"]])
   (hc
    [(workspace
      :spec
@@ -9292,7 +9292,7 @@
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]]
      (> (get x :x) 1))
     [:throws
-     "h-err-invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
+     "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
   (hc
    [(workspace
      :spec
@@ -9337,26 +9337,26 @@
   (h
    (reduce)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'reduce': expected 3, but got 0"])
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'reduce': expected 3, but got 0"])
   (h
    (reduce 1 "as" true)
    [:throws "nth not supported on this type: Long"])
   (h
    (reduce [1 2] "as" true)
    [:throws
-    "h-err-accumulator-target-must-be-bare-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
+    "h-err/accumulator-target-must-be-bare-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
   (h
    (reduce [1 2] [x 3] true)
    [:throws
-    "h-err-accumulator-target-must-be-bare-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
+    "h-err/accumulator-target-must-be-bare-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
   (h
    (reduce [a 2] [x 3] true)
    [:throws
-    "h-err-reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
+    "h-err/reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
   (h
    (reduce [a [2]] [x 3] true)
    [:throws
-    "h-err-reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
+    "h-err/reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
   (h
    (reduce [a 2] [x [3]] true)
    :Boolean
@@ -9378,7 +9378,7 @@
   (h
    (reduce [a 0] [x []] (+ a x))
    [:throws
-    "l-err-disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
+    "l-err/disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
   (h
    (reduce [a 0] [x []] a)
    :Integer
@@ -9388,11 +9388,11 @@
   (h
    (reduce [a 0] [x #{}] (+ a x))
    [:throws
-    "h-err-reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
+    "h-err/reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
   (h
    (reduce [a 0] [x #{}] a)
    [:throws
-    "h-err-reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
+    "h-err/reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
   (h
    (reduce [a 0] [x [1 3 2]] (+ a x))
    :Integer
@@ -9408,13 +9408,13 @@
   (h
    (reduce [x 0] [x [1 2 3 4]] (+ x x))
    [:throws
-    "h-err-element-accumulator-same-symbol 0-0 : Cannot use the same symbol for accumulator and element binding: x"])
+    "h-err/element-accumulator-same-symbol 0-0 : Cannot use the same symbol for accumulator and element binding: x"])
   (h
    (reduce [x 10] [y [1 2 3 x]] (+ y x))
-   [:throws "h-err-undefined-symbol 0-0 : Undefined: 'x'"])
+   [:throws "h-err/undefined-symbol 0-0 : Undefined: 'x'"])
   (h
    (reduce [x y] [y [1 2 3 x]] (+ x x))
-   [:throws "h-err-undefined-symbol 0-0 : Undefined: 'y'"])
+   [:throws "h-err/undefined-symbol 0-0 : Undefined: 'y'"])
   (h
    (reduce [a 0] [x [1 2 3 4]] x)
    :Integer
@@ -9430,7 +9430,7 @@
   (h
    (reduce [a 0] [x #{[3] [1 2]}] (+ a (count x)))
    [:throws
-    "h-err-reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
+    "h-err/reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."])
   (h
    (reduce
     [a 0]
@@ -9460,7 +9460,7 @@
    :spec
    [(reduce [a 0] [x {:$type :spec/A$v1, :x 1}] a)
     [:throws
-     "h-err-reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."]])
+     "h-err/reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."]])
   (hc
    [(workspace
      :spec
@@ -9481,11 +9481,11 @@
   (h
    (sort)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'sort'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
   (h
    (sort "abc")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'sort'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
   (h (sort []) [:Vec :Nothing] [] "[].sort()" "[]")
   (h (sort #{}) [:Vec :Nothing] [] "#{}.sort()" "[]")
   (h
@@ -9509,11 +9509,11 @@
   (h
    (sort ["a" "c" "b"])
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'sort'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
   (h
    (sort [[1 2] [3] [4 5 6]])
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'sort'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
   (h
    (sort-by
     [x ["a" "c" "b"]]
@@ -9596,19 +9596,19 @@
    "3")
   (h
    (let [x y y 1] y)
-   [:throws "h-err-undefined-symbol 0-0 : Undefined: 'y'"])
+   [:throws "h-err/undefined-symbol 0-0 : Undefined: 'y'"])
   (h
    (let [:x 1] x)
    [:throws
-    "h-err-let-symbols-required 0-0 : Even-numbered forms in let binding vector must be symbols"])
+    "h-err/let-symbols-required 0-0 : Even-numbered forms in let binding vector must be symbols"])
   (h
    (let [[a b] [1 2]] a)
    [:throws
-    "h-err-let-symbols-required 0-0 : Even-numbered forms in let binding vector must be symbols"])
+    "h-err/let-symbols-required 0-0 : Even-numbered forms in let binding vector must be symbols"])
   (h
    (let [x 1 y (inc x) z (inc y)] x z)
    [:throws
-    "h-err-wrong-arg-count 0-0 : Wrong number of arguments to 'let': expected 2, but got 3"]))
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'let': expected 2, but got 3"]))
 
 (deftest
   test-fixed-decimal
@@ -9702,7 +9702,7 @@
   (h
    (* 2 #d "1.1")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '*'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '*'"])
   (h
    (div #d "1.1" 2)
    [:Decimal 1]
@@ -9718,7 +9718,7 @@
   (h
    (div 2 #d "1.1")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'div'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'div'"])
   (h
    (div #d "1.1" 0)
    [:Decimal 1]
@@ -9741,50 +9741,50 @@
    (abs #d "-922337203685477580.8")
    [:Decimal 1]
    [:throws
-    "h-err-abs-failure 0-0 : Cannot compute absolute value of: #d \"-922337203685477580.8\""]
+    "h-err/abs-failure 0-0 : Cannot compute absolute value of: #d \"-922337203685477580.8\""]
    "abs(#d \"-922337203685477580.8\")"
    [:throws
-    "h-err-abs-failure 0-0 : Cannot compute absolute value of: #d \"-922337203685477580.8\""])
+    "h-err/abs-failure 0-0 : Cannot compute absolute value of: #d \"-922337203685477580.8\""])
   (h
    (abs #d "-92233720368547758.08")
    [:Decimal 2]
    [:throws
-    "h-err-abs-failure 0-0 : Cannot compute absolute value of: #d \"-92233720368547758.08\""]
+    "h-err/abs-failure 0-0 : Cannot compute absolute value of: #d \"-92233720368547758.08\""]
    "abs(#d \"-92233720368547758.08\")"
    [:throws
-    "h-err-abs-failure 0-0 : Cannot compute absolute value of: #d \"-92233720368547758.08\""])
+    "h-err/abs-failure 0-0 : Cannot compute absolute value of: #d \"-92233720368547758.08\""])
   (h
    (abs #d "-9223372036854775.808")
    [:Decimal 3]
    [:throws
-    "h-err-abs-failure 0-0 : Cannot compute absolute value of: #d \"-9223372036854775.808\""]
+    "h-err/abs-failure 0-0 : Cannot compute absolute value of: #d \"-9223372036854775.808\""]
    "abs(#d \"-9223372036854775.808\")"
    [:throws
-    "h-err-abs-failure 0-0 : Cannot compute absolute value of: #d \"-9223372036854775.808\""])
+    "h-err/abs-failure 0-0 : Cannot compute absolute value of: #d \"-9223372036854775.808\""])
   (h
    (+ #d "1.1" 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '+'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '+'"])
   (h
    (+ #d "1.1" #d "0.01")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '+'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '+'"])
   (h
    (- #d "1.1" 1)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '-'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '-'"])
   (h
    (- #d "1.1" #d "2.01")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '-'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '-'"])
   (h
    (* #d "1.1" #d "0.1")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for '*'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for '*'"])
   (h
    (div #d "1.1" #d "0.1")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'div'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'div'"])
   (h
    (= #d "1.0" #d "1.0")
    :Boolean
@@ -9793,13 +9793,13 @@
    "true")
   (h
    (= #d "1.0" 1.0)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (= #d "1.0" #d "1.00")
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (h
    (= #d "1.0" 1)
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (h
    (not= #d "1.0" #d "1.0")
    :Boolean
@@ -9821,7 +9821,7 @@
   (h
    (not= #d "1.0" #d "1.0" #d "1.00")
    [:throws
-    "l-err-result-always 0-0 : Result of 'not=' would always be true"])
+    "l-err/result-always 0-0 : Result of 'not=' would always be true"])
   (h
    (< #d "1.0" #d "1.1")
    :Boolean
@@ -9880,22 +9880,22 @@
   (h
    (rescale #d "1.23" -1)
    [:throws
-    "h-err-arg-type-mismatch 0-0 : Second argument to 'rescale' must be an integer between 0 and 18"])
+    "h-err/arg-type-mismatch 0-0 : Second argument to 'rescale' must be an integer between 0 and 18"])
   (h
    (rescale #d "1.23" 1.0)
-   [:syntax-check-throws "h-err-syntax-error 0-0 : Syntax error"])
+   [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (rescale #d "1.23" #d "1.0")
    [:throws
-    "h-err-arg-type-mismatch 0-0 : Second argument to 'rescale' must be an integer"])
+    "h-err/arg-type-mismatch 0-0 : Second argument to 'rescale' must be an integer"])
   (h
    (rescale #d "1.23" (+ 1 0))
    [:throws
-    "h-err-arg-type-mismatch 0-0 : Second argument to 'rescale' must be an integer literal"])
+    "h-err/arg-type-mismatch 0-0 : Second argument to 'rescale' must be an integer literal"])
   (h
    (rescale 1 1)
    [:throws
-    "h-err-arg-type-mismatch 0-0 : First argument to 'rescale' must be a fixed point decimal"])
+    "h-err/arg-type-mismatch 0-0 : First argument to 'rescale' must be a fixed point decimal"])
   (h
    (intersection #{0 1 2} #{#d "0.0" #d "1.0" #d "2.0"})
    [:Set :Nothing]
@@ -9939,22 +9939,22 @@
    "#{#d \"0.0\", #d \"0.00\", 0}")
   (h
    (= 0 #d "0.0")
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (h
    (= #d "0.0" #d "0.00")
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (h
    (= 1 #d "1.0")
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (h
    (= #d "1.00" #d "1.0")
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (h
    (= -1 #d "-1.0")
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (h
    (= #d "-1.00" #d "-1.0")
-   [:throws "l-err-result-always 0-0 : Result of '=' would always be false"])
+   [:throws "l-err/result-always 0-0 : Result of '=' would always be false"])
   (hf
    (reduce conj #{} [1 #d "1.0" #d "1.00"])
    [:Set :Value]
@@ -9973,7 +9973,7 @@
   (hf
    (into (range 256) '(+))
    [:syntax-check-throws
-    "h-err-size-exceeded 0-0 : List size of 257 exceeds the max allowed size of 256"]))
+    "h-err/size-exceeded 0-0 : List size of 257 exceeds the max allowed size of 256"]))
 
 (deftest
   test-expression-nesting-limit
@@ -9992,48 +9992,48 @@
     0
     (range (inc 10)))
    [:syntax-check-throws
-    "h-err-limit-exceeded 0-0 : \"expression nesting\" of 11 exceeds the max allowed value of 10"]))
+    "h-err/limit-exceeded 0-0 : \"expression nesting\" of 11 exceeds the max allowed value of 10"]))
 
 (deftest
   test-error
   (h
    (error "fail")
    :Nothing
-   [:throws "h-err-spec-threw 0-0 : Spec threw error: \"fail\""]
+   [:throws "h-err/spec-threw 0-0 : Spec threw error: \"fail\""]
    "error(\"fail\")"
-   [:throws "h-err-spec-threw 0-0 : Spec threw error: \"fail\""])
+   [:throws "h-err/spec-threw 0-0 : Spec threw error: \"fail\""])
   (h
    (if true (error "fail") "hello")
    :String
-   [:throws "h-err-spec-threw 0-0 : Spec threw error: \"fail\""]
+   [:throws "h-err/spec-threw 0-0 : Spec threw error: \"fail\""]
    "(if(true) {error(\"fail\")} else {\"hello\"})"
-   [:throws "h-err-spec-threw 0-0 : Spec threw error: \"fail\""])
+   [:throws "h-err/spec-threw 0-0 : Spec threw error: \"fail\""])
   (h
    (error)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'error'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'error'"])
   (h
    (error 20)
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'error'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'error'"])
   (h
    (error "my" "bad")
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'error'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'error'"])
   (h
    (error [])
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'error'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'error'"])
   (h
    (error #{})
    [:throws
-    "h-err-no-matching-signature 0-0 : No matching signature for 'error'"])
+    "h-err/no-matching-signature 0-0 : No matching signature for 'error'"])
   (hc
    :basic
    :my
    [(error {:$type :my/Spec$v1, :n 1, :p 1})
     [:throws
-     "h-err-no-matching-signature 0-0 : No matching signature for 'error'"]]))
+     "h-err/no-matching-signature 0-0 : No matching signature for 'error'"]]))
 
 (deftest
   test-col-row-in-exceptions
@@ -10074,7 +10074,7 @@
         (set (keys (ex-data e)))))
       (is
        (=
-        {:err-id :h-err-undefined-symbol,
+        {:err-id :h-err/undefined-symbol,
          :jibe.data.model/spec-name :my/Spec,
          :refinement-name "my/Spec$v1/as_b",
          :row 3,
