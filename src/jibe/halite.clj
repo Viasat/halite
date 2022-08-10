@@ -534,22 +534,33 @@
   (arg-count-at-least 2 expr)
   :Boolean)
 
+(defn- add-position [n m]
+  (let [m' (assoc m
+                  :position-text (text (condp = n
+                                         nil "Argument"
+                                         0 "First argument"
+                                         1 "Second argument"
+                                         "An argument")))]
+    (if (nil? n)
+      m'
+      (assoc m' :position n))))
+
 (s/defn ^:private type-check-set-scale :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
   (let [[_ _ scale] expr
         arg-types (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/decimal-type? (first arg-types))
-      (throw-err (h-err/arg-type-mismatch {:position 0 :op 'rescale :expected-type-description (text "a fixed point decimal") :expr expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'rescale :expected-type-description (text "a fixed point decimal") :expr expr}))))
     (when-not (= :Integer (second arg-types))
-      (throw-err (h-err/arg-type-mismatch {:position 1 :op 'rescale :expected-type-description (text "an integer") :expr expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'rescale :expected-type-description (text "an integer") :expr expr}))))
     (when-not (integer-or-long? scale)
-      (throw-err (h-err/arg-type-mismatch {:position 1 :op 'rescale :expected-type-description (text "an integer literal") :expr expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'rescale :expected-type-description (text "an integer literal") :expr expr}))))
     (when-not (and (>= scale 0)
                    (< scale (inc fixed-decimal/max-scale)))
-      (throw-err (h-err/arg-type-mismatch {:position 1 :op 'rescale
-                                           :expected-type-description (text (format "an integer between 0 and %s" fixed-decimal/max-scale))
-                                           :expr expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'rescale
+                                                           :expected-type-description (text (format "an integer between 0 and %s" fixed-decimal/max-scale))
+                                                           :expr expr}))))
     (if (zero? scale)
       :Integer
       (halite-types/decimal-type scale))))
@@ -559,7 +570,7 @@
   (arg-count-exactly 3 expr)
   (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw-err (h-err/arg-type-mismatch {:position 0 :op 'if :expected-type-description (text "boolean") :expr expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'if :expected-type-description (text "boolean") :expr expr}))))
     (halite-types/meet s t)))
 
 (s/defn ^:private type-check-when :- halite-types/HaliteType
@@ -567,7 +578,7 @@
   (arg-count-exactly 2 expr)
   (let [[pred-type body-type] (map (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw-err (h-err/arg-type-mismatch {:position 0 :op 'when :expected-type-description (text "boolean") :expr expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'when :expected-type-description (text "boolean") :expr expr}))))
     (halite-types/maybe-type body-type)))
 
 (s/defn ^:private type-check-let :- halite-types/HaliteType
@@ -754,9 +765,9 @@
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
     (when-not (halite-types/subtype? s (halite-types/coll-type :Value))
-      (throw-err (h-err/arg-type-mismatch {:op op, :position 0, :expected-type-description (text "a set or vector"), :form expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 0 {:op op :expected-type-description (text "a set or vector"), :form expr}))))
     (when-not (halite-types/subtype? t (halite-types/coll-type :Value))
-      (throw-err (h-err/arg-type-mismatch {:op op, :position 1, :expected-type-description (text "a set or vector"), :form expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 1 {:op op :expected-type-description (text "a set or vector"), :form expr}))))
     (when (and (halite-types/subtype? s (halite-types/vector-type :Value)) (not (halite-types/subtype? t (halite-types/vector-type :Value))))
       (throw-err (h-err/arg-types-both-vectors {:op op, :form expr})))
     (halite-types/meet s
@@ -768,9 +779,9 @@
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     (when-not (halite-types/subtype? s (halite-types/instance-type))
-      (throw-err (h-err/arg-type-mismatch {:op 'refine-to, :position 0, :expected-type-description (text "an instance"), :form expr, :actual s})))
+      (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'refine-to :expected-type-description (text "an instance"), :form expr, :actual s}))))
     (when-not (halite-types/namespaced-keyword? kw)
-      (throw-err (h-err/arg-type-mismatch {:op 'refine-to, :position 1, :expected-type-description (text "a spec id"), :form expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'refine-to :expected-type-description (text "a spec id"), :form expr}))))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     (halite-types/concrete-spec-type kw)))
@@ -781,9 +792,9 @@
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     (when-not (halite-types/subtype? s (halite-types/instance-type))
-      (throw-err (h-err/arg-type-mismatch {:op 'refines-to?, :position 0, :expected-type-description (text "an instance"), :form expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'refines-to? :expected-type-description (text "an instance"), :form expr}))))
     (when-not (halite-types/namespaced-keyword? kw)
-      (throw-err (h-err/arg-type-mismatch {:op 'refines-to?, :position 1, :expected-type-description (text "a spec id"), :form expr})))
+      (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'refines-to? :expected-type-description (text "a spec id"), :form expr}))))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     :Boolean))
@@ -795,7 +806,7 @@
       (halite-types/spec-type? t) (halite-types/maybe-type t)
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) t
-      :else (throw-err (h-err/arg-type-mismatch {:op 'valid, :expected-type-description (text "an instance of known type"), :form expr})))))
+      :else (throw-err (h-err/arg-type-mismatch (add-position nil {:op 'valid, :expected-type-description (text "an instance of known type"), :form expr}))))))
 
 (s/defn ^:private type-check-valid? :- halite-types/HaliteType
   [ctx :- TypeContext, [_valid? subexpr :as expr]]
@@ -804,7 +815,7 @@
       (halite-types/spec-type? t) :Boolean
       ;; questionable...
       ;;(and (vector? t) (= :Maybe (first t)) (spec-type? (second t))) :Boolean
-      :else (throw-err (h-err/arg-type-mismatch {:op 'valid?, :expected-type-description (text "an instance of known type"), :form expr})))))
+      :else (throw-err (h-err/arg-type-mismatch (add-position nil {:op 'valid?, :expected-type-description (text "an instance of known type"), :form expr}))))))
 
 (s/defn ^:private type-check* :- halite-types/HaliteType
   [ctx :- TypeContext, expr]

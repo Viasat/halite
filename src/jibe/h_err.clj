@@ -88,7 +88,7 @@
         {:message "Lookup target must be an instance of known type or non-empty vector"})
 
 (deferr arg-type-mismatch [data]
-        {:message ":position to ':op' must be :expected-type-description"})
+        {:message ":position-text to ':op' must be :expected-type-description"})
 
 (deferr arg-types-both-vectors [data]
         {:message "When first argument to ':op' is a vector, second argument must also be a vector"})

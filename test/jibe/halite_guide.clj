@@ -6929,9 +6929,7 @@
   (hc
    :basic
    :my
-   [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2}))
-    [:throws
-     "h-err/arg-type-mismatch 0-0 : :position to 'valid?' must be an instance of known type"]]))
+   [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2})) [:throws "h-err/arg-type-mismatch 0-0 : Argument to 'valid?' must be an instance of known type"]]))
 
 (deftest
   test-instances
@@ -9064,11 +9062,7 @@
      (spec :A :concrete (variables [:x "Integer"]))
      (spec :B :concrete (variables [:x "String"])))]
    :spec
-   [(map
-     [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
-     (valid x))
-    [:throws
-     "h-err/arg-type-mismatch 0-0 : :position to 'valid' must be an instance of known type"]])
+   [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] (valid x)) [:throws "h-err/arg-type-mismatch 0-0 : Argument to 'valid' must be an instance of known type"]])
   (h (map [x #{}] x) [:Set :Nothing] #{} "map(x in #{})x" "#{}")
   (h
    (map [x #{1 3 2}] x)
@@ -9113,11 +9107,7 @@
      (spec :A :concrete (variables [:x "Integer"]))
      (spec :B :concrete (variables [:x "String"])))]
    :spec
-   [(map
-     [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}]
-     (valid x))
-    [:throws
-     "h-err/arg-type-mismatch 0-0 : :position to 'valid' must be an instance of known type"]])
+   [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] (valid x)) [:throws "h-err/arg-type-mismatch 0-0 : Argument to 'valid' must be an instance of known type"]])
   (hc
    [(workspace
      :spec

@@ -165,14 +165,9 @@
 (defn format-data-map [data-map]
   (->> data-map
        (mapcat (fn [[k v]]
-                 [k (cond
-                      (or (seq? v) (vector? v) (set? v)) (string/join ", " (map pr-str v))
-                      (= :position k) (condp = v
-                                        nil "Argument"
-                                        0 "First argument"
-                                        1 "Second argument"
-                                        "An argument")
-                      :default (pr-str v))]))
+                 [k (if (or (seq? v) (vector? v) (set? v))
+                      (string/join ", " (map pr-str v))
+                      (pr-str v))]))
        (apply hash-map)))
 
 (defn format-msg [msg-str data-map]
