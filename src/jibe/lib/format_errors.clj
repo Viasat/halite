@@ -133,7 +133,7 @@
            (when (nil? v)
              (log/error (str "string template key not found: " {:key n :msg-str msg-str})))
            (string/replace k (str ":" n) (or v (str ":" n))))))
-      (string/replace "<colon>" ":")))
+      (string/replace "\\colon" ":")))
 
 ;;
 
