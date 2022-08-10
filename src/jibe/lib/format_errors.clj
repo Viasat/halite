@@ -4,6 +4,7 @@
 (ns jibe.lib.format-errors
   (:require [clojure.pprint :as pprint]
             [clojure.string :as string]
+            [clojure.tools.logging :as log]
             [schema.core :as s])
   (:import [clojure.lang Namespace]
            [java.lang StackTraceElement]))
@@ -124,10 +125,15 @@
       (assoc :message-template (:message data))))
 
 (defn format-msg* [msg-str data-map]
-  (string/replace msg-str
-                  #":([a-zA-Z][a-zA-Z0-9-]*)"
-                  (fn [[k n]]
-                    (get data-map (keyword n) k))))
+  (-> msg-str
+      (string/replace
+       #"(?:^|\s|[^a-zA-Z0-9]):([a-zA-Z][a-zA-Z0-9-]*)"
+       (fn [[k n]]
+         (let [v (get data-map (keyword n))]
+           (when (nil? v)
+             (log/error (str "string template key not found: " {:key n :msg-str msg-str})))
+           (string/replace k (str ":" n) (or v (str ":" n))))))
+      (string/replace "<colon>" ":")))
 
 ;;
 

@@ -10,7 +10,7 @@
         {:message "Function ':op' not found"})
 
 (deferr disallowed-nothing [data]
-        {:message "Disallowed ':Nothing' expression: :nothing-arg"})
+        {:message "Disallowed '<colon>Nothing' expression: :nothing-arg"})
 
 (deferr no-matching-signature [data]
         {:message "No matching signature for ':op'"})
@@ -52,10 +52,10 @@
         {:message "Binding target for 'let' must not start with '$': :sym"})
 
 (deferr cannot-bind-unset [data]
-        {:message "Disallowed binding ':sym' to :Unset value; just use '$no-value'"})
+        {:message "Disallowed binding ':sym' to <colon>Unset value; just use '$no-value'"})
 
 (deferr cannot-bind-nothing [data]
-        {:message "Disallowed binding ':sym' to :Nothing value; perhaps move to body of 'let'"})
+        {:message "Disallowed binding ':sym' to <colon>Nothing value; perhaps move to body of 'let'"})
 
 (deferr invalid-binding-form [data]
         {:message "Binding form for ':op' must have one variable and one collection"})
