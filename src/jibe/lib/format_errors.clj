@@ -16,7 +16,7 @@
 (def trace-atom (atom []))
 
 (defn extract-system-name-from-err-id [err-id]
-  (second (re-matches #"([a-z]+)-[a-z-]+" (name err-id))))
+  (symbol (namespace err-id)))
 
 (defn update-fields [fields new-fields]
   (loop [m fields
@@ -34,14 +34,16 @@
          [t & more-t] @trace-atom]
     (let [[err-defs' fields' field-index' systems']
           (condp = (second t)
-            :deferr (let [[ns-name _ err-id message] t]
+            :deferr (let [[ns-name _ err-id message] t
+                          system-name (last (string/split (str ns-name) #"\."))
+                          err-id (symbol system-name (str err-id))]
                       (when (contains? err-defs err-id)
                         (throw (ex-info "duplicate err-id" {:err-id err-id})))
                       [(assoc err-defs err-id {:message message
                                                :fields #{}})
                        fields
                        field-index
-                       (update systems (extract-system-name-from-err-id err-id) #(if % (conj % ns-name) #{ns-name}))])
+                       (update systems system-name #(if % (conj % ns-name) #{ns-name}))])
 
             :throw-err (let [[ns-name _ err-id data] t
                              new-fields (if (map? data)
@@ -73,7 +75,8 @@
          :systems systems'}))))
 
 (defn assemble-err-ids []
-  (update-vals (group-by extract-system-name-from-err-id (keys (:err-defs (analyze-err-defs)))) (comp vec sort)))
+  (-> (group-by extract-system-name-from-err-id (keys (:err-defs (analyze-err-defs))))
+      (update-vals (comp vec sort (partial map (comp symbol name))))))
 
 (defn find-string [x]
   (cond
@@ -109,7 +112,7 @@
 
 (defmacro deferr [err-id [data-arg] data]
   (when trace-err-defs?
-    (let [t [(str (.name *ns*)) :deferr err-id (:message data)]]
+    (let [t [(ns-name *ns*) :deferr err-id (:message data)]]
       (swap! trace-atom conj t)))
   `(defn ~err-id [~data-arg]
      (merge ~data-arg
