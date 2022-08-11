@@ -161,7 +161,7 @@
         _ (when-not (halite-types/namespaced-keyword? t)
             (throw-err (h-err/invalid-type-value {error-key inst})))
         spec-info (or (halite-envs/lookup-spec (:senv ctx) t)
-                      (throw-err (h-err/resource-spec-not-found {:spec-id t
+                      (throw-err (h-err/resource-spec-not-found {:spec-id (symbol t)
                                                                  error-key inst})))
         field-types (:spec-vars spec-info)
         fields (set (keys field-types))
@@ -512,7 +512,7 @@
       (when-not (and (keyword? index) (halite-types/bare? index))
         (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
-        (throw-err (h-err/variables-not-in-spec {:form form, :invalid-vars #{(symbol index)}})))
+        (throw-err (h-err/variables-not-in-spec {:form form, :invalid-vars [(symbol index)]})))
       (get field-types index))
 
     :else (throw-err (h-err/invalid-lookup-target {:form form, :actual-type subexpr-type}))))

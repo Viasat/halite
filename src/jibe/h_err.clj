@@ -2,7 +2,9 @@
 ;; Licensed under the MIT license
 
 (ns jibe.h-err
-  (:require [jibe.lib.format-errors :refer [deferr]]))
+  (:require [jibe.lib.format-errors :refer [deferr merge-field-map]]
+            [schema.core :as s])
+  (:import [jibe.lib.format_errors Text]))
 
 (set! *warn-on-reflection* true)
 
@@ -161,3 +163,37 @@
 
 (deferr invalid-refinement-expression [data]
         {:message "Invalid refinement expression: :form"})
+
+(merge-field-map {:actual-arg-count s/Int
+                  :actual-count s/Int
+                  :coll-type-string s/Symbol
+                  :constraint-name String
+                  :count-limit s/Int
+                  :element (s/conditional symbol? s/Symbol
+                                          :else s/Int)
+                  :entry-spec-id (s/maybe s/Keyword)
+                  :expected-arg-count s/Int
+                  :expected-type s/Keyword
+                  :expected-type-description Text
+                  :exponent s/Int
+                  :instruction {s/Any s/Any}
+                  :instruction-time String
+                  :invalid-vars [s/Symbol]
+                  :just-keys [s/Keyword]
+                  :last-modified-time String
+                  :limit s/Int
+                  :minimum-arg-count s/Int
+                  :missing-vars [s/Symbol]
+                  :object-type (s/conditional symbol? s/Symbol
+                                              :else String)
+                  :position-text Text
+                  :reachable [#{s/Keyword}]
+                  :spec-error-str String
+                  :spec-id s/Symbol
+                  :target-type s/Symbol
+                  :type s/Symbol
+                  :type-string s/Symbol
+                  :underlying-error-message String
+                  :variable s/Symbol
+                  :violated-constraints [s/Symbol]
+                  :workspace-name s/Keyword})

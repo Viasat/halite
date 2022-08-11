@@ -73,7 +73,7 @@
       (when-not (and (keyword? index) (halite-types/bare? index))
         (throw-err (l-err/index-not-variable-name {:form form, :index-form index})))
       (when-not (contains? field-types index)
-        (throw-err (l-err/no-such-variable {:form form, :index-form index, :spec-id (halite-types/spec-id subexpr-type)})))
+        (throw-err (l-err/no-such-variable {:form form, :index-form index, :spec-id (symbol (halite-types/spec-id subexpr-type))})))
       (get field-types index))
 
     :else (throw-err (l-err/invalid-lookup-target {:form form, :actual-type subexpr-type}))))

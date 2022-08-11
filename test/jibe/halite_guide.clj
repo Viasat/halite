@@ -6940,7 +6940,7 @@
   (h
    {:$type :my/Spec$v1}
    [:throws
-    "h-err/resource-spec-not-found 0-0 : Resource spec not found: :my/Spec$v1"])
+    "h-err/resource-spec-not-found 0-0 : Resource spec not found: my/Spec$v1"])
   (hc
    [(workspace :my #:my{:Spec []} (spec :Spec :concrete))]
    :my
@@ -6968,7 +6968,7 @@
    :other
    [{:$type :my/Spec$v1, :p 1, :n -1}
     [:throws
-     "h-err/resource-spec-not-found 0-0 : Resource spec not found: :my/Spec$v1"]])
+     "h-err/resource-spec-not-found 0-0 : Resource spec not found: my/Spec$v1"]])
   (hc
    :basic
    :my

@@ -15,6 +15,60 @@
 
 (def trace-atom (atom []))
 
+(def runtime-trace-atom (atom []))
+
+(defn get-type-name [v]
+  (cond
+    (nil? v) 'nil
+    (vector? v) (->> v
+                     (map get-type-name)
+                     set
+                     vec)
+    (set? v) (->> v
+                  (map get-type-name)
+                  set)
+    (seq? v) (->> v
+                  (map get-type-name)
+                  set
+                  (apply list))
+    :default (symbol (.getName (class v)))))
+
+(defn analyze-runtime-usage []
+  (loop [[t & more-t] @runtime-trace-atom
+         type-by-err-id {}
+         type-by-field {}]
+    (if t
+      (let [[field-name err-id _ data-value] t
+            data-type (get-type-name data-value)]
+        (recur more-t
+               (update-in type-by-err-id
+                          [(symbol (namespace err-id)) (symbol (name err-id)) field-name]
+                          #(if % (conj % data-type) #{data-type}))
+               (update-in type-by-field
+                          [field-name]
+                          #(if % (conj % data-type) #{data-type}))))
+      [type-by-err-id
+       type-by-field])))
+
+(def field-map-atom (atom {}))
+
+(defn merge-field-map [field-map]
+  (swap! field-map-atom merge field-map))
+
+(def ^:dynamic *throw-on-schema-failure* false)
+
+(defn check-data [data-map]
+  (->> data-map
+       (map (fn [[k v]]
+              (when-let [field-schema (get @field-map-atom k)]
+                (when-let [schema-failure (s/check field-schema v)]
+                  (log/error (str "exception data of invalid type for field '" k "': " (pr-str schema-failure)))
+                  (when *throw-on-schema-failure*
+                    (throw (ex-info "schema failure on exception data" {:key k
+                                                                        :value v
+                                                                        :schema-failure schema-failure})))))))
+       dorun))
+
 (defn extract-system-name-from-err-id [err-id]
   (symbol (namespace err-id)))
 
@@ -127,7 +181,7 @@
       (dissoc :message)
       (assoc :message-template (:message data))))
 
-(defn format-msg* [msg-str data-map]
+(defn format-msg* [err-id msg-str data-map original-data-map]
   (-> msg-str
       (string/replace
        #"(?:^|\s|[^a-zA-Z0-9]):([a-zA-Z][a-zA-Z0-9-]*)"
@@ -135,6 +189,15 @@
          (let [v (get data-map (keyword n))]
            (when (nil? v)
              (log/error (str "string template key not found: " {:key n :msg-str msg-str})))
+           (when trace-err-defs?
+             (let [original-v (get original-data-map (keyword n))
+                   t [(keyword n)
+                      (symbol err-id)
+                      (if (nil? original-v)
+                        'nil
+                        (symbol (.getName (class original-v))))
+                      original-v]]
+               (swap! runtime-trace-atom conj t)))
            (string/replace k (str ":" n) (or v (str ":" n))))))
       (string/replace "\\colon" ":")))
 
@@ -179,8 +242,8 @@
                       (pr-str v))]))
        (apply hash-map)))
 
-(defn format-msg [msg-str data-map]
-  (format-msg* msg-str (format-data-map data-map)))
+(defn format-msg [err-id msg-str data-map]
+  (format-msg* err-id msg-str (format-data-map data-map) data-map))
 
 (defn site-code [^Namespace ns form]
   (str (mod (.hashCode (str (ns-name ns))) 1000) "-" (:line (meta form))))
@@ -194,9 +257,13 @@
        (swap! trace-atom conj t)))
    `(let [data# ~data
           site-code# ~(site-code *ns* &form)]
+      (check-data data#)
       (throw (ex-info (str (namespace (:err-id data#)) "/" (name (:err-id data#)) " " (if *squash-throw-site*
                                                                                         "0-0"
-                                                                                        site-code#) " : " (format-msg (:message data#) data#))
+                                                                                        site-code#) " : " (format-msg
+                                                                                                           (:err-id data#)
+                                                                                                           (:message data#)
+                                                                                                           data#))
                       (assoc (extend-err-data data#)
                              :throw-site (if *squash-throw-site*
                                            "0-0"
@@ -207,9 +274,13 @@
        (swap! trace-atom conj t)))
    `(let [data# ~data
           site-code# ~(site-code *ns* &form)]
+      (check-data data#)
       (throw (ex-info (str (namespace (:err-id data#)) "/" (name (:err-id data#)) " " (if *squash-throw-site*
                                                                                         "0-0"
-                                                                                        site-code#) " : " (format-msg (:message data#) data#))
+                                                                                        site-code#) " : " (format-msg
+                                                                                                           (:err-id data#)
+                                                                                                           (:message data#)
+                                                                                                           data#))
                       (assoc (extend-err-data data#)
                              :throw-site (if *squash-throw-site*
                                            "0-0"
