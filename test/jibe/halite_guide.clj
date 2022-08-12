@@ -10081,6 +10081,11 @@
           :refinement-name
           :jibe.data.model/spec-name]))))))
 
+(deftest test-reserved-words
+  (h :Unset [:throws "h-err/syntax-error 0-0 : Syntax error"])
+  (h $no-value :Unset :Unset "<$no-value>" "Unset")
+  (h $this [:throws "h-err/undefined-symbol 0-0 : Undefined: '$this'"]))
+
 ;; deftest-end
 
 (defn- update-expected-results []
