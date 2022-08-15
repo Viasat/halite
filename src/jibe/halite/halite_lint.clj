@@ -181,6 +181,8 @@
 (s/defn ^:private type-check-map :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
+    (when (halite-types/maybe-type? body-type)
+      (throw-err (l-err/must-produce-value {:form expr})))
     [(first coll-type) (if (halite-types/subtype? coll-type halite-types/empty-coll)
                          :Nothing
                          body-type)]))

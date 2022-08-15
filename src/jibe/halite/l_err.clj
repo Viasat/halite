@@ -131,3 +131,6 @@
 
 (deferr syntax-error [data]
         {:message "Syntax error"})
+
+(deferr must-produce-value [data]
+        {:message "Expression provided to 'map' must produce a value :form"})

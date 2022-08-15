@@ -409,6 +409,7 @@
                           'filter
                           'first
                           'get
+                          'get-in
                           'if
                           'if-value
                           'if-value-let
@@ -627,6 +628,8 @@
 (s/defn ^:private type-check-map :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
+    (when (halite-types/maybe-type? body-type)
+      (throw-err (h-err/must-produce-value {:form expr})))
     [(first coll-type) (if (halite-types/subtype? coll-type halite-types/empty-coll)
                          :Nothing
                          body-type)]))
@@ -1014,6 +1017,8 @@
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
                     'map (let [[coll result] (eval-comprehend ctx (rest expr))]
+                           (when (some #(= :Unset %) result)
+                             (throw-err (h-err/must-produce-value {:form expr})))
                            (into (empty coll) result))
                     'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
                               (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))

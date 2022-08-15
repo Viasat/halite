@@ -164,6 +164,9 @@
 (deferr invalid-refinement-expression [data]
         {:message "Invalid refinement expression: :form"})
 
+(deferr must-produce-value [data]
+        {:message "Expression provided to 'map' must produce a value :form"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol

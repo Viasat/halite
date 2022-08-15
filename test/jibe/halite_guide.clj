@@ -487,6 +487,9 @@
    [:throws
     "h-err/no-matching-signature 0-0 : No matching signature for 'expt'"])
   (h (expt 2 0) :Integer 1 "expt(2, 0)" "1")
+  (h (expt #d "1.1" 2) [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'expt'"])
+  (h (expt 3 #d "1.1") [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'expt'"])
+  (h (expt 3 #d "0.1" "1.1") [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'expt'"])
   (h
    (expt 2 -1)
    :Integer
@@ -1165,7 +1168,9 @@
    #{}
    "#{\"a\"}.intersection(#{2, 3})"
    "#{}")
-  (h (union #{} #{}) [:Set :Nothing] #{} "#{}.union(#{})" "#{}")
+  (h (intersection #{} #{}) [:Set :Nothing] #{} "#{}.intersection(#{})" "#{}")
+  (h (intersection #{} #{} #{}) [:Set :Nothing] #{} "#{}.intersection(#{}, #{})" "#{}")
+  (h (intersection #{1 3 2} #{4 3 2} #{4 3}) [:Set :Integer] #{3} "#{1, 2, 3}.intersection(#{2, 3, 4}, #{3, 4})" "#{3}")
   (h
    (union #{2})
    [:throws
@@ -1189,6 +1194,7 @@
    #{3}
    "#{1, 2, 3}.difference(#{1, 2})"
    "#{3}")
+  (h (difference #{1 3 2} #{1 2} #{}) [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'difference': expected 2, but got 3"])
   (h
    (difference #{1 2})
    [:throws
@@ -5547,6 +5553,7 @@
    "[[], [1], [\"a\", true]]"
    "[[], [1], [\"a\", true]]")
   (h [[1] []] [:Vec [:Vec :Integer]] [[1] []] "[[1], []]" "[[1], []]")
+  (h (contains? [1 2 3] 1) [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'contains?'"])
   (h
    (first [])
    [:throws
@@ -5608,6 +5615,11 @@
   (h (range 1) [:Vec :Integer] [0] "range(1)" "[0]")
   (h (range 1 2) [:Vec :Integer] [1] "range(1, 2)" "[1]")
   (h (range 1 2 3) [:Vec :Integer] [1] "range(1, 2, 3)" "[1]")
+  (h (range 10 15 1) [:Vec :Integer] [10 11 12 13 14] "range(10, 15, 1)" "[10, 11, 12, 13, 14]")
+  (h (range 10 15 2) [:Vec :Integer] [10 12 14] "range(10, 15, 2)" "[10, 12, 14]")
+  (h (range 10 15 5) [:Vec :Integer] [10] "range(10, 15, 5)" "[10]")
+  (h (range 10 15 6) [:Vec :Integer] [10] "range(10, 15, 6)" "[10]")
+
   (h
    (conj [10 20] 30)
    [:Vec :Integer]
@@ -5642,6 +5654,7 @@
    "[10].conj(1, 2, 3)"
    "[10, 1, 2, 3]")
   (h (get [10 20] 0) :Integer 10 "[10, 20][0]" "10")
+  (h (get [10 20] (+ 1 0)) :Integer 20 "[10, 20][(1 + 0)]" "20")
   (h
    (get [] 0)
    [:throws
@@ -6884,6 +6897,14 @@
   (hc
    :basic
    :my
+   [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)] (when false 1) (when false 2)) [:Maybe :Integer] :Unset "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(when(false) {1})} else {(when(false) {2})})" "Unset"])
+  (hc
+   :basic
+   :my
+   [(if-value-let [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 4} :o)] (when false 1) (when false 2)) [:Maybe :Integer] :Unset "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, o: 4, p: 2}.o ) {(when(false) {1})} else {(when(false) {2})})" "Unset"])
+  (hc
+   :basic
+   :my
    [(when-value-let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
      (div 5 0))
@@ -6920,6 +6941,11 @@
    :Unset
    "(when(false) {(5 / 0)})"
    "Unset")
+  (h (if true
+       (when false (div 5 0))
+       (when false (div 6 0)))
+     [:Maybe :Integer]
+     :Unset "(if(true) {(when(false) {(5 / 0)})} else {(when(false) {(6 / 0)})})" "Unset")
   (h
    (when true (div 5 0))
    [:Maybe :Integer]
@@ -7163,6 +7189,20 @@
     {:$type :spec/A$v1, :p 1, :n -1}
     "(if(true) {(valid {$type: spec/A$v1, n: -1, p: 1})} else {{$type: spec/A$v1, n: -2, p: 1}})"
     "{$type: spec/A$v1, n: -1, p: 1}"])
+
+  (hc
+   :basic-2
+   :spec
+   [(get {:$type :spec/A$v1, :p 1, :n -1} :o)
+    [:Maybe :Integer]
+    :Unset
+    "{$type: spec/A$v1, n: -1, p: 1}.o" "Unset"])
+  (hc
+   :basic-2
+   :spec
+   [(valid (get {:$type :spec/A$v1, :p 1, :n -1} :o))
+    [:throws "h-err/arg-type-mismatch 0-0 : Argument to 'valid' must be an instance of known type"]])
+
   (hc
    :basic-2
    :spec
@@ -9009,6 +9049,13 @@
    [2 3]
    "map(x in [#{1, 2}, #{3, 4, 5}])x.count()"
    "[2, 3]")
+  (h (map [x [1]] (when false 2))
+     [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value map, [x [1]], (when false 2)"])
+  (h (map [x #{1}] (when false 2))
+     [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value map, [x #{1}], (when false 2)"])
+  (h (map [x [1]] $no-value)
+     [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value map, [x [1]], $no-value"])
+
   (h
    (map [x [1 "a"]] x)
    [:Vec :Value]
@@ -9411,6 +9458,14 @@
    4
    "reduce( a = 0; x in [1, 2, 3, 4] ) { x }"
    "4")
+  (h (reduce [a 0] [x [1 2 3 4]]
+             (when false 1))
+     [:Maybe :Integer]
+     :Unset "reduce( a = 0; x in [1, 2, 3, 4] ) { (when(false) {1}) }" "Unset")
+  (h (reduce [a 0] [x [1 2 3 4]] $no-value)
+     :Unset
+     :Unset
+     "reduce( a = 0; x in [1, 2, 3, 4] ) { <$no-value> }" "Unset")
   (h
    (reduce [a 0] [x [[1 2] [3]]] (+ a (count x)))
    :Integer
@@ -9570,6 +9625,12 @@
    "filter(x in (if(false) {[1, 2]} else {#{1, 2}}))(x > 1)"
    "#{2}"))
 
+(deftest test-concat
+  (h (concat "a" "b") [:throws "h-err/arg-type-mismatch 0-0 : First argument to 'concat' must be a set or vector"])
+  (h (concat #{1} [2]) [:Set :Integer] #{1 2} "#{1}.concat([2])" "#{1, 2}")
+  (h (concat [2] #{1}) [:throws "h-err/arg-types-both-vectors 0-0 : When first argument to 'concat' is a vector, second argument must also be a vector"])
+  (h (concat #{} [1 2]) [:Set :Integer] #{1 2} "#{}.concat([1, 2])" "#{1, 2}"))
+
 (deftest
   test-let
   (h
@@ -9578,6 +9639,7 @@
    3
    "{ x = 1; y = (x + 1); z = (y + 1); z }"
    "3")
+  (h (let [x 1] (when false 1)) [:Maybe :Integer] :Unset "{ x = 1; (when(false) {1}) }" "Unset")
   (h
    (let [x 1 x (inc x) x (inc x)] x)
    :Integer
@@ -9598,7 +9660,8 @@
   (h
    (let [x 1 y (inc x) z (inc y)] x z)
    [:throws
-    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'let': expected 2, but got 3"]))
+    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'let': expected 2, but got 3"])
+  (h (let [] 1) :Integer 1 "{ 1 }" "1"))
 
 (deftest
   test-fixed-decimal
@@ -9950,7 +10013,10 @@
    [:Set :Value]
    #{1 #d "1.0" #d "1.00"}
    "#{#d \"1.0\", #d \"1.00\", 1}"
-   "#{#d \"1.0\", #d \"1.00\", 1}"))
+   "#{#d \"1.0\", #d \"1.00\", 1}")
+
+  (h (dec #d "0.1") [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'dec'"])
+  (h (inc #d "0.1") [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'inc'"]))
 
 (deftest
   test-function-call-limits
@@ -10085,6 +10151,74 @@
   (h :Unset [:throws "h-err/syntax-error 0-0 : Syntax error"])
   (h $no-value :Unset :Unset "<$no-value>" "Unset")
   (h $this [:throws "h-err/undefined-symbol 0-0 : Undefined: '$this'"]))
+
+(deftest test-get-in
+  (h (get-in [10 20 30] [1]) :Integer 20 "[10, 20, 30][1]" "20")
+  (h (get-in [[10 11 12] [20 21] [30 31 32 33]] [2 3]) :Integer 33 "[[10, 11, 12], [20, 21], [30, 31, 32, 33]][2][3]" "33")
+  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
+  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
+  (h (let [x 0] (get-in [10 20 30] [(+ x 1)])) :Integer 20 "{ x = 0; [10, 20, 30][(x + 1)] }" "20")
+  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
+
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:n "Integer"])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :n 1} [:n]) :Integer 1 "{$type: spec/T$v1, n: 1}.n" "1"])
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"]])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 1]) :Integer 20 "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[1]" "20"]))
+
+(deftest test-when
+  (h (when true 0) [:Maybe :Integer] 0 "(when(true) {0})" "0")
+  (h (when true 0 1) [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'when': expected 2, but got 3"])
+  (h (when 1 true) [:throws "h-err/arg-type-mismatch 0-0 : First argument to 'when' must be boolean"]))
+
+(deftest test-when-value
+  (hc
+   :basic
+   :my
+   [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
+      (when-value o (+ o 2)))
+    [:Maybe :Integer]
+    :Unset
+    "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(o + 2)}) }" "Unset"])
+  (hc
+   :basic
+   :my
+   [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)]
+      (when-value o (+ o 2)))
+    [:Maybe :Integer]
+    5
+    "{ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (whenValue(o) {(o + 2)}) }" "5"]))
+
+(deftest test-when-value-let
+  (hc
+   :basic
+   :my
+   [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
+      (when-value-let [x (when-value o (+ o 2))]
+                      (inc x)))
+    [:Maybe :Integer]
+    :Unset
+    "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValueLet ( x = (whenValue(o) {(o + 2)}) ) {(x + 1)}) }"
+    "Unset"])
+  (hc
+   :basic
+   :my
+   [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)]
+      (when-value-let [x (when-value o (+ o 2))]
+                      (inc x)))
+    [:Maybe :Integer]
+    6
+    "{ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (whenValueLet ( x = (whenValue(o) {(o + 2)}) ) {(x + 1)}) }"
+    "6"]))
 
 ;; deftest-end
 
