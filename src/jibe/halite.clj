@@ -528,6 +528,8 @@
   [ctx :- TypeContext, form]
   (arg-count-exactly 2 form)
   (let [[_ subexpr indexes] form]
+    (when-not (vector? indexes)
+      (throw-err (h-err/get-in-path-must-be-vector-literal {:form form})))
     (reduce (partial type-check-lookup ctx form) (type-check* ctx subexpr) indexes)))
 
 (s/defn ^:private type-check-equals :- halite-types/HaliteType

@@ -131,3 +131,9 @@
 
 (deferr syntax-error [data]
         {:message "Syntax error"})
+
+(deferr let-bindings-empty [data]
+        {:message "Bindings form of 'let' cannot be empty in :form"})
+
+(deferr get-in-path-cannot-be-empty [data]
+        {:message "The path parameter in 'get-in' cannot be empty: :form"})

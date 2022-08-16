@@ -237,7 +237,8 @@
 (defn format-data-map [data-map]
   (->> data-map
        (mapcat (fn [[k v]]
-                 [k (if (or (seq? v) (vector? v) (set? v))
+                 [k (if (and (not (= :form k))
+                             (or (seq? v) (vector? v) (set? v)))
                       (string/join ", " (map pr-str v))
                       (pr-str v))]))
        (apply hash-map)))

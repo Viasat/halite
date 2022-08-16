@@ -267,7 +267,8 @@
       '(get a :foo/bar) #"must be a variable name"
       '(get a 12) #"must be a variable name"
       '(get a :b) #"Variables not defined on spec: b"
-      '(get #{} 1) #"must be an instance of known type or non-empty vector")))
+      '(get #{} 1) #"must be an instance of known type or non-empty vector"
+      '(let [x [1]] (get-in c x)) #"must be a vector literal")))
 
 (deftest get-eval-tests
   (let [c {:$type :ws/C$v1
@@ -346,7 +347,6 @@
   (are [expr etype]
        (= etype (halite-lint/type-check senv tenv expr))
 
-    '(let [] 1) :Integer
     '(let [x (+ 1 2)
            y [x]]
        y) [:Vec :Integer]

@@ -88,6 +88,8 @@
   [ctx :- TypeContext, form]
   (halite/arg-count-exactly 2 form)
   (let [[_ subexpr indexes] form]
+    (when (empty? indexes)
+      (throw-err (l-err/get-in-path-cannot-be-empty {:form form})))
     (reduce (partial type-check-lookup ctx form) (type-check* ctx subexpr) indexes)))
 
 (s/defn ^:private type-check-equals :- halite-types/HaliteType
@@ -134,6 +136,8 @@
   [ctx :- TypeContext, expr :- s/Any]
   (halite/arg-count-exactly 2 expr)
   (let [[bindings body] (rest expr)]
+    (when (zero? (count bindings))
+      (throw-err (l-err/let-bindings-empty {:expr expr})))
     (type-check*
      (reduce
       (fn [ctx [sym body]]

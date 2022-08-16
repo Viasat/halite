@@ -355,6 +355,7 @@
    (if true false)
    [:throws
     "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'if': expected 3, but got 2"])
+  (h (if true $no-value $no-value) :Unset :Unset "(if(true) {<$no-value>} else {<$no-value>})" "Unset")
   (h
    (if-value true false true)
    [:throws
@@ -5412,6 +5413,8 @@
    false
    "every?(x in #{3, 4})false"
    "false")
+  (h (every? [x #{4 3}] $no-value) [:throws "h-err/not-boolean-body 0-0 : Body expression in 'every?' must be boolean"])
+  (h (every? [x #{4 3}] (when (> x 3) x)) [:throws "h-err/not-boolean-body 0-0 : Body expression in 'every?' must be boolean"])
   (h
    (every?)
    [:throws
@@ -6759,6 +6762,8 @@
 
 (deftest
   test-vector-any?
+  (h (any? [x []] $no-value) [:throws "h-err/not-boolean-body 0-0 : Body expression in 'any?' must be boolean"])
+  (h (any? [x []] (when true false)) [:throws "h-err/not-boolean-body 0-0 : Body expression in 'any?' must be boolean"])
   (h (any? [x []] false) :Boolean false "any?(x in [])false" "false")
   (h (any? [x []] true) :Boolean false "any?(x in [])true" "false")
   (h
@@ -6955,7 +6960,9 @@
   (hc
    :basic
    :my
-   [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2})) [:throws "h-err/arg-type-mismatch 0-0 : Argument to 'valid?' must be an instance of known type"]]))
+   [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2})) [:throws "h-err/arg-type-mismatch 0-0 : Argument to 'valid?' must be an instance of known type"]])
+  (h (when true $no-value) :Unset :Unset "(when(true) {<$no-value>})" "Unset")
+  (h (when (if true true false) $no-value) :Unset :Unset "(when((if(true) {true} else {false})) {<$no-value>})" "Unset"))
 
 (deftest
   test-instances
@@ -9049,12 +9056,9 @@
    [2 3]
    "map(x in [#{1, 2}, #{3, 4, 5}])x.count()"
    "[2, 3]")
-  (h (map [x [1]] (when false 2))
-     [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value map, [x [1]], (when false 2)"])
-  (h (map [x #{1}] (when false 2))
-     [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value map, [x #{1}], (when false 2)"])
-  (h (map [x [1]] $no-value)
-     [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value map, [x [1]], $no-value"])
+  (h (map [x [1]] (when false 2)) [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value: (map [x [1]] (when false 2))"])
+  (h (map [x #{1}] (when false 2)) [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value: (map [x #{1}] (when false 2))"])
+  (h (map [x [1]] $no-value) [:throws "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value: (map [x [1]] $no-value)"])
 
   (h
    (map [x [1 "a"]] x)
@@ -9188,6 +9192,8 @@
    [:throws
     "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'filter': expected 2, but got 3"])
   (h (filter 1 [x []]) [:throws "nth not supported on this type: Long"])
+  (h (filter [x []] $no-value) [:throws "h-err/not-boolean-body 0-0 : Body expression in 'filter' must be boolean"])
+  (h (filter [x [true false]] (when x x)) [:throws "h-err/not-boolean-body 0-0 : Body expression in 'filter' must be boolean"])
   (hc
    [(workspace
      :spec
@@ -9661,7 +9667,9 @@
    (let [x 1 y (inc x) z (inc y)] x z)
    [:throws
     "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'let': expected 2, but got 3"])
-  (h (let [] 1) :Integer 1 "{ 1 }" "1"))
+  (h (let [] 1) [:throws "l-err/let-bindings-empty 0-0 : Bindings form of 'let' cannot be empty in :form"])
+  (h (let [x 1] $no-value) :Unset :Unset "{ x = 1; <$no-value> }" "Unset")
+  (h (let [x 1] (when (> x 1) x)) [:Maybe :Integer] :Unset "{ x = 1; (when((x > 1)) {x}) }" "Unset"))
 
 (deftest
   test-fixed-decimal
@@ -10153,12 +10161,15 @@
   (h $this [:throws "h-err/undefined-symbol 0-0 : Undefined: '$this'"]))
 
 (deftest test-get-in
+  (h (get-in [10 20 30] []) [:throws "l-err/get-in-path-cannot-be-empty 0-0 : The path parameter in 'get-in' cannot be empty: (get-in [10 20 30] [])"])
   (h (get-in [10 20 30] [1]) :Integer 20 "[10, 20, 30][1]" "20")
   (h (get-in [[10 11 12] [20 21] [30 31 32 33]] [2 3]) :Integer 33 "[[10, 11, 12], [20, 21], [30, 31, 32, 33]][2][3]" "33")
   (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
   (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
   (h (let [x 0] (get-in [10 20 30] [(+ x 1)])) :Integer 20 "{ x = 0; [10, 20, 30][(x + 1)] }" "20")
   (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
+  (h (get-in [10 20 30] (if true [1] [2])) [:throws "h-err/get-in-path-must-be-vector-literal 0-0 : The path parameter in 'get-in' must be a vector literal: (get-in [10 20 30] (if true [1] [2]))"])
+  (h (let [x [1]] (get-in [10 20 30] x)) [:throws "h-err/get-in-path-must-be-vector-literal 0-0 : The path parameter in 'get-in' must be a vector literal: (get-in [10 20 30] x)"])
 
   (hc
    [(workspace
@@ -10173,7 +10184,38 @@
      #:spec{:T []}
      (spec :T :concrete (variables [:ns ["Integer"]])))]
    :spec
-   [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 1]) :Integer 20 "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[1]" "20"]))
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 1]) :Integer 20 "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[1]" "20"])
+  (hc
+   :basic
+   :my
+   [(get-in [{:$type :my/Spec$v1, :n -3, :p 2}] [0 :o]) [:Maybe :Integer] :Unset "[{$type: my/Spec$v1, n: -3, p: 2}][0].o" "Unset"])
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"] :optional]
+                                   [:x "Integer"]
+                                   [:y "Integer" :optional])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:y]) [:Maybe :Integer] :Unset "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.y" "Unset"])
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"] :optional]
+                                   [:x "Integer"]
+                                   [:y "Integer" :optional])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:x]) :Integer 9 "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.x" "9"])
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"] :optional]
+                                   [:x "Integer"]
+                                   [:y "Integer" :optional])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:ns 0]) [:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]]))
 
 (deftest test-when
   (h (when true 0) [:Maybe :Integer] 0 "(when(true) {0})" "0")

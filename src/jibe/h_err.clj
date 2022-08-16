@@ -165,7 +165,10 @@
         {:message "Invalid refinement expression: :form"})
 
 (deferr must-produce-value [data]
-        {:message "Expression provided to 'map' must produce a value :form"})
+        {:message "Expression provided to 'map' must produce a value: :form"})
+
+(deferr get-in-path-must-be-vector-literal [data]
+        {:message "The path parameter in 'get-in' must be a vector literal: :form"})
 
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
