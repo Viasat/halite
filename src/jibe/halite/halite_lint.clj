@@ -137,7 +137,7 @@
   (halite/arg-count-exactly 2 expr)
   (let [[bindings body] (rest expr)]
     (when (zero? (count bindings))
-      (throw-err (l-err/let-bindings-empty {:expr expr})))
+      (throw-err (l-err/let-bindings-empty {:form expr})))
     (type-check*
      (reduce
       (fn [ctx [sym body]]

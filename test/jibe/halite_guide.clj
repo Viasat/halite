@@ -9667,7 +9667,7 @@
    (let [x 1 y (inc x) z (inc y)] x z)
    [:throws
     "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'let': expected 2, but got 3"])
-  (h (let [] 1) [:throws "l-err/let-bindings-empty 0-0 : Bindings form of 'let' cannot be empty in :form"])
+  (h (let [] 1) [:throws "l-err/let-bindings-empty 0-0 : Bindings form of 'let' cannot be empty in: (let [] 1)"])
   (h (let [x 1] $no-value) :Unset :Unset "{ x = 1; <$no-value> }" "Unset")
   (h (let [x 1] (when (> x 1) x)) [:Maybe :Integer] :Unset "{ x = 1; (when((x > 1)) {x}) }" "Unset"))
 
