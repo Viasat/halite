@@ -191,33 +191,21 @@
 
 (s/defn ^:private type-check-filter :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
-  (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
-    (when (not= :Boolean body-type)
-      (throw-err (l-err/body-must-be-boolean {:op 'filter :form expr})))
+  (let [{:keys [coll-type]} (type-check-comprehend ctx expr)]
     coll-type))
 
 (s/defn ^:private type-check-sort-by :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
-  (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
-    (when (not= :Integer body-type)
-      (throw-err (l-err/body-must-be-integer {:body-type body-type :form expr})))
+  (let [{:keys [coll-type]} (type-check-comprehend ctx expr)]
     (halite-types/vector-type (halite-types/elem-type coll-type))))
 
 (s/defn ^:private type-check-reduce :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (halite/arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
-    (when-not (and (symbol? acc) (halite-types/bare? acc))
-      (throw-err (l-err/invalid-accumulator {:op op :form expr :accumulator acc})))
-    (when-not (and (symbol? elem) (halite-types/bare? elem))
-      (throw-err (l-err/invalid-element-binding-target {:op op :form expr :element elem})))
-    (when (= acc elem)
-      (throw-err (l-err/cannot-use-same-symbol {:form expr :accumulator acc :element elem})))
     (let [init-type (type-check* ctx init)
           coll-type (type-check* ctx coll)
           et (halite-types/elem-type coll-type)]
-      (when-not (halite-types/subtype? coll-type (halite-types/vector-type :Value))
-        (throw-err (l-err/reduce-needs-vector {:form expr :actual-coll-type coll-type})))
       (type-check* (update ctx :tenv #(-> %
                                           (halite-envs/extend-scope acc init-type)
                                           (halite-envs/extend-scope elem et)))
