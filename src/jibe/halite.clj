@@ -332,6 +332,13 @@
                                                :Boolean])
                                             (range 1 (inc fixed-decimal/max-scale))))
 
+(def ^:private decimal-sigs-collections (mapcat (fn [s]
+                                                  [[(halite-types/set-type (halite-types/decimal-type s))]
+                                                   (halite-types/vector-type (halite-types/decimal-type s))
+                                                   [(halite-types/vector-type (halite-types/decimal-type s))]
+                                                   (halite-types/vector-type (halite-types/decimal-type s))])
+                                                (range 1 (inc fixed-decimal/max-scale))))
+
 (def builtins
   (s/with-fn-validation
     {'+ (apply mk-builtin h+ (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
@@ -361,11 +368,16 @@
      'abs (apply mk-builtin habs (into [[:Integer] :Integer] decimal-sigs-unary))
      'str (mk-builtin (comp (partial check-limit :string-runtime-length) str) [& :String] :String)
      'subset? (mk-builtin set/subset? [(halite-types/set-type :Value) (halite-types/set-type :Value)] :Boolean)
-     'sort (mk-builtin (comp vec sort)
-                       [halite-types/empty-set] halite-types/empty-vector
-                       [halite-types/empty-vector] halite-types/empty-vector
-                       [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
-                       [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer))
+     'sort (apply mk-builtin (fn [expr]
+                               ((if (and (pos? (count expr))
+                                         (fixed-decimal? (first expr)))
+                                  (comp vec (partial sort-by fixed-decimal/sort-key))
+                                  (comp vec sort)) expr))
+                  (into [[halite-types/empty-set] halite-types/empty-vector
+                         [halite-types/empty-vector] halite-types/empty-vector
+                         [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
+                         [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer)]
+                        decimal-sigs-collections))
      'range (mk-builtin (comp vec range)
                         [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer :Integer] (halite-types/vector-type :Integer)
@@ -647,7 +659,8 @@
 (s/defn ^:private type-check-sort-by :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
-    (when (not= :Integer body-type)
+    (when-not (or (= :Integer body-type)
+                  (halite-types/decimal-type? body-type))
       (throw-err (h-err/not-integer-body {:op 'sort-by :form expr :actual-type body-type})))
     (halite-types/vector-type (halite-types/elem-type coll-type))))
 
@@ -1032,7 +1045,12 @@
                                  (throw ex))))
                     'valid? (not= :Unset (eval-in-env (list 'valid (second expr))))
                     'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
-                               (mapv #(nth % 1) (sort (map vector indexes coll))))
+                               (mapv #(nth % 1) (if (and (pos? (count indexes))
+                                                         (fixed-decimal/fixed-decimal? (first indexes)))
+                                                  (sort-by
+                                                   (comp fixed-decimal/sort-key first)
+                                                   (map vector indexes coll))
+                                                  (sort (map vector indexes coll)))))
                     'reduce (eval-reduce ctx expr)
                     (with-exception-data {:form expr}
                       (apply (or (:impl (get builtins (first expr)))

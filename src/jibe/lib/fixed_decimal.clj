@@ -56,6 +56,9 @@
       (throw (NumberFormatException. (str "Character is neither a decimal digit number nore a decimal point: " s))))
     (BigDecimal. ^String s)))
 
+(schema/defn sort-key [f :- FixedDecimal]
+  (fixed->BigDecimal f))
+
 (def max-scale 18)
 
 (schema/defn ^:private valid-scale? :- Boolean
