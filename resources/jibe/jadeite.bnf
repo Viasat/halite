@@ -1,5 +1,4 @@
 expr           = conditional
-params         = symbol          | <'('> (symbol (<','> symbol)* <','>? )? <')'>
 
 conditional    = if-value-let    | ('if' | 'ifValue' ) <'('> expr <')'> expr <'else'> expr
 if-value-let   = when-value-let  | <'ifValueLet'> <'('> symbol <'='> expr <')'> expr <'else'> expr

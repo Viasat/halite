@@ -66,7 +66,6 @@
   "Translate from tree of expression objects created by instaparse (hiccup) into halite"
   [tree]
   (-> (match [tree]
-        [[:lambda [:params & params] body]]  (list 'fn (mapv toh params) (toh body))
         [[:conditional op a b c]]      (list (if (= "if" op) 'if 'if-value) (toh a) (toh b) (toh c))
         [[:if-value-let sym m t e]]    (list 'if-value-let [(toh sym) (toh m)] (toh t) (toh e))
         [[:when-value-let sym m t]]    (list 'when-value-let [(toh sym) (toh m)] (toh t))
