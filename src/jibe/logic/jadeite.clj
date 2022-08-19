@@ -39,7 +39,8 @@
         :else h))))
 
 (defn- unwrap-symbol [s]
-  (if-let [[_ weird-s] (re-matches #"<(\S+)>" s)]
+  (if-let [[_ weird-s] (or (re-matches #"'([^\s']+)'" s)
+                           (re-matches #"<(\S+)>" s))]
     (symbol weird-s)
     (symbol s)))
 
@@ -110,7 +111,7 @@
         [[:type-method a "refinesTo?" & args]]       (list* 'refines-to? (toh a) (map toh args))
         [[:map & args]]          (into {} (map toh) args)
         [[:map-entry "$type" v]] [:$type (toh v)]
-        [[:map-entry [_ k] v]]   [(keyword k) (toh v)]
+        [[:map-entry [_ k] v]]   [(keyword (unwrap-symbol k)) (toh v)]
         [[:set & args]]          (set (map toh args))
         [[:vec & args]]          (vec (map toh args))
         [[:let & args]]          (if (next args)
@@ -189,18 +190,24 @@
     (str op (infix ", " args))
     (call-method op args)))
 
+(defn wrap-string [s]
+  (if (re-find #"[^a-zA-Z0-9]" s)
+    (str "'" s "'")
+    s))
+
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
     (halite/fixed-decimal? x) (str "#d" " \"" (fixed-decimal/string-representation x) "\"")
     (keyword? x) (typename x)
-    (symbol? x) (if (re-find #"[^a-zA-Z0-9./$]" (str x))
-                  (str "<" x ">")
-                  (str x))
+    (symbol? x) (wrap-string (str x))
     (set? x) (infix "#{" ", " "}" x :sort? true)
     (map? x) (infix "{" ", " "}" x :sort? true)
     (map-entry? x) (let [[k v] x]
-                     (str (name k) ": "
+                     (str (if (= :$type k)
+                            (name k)
+                            (wrap-string (name k)))
+                          ": "
                           (if (= :$type k)
                             (typename v)
                             (toj v))))
@@ -221,11 +228,11 @@
                  div (infix " / " args)
                  fn (str (infix a0) " -> " (toj a1))
                  get (if (keyword? a1)
-                       (str (toj a0) '. (name a1))
+                       (str (toj a0) '. (wrap-string (name a1)))
                        (str (toj a0) "[" (toj a1) "]"))
                  get-in (reduce (fn [target index]
                                   (if (keyword? index)
-                                    (str target '. (name index))
+                                    (str target '. (wrap-string (name index)))
                                     (str target "[" (toj index) "]")))
                                 (toj a0)
                                 a1)

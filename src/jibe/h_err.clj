@@ -170,6 +170,18 @@
 (deferr get-in-path-must-be-vector-literal [data]
         {:message "The path parameter in 'get-in' must be a vector literal: :form"})
 
+(deferr invalid-symbol-char [data]
+        {:message "The symbol contains invalid characters: :form"})
+
+(deferr invalid-symbol-length [data]
+        {:message "The symbol is too long"})
+
+(deferr invalid-keyword-char [data]
+        {:message "The keyword contains invalid characters: :form"})
+
+(deferr invalid-keyword-length [data]
+        {:message "The keyword is too long"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol

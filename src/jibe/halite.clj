@@ -392,6 +392,43 @@
                                       :value v
                                       :limit n}))))
 
+;; for syntax checks
+
+(def max-symbol-length 256)
+
+(def symbol-regex
+  ;; from chouser, started with edn symbol description https://github.com/edn-format/edn#symbols
+  #"(?x) # allow comments and whitespace in regex
+        (?: # prefix (namespace) part
+          (?: # first character of prefix
+              [A-Za-z*!$=<>_.]      # begin with non-numeric
+              | [+-] (?=[^0-9]))   # for +/-, second character must be non-numeric
+          [0-9A-Za-z*!$=<>_+-.]*    # subsequent characters of prefix
+          /                        # prefix / name separator
+        )?                         # prefix is optional
+        (?: # name (suffix) part
+        #  / | # if name contains a /, it must stand alone (commented out for the moment)
+          (?: # first character of name
+              [A-Za-z*!$=<>_.]        # begin with non-numeric
+              | [+-] (?=[^0-9]|$))   # for +/-, second character must be non-numeric
+          [0-9A-Za-z*!$=<>_+-.]*) # subsequent characters of name
+        ")
+
+(defn- check-symbol-string [expr]
+  (let [s (if (symbol? expr)
+            (str expr)
+            (subs (str expr) 1))]
+    (when-not (re-matches symbol-regex s)
+      (throw-err ((if (symbol? expr)
+                    h-err/invalid-symbol-char
+                    h-err/invalid-keyword-char) {:form expr})))
+    (when-not (<= (count s) max-symbol-length)
+      (throw-err ((if (symbol? expr)
+                    h-err/invalid-symbol-length
+                    h-err/invalid-keyword-length) {:form expr
+                                                   :length (count s)
+                                                   :limit max-symbol-length})))))
+
 (s/defn syntax-check
   ([expr]
    (syntax-check 0 expr))
@@ -402,8 +439,9 @@
      (integer-or-long? expr) true
      (fixed-decimal? expr) true
      (string? expr) (do (check-limit :string-literal-length expr) true)
-     (symbol? expr) true
-     (keyword? expr) true
+     (symbol? expr) (do (check-symbol-string expr) true)
+     (keyword? expr) (do (check-symbol-string expr) true)
+
      (map? expr) (and (or (:$type expr)
                           (throw-err (h-err/missing-type-field {:expr expr})))
                       (->> expr

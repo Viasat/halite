@@ -26,9 +26,6 @@
         nargs (count args)
         {:keys [signatures impl deprecated?] :as builtin} (get halite/builtins op)
         actual-types (map (partial type-check* ctx) args)]
-    (when (nil? builtin)
-      (throw-err (l-err/function-not-found {:op op
-                                            :form form})))
     (doseq [[arg t] (map vector args actual-types)]
       (when (= :Nothing t)
         (throw-err (l-err/disallowed-nothing {:form form

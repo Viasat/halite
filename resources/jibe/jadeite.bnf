@@ -32,6 +32,6 @@ vec            = <'['> ( expr ( <','> expr )* <','>? )? <']'>
 let            = <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
 int            = "-"? #"\d+"
 decimal        = <'#d'> string
-symbol         = #"[a-zA-Z][a-zA-Z0-9_$?]*" | #"<\S+>"
+symbol         = #"[a-zA-Z][a-zA-Z0-9_$?]*" | #"'[^\s']+'" | #"<\S+>" (* this last form of symbol is deprecated due to parse ambiguity *)
 typename       = #"[a-zA-Z0-9./$]+" | symbol
 string         = #"\"([^\"\\]|\\.)*\""
