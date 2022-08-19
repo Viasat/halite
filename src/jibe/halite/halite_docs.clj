@@ -28,7 +28,10 @@
                 'vector {:bnf "'[' { value } ']'"
                          :j-bnf "'[' [value] {',' value } ']'"}
                 'set {:bnf "'#' '{' { value } '}'"
-                      :j-bnf "'#' '{' [value] {',' value} '}'"}])
+                      :j-bnf "'#' '{' [value] {',' value} '}'"}
+
+                'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"}
+                'any {:bnf "value | unset"}])
 
 (def op-maps
   {'$no-value {:sigs [["" "unset"]]
