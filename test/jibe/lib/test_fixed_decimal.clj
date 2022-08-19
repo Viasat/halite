@@ -18,8 +18,26 @@
 
   (is (thrown-with-msg? ExceptionInfo #"cannot be negative 0"
                         (read-string "#d \"-0.0\"")))
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (read-string "#d \"1.\"")))
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (read-string "#d \"1\"")))
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (read-string "#d \"-1.\"")))
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (read-string "#d \"-1\"")))
   (is (thrown-with-msg? ExceptionInfo #"cannot construct"
                         (read-string "#d \"\"")))
+  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+                        (read-string "#d \".0\"")))
+  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+                        (read-string "#d \".1\"")))
+  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+                        (read-string "#d \"-.0\"")))
+  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+                        (read-string "#d \"-.1\"")))
+  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+                        (read-string "#d \"+10.0\"")))
   (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
                         (read-string "#d \"- 0.0\"")))
   (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"

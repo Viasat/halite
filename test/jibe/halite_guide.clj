@@ -399,6 +399,8 @@
 (deftest
   test-int
   (h 1 :Integer 1 "1" "1")
+  (h 1 :Integer 1 "1" "1")
+  (h -1 :Integer -1 "-1" "-1")
   (h
    (+ 1)
    [:throws
