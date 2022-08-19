@@ -476,6 +476,10 @@
   (h (mod -3 2) :Integer 1 "(-3 % 2)" "1")
   (h (mod 3 -2) :Integer -1 "(3 % -2)" "-1")
   (h (mod -3 -2) :Integer -1 "(-3 % -2)" "-1")
+  (h (mod 99 100) :Integer 99 "(99 % 100)" "99")
+  (h (mod -99 100) :Integer 1 "(-99 % 100)" "1")
+  (h (mod 99 -100) :Integer -1 "(99 % -100)" "-1")
+  (h (mod -99 -100) :Integer -99 "(-99 % -100)" "-99")
   (h
    (mod 3 0)
    :Integer
@@ -5569,6 +5573,7 @@
    (first [])
    [:throws
     "h-err/argument-empty 0-0 : Argument to first is always empty"])
+  (h (rest []) [:Vec :Nothing] [] "[].rest()" "[]")
   (h
    (first)
    [:throws
@@ -9603,7 +9608,10 @@
    [:Vec :String]
    ["a" "b" "c"]
    "sortBy(x in [\"a\", \"c\", \"b\"])(if((\"a\" == x)) {#d \"1.0\"} else {(if((\"b\" == x)) {#d \"2.0\"} else {(if((\"c\" == x)) {#d \"3.0\"} else {#d \"4.0\"})})})"
-   "[\"a\", \"b\", \"c\"]"))
+   "[\"a\", \"b\", \"c\"]")
+  (h
+   (sort-by [x ["a" "c" "b"]] x)
+   [:throws "h-err/not-integer-body 0-0 : Body expression in 'sort-by' must be Integer, not :String"]))
 
 (deftest
   test-generic-collections
