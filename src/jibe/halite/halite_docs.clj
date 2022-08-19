@@ -81,7 +81,7 @@
    '=> {:sigs [["boolean boolean" "boolean"]]
         :j-sigs [["boolean '=>' boolean" "boolean"]]
         :tags #{:boolean-op :boolean-out}
-        :doc "Performs logical implication. If the first value is true, then the second value must also be true. If the first value is false, then the result is true."}
+        :doc "Performs logical implication. If the first value is true, then the second value must also be true for the result to be true. If the first value is false, then the result is true."}
    '> {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
        :j-sigs [["((integer '>'  integer) | (fixed-decimal '>' fixed-decimal))" "boolean"]]
        :tags #{:integer-op :fixed-decimal-op :boolean-out}
@@ -182,15 +182,16 @@
          :throws [["Index out of range"]
                   ["Field does not exist"]]
          :see-also ['get-in]}
-   'get-in {:sigs [["(instance | vector) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]]
+   'get-in {:sigs [["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]]
             :notes ["if the last element of the lookup path is an integer, then the result is a value"
                     "if the last element of the lookup path is an instance field name, then the result is an 'any'; specifically of that last field is the name of an optional field"
                     "the non-terminal field names in the lookup path must be the names of mandatory fields"]
-            :j-sigs [["( (instance '.' symbol:instance-field) | (vector '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }"
+            :j-sigs [["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }"
                       "any"]]
             :tags #{:vector-op :instance-op :optional-out :instance-field-op}
-            :doc "Syntactic sugar for performing the equivalent of a chained series of 'get' operations. The second argument is a vector that represents the logical path to be navigated through the first argument. The first path element in the path is looked up in the first argument. Then, if there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'."
-            :j-doc "<TODO>"
+            :doc "Syntactic sugar for performing the equivalent of a chained series of 'get' operations. The second argument is a vector that represents the logical path to be navigated through the first argument."
+            :j-doc "A path of element accessors can be created by chaining together element access forms in sequence."
+            :doc-2 "The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'."
             :throws [["Index out of range"]
                      ["Field does not exist"]
                      ["Attempt to lookup a path element on a non-terminal optional field"]]
