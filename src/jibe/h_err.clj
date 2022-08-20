@@ -86,6 +86,9 @@
 (deferr invalid-instance-index [data]
         {:message "Index must be a variable name (as a keyword) when target is an instance"})
 
+(deferr index-out-of-bounds [data]
+        {:message "Index out of bounds, :index, for vector of length :length"})
+
 (deferr invalid-lookup-target [data]
         {:message "Lookup target must be an instance of known type or non-empty vector"})
 

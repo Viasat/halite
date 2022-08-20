@@ -22,6 +22,13 @@
 
 (deftype HInfo [s t j-expr h-result jh-result j-result])
 
+(defmacro h-eval [expr]
+  ;; helper for debugging
+  `(let [senv# (halite-envs/spec-env {})
+         tenv# (halite-envs/type-env {})
+         env# (halite-envs/env {})]
+     (halite/eval-expr senv# tenv# env# ~expr)))
+
 (defn- is-harness-error? [x]
   (and (vector? x)
        (= :throws (first x))))
@@ -5675,6 +5682,8 @@
    (get [] 0)
    [:throws
     "l-err/cannot-index-into-empty-vector 0-0 : Cannot index into empty vector"])
+  (h (get [10] 1) :Integer [:throws "h-err/index-out-of-bounds 0-0 : Index out of bounds, 1, for vector of length 1"] "[10][1]" [:throws "h-err/index-out-of-bounds 0-0 : Index out of bounds, 1, for vector of length 1"])
+  (h (get [10] -1) :Integer [:throws "h-err/index-out-of-bounds 0-0 : Index out of bounds, -1, for vector of length 1"] "[10][-1]" [:throws "h-err/index-out-of-bounds 0-0 : Index out of bounds, -1, for vector of length 1"])
   (h (get [10 20 30] 1) :Integer 20 "[10, 20, 30][1]" "20")
   (h
    (get (get (get [[10 20 [300 302]] [30 40]] 0) 2) 1)
@@ -10225,6 +10234,20 @@
    :spec
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 1]) :Integer 20 "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[1]" "20"])
   (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"]])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:q 1]) [:throws "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: q"]])
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"]])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 100]) :Integer [:throws "h-err/index-out-of-bounds 0-0 : Index out of bounds, 100, for vector of length 3"] "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[100]" [:throws "h-err/index-out-of-bounds 0-0 : Index out of bounds, 100, for vector of length 3"]])
+  (hc
    :basic
    :my
    [(get-in [{:$type :my/Spec$v1, :n -3, :p 2}] [0 :o]) [:Maybe :Integer] :Unset "[{$type: my/Spec$v1, n: -3, p: 2}][0].o" "Unset"])
@@ -10246,6 +10269,15 @@
                                    [:y "Integer" :optional])))]
    :spec
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:x]) :Integer 9 "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.x" "9"])
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"] :optional]
+                                   [:x "Integer"]
+                                   [:y "Integer" :optional])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:q]) [:throws "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
    [(workspace
      :spec

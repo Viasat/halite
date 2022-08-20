@@ -179,8 +179,8 @@
                   ["(vector '[' integer ']')" "value"]]
          :tags #{:vector-op :instance-op :optional-out :instance-field-op}
          :doc "Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based."
-         :throws [["Index out of range"]
-                  ["Field does not exist"]]
+         :throws [['h-err/index-out-of-bounds]
+                  ['h-err/variables-not-in-spec]]
          :see-also ['get-in]}
    'get-in {:sigs [["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]]
             :notes ["if the last element of the lookup path is an integer, then the result is a value"
@@ -192,9 +192,10 @@
             :doc "Syntactic sugar for performing the equivalent of a chained series of 'get' operations. The second argument is a vector that represents the logical path to be navigated through the first argument."
             :j-doc "A path of element accessors can be created by chaining together element access forms in sequence."
             :doc-2 "The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'."
-            :throws [["Index out of range"]
-                     ["Field does not exist"]
-                     ["Attempt to lookup a path element on a non-terminal optional field"]]
+            :throws ['l-err/get-in-path-cannot-be-empty
+                     'h-err/invalid-lookup-target
+                     'h-err/variables-not-in-spec
+                     'h-err/index-out-of-bounds]
             :see-also ['get]}
    'if {:sigs [["boolean any-expression any-expression" "any"]]
         :j-sigs [["'if' '(' boolean ')' any-expression 'else' any-expression" "any"]]

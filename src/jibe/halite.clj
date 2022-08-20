@@ -924,19 +924,29 @@
 
 (declare eval-expr*)
 
+(defn- get-from-vector [ctx target-expr target index-expr]
+  (let [index (eval-expr* ctx index-expr)]
+    (when-not (< -1 index (count target))
+      (throw-err (h-err/index-out-of-bounds {:form (list 'get
+                                                         target-expr
+                                                         index)
+                                             :index index
+                                             :length (count target)})))
+    (nth target index)))
+
 (s/defn ^:private eval-get :- s/Any
-  [ctx :- EvalContext, target-expr index]
+  [ctx :- EvalContext, target-expr index-expr]
   (let [target (eval-expr* ctx target-expr)]
     (if (vector? target)
-      (nth target (eval-expr* ctx index))
-      (get target index :Unset))))
+      (get-from-vector ctx target-expr target index-expr)
+      (get target index-expr :Unset))))
 
 (s/defn ^:private eval-get-in :- s/Any
   [ctx :- EvalContext, target-expr indexes]
-  (reduce (fn [target index]
+  (reduce (fn [target index-expr]
             (if (vector? target)
-              (nth target (eval-expr* ctx index))
-              (get target index :Unset)))
+              (get-from-vector ctx target-expr target index-expr)
+              (get target index-expr :Unset)))
           (eval-expr* ctx target-expr)
           indexes))
 

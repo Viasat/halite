@@ -297,8 +297,8 @@
       '(get (get (get c :bs) 2) :a) (get-in c [:bs 2 :a])
       '(get-in c [:bs 2]) (get-in c [:bs 2])
       '(get-in c [:bs 2 :a]) (get-in c [:bs 2 :a]))
-    (is (thrown? IndexOutOfBoundsException
-                 (halite/eval-expr senv tenv env '(get (get c :bs) 10))))))
+    (is (thrown-with-msg? ExceptionInfo #"out of bounds"
+                          (halite/eval-expr senv tenv env '(get (get c :bs) 10))))))
 
 (deftest equality-tests
   (are [expr etype]
