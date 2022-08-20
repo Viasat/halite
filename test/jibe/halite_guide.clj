@@ -27,7 +27,7 @@
   `(let [senv# (halite-envs/spec-env {})
          tenv# (halite-envs/type-env {})
          env# (halite-envs/env {})]
-     (halite/eval-expr senv# tenv# env# ~expr)))
+     (halite/eval-expr senv# tenv# env# '~expr)))
 
 (defn- is-harness-error? [x]
   (and (vector? x)

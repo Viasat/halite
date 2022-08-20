@@ -924,31 +924,31 @@
 
 (declare eval-expr*)
 
-(defn- get-from-vector [ctx target-expr target index-expr]
+(defn- get-from-vector [ctx expr target index-expr]
   (let [index (eval-expr* ctx index-expr)]
     (when-not (< -1 index (count target))
-      (throw-err (h-err/index-out-of-bounds {:form (list 'get
-                                                         target-expr
-                                                         index)
+      (throw-err (h-err/index-out-of-bounds {:form expr
                                              :index index
                                              :length (count target)})))
     (nth target index)))
 
 (s/defn ^:private eval-get :- s/Any
-  [ctx :- EvalContext, target-expr index-expr]
-  (let [target (eval-expr* ctx target-expr)]
+  [ctx :- EvalContext, expr]
+  (let [[_ target-expr index-expr] expr
+        target (eval-expr* ctx target-expr)]
     (if (vector? target)
-      (get-from-vector ctx target-expr target index-expr)
+      (get-from-vector ctx expr target index-expr)
       (get target index-expr :Unset))))
 
 (s/defn ^:private eval-get-in :- s/Any
-  [ctx :- EvalContext, target-expr indexes]
-  (reduce (fn [target index-expr]
-            (if (vector? target)
-              (get-from-vector ctx target-expr target index-expr)
-              (get target index-expr :Unset)))
-          (eval-expr* ctx target-expr)
-          indexes))
+  [ctx :- EvalContext, expr]
+  (let [[_ target-expr indexes] expr]
+    (reduce (fn [target index-expr]
+              (if (vector? target)
+                (get-from-vector ctx expr target index-expr)
+                (get target index-expr :Unset)))
+            (eval-expr* ctx target-expr)
+            indexes)))
 
 (s/defn ^:private eval-let :- s/Any
   [ctx :- EvalContext, bindings body]
@@ -1047,8 +1047,8 @@
                        (into (select-keys expr [:$type]))
                        (validate-instance (:senv ctx)))
       (seq? expr) (condp = (first expr)
-                    'get (apply eval-get ctx (rest expr))
-                    'get-in (apply eval-get-in ctx (rest expr))
+                    'get (eval-get ctx expr)
+                    'get-in (eval-get-in ctx expr)
                     '= (apply = (mapv eval-in-env (rest expr)))
                     'not= (apply not= (mapv eval-in-env (rest expr)))
                     'rescale (let [[_ f s] expr]
