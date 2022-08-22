@@ -401,17 +401,16 @@
   #"(?x) # allow comments and whitespace in regex
         (?: # prefix (namespace) part
           (?: # first character of prefix
-              [A-Za-z*!$=<>_.]      # begin with non-numeric
-              | [+-] (?=[^0-9]))   # for +/-, second character must be non-numeric
-          [0-9A-Za-z*!$=<>_+-.]*    # subsequent characters of prefix
-          /                        # prefix / name separator
-        )?                         # prefix is optional
+              [A-Za-z*!$?=<>_.]      # begin with non-numeric
+              | [+-] (?=[^0-9]))     # for +/-, second character must be non-numeric
+          [0-9A-Za-z*!$?=<>_+.-]*    # subsequent characters of prefix
+          /                          # prefix / name separator
+        )?                           # prefix is optional
         (?: # name (suffix) part
-        #  / | # if name contains a /, it must stand alone (commented out for the moment)
           (?: # first character of name
-              [A-Za-z*!$=<>_.]        # begin with non-numeric
+              [A-Za-z*!$?=<>_.]      # begin with non-numeric
               | [+-] (?=[^0-9]|$))   # for +/-, second character must be non-numeric
-          [0-9A-Za-z*!$=<>_+-.]*) # subsequent characters of name
+          [0-9A-Za-z*!$?=<>_+.-]*)   # subsequent characters of name
         ")
 
 (defn- check-symbol-string [expr]

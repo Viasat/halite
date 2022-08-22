@@ -2,15 +2,45 @@
 ;; Licensed under the MIT license
 
 (ns jibe.test-halite
-  (:require [jibe.halite :as halite]
-            [jibe.halite.halite-lint :as halite-lint]
-            [jibe.halite.halite-envs :as halite-envs]
-            [jibe.lib.format-errors :as format-errors]
+  (:require [clojure.edn :as edn]
             [clojure.test :as test :refer [deftest is are test-vars]]
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [jibe.halite :as halite]
+            [jibe.halite.halite-envs :as halite-envs]
+            [jibe.halite.halite-lint :as halite-lint]
+            [jibe.lib.format-errors :as format-errors]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 
 (clojure.test/use-fixtures :once validate-schemas)
+
+(deftest test-halite-symbol-examples
+  (are [string] (re-matches halite/symbol-regex string)
+    "foo" "$foo" "!20<90" "-->*/*<--" "+" "</>" "a.b/c.d" "a.b")
+  (are [string] (not (re-matches halite/symbol-regex string))
+    "72" "+8" "-9" "//" "/z" "foo/9" "-/1" "/" "foo//" "$//"))
+
+(defn halite-symbol-differs-from-clj-symbol [string]
+  (let [obj (try (edn/read-string string) (catch Exception ex nil))
+        clj-sym? (and (symbol? obj) (= (str obj) string))]
+    (if (re-matches halite/symbol-regex string)
+      clj-sym?
+      (or (not clj-sym?)
+          ;; halite symbols disallow these chars that are legal in Clojure symbols:
+          (re-find #"[:#|%&']" string)
+          ;; Clojure symbols can have a slash in the name part. halite does not
+          ;; support this:
+          (= "/" string)
+          (re-find #"/.*/" string)
+          ;; If the name part can't be read as a symbol, we don't want to allow it (e.g. "foo/+0")
+          (not (symbol? (edn/read-string (name obj))))))))
+
+(defspec symbol-prop
+  {:num-tests 100000}
+  (prop/for-all [s gen/string-ascii]
+                (halite-symbol-differs-from-clj-symbol s)))
 
 (defrecord TestSpecEnv [specs]
   halite-envs/SpecEnv

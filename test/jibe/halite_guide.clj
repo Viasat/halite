@@ -5492,8 +5492,7 @@
    true
    "every?(h19 in #{true})h19"
    "true")
-  (h (every? [☺ #{true}] ☺) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: ☺"])
-  (h (every? [? #{true}] ?) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: ?"]))
+  (h (every? [☺ #{true}] ☺) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: ☺"]))
 
 (deftest
   test-every?-other
