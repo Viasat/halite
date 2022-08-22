@@ -37,7 +37,9 @@
   {'$no-value {:sigs [["" "unset"]]
                :j-sigs [["'$no-value'" "unset"]]
                :tags #{:optional-out}
-               :doc "Constant that produces the special 'unset' value which represents the lack of a value."}
+               :doc "Constant that produces the special 'unset' value which represents the lack of a value."
+               :comment "Expected use is in an instance expression to indicate that a field in the instance does not have a value. However, it is suggested that alternatives include simply omitting the field name from the instance or using a variant of a 'when' expression to optionally produce a value for the field."
+               :see-also ['when 'when-value 'when-value-let]}
    '$this {:sigs [["" "value"]]
            :j-sigs [["<$this>" "unset"]]
            :tags #{}
@@ -45,9 +47,10 @@
    '* {:sigs [["integer integer" "integer"]
               ["fixed-decimal integer" "fixed-decimal"]]
        :j-sigs [["integer '*' integer" "integer"]
-                ["fixed-decimal '*' fixed-decimal" "fixed-decimal"]]
+                ["fixed-decimal '*' integer" "fixed-decimal"]]
        :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
        :doc "Multiply two numbers together."
+       :comment "Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale."
        :throws ["On overflow"]}
    '+ {:sigs [["integer integer {integer}" "integer"]
               ["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]]
@@ -95,37 +98,44 @@
          :j-sigs [["'abs' '(' integer ')'" "integer"]
                   ["'abs' '(' fixed-decimal ')'" "fixed-decimal"]]
          :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
-         :doc "Compute the absolute value of a number."}
+         :doc "Compute the absolute value of a number."
+         :comment "Since the negative number space contains one more value than the positive number space, it is a runtime error to attempt to take the absolute value of the most negative value for a given number space."
+         :throws ["Cannot compute absolute value most max negative value"]}
    'and {:sigs [["boolean {boolean}" "boolean"]]
          :j-sigs [["boolean '&&' {boolean}" "boolean"]]
          :tags #{:boolean-op :boolean-out}
          :doc "Perform a logical 'and' operation on the input values."
-         :see-also ['=> 'not 'or]}
+         :comment "The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated."
+         :see-also ['=> 'every? 'not 'or]}
    'any? {:sigs [["'[' symbol (set | vector) ']' boolean-expression" "boolean"]]
           :j-sigs [["'any?' '(' symbol 'in' (set | vector) ')' boolean-expression" "boolean"]]
           :tags #{:set-op :vector-op :boolean-out :special-form}
           :doc "Evaluates to true if the boolean-expression is true when the symbol is bound to some element in the collection."
-          :see-also ['every?]}
+          :comment "The operation does not short-circuit. The boolean-expression is evaluated for all elements even if a prior element has caused the boolean-expression to evaluate to true. Operating on an empty collection produces a false value."
+          :see-also ['every? 'or]}
    'concat {:sigs [["vector vector" "vector"]
                    ["(set (set | vector))" "set"]]
             :j-sigs [["vector '.' 'concat' '('  vector ')'" "vector"]
                      ["(set '.' 'concat' '(' (set | vector) ')')" "set"]]
             :tags #{:set-op :vector-op :vector-out :set-out}
-            :doc "Combine two collections into one."}
+            :doc "Combine two collections into one."
+            :comment "Invoking this operation with a vector and an empty set has the effect of converting a vector into a set."}
    'conj {:sigs [["set value {value}" "set"]
                  ["vector value {value}" "vector"]]
           :j-sigs [["set '.' 'conj' '(' value {',' value} ')'" "set"]
                    ["vector '.' 'conj' '(' value {',' value} ')'" "vector"]]
           :tags #{:set-op :vector-op :set-out :vector-out}
-          :doc "Add individual items to a collection."}
+          :doc "Add individual items to a collection."
+          :comment "Only definite values may be put into collections, i.e. collections cannot contain 'unset' values."}
    'contains? {:sigs [["set value" "boolean"]]
                :j-sigs [["set '.' 'contains?' '(' value ')'" "boolean"]]
                :tags #{:set-op :boolean-out}
-               :doc "Determine if a specific value is in a set."}
+               :doc "Determine if a specific value is in a set."
+               :comment "Since collections themselves are compared by their contents, this works for collections nested inside of sets."}
    'count {:sigs [["(set | vector)" "integer"]]
            :j-sigs [["(set | vector) '.' 'count()'" "integer"]]
            :tags #{:integer-out :set-op :vector-op}
-           :doc "Compute how many items are in a collection."}
+           :doc "Return how many items are in a collection."}
    'dec {:sigs [["integer" "integer"]]
          :j-sigs [["integer '-' '1' " "integer"]]
          :tags #{:integer-op :integer-out}
@@ -136,6 +146,7 @@
                 :j-sigs [["set '.' 'difference' '(' set ')'" "set"]]
                 :tags #{:set-op :set-out}
                 :doc "Compute the set difference of two sets."
+                :comment "This produces a set which contains all of the elements from the first set which do not appear in the second set."
                 :see-also ['intersection 'union 'subset?]}
    'div {:sigs [["integer integer" "integer"]
                 ["fixed-decimal integer" "fixed-decimal"]]
@@ -143,18 +154,21 @@
                   ["fixed-decimal '/' integer" "fixed-decimal"]]
          :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
          :doc "Divide the first number by the second. When the first argument is an integer the result is truncated to an integer value. When the first argument is a fixed-decimal the result is truncated to the same precision as the first argument."
+         :comment "As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale."
          :throws ["When the second argument is 0"]
          :see-also ['mod]}
    'error {:sigs [["string" "nothing"]]
            :j-sigs [["'error' '(' string ')'" "nothing"]]
            :tags #{:nothing-out}
            :doc "Produce a runtime error with the provided string as an error message."
+           :comment "Used to indicate when an unexpected condition has occurred and the data at hand is invalid. It is preferred to use constraints to capture such conditions earlier."
            :throws ["Always"]}
    'every? {:sigs [["'[' symbol (set | vector) ']' boolean-expression" "boolean"]]
             :j-sigs [["'every?' '(' symbol 'in' (set | vector) ')' boolean-expression" "boolean"]]
             :tags #{:set-op :vector-op :boolean-out :special-form}
             :doc "Evaluates to true if the boolean-expression is true when the symbol is bound to each the element in the collection."
-            :see-also ['any?]}
+            :comment "Does not short-circuit. The boolean-expression is evaluated for all elements, even once a prior element has evaluated to false. Operating on an empty collection produces a true value."
+            :see-also ['any? 'and]}
    'expt {:sigs [["integer integer" "integer"]]
           :j-sigs [["'expt' '(' integer ',' integer ')'" "integer"]]
           :tags #{:integer-op :integer-out}
@@ -171,14 +185,16 @@
            :j-sigs [["vector '.' 'first()'" "value"]]
            :tags #{:vector-op}
            :doc "Produce the first element from a vector."
+           :comment "To avoid runtime errors, if the vector might be empty, use 'count' to check the length first."
            :throws ["When invoked on an empty vector."]
-           :see-also ['rest]}
+           :see-also ['count 'rest]}
    'get {:sigs [["(instance keyword:instance-field)" "any"]
                 ["(vector integer)" "value"]]
          :j-sigs [["(instance '.' symbol:instance-field)" "any"]
                   ["(vector '[' integer ']')" "value"]]
          :tags #{:vector-op :instance-op :optional-out :instance-field-op}
          :doc "Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based."
+         :comment "The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification."
          :throws [['h-err/index-out-of-bounds]
                   ['h-err/variables-not-in-spec]]
          :see-also ['get-in]}
@@ -205,12 +221,14 @@
    'if-value {:sigs [["symbol any-expression any-expression" "any"]]
               :j-sigs [["'ifValue' '(' symbol ')' any-expression 'else' any-expression" "any"]]
               :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then evaluate the third argument."
+              :comment "When an optional instance field needs to be referenced, it is generally necessary to guard the access with either 'if-value' or 'when-value'. In this way, both the case of the field being set and unset are explicitly handled."
               :tags #{:optional-op :control-flow :special-form}
               :see-also ['if-value-let 'when-value]}
    'if-value-let {:sigs [["'[' symbol any:binding ']' any-expression any-expression" "any"]]
                   :j-sigs [["'ifValueLet' '(' symbol '=' any:binding ')'  any-expression 'else' any-expression" "any"]]
                   :tags #{:optional-op :control-flow :special-form}
                   :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol."
+                  :comment "This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value."
                   :see-also ['if-value 'when-value-let]}
    'inc {:sigs [["integer" "integer"]]
          :j-sigs [["integer '+' '1'" "integer"]]
@@ -222,11 +240,13 @@
                   :j-sigs [["set '.' 'intersection' '(' set {',' set} ')'" "set"]]
                   :tags #{:set-op :set-out}
                   :doc "Compute the set intersection of the sets."
+                  :comment "This produces a set which only contains values that appear in each of the arguments."
                   :see-also ['difference 'union 'subset?]}
    'let {:sigs [["'[' symbol value {symbol value} ']' any-expression" "any"]]
          :j-sigs [["'{' symbol '=' value ';' {symbol '=' value ';'} any-expression '}'" "any"]]
          :tags #{:special-form}
          :doc "Evaluate the expression argument in a nested context created by considering the first argument in a pairwise fashion and binding each symbol to the corresponding value."
+         :comment "Allows names to be given to values so that they can be referenced by the any-expression."
          :j-doc "Evaluate the expression argument in a nested context created by binding each symbol to the corresponding value."}
    'map {:sigs [["'[' symbol:element set ']' value-expression" "set"]
                 ["'[' symbol:element vector ']' value-expression" "vector"]]
@@ -255,7 +275,8 @@
         :j-sigs [["boolean '||' {boolean}" "boolean"]]
         :tags #{:boolean-op :boolean-out}
         :doc "Perform a logical 'or' operation on the input values."
-        :see-also ['=> 'and 'not]}
+        :comment "The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated."
+        :see-also ['=> 'and 'any? 'not]}
    'range {:sigs [["[integer:start] integer:end [integer:increment]" "vector"]]
            :j-sigs [["'range' '(' [integer:start ','] integer:end [',' integer:increment] ')'" "vector"]]
            :doc "Produce a vector that contains integers in order starting at either the start value or 0 if no start is provided. The final element of the vector will be no more than one less than the end value. If an increment is provided then only every increment integer will be included in the result."
@@ -283,9 +304,11 @@
              :j-sigs [["'rescale' '(' fixed-decimal ',' integer ')'" "(fixed-decimal | integer)"]]
              :tags #{:integer-out :fixed-decimal-op :fixed-decimal-out}
              :doc "Produce a number by adjusting the scale of the fixed-decimal to the new-scale. If the scale is being reduced, the original number is truncated. If the scale is being increased, then the original number is padded with zeroes in the decimal places. If the new-scale is zero, then the result is an integer."
+             :comment "Arithmetic on numeric values never produce results in different number spaces. This operation provides an explicit way to convert a fixed-decimal value into a value with the scale of a different number space. This includes the ability to convert a fixed-decimal value into an integer."
              :notes ["if the new scale is 0, then an integer is produced"
                      "scale must be positive"
-                     "scale must be between 0 and 18 (inclusive)"]}
+                     "scale must be between 0 and 18 (inclusive)"]
+             :see-also ['*]}
    'rest {:sigs [["vector" "vector"]]
           :j-sigs [["vector '.' 'rest()'" "vector"]]
           :doc "Produce a new vector which contains the same element of the argument, in the same order, except the first element is removed. If there are no elements in the argument, then an empty vector is produced."
@@ -310,36 +333,41 @@
              :j-sigs [["set '.' 'subset?' '(' set ')'" "boolean"]]
              :tags #{:set-op :boolean-out}
              :doc "Return false if there are any items in the first set which do not appear in the second set. Otherwise return true."
+             :comment "According to this operation, a set is always a subset of itself and every set is a subset of the empty set. Using this operation and an equality check in combination allows a 'superset?' predicate to be computed."
              :see-also ['difference 'intersection 'union]}
    'union {:sigs [["set set {set}" "set"]]
            :j-sigs [["set '.' 'union' '(' set {',' set} ')'" "set"]]
            :tags #{:set-op :set-out}
            :doc "Compute the union of all the sets."
+           :comment "This produces a set which contains all of the values that appear in any of the arguments."
            :see-also ['difference 'intersection 'subset?]}
    'valid {:sigs [["instance-expression" "any"]]
            :j-sigs [["'valid' instance-expression" "any"]]
            :tags #{:instance-op :optional-out :special-form}
            :doc "Evaluate the instance-expression and produce the result. If a constraint violation occurs while evaluating the expression then produce an 'unset' value."
+           :comment "This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification."
            :see-also ['valid?]}
    'valid? {:sigs [["instance-expression" "boolean"]]
             :j-sigs [["'valid?' instance-expression" "boolean"]]
             :doc "Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true."
+            :comment "Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value."
             :tags #{:instance-op :boolean-out :special-form}
             :see-also ['valid]}
    'when {:sigs [["boolean any-expression" "any"]]
           :j-sigs [["'when' '(' boolean ')' any-expression" "any"]]
           :tags #{:boolean-op :optional-out :control-flow :special-form}
-          :doc "If the first argument is true, then evaluate the second argument, otherwise produce 'unset'."}
+          :doc "If the first argument is true, then evaluate the second argument, otherwise produce 'unset'."
+          :comment "A primary use of this operator is in instance expression to optionally provide a value for a an optional field."}
    'when-value {:sigs [["symbol any-expression:binding" "any"]]
                 :j-sigs [["'whenValue' '(' symbol ')' any-expression" "any"]]
                 :tags #{:optional-op :optional-out :control-flow :special-form}
                 :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset."
-                :see-also ['if-value 'when-value-let]}
+                :see-also ['if-value 'when 'when-value-let]}
    'when-value-let {:sigs [["'[' symbol any:binding']' any-expression" "any"]]
                     :j-sigs [["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]]
                     :tags #{:optional-op :optional-out :control-flow :special-form}
                     :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'"
-                    :see-also ['if-value-let 'when-value]}})
+                    :see-also ['if-value-let 'when 'when-value]}})
 
 (defn produce-diagram [out-file-name ^String rule-str]
   (let [gtrd (GrammarToRRDiagram.)

@@ -29,6 +29,12 @@
          env# (halite-envs/env {})]
      (halite/eval-expr senv# tenv# env# '~expr)))
 
+(defmacro h-lint [expr]
+  ;; helper for debugging
+  `(let [senv# (halite-envs/spec-env {})
+         tenv# (halite-envs/type-env {})]
+     (halite-lint/type-check senv# tenv# '~expr)))
+
 (defn- is-harness-error? [x]
   (and (vector? x)
        (= :throws (first x))))
@@ -299,6 +305,8 @@
   (h (and true true) :Boolean true "(true && true)" "true")
   (h (and true) :Boolean true "(true)" "true")
   (h (and false) :Boolean false "(false)" "false")
+  (h (and true (error "fail")) [:throws "l-err/disallowed-nothing 0-0 : Disallowed ':Nothing' expression: error, \"fail\""])
+  (h (and true (> (div 1 0) 1)) :Boolean [:throws "Divide by zero"] "(true && ((1 / 0) > 1))" [:throws "Divide by zero"])
   (h
    (and)
    [:throws
@@ -1132,6 +1140,9 @@
    true
    "#{1, 2}.subset?(#{1, 2, 3, 4})"
    "true")
+  (h (subset? #{1 2} #{1 2}) :Boolean true "#{1, 2}.subset?(#{1, 2})" "true")
+  (h (subset? #{} #{1 2}) :Boolean true "#{}.subset?(#{1, 2})" "true")
+  (h (subset? #{} #{}) :Boolean true "#{}.subset?(#{})" "true")
   (h
    (subset? #{} #{1 4 3 2})
    :Boolean
@@ -1255,6 +1266,7 @@
     "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'conj': expected at least 2, but got 1"])
   (h (conj #{} 1 2) [:Set :Integer] #{1 2} "#{}.conj(1, 2)" "#{1, 2}")
   (h (conj #{} 1) [:Set :Integer] #{1} "#{}.conj(1)" "#{1}")
+  (h (conj #{} $no-value) [:throws "h-err/cannot-conj-unset 0-0 : Cannot conj possibly unset value to set"])
   (h
    (conj #{} 1 #{3 2})
    [:Set :Value]
@@ -5396,6 +5408,8 @@
 
 (deftest
   test-set-every?
+  (h (every? [x #{}] (> x 0)) [:throws "l-err/disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
+  (h (let [s #{}] (every? [x s] (> x 0))) [:throws "l-err/disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
   (h
    (every? [x #{1 2}] (> x 0))
    :Boolean
@@ -6750,6 +6764,8 @@
 
 (deftest
   test-vector-every?
+  (h (every? [x []] true) :Boolean true "every?(x in [])true" "true")
+  (h (every? [x []] false) :Boolean true "every?(x in [])false" "true")
   (h
    (every? [_x [10 20 30]] (= (mod _x 3) 1))
    :Boolean
@@ -6799,7 +6815,8 @@
    :Boolean
    [:throws "Divide by zero"]
    "any?(x in [true, (4 == (1 / 0))])x"
-   [:throws "Divide by zero"]))
+   [:throws "Divide by zero"])
+  (h (any? [x [1 0]] (> (div 100 x) 1)) :Boolean [:throws "Divide by zero"] "any?(x in [1, 0])((100 / x) > 1)" [:throws "Divide by zero"]))
 
 (deftest
   test-sets-and-vectors
@@ -10480,3 +10497,23 @@
        (spit "test/jibe/halite_guide2.clj")))
 
 ;; (time (run-tests))
+
+(clojure.set/subset? #{} #{})
+true
+(clojure.set/subset? #{} #{1 2})
+true
+(clojure.set/subset? #{1 2} #{1 2})
+true
+
+(clojure.set/superset? #{1 2} #{1 2})
+true
+
+(not (and (clojure.set/subset? #{1 2} #{1 2})
+          (not= #{1 2} #{1 2})))
+true
+
+(clojure.set/superset? #{1 2} #{1 2 3})
+false
+(not (clojure.set/subset? #{1 2} #{1 2 3}))
+false
+

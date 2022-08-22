@@ -476,7 +476,7 @@
   [coll-type :- HaliteType]
   (if (= :Vec (:kind (type-ptn coll-type)))
     "vector"
-    "string"))
+    "set"))
 
 (s/defn decimal-type [scale]
   [:Decimal scale])
