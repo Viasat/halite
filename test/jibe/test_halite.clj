@@ -38,7 +38,8 @@
           (not (symbol? (edn/read-string (name obj))))))))
 
 (defspec symbol-prop
-  {:num-tests 100000}
+  {:num-tests 100000
+   :reporter-fn (fn [_])}
   (prop/for-all [s gen/string-ascii]
                 (halite-symbol-differs-from-clj-symbol s)))
 
