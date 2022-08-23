@@ -35,7 +35,8 @@
           (= "/" string)
           (re-find #"/.*/" string)
           ;; If the name part can't be read as a symbol, we don't want to allow it (e.g. "foo/+0")
-          (not (symbol? (edn/read-string (name obj))))))))
+          (not (symbol? (try (edn/read-string (name obj))
+                             (catch Exception ex :ok))))))))
 
 (defspec symbol-prop
   {:num-tests 100000
