@@ -1015,6 +1015,72 @@
                 (produce-diagram (str "doc/halite-bnf-diagrams/op/" (str (safe-op-name op-name) "-" sig-index "-j" ".svg")) rule-str)))
          dorun)))
 
+(def safe-char-map
+  (let [weird "*!$?=<>_+."
+        norml "SBDQELGUAP"]
+    (zipmap weird (map #(str "_" %) norml))))
+
+(defn safe-op-anchor [s]
+  (apply str (map #(safe-char-map % %) (str s))))
+
+(defn url-encode [s]
+  (java.net.URLEncoder/encode (str s)))
+
+(defn full-md [lang op-name op]
+  (->> ["### "
+        "<a name=\"" (safe-op-anchor op-name) "\"></a>"
+        op-name "\n\n" (:doc op) "\n\n"
+        (map-indexed
+         (fn [i sig]
+           ["![" (pr-str sig) "](./halite-bnf-diagrams/op/"
+            (url-encode (safe-op-name op-name)) "-" i (when (= :jadeite lang) "-j") ".svg)\n\n"])
+         (op ({:halite :sigs, :jadeite :j-sigs} lang)))
+        (when-let [c (:comment op)] [c "\n\n"])
+        (when-let [ex-groups (seq (partition-all 3 (:examples op)))]
+          ["<table>"
+           (for [group ex-groups]
+             ["<tr>"
+              (for [e group]
+                ["<td>\n\n"
+                 "```" ({:halite "clojure", :jadeite "java"} lang) "\n"
+                 (or (e ({:halite :expr-str, :jadeite :expr-str-j} lang))
+                     (e ({:halite :str, :jadeite :str-j} lang)))
+                 ({:halite  "\n\n;-- result --;\n\n"
+                   :jadeite "\n\n### result ###\n\n"}
+                  lang)
+                 (:result e)
+                 "\n```\n\n</td>"])
+              "</tr>"])
+           "</table>\n\n"])
+        (when-let [t (:throws op)]
+          ["#### Possible errors:\n\n"
+           (for [msg t] (str "* " msg "\n"))
+           "\n"])
+        (when-let [alsos (:see-also op)]
+          ["See also:"
+           (for [a alsos]
+             [" [`" a "`](#" (safe-op-anchor a) ")"])
+           "\n\n"])
+        "---\n"]
+      flatten (apply str)))
+
+(def generated-msg
+  "<!---
+This markdown file was generated. Do not edit.
+-->\n\n")
+
+(defn produce-full-md []
+  (->> op-maps
+       sort
+       (map (partial apply full-md :halite))
+       (apply str generated-msg "# Halite operator reference (all operators)\n\n")
+       (spit "doc/halite-full-reference.md"))
+  (->> op-maps
+       sort
+       (map (partial apply full-md :jadeite))
+       (apply str generated-msg "# Jadeite operator reference (all operators)\n\n")
+       (spit "doc/jadeite-full-reference.md")))
+
 ;;
 
 (defn query-ops
