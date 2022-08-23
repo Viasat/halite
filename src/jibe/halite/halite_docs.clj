@@ -8,26 +8,22 @@
 
 (set! *warn-on-reflection* true)
 
+(def misc-notes ["Commas are considered whitespace in halite expressions."])
+
 (def basic-bnf ['basic-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"}
                 'plus-minus-character {:bnf "'+' | '-'"}
                 'symbol-character {:bnf "basic-character | plus-minus-character | '0-9'"}
-                'simple-symbol {:bnf "plus-minus-character | ((basic-character | (plus-minus-character (basic-character | plus-minus-character))) [{symbol-character}])"}
+                'simple-symbol {:bnf "plus-minus-character | ((basic-character | plus-minus-character) [{symbol-character}])"}
                 'symbol {:bnf "simple-symbol [ '/' simple-symbol]"
                          :j-bnf "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"
-                         :examples [{:expr-str "(let [a 1] 
-  a)"
-                                     :expr-str-j "{a = 1;
- a
-}"}
-                                    {:expr-str "(let [a.b 1] 
-  a.b)"
-                                     :expr-str-j "{a.b = 1;
- a.b
-}"}]}
+                         :examples [{:str "a"
+                                     :str-j "a"}
+                                    {:expr-str "a.b"
+                                     :expr-str-j "a.b"}]}
                 'keyword {:bnf "':' symbol"
                           :j-bnf nil
-                          :examples [{:expr-str ":age"}
-                                     {:expr-str ":first/Name"}]}
+                          :examples [{:str ":age"}
+                                     {:str ":x/y"}]}
 
                 'boolean {:bnf "true | false"}
                 'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
@@ -74,7 +70,9 @@
 
                 'instance {:bnf "'{' ':$type' keyword:spec-id {keyword value} '}' "
                            :j-bnf "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"
-                           :doc "Represents an instance of a specification."}
+                           :doc "Represents an instance of a specification."
+                           :examples [{:str "{:$type :text/Spec$v1 :x 1 :y -1}"
+                                       :str-j "{$type: my/Spec$v1, x: 1, y: -1}"}]}
                 'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
                          :j-bnf "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
                          :doc "A collection of values in a prescribed sequence."
