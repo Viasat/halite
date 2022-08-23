@@ -126,6 +126,10 @@
   "Convert a value from the clojure reader into a fixed decimal value. Intended to be used to read
   clojure tagged literals. Expects a string as input"
   [s :- String]
+  (let [offset (if (= (first s) \-) 1 0)]
+    (when (and (= (get s offset) \0)
+               (not= (get s (inc offset)) \.))
+      (throw (ex-info (str "cannot have a leading 0 here: " (pr-str s)) {:string s}))))
   (fixed s))
 
 (schema/defn fixed-decimal? :- Boolean

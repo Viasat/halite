@@ -8,27 +8,87 @@
 
 (set! *warn-on-reflection* true)
 
-(def basic-bnf ['basic-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.'"}
+(def basic-bnf ['basic-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"}
                 'plus-minus-character {:bnf "'+' | '-'"}
                 'symbol-character {:bnf "basic-character | plus-minus-character | '0-9'"}
                 'simple-symbol {:bnf "plus-minus-character | ((basic-character | (plus-minus-character (basic-character | plus-minus-character))) [{symbol-character}])"}
                 'symbol {:bnf "simple-symbol [ '/' simple-symbol]"
-                         :j-bnf "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"}
+                         :j-bnf "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"
+                         :examples [{:expr-str "(let [a 1] 
+  a)"
+                                     :expr-str-j "{a = 1;
+ a
+}"}
+                                    {:expr-str "(let [a.b 1] 
+  a.b)"
+                                     :expr-str-j "{a.b = 1;
+ a.b
+}"}]}
                 'keyword {:bnf "':' symbol"
-                          :j-bnf nil}
+                          :j-bnf nil
+                          :examples [{:expr-str ":age"}
+                                     {:expr-str ":first/Name"}]}
 
                 'boolean {:bnf "true | false"}
-                'string {:bnf " '\"' {char} '\"'"}
-                'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"}
+                'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
+                         :doc "Strings are sequences of characters. Strings can be multi-line. Quotation marks can be included if escaped with a \\. A backslash can be included with the character sequence: \\\\ . Strings can include special characters, e.g. \\t for a tab and \\n for a newline, as well as unicode via \\uNNNN. Unicode can also be directly entered in strings. Additional character representations may work but the only representations that are guaranteed to work are those documented here."
+                         :examples [{:expr-str ""
+                                     :expr-str-j ""}
+                                    {:expr-str "hello"
+                                     :expr-str-j "hello"}
+                                    {:expr-str "say \"hi\" now"
+                                     :expr-str-j "say \"hi\" now"}
+                                    {:expr-str "one \\ two"
+                                     :expr-str-j "one \\ two"}
+                                    {:expr-str "\t\n"
+                                     :expr-str-j "\t\n"}
+                                    {:expr-str "☺"
+                                     :expr-str-j "☺"}
+                                    {:expr-str "\u263A"
+                                     :expr-str-j "\u263A"}]}
+                'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
+                          :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
+                          :examples [{:expr-str "0"
+                                      :expr-str-j "0"}
+                                     {:expr-str "1"
+                                      :expr-str-j "1"}
+                                     {:expr-str "+1"
+                                      :expr-str-j "+1"}
+                                     {:expr-str "-1"
+                                      :expr-str-j "-1"}
+                                     {:expr-str "9223372036854775807"
+                                      :expr-str-j "9223372036854775807"}
+                                     {:expr-str "-9223372036854775808"
+                                      :expr-str-j "-9223372036854775808"}]}
 
-                'fixed-decimal {:bnf "'#d' '\"' ['-'] '0-9' {'0-9'} '.' '0-9' {'0-9'} '\"'"}
+                'fixed-decimal {:bnf "'#' 'd' [whitespace] '\"' ['-'] ('0' | ('1-9' {'0-9'})) '.' '0-9' {'0-9'} '\"'"
+                                :doc "Signed numeric values with decimal places."
+                                :examples [{:expr-str "#d \"1.1\""
+                                            :expr-str-j "#d \"1.1\""}
+                                           {:expr-str "#d \"-1.1\""
+                                            :expr-str-j "#d \"-1.1\""}
+                                           {:expr-str "#d \"1.00\""
+                                            :expr-str-j "#d \"1.00\""}
+                                           {:expr-str "#d \"0.00\""
+                                            :expr-str-j "#d \"0.00\""}]}
 
                 'instance {:bnf "'{' ':$type' keyword:spec-id {keyword value} '}' "
-                           :j-bnf "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"}
-                'vector {:bnf "'[' { value } ']'"
-                         :j-bnf "'[' [value] {',' value } ']'"}
-                'set {:bnf "'#' '{' { value } '}'"
-                      :j-bnf "'#' '{' [value] {',' value} '}'"}
+                           :j-bnf "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"
+                           :doc "Represents an instance of a specification."}
+                'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
+                         :j-bnf "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
+                         :doc "A collection of values in a prescribed sequence."
+                         :examples [{:expr-str "[]"
+                                     :expr-str-j "[]"}
+                                    {:expr-str "[1 2 3]"
+                                     :expr-str-j "[1, 2, 3]"}]}
+                'set {:bnf "'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"
+                      :j-bnf "'#' '{' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} '}'"
+                      :doc "A collection of values in an unordered set. Duplicates are not allowed."
+                      :examples [{:expr-str "#{}"
+                                  :expr-str-j "#{}"}
+                                 {:expr-str "#{1 2 3}"
+                                  :expr-str-j "#{1, 2, 3}"}]}
 
                 'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"}
                 'any {:bnf "value | unset"}])
@@ -51,7 +111,11 @@
        :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
        :doc "Multiply two numbers together."
        :comment "Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale."
-       :throws ["On overflow"]}
+       :throws ["On overflow"]
+       :examples [{:expr-str "(* 2 3)"
+                   :result :auto}
+                  {:expr-str "(* #d \"2.2\" 3)"
+                   :result :auto}]}
    '+ {:sigs [["integer integer {integer}" "integer"]
               ["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]]
        :j-sigs [["integer '+' integer" "integer"]
@@ -119,7 +183,7 @@
                      ["(set '.' 'concat' '(' (set | vector) ')')" "set"]]
             :tags #{:set-op :vector-op :vector-out :set-out}
             :doc "Combine two collections into one."
-            :comment "Invoking this operation with a vector and an empty set has the effect of converting a vector into a set."}
+            :comment "Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed."}
    'conj {:sigs [["set value {value}" "set"]
                  ["vector value {value}" "vector"]]
           :j-sigs [["set '.' 'conj' '(' value {',' value} ')'" "set"]
@@ -281,10 +345,10 @@
            :j-sigs [["'range' '(' [integer:start ','] integer:end [',' integer:increment] ')'" "vector"]]
            :doc "Produce a vector that contains integers in order starting at either the start value or 0 if no start is provided. The final element of the vector will be no more than one less than the end value. If an increment is provided then only every increment integer will be included in the result."
            :tags #{:vector-out}}
-   'reduce {:sigs [["'[' symbol:accumulator value:accumulator-init ']' '[' symbol:element (set | vector) ']' any-expression" "any"]]
-            :j-sigs [["'reduce' '(' symbol:accumulator '=' value:accumulator-init ';' symbol:element 'in' (set | vector) ')' any-expression" "any"]]
-            :tags #{:set-op :vector-op :special-form}
-            :doc "Evalue the expression repeatedly for each element in the collection. The accumulator value will have a value of accumulator-init on the first evaluation of the expression. Subsequent evaluations of the expression will chain the prior result in as the value of the accumulator. The result of the final evaluation of the expression will be produced as the result of the reduce operation. When applied to a vector, the elements will be considered in order."
+   'reduce {:sigs [["'[' symbol:accumulator value:accumulator-init ']' '[' symbol:element vector ']' any-expression" "any"]]
+            :j-sigs [["'reduce' '(' symbol:accumulator '=' value:accumulator-init ';' symbol:element 'in' vector ')' any-expression" "any"]]
+            :tags #{:vector-op :special-form}
+            :doc "Evalue the expression repeatedly for each element in the vector. The accumulator value will have a value of accumulator-init on the first evaluation of the expression. Subsequent evaluations of the expression will chain the prior result in as the value of the accumulator. The result of the final evaluation of the expression will be produced as the result of the reduce operation. The elements are processed in order."
             :see-also ['map 'filter]
             :notes ["'normally' a reduce will produce a value, but the body could produce a 'maybe' value or even always produce 'unset', in which case the reduce may not produce a value"]}
    'refine-to {:sigs [["instance keyword:spec-id" "instance"]]
@@ -316,14 +380,15 @@
    'sort {:sigs [["(set | vector)" "vector"]]
           :j-sigs [["(set | vector) '.' 'sort()'" "vector"]]
           :tags #{:set-op :vector-op :vector-out}
-          :doc "Produce a new vector by sorting all of the items in the argument. Only vectors of numeric values may be sorted."
+          :doc "Produce a new vector by sorting all of the items in the argument. Only collections of numeric values may be sorted."
           :throws ["Elements not sortable"]
           :see-also ['sort-by]}
    'sort-by {:sigs [["'[' symbol:element (set | vector) ']' (integer-expression | fixed-decimal-expression)" "vector"]]
              :j-sigs [["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]]
              :tags #{:set-op :vector-op :vector-out :special-form}
-             :doc "Produce a new vector by sorting all of the items in the input collection according to the values produced by applying the expression to each element."
-             :throws ["Expression does not produce sortable values"]
+             :doc "Produce a new vector by sorting all of the items in the input collection according to the values produced by applying the expression to each element. The expression must produce a unique, sortable value for each element."
+             :throws ["Expression does not produce sortable values"
+                      'sort-value-collision]
              :see-also ['sort]}
    'str {:sigs [["string {string}" "string"]]
          :j-sigs [["'str' '(' string {',' string} ')'" "string"]]

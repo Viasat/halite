@@ -15,7 +15,7 @@
   (is (fixed-decimal/fixed-decimal? #d "0.00"))
   (is (fixed-decimal/fixed-decimal? #d "922337203685477580.7"))
   (is (fixed-decimal/fixed-decimal? #d "-922337203685477580.8"))
-
+  (is (= #d "1.0" (read-string "#d\"1.0\"")))
   (is (thrown-with-msg? ExceptionInfo #"cannot be negative 0"
                         (read-string "#d \"-0.0\"")))
   (is (thrown-with-msg? ExceptionInfo #"invalid scale"
@@ -44,6 +44,14 @@
                         (read-string "#d \"-0.0 \"")))
   (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
                         (read-string "#d \" -0.0\"")))
+  (is (thrown-with-msg? ExceptionInfo #"cannot have a leading 0"
+                        (read-string "#d \"01.0\"")))
+  (is (thrown-with-msg? ExceptionInfo #"cannot have a leading 0"
+                        (read-string "#d \"00.0\"")))
+  (is (thrown-with-msg? ExceptionInfo #"cannot have a leading 0"
+                        (read-string "#d \"-01.0\"")))
+  (is (thrown-with-msg? ExceptionInfo #"cannot have a leading 0"
+                        (read-string "#d \"-00.0\"")))
   (is (thrown-with-msg? NumberFormatException #"For input string"
                         (read-string "#d \"922337203685477580.8\"")))
   (is (thrown-with-msg? NumberFormatException #"For input string"

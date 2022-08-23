@@ -35,6 +35,14 @@
          tenv# (halite-envs/type-env {})]
      (halite-lint/type-check senv# tenv# '~expr)))
 
+(defn j-eval [expr-str]
+  ;; helper for debugging
+  (let [senv (halite-envs/spec-env {})
+        tenv (halite-envs/type-env {})
+        env (halite-envs/env {})
+        expr (jadeite/to-halite expr-str)]
+    (halite/eval-expr senv tenv env expr)))
+
 (defn- is-harness-error? [x]
   (and (vector? x)
        (= :throws (first x))))
@@ -903,6 +911,7 @@
   test-string
   (h "hello" :String "hello" "\"hello\"" "\"hello\"")
   (h "" :String "" "\"\"" "\"\"")
+  (h "one \\ two" :String "one \\ two" "\"one \\\\ two\"" "\"one \\\\ two\"")
   (h "a" :String "a" "\"a\"" "\"a\"")
   (h "☺" :String "☺" "\"☺\"" "\"☺\"")
   (h "\t\n" :String "\t\n" "\"\\t\\n\"" "\"\\t\\n\"")
@@ -1252,6 +1261,11 @@
    (first #{1})
    [:throws
     "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
+  (h (first (sort #{1})) :Integer 1 "#{1}.sort().first()" "1")
+  (h (first (reduce [a []] [x (sort #{1})] (conj a x))) :Integer 1 "reduce( a = []; x in #{1}.sort() ) { a.conj(x) }.first()" "1")
+  (h (first (reduce [a []] [x (sort-by [y #{"a"}] 1)] (conj a x))) :String "a" "reduce( a = []; x in sortBy(y in #{\"a\"})1 ) { a.conj(x) }.first()" "\"a\"")
+  (h (first (reduce [a []] [x (sort-by [y #{"a" "b"}] 1)] (conj a x))) :String [:throws "h-err/sort-value-collision 0-0 : Multiple elements produced the same sort value, so the collection cannot be deterministically sorted"] "reduce( a = []; x in sortBy(y in #{\"a\", \"b\"})1 ) { a.conj(x) }.first()" [:throws "h-err/sort-value-collision 0-0 : Multiple elements produced the same sort value, so the collection cannot be deterministically sorted"])
+
   (h
    (rest #{})
    [:throws
@@ -10461,7 +10475,13 @@
   (hf `(~'let [~(symbol "#") 1] ~(symbol "#")) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: #"])
   (hf `(~'let [~(symbol ",") 1] ~(symbol ",")) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: #"])
   (hf `(~'let [~(symbol ":") 1] ~(symbol ":")) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: #"])
-  (hf `(~'let [~(symbol ";") 1] ~(symbol ";")) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: #"]))
+  (hf `(~'let [~(symbol ";") 1] ~(symbol ";")) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: #"])
+
+  ;; multi-line-strings
+  (hf "a
+b" :String "a\nb" "\"a\\nb\"" "\"a\\nb\"")
+  (is (= "a\nb" (j-eval "\"a
+b\""))))
 
 (defn- update-expected-results []
   (->> (read-string
@@ -10496,23 +10516,3 @@
        (spit "test/jibe/halite_guide2.clj")))
 
 ;; (time (run-tests))
-
-(clojure.set/subset? #{} #{})
-true
-(clojure.set/subset? #{} #{1 2})
-true
-(clojure.set/subset? #{1 2} #{1 2})
-true
-
-(clojure.set/superset? #{1 2} #{1 2})
-true
-
-(not (and (clojure.set/subset? #{1 2} #{1 2})
-          (not= #{1 2} #{1 2})))
-true
-
-(clojure.set/superset? #{1 2} #{1 2 3})
-false
-(not (clojure.set/subset? #{1 2} #{1 2 3}))
-false
-

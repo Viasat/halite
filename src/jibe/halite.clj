@@ -1092,6 +1092,10 @@
                                  (throw ex))))
                     'valid? (not= :Unset (eval-in-env (list 'valid (second expr))))
                     'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
+                               (when-not (= (count (set indexes))
+                                            (count indexes))
+                                 (throw-err (h-err/sort-value-collision {:form expr
+                                                                         :coll coll})))
                                (mapv #(nth % 1) (if (and (pos? (count indexes))
                                                          (fixed-decimal/fixed-decimal? (first indexes)))
                                                   (sort-by

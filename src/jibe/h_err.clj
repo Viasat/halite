@@ -185,6 +185,9 @@
 (deferr invalid-keyword-length [data]
         {:message "The keyword is too long"})
 
+(deferr sort-value-collision [data]
+        {:message "Multiple elements produced the same sort value, so the collection cannot be deterministically sorted"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol
