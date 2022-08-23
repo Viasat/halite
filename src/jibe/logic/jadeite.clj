@@ -221,8 +221,8 @@
                  (every? any? map filter) (str op (infix " in " a0) (toj a1))
                  sort-by (str "sortBy" (infix " in " a0) (toj a1))
                  reduce (let [[[acc init] [elem coll] body] args]
-                          (str "reduce( " (toj acc) " = " (toj init) "; " (toj elem) " in " (toj coll)
-                               " ) { " (toj body) " }"))
+                          (str "(reduce( " (toj acc) " = " (toj init) "; " (toj elem) " in " (toj coll)
+                               " ) { " (toj body) " })"))
                  and (infix " && " args)
                  dec (str "(" (toj a0) " - 1)")
                  div (infix " / " args)
@@ -252,14 +252,14 @@
                                        (map toj [(first a0) (second a0) a1]))
                  inc (str "(" (toj a0) " + 1)")
                  let (let [[bindings expr] args]
-                       (str "{ "
+                       (str "({ "
                             (->> bindings
                                  (partition 2)
                                  (mapcat (fn [[k v]]
                                            [(toj k) " = " (toj v) "; "]))
                                  (apply str))
                             (toj expr)
-                            " }"))
+                            " })"))
                  mod (infix " % " args)
                  not (str "!" (toj a0))
                  not= (if (> (count args) 2)

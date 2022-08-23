@@ -1,5 +1,6 @@
-expr           = conditional
+expr           = let
 
+let            = conditional     | <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
 conditional    = if-value-let    | ('if' | 'ifValue' ) <'('> expr <')'> expr <'else'> expr
 if-value-let   = when-value-let  | <'ifValueLet'> <'('> symbol <'='> expr <')'> expr <'else'> expr
 when-value-let = when-value      | <'whenValueLet'> <'('> symbol <'='> expr <')'> expr
@@ -24,12 +25,11 @@ call-fn        = symbol <'('> (expr (<','> expr)* <','>? )? <')'>
 type-method    = postfix <'.'> ( 'refineTo' | 'refinesTo?' ) <'('> typename <')'>
 call-method    = postfix <'.'> symbol <'('> (expr (<','> expr)* <','>? )? <')'>
 
-<primary>      = decimal | int | symbol | string | map | set | vec | let | <'('> expr <')'>
+<primary>      = decimal | int | symbol | string | map | set | vec | <'('> expr <')'>
 map            = <'{'> ( map-entry ( <','> map-entry )* <','>? )? <'}'>
 map-entry      = '$type' <':'> typename | symbol <':'> expr
 set            = <'#{'> ( expr ( <','> expr )* <','>? )? <'}'>
 vec            = <'['> ( expr ( <','> expr )* <','>? )? <']'>
-let            = <'{'> ( symbol <'='> expr <';'> )* expr <'}'>
 int            = "-"? #"\d+"
 decimal        = <'#d'> string
 symbol         = #"[a-zA-Z][a-zA-Z0-9_$?]*" | #"'[^\s']+'" | #"<\S+>" (* this last form of symbol is deprecated due to parse ambiguity *)

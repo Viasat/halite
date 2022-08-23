@@ -1262,9 +1262,9 @@
    [:throws
     "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
   (h (first (sort #{1})) :Integer 1 "#{1}.sort().first()" "1")
-  (h (first (reduce [a []] [x (sort #{1})] (conj a x))) :Integer 1 "reduce( a = []; x in #{1}.sort() ) { a.conj(x) }.first()" "1")
-  (h (first (reduce [a []] [x (sort-by [y #{"a"}] 1)] (conj a x))) :String "a" "reduce( a = []; x in sortBy(y in #{\"a\"})1 ) { a.conj(x) }.first()" "\"a\"")
-  (h (first (reduce [a []] [x (sort-by [y #{"a" "b"}] 1)] (conj a x))) :String [:throws "h-err/sort-value-collision 0-0 : Multiple elements produced the same sort value, so the collection cannot be deterministically sorted"] "reduce( a = []; x in sortBy(y in #{\"a\", \"b\"})1 ) { a.conj(x) }.first()" [:throws "h-err/sort-value-collision 0-0 : Multiple elements produced the same sort value, so the collection cannot be deterministically sorted"])
+  (h (first (reduce [a []] [x (sort #{1})] (conj a x))) :Integer 1 "(reduce( a = []; x in #{1}.sort() ) { a.conj(x) }).first()" "1")
+  (h (first (reduce [a []] [x (sort-by [y #{"a"}] 1)] (conj a x))) :String "a" "(reduce( a = []; x in sortBy(y in #{\"a\"})1 ) { a.conj(x) }).first()" "\"a\"")
+  (h (first (reduce [a []] [x (sort-by [y #{"a" "b"}] 1)] (conj a x))) :String [:throws "h-err/sort-value-collision 0-0 : Multiple elements produced the same sort value, so the collection cannot be deterministically sorted"] "(reduce( a = []; x in sortBy(y in #{\"a\", \"b\"})1 ) { a.conj(x) }).first()" [:throws "h-err/sort-value-collision 0-0 : Multiple elements produced the same sort value, so the collection cannot be deterministically sorted"])
 
   (h
    (rest #{})
@@ -6874,7 +6874,7 @@
       (if-value o (div 5 0) 1))
     :Integer
     1
-    "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {(5 / 0)} else {1}) }"
+    "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {(5 / 0)} else {1}) })"
     "1"])
   (hc
    :basic
@@ -6884,7 +6884,7 @@
       (if-value o 1 (div 5 0)))
     :Integer
     [:throws "Divide by zero"]
-    "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {1} else {(5 / 0)}) }"
+    "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {1} else {(5 / 0)}) })"
     [:throws "Divide by zero"]])
   (hc
    :basic
@@ -6894,7 +6894,7 @@
       (if-value o o 1))
     :Integer
     1
-    "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {o} else {1}) }"
+    "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {o} else {1}) })"
     "1"])
   (hc
    :basic
@@ -6904,7 +6904,7 @@
       (if-value o o 1))
     :Integer
     3
-    "{ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (ifValue(o) {o} else {1}) }"
+    "({ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (ifValue(o) {o} else {1}) })"
     "3"])
   (hc
    :basic
@@ -6928,7 +6928,7 @@
    [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)] o)
     [:Maybe :Integer]
     3
-    "{ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; o }"
+    "({ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; o })"
     "3"])
   (hc
    :basic
@@ -6938,7 +6938,7 @@
       (when-value o (div 5 0)))
     [:Maybe :Integer]
     :Unset
-    "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(5 / 0)}) }"
+    "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(5 / 0)}) })"
     "Unset"])
   (hc
    :basic
@@ -7285,7 +7285,7 @@
       (if-value v v {:$type :spec/A$v1, :p 1, :n -3}))
     [:Instance :spec/A$v1]
     {:$type :spec/A$v1, :p 1, :n -1}
-    "{ v = (if(true) {(valid {$type: spec/A$v1, n: -1, p: 1})} else {{$type: spec/A$v1, n: -2, p: 1}}); (ifValue(v) {v} else {{$type: spec/A$v1, n: -3, p: 1}}) }"
+    "({ v = (if(true) {(valid {$type: spec/A$v1, n: -1, p: 1})} else {{$type: spec/A$v1, n: -2, p: 1}}); (ifValue(v) {v} else {{$type: spec/A$v1, n: -3, p: 1}}) })"
     "{$type: spec/A$v1, n: -1, p: 1}"])
   (hc
    :basic-2
@@ -7357,7 +7357,7 @@
       (if true (get vs 0) (get vs 1)))
     [:Instance :*]
     {:$type :spec/A$v1, :p 1, :n -1}
-    "{ vs = [{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}]; (if(true) {vs[0]} else {vs[1]}) }"
+    "({ vs = [{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}]; (if(true) {vs[0]} else {vs[1]}) })"
     "{$type: spec/A$v1, n: -1, p: 1}"]))
 
 (deftest
@@ -7393,12 +7393,11 @@
   (hc
    :basic
    :my
-   [(let
-     [v (get {:$type :my/Spec$v1, :p 1, :n -1} :o)]
+   [(let [v (get {:$type :my/Spec$v1, :p 1, :n -1} :o)]
       (if-value v 19 32))
     :Integer
     32
-    "{ v = {$type: my/Spec$v1, n: -1, p: 1}.o; (ifValue(v) {19} else {32}) }"
+    "({ v = {$type: my/Spec$v1, n: -1, p: 1}.o; (ifValue(v) {19} else {32}) })"
     "32"])
   (hc
    :basic
@@ -7408,7 +7407,7 @@
       (if-value v 19 32))
     :Integer
     19
-    "{ v = {$type: my/Spec$v1, n: -1, o: 0, p: 1}.o; (ifValue(v) {19} else {32}) }"
+    "({ v = {$type: my/Spec$v1, n: -1, o: 0, p: 1}.o; (ifValue(v) {19} else {32}) })"
     "19"]))
 
 (deftest
@@ -7471,7 +7470,7 @@
       (if-value v "hi" "bye"))
     :String
     "hi"
-    "{ v = (valid {$type: my/Spec$v1, n: -1, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) }"
+    "({ v = (valid {$type: my/Spec$v1, n: -1, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) })"
     "\"hi\""])
   (hc
    :basic
@@ -7481,7 +7480,7 @@
       (if-value v "hi" "bye"))
     :String
     "bye"
-    "{ v = (valid {$type: my/Spec$v1, n: 0, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) }"
+    "({ v = (valid {$type: my/Spec$v1, n: 0, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) })"
     "\"bye\""])
   (hc
    :basic
@@ -7491,7 +7490,7 @@
       (if-value v "hi" "bye"))
     :String
     "hi"
-    "{ v = (valid {$type: my/Spec$v1, n: -1, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) }"
+    "({ v = (valid {$type: my/Spec$v1, n: -1, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) })"
     "\"hi\""])
   (hc
    :basic
@@ -7621,7 +7620,7 @@
       (if-value v [1] [2]))
     [:Vec :Integer]
     [2]
-    "{ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[2]}) }"
+    "({ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[2]}) })"
     "[2]"])
   (hc
    :basic-2
@@ -7631,7 +7630,7 @@
       (if-value v [1] [2]))
     [:Vec :Integer]
     [1]
-    "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[2]}) }"
+    "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[2]}) })"
     "[1]"])
   (hc
    :basic-2
@@ -7641,7 +7640,7 @@
       (if-value v [1] "no"))
     :Value
     [1]
-    "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {\"no\"}) }"
+    "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {\"no\"}) })"
     "[1]"])
   (hc
    :basic-2
@@ -7651,7 +7650,7 @@
       (if-value v [1] ["no"]))
     [:Vec :Value]
     [1]
-    "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[\"no\"]}) }"
+    "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[\"no\"]}) })"
     "[1]"])
   (hc
    :basic-2
@@ -7661,7 +7660,7 @@
       (if-value v [1] []))
     [:Vec :Integer]
     [1]
-    "{ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) }"
+    "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) })"
     "[1]"])
   (hc
    :basic-2
@@ -7672,7 +7671,7 @@
       (if-value v [1] []))
     [:Vec :Integer]
     []
-    "{ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) }"
+    "({ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) })"
     "[]"])
   (hc
    :basic-2
@@ -9420,7 +9419,7 @@
          false)))
     [:Vec [:Instance :*]]
     [{:$type :spec/A$v1, :x 1}]
-    "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}]){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) }"
+    "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])({ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) })"
     "[{$type: spec/A$v1, x: 1}]"])
   (hc
    [(workspace
@@ -9439,7 +9438,7 @@
          true)))
     [:Set [:Instance :*]]
     #{{:$type :spec/B$v1, :x 2}}
-    "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}}){ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 1)} else {true}) }"
+    "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}})({ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 1)} else {true}) })"
     "#{{$type: spec/B$v1, x: 2}}"]))
 
 (deftest
@@ -9471,19 +9470,19 @@
    (reduce [a 2] [x [3]] true)
    :Boolean
    true
-   "reduce( a = 2; x in [3] ) { true }"
+   "(reduce( a = 2; x in [3] ) { true })"
    "true")
   (h
    (reduce [a 2] [x [3]] (+ a x))
    :Integer
    5
-   "reduce( a = 2; x in [3] ) { (a + x) }"
+   "(reduce( a = 2; x in [3] ) { (a + x) })"
    "5")
   (h
    (reduce [a 0] [x [1 2 3]] (+ a x))
    :Integer
    6
-   "reduce( a = 0; x in [1, 2, 3] ) { (a + x) }"
+   "(reduce( a = 0; x in [1, 2, 3] ) { (a + x) })"
    "6")
   (h
    (reduce [a 0] [x []] (+ a x))
@@ -9493,7 +9492,7 @@
    (reduce [a 0] [x []] a)
    :Integer
    0
-   "reduce( a = 0; x in [] ) { a }"
+   "(reduce( a = 0; x in [] ) { a })"
    "0")
   (h
    (reduce [a 0] [x #{}] (+ a x))
@@ -9507,13 +9506,13 @@
    (reduce [a 0] [x [1 3 2]] (+ a x))
    :Integer
    6
-   "reduce( a = 0; x in [1, 3, 2] ) { (a + x) }"
+   "(reduce( a = 0; x in [1, 3, 2] ) { (a + x) })"
    "6")
   (h
    (reduce [a 1] [x [1 3 2]] (* 2 a))
    :Integer
    8
-   "reduce( a = 1; x in [1, 3, 2] ) { (2 * a) }"
+   "(reduce( a = 1; x in [1, 3, 2] ) { (2 * a) })"
    "8")
   (h
    (reduce [x 0] [x [1 2 3 4]] (+ x x))
@@ -9529,21 +9528,21 @@
    (reduce [a 0] [x [1 2 3 4]] x)
    :Integer
    4
-   "reduce( a = 0; x in [1, 2, 3, 4] ) { x }"
+   "(reduce( a = 0; x in [1, 2, 3, 4] ) { x })"
    "4")
   (h (reduce [a 0] [x [1 2 3 4]]
              (when false 1))
      [:Maybe :Integer]
-     :Unset "reduce( a = 0; x in [1, 2, 3, 4] ) { (when(false) {1}) }" "Unset")
+     :Unset "(reduce( a = 0; x in [1, 2, 3, 4] ) { (when(false) {1}) })" "Unset")
   (h (reduce [a 0] [x [1 2 3 4]] $no-value)
      :Unset
      :Unset
-     "reduce( a = 0; x in [1, 2, 3, 4] ) { '$no-value' }" "Unset")
+     "(reduce( a = 0; x in [1, 2, 3, 4] ) { '$no-value' })" "Unset")
   (h
    (reduce [a 0] [x [[1 2] [3]]] (+ a (count x)))
    :Integer
    3
-   "reduce( a = 0; x in [[1, 2], [3]] ) { (a + x.count()) }"
+   "(reduce( a = 0; x in [[1, 2], [3]] ) { (a + x.count()) })"
    "3")
   (h
    (reduce [a 0] [x #{[3] [1 2]}] (+ a (count x)))
@@ -9556,13 +9555,13 @@
     (+ a (count x)))
    :Integer
    3
-   "reduce( a = 0; x in sortBy(x in #{[1, 2], [3]})x.count() ) { (a + x.count()) }"
+   "(reduce( a = 0; x in sortBy(x in #{[1, 2], [3]})x.count() ) { (a + x.count()) })"
    "3")
   (h
    (reduce [_ 0] [x [[3] [1 2]]] (count x))
    :Integer
    2
-   "reduce( '_' = 0; x in [[3], [1, 2]] ) { x.count() }"
+   "(reduce( '_' = 0; x in [[3], [1, 2]] ) { x.count() })"
    "2")
   (h
    (reduce [☺ 0] [x [[3] [1 2]]] (+ ☺ (count x)))
@@ -9588,7 +9587,7 @@
      (+ a (get x :x)))
     :Integer
     13
-    "reduce( a = 10; x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}] ) { (a + x.x) }"
+    "(reduce( a = 10; x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}] ) { (a + x.x) })"
     "13"]))
 
 (deftest
@@ -9721,14 +9720,14 @@
    (let [x 1 y (inc x) z (inc y)] z)
    :Integer
    3
-   "{ x = 1; y = (x + 1); z = (y + 1); z }"
+   "({ x = 1; y = (x + 1); z = (y + 1); z })"
    "3")
-  (h (let [x 1] (when false 1)) [:Maybe :Integer] :Unset "{ x = 1; (when(false) {1}) }" "Unset")
+  (h (let [x 1] (when false 1)) [:Maybe :Integer] :Unset "({ x = 1; (when(false) {1}) })" "Unset")
   (h
    (let [x 1 x (inc x) x (inc x)] x)
    :Integer
    3
-   "{ x = 1; x = (x + 1); x = (x + 1); x }"
+   "({ x = 1; x = (x + 1); x = (x + 1); x })"
    "3")
   (h
    (let [x y y 1] y)
@@ -9746,8 +9745,8 @@
    [:throws
     "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'let': expected 2, but got 3"])
   (h (let [] 1) [:throws "l-err/let-bindings-empty 0-0 : Bindings form of 'let' cannot be empty in: (let [] 1)"])
-  (h (let [x 1] $no-value) :Unset :Unset "{ x = 1; '$no-value' }" "Unset")
-  (h (let [x 1] (when (> x 1) x)) [:Maybe :Integer] :Unset "{ x = 1; (when((x > 1)) {x}) }" "Unset"))
+  (h (let [x 1] $no-value) :Unset :Unset "({ x = 1; '$no-value' })" "Unset")
+  (h (let [x 1] (when (> x 1) x)) [:Maybe :Integer] :Unset "({ x = 1; (when((x > 1)) {x}) })" "Unset"))
 
 (deftest
   test-fixed-decimal
@@ -10074,7 +10073,7 @@
     (conj a x))
    [:Set :Value]
    #{0 #d "0.0" #d "0.00"}
-   "reduce( a = #{}; x in [0, #d \"0.0\", #d \"0.00\", 0, #d \"0.0\", #d \"0.00\"] ) { a.conj(x) }"
+   "(reduce( a = #{}; x in [0, #d \"0.0\", #d \"0.00\", 0, #d \"0.0\", #d \"0.00\"] ) { a.conj(x) })"
    "#{#d \"0.0\", #d \"0.00\", 0}")
   (h
    (= 0 #d "0.0")
@@ -10242,10 +10241,10 @@
   (h (get-in [10 20 30] []) [:throws "l-err/get-in-path-cannot-be-empty 0-0 : The path parameter in 'get-in' cannot be empty: (get-in [10 20 30] [])"])
   (h (get-in [10 20 30] [1]) :Integer 20 "[10, 20, 30][1]" "20")
   (h (get-in [[10 11 12] [20 21] [30 31 32 33]] [2 3]) :Integer 33 "[[10, 11, 12], [20, 21], [30, 31, 32, 33]][2][3]" "33")
-  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
-  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
-  (h (let [x 0] (get-in [10 20 30] [(+ x 1)])) :Integer 20 "{ x = 0; [10, 20, 30][(x + 1)] }" "20")
-  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "{ x = 1; [10, 20, 30][x] }" "20")
+  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "({ x = 1; [10, 20, 30][x] })" "20")
+  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "({ x = 1; [10, 20, 30][x] })" "20")
+  (h (let [x 0] (get-in [10 20 30] [(+ x 1)])) :Integer 20 "({ x = 0; [10, 20, 30][(x + 1)] })" "20")
+  (h (let [x 1] (get-in [10 20 30] [x])) :Integer 20 "({ x = 1; [10, 20, 30][x] })" "20")
   (h (get-in [10 20 30] (if true [1] [2])) [:throws "h-err/get-in-path-must-be-vector-literal 0-0 : The path parameter in 'get-in' must be a vector literal: (get-in [10 20 30] (if true [1] [2]))"])
   (h (let [x [1]] (get-in [10 20 30] x)) [:throws "h-err/get-in-path-must-be-vector-literal 0-0 : The path parameter in 'get-in' must be a vector literal: (get-in [10 20 30] x)"])
 
@@ -10331,7 +10330,8 @@
       (when-value o (+ o 2)))
     [:Maybe :Integer]
     :Unset
-    "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(o + 2)}) }" "Unset"])
+    "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(o + 2)}) })"
+    "Unset"])
   (hc
    :basic
    :my
@@ -10339,7 +10339,8 @@
       (when-value o (+ o 2)))
     [:Maybe :Integer]
     5
-    "{ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (whenValue(o) {(o + 2)}) }" "5"]))
+    "({ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (whenValue(o) {(o + 2)}) })"
+    "5"]))
 
 (deftest test-when-value-let
   (hc
@@ -10350,7 +10351,7 @@
                       (inc x)))
     [:Maybe :Integer]
     :Unset
-    "{ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValueLet ( x = (whenValue(o) {(o + 2)}) ) {(x + 1)}) }"
+    "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValueLet ( x = (whenValue(o) {(o + 2)}) ) {(x + 1)}) })"
     "Unset"])
   (hc
    :basic
@@ -10360,7 +10361,7 @@
                       (inc x)))
     [:Maybe :Integer]
     6
-    "{ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (whenValueLet ( x = (whenValue(o) {(o + 2)}) ) {(x + 1)}) }"
+    "({ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (whenValueLet ( x = (whenValue(o) {(o + 2)}) ) {(x + 1)}) })"
     "6"]))
 
 (deftest test-keywords
@@ -10440,31 +10441,31 @@
 
 (deftest test-symbols
   (h a [:throws "h-err/undefined-symbol 0-0 : Undefined: 'a'"])
-  (h (let [a 1] a) :Integer 1 "{ a = 1; a }" "1")
-  (h (let [a1 1] a1) :Integer 1 "{ a1 = 1; a1 }" "1")
+  (h (let [a 1] a) :Integer 1 "({ a = 1; a })" "1")
+  (h (let [a1 1] a1) :Integer 1 "({ a1 = 1; a1 })" "1")
   (h (let [0 1] 0) [:throws "h-err/let-symbols-required 0-0 : Even-numbered forms in let binding vector must be symbols"])
-  (h (let [- 1] -) :Integer 1 "{ '-' = 1; '-' }" "1")
-  (h (let [a- 1] a-) :Integer 1 "{ 'a-' = 1; 'a-' }" "1")
-  (h (let [a-b 1] a-b) :Integer 1 "{ 'a-b' = 1; 'a-b' }" "1")
-  (h (let [_ 1] _) :Integer 1 "{ '_' = 1; '_' }" "1")
-  (h (let [_a 1] _a) :Integer 1 "{ '_a' = 1; '_a' }" "1")
-  (h (let [a_ 1] a_) :Integer 1 "{ 'a_' = 1; 'a_' }" "1")
+  (h (let [- 1] -) :Integer 1 "({ '-' = 1; '-' })" "1")
+  (h (let [a- 1] a-) :Integer 1 "({ 'a-' = 1; 'a-' })" "1")
+  (h (let [a-b 1] a-b) :Integer 1 "({ 'a-b' = 1; 'a-b' })" "1")
+  (h (let [_ 1] _) :Integer 1 "({ '_' = 1; '_' })" "1")
+  (h (let [_a 1] _a) :Integer 1 "({ '_a' = 1; '_a' })" "1")
+  (h (let [a_ 1] a_) :Integer 1 "({ 'a_' = 1; 'a_' })" "1")
   (h (let [$ 1] $) [:throws "l-err/let-invalid-symbol 0-0 : Binding target for 'let' must not start with '$': $"])
-  (h (let [a$ 1] a$) :Integer 1 "{ 'a$' = 1; 'a$' }" "1")
+  (h (let [a$ 1] a$) :Integer 1 "({ 'a$' = 1; 'a$' })" "1")
   (h (let [☺ 1] ☺) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: ☺"])
   (h (let [% 1] %) [:syntax-check-throws "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: %"])
-  (h (let [. 1] .) :Integer 1 "{ '.' = 1; '.' }" "1")
-  (h (let [< 1] <) :Integer 1 "{ '<' = 1; '<' }" "1")
-  (h (let [> 1] >) :Integer 1 "{ '>' = 1; '>' }" "1")
-  (h (let [= 1] =) :Integer 1 "{ '=' = 1; '=' }" "1")
-  (h (let [a.b 1] a.b) :Integer 1 "{ 'a.b' = 1; 'a.b' }" "1")
+  (h (let [. 1] .) :Integer 1 "({ '.' = 1; '.' })" "1")
+  (h (let [< 1] <) :Integer 1 "({ '<' = 1; '<' })" "1")
+  (h (let [> 1] >) :Integer 1 "({ '>' = 1; '>' })" "1")
+  (h (let [= 1] =) :Integer 1 "({ '=' = 1; '=' })" "1")
+  (h (let [a.b 1] a.b) :Integer 1 "({ 'a.b' = 1; 'a.b' })" "1")
   (h (let [a/b 1] a/b) [:throws "l-err/let-needs-bare-symbol 0-0 : Binding target for 'let' must be a bare symbol, not: a/b"])
 
   (h (let [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 1]
        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa)
      :Integer
      1
-     "{ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 1; aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa }"
+     "({ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 1; aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa })"
      "1")
 
   (h (let [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaax 1] aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaax) [:syntax-check-throws "h-err/invalid-symbol-length 0-0 : The symbol is too long"]))
