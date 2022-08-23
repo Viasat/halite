@@ -8,22 +8,43 @@
 
 (set! *warn-on-reflection* true)
 
-(def misc-notes ["Commas are considered whitespace in halite expressions."])
+;; TODO:
+;; define jadeite operator precedence
+;; specify use of parens and {} in jadeite
 
-(def basic-bnf ['basic-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"}
-                'plus-minus-character {:bnf "'+' | '-'"}
-                'symbol-character {:bnf "basic-character | plus-minus-character | '0-9'"}
-                'simple-symbol {:bnf "plus-minus-character | ((basic-character | plus-minus-character) [{symbol-character}])"}
+(def misc-notes ["'whitespace' refers to characters such as spaces, tabs, and newlines."
+                 "Whitespace is generally not called out in the following diagrams. However, it is specified for a few syntactic constructs that explicitly rely on whitespace."])
+
+(def misc-notes-halite ["For halite, whitespace also includes the comma. The comma can be used as an optional delimiter in sequences to improve readability."])
+
+(def basic-bnf ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"
+                                        :tags #{:symbol :symbol-j}}
+                'plus-minus-character {:bnf "'+' | '-'"
+                                       :tags #{:symbol :symbol-j}}
+                'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"
+                                   :tags #{:symbol :symbol-j}}
+                'simple-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"
+                                :tags #{:symbol :symbol-j}}
                 'symbol {:bnf "simple-symbol [ '/' simple-symbol]"
                          :j-bnf "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"
+                         :doc "Symbols are identifiers that allow values and operations to be named."
+                         :comment "Symbols are used to identify operators, variables in expressions, and specifications."
+                         :comment-j "Symbols are used to identify operators, variables in expressions, specifications, and fields within specifications."
+                         :comment-2 "Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator."
+                         :comment-3 "A common pattern in operator arguments is to provide a sequence of alternating symbols and values within square brackets. In these cases each symbol is bound to the corresponding value in pair-wise fashion."
+                         :comment-3-j nil
                          :examples [{:str "a"
                                      :str-j "a"}
                                     {:expr-str "a.b"
-                                     :expr-str-j "a.b"}]}
+                                     :expr-str-j "a.b"}]
+                         :tags #{:symbol :symbol-j}}
                 'keyword {:bnf "':' symbol"
                           :j-bnf nil
+                          :doc "Keywords are identifiers that are used for instance field names."
+                          :comment "Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated."
                           :examples [{:str ":age"}
-                                     {:str ":x/y"}]}
+                                     {:str ":x/y"}]
+                          :tags #{:symbol}}
 
                 'boolean {:bnf "true | false"}
                 'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
@@ -71,6 +92,9 @@
                 'instance {:bnf "'{' ':$type' keyword:spec-id {keyword value} '}' "
                            :j-bnf "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"
                            :doc "Represents an instance of a specification."
+                           :comment "The contents of the instance are specified in pair-wise fashion with alternating field names and field values."
+                           :comment-2 "The special field name ':$type' is mandatory but cannot be used as the other fields are."
+                           :comment-2-j "The special field name '$type' is mandatory but cannot be used as the other fields are."
                            :examples [{:str "{:$type :text/Spec$v1 :x 1 :y -1}"
                                        :str-j "{$type: my/Spec$v1, x: 1, y: -1}"}]}
                 'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
@@ -83,13 +107,16 @@
                 'set {:bnf "'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"
                       :j-bnf "'#' '{' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} '}'"
                       :doc "A collection of values in an unordered set. Duplicates are not allowed."
+                      :comment "The members of sets are not directly accessible. If it is necessary to access the members of a set, it is recommended to design the data structures going into the sets in such a way that the set can be sorted into a vector for access."
                       :examples [{:expr-str "#{}"
                                   :expr-str-j "#{}"}
                                  {:expr-str "#{1 2 3}"
                                   :expr-str-j "#{1, 2, 3}"}]}
 
-                'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"}
-                'any {:bnf "value | unset"}])
+                'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"
+                        :doc "Expressions and many literals produce values."}
+                'any {:bnf "value | unset"
+                      :doc "Refers to either the presence of absence of a value."}])
 
 (def op-maps
   {'$no-value {:sigs [["" "unset"]]
@@ -111,8 +138,13 @@
        :comment "Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale."
        :throws ["On overflow"]
        :examples [{:expr-str "(* 2 3)"
+                   :expr-str-j :auto
                    :result :auto}
                   {:expr-str "(* #d \"2.2\" 3)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(* 2 3 4)"
+                   :expr-str-j :auto
                    :result :auto}]}
    '+ {:sigs [["integer integer {integer}" "integer"]
               ["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]]
@@ -120,7 +152,19 @@
                 ["fixed-decimal '+' fixed-decimal" "fixed-decimal"]]
        :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
        :doc "Add two numbers together."
-       :throws ["On overflow"]}
+       :throws ["On overflow"]
+       :examples [{:expr-str "(+ 2 3)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(+ #d \"2.2\" #d \"3.3\")"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(+ 2 3 4)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(+ 2 -3)"
+                   :expr-str-j :auto
+                   :result :auto}]}
    '- {:sigs [["integer integer {integer}" "integer"]
               ["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]]
        :j-sigs [["integer '-' integer" "integer"]
@@ -128,21 +172,78 @@
        :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
 
        :doc "Subtract one number from another."
+       :examples [{:expr-str "(- 2 3)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(- #d \"2.2\" #d \"3.3\")"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(- 2 3 4)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(- 2 -3)"
+                   :expr-str-j :auto
+                   :result :auto}]
        :throws ["On overflow"]}
    '< {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
        :j-sigs [["((integer '<'  integer) | (fixed-decimal '<' fixed-decimal))" "boolean"]]
        :tags #{:integer-op :fixed-decimal-op :boolean-out}
-       :doc "Determine if a number is strictly less than another."}
+       :doc "Determine if a number is strictly less than another."
+       :examples [{:expr-str "(< 2 3)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(< #d \"2.2\" #d \"3.3\")"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(< 2 2)"
+                   :expr-str-j :auto
+                   :result :auto}]}
    '<= {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
         :j-sigs [["((integer '<=' integer) | (fixed-decimal '<=' fixed-decimal))" "boolean"]]
         :tags #{:integer-op :fixed-decimal-op :boolean-out}
-        :doc "Determine if a number is less than or equal to another."}
+        :doc "Determine if a number is less than or equal to another."
+        :examples [{:expr-str "(<= 2 3)"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(<= #d \"2.2\" #d \"3.3\")"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(<= 2 2)"
+                    :expr-str-j :auto
+                    :result :auto}]}
    '= {:sigs [["value value {value}" "boolean"]]
        :j-sigs [["value '==' value" "boolean"]
                 ["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]]
        :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :boolean-out :instance-op}
        :doc "Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents."
-       :see-also ['not=]}
+       :see-also ['not=]
+       :examples [{:expr-str "(= 2 2)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(= #d \"2.2\" #d \"3.3\")"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(= 2 3)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(= \"hi\" \"hi\")"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(= [1 2 3] [1 2 3])"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(= [1 2 3] #{1 2 3})"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(= #{3 1 2} #{1 2 3})"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(= [#{1 2} #{3}] [#{1 2} #{3}])"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(= [#{1 2} #{3}] [#{1 2} #{4}])"
+                   :expr-str-j :auto
+                   :result :auto}]}
    '=> {:sigs [["boolean boolean" "boolean"]]
         :j-sigs [["boolean '=>' boolean" "boolean"]]
         :tags #{:boolean-op :boolean-out}
