@@ -243,19 +243,48 @@
                    :result :auto}
                   {:expr-str "(= [#{1 2} #{3}] [#{1 2} #{4}])"
                    :expr-str-j :auto
-                   :result :auto}]}
+                   :result :auto}
+                  {:str "(= {:$type :text/Spec$v1 :x 1 :y -1} {:$type :text/Spec$v1 :x 1 :y 0})"}]}
    '=> {:sigs [["boolean boolean" "boolean"]]
         :j-sigs [["boolean '=>' boolean" "boolean"]]
         :tags #{:boolean-op :boolean-out}
-        :doc "Performs logical implication. If the first value is true, then the second value must also be true for the result to be true. If the first value is false, then the result is true."}
+        :doc "Performs logical implication. If the first value is true, then the second value must also be true for the result to be true. If the first value is false, then the result is true."
+        :examples [{:expr-str "(=> (> 2 1) (< 1 2))"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(=> (> 2 1) (> 1 2))"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(=> (> 1 2) false)"
+                    :expr-str-j :auto
+                    :result :auto}]
+        :see-also ['and 'every? 'not 'or]}
    '> {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
        :j-sigs [["((integer '>'  integer) | (fixed-decimal '>' fixed-decimal))" "boolean"]]
        :tags #{:integer-op :fixed-decimal-op :boolean-out}
-       :doc "Determine if a number is strictly greater than another."}
+       :doc "Determine if a number is strictly greater than another."
+       :examples [{:expr-str "(> 3 2)"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(> #d \"3.3\" #d \"2.2\" )"
+                   :expr-str-j :auto
+                   :result :auto}
+                  {:expr-str "(> 2 2)"
+                   :expr-str-j :auto
+                   :result :auto}]}
    '>= {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
         :j-sigs [["((integer '>='  integer) | (fixed-decimal '>=' fixed-decimal))" "boolean"]]
         :tags #{:integer-op :fixed-decimal-op :boolean-out}
-        :doc "Determine if a number is greater than or equal to another."}
+        :doc "Determine if a number is greater than or equal to another."
+        :examples [{:expr-str "(>= 3 2)"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(>= #d \"3.3\" #d \"2.2\" )"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(>= 2 2)"
+                    :expr-str-j :auto
+                    :result :auto}]}
    'abs {:sigs [["integer" "integer"]
                 ["fixed-decimal" "fixed-decimal"]]
          :j-sigs [["'abs' '(' integer ')'" "integer"]
@@ -263,18 +292,42 @@
          :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
          :doc "Compute the absolute value of a number."
          :comment "Since the negative number space contains one more value than the positive number space, it is a runtime error to attempt to take the absolute value of the most negative value for a given number space."
-         :throws ["Cannot compute absolute value most max negative value"]}
+         :throws ["Cannot compute absolute value most max negative value"]
+         :examples [{:expr-str "(abs -1)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(abs 1)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(abs #d \"-1.0\")"
+                     :expr-str-j :auto
+                     :result :auto}]}
    'and {:sigs [["boolean {boolean}" "boolean"]]
          :j-sigs [["boolean '&&' {boolean}" "boolean"]]
          :tags #{:boolean-op :boolean-out}
          :doc "Perform a logical 'and' operation on the input values."
          :comment "The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated."
-         :see-also ['=> 'every? 'not 'or]}
+         :see-also ['=> 'every? 'not 'or]
+         :examples [{:expr-str "(and true false)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(and true true)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(and (> 2 1) (> 3 2) (> 4 3))"
+                     :expr-str-j :auto
+                     :result :auto}]}
    'any? {:sigs [["'[' symbol (set | vector) ']' boolean-expression" "boolean"]]
           :j-sigs [["'any?' '(' symbol 'in' (set | vector) ')' boolean-expression" "boolean"]]
           :tags #{:set-op :vector-op :boolean-out :special-form}
           :doc "Evaluates to true if the boolean-expression is true when the symbol is bound to some element in the collection."
           :comment "The operation does not short-circuit. The boolean-expression is evaluated for all elements even if a prior element has caused the boolean-expression to evaluate to true. Operating on an empty collection produces a false value."
+          :examples [{:expr-str "(any? [x [1 2 3] (> x 1))"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(any? [x #{1 2 3} (> x 10))"
+                      :expr-str-j :auto
+                      :result :auto}]
           :see-also ['every? 'or]}
    'concat {:sigs [["vector vector" "vector"]
                    ["(set (set | vector))" "set"]]
@@ -282,35 +335,91 @@
                      ["(set '.' 'concat' '(' (set | vector) ')')" "set"]]
             :tags #{:set-op :vector-op :vector-out :set-out}
             :doc "Combine two collections into one."
-            :comment "Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed."}
+            :comment "Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed."
+            :examples [{:expr-str "(concat [1 2] [3])"
+                        :expr-str-j :auto
+                        :result :auto}
+                       {:expr-str "(concat #{1 2} [3 4])"
+                        :expr-str-j :auto
+                        :result :auto}
+                       {:expr-str "(concat [] [])"
+                        :expr-str-j :auto
+                        :result :auto}]}
    'conj {:sigs [["set value {value}" "set"]
                  ["vector value {value}" "vector"]]
           :j-sigs [["set '.' 'conj' '(' value {',' value} ')'" "set"]
                    ["vector '.' 'conj' '(' value {',' value} ')'" "vector"]]
           :tags #{:set-op :vector-op :set-out :vector-out}
           :doc "Add individual items to a collection."
-          :comment "Only definite values may be put into collections, i.e. collections cannot contain 'unset' values."}
+          :comment "Only definite values may be put into collections, i.e. collections cannot contain 'unset' values."
+          :examples [{:expr-str "(conj [1 2] 3)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(conj #{1 2} 3 4)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(conj [] 1)"
+                      :expr-str-j :auto
+                      :result :auto}]}
    'contains? {:sigs [["set value" "boolean"]]
                :j-sigs [["set '.' 'contains?' '(' value ')'" "boolean"]]
                :tags #{:set-op :boolean-out}
                :doc "Determine if a specific value is in a set."
-               :comment "Since collections themselves are compared by their contents, this works for collections nested inside of sets."}
+               :comment "Since collections themselves are compared by their contents, this works for collections nested inside of sets."
+               :examples [{:expr-str "(contains? #{\"a\" \"b\"} \"a\")"
+                           :expr-str-j :auto
+                           :result :auto}
+                          {:expr-str "(contains? #{\"a\" \"b\"} \"c\")"
+                           :expr-str-j :auto
+                           :result :auto}
+                          {:expr-str "(contains? #{#{1 2} #{3}} #{1 2})"
+                           :expr-str-j :auto
+                           :result :auto}
+                          {:expr-str "(contains? #{[1 2] [3]} [4])"
+                           :expr-str-j :auto
+                           :result :auto}]}
    'count {:sigs [["(set | vector)" "integer"]]
            :j-sigs [["(set | vector) '.' 'count()'" "integer"]]
            :tags #{:integer-out :set-op :vector-op}
-           :doc "Return how many items are in a collection."}
+           :doc "Return how many items are in a collection."
+           :examples [{:expr-str "(count [10 20 30])"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(count #{\"a\" \"b\"})"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(count [])"
+                       :expr-str-j :auto
+                       :result :auto}]}
    'dec {:sigs [["integer" "integer"]]
          :j-sigs [["integer '-' '1' " "integer"]]
          :tags #{:integer-op :integer-out}
          :doc "Decrement a numeric value."
          :throws ["On overflow"]
-         :see-also ['inc]}
+         :see-also ['inc]
+         :examples [{:expr-str "(dec 10)"
+                     :result :auto}
+                    {:expr-str "(dec 0)"
+                     :result :auto}]}
    'difference {:sigs [["set set" "set"]]
                 :j-sigs [["set '.' 'difference' '(' set ')'" "set"]]
                 :tags #{:set-op :set-out}
                 :doc "Compute the set difference of two sets."
                 :comment "This produces a set which contains all of the elements from the first set which do not appear in the second set."
-                :see-also ['intersection 'union 'subset?]}
+                :see-also ['intersection 'union 'subset?]
+
+                :examples [{:expr-str "(difference #{1 2 3} #{1 2})"
+                            :expr-str-j :auto
+                            :result :auto}
+                           {:expr-str "(difference #{1 2 3} #{})"
+                            :expr-str-j :auto
+                            :result :auto}
+                           {:expr-str "(difference #{1 2 3} #{1 2 3 4})"
+                            :expr-str-j :auto
+                            :result :auto}
+                           {:expr-str "(difference #{[1 2] [3]} #{[1 2]})"
+                            :expr-str-j :auto
+                            :result :auto}]}
    'div {:sigs [["integer integer" "integer"]
                 ["fixed-decimal integer" "fixed-decimal"]]
          :j-sigs [["integer '/' integer" "integer"]
@@ -318,38 +427,87 @@
          :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
          :doc "Divide the first number by the second. When the first argument is an integer the result is truncated to an integer value. When the first argument is a fixed-decimal the result is truncated to the same precision as the first argument."
          :comment "As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale."
-         :throws ["When the second argument is 0"]
+         :throws ['h-err/divide-by-zero]
+         :examples [{:expr-str "(div 12 3)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(div #d \"12.3\" 3)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(div 14 4)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(div #d \"14.3\" 3)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(div 1 0)"
+                     :expr-str-j :auto
+                     :result :auto}]
          :see-also ['mod]}
    'error {:sigs [["string" "nothing"]]
            :j-sigs [["'error' '(' string ')'" "nothing"]]
            :tags #{:nothing-out}
            :doc "Produce a runtime error with the provided string as an error message."
            :comment "Used to indicate when an unexpected condition has occurred and the data at hand is invalid. It is preferred to use constraints to capture such conditions earlier."
+           :examples [{:expr-str "(error \"failure\")"
+                       :expr-str-j :auto
+                       :result :auto}]
            :throws ["Always"]}
    'every? {:sigs [["'[' symbol (set | vector) ']' boolean-expression" "boolean"]]
             :j-sigs [["'every?' '(' symbol 'in' (set | vector) ')' boolean-expression" "boolean"]]
             :tags #{:set-op :vector-op :boolean-out :special-form}
             :doc "Evaluates to true if the boolean-expression is true when the symbol is bound to each the element in the collection."
             :comment "Does not short-circuit. The boolean-expression is evaluated for all elements, even once a prior element has evaluated to false. Operating on an empty collection produces a true value."
+            :examples [{:expr-str "(every? [x [1 2 3] (> x 0))"
+                        :expr-str-j :auto
+                        :result :auto}
+                       {:expr-str "(every? [x #{1 2 3} (> x 1))"
+                        :expr-str-j :auto
+                        :result :auto}]
             :see-also ['any? 'and]}
    'expt {:sigs [["integer integer" "integer"]]
           :j-sigs [["'expt' '(' integer ',' integer ')'" "integer"]]
           :tags #{:integer-op :integer-out}
-          :doc "Compute the numeric result of raising the first argument to the power given by the second argument."
-          :throws ["On overflow"]}
+          :doc "Compute the numeric result of raising the first argument to the power given by the second argument. The exponent argument cannot be negative."
+          :examples [{:expr-str "(expt 2 3)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(expt -2 3)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(expt 2 0)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(expt 2 -1)"
+                      :expr-str-j :auto
+                      :result :auto}]
+          :throws ["On overflow"
+                   'h-err/invalid-exponent]}
    'filter {:sigs [["'[' symbol:element set ']' boolean-expression" "set"]
                    ["'[' symbol:element vector ']' boolean-expression" "vector"]]
             :j-sigs [["'filter' '(' symbol 'in' set ')' boolean-expression" "set"]
                      ["'filter' '(' symbol 'in' vector ')' boolean-expression" "vector"]]
             :tags #{:set-op :vector-op :set-out :vector-out :special-form}
             :doc "Produce a new collection which contains only the elements from the original collection for which the boolean-expression is true. When applied to a vector, the order of the elements in the result preserves the order from the original vector."
+            :examples [{:expr-str "(filter [x [1 2 3]] (> x 2))"
+                        :expr-str-j :auto
+                        :result :auto}
+                       {:expr-str "(filter [x #{1 2 3}] (> x 2))"
+                        :expr-str-j :auto
+                        :result :auto}]
             :see-also ['map 'filter]}
    'first {:sigs [["vector" "value"]]
            :j-sigs [["vector '.' 'first()'" "value"]]
            :tags #{:vector-op}
            :doc "Produce the first element from a vector."
            :comment "To avoid runtime errors, if the vector might be empty, use 'count' to check the length first."
-           :throws ["When invoked on an empty vector."]
+           :throws ['h-err/argument-empty]
+           :examples [{:expr-str "(first [10 20 30])"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(filter [])"
+                       :expr-str-j :auto
+                       :result :auto}]
            :see-also ['count 'rest]}
    'get {:sigs [["(instance keyword:instance-field)" "any"]
                 ["(vector integer)" "value"]]
@@ -360,6 +518,11 @@
          :comment "The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification."
          :throws [['h-err/index-out-of-bounds]
                   ['h-err/variables-not-in-spec]]
+         :examples [{:expr-str "(get [10 20 30 40] 2)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:str "(get {:$type :my/Spec$v1, :x -3, :y 2} :x)"
+                     :str-j :auto}]
          :see-also ['get-in]}
    'get-in {:sigs [["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]]
             :notes ["if the last element of the lookup path is an integer, then the result is a value"
@@ -375,11 +538,24 @@
                      'h-err/invalid-lookup-target
                      'h-err/variables-not-in-spec
                      'h-err/index-out-of-bounds]
+            :examples [{:expr-str "(get-in [[10 20] [30 40]] [1 0])"
+                        :expr-str-j :auto
+                        :result :auto}
+                       {:str "(get {:$type :my/Spec$v1, :x {:$type :other/Spec$v1, :a 20, :b 10}, :y 2} [:x :a])"
+                        :str-j :auto}
+                       {:str "(get {:$type :my/Spec$v1, :x {:$type :other/Spec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])"
+                        :str-j :auto}]
             :see-also ['get]}
    'if {:sigs [["boolean any-expression any-expression" "any"]]
         :j-sigs [["'if' '(' boolean ')' any-expression 'else' any-expression" "any"]]
         :tags #{:boolean-op :control-flow :special-form}
         :doc "If the first argument is true, then evaluate the second argument, otherwise evaluate the third argument."
+        :examples [{:expr-str "(if (> 2 1) 10 -1)"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(if (> 2 1) 10 (error \"fail\"))"
+                    :expr-str-j :auto
+                    :result :auto}]
         :see-also ['when]}
    'if-value {:sigs [["symbol any-expression any-expression" "any"]]
               :j-sigs [["'ifValue' '(' symbol ')' any-expression 'else' any-expression" "any"]]
@@ -397,6 +573,10 @@
          :j-sigs [["integer '+' '1'" "integer"]]
          :tags #{:integer-op :integer-out}
          :doc "Increment a numeric value."
+         :examples [{:expr-str "(inc 10)"
+                     :result :auto}
+                    {:expr-str "(inc 0)"
+                     :result :auto}]
          :throws ["On overflow"]
          :see-also ['dec]}
    'intersection {:sigs [["set set {set}" "set"]]
@@ -404,12 +584,20 @@
                   :tags #{:set-op :set-out}
                   :doc "Compute the set intersection of the sets."
                   :comment "This produces a set which only contains values that appear in each of the arguments."
+                  :examples [{:expr-str "(intersection #{1 2 3} #{2 3 4})"
+                              :result :auto}
+                             {:expr-str "(intersection #{1 2 3} #{2 3 4} #{3 4})"
+                              :result :auto}]
                   :see-also ['difference 'union 'subset?]}
    'let {:sigs [["'[' symbol value {symbol value} ']' any-expression" "any"]]
          :j-sigs [["'{' symbol '=' value ';' {symbol '=' value ';'} any-expression '}'" "any"]]
          :tags #{:special-form}
          :doc "Evaluate the expression argument in a nested context created by considering the first argument in a pairwise fashion and binding each symbol to the corresponding value."
          :comment "Allows names to be given to values so that they can be referenced by the any-expression."
+         :examples [{:expr-str "(let [x 1] (inc x))"
+                     :result :auto}
+                    {:expr-str "(let [x 1 y 2] (+ x y))"
+                     :result :auto}]
          :j-doc "Evaluate the expression argument in a nested context created by binding each symbol to the corresponding value."}
    'map {:sigs [["'[' symbol:element set ']' value-expression" "set"]
                 ["'[' symbol:element vector ']' value-expression" "vector"]]
@@ -417,12 +605,25 @@
                   ["'map' '(' symbol:element 'in' vector ')' value-expression" "vector"]]
          :tags #{:set-op :vector-op :set-out :vector-out :special-form}
          :doc "Produce a new collection from a collection by evaluating the expression with the symbol bound to each element of the original collection, one-by-one. The results of evaluating the expression will be in the resulting collection. When operating on a vector, the order of the output vector will correspond to the order of the items in the original vector."
+         :examples [{:expr-str "(map [x [10 11 12]] (inc x))"
+                     :result :auto}
+                    {:expr-str "(map [x #{10 12}] (* x 2))"
+                     :result :auto}]
          :see-also ['reduce 'filter]}
    'mod {:sigs [["integer integer" "integer"]]
          :j-sigs [["integer '%' integer" "integer"]]
          :tags #{:integer-op :integer-out}
          :doc "Computes the mathematical modulus of two numbers. Use care if one of the arguments is negative."
-         :thows ["Second argument is 0"]}
+         :examples [{:expr-str "(mod 12 3)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(mod 14 4)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(mod 1 0)"
+                     :expr-str-j :auto
+                     :result :auto}]
+         :thows ['h-err/divide-by-zero]}
    'not {:sigs [["boolean" "boolean"]]
          :j-sigs [["'!' boolean" "boolean"]]
          :tags #{:boolean-op :boolean-out}

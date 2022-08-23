@@ -48,6 +48,7 @@
 
 (s/defn ^:private eval-predicate :- Boolean
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
+  ;; TODO: currently this with-exception-data form causes err-msg to be thrown without an error code
   (with-exception-data err-msg {:form bool-expr}
     (let [t (type-check* {:senv (:senv ctx) :tenv tenv} bool-expr)]
       (when (not= :Boolean t)
@@ -359,8 +360,14 @@
      'contains? (mk-builtin contains? [(halite-types/set-type :Value) :Value] :Boolean)
      'inc (mk-builtin inc [:Integer] :Integer)
      'dec (mk-builtin dec [:Integer] :Integer)
-     'div (apply mk-builtin hquot (into [[:Integer :Integer] :Integer] decimal-sigs-single))
-     'mod (mk-builtin mod [:Integer :Integer] :Integer)
+     'div (apply mk-builtin (fn [num divisor]
+                              (when (= 0 divisor)
+                                (throw-err (h-err/divide-by-zero {:num num})))
+                              (hquot num divisor)) (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
+     'mod (mk-builtin (fn [num divisor]
+                        (when (= 0 divisor)
+                          (throw-err (h-err/divide-by-zero {:num num})))
+                        (mod num divisor)) [:Integer :Integer] :Integer)
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
                            (throw-err (h-err/invalid-exponent {:exponent p})))

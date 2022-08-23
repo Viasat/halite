@@ -188,6 +188,9 @@
 (deferr sort-value-collision [data]
         {:message "Multiple elements produced the same sort value, so the collection cannot be deterministically sorted"})
 
+(deferr divide-by-zero [data]
+        {:message "Cannot divide by zero"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol
