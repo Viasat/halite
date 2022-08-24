@@ -5,8 +5,11 @@
   (:require [clojure.edn :as edn]
             [clojure.string :as string]
             [jibe.halite-guide :as halite-guide]
-            [jibe.lib.fixed-decimal :as fixed-decimal])
-  (:import [net.nextencia.rrdiagram.grammar.model GrammarToRRDiagram BNFToGrammar]
+            [jibe.lib.fixed-decimal :as fixed-decimal]
+            [jibe.logic.expression :as expression]
+            [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]])
+  (:import [jibe.halite_guide HCInfo]
+           [net.nextencia.rrdiagram.grammar.model GrammarToRRDiagram BNFToGrammar]
            [net.nextencia.rrdiagram.grammar.rrdiagram RRDiagramToSVG]))
 
 (set! *warn-on-reflection* true)
@@ -126,17 +129,31 @@
        (mapcat (fn [[op m]]
                  [op (if (:examples m)
                        (assoc m :examples (mapv (fn [example]
-                                                  (let [{:keys [expr-str expr-str-j result result-j]} example]
+                                                  (let [{:keys [expr-str expr-str-j result result-j workspace-f instance]} example]
                                                     (if expr-str
-                                                      (let [i (halite-guide/h* (edn/read-string
-                                                                                {:readers {'d fixed-decimal/fixed-decimal-reader}}
-                                                                                expr-str)
-                                                                               true)
-                                                            h-result (.-h-result i)
+                                                      (let [{:keys [h-result j-result j-expr]}
+                                                            (if workspace-f
+                                                              (let [workspace (workspace-f expr-str)
+                                                                    ^HCInfo i (halite-guide/hc-body
+                                                                               [workspace]
+                                                                               :my
+                                                                               (list 'get
+                                                                                     (list 'refine-to instance :my/Result$v1)
+                                                                                     :x))]
+                                                                {:h-result (.-h-result i)
+                                                                 :j-result (.-j-result i)
+                                                                 :j-expr (.-j-expr i)})
+                                                              (let [i (halite-guide/h*
+                                                                       (edn/read-string
+                                                                        {:readers {'d fixed-decimal/fixed-decimal-reader}}
+                                                                        expr-str)
+                                                                       true)]
+                                                                {:h-result (.-h-result i)
+                                                                 :j-result (.-j-result i)
+                                                                 :j-expr (.-j-expr i)}))
+
                                                             err-result? (and (vector? h-result)
                                                                              (= :throws (first h-result)))
-                                                            j-result (.-j-result i)
-                                                            j-expr (.-j-expr i)
                                                             to-merge (apply merge [(when (= expr-str-j :auto)
                                                                                      {:expr-str-j j-expr})
                                                                                    (when (= result :auto)
@@ -923,8 +940,52 @@
                      :j-sigs [["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]]
                      :tags #{:optional-op :optional-out :control-flow :special-form}
                      :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'"
-                     :examples [{:str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
-                                 :str-j  "whenValueLet( x = (whenValue(o) {o + 2}) ) {x + 1}"}]
+                     :examples [{:workspace-f (fn [expr-str] (update-in (workspace :my
+                                                                                   {:my/Spec []
+                                                                                    :my/Result []}
+                                                                                   (spec :Spec :concrete
+                                                                                         (variables [:y "Integer" :optional]))
+                                                                                   (spec :Result :concrete
+                                                                                         (variables [:x "Integer" :optional])
+                                                                                         (refinements
+                                                                                          [:r :from :my/Spec$v1 [:halite "placeholder"]])))
+                                                                        [:specs
+                                                                         1
+                                                                         :jibe.data.model/spec-refinements
+                                                                         0
+                                                                         :jibe.data.model/refinement-e]
+                                                                        (fn [_] (expression/parse :halite
+                                                                                                  (string/replace
+                                                                                                   "{:$type :my/Result$v1, :x <expr>}"
+                                                                                                   "<expr>"
+                                                                                                   expr-str)))))
+                                 :instance {:$type :my/Spec$v1, :y 1}
+                                 :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
+                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
+                                 :result :auto}
+                                {:workspace-f (fn [expr-str] (update-in (workspace :my
+                                                                                   {:my/Spec []
+                                                                                    :my/Result []}
+                                                                                   (spec :Spec :concrete
+                                                                                         (variables [:y "Integer" :optional]))
+                                                                                   (spec :Result :concrete
+                                                                                         (variables [:x "Integer" :optional])
+                                                                                         (refinements
+                                                                                          [:r :from :my/Spec$v1 [:halite "placeholder"]])))
+                                                                        [:specs
+                                                                         1
+                                                                         :jibe.data.model/spec-refinements
+                                                                         0
+                                                                         :jibe.data.model/refinement-e]
+                                                                        (fn [_] (expression/parse :halite
+                                                                                                  (string/replace
+                                                                                                   "{:$type :my/Result$v1, :x <expr>}"
+                                                                                                   "<expr>"
+                                                                                                   expr-str)))))
+                                 :instance {:$type :my/Spec$v1}
+                                 :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
+                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
+                                 :result :auto}]
                      :see-also ['if-value-let 'when 'when-value]}}))
 
 (defn produce-diagram [out-file-name ^String rule-str]

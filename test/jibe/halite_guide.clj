@@ -13,8 +13,10 @@
             [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]
+            [jibe.logic.resource-spec :as resource-spec]
             [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]]
             [jibe.logic.test-setup-specs :as test-setup-specs :refer [*spec-store*]]
+            [internal-close :as with-close]
             [internal :refer :all])
   (:import [clojure.lang ExceptionInfo]))
 
@@ -43,7 +45,7 @@
         expr (jadeite/to-halite expr-str)]
     (halite/eval-expr senv tenv env expr)))
 
-(defn- is-harness-error? [x]
+(defn is-harness-error? [x]
   (and (vector? x)
        (= :throws (first x))))
 
@@ -278,6 +280,12 @@
                        [:throws (.getMessage e)]))]
 
       (HCInfo. s t h-result j-expr jh-result j-result))))
+
+(defn hc-body [workspaces workspace-id expr]
+  (with-close/with-close [spec-store ^java.io.Closeable (test-setup-specs/connect-to-spec-store)]
+    (resource-spec-construct/create-all-async spec-store workspaces)
+    (binding [*spec-store* (resource-spec/add-resource-spec-cache-to-spec-store spec-store)]
+      (hc* workspace-id expr))))
 
 (defmacro hc [workspaces workspace-id comment? & raw-args]
   (let [raw-args (if (string? comment?)
