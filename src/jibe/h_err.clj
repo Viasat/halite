@@ -223,4 +223,4 @@
                   :underlying-error-message String
                   :variable s/Symbol
                   :violated-constraints [s/Symbol]
-                  :workspace-name s/Keyword})
+                  :workspace-name s/Symbol})

@@ -80,7 +80,7 @@
     (or (integer-or-long? v) (fixed-decimal? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
                    spec-info (or (halite-envs/lookup-spec senv spec-id)
-                                 (h-err/resource-spec-not-found {:spec-id spec-id}))]
+                                 (h-err/resource-spec-not-found {:spec-id (symbol spec-id)}))]
                (and (not (:abstract? spec-info))
                     (every? (partial concrete? senv) (vals (dissoc v :$type)))))
     (coll? v) (every? (partial concrete? senv) v)
@@ -129,7 +129,8 @@
     ;; check all constraints
     (let [violated-constraints (->> spec-info :constraints (remove satisfied?) vec)]
       (when (seq violated-constraints)
-        (throw-err (h-err/invalid-instance {:spec-id (symbol spec-id) :violated-constraints (mapv (comp symbol first) violated-constraints)
+        (throw-err (h-err/invalid-instance {:spec-id (symbol spec-id)
+                                            :violated-constraints (mapv (comp symbol first) violated-constraints)
                                             :value inst
                                             :halite-error :constraint-violation}))))
 

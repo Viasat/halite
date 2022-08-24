@@ -330,7 +330,7 @@
     (when-not (halite-types/namespaced-keyword? kw)
       (throw-err (l-err/must-be-spec-id {:op 'refine-to :form expr})))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
-      (throw-err (l-err/spec-not-found {:spec-id (symbol kw) :form expr})))
+      (throw-err (l-err/spec-not-found {:spec-id kw :form expr})))
     (halite-types/concrete-spec-type kw)))
 
 (s/defn ^:private type-check-refines-to? :- halite-types/HaliteType
@@ -343,7 +343,7 @@
     (when-not (halite-types/namespaced-keyword? kw)
       (throw-err (l-err/must-be-spec-id {:op 'refines-to? :form expr})))
     (when-not (halite-envs/lookup-spec (:senv ctx) kw)
-      (throw-err (l-err/spec-not-found {:spec-id (symbol kw) :form expr})))
+      (throw-err (l-err/spec-not-found {:spec-id kw :form expr})))
     :Boolean))
 
 (s/defn ^:private type-check-valid :- halite-types/HaliteType
