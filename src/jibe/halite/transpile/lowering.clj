@@ -136,71 +136,102 @@
        (remove nil?)
        (set)))
 
+(declare replace-in-expr)
+
+(defn- fresh-symbol [replacements sym]
+  (loop [n 1]
+    (let [sym' (symbol (str (name sym) "$" n))]
+      (if (contains? replacements sym')
+        (recur (inc n))
+        sym'))))
+
+(defn- replace-in-let-expr
+  [replacements bindings expr]
+  (let [[replacements bindings]
+        ,,(reduce
+           (fn [[replacements bindings] [sym expr]]
+             (let [expr' (replace-in-expr replacements expr)
+                   replacements (if (contains? replacements sym)
+                                  (assoc replacements sym (fresh-symbol replacements sym))
+                                  replacements)]
+               [replacements
+                (conj bindings (get replacements sym sym) expr')]))
+           [replacements []]
+           (partition 2 bindings))]
+    (list 'let bindings (replace-in-expr replacements expr))))
+
+(defn- replace-in-expr
+  [replacements expr]
+  (cond
+    (or (integer? expr) (boolean? expr) (string? expr) (keyword? expr)) expr
+    (symbol? expr) (get replacements expr expr)
+    (seq? expr) (let [[op & args] expr]
+                  (if (= op 'let)
+                    (replace-in-let-expr replacements (first args) (last args))
+                    (apply list op (map (partial replace-in-expr replacements) args))))
+    (map? expr) (update-vals expr (partial replace-in-expr replacements))
+    :else (throw (ex-info "BUG! Invalid expression" {:expr expr}))))
+
 (declare validity-guard)
 
-(s/defn ^:private validity-guard-inst :- ssa/DerivResult
-  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, [ssa-form htype] :- ssa/Derivation]
-  (let [{:keys [spec-vars derivations constraints] :as spec-info} (sctx (:$type ssa-form))
-        inst-entries (dissoc ssa-form :$type)
-        [dgraph pred-clauses] (reduce
-                               (fn [[dgraph pred-clauses] [var-kw var-expr-id]]
-                                 (let [[dgraph clause-id] (validity-guard sctx (assoc ctx :dgraph dgraph) var-expr-id)]
-                                   [dgraph (conj pred-clauses clause-id)]))
-                               [dgraph []]
-                               (sort-by first  inst-entries))
-        [dgraph bindings] (reduce
-                           (fn [[dgraph bindings] var-kw]
-                             (let [var-expr-id-or-no-value (or (inst-entries var-kw) '$no-value)]
-                               [dgraph (conj bindings (symbol var-kw) var-expr-id-or-no-value)]))
-                           [dgraph []]
-                           (->> spec-vars keys sort))
-        scope (->> spec-info :spec-vars keys (map symbol) set)
-        the-form (list 'if
-                       (mk-junct 'and pred-clauses)
-                       (list 'let (vec bindings)
-                             (mk-junct 'and
-                                       (map (fn [[cname id]]
-                                              (ssa/form-from-ssa scope derivations id))
-                                            constraints)))
-                       false)]
-    (ssa/form-to-ssa
-     (assoc ctx :dgraph dgraph)
-     the-form)))
+(s/defn ^:private validity-guard-inst
+  [sctx :- SpecCtx, ctx :- ssa/SSACtx, inst]
+  (let [{:keys [spec-vars derivations constraints] :as spec-info} (sctx (:$type inst))
+        inst-entries (dissoc inst :$type)
+        scope (->> spec-vars keys (map symbol) set)
+        inlined-constraints (->> constraints
+                                 (map (fn [[cname id]] (ssa/form-from-ssa scope derivations id)))
+                                 (mk-junct 'and)
+                                 (replace-in-expr
+                                  (-> spec-vars (update-vals (constantly '$no-value)) (merge inst-entries) (update-keys symbol))))
+        sub-guards (->> inst-entries
+                        (vals)
+                        (map (partial validity-guard sctx ctx))
+                        (remove true?)
+                        (mk-junct 'and))
+        unused-field-vals (reduce
+                           disj
+                           (->> inst-entries vals set)
+                           (->> inlined-constraints
+                                (tree-seq coll? seq)
+                                (filter symbol?)))
+        result (make-do unused-field-vals inlined-constraints)]
+    (if (true? sub-guards)
+      result
+      (list 'if sub-guards result false))))
 
-(s/defn ^:private validity-guard-if :- ssa/DerivResult
-  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, [[_if pred-id then-id else-id] htype] :- ssa/Derivation]
-  (let [[dgraph pred-guard-id] (validity-guard sctx ctx pred-id)
-        [dgraph then-guard-id] (validity-guard sctx (assoc ctx :dgraph dgraph) then-id)
-        [dgraph else-guard-id] (validity-guard sctx (assoc ctx :dgraph dgraph) else-id)]
-    (ssa/form-to-ssa
-     (assoc ctx :dgraph dgraph)
-     (list 'if pred-guard-id
-           (list 'if pred-id then-guard-id else-guard-id)
-           false))))
+(s/defn ^:private validity-guard-if
+  [sctx :- SpecCtx, ctx :- ssa/SSACtx, [_if pred-id then-id else-id]]
+  (let [pred-guard (validity-guard sctx ctx pred-id)
+        then-guard (validity-guard sctx ctx then-id)
+        else-guard (validity-guard sctx ctx else-id)
+        branches-guard (if (and (true? then-guard) (true? else-guard))
+                         true
+                         (list 'if pred-id then-guard else-guard))]
+    (if (true? pred-guard)
+      branches-guard
+      (list 'if pred-guard
+            branches-guard
+            false))))
 
-(s/defn ^:private validity-guard-when :- ssa/DerivResult
-  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, [[_if pred-id then-id] htype] :- ssa/Derivation]
-  (let [[dgraph pred-guard-id] (validity-guard sctx ctx pred-id)
-        [dgraph then-guard-id] (validity-guard sctx (assoc ctx :dgraph dgraph) then-id)]
-    (ssa/form-to-ssa
-     (assoc ctx :dgraph dgraph)
-     (list 'if pred-guard-id
-           (list 'if pred-id then-guard-id true)
-           false))))
+(s/defn ^:private validity-guard-when
+  [sctx :- SpecCtx, ctx :- ssa/SSACtx, [_when pred-id then-id]]
+  (let [pred-guard (validity-guard sctx ctx pred-id)
+        then-guard (validity-guard sctx ctx then-id)]
+    (if (true? pred-guard)
+      then-guard
+      (list 'if pred-guard
+            then-guard
+            false))))
 
-(s/defn ^:private validity-guard-app :- ssa/DerivResult
-  [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, [[op & args] htype] :- ssa/Derivation]
-  (let [[dgraph guard-ids] (reduce
-                            (fn [[dgraph guard-ids] arg-id]
-                              (let [[dgraph guard-id] (validity-guard sctx (assoc ctx :dgraph dgraph) arg-id)]
-                                [dgraph (conj guard-ids guard-id)]))
-                            [dgraph []]
-                            args)]
-    (ssa/form-to-ssa
-     (assoc ctx :dgraph dgraph)
-     (mk-junct 'and guard-ids))))
+(s/defn ^:private validity-guard-app
+  [sctx :- SpecCtx, ctx :- ssa/SSACtx, args]
+  (->> args
+       (map (partial validity-guard sctx ctx))
+       (remove true?)
+       (mk-junct 'and)))
 
-(s/defn validity-guard :- ssa/DerivResult
+(s/defn validity-guard
   "Given an expression <expr>, the function validity-guard computes an expression that
   * evaluates to true iff <expr> evaluates to a value
   * evaluates to false iff evaluating <expr> results in the evaluation of an invalid instance
@@ -226,25 +257,24 @@
          <inlined constraints>)
        false)"
   [sctx :- SpecCtx, {:keys [dgraph] :as ctx} :- ssa/SSACtx, id :- DerivationName]
-  (let [[ssa-form htype :as deriv] (ssa/deref-id dgraph id)]
+  (let [[form htype :as deriv] (ssa/deref-id dgraph id)]
     (cond
-      (or (int? ssa-form) (boolean? ssa-form) (= :Unset ssa-form) (symbol? ssa-form) (string? ssa-form)) (ssa/form-to-ssa ctx true)
-      (map? ssa-form) (validity-guard-inst sctx ctx deriv)
-      (seq? ssa-form) (let [[op & args] ssa-form]
-                        (condp = op
-                          'if (validity-guard-if sctx ctx deriv)
-                          'when (validity-guard-when sctx ctx deriv)
-                          'get (validity-guard sctx ctx (first args))
-                          'valid? (validity-guard sctx ctx (first args))
-                          (validity-guard-app sctx ctx deriv)))
+      (or (int? form) (boolean? form) (= :Unset form) (symbol? form) (string? form)) 'true
+      (map? form) (validity-guard-inst sctx ctx form)
+      (seq? form) (let [[op & args] form]
+                    (condp = op
+                      'get (validity-guard sctx ctx (first args))
+                      'refine-to (validity-guard sctx ctx (first args))
+                      'if (validity-guard-if sctx ctx form)
+                      'when (validity-guard-when sctx ctx form)
+                      (validity-guard-app sctx ctx args)))
       :else (throw (ex-info "BUG! Cannot compute validity-guard" {:dgraph dgraph :id id :deriv deriv})))))
 
 (s/defn ^:private lower-valid?-expr
   [{sctx :sctx, {:keys [dgraph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'valid? (first form)))
     (let [[_valid? expr-id] form]
-      (let [[dgraph new-id] (validity-guard sctx ctx expr-id)]
-        (vary-meta new-id assoc :dgraph dgraph)))))
+      (validity-guard sctx ctx expr-id))))
 
 (s/defn ^:private lower-valid? :- SpecCtx
   [sctx :- SpecCtx]
@@ -487,8 +517,9 @@
 
 (s/defn ^:private eliminate-runtime-constraint-violations-in-expr
   [{:keys [sctx ctx]} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
-  (let [[dgraph guard-id] (validity-guard sctx ctx id)]
-    (vary-meta (list 'if guard-id id false) assoc :dgraph dgraph)))
+  (let [guard (validity-guard sctx ctx id)]
+    (when (not (true? guard))
+      (list 'if guard id false))))
 
 (s/defn eliminate-runtime-constraint-violations :- SpecCtx
   "Rewrite the constraints of every spec to eliminate the possibility of runtime constraint

@@ -148,6 +148,55 @@
                   (fixpoint lower-instance-comparisons)
                   :ws/D ssa/spec-from-ssa :constraints))))))
 
+(def replace-in-expr #'lowering/replace-in-expr)
+
+(deftest test-replace-in-expr
+  (are [replacements in out]
+       (= out (replace-in-expr replacements in))
+
+    '{a b, b a} '(= a (+ b 1)) '(= b (+ a 1))
+    '{a b, b a} '{:a a, :b b}, '{:a b, :b a}
+    '{a b, b a}, '(let [a b, b 1, c 2] (+ a b c)) '(let [a$1 a, b$1 1, c 2] (+ a$1 b$1 c))))
+
+(deftest test-validity-guard
+  (let [senv '{:ws/A
+               {:spec-vars {:an "Integer" :b :ws/B}
+                :constraints []
+                :refines-to {}}
+               :ws/B
+               {:spec-vars {:bn "Integer" :bw [:Maybe "Integer"] :c [:Maybe :ws/C]}
+                :constraints [["b1" (not= bn bw)]]
+                :refines-to {}}
+               :ws/C
+               {:spec-vars {:cn "Integer"}
+                :constraints [["c1" (< 12 cn)]]
+                :refines-to {}}}]
+    (are [in out]
+         (= out
+            (binding [ssa/*next-id* (atom 0)]
+              (let [sctx (-> senv
+                             (update-in [:ws/A :constraints] conj ["c" in])
+                             (halite-envs/spec-env)
+                             (ssa/build-spec-ctx :ws/A))]
+                (lowering/validity-guard
+                 sctx
+                 (ssa/make-ssa-ctx sctx (:ws/A sctx))
+                 (get-in sctx [:ws/A :constraints 0 1])))))
+
+      true true
+      42 true
+      'an true
+      '$no-value true
+      '(+ 1 2 3) true
+      '(if (= an 12) 13 14) true
+      '(let [b {:$type :ws/B :bn 42}] true) '(not= $1 $no-value)
+
+      '(let [b {:$type :ws/B :bn 42 :c {:$type :ws/C :cn an}}] true)
+      '(if (< 12 $2) ($do! $3 (not= $1 $no-value)) false)
+
+      '(let [c (if (< an 12) {:$type :ws/C :cn 10} {:$type :ws/C :cn 13})] true)
+      '(if $3 (< 12 $5) (< 12 $7)))))
+
 (def lower-valid? #'lowering/lower-valid?)
 
 (deftest test-lower-valid?
@@ -166,7 +215,7 @@
                 :refines-to {}}}]
     (are [expr lowered-expr]
          (= lowered-expr
-            (binding [ssa/*next-id* (atom 0)]
+            (binding [ssa/*next-id* (atom 0), ssa/*hide-non-halite-ops* false]
               (-> senv
                   (update-in [:ws/A :constraints] conj ["c" expr])
                   (halite-envs/spec-env)
@@ -176,108 +225,57 @@
                   (ssa/spec-from-ssa)
                   :constraints
                   first second)))
-      ;; The commented out forms below are hand-simplified versions
-      ;; of the 'expected' values.
 
       true true
 
       '(valid? {:$type :ws/B :bn 1 :bp (= $no-value (when (= an 1) 42))})
-      '(if (and true (and true (if (and true true) (if (= an 1) true true) false)))
-         (let [v1 (= $no-value (when (= an 1) 42))] (let [v2 1] (and (<= v2 10) (=> v1 (<= 0 v2)))))
-         false)
-      #_(let [$8 (= $no-value (when (= an 1) 42))]
-          (let [$1 1]
-            (and (<= $1 10) (=> $8 (<= 0 $1)))))
+      '(and (<= 1 10) (=> (= $no-value (when (= an 1) 42)) (<= 0 1)))
 
       '(valid? {:$type :ws/B :bn 1 :bp true})
-      '(if (and true true)
-         (let [v1 1 v2 true]
-           (and (<= v1 10)
-                (=> v2 (<= 0 v1))))
-         false)
-      #_(and (<= 1 10) (=> true (<= 0 1)))
+      '(and (<= 1 10) (=> true (<= 0 1)))
       ;; -----------
       '(and (valid? {:$type :ws/B :bn an :bp false})
             (valid? {:$type :ws/B :bn 12 :bp (= an 1)}))
-      '(let [v1 (and true true)]
-         (and
-          (if v1
-            (let [v2 an, v3 false] (and (<= v2 10) (=> v3 (<= 0 v2))))
-            false)
-          (if (and true v1)
-            (let [v2 (= an 1)]
-              (let [v3 12] (and (<= v3 10) (=> v2 (<= 0 v3)))))
-            false)))
-      #_(and
-         (and (<= an 10) (=> false (<= 0 an)))
-         (and (<= 12 10) (=> (= an 1) (<= 0 12))))
+      '(and
+        (and (<= an 10) (=> false (<= 0 an)))
+        (and (<= 12 10) (=> (= an 1) (<= 0 12))))
       ;; -----------
       '(if (valid? {:$type :ws/B :bn an :bp false})
          {:$type :ws/B :bn an, :bp true}
          {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)})
-      '(if (if (and true true)
-             (let [v1 an, v2 false]
-               (and (<= v1 10) (=> v2 (<= 0 v1))))
-             false)
-         {:$type :ws/B, :bn an, :bp true}
-         {:$type :ws/B, :bn (+ 1 an), :bp (< 5 an)})
+      '(if (and (<= an 10) (=> false (<= 0 an)))
+         {:$type :ws/B :bn an, :bp true}
+         {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)})
       ;; -----------
       '(if (valid? {:$type :ws/B :bn an :bp false})
          (valid? {:$type :ws/B :bn an, :bp true})
          (valid? {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
-      '(let [v1 (and true true)]
-         (if (if v1
-               (let [v2 an v3 false]
-                 (and (<= v2 10) (=> v3 (<= 0 v2))))
-               false)
-           (if v1
-             (let [v2 an, v3 true]
-               (and (<= v2 10) (=> v3 (<= 0 v2))))
-             false)
-           (if (and v1 v1)
-             (let [v2 (+ 1 an), v3 (< 5 an)]
-               (and (<= v2 10) (=> v3 (<= 0 v2))))
-             false)))
-      #_(if (and (<= an 10) (=> false (<= 0 an)))
-          (and (<= an 10) (=> true (<= 0 an)))
-          (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an)))))
+      '(let [v1 (<= 0 an), v2 (<= an 10)]
+         (if (and v2 (=> false v1))
+           (and v2 (=> true v1))
+           (let [v3 (+ 1 an)]
+             (and (<= v3 10) (=> (< 5 an) (<= 0 v3))))))
       ;; -----------
       '(valid? (if (valid? {:$type :ws/B :bn an :bp false})
                  {:$type :ws/B :bn an, :bp true}
                  {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
-      '(let [v1 (and true true)]
-         (if (if v1 (if v1 (and true true (and v1 (and true v1))) true) false)
-           (if (if v1 (let [v2 an v3 false] (and (<= v2 10) (=> v3 (<= 0 v2)))) false)
-             (if v1 (let [v2 an v3 true] (and (<= v2 10) (=> v3 (<= 0 v2)))) false)
-             (if (and v1 v1) (let [v2 (+ 1 an) v3 (< 5 an)] (and (<= v2 10) (=> v3 (<= 0 v2)))) false))
-           false))
-      #_(if (and (<= an 10) (=> false (<= 0 an)))
-          (and (<= an 10) (=> true (<= 0 an)))
-          (and (<= (+ 1 an) 10) (=> (< 5 an) (<= 0 (+ 1 an)))))
+      '(let [v1 (<= 0 an), v2 (<= an 10)]
+         (if (and v2 (=> false v1))
+           (and v2 (=> true v1))
+           (let [v3 (+ 1 an)]
+             (and (<= v3 10) (=> (< 5 an) (<= 0 v3))))))
       ;; -----------
       '(valid? {:$type :ws/C :b {:$type :ws/B :bn an :bp (< an 15)}})
-      '(if (if (and true (and true true))
-             (let [v1 (< an 15)]
-               (let [v2 an] (and (<= v2 10) (=> v1 (<= 0 v2)))))
-             false)
-         (let [v1 {:$type :ws/B, :bn an, :bp (< an 15)}]
-           (not= (get v1 :bn) 4))
-         false)
-      #_(if (and (<= an 10) (=> (< an 15) (<= 0 an)))
-          (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
-          false)
+      '(let [v1 (< an 15)]
+         (if (and (<= an 10) (=> v1 (<= 0 an)))
+           (not= (get {:$type :ws/B, :bn an, :bp v1} :bn) 4)
+           false))
       ;; -----------
       '(valid? (get {:$type :ws/C :b {:$type :ws/B :bn an :bp (< an 15)}} :b))
-      '(if (if (and true (and true true))
-             (let [v1 (< an 15)]
-               (let [v2 an] (and (<= v2 10) (=> v1 (<= 0 v2)))))
-             false)
-         (let [v1 {:$type :ws/B, :bn an, :bp (< an 15)}]
-           (not= (get v1 :bn) 4))
-         false)
-      #_(if (and (<= an 10) (=> (< an 15) (<= 0 an)))
-          (not= (get {:$type :ws/B, :bn an, :bp (< an 15)} :bn) 4)
-          false))))
+      '(let [v1 (< an 15)]
+         (if (and (<= an 10) (=> v1 (<= 0 an)))
+           (not= (get {:$type :ws/B, :bn an, :bp v1} :bn) 4)
+           false)))))
 
 (def push-gets-into-ifs #'lowering/push-gets-into-ifs)
 
@@ -727,9 +725,9 @@
                   (and
                    (if-value b1
                              (if-value b2
-                                       (let [v1 (get b2 :c2)
-                                             v2 (get b2 :c1)
-                                             v3 (get v2 :cw)
+                                       (let [v1 (get b2 :c1)
+                                             v2 (get v1 :cw)
+                                             v3 (get b2 :c2)
                                              v4 (get b1 :c1)
                                              v5 (get b2 :bw)]
                                          (and
@@ -739,19 +737,19 @@
                                                     (let [v6 (get b1 :bw)] (if-value v6 false true)))
                                           (= (get b2 :bx) (get b1 :bx))
                                           (and
-                                           (if-value v3
-                                                     (let [v6 (get v4 :cw)] (if-value v6 (= v6 v3) false))
+                                           (if-value v2
+                                                     (let [v6 (get v4 :cw)] (if-value v6 (= v6 v2) false))
                                                      (let [v6 (get v4 :cw)] (if-value v6 false true)))
-                                           (= (get v2 :cx) (get v4 :cx)))
-                                          (if-value v1
+                                           (= (get v1 :cx) (get v4 :cx)))
+                                          (if-value v3
                                                     (let [v6 (get b1 :c2)]
                                                       (if-value v6
                                                                 (let [v7 (get v6 :cw)]
                                                                   (and
                                                                    (if-value v7
-                                                                             (let [v8 (get v1 :cw)] (if-value v8 (= v8 v7) false))
-                                                                             (let [v8 (get v1 :cw)] (if-value v8 false true)))
-                                                                   (= (get v6 :cx) (get v1 :cx))))
+                                                                             (let [v8 (get v3 :cw)] (if-value v8 (= v8 v7) false))
+                                                                             (let [v8 (get v3 :cw)] (if-value v8 false true)))
+                                                                   (= (get v6 :cx) (get v3 :cx))))
                                                                 false))
                                                     (let [v6 (get b1 :c2)] (if-value v6 false true)))))
                                        false)
@@ -767,12 +765,11 @@
        (is (= '{:spec-vars {:dx "Integer"}
                 :constraints
                 [["$all"
-                  (let [v1 (= 0 (mod dx 2))]
-                    (let [v2 (if v1 (div dx 2) $no-value)
-                          v3 (+ dx 1)
-                          v4 {:$type :ws/C, :cw dx, :cx dx}
-                          v5 {:$type :ws/C, :cw 12, :cx dx}]
-                      (if v1 (let [v6 (div dx 2)] false) true)))]],
+                  (let [v1 {:$type :ws/C, :cw dx, :cx dx}
+                        v2 {:$type :ws/C, :cw 12, :cx dx}]
+                    (if (= 0 (mod dx 2))
+                      (let [v3 (div dx 2)] false)
+                      true))]],
                 :refines-to {:ws/B {:expr {:$type :ws/B,
                                            :bp false,
                                            :bw (when (= 0 (mod dx 2)) (div dx 2)),
@@ -802,7 +799,7 @@
                            :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}})
             sctx (ssa/build-spec-ctx senv :my/B)]
         (is (= '{:abstract? false,
-                 :constraints [["$all" (let [v1 $no-value] (if-value b (< 0 b) true))]],
+                 :constraints [["$all" (if-value b (< 0 b) true)]],
                  :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}},
                  :spec-vars {:b [:Maybe "Integer"]}}
                (-> senv
