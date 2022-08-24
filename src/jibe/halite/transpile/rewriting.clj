@@ -4,6 +4,7 @@
 (ns jibe.halite.transpile.rewriting
   "Functions to facilitate rewriting of halite specs."
   (:require [clojure.set :as set]
+            [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
@@ -51,6 +52,27 @@
          ~body
          (finally
            (print-trace-summary (get @traces# spec-id#)))))))
+
+(def type-error-item (atom nil))
+
+(defn type-check-trace [senv trace]
+  (doseq [{:keys [op rule spec-info spec-info'] :as item} trace]
+    (when (and rule spec-info spec-info')
+      (try
+        (let [spec-info (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* true] (ssa/spec-from-ssa spec-info))
+              spec-info' (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* true] (ssa/spec-from-ssa spec-info'))]
+          (halite/type-check-spec senv spec-info)
+          (println "ok before" rule)
+          (halite/type-check-spec senv spec-info')
+          (println "ok after" rule))
+        (catch clojure.lang.ExceptionInfo ex
+          (reset! type-error-item item)
+          (let [spec-info (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa spec-info))
+                spec-info' (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa spec-info'))]
+            (-> spec-info :constraints first second clojure.pprint/pprint)
+            (print-trace-item item)
+            (-> spec-info' :constraints first second clojure.pprint/pprint))
+          (throw (ex-info (str "Found type error for " rule) {} ex)))))))
 
 (defn- prune
   [spec-id {:keys [derivations] :as spec-info}]
