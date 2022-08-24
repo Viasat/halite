@@ -1150,4 +1150,6 @@ This markdown file was generated. Do not edit.
           :control-flow
           :special-form]
          (map produce-bnf-diagram-for-tag)
-         dorun)))
+         dorun)
+
+    (produce-full-md)))

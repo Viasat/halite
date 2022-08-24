@@ -35,31 +35,31 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 <table><tr><td>
 
 ```java
-:auto
+(2 * 3)
 
 ### result ###
 
-:auto
+6
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "2.2" * 3)
 
 ### result ###
 
-:auto
+#d "6.6"
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 * 3 * 4)
 
 ### result ###
 
-:auto
+24
 ```
 
 </td></tr></table>
@@ -80,41 +80,41 @@ Add two numbers together.
 <table><tr><td>
 
 ```java
-:auto
+(2 + 3)
 
 ### result ###
 
-:auto
+5
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "2.2" + #d "3.3")
 
 ### result ###
 
-:auto
+#d "5.5"
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 + 3 + 4)
 
 ### result ###
 
-:auto
+9
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+(2 + -3)
 
 ### result ###
 
-:auto
+-1
 ```
 
 </td></tr></table>
@@ -135,41 +135,41 @@ Subtract one number from another.
 <table><tr><td>
 
 ```java
-:auto
+(2 - 3)
 
 ### result ###
 
-:auto
+-1
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "2.2" - #d "3.3")
 
 ### result ###
 
-:auto
+#d "-1.1"
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 - 3 - 4)
 
 ### result ###
 
-:auto
+-5
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+(2 - -3)
 
 ### result ###
 
-:auto
+5
 ```
 
 </td></tr></table>
@@ -188,31 +188,31 @@ Determine if a number is strictly less than another.
 <table><tr><td>
 
 ```java
-:auto
+(2 < 3)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "2.2" < #d "3.3")
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 < 2)
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -227,31 +227,31 @@ Determine if a number is less than or equal to another.
 <table><tr><td>
 
 ```java
-:auto
+(2 <= 3)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "2.2" <= #d "3.3")
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 <= 2)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -268,91 +268,91 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 <table><tr><td>
 
 ```java
-:auto
+(2 == 2)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "2.2" == #d "3.3")
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 == 3)
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+("hi" == "hi")
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+([1, 2, 3] == [1, 2, 3])
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+([1, 2, 3] == #{1, 2, 3})
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+(#{1, 2, 3} == #{1, 2, 3})
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+([#{1, 2}, #{3}] == [#{1, 2}, #{3}])
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+([#{1, 2}, #{3}] == [#{1, 2}, #{4}])
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr><tr><td>
@@ -379,31 +379,31 @@ Performs logical implication. If the first value is true, then the second value 
 <table><tr><td>
 
 ```java
-:auto
+((2 > 1) => (1 < 2))
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+((2 > 1) => (1 > 2))
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+((1 > 2) => false)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -420,31 +420,31 @@ Determine if a number is strictly greater than another.
 <table><tr><td>
 
 ```java
-:auto
+(3 > 2)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "3.3" > #d "2.2")
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 > 2)
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -459,31 +459,31 @@ Determine if a number is greater than or equal to another.
 <table><tr><td>
 
 ```java
-:auto
+(3 >= 2)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "3.3" >= #d "2.2")
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 >= 2)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -502,31 +502,31 @@ Since the negative number space contains one more value than the positive number
 <table><tr><td>
 
 ```java
-:auto
+abs(-1)
 
 ### result ###
 
-:auto
+1
 ```
 
 </td><td>
 
 ```java
-:auto
+abs(1)
 
 ### result ###
 
-:auto
+1
 ```
 
 </td><td>
 
 ```java
-:auto
+abs(#d "-1.0")
 
 ### result ###
 
-:auto
+#d "1.0"
 ```
 
 </td></tr></table>
@@ -547,31 +547,31 @@ The operation does not short-circuit. Even if the first argument evaluates to fa
 <table><tr><td>
 
 ```java
-:auto
+(true && false)
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+(true && true)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+((2 > 1) && (3 > 2) && (4 > 3))
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -590,21 +590,21 @@ The operation does not short-circuit. The boolean-expression is evaluated for al
 <table><tr><td>
 
 ```java
-:auto
+any?(x in [1, 2, 3])(x > 1)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+any?(x in #{1, 2, 3})(x > 10)
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -625,31 +625,31 @@ Invoking this operation with a vector and an empty set has the effect of convert
 <table><tr><td>
 
 ```java
-:auto
+[1, 2].concat([3])
 
 ### result ###
 
-:auto
+[1 2 3]
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1, 2}.concat([3, 4])
 
 ### result ###
 
-:auto
+#{1 4 3 2}
 ```
 
 </td><td>
 
 ```java
-:auto
+[].concat([])
 
 ### result ###
 
-:auto
+[]
 ```
 
 </td></tr></table>
@@ -668,31 +668,31 @@ Only definite values may be put into collections, i.e. collections cannot contai
 <table><tr><td>
 
 ```java
-:auto
+[1, 2].conj(3)
 
 ### result ###
 
-:auto
+[1 2 3]
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1, 2}.conj(3, 4)
 
 ### result ###
 
-:auto
+#{1 4 3 2}
 ```
 
 </td><td>
 
 ```java
-:auto
+[].conj(1)
 
 ### result ###
 
-:auto
+[1]
 ```
 
 </td></tr></table>
@@ -709,41 +709,41 @@ Since collections themselves are compared by their contents, this works for coll
 <table><tr><td>
 
 ```java
-:auto
+#{"a", "b"}.contains?("a")
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+#{"a", "b"}.contains?("c")
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+#{#{1, 2}, #{3}}.contains?(#{1, 2})
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+#{[1, 2], [3]}.contains?([4])
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -758,31 +758,31 @@ Return how many items are in a collection.
 <table><tr><td>
 
 ```java
-:auto
+[10, 20, 30].count()
 
 ### result ###
 
-:auto
+3
 ```
 
 </td><td>
 
 ```java
-:auto
+#{"a", "b"}.count()
 
 ### result ###
 
-:auto
+2
 ```
 
 </td><td>
 
 ```java
-:auto
+[].count()
 
 ### result ###
 
-:auto
+0
 ```
 
 </td></tr></table>
@@ -801,7 +801,7 @@ Decrement a numeric value.
 
 ### result ###
 
-:auto
+9
 ```
 
 </td><td>
@@ -811,7 +811,7 @@ Decrement a numeric value.
 
 ### result ###
 
-:auto
+-1
 ```
 
 </td></tr></table>
@@ -834,41 +834,41 @@ This produces a set which contains all of the elements from the first set which 
 <table><tr><td>
 
 ```java
-:auto
+#{1, 2, 3}.difference(#{1, 2})
 
 ### result ###
 
-:auto
+#{3}
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1, 2, 3}.difference(#{})
 
 ### result ###
 
-:auto
+#{1 3 2}
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1, 2, 3}.difference(#{1, 2, 3, 4})
 
 ### result ###
 
-:auto
+#{}
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+#{[1, 2], [3]}.difference(#{[1, 2]})
 
 ### result ###
 
-:auto
+#{[3]}
 ```
 
 </td></tr></table>
@@ -889,51 +889,51 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 <table><tr><td>
 
 ```java
-:auto
+(12 / 3)
 
 ### result ###
 
-:auto
+4
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "12.3" / 3)
 
 ### result ###
 
-:auto
+#d "4.1"
 ```
 
 </td><td>
 
 ```java
-:auto
+(14 / 4)
 
 ### result ###
 
-:auto
+3
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+(#d "14.3" / 3)
 
 ### result ###
 
-:auto
+#d "4.7"
 ```
 
 </td><td>
 
 ```java
-:auto
+(1 / 0)
 
 ### result ###
 
-:auto
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
 </td></tr></table>
@@ -956,11 +956,11 @@ Used to indicate when an unexpected condition has occurred and the data at hand 
 <table><tr><td>
 
 ```java
-:auto
+error("failure")
 
 ### result ###
 
-:auto
+[:throws "h-err/spec-threw 0-0 : Spec threw error: \"failure\""]
 ```
 
 </td></tr></table>
@@ -981,21 +981,21 @@ Does not short-circuit. The boolean-expression is evaluated for all elements, ev
 <table><tr><td>
 
 ```java
-:auto
+every?(x in [1, 2, 3])(x > 0)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+every?(x in #{1, 2, 3})(x > 1)
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -1012,41 +1012,41 @@ Compute the numeric result of raising the first argument to the power given by t
 <table><tr><td>
 
 ```java
-:auto
+expt(2, 3)
 
 ### result ###
 
-:auto
+8
 ```
 
 </td><td>
 
 ```java
-:auto
+expt(-2, 3)
 
 ### result ###
 
-:auto
+-8
 ```
 
 </td><td>
 
 ```java
-:auto
+expt(2, 0)
 
 ### result ###
 
-:auto
+1
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+expt(2, -1)
 
 ### result ###
 
-:auto
+[:throws "h-err/invalid-exponent 0-0 : Invalid exponent: -1"]
 ```
 
 </td></tr></table>
@@ -1068,21 +1068,21 @@ Produce a new collection which contains only the elements from the original coll
 <table><tr><td>
 
 ```java
-:auto
+filter(x in [1, 2, 3])(x > 2)
 
 ### result ###
 
-:auto
+[3]
 ```
 
 </td><td>
 
 ```java
-:auto
+filter(x in #{1, 2, 3})(x > 2)
 
 ### result ###
 
-:auto
+#{3}
 ```
 
 </td></tr></table>
@@ -1101,21 +1101,21 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 <table><tr><td>
 
 ```java
-:auto
+[10, 20, 30].first()
 
 ### result ###
 
-:auto
+10
 ```
 
 </td><td>
 
 ```java
-:auto
+filter()
 
 ### result ###
 
-:auto
+[:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'filter': expected 2, but got 1"]
 ```
 
 </td></tr></table>
@@ -1140,11 +1140,11 @@ The $type value of an instance is not considered a field that can be extracted w
 <table><tr><td>
 
 ```java
-:auto
+[10, 20, 30, 40][2]
 
 ### result ###
 
-:auto
+30
 ```
 
 </td><td>
@@ -1176,11 +1176,11 @@ Syntactic sugar for performing the equivalent of a chained series of 'get' opera
 <table><tr><td>
 
 ```java
-:auto
+[[10, 20], [30, 40]][1][0]
 
 ### result ###
 
-:auto
+30
 ```
 
 </td><td>
@@ -1224,21 +1224,21 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 <table><tr><td>
 
 ```java
-:auto
+(if((2 > 1)) {10} else {-1})
 
 ### result ###
 
-:auto
+10
 ```
 
 </td><td>
 
 ```java
-:auto
+(if((2 > 1)) {10} else {error("fail")})
 
 ### result ###
 
-:auto
+10
 ```
 
 </td></tr></table>
@@ -1293,7 +1293,7 @@ Increment a numeric value.
 
 ### result ###
 
-:auto
+11
 ```
 
 </td><td>
@@ -1303,7 +1303,7 @@ Increment a numeric value.
 
 ### result ###
 
-:auto
+1
 ```
 
 </td></tr></table>
@@ -1326,21 +1326,21 @@ This produces a set which only contains values that appear in each of the argume
 <table><tr><td>
 
 ```java
-:auto
+#{1, 2, 3}.intersection(#{2, 3, 4})
 
 ### result ###
 
-:auto
+#{3 2}
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1, 2, 3}.intersection(#{2, 3, 4}, #{3, 4})
 
 ### result ###
 
-:auto
+#{3}
 ```
 
 </td></tr></table>
@@ -1359,31 +1359,31 @@ Allows names to be given to values so that they can be referenced by the any-exp
 <table><tr><td>
 
 ```java
-:auto
+({ x = 1; (x + 1) })
 
 ### result ###
 
-:auto
+2
 ```
 
 </td><td>
 
 ```java
-:auto
+({ x = 1; y = 2; (x + y) })
 
 ### result ###
 
-:auto
+3
 ```
 
 </td><td>
 
 ```java
-:auto
+({ x = 1; ({ x = 2; x }) })
 
 ### result ###
 
-:auto
+2
 ```
 
 </td></tr></table>
@@ -1400,21 +1400,21 @@ Produce a new collection from a collection by evaluating the expression with the
 <table><tr><td>
 
 ```java
-:auto
+map(x in [10, 11, 12])(x + 1)
 
 ### result ###
 
-:auto
+[11 12 13]
 ```
 
 </td><td>
 
 ```java
-:auto
+map(x in #{10, 12})(x * 2)
 
 ### result ###
 
-:auto
+#{20 24}
 ```
 
 </td></tr></table>
@@ -1431,31 +1431,31 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 <table><tr><td>
 
 ```java
-:auto
+(12 % 3)
 
 ### result ###
 
-:auto
+0
 ```
 
 </td><td>
 
 ```java
-:auto
+(14 % 4)
 
 ### result ###
 
-:auto
+2
 ```
 
 </td><td>
 
 ```java
-:auto
+(1 % 0)
 
 ### result ###
 
-:auto
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
 </td></tr></table>
@@ -1470,21 +1470,21 @@ Performs logical negation of the argument.
 <table><tr><td>
 
 ```java
-:auto
+!true
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+!false
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -1503,91 +1503,91 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 <table><tr><td>
 
 ```java
-:auto
+(2 != 3)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(#d "2.2" != #d "2.2")
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+(2 != 2)
 
 ### result ###
 
-:auto
+false
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+("hi" != "bye")
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+([1, 2, 3] != [1, 2, 3, 4])
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+([1, 2, 3] != #{1, 2, 3})
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+(#{1, 2, 3} != #{1, 2, 3})
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+([#{1, 2}, #{3}] != [#{1, 2}, #{3}])
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+([#{1, 2}, #{3}] != [#{1, 2}, #{4}])
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr><tr><td>
@@ -1616,31 +1616,31 @@ The operation does not short-circuit. Even if the first argument evaluates to tr
 <table><tr><td>
 
 ```java
-:auto
+(true || false)
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+(false || false)
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+((1 > 2) || (2 > 3) || (4 > 3))
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -1657,31 +1657,31 @@ Produce a vector that contains integers in order starting at either the start va
 <table><tr><td>
 
 ```java
-:auto
+range(3)
 
 ### result ###
 
-:auto
+[0 1 2]
 ```
 
 </td><td>
 
 ```java
-:auto
+range(10, 12)
 
 ### result ###
 
-:auto
+[10 11]
 ```
 
 </td><td>
 
 ```java
-:auto
+range(10, 21, 5)
 
 ### result ###
 
-:auto
+[10 15 20]
 ```
 
 </td></tr></table>
@@ -1696,11 +1696,11 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 <table><tr><td>
 
 ```java
-:auto
+(reduce( a = 10; x in [1, 2, 3] ) { (a + x) })
 
 ### result ###
 
-:auto
+16
 ```
 
 </td></tr></table>
@@ -1770,41 +1770,41 @@ Arithmetic on numeric values never produce results in different number spaces. T
 <table><tr><td>
 
 ```java
-:auto
+rescale(#d "1.23", 1)
 
 ### result ###
 
-:auto
+#d "1.2"
 ```
 
 </td><td>
 
 ```java
-:auto
+rescale(#d "1.23", 2)
 
 ### result ###
 
-:auto
+#d "1.23"
 ```
 
 </td><td>
 
 ```java
-:auto
+rescale(#d "1.23", 3)
 
 ### result ###
 
-:auto
+#d "1.230"
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+rescale(#d "1.23", 0)
 
 ### result ###
 
-:auto
+1
 ```
 
 </td></tr></table>
@@ -1821,41 +1821,41 @@ Produce a new vector which contains the same element of the argument, in the sam
 <table><tr><td>
 
 ```java
-:auto
+[1, 2, 3].rest()
 
 ### result ###
 
-:auto
+[2 3]
 ```
 
 </td><td>
 
 ```java
-:auto
+[1, 2].rest()
 
 ### result ###
 
-:auto
+[2]
 ```
 
 </td><td>
 
 ```java
-:auto
+[1].rest()
 
 ### result ###
 
-:auto
+[]
 ```
 
 </td></tr><tr><td>
 
 ```java
-:auto
+[].rest()
 
 ### result ###
 
-:auto
+[]
 ```
 
 </td></tr></table>
@@ -1870,21 +1870,21 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 <table><tr><td>
 
 ```java
-:auto
+[2, 1, 3].sort()
 
 ### result ###
 
-:auto
+[1 2 3]
 ```
 
 </td><td>
 
 ```java
-:auto
+[#d "3.3", #d "1.1", #d "2.2"].sort()
 
 ### result ###
 
-:auto
+[#d "1.1" #d "2.2" #d "3.3"]
 ```
 
 </td></tr></table>
@@ -1905,11 +1905,11 @@ Produce a new vector by sorting all of the items in the input collection accordi
 <table><tr><td>
 
 ```java
-:auto
+sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()
 
 ### result ###
 
-:auto
+[[1 2 3] [10 20] [30]]
 ```
 
 </td></tr></table>
@@ -1931,21 +1931,21 @@ Combine all of the input strings together in sequence to produce a new string.
 <table><tr><td>
 
 ```java
-:auto
+str("a", "b")
 
 ### result ###
 
-:auto
+"ab"
 ```
 
 </td><td>
 
 ```java
-:auto
+str("a", "", "c")
 
 ### result ###
 
-:auto
+"ac"
 ```
 
 </td></tr></table>
@@ -1962,31 +1962,31 @@ According to this operation, a set is always a subset of itself and every set is
 <table><tr><td>
 
 ```java
-:auto
+#{1, 2}.subset?(#{1, 2, 3, 4})
 
 ### result ###
 
-:auto
+true
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1, 5}.subset?(#{1, 2})
 
 ### result ###
 
-:auto
+false
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1, 2}.subset?(#{1, 2})
 
 ### result ###
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -2005,31 +2005,31 @@ This produces a set which contains all of the values that appear in any of the a
 <table><tr><td>
 
 ```java
-:auto
+#{1}.union(#{2, 3})
 
 ### result ###
 
-:auto
+#{1 3 2}
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1}.union(#{2, 3}, #{4})
 
 ### result ###
 
-:auto
+#{1 4 3 2}
 ```
 
 </td><td>
 
 ```java
-:auto
+#{1}.union(#{})
 
 ### result ###
 
-:auto
+#{1}
 ```
 
 </td></tr></table>
@@ -2094,21 +2094,21 @@ A primary use of this operator is in instance expression to optionally provide a
 <table><tr><td>
 
 ```java
-:auto
+(when((2 > 1)) {"bigger"})
 
 ### result ###
 
-:auto
+"bigger"
 ```
 
 </td><td>
 
 ```java
-:auto
+(when((2 < 1)) {"bigger"})
 
 ### result ###
 
-:auto
+:Unset
 ```
 
 </td></tr></table>

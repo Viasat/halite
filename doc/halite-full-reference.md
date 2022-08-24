@@ -39,7 +39,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 
 ;-- result --;
 
-:auto
+6
 ```
 
 </td><td>
@@ -49,7 +49,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 
 ;-- result --;
 
-:auto
+#d "6.6"
 ```
 
 </td><td>
@@ -59,7 +59,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 
 ;-- result --;
 
-:auto
+24
 ```
 
 </td></tr></table>
@@ -84,7 +84,7 @@ Add two numbers together.
 
 ;-- result --;
 
-:auto
+5
 ```
 
 </td><td>
@@ -94,7 +94,7 @@ Add two numbers together.
 
 ;-- result --;
 
-:auto
+#d "5.5"
 ```
 
 </td><td>
@@ -104,7 +104,7 @@ Add two numbers together.
 
 ;-- result --;
 
-:auto
+9
 ```
 
 </td></tr><tr><td>
@@ -114,7 +114,7 @@ Add two numbers together.
 
 ;-- result --;
 
-:auto
+-1
 ```
 
 </td></tr></table>
@@ -139,7 +139,7 @@ Subtract one number from another.
 
 ;-- result --;
 
-:auto
+-1
 ```
 
 </td><td>
@@ -149,7 +149,7 @@ Subtract one number from another.
 
 ;-- result --;
 
-:auto
+#d "-1.1"
 ```
 
 </td><td>
@@ -159,7 +159,7 @@ Subtract one number from another.
 
 ;-- result --;
 
-:auto
+-5
 ```
 
 </td></tr><tr><td>
@@ -169,7 +169,7 @@ Subtract one number from another.
 
 ;-- result --;
 
-:auto
+5
 ```
 
 </td></tr></table>
@@ -192,7 +192,7 @@ Determine if a number is strictly less than another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -202,7 +202,7 @@ Determine if a number is strictly less than another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -212,7 +212,7 @@ Determine if a number is strictly less than another.
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -231,7 +231,7 @@ Determine if a number is less than or equal to another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -241,7 +241,7 @@ Determine if a number is less than or equal to another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -251,7 +251,7 @@ Determine if a number is less than or equal to another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -270,7 +270,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -280,7 +280,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -290,7 +290,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr><tr><td>
@@ -300,7 +300,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -310,7 +310,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -320,7 +320,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr><tr><td>
@@ -330,7 +330,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -340,7 +340,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -350,7 +350,7 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr><tr><td>
@@ -381,7 +381,7 @@ Performs logical implication. If the first value is true, then the second value 
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -391,7 +391,7 @@ Performs logical implication. If the first value is true, then the second value 
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -401,7 +401,7 @@ Performs logical implication. If the first value is true, then the second value 
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -422,7 +422,7 @@ Determine if a number is strictly greater than another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -432,7 +432,7 @@ Determine if a number is strictly greater than another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -442,7 +442,7 @@ Determine if a number is strictly greater than another.
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -461,7 +461,7 @@ Determine if a number is greater than or equal to another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -471,7 +471,7 @@ Determine if a number is greater than or equal to another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -481,7 +481,7 @@ Determine if a number is greater than or equal to another.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -504,7 +504,7 @@ Since the negative number space contains one more value than the positive number
 
 ;-- result --;
 
-:auto
+1
 ```
 
 </td><td>
@@ -514,7 +514,7 @@ Since the negative number space contains one more value than the positive number
 
 ;-- result --;
 
-:auto
+1
 ```
 
 </td><td>
@@ -524,7 +524,7 @@ Since the negative number space contains one more value than the positive number
 
 ;-- result --;
 
-:auto
+#d "1.0"
 ```
 
 </td></tr></table>
@@ -549,7 +549,7 @@ The operation does not short-circuit. Even if the first argument evaluates to fa
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -559,7 +559,7 @@ The operation does not short-circuit. Even if the first argument evaluates to fa
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -569,7 +569,7 @@ The operation does not short-circuit. Even if the first argument evaluates to fa
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -588,21 +588,21 @@ The operation does not short-circuit. The boolean-expression is evaluated for al
 <table><tr><td>
 
 ```clojure
-(any? [x [1 2 3] (> x 1))
+(any? [x [1 2 3]] (> x 1))
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
 
 ```clojure
-(any? [x #{1 2 3} (> x 10))
+(any? [x #{1 2 3}] (> x 10))
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -627,7 +627,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 
 ;-- result --;
 
-:auto
+[1 2 3]
 ```
 
 </td><td>
@@ -637,7 +637,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 
 ;-- result --;
 
-:auto
+#{1 4 3 2}
 ```
 
 </td><td>
@@ -647,7 +647,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 
 ;-- result --;
 
-:auto
+[]
 ```
 
 </td></tr></table>
@@ -670,7 +670,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 
 ;-- result --;
 
-:auto
+[1 2 3]
 ```
 
 </td><td>
@@ -680,7 +680,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 
 ;-- result --;
 
-:auto
+#{1 4 3 2}
 ```
 
 </td><td>
@@ -690,7 +690,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 
 ;-- result --;
 
-:auto
+[1]
 ```
 
 </td></tr></table>
@@ -711,7 +711,7 @@ Since collections themselves are compared by their contents, this works for coll
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -721,7 +721,7 @@ Since collections themselves are compared by their contents, this works for coll
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -731,7 +731,7 @@ Since collections themselves are compared by their contents, this works for coll
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr><tr><td>
@@ -741,7 +741,7 @@ Since collections themselves are compared by their contents, this works for coll
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -760,7 +760,7 @@ Return how many items are in a collection.
 
 ;-- result --;
 
-:auto
+3
 ```
 
 </td><td>
@@ -770,7 +770,7 @@ Return how many items are in a collection.
 
 ;-- result --;
 
-:auto
+2
 ```
 
 </td><td>
@@ -780,7 +780,7 @@ Return how many items are in a collection.
 
 ;-- result --;
 
-:auto
+0
 ```
 
 </td></tr></table>
@@ -799,7 +799,7 @@ Decrement a numeric value.
 
 ;-- result --;
 
-:auto
+9
 ```
 
 </td><td>
@@ -809,7 +809,7 @@ Decrement a numeric value.
 
 ;-- result --;
 
-:auto
+-1
 ```
 
 </td></tr></table>
@@ -836,7 +836,7 @@ This produces a set which contains all of the elements from the first set which 
 
 ;-- result --;
 
-:auto
+#{3}
 ```
 
 </td><td>
@@ -846,7 +846,7 @@ This produces a set which contains all of the elements from the first set which 
 
 ;-- result --;
 
-:auto
+#{1 3 2}
 ```
 
 </td><td>
@@ -856,7 +856,7 @@ This produces a set which contains all of the elements from the first set which 
 
 ;-- result --;
 
-:auto
+#{}
 ```
 
 </td></tr><tr><td>
@@ -866,7 +866,7 @@ This produces a set which contains all of the elements from the first set which 
 
 ;-- result --;
 
-:auto
+#{[3]}
 ```
 
 </td></tr></table>
@@ -891,7 +891,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 
 ;-- result --;
 
-:auto
+4
 ```
 
 </td><td>
@@ -901,7 +901,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 
 ;-- result --;
 
-:auto
+#d "4.1"
 ```
 
 </td><td>
@@ -911,7 +911,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 
 ;-- result --;
 
-:auto
+3
 ```
 
 </td></tr><tr><td>
@@ -921,7 +921,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 
 ;-- result --;
 
-:auto
+#d "4.7"
 ```
 
 </td><td>
@@ -931,7 +931,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 
 ;-- result --;
 
-:auto
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
 </td></tr></table>
@@ -958,7 +958,7 @@ Used to indicate when an unexpected condition has occurred and the data at hand 
 
 ;-- result --;
 
-:auto
+[:throws "h-err/spec-threw 0-0 : Spec threw error: \"failure\""]
 ```
 
 </td></tr></table>
@@ -979,21 +979,21 @@ Does not short-circuit. The boolean-expression is evaluated for all elements, ev
 <table><tr><td>
 
 ```clojure
-(every? [x [1 2 3] (> x 0))
+(every? [x [1 2 3]] (> x 0))
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
 
 ```clojure
-(every? [x #{1 2 3} (> x 1))
+(every? [x #{1 2 3}] (> x 1))
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr></table>
@@ -1014,7 +1014,7 @@ Compute the numeric result of raising the first argument to the power given by t
 
 ;-- result --;
 
-:auto
+8
 ```
 
 </td><td>
@@ -1024,7 +1024,7 @@ Compute the numeric result of raising the first argument to the power given by t
 
 ;-- result --;
 
-:auto
+-8
 ```
 
 </td><td>
@@ -1034,7 +1034,7 @@ Compute the numeric result of raising the first argument to the power given by t
 
 ;-- result --;
 
-:auto
+1
 ```
 
 </td></tr><tr><td>
@@ -1044,7 +1044,7 @@ Compute the numeric result of raising the first argument to the power given by t
 
 ;-- result --;
 
-:auto
+[:throws "h-err/invalid-exponent 0-0 : Invalid exponent: -1"]
 ```
 
 </td></tr></table>
@@ -1070,7 +1070,7 @@ Produce a new collection which contains only the elements from the original coll
 
 ;-- result --;
 
-:auto
+[3]
 ```
 
 </td><td>
@@ -1080,7 +1080,7 @@ Produce a new collection which contains only the elements from the original coll
 
 ;-- result --;
 
-:auto
+#{3}
 ```
 
 </td></tr></table>
@@ -1103,7 +1103,7 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 
 ;-- result --;
 
-:auto
+10
 ```
 
 </td><td>
@@ -1113,7 +1113,7 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 
 ;-- result --;
 
-:auto
+[:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'filter': expected 2, but got 1"]
 ```
 
 </td></tr></table>
@@ -1142,7 +1142,7 @@ The $type value of an instance is not considered a field that can be extracted w
 
 ;-- result --;
 
-:auto
+30
 ```
 
 </td><td>
@@ -1178,7 +1178,7 @@ Syntactic sugar for performing the equivalent of a chained series of 'get' opera
 
 ;-- result --;
 
-:auto
+30
 ```
 
 </td><td>
@@ -1226,7 +1226,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 ;-- result --;
 
-:auto
+10
 ```
 
 </td><td>
@@ -1236,7 +1236,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 ;-- result --;
 
-:auto
+10
 ```
 
 </td></tr></table>
@@ -1291,7 +1291,7 @@ Increment a numeric value.
 
 ;-- result --;
 
-:auto
+11
 ```
 
 </td><td>
@@ -1301,7 +1301,7 @@ Increment a numeric value.
 
 ;-- result --;
 
-:auto
+1
 ```
 
 </td></tr></table>
@@ -1328,7 +1328,7 @@ This produces a set which only contains values that appear in each of the argume
 
 ;-- result --;
 
-:auto
+#{3 2}
 ```
 
 </td><td>
@@ -1338,7 +1338,7 @@ This produces a set which only contains values that appear in each of the argume
 
 ;-- result --;
 
-:auto
+#{3}
 ```
 
 </td></tr></table>
@@ -1361,7 +1361,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 
 ;-- result --;
 
-:auto
+2
 ```
 
 </td><td>
@@ -1371,7 +1371,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 
 ;-- result --;
 
-:auto
+3
 ```
 
 </td><td>
@@ -1381,7 +1381,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 
 ;-- result --;
 
-:auto
+2
 ```
 
 </td></tr></table>
@@ -1402,7 +1402,7 @@ Produce a new collection from a collection by evaluating the expression with the
 
 ;-- result --;
 
-:auto
+[11 12 13]
 ```
 
 </td><td>
@@ -1412,7 +1412,7 @@ Produce a new collection from a collection by evaluating the expression with the
 
 ;-- result --;
 
-:auto
+#{20 24}
 ```
 
 </td></tr></table>
@@ -1433,7 +1433,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 
 ;-- result --;
 
-:auto
+0
 ```
 
 </td><td>
@@ -1443,7 +1443,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 
 ;-- result --;
 
-:auto
+2
 ```
 
 </td><td>
@@ -1453,7 +1453,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 
 ;-- result --;
 
-:auto
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
 </td></tr></table>
@@ -1472,7 +1472,7 @@ Performs logical negation of the argument.
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -1482,7 +1482,7 @@ Performs logical negation of the argument.
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -1503,7 +1503,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -1513,7 +1513,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -1523,7 +1523,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td></tr><tr><td>
@@ -1533,7 +1533,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -1543,7 +1543,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -1553,7 +1553,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr><tr><td>
@@ -1563,7 +1563,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -1573,7 +1573,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -1583,7 +1583,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr><tr><td>
@@ -1616,7 +1616,7 @@ The operation does not short-circuit. Even if the first argument evaluates to tr
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -1626,7 +1626,7 @@ The operation does not short-circuit. Even if the first argument evaluates to tr
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -1636,7 +1636,7 @@ The operation does not short-circuit. Even if the first argument evaluates to tr
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -1657,7 +1657,7 @@ Produce a vector that contains integers in order starting at either the start va
 
 ;-- result --;
 
-:auto
+[0 1 2]
 ```
 
 </td><td>
@@ -1667,7 +1667,7 @@ Produce a vector that contains integers in order starting at either the start va
 
 ;-- result --;
 
-:auto
+[10 11]
 ```
 
 </td><td>
@@ -1677,7 +1677,7 @@ Produce a vector that contains integers in order starting at either the start va
 
 ;-- result --;
 
-:auto
+[10 15 20]
 ```
 
 </td></tr></table>
@@ -1696,7 +1696,7 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 ;-- result --;
 
-:auto
+16
 ```
 
 </td></tr></table>
@@ -1770,7 +1770,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 
 ;-- result --;
 
-:auto
+#d "1.2"
 ```
 
 </td><td>
@@ -1780,7 +1780,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 
 ;-- result --;
 
-:auto
+#d "1.23"
 ```
 
 </td><td>
@@ -1790,7 +1790,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 
 ;-- result --;
 
-:auto
+#d "1.230"
 ```
 
 </td></tr><tr><td>
@@ -1800,7 +1800,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 
 ;-- result --;
 
-:auto
+1
 ```
 
 </td></tr></table>
@@ -1821,7 +1821,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ;-- result --;
 
-:auto
+[2 3]
 ```
 
 </td><td>
@@ -1831,7 +1831,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ;-- result --;
 
-:auto
+[2]
 ```
 
 </td><td>
@@ -1841,7 +1841,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ;-- result --;
 
-:auto
+[]
 ```
 
 </td></tr><tr><td>
@@ -1851,7 +1851,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ;-- result --;
 
-:auto
+[]
 ```
 
 </td></tr></table>
@@ -1870,7 +1870,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 ;-- result --;
 
-:auto
+[1 2 3]
 ```
 
 </td><td>
@@ -1880,7 +1880,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 ;-- result --;
 
-:auto
+[#d "1.1" #d "2.2" #d "3.3"]
 ```
 
 </td></tr></table>
@@ -1905,7 +1905,7 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 ;-- result --;
 
-:auto
+[[1 2 3] [10 20] [30]]
 ```
 
 </td></tr></table>
@@ -1931,7 +1931,7 @@ Combine all of the input strings together in sequence to produce a new string.
 
 ;-- result --;
 
-:auto
+"ab"
 ```
 
 </td><td>
@@ -1941,7 +1941,7 @@ Combine all of the input strings together in sequence to produce a new string.
 
 ;-- result --;
 
-:auto
+"ac"
 ```
 
 </td></tr></table>
@@ -1962,7 +1962,7 @@ According to this operation, a set is always a subset of itself and every set is
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td><td>
@@ -1972,7 +1972,7 @@ According to this operation, a set is always a subset of itself and every set is
 
 ;-- result --;
 
-:auto
+false
 ```
 
 </td><td>
@@ -1982,7 +1982,7 @@ According to this operation, a set is always a subset of itself and every set is
 
 ;-- result --;
 
-:auto
+true
 ```
 
 </td></tr></table>
@@ -2005,7 +2005,7 @@ This produces a set which contains all of the values that appear in any of the a
 
 ;-- result --;
 
-:auto
+#{1 3 2}
 ```
 
 </td><td>
@@ -2015,7 +2015,7 @@ This produces a set which contains all of the values that appear in any of the a
 
 ;-- result --;
 
-:auto
+#{1 4 3 2}
 ```
 
 </td><td>
@@ -2025,7 +2025,7 @@ This produces a set which contains all of the values that appear in any of the a
 
 ;-- result --;
 
-:auto
+#{1}
 ```
 
 </td></tr></table>
@@ -2094,7 +2094,7 @@ A primary use of this operator is in instance expression to optionally provide a
 
 ;-- result --;
 
-:auto
+"bigger"
 ```
 
 </td><td>
@@ -2104,7 +2104,7 @@ A primary use of this operator is in instance expression to optionally provide a
 
 ;-- result --;
 
-:auto
+:Unset
 ```
 
 </td></tr></table>
