@@ -369,9 +369,11 @@
        (-> senv
            (ssa/build-spec-ctx (:$type initial-bound))
            (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound))
-           (lowering/lower)
            (lowering/eliminate-runtime-constraint-violations)
+           (lowering/lower-when)
            (lowering/eliminate-error-forms)
+           (lowering/eliminate-dos)
+           (lowering/lower)
            (lowering/eliminate-dos)
            ;; TODO: Figure out why these have to be done together to get the tests to pass...
            (->> (fixpoint #(-> %

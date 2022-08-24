@@ -369,6 +369,10 @@
     (let [[_when pred-id body-id] form]
       (list 'if pred-id body-id :Unset))))
 
+(s/defn lower-when :- SpecCtx
+  [sctx :- SpecCtx]
+  (rewrite-sctx sctx lower-when-expr))
+
 (s/defn ^:private lower-maybe-comparison-expr
   [{{:keys [dgraph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (let [opt-arg? (fn [[form htype]]
