@@ -37,8 +37,9 @@
 (defn- do-form? [form] (and (seq? form) (= '$do! (first form))))
 
 (def do!-fence-ops
-  "The set of ops that a $do! form cannot bubble up out of without changing semantics."
-  '#{if valid?})
+  "The set of ops that a $do! form cannot bubble up out of without changing semantics.
+  The $do! form is in here too, to avoid redundant rewrites."
+  '#{if valid? $do!})
 
 (s/defn ^:private first-nested-do :- (s/maybe [(s/one s/Int :index) (s/one ssa/Derivation :deriv)])
   [{:keys [dgraph] :as ctx}, form]
@@ -74,7 +75,9 @@
 
     (and (seq? form) (not (contains? do!-fence-ops (first form))))
     (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
-      (make-do (->> nested-do-form rest butlast) (seq (assoc (vec form) i (last nested-do-form)))))))
+      (let [side-effects (->> nested-do-form rest butlast)
+            body (seq (assoc (vec form) i (last nested-do-form)))]
+        (make-do side-effects body)))))
 
 ;; Finally, we can 'flatten' $do! forms.
 
