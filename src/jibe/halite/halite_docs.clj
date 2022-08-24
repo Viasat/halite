@@ -27,7 +27,7 @@
                                 :tags #{:symbol-all :symbol-all-j}}
                 'symbol {:bnf "simple-symbol [ '/' simple-symbol]"
                          :j-bnf "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"
-                         :doc "Symbols are identifiers that allow values and operations to be named."
+                         :doc "Symbols are identifiers that allow values and operations to be named. The following are reserved and cannot be used as user defined symbols: true, false, nil."
                          :comment "Symbols are used to identify operators, variables in expressions, and specifications."
                          :comment-j "Symbols are used to identify operators, variables in expressions, specifications, and fields within specifications."
                          :comment-2 "Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator."
@@ -40,7 +40,7 @@
                          :tags #{:symbol-all :symbol-all-j}}
                 'keyword {:bnf "':' symbol"
                           :j-bnf nil
-                          :doc "Keywords are identifiers that are used for instance field names."
+                          :doc "Keywords are identifiers that are used for instance field names. The following are reserved and cannot be used as user defined keywords: :true, :false, :nil."
                           :comment "Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated."
                           :examples [{:str ":age"}
                                      {:str ":x/y"}]
