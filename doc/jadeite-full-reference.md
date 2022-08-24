@@ -32,33 +32,30 @@ Multiply two numbers together.
 
 Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (2 * 3)
 
 ### result ###
-
 6
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (#d "2.2" * 3)
 
 ### result ###
-
 #d "6.6"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 * 3 * 4)
 
 ### result ###
-
 24
 ```
 
@@ -77,43 +74,39 @@ Add two numbers together.
 
 ![["fixed-decimal '+' fixed-decimal" "fixed-decimal"]](./halite-bnf-diagrams/op/plus-1-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (2 + 3)
 
 ### result ###
-
 5
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (#d "2.2" + #d "3.3")
 
 ### result ###
-
 #d "5.5"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 + 3 + 4)
 
 ### result ###
-
 9
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```java
 (2 + -3)
 
 ### result ###
-
 -1
 ```
 
@@ -132,43 +125,39 @@ Subtract one number from another.
 
 ![["fixed-decimal '-' fixed-decimal" "fixed-decimal"]](./halite-bnf-diagrams/op/minus-1-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (2 - 3)
 
 ### result ###
-
 -1
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (#d "2.2" - #d "3.3")
 
 ### result ###
-
 #d "-1.1"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 - 3 - 4)
 
 ### result ###
-
 -5
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```java
 (2 - -3)
 
 ### result ###
-
 5
 ```
 
@@ -185,33 +174,30 @@ Determine if a number is strictly less than another.
 
 ![["((integer '<'  integer) | (fixed-decimal '<' fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (2 < 3)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (#d "2.2" < #d "3.3")
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 < 2)
 
 ### result ###
-
 false
 ```
 
@@ -224,33 +210,30 @@ Determine if a number is less than or equal to another.
 
 ![["((integer '<=' integer) | (fixed-decimal '<=' fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C%3D-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (2 <= 3)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (#d "2.2" <= #d "3.3")
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 <= 2)
 
 ### result ###
-
 true
 ```
 
@@ -265,103 +248,93 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/%3D-1-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (2 == 2)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (#d "2.2" == #d "3.3")
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 == 3)
 
 ### result ###
-
 false
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```java
 ("hi" == "hi")
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 ([1, 2, 3] == [1, 2, 3])
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 ([1, 2, 3] == #{1, 2, 3})
 
 ### result ###
-
 false
 ```
 
-</td></tr><tr><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 (#{1, 2, 3} == #{1, 2, 3})
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] == [#{1, 2}, #{3}])
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] == [#{1, 2}, #{4}])
 
 ### result ###
-
 false
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```java
 
 
 ### result ###
-
 
 ```
 
@@ -376,33 +349,30 @@ Performs logical implication. If the first value is true, then the second value 
 
 ![["boolean '=>' boolean" "boolean"]](./halite-bnf-diagrams/op/%3D%3E-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 ((2 > 1) => (1 < 2))
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 ((2 > 1) => (1 > 2))
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 ((1 > 2) => false)
 
 ### result ###
-
 true
 ```
 
@@ -417,33 +387,30 @@ Determine if a number is strictly greater than another.
 
 ![["((integer '>'  integer) | (fixed-decimal '>' fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (3 > 2)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (#d "3.3" > #d "2.2")
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 > 2)
 
 ### result ###
-
 false
 ```
 
@@ -456,33 +423,30 @@ Determine if a number is greater than or equal to another.
 
 ![["((integer '>='  integer) | (fixed-decimal '>=' fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E%3D-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (3 >= 2)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (#d "3.3" >= #d "2.2")
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 >= 2)
 
 ### result ###
-
 true
 ```
 
@@ -499,33 +463,30 @@ Compute the absolute value of a number.
 
 Since the negative number space contains one more value than the positive number space, it is a runtime error to attempt to take the absolute value of the most negative value for a given number space.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 abs(-1)
 
 ### result ###
-
 1
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 abs(1)
 
 ### result ###
-
 1
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 abs(#d "-1.0")
 
 ### result ###
-
 #d "1.0"
 ```
 
@@ -544,33 +505,30 @@ Perform a logical 'and' operation on the input values.
 
 The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (true && false)
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (true && true)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 ((2 > 1) && (3 > 2) && (4 > 3))
 
 ### result ###
-
 true
 ```
 
@@ -587,23 +545,21 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 
 The operation does not short-circuit. The boolean-expression is evaluated for all elements even if a prior element has caused the boolean-expression to evaluate to true. Operating on an empty collection produces a false value.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 any?(x in [1, 2, 3])(x > 1)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 any?(x in #{1, 2, 3})(x > 10)
 
 ### result ###
-
 false
 ```
 
@@ -622,33 +578,30 @@ Combine two collections into one.
 
 Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 [1, 2].concat([3])
 
 ### result ###
-
 [1 2 3]
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 #{1, 2}.concat([3, 4])
 
 ### result ###
-
 #{1 4 3 2}
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 [].concat([])
 
 ### result ###
-
 []
 ```
 
@@ -665,33 +618,30 @@ Add individual items to a collection.
 
 Only definite values may be put into collections, i.e. collections cannot contain 'unset' values.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 [1, 2].conj(3)
 
 ### result ###
-
 [1 2 3]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 #{1, 2}.conj(3, 4)
 
 ### result ###
-
 #{1 4 3 2}
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 [].conj(1)
 
 ### result ###
-
 [1]
 ```
 
@@ -706,43 +656,39 @@ Determine if a specific value is in a set.
 
 Since collections themselves are compared by their contents, this works for collections nested inside of sets.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 #{"a", "b"}.contains?("a")
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 #{"a", "b"}.contains?("c")
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 #{#{1, 2}, #{3}}.contains?(#{1, 2})
 
 ### result ###
-
 true
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```java
 #{[1, 2], [3]}.contains?([4])
 
 ### result ###
-
 false
 ```
 
@@ -755,33 +701,30 @@ Return how many items are in a collection.
 
 ![["(set | vector) '.' 'count()'" "integer"]](./halite-bnf-diagrams/op/count-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 [10, 20, 30].count()
 
 ### result ###
-
 3
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 #{"a", "b"}.count()
 
 ### result ###
-
 2
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 [].count()
 
 ### result ###
-
 0
 ```
 
@@ -794,23 +737,21 @@ Decrement a numeric value.
 
 ![["integer '-' '1' " "integer"]](./halite-bnf-diagrams/op/dec-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 
 
 ### result ###
-
 9
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 
 
 ### result ###
-
 -1
 ```
 
@@ -831,43 +772,39 @@ Compute the set difference of two sets.
 
 This produces a set which contains all of the elements from the first set which do not appear in the second set.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 #{1, 2, 3}.difference(#{1, 2})
 
 ### result ###
-
 #{3}
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 #{1, 2, 3}.difference(#{})
 
 ### result ###
-
 #{1 3 2}
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 #{1, 2, 3}.difference(#{1, 2, 3, 4})
 
 ### result ###
-
 #{}
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```java
 #{[1, 2], [3]}.difference(#{[1, 2]})
 
 ### result ###
-
 #{[3]}
 ```
 
@@ -886,53 +823,48 @@ Divide the first number by the second. When the first argument is an integer the
 
 As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (12 / 3)
 
 ### result ###
-
 4
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (#d "12.3" / 3)
 
 ### result ###
-
 #d "4.1"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (14 / 4)
 
 ### result ###
-
 3
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```java
 (#d "14.3" / 3)
 
 ### result ###
-
 #d "4.7"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (1 / 0)
 
 ### result ###
-
 h-err/divide-by-zero
 ```
 
@@ -953,13 +885,12 @@ Produce a runtime error with the provided string as an error message.
 
 Used to indicate when an unexpected condition has occurred and the data at hand is invalid. It is preferred to use constraints to capture such conditions earlier.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 error("failure")
 
 ### result ###
-
 h-err/spec-threw
 ```
 
@@ -978,23 +909,21 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 
 Does not short-circuit. The boolean-expression is evaluated for all elements, even once a prior element has evaluated to false. Operating on an empty collection produces a true value.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 every?(x in [1, 2, 3])(x > 0)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 every?(x in #{1, 2, 3})(x > 1)
 
 ### result ###
-
 false
 ```
 
@@ -1009,43 +938,39 @@ Compute the numeric result of raising the first argument to the power given by t
 
 ![["'expt' '(' integer ',' integer ')'" "integer"]](./halite-bnf-diagrams/op/expt-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 expt(2, 3)
 
 ### result ###
-
 8
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 expt(-2, 3)
 
 ### result ###
-
 -8
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 expt(2, 0)
 
 ### result ###
-
 1
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```java
 expt(2, -1)
 
 ### result ###
-
 h-err/invalid-exponent
 ```
 
@@ -1065,23 +990,21 @@ Produce a new collection which contains only the elements from the original coll
 
 ![["'filter' '(' symbol 'in' vector ')' boolean-expression" "vector"]](./halite-bnf-diagrams/op/filter-1-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 filter(x in [1, 2, 3])(x > 2)
 
 ### result ###
-
 [3]
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 filter(x in #{1, 2, 3})(x > 2)
 
 ### result ###
-
 #{3}
 ```
 
@@ -1098,23 +1021,21 @@ Produce the first element from a vector.
 
 To avoid runtime errors, if the vector might be empty, use 'count' to check the length first.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 [10, 20, 30].first()
 
 ### result ###
-
 10
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 [].first()
 
 ### result ###
-
 h-err/argument-empty
 ```
 
@@ -1137,23 +1058,21 @@ Extract the given item from the first argument. If the first argument is an inst
 
 The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 [10, 20, 30, 40][2]
 
 ### result ###
-
 30
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 :auto
 
 ### result ###
-
 
 ```
 
@@ -1173,33 +1092,30 @@ Syntactic sugar for performing the equivalent of a chained series of 'get' opera
 
 ![["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }" "any"]](./halite-bnf-diagrams/op/get-in-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 [[10, 20], [30, 40]][1][0]
 
 ### result ###
-
 30
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 :auto
 
 ### result ###
-
 
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 :auto
 
 ### result ###
-
 
 ```
 
@@ -1221,23 +1137,21 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 ![["'if' '(' boolean ')' any-expression 'else' any-expression" "any"]](./halite-bnf-diagrams/op/if-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 (if((2 > 1)) {10} else {-1})
 
 ### result ###
-
 10
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (if((2 > 1)) {10} else {error("fail")})
 
 ### result ###
-
 10
 ```
 
@@ -1265,13 +1179,12 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 :auto
 
 ### result ###
-
 :auto
 ```
 
@@ -1286,23 +1199,21 @@ Increment a numeric value.
 
 ![["integer '+' '1'" "integer"]](./halite-bnf-diagrams/op/inc-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 
 
 ### result ###
-
 11
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 
 
 ### result ###
-
 1
 ```
 
@@ -1323,23 +1234,21 @@ Compute the set intersection of the sets.
 
 This produces a set which only contains values that appear in each of the arguments.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 #{1, 2, 3}.intersection(#{2, 3, 4})
 
 ### result ###
-
 #{3 2}
 ```
 
-</td><td>
+</td><td colspan="3">
 
 ```java
 #{1, 2, 3}.intersection(#{2, 3, 4}, #{3, 4})
 
 ### result ###
-
 #{3}
 ```
 
@@ -1356,33 +1265,30 @@ Evaluate the expression argument in a nested context created by considering the 
 
 Allows names to be given to values so that they can be referenced by the any-expression.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 ({ x = 1; (x + 1) })
 
 ### result ###
-
 2
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 ({ x = 1; y = 2; (x + y) })
 
 ### result ###
-
 3
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 ({ x = 1; ({ x = 2; x }) })
 
 ### result ###
-
 2
 ```
 
@@ -1397,23 +1303,21 @@ Produce a new collection from a collection by evaluating the expression with the
 
 ![["'map' '(' symbol:element 'in' vector ')' value-expression" "vector"]](./halite-bnf-diagrams/op/map-1-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 map(x in [10, 11, 12])(x + 1)
 
 ### result ###
-
 [11 12 13]
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 map(x in #{10, 12})(x * 2)
 
 ### result ###
-
 #{20 24}
 ```
 
@@ -1428,33 +1332,30 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 
 ![["integer '%' integer" "integer"]](./halite-bnf-diagrams/op/mod-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (12 % 3)
 
 ### result ###
-
 0
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (14 % 4)
 
 ### result ###
-
 2
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (1 % 0)
 
 ### result ###
-
 h-err/divide-by-zero
 ```
 
@@ -1467,23 +1368,21 @@ Performs logical negation of the argument.
 
 ![["'!' boolean" "boolean"]](./halite-bnf-diagrams/op/not-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 !true
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 !false
 
 ### result ###
-
 true
 ```
 
@@ -1500,103 +1399,93 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ![["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/not%3D-1-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (2 != 3)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (#d "2.2" != #d "2.2")
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (2 != 2)
 
 ### result ###
-
 false
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```java
 ("hi" != "bye")
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 ([1, 2, 3] != [1, 2, 3, 4])
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 ([1, 2, 3] != #{1, 2, 3})
 
 ### result ###
-
 true
 ```
 
-</td></tr><tr><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 (#{1, 2, 3} != #{1, 2, 3})
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{3}])
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{4}])
 
 ### result ###
-
 true
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```java
 
 
 ### result ###
-
 
 ```
 
@@ -1613,33 +1502,30 @@ Perform a logical 'or' operation on the input values.
 
 The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 (true || false)
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 (false || false)
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 ((1 > 2) || (2 > 3) || (4 > 3))
 
 ### result ###
-
 true
 ```
 
@@ -1654,33 +1540,30 @@ Produce a vector that contains integers in order starting at either the start va
 
 ![["'range' '(' [integer:start ','] integer:end [',' integer:increment] ')'" "vector"]](./halite-bnf-diagrams/op/range-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 range(3)
 
 ### result ###
-
 [0 1 2]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 range(10, 12)
 
 ### result ###
-
 [10 11]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 range(10, 21, 5)
 
 ### result ###
-
 [10 15 20]
 ```
 
@@ -1693,13 +1576,12 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 ![["'reduce' '(' symbol:accumulator '=' value:accumulator-init ';' symbol:element 'in' vector ')' any-expression" "any"]](./halite-bnf-diagrams/op/reduce-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```java
 (reduce( a = 10; x in [1, 2, 3] ) { (a + x) })
 
 ### result ###
-
 16
 ```
 
@@ -1714,13 +1596,12 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 ![["instance '.' 'refineTo' '(' symbol:spec-id ')'" "instance"]](./halite-bnf-diagrams/op/refine-to-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```java
 {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )
 
 ### result ###
-
 
 ```
 
@@ -1740,13 +1621,12 @@ Determine whether it is possible to refine the given instance into an instance o
 
 ![["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]](./halite-bnf-diagrams/op/refines-to%3F-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```java
 {$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Spec$v1 )
 
 ### result ###
-
 
 ```
 
@@ -1767,43 +1647,39 @@ Produce a number by adjusting the scale of the fixed-decimal to the new-scale. I
 
 Arithmetic on numeric values never produce results in different number spaces. This operation provides an explicit way to convert a fixed-decimal value into a value with the scale of a different number space. This includes the ability to convert a fixed-decimal value into an integer.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 rescale(#d "1.23", 1)
 
 ### result ###
-
 #d "1.2"
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 rescale(#d "1.23", 2)
 
 ### result ###
-
 #d "1.23"
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 rescale(#d "1.23", 3)
 
 ### result ###
-
 #d "1.230"
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```java
 rescale(#d "1.23", 0)
 
 ### result ###
-
 1
 ```
 
@@ -1818,43 +1694,39 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ![["vector '.' 'rest()'" "vector"]](./halite-bnf-diagrams/op/rest-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 [1, 2, 3].rest()
 
 ### result ###
-
 [2 3]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 [1, 2].rest()
 
 ### result ###
-
 [2]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 [1].rest()
 
 ### result ###
-
 []
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```java
 [].rest()
 
 ### result ###
-
 []
 ```
 
@@ -1867,23 +1739,21 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 ![["(set | vector) '.' 'sort()'" "vector"]](./halite-bnf-diagrams/op/sort-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 [2, 1, 3].sort()
 
 ### result ###
-
 [1 2 3]
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 [#d "3.3", #d "1.1", #d "2.2"].sort()
 
 ### result ###
-
 [#d "1.1" #d "2.2" #d "3.3"]
 ```
 
@@ -1902,13 +1772,12 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 ![["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]](./halite-bnf-diagrams/op/sort-by-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```java
 sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()
 
 ### result ###
-
 [[1 2 3] [10 20] [30]]
 ```
 
@@ -1928,23 +1797,21 @@ Combine all of the input strings together in sequence to produce a new string.
 
 ![["'str' '(' string ',' string {',' string} ')'" "string"]](./halite-bnf-diagrams/op/str-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 str("a", "b")
 
 ### result ###
-
 "ab"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 str("a", "", "c")
 
 ### result ###
-
 "ac"
 ```
 
@@ -1959,33 +1826,30 @@ Return false if there are any items in the first set which do not appear in the 
 
 According to this operation, a set is always a subset of itself and every set is a subset of the empty set. Using this operation and an equality check in combination allows a 'superset?' predicate to be computed.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 #{1, 2}.subset?(#{1, 2, 3, 4})
 
 ### result ###
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 #{1, 5}.subset?(#{1, 2})
 
 ### result ###
-
 false
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```java
 #{1, 2}.subset?(#{1, 2})
 
 ### result ###
-
 true
 ```
 
@@ -2002,33 +1866,30 @@ Compute the union of all the sets.
 
 This produces a set which contains all of the values that appear in any of the arguments.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 #{1}.union(#{2, 3})
 
 ### result ###
-
 #{1 3 2}
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 #{1}.union(#{2, 3}, #{4})
 
 ### result ###
-
 #{1 4 3 2}
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```java
 #{1}.union(#{})
 
 ### result ###
-
 #{1}
 ```
 
@@ -2045,13 +1906,12 @@ Evaluate the instance-expression and produce the result. If a constraint violati
 
 This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 valid {$type: spec/A$v1, n: -1, p: 1}
 
 ### result ###
-
 
 ```
 
@@ -2068,13 +1928,12 @@ Evaluate the instance expression and produce false if a constraint violation occ
 
 Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 valid? {$type: my/Spec$v1, n: 0, p: 1}
 
 ### result ###
-
 
 ```
 
@@ -2091,23 +1950,21 @@ If the first argument is true, then evaluate the second argument, otherwise prod
 
 A primary use of this operator is in instance expression to optionally provide a value for a an optional field.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```java
 (when((2 > 1)) {"bigger"})
 
 ### result ###
-
 "bigger"
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```java
 (when((2 < 1)) {"bigger"})
 
 ### result ###
-
 :Unset
 ```
 
@@ -2120,13 +1977,12 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 ![["'whenValue' '(' symbol ')' any-expression" "any"]](./halite-bnf-diagrams/op/when-value-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```java
 whenValue(x) {x + 2}
 
 ### result ###
-
 
 ```
 
@@ -2141,13 +1997,12 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 ![["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]](./halite-bnf-diagrams/op/when-value-let-0-j.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```java
 whenValueLet( x = (whenValue(o) {o + 2}) ) {x + 1}
 
 ### result ###
-
 
 ```
 

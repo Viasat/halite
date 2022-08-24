@@ -1074,6 +1074,34 @@
 (defn url-encode [s]
   (java.net.URLEncoder/encode (str s)))
 
+(defn text-width [s]
+  (apply max 0 (map count (re-seq #".*" s))))
+
+(defn text-tile-rows [texts]
+  (let [chars-per-col 20
+        cols-per-row 5]
+    (reduce (fn [rows text]
+              (let [cols (inc (quot (dec (text-width text)) chars-per-col))
+                    tile {:text text, :cols cols}
+                    last-row (peek rows)]
+                (if (or (empty? rows)
+                        (< cols-per-row (+ cols (:cols last-row))))
+                  (conj rows {:cols cols :tiles [tile]})
+                  (conj (pop rows) (-> last-row
+                                       (update :cols + cols)
+                                       (update :tiles conj tile))))))
+            []
+            texts)))
+
+(defn example-text [lang e]
+  (str (or (e ({:halite :expr-str, :jadeite :expr-str-j} lang))
+           (e ({:halite :str, :jadeite :str-j} lang)))
+       ({:halite  "\n\n;-- result --;\n"
+         :jadeite "\n\n### result ###\n"}
+        lang)
+       (or (:result e)
+           (:err-result e))))
+
 (defn full-md [lang op-name op]
   (->> ["### "
         "<a name=\"" (safe-op-anchor op-name) "\"></a>"
@@ -1084,20 +1112,14 @@
             (url-encode (safe-op-name op-name)) "-" i (when (= :jadeite lang) "-j") ".svg)\n\n"])
          (op ({:halite :sigs, :jadeite :j-sigs} lang)))
         (when-let [c (:comment op)] [c "\n\n"])
-        (when-let [ex-groups (seq (partition-all 3 (:examples op)))]
+        (when-let [es (:examples op)]
           ["<table>"
-           (for [group ex-groups]
+           (for [row (text-tile-rows (map (partial example-text lang) es))]
              ["<tr>"
-              (for [e group]
-                ["<td>\n\n"
+              (for [tile (:tiles row)]
+                ["<td colspan=\"" (:cols tile) "\">\n\n"
                  "```" ({:halite "clojure", :jadeite "java"} lang) "\n"
-                 (or (e ({:halite :expr-str, :jadeite :expr-str-j} lang))
-                     (e ({:halite :str, :jadeite :str-j} lang)))
-                 ({:halite  "\n\n;-- result --;\n\n"
-                   :jadeite "\n\n### result ###\n\n"}
-                  lang)
-                 (or (:result e)
-                     (:err-result e))
+                 (:text tile)
                  "\n```\n\n</td>"])
               "</tr>"])
            "</table>\n\n"])

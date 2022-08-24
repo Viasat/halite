@@ -32,33 +32,30 @@ Multiply two numbers together.
 
 Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (* 2 3)
 
 ;-- result --;
-
 6
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (* #d "2.2" 3)
 
 ;-- result --;
-
 #d "6.6"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (* 2 3 4)
 
 ;-- result --;
-
 24
 ```
 
@@ -77,43 +74,39 @@ Add two numbers together.
 
 ![["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]](./halite-bnf-diagrams/op/plus-1.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (+ 2 3)
 
 ;-- result --;
-
 5
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (+ #d "2.2" #d "3.3")
 
 ;-- result --;
-
 #d "5.5"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (+ 2 3 4)
 
 ;-- result --;
-
 9
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```clojure
 (+ 2 -3)
 
 ;-- result --;
-
 -1
 ```
 
@@ -132,43 +125,39 @@ Subtract one number from another.
 
 ![["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]](./halite-bnf-diagrams/op/minus-1.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (- 2 3)
 
 ;-- result --;
-
 -1
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (- #d "2.2" #d "3.3")
 
 ;-- result --;
-
 #d "-1.1"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (- 2 3 4)
 
 ;-- result --;
-
 -5
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```clojure
 (- 2 -3)
 
 ;-- result --;
-
 5
 ```
 
@@ -185,33 +174,30 @@ Determine if a number is strictly less than another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (< 2 3)
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (< #d "2.2" #d "3.3")
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (< 2 2)
 
 ;-- result --;
-
 false
 ```
 
@@ -224,33 +210,30 @@ Determine if a number is less than or equal to another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C%3D-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (<= 2 3)
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (<= #d "2.2" #d "3.3")
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (<= 2 2)
 
 ;-- result --;
-
 true
 ```
 
@@ -263,103 +246,93 @@ Determine if two values are equivalent. For vectors and sets this performs a com
 
 ![["value value {value}" "boolean"]](./halite-bnf-diagrams/op/%3D-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (= 2 2)
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (= #d "2.2" #d "3.3")
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (= 2 3)
 
 ;-- result --;
-
 false
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```clojure
 (= "hi" "hi")
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td></tr><tr><td colspan="1">
 
 ```clojure
 (= [1 2 3] [1 2 3])
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (= [1 2 3] #{1 2 3})
 
 ;-- result --;
-
 false
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```clojure
 (= #{3 1 2} #{1 2 3})
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (= [#{1 2} #{3}] [#{1 2} #{3}])
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (= [#{1 2} #{3}] [#{1 2} #{4}])
 
 ;-- result --;
-
 false
 ```
 
-</td></tr><tr><td>
+</td></tr><tr><td colspan="4">
 
 ```clojure
 (= {:$type :text/Spec$v1 :x 1 :y -1} {:$type :text/Spec$v1 :x 1 :y 0})
 
 ;-- result --;
-
 
 ```
 
@@ -374,33 +347,30 @@ Performs logical implication. If the first value is true, then the second value 
 
 ![["boolean boolean" "boolean"]](./halite-bnf-diagrams/op/%3D%3E-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (=> (> 2 1) (< 1 2))
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (=> (> 2 1) (> 1 2))
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (=> (> 1 2) false)
 
 ;-- result --;
-
 true
 ```
 
@@ -415,33 +385,30 @@ Determine if a number is strictly greater than another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (> 3 2)
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (> #d "3.3" #d "2.2" )
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (> 2 2)
 
 ;-- result --;
-
 false
 ```
 
@@ -454,33 +421,30 @@ Determine if a number is greater than or equal to another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E%3D-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (>= 3 2)
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (>= #d "3.3" #d "2.2" )
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (>= 2 2)
 
 ;-- result --;
-
 true
 ```
 
@@ -497,33 +461,30 @@ Compute the absolute value of a number.
 
 Since the negative number space contains one more value than the positive number space, it is a runtime error to attempt to take the absolute value of the most negative value for a given number space.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (abs -1)
 
 ;-- result --;
-
 1
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (abs 1)
 
 ;-- result --;
-
 1
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (abs #d "-1.0")
 
 ;-- result --;
-
 #d "1.0"
 ```
 
@@ -542,33 +503,30 @@ Perform a logical 'and' operation on the input values.
 
 The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (and true false)
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (and true true)
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (and (> 2 1) (> 3 2) (> 4 3))
 
 ;-- result --;
-
 true
 ```
 
@@ -585,23 +543,21 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 
 The operation does not short-circuit. The boolean-expression is evaluated for all elements even if a prior element has caused the boolean-expression to evaluate to true. Operating on an empty collection produces a false value.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (any? [x [1 2 3]] (> x 1))
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (any? [x #{1 2 3}] (> x 10))
 
 ;-- result --;
-
 false
 ```
 
@@ -620,33 +576,30 @@ Combine two collections into one.
 
 Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (concat [1 2] [3])
 
 ;-- result --;
-
 [1 2 3]
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (concat #{1 2} [3 4])
 
 ;-- result --;
-
 #{1 4 3 2}
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (concat [] [])
 
 ;-- result --;
-
 []
 ```
 
@@ -663,33 +616,30 @@ Add individual items to a collection.
 
 Only definite values may be put into collections, i.e. collections cannot contain 'unset' values.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (conj [1 2] 3)
 
 ;-- result --;
-
 [1 2 3]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (conj #{1 2} 3 4)
 
 ;-- result --;
-
 #{1 4 3 2}
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (conj [] 1)
 
 ;-- result --;
-
 [1]
 ```
 
@@ -704,43 +654,39 @@ Determine if a specific value is in a set.
 
 Since collections themselves are compared by their contents, this works for collections nested inside of sets.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (contains? #{"a" "b"} "a")
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (contains? #{"a" "b"} "c")
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (contains? #{#{1 2} #{3}} #{1 2})
 
 ;-- result --;
-
 true
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```clojure
 (contains? #{[1 2] [3]} [4])
 
 ;-- result --;
-
 false
 ```
 
@@ -753,33 +699,30 @@ Return how many items are in a collection.
 
 ![["(set | vector)" "integer"]](./halite-bnf-diagrams/op/count-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (count [10 20 30])
 
 ;-- result --;
-
 3
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (count #{"a" "b"})
 
 ;-- result --;
-
 2
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (count [])
 
 ;-- result --;
-
 0
 ```
 
@@ -792,23 +735,21 @@ Decrement a numeric value.
 
 ![["integer" "integer"]](./halite-bnf-diagrams/op/dec-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (dec 10)
 
 ;-- result --;
-
 9
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (dec 0)
 
 ;-- result --;
-
 -1
 ```
 
@@ -829,43 +770,39 @@ Compute the set difference of two sets.
 
 This produces a set which contains all of the elements from the first set which do not appear in the second set.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (difference #{1 2 3} #{1 2})
 
 ;-- result --;
-
 #{3}
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (difference #{1 2 3} #{})
 
 ;-- result --;
-
 #{1 3 2}
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (difference #{1 2 3} #{1 2 3 4})
 
 ;-- result --;
-
 #{}
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```clojure
 (difference #{[1 2] [3]} #{[1 2]})
 
 ;-- result --;
-
 #{[3]}
 ```
 
@@ -884,53 +821,48 @@ Divide the first number by the second. When the first argument is an integer the
 
 As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (div 12 3)
 
 ;-- result --;
-
 4
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (div #d "12.3" 3)
 
 ;-- result --;
-
 #d "4.1"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (div 14 4)
 
 ;-- result --;
-
 3
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```clojure
 (div #d "14.3" 3)
 
 ;-- result --;
-
 #d "4.7"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (div 1 0)
 
 ;-- result --;
-
 h-err/divide-by-zero
 ```
 
@@ -951,13 +883,12 @@ Produce a runtime error with the provided string as an error message.
 
 Used to indicate when an unexpected condition has occurred and the data at hand is invalid. It is preferred to use constraints to capture such conditions earlier.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (error "failure")
 
 ;-- result --;
-
 h-err/spec-threw
 ```
 
@@ -976,23 +907,21 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 
 Does not short-circuit. The boolean-expression is evaluated for all elements, even once a prior element has evaluated to false. Operating on an empty collection produces a true value.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (every? [x [1 2 3]] (> x 0))
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (every? [x #{1 2 3}] (> x 1))
 
 ;-- result --;
-
 false
 ```
 
@@ -1007,43 +936,39 @@ Compute the numeric result of raising the first argument to the power given by t
 
 ![["integer integer" "integer"]](./halite-bnf-diagrams/op/expt-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (expt 2 3)
 
 ;-- result --;
-
 8
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (expt -2 3)
 
 ;-- result --;
-
 -8
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (expt 2 0)
 
 ;-- result --;
-
 1
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```clojure
 (expt 2 -1)
 
 ;-- result --;
-
 h-err/invalid-exponent
 ```
 
@@ -1063,23 +988,21 @@ Produce a new collection which contains only the elements from the original coll
 
 ![["'[' symbol:element vector ']' boolean-expression" "vector"]](./halite-bnf-diagrams/op/filter-1.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (filter [x [1 2 3]] (> x 2))
 
 ;-- result --;
-
 [3]
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (filter [x #{1 2 3}] (> x 2))
 
 ;-- result --;
-
 #{3}
 ```
 
@@ -1096,23 +1019,21 @@ Produce the first element from a vector.
 
 To avoid runtime errors, if the vector might be empty, use 'count' to check the length first.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (first [10 20 30])
 
 ;-- result --;
-
 10
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (first [])
 
 ;-- result --;
-
 h-err/argument-empty
 ```
 
@@ -1135,23 +1056,21 @@ Extract the given item from the first argument. If the first argument is an inst
 
 The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (get [10 20 30 40] 2)
 
 ;-- result --;
-
 30
 ```
 
-</td><td>
+</td><td colspan="3">
 
 ```clojure
 (get {:$type :my/Spec$v1, :x -3, :y 2} :x)
 
 ;-- result --;
-
 
 ```
 
@@ -1171,33 +1090,30 @@ Syntactic sugar for performing the equivalent of a chained series of 'get' opera
 
 ![["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]](./halite-bnf-diagrams/op/get-in-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (get-in [[10 20] [30 40]] [1 0])
 
 ;-- result --;
-
 30
 ```
 
-</td><td>
+</td></tr><tr><td colspan="5">
 
 ```clojure
 (get {:$type :my/Spec$v1, :x {:$type :other/Spec$v1, :a 20, :b 10}, :y 2} [:x :a])
 
 ;-- result --;
 
-
 ```
 
-</td><td>
+</td></tr><tr><td colspan="5">
 
 ```clojure
 (get {:$type :my/Spec$v1, :x {:$type :other/Spec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])
 
 ;-- result --;
-
 
 ```
 
@@ -1219,23 +1135,21 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 ![["boolean any-expression any-expression" "any"]](./halite-bnf-diagrams/op/if-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (if (> 2 1) 10 -1)
 
 ;-- result --;
-
 10
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (if (> 2 1) 10 (error "fail"))
 
 ;-- result --;
-
 10
 ```
 
@@ -1263,13 +1177,12 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value.
 
-<table><tr><td>
+<table><tr><td colspan="4">
 
 ```clojure
 (if-value-let (value {:$type :my/Spec$v1, :n -3, :p 2}) "good" "bad")
 
 ;-- result --;
-
 :auto
 ```
 
@@ -1284,23 +1197,21 @@ Increment a numeric value.
 
 ![["integer" "integer"]](./halite-bnf-diagrams/op/inc-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (inc 10)
 
 ;-- result --;
-
 11
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (inc 0)
 
 ;-- result --;
-
 1
 ```
 
@@ -1321,23 +1232,21 @@ Compute the set intersection of the sets.
 
 This produces a set which only contains values that appear in each of the arguments.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (intersection #{1 2 3} #{2 3 4})
 
 ;-- result --;
-
 #{3 2}
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (intersection #{1 2 3} #{2 3 4} #{3 4})
 
 ;-- result --;
-
 #{3}
 ```
 
@@ -1354,33 +1263,30 @@ Evaluate the expression argument in a nested context created by considering the 
 
 Allows names to be given to values so that they can be referenced by the any-expression.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (let [x 1] (inc x))
 
 ;-- result --;
-
 2
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (let [x 1 y 2] (+ x y))
 
 ;-- result --;
-
 3
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (let [x 1] (let [x 2] x))
 
 ;-- result --;
-
 2
 ```
 
@@ -1395,23 +1301,21 @@ Produce a new collection from a collection by evaluating the expression with the
 
 ![["'[' symbol:element vector ']' value-expression" "vector"]](./halite-bnf-diagrams/op/map-1.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (map [x [10 11 12]] (inc x))
 
 ;-- result --;
-
 [11 12 13]
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (map [x #{10 12}] (* x 2))
 
 ;-- result --;
-
 #{20 24}
 ```
 
@@ -1426,33 +1330,30 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 
 ![["integer integer" "integer"]](./halite-bnf-diagrams/op/mod-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (mod 12 3)
 
 ;-- result --;
-
 0
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (mod 14 4)
 
 ;-- result --;
-
 2
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (mod 1 0)
 
 ;-- result --;
-
 h-err/divide-by-zero
 ```
 
@@ -1465,23 +1366,21 @@ Performs logical negation of the argument.
 
 ![["boolean" "boolean"]](./halite-bnf-diagrams/op/not-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (not true)
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (not false)
 
 ;-- result --;
-
 true
 ```
 
@@ -1496,103 +1395,93 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ![["value value {value}" "boolean"]](./halite-bnf-diagrams/op/not%3D-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (not= 2 3)
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (not= #d "2.2" #d "2.2")
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (not= 2 2)
 
 ;-- result --;
-
 false
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```clojure
 (not= "hi" "bye")
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (not= [1 2 3] [1 2 3 4])
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (not= [1 2 3] #{1 2 3})
 
 ;-- result --;
-
 true
 ```
 
-</td></tr><tr><td>
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (not= #{3 1 2} #{1 2 3})
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (not= [#{1 2} #{3}] [#{1 2} #{3}])
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (not= [#{1 2} #{3}] [#{1 2} #{4}])
 
 ;-- result --;
-
 true
 ```
 
-</td></tr><tr><td>
+</td></tr><tr><td colspan="4">
 
 ```clojure
 (not= {:$type :text/Spec$v1 :x 1 :y -1} {:$type :text/Spec$v1 :x 1 :y 0})
 
 ;-- result --;
-
 
 ```
 
@@ -1609,33 +1498,30 @@ Perform a logical 'or' operation on the input values.
 
 The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (or true false)
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (or false false)
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (or (> 1 2) (> 2 3) (> 4 3))
 
 ;-- result --;
-
 true
 ```
 
@@ -1650,33 +1536,30 @@ Produce a vector that contains integers in order starting at either the start va
 
 ![["[integer:start] integer:end [integer:increment]" "vector"]](./halite-bnf-diagrams/op/range-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (range 3)
 
 ;-- result --;
-
 [0 1 2]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (range 10 12)
 
 ;-- result --;
-
 [10 11]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (range 10 21 5)
 
 ;-- result --;
-
 [10 15 20]
 ```
 
@@ -1689,13 +1572,12 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 ![["'[' symbol:accumulator value:accumulator-init ']' '[' symbol:element vector ']' any-expression" "any"]](./halite-bnf-diagrams/op/reduce-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (reduce [a 10] [x [1 2 3]] (+ a x))
 
 ;-- result --;
-
 16
 ```
 
@@ -1710,13 +1592,12 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 ![["instance keyword:spec-id" "instance"]](./halite-bnf-diagrams/op/refine-to-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```clojure
 (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)
 
 ;-- result --;
-
 
 ```
 
@@ -1736,13 +1617,12 @@ Determine whether it is possible to refine the given instance into an instance o
 
 ![["instance keyword:spec-id" "boolean"]](./halite-bnf-diagrams/op/refines-to%3F-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```clojure
 (refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Spec$v1)
 
 ;-- result --;
-
 
 ```
 
@@ -1763,43 +1643,39 @@ Produce a number by adjusting the scale of the fixed-decimal to the new-scale. I
 
 Arithmetic on numeric values never produce results in different number spaces. This operation provides an explicit way to convert a fixed-decimal value into a value with the scale of a different number space. This includes the ability to convert a fixed-decimal value into an integer.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (rescale #d "1.23" 1)
 
 ;-- result --;
-
 #d "1.2"
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (rescale #d "1.23" 2)
 
 ;-- result --;
-
 #d "1.23"
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (rescale #d "1.23" 3)
 
 ;-- result --;
-
 #d "1.230"
 ```
 
-</td></tr><tr><td>
+</td><td colspan="2">
 
 ```clojure
 (rescale #d "1.23" 0)
 
 ;-- result --;
-
 1
 ```
 
@@ -1814,43 +1690,39 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ![["vector" "vector"]](./halite-bnf-diagrams/op/rest-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (rest [1 2 3])
 
 ;-- result --;
-
 [2 3]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (rest [1 2])
 
 ;-- result --;
-
 [2]
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (rest [1])
 
 ;-- result --;
-
 []
 ```
 
-</td></tr><tr><td>
+</td><td colspan="1">
 
 ```clojure
 (rest [])
 
 ;-- result --;
-
 []
 ```
 
@@ -1863,23 +1735,21 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 ![["(set | vector)" "vector"]](./halite-bnf-diagrams/op/sort-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (sort [2 1 3])
 
 ;-- result --;
-
 [1 2 3]
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (sort [#d "3.3" #d "1.1" #d "2.2"])
 
 ;-- result --;
-
 [#d "1.1" #d "2.2" #d "3.3"]
 ```
 
@@ -1898,13 +1768,12 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 ![["'[' symbol:element (set | vector) ']' (integer-expression | fixed-decimal-expression)" "vector"]](./halite-bnf-diagrams/op/sort-by-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```clojure
 (sort-by [x [[10 20] [30] [1 2 3]]] (first x))
 
 ;-- result --;
-
 [[1 2 3] [10 20] [30]]
 ```
 
@@ -1924,23 +1793,21 @@ Combine all of the input strings together in sequence to produce a new string.
 
 ![["string string {string}" "string"]](./halite-bnf-diagrams/op/str-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (str "a" "b")
 
 ;-- result --;
-
 "ab"
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (str "a" "" "c")
 
 ;-- result --;
-
 "ac"
 ```
 
@@ -1955,33 +1822,30 @@ Return false if there are any items in the first set which do not appear in the 
 
 According to this operation, a set is always a subset of itself and every set is a subset of the empty set. Using this operation and an equality check in combination allows a 'superset?' predicate to be computed.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (subset? #{1 2} #{1 2 3 4})
 
 ;-- result --;
-
 true
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (subset? #{1 5} #{1 2})
 
 ;-- result --;
-
 false
 ```
 
-</td><td>
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (subset? #{1 2} #{1 2})
 
 ;-- result --;
-
 true
 ```
 
@@ -1998,33 +1862,30 @@ Compute the union of all the sets.
 
 This produces a set which contains all of the values that appear in any of the arguments.
 
-<table><tr><td>
+<table><tr><td colspan="1">
 
 ```clojure
 (union #{1} #{2 3})
 
 ;-- result --;
-
 #{1 3 2}
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (union #{1} #{2 3} #{4})
 
 ;-- result --;
-
 #{1 4 3 2}
 ```
 
-</td><td>
+</td><td colspan="1">
 
 ```clojure
 (union #{1} #{})
 
 ;-- result --;
-
 #{1}
 ```
 
@@ -2041,13 +1902,12 @@ Evaluate the instance-expression and produce the result. If a constraint violati
 
 This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (valid {:$type :spec/A$v1, :p 1, :n -1})
 
 ;-- result --;
-
 
 ```
 
@@ -2064,13 +1924,12 @@ Evaluate the instance expression and produce false if a constraint violation occ
 
 Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value.
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```clojure
 (valid? {:$type :my/Spec$v1, :p 1, :n 0})
 
 ;-- result --;
-
 
 ```
 
@@ -2087,23 +1946,21 @@ If the first argument is true, then evaluate the second argument, otherwise prod
 
 A primary use of this operator is in instance expression to optionally provide a value for a an optional field.
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (when (> 2 1) "bigger")
 
 ;-- result --;
-
 "bigger"
 ```
 
-</td><td>
+</td><td colspan="2">
 
 ```clojure
 (when (< 2 1) "bigger")
 
 ;-- result --;
-
 :Unset
 ```
 
@@ -2116,13 +1973,12 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 ![["symbol any-expression:binding" "any"]](./halite-bnf-diagrams/op/when-value-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="2">
 
 ```clojure
 (when-value x (+ x 2))
 
 ;-- result --;
-
 
 ```
 
@@ -2137,13 +1993,12 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 ![["'[' symbol any:binding']' any-expression" "any"]](./halite-bnf-diagrams/op/when-value-let-0.svg)
 
-<table><tr><td>
+<table><tr><td colspan="3">
 
 ```clojure
 (when-value-let [x (when-value y (+ y 2))] (inc x))
 
 ;-- result --;
-
 
 ```
 
