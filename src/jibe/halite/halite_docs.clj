@@ -811,10 +811,28 @@
              :tags #{:set-op :boolean-out}
              :doc "Return false if there are any items in the first set which do not appear in the second set. Otherwise return true."
              :comment "According to this operation, a set is always a subset of itself and every set is a subset of the empty set. Using this operation and an equality check in combination allows a 'superset?' predicate to be computed."
+             :examples [{:expr-str "(subset? #{1 2} #{1 2 3 4})"
+                         :expr-str-j :auto
+                         :result :auto}
+                        {:expr-str "(subset? #{1 5} #{1 2})"
+                         :expr-str-j :auto
+                         :result :auto}
+                        {:expr-str "(subset? #{1 2} #{1 2})"
+                         :expr-str-j :auto
+                         :result :auto}]
              :see-also ['difference 'intersection 'union]}
    'union {:sigs [["set set {set}" "set"]]
            :j-sigs [["set '.' 'union' '(' set {',' set} ')'" "set"]]
            :tags #{:set-op :set-out}
+           :examples [{:expr-str "(union #{1} #{2 3})"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(union #{1} #{2 3} #{4})"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(union #{1} #{})"
+                       :expr-str-j :auto
+                       :result :auto}]
            :doc "Compute the union of all the sets."
            :comment "This produces a set which contains all of the values that appear in any of the arguments."
            :see-also ['difference 'intersection 'subset?]}
@@ -823,27 +841,42 @@
            :tags #{:instance-op :optional-out :special-form}
            :doc "Evaluate the instance-expression and produce the result. If a constraint violation occurs while evaluating the expression then produce an 'unset' value."
            :comment "This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification."
+
+           :examples [{:str "(valid {:$type :spec/A$v1, :p 1, :n -1})"
+                       :str-j "valid {$type: spec/A$v1, n: -1, p: 1}"}]
            :see-also ['valid?]}
    'valid? {:sigs [["instance-expression" "boolean"]]
             :j-sigs [["'valid?' instance-expression" "boolean"]]
             :doc "Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true."
             :comment "Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value."
+            :examples [{:str "(valid? {:$type :my/Spec$v1, :p 1, :n 0})"
+                        :str-j "valid? {$type: my/Spec$v1, n: 0, p: 1}"}]
             :tags #{:instance-op :boolean-out :special-form}
             :see-also ['valid]}
    'when {:sigs [["boolean any-expression" "any"]]
           :j-sigs [["'when' '(' boolean ')' any-expression" "any"]]
           :tags #{:boolean-op :optional-out :control-flow :special-form}
           :doc "If the first argument is true, then evaluate the second argument, otherwise produce 'unset'."
+          :examples [{:expr-str "(when (> 2 1) \"bigger\")"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(when (< 2 1) \"bigger\")"
+                      :expr-str-j :auto
+                      :result :auto}]
           :comment "A primary use of this operator is in instance expression to optionally provide a value for a an optional field."}
    'when-value {:sigs [["symbol any-expression:binding" "any"]]
                 :j-sigs [["'whenValue' '(' symbol ')' any-expression" "any"]]
                 :tags #{:optional-op :optional-out :control-flow :special-form}
                 :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset."
+                :examples [{:str "(when-value x (+ x 2))"
+                            :str-j "whenValue(x) {x + 2}"}]
                 :see-also ['if-value 'when 'when-value-let]}
    'when-value-let {:sigs [["'[' symbol any:binding']' any-expression" "any"]]
                     :j-sigs [["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]]
                     :tags #{:optional-op :optional-out :control-flow :special-form}
                     :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'"
+                    :examples [{:str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
+                                :str-j  "whenValueLet( x = (whenValue(o) {o + 2}) ) {x + 1}"}]
                     :see-also ['if-value-let 'when 'when-value]}})
 
 (defn produce-diagram [out-file-name ^String rule-str]
