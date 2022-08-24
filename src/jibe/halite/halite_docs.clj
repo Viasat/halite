@@ -302,8 +302,8 @@
                     {:expr-str "(abs #d \"-1.0\")"
                      :expr-str-j :auto
                      :result :auto}]}
-   'and {:sigs [["boolean {boolean}" "boolean"]]
-         :j-sigs [["boolean '&&' {boolean}" "boolean"]]
+   'and {:sigs [["boolean boolean {boolean}" "boolean"]]
+         :j-sigs [["boolean '&&' boolean" "boolean"]]
          :tags #{:boolean-op :boolean-out}
          :doc "Perform a logical 'and' operation on the input values."
          :comment "The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated."
@@ -568,6 +568,9 @@
                   :tags #{:optional-op :control-flow :special-form}
                   :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol."
                   :comment "This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value."
+                  :examples [{:str "(if-value-let (value {:$type :my/Spec$v1, :n -3, :p 2}) \"good\" \"bad\")"
+                              :str-j :auto
+                              :result :auto}]
                   :see-also ['if-value 'when-value-let]}
    'inc {:sigs [["integer" "integer"]]
          :j-sigs [["integer '+' '1'" "integer"]]
@@ -585,8 +588,10 @@
                   :doc "Compute the set intersection of the sets."
                   :comment "This produces a set which only contains values that appear in each of the arguments."
                   :examples [{:expr-str "(intersection #{1 2 3} #{2 3 4})"
+                              :expr-str-j :auto
                               :result :auto}
                              {:expr-str "(intersection #{1 2 3} #{2 3 4} #{3 4})"
+                              :expr-str-j :auto
                               :result :auto}]
                   :see-also ['difference 'union 'subset?]}
    'let {:sigs [["'[' symbol value {symbol value} ']' any-expression" "any"]]
@@ -595,9 +600,15 @@
          :doc "Evaluate the expression argument in a nested context created by considering the first argument in a pairwise fashion and binding each symbol to the corresponding value."
          :comment "Allows names to be given to values so that they can be referenced by the any-expression."
          :examples [{:expr-str "(let [x 1] (inc x))"
+                     :expr-str-j :auto
                      :result :auto}
                     {:expr-str "(let [x 1 y 2] (+ x y))"
-                     :result :auto}]
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(let [x 1] (let [x 2] x))"
+                     :expr-str-j :auto
+                     :result :auto
+                     :doc "The values associated with symbols can be changed in nested contexts."}]
          :j-doc "Evaluate the expression argument in a nested context created by binding each symbol to the corresponding value."}
    'map {:sigs [["'[' symbol:element set ']' value-expression" "set"]
                 ["'[' symbol:element vector ']' value-expression" "vector"]]
@@ -606,8 +617,10 @@
          :tags #{:set-op :vector-op :set-out :vector-out :special-form}
          :doc "Produce a new collection from a collection by evaluating the expression with the symbol bound to each element of the original collection, one-by-one. The results of evaluating the expression will be in the resulting collection. When operating on a vector, the order of the output vector will correspond to the order of the items in the original vector."
          :examples [{:expr-str "(map [x [10 11 12]] (inc x))"
+                     :expr-str-j :auto
                      :result :auto}
                     {:expr-str "(map [x #{10 12}] (* x 2))"
+                     :expr-str-j :auto
                      :result :auto}]
          :see-also ['reduce 'filter]}
    'mod {:sigs [["integer integer" "integer"]]
@@ -628,27 +641,82 @@
          :j-sigs [["'!' boolean" "boolean"]]
          :tags #{:boolean-op :boolean-out}
          :doc "Performs logical negation of the argument."
+         :examples [{:expr-str "(not true)"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(not false)"
+                     :expr-str-j :auto
+                     :result :auto}]
          :see-also ['=> 'and 'or]}
    'not= {:sigs [["value value {value}" "boolean"]]
           :j-sigs [["value '!=' value" "boolean"]
                    ["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]]
           :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :instance-op :boolean-op :boolean-out}
           :doc "Produces a false value if all of the values are equal to each other. Otherwise produces a true value."
+          :examples [{:expr-str "(not= 2 3)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(not= #d \"2.2\" #d \"2.2\")"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(not= 2 2)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(not= \"hi\" \"bye\")"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(not= [1 2 3] [1 2 3 4])"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(not= [1 2 3] #{1 2 3})"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(not= #{3 1 2} #{1 2 3})"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(not= [#{1 2} #{3}] [#{1 2} #{3}])"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(not= [#{1 2} #{3}] [#{1 2} #{4}])"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:str "(not= {:$type :text/Spec$v1 :x 1 :y -1} {:$type :text/Spec$v1 :x 1 :y 0})"}]
           :see-also ['=]}
-   'or {:sigs [["boolean {boolean}" "boolean"]]
-        :j-sigs [["boolean '||' {boolean}" "boolean"]]
+   'or {:sigs [["boolean boolean {boolean}" "boolean"]]
+        :j-sigs [["boolean '||' boolean" "boolean"]]
         :tags #{:boolean-op :boolean-out}
         :doc "Perform a logical 'or' operation on the input values."
         :comment "The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated."
+        :examples [{:expr-str "(or true false)"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(or false false)"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(or (> 1 2) (> 2 3) (> 4 3))"
+                    :expr-str-j :auto
+                    :result :auto}]
         :see-also ['=> 'and 'any? 'not]}
    'range {:sigs [["[integer:start] integer:end [integer:increment]" "vector"]]
            :j-sigs [["'range' '(' [integer:start ','] integer:end [',' integer:increment] ')'" "vector"]]
            :doc "Produce a vector that contains integers in order starting at either the start value or 0 if no start is provided. The final element of the vector will be no more than one less than the end value. If an increment is provided then only every increment integer will be included in the result."
+           :examples [{:expr-str "(range 3)"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(range 10 12)"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(range 10 21 5)"
+                       :expr-str-j :auto
+                       :result :auto}]
            :tags #{:vector-out}}
    'reduce {:sigs [["'[' symbol:accumulator value:accumulator-init ']' '[' symbol:element vector ']' any-expression" "any"]]
             :j-sigs [["'reduce' '(' symbol:accumulator '=' value:accumulator-init ';' symbol:element 'in' vector ')' any-expression" "any"]]
             :tags #{:vector-op :special-form}
             :doc "Evalue the expression repeatedly for each element in the vector. The accumulator value will have a value of accumulator-init on the first evaluation of the expression. Subsequent evaluations of the expression will chain the prior result in as the value of the accumulator. The result of the final evaluation of the expression will be produced as the result of the reduce operation. The elements are processed in order."
+            :examples [{:expr-str "(reduce [a 10] [x [1 2 3]] (+ a x))"
+                        :expr-str-j :auto
+                        :result :auto}]
             :see-also ['map 'filter]
             :notes ["'normally' a reduce will produce a value, but the body could produce a 'maybe' value or even always produce 'unset', in which case the reduce may not produce a value"]}
    'refine-to {:sigs [["instance keyword:spec-id" "instance"]]
@@ -657,12 +725,16 @@
                :doc "Attempt to refine the given instance into an instance of type, spec-id."
                :throws ["No refinement path"
                         "Spec not found"]
+               :examples [{:str "(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)"
+                           :str-j "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )"}]
                :see-also ['refines-to?]}
    'refines-to? {:sigs [["instance keyword:spec-id" "boolean"]]
                  :j-sigs [["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]]
                  :tags #{:instance-op :boolean-out :spec-id-op}
                  :doc "Determine whether it is possible to refine the given instance into an instance of type, spec-id."
                  :see-also ['refine-to]
+                 :examples [{:str "(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Spec$v1)"
+                             :str-j "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Spec$v1 )"}]
                  :throws ["Spec not found"]}
    'rescale {:sigs [["fixed-decimal integer:new-scale" "(fixed-decimal | integer)"]]
              :j-sigs [["'rescale' '(' fixed-decimal ',' integer ')'" "(fixed-decimal | integer)"]]
@@ -670,29 +742,69 @@
              :doc "Produce a number by adjusting the scale of the fixed-decimal to the new-scale. If the scale is being reduced, the original number is truncated. If the scale is being increased, then the original number is padded with zeroes in the decimal places. If the new-scale is zero, then the result is an integer."
              :comment "Arithmetic on numeric values never produce results in different number spaces. This operation provides an explicit way to convert a fixed-decimal value into a value with the scale of a different number space. This includes the ability to convert a fixed-decimal value into an integer."
              :notes ["if the new scale is 0, then an integer is produced"
-                     "scale must be positive"
+                     "scale cannot be negative"
                      "scale must be between 0 and 18 (inclusive)"]
+             :examples [{:expr-str "(rescale #d \"1.23\" 1)"
+                         :expr-str-j :auto
+                         :result :auto}
+                        {:expr-str "(rescale #d \"1.23\" 2)"
+                         :expr-str-j :auto
+                         :result :auto}
+                        {:expr-str "(rescale #d \"1.23\" 3)"
+                         :expr-str-j :auto
+                         :result :auto}
+                        {:expr-str "(rescale #d \"1.23\" 0)"
+                         :expr-str-j :auto
+                         :result :auto}]
+             :thows ['h-err/arg-type-mismatch]
              :see-also ['*]}
    'rest {:sigs [["vector" "vector"]]
           :j-sigs [["vector '.' 'rest()'" "vector"]]
           :doc "Produce a new vector which contains the same element of the argument, in the same order, except the first element is removed. If there are no elements in the argument, then an empty vector is produced."
+          :examples [{:expr-str "(rest [1 2 3])"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(rest [1 2])"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(rest [1])"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(rest [])"
+                      :expr-str-j :auto
+                      :result :auto}]
           :tags #{:vector-op :vector-out}}
    'sort {:sigs [["(set | vector)" "vector"]]
           :j-sigs [["(set | vector) '.' 'sort()'" "vector"]]
           :tags #{:set-op :vector-op :vector-out}
           :doc "Produce a new vector by sorting all of the items in the argument. Only collections of numeric values may be sorted."
           :throws ["Elements not sortable"]
+          :examples [{:expr-str "(sort [2 1 3])"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(sort [#d \"3.3\" #d \"1.1\" #d \"2.2\"])"
+                      :expr-str-j :auto
+                      :result :auto}]
           :see-also ['sort-by]}
    'sort-by {:sigs [["'[' symbol:element (set | vector) ']' (integer-expression | fixed-decimal-expression)" "vector"]]
              :j-sigs [["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]]
              :tags #{:set-op :vector-op :vector-out :special-form}
              :doc "Produce a new vector by sorting all of the items in the input collection according to the values produced by applying the expression to each element. The expression must produce a unique, sortable value for each element."
-             :throws ["Expression does not produce sortable values"
-                      'sort-value-collision]
+             :throws ['h-err/not-sortable-body
+                      'h-err/sort-value-collision]
+             :examples [{:expr-str "(sort-by [x [[10 20] [30] [1 2 3]]] (first x))"
+                         :expr-str-j :auto
+                         :result :auto}]
              :see-also ['sort]}
-   'str {:sigs [["string {string}" "string"]]
-         :j-sigs [["'str' '(' string {',' string} ')'" "string"]]
+   'str {:sigs [["string string {string}" "string"]]
+         :j-sigs [["'str' '(' string ',' string {',' string} ')'" "string"]]
          :doc "Combine all of the input strings together in sequence to produce a new string."
+         :examples [{:expr-str "(str \"a\" \"b\")"
+                     :expr-str-j :auto
+                     :result :auto}
+                    {:expr-str "(str \"a\" \"\" \"c\")"
+                     :expr-str-j :auto
+                     :result :auto}]
          :tags #{:string-op}}
    'subset? {:sigs [["set set" "boolean"]]
              :j-sigs [["set '.' 'subset?' '(' set ')'" "boolean"]]

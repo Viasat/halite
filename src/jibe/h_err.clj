@@ -128,8 +128,8 @@
 (deferr not-boolean-constraint [data]
         {:message "Constraint expression ':expr' must have Boolean type"})
 
-(deferr not-integer-body [data]
-        {:message "Body expression in ':op' must be Integer, not :actual-type"})
+(deferr not-sortable-body [data]
+        {:message "Body expression in ':op' must be sortable, not :actual-type"})
 
 (deferr accumulator-target-must-be-bare-symbol [data]
         {:message "Accumulator binding target for ':op' must be a bare symbol, not: :accumulator"})

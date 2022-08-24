@@ -247,18 +247,20 @@
 
 (def & :&)
 
+(defn make-signatures [signatures]
+  (vec (for [[arg-types return-type] (partition 2 signatures)
+             :let [n (count arg-types)
+                   variadic? (and (< 1 n) (= :& (nth arg-types (- n 2))))]]
+         (cond-> {:arg-types (cond-> arg-types variadic? (subvec 0 (- n 2)))
+                  :return-type return-type}
+           variadic? (assoc :variadic-tail (last arg-types))))))
+
 (s/defn ^:private mk-builtin :- Builtin
   [impl & signatures]
   (when (not= 0 (mod (count signatures) 2))
     (throw (ex-info "argument count must be a multiple of 2" {})))
   {:impl impl
-   :signatures
-   (vec (for [[arg-types return-type] (partition 2 signatures)
-              :let [n (count arg-types)
-                    variadic? (and (< 1 n) (= :& (nth arg-types (- n 2))))]]
-          (cond-> {:arg-types (cond-> arg-types variadic? (subvec 0 (- n 2)))
-                   :return-type return-type}
-            variadic? (assoc :variadic-tail (last arg-types)))))})
+   :signatures (make-signatures signatures)})
 
 (def ^:dynamic *limits* {:string-literal-length nil
                          :string-runtime-length nil
@@ -706,7 +708,7 @@
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     (when-not (or (= :Integer body-type)
                   (halite-types/decimal-type? body-type))
-      (throw-err (h-err/not-integer-body {:op 'sort-by :form expr :actual-type body-type})))
+      (throw-err (h-err/not-sortable-body {:op 'sort-by :form expr :actual-type body-type})))
     (halite-types/vector-type (halite-types/elem-type coll-type))))
 
 (s/defn ^:private type-check-reduce :- halite-types/HaliteType

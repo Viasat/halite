@@ -310,8 +310,7 @@
   (h false :Boolean false "false" "false")
   (h (and true false) :Boolean false "(true && false)" "false")
   (h (and true true) :Boolean true "(true && true)" "true")
-  (h (and true) :Boolean true "(true)" "true")
-  (h (and false) :Boolean false "(false)" "false")
+  (h (and true) [:throws "l-err/no-matching-signature 0-0 : No matching signature for '\"and\"'"])
   (h
    (and true (error "fail"))
    [:throws
@@ -341,7 +340,7 @@
   (h (or true true) :Boolean true "(true || true)" "true")
   (h (or true false) :Boolean true "(true || false)" "true")
   (h (or false false) :Boolean false "(false || false)" "false")
-  (h (or true) :Boolean true "(true)" "true")
+  (h (or true) [:throws "l-err/no-matching-signature 0-0 : No matching signature for '\"or\"'"])
   (h
    (or)
    [:throws
@@ -1013,7 +1012,7 @@
   test-string-concatenation
   (h (str "a" "b") :String "ab" "str(\"a\", \"b\")" "\"ab\"")
   (h (str "a" "") :String "a" "str(\"a\", \"\")" "\"a\"")
-  (h (str "a") :String "a" "str(\"a\")" "\"a\"")
+  (h (str "a") [:throws "l-err/no-matching-signature 0-0 : No matching signature for '\"str\"'"])
   (h
    (str "a" "b" "c")
    :String
@@ -9837,6 +9836,12 @@
    [:throws
     "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
   (h
+   (sort-by [x [[10 20] [30] [1 2 3]]] (first x))
+   [:Vec [:Vec :Integer]]
+   [[1 2 3] [10 20] [30]]
+   "sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()"
+   "[[1, 2, 3], [10, 20], [30]]")
+  (h
    (sort-by
     [x ["a" "c" "b"]]
     (if (= "a" x) 1 (if (= "b" x) 2 (if (= "c" x) 3 4))))
@@ -9857,8 +9862,7 @@
    "[\"a\", \"b\", \"c\"]")
   (h
    (sort-by [x ["a" "c" "b"]] x)
-   [:throws
-    "h-err/not-integer-body 0-0 : Body expression in 'sort-by' must be Integer, not :String"]))
+   [:throws "h-err/not-sortable-body 0-0 : Body expression in 'sort-by' must be sortable, not :String"]))
 
 (deftest
   test-generic-collections

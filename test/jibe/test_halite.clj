@@ -202,7 +202,7 @@
     '(filter [x #{"nan"}] (< x 10)) #"No matching signature for '\<'"
     '(filter [x #{}] (< x 10)) #":Nothing"
     '(sort 5) #"No matching signature"
-    '(sort-by [x []] x) #"must be Integer"
+    '(sort-by [x []] x) #"must be sortable"
     '(sort-by [x 5] 1) #"Collection required"
     '(sort-by [1 5] 1) #"must be a bare symbol"
     '(reduce [0 1] [x []] 2) #"must be a bare symbol"

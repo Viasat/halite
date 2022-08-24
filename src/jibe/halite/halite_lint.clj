@@ -20,6 +20,10 @@
 
 (s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
 
+(def lint-builtins-signatures {'and (halite/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
+                               'or (halite/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
+                               'str (halite/make-signatures [[:String :String :& :String] :String])})
+
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
@@ -30,6 +34,13 @@
       (when (= :Nothing t)
         (throw-err (l-err/disallowed-nothing {:form form
                                               :nothing-arg arg}))))
+    ;; linter has tighter signature requirements on some builtin functions
+    (when-let [lint-signatures (get lint-builtins-signatures op)]
+      (when-not (some #(halite/matches-signature? % actual-types) lint-signatures)
+        (throw-err (l-err/no-matching-signature {:form form
+                                                 :op (name op)
+                                                 :actual-types actual-types
+                                                 :signatures lint-signatures}))))
     (loop [[sig & more] signatures]
       (cond
         (nil? sig) (throw-err (l-err/no-matching-signature {:form form
