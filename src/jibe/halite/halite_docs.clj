@@ -18,13 +18,13 @@
 (def misc-notes-halite ["For halite, whitespace also includes the comma. The comma can be used as an optional delimiter in sequences to improve readability."])
 
 (def basic-bnf ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"
-                                        :tags #{:symbol :symbol-j}}
+                                        :tags #{:symbol-all :symbol-all-j}}
                 'plus-minus-character {:bnf "'+' | '-'"
-                                       :tags #{:symbol :symbol-j}}
+                                       :tags #{:symbol-all :symbol-all-j}}
                 'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"
-                                   :tags #{:symbol :symbol-j}}
+                                   :tags #{:symbol-all :symbol-all-j}}
                 'simple-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"
-                                :tags #{:symbol :symbol-j}}
+                                :tags #{:symbol-all :symbol-all-j}}
                 'symbol {:bnf "simple-symbol [ '/' simple-symbol]"
                          :j-bnf "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"
                          :doc "Symbols are identifiers that allow values and operations to be named."
@@ -37,14 +37,14 @@
                                      :str-j "a"}
                                     {:expr-str "a.b"
                                      :expr-str-j "a.b"}]
-                         :tags #{:symbol :symbol-j}}
+                         :tags #{:symbol-all :symbol-all-j}}
                 'keyword {:bnf "':' symbol"
                           :j-bnf nil
                           :doc "Keywords are identifiers that are used for instance field names."
                           :comment "Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated."
                           :examples [{:str ":age"}
                                      {:str ":x/y"}]
-                          :tags #{:symbol}}
+                          :tags #{:symbol-all}}
 
                 'boolean {:bnf "true | false"}
                 'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
@@ -746,34 +746,26 @@
                       first)]
     (spit out-file-name rule-svg)))
 
+(defn- rule-from-partitioned-bnf [partitioned-bnf k-f]
+  (str "RULE = "
+       "("
+       (->> partitioned-bnf
+            (map (fn [[n m]]
+                   (let [bnf (k-f m)]
+                     (when bnf
+                       (str "("
+                            "'" n ":' " "(" bnf ")"
+                            ")")))))
+            (remove nil?)
+            (string/join " |\n"))
+       ")"
+       ";"))
+
 (defn produce-basic-bnf-diagrams [all-file-name all-file-name-j basic-bnf]
   (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" all-file-name)
-                   (str "RULE = "
-                        "("
-                        (->> (partition 2 basic-bnf)
-                             (map (fn [[n {:keys [bnf]}]]
-                                    (when bnf
-                                      (str "("
-                                           "'" n ":' " "(" bnf ")"
-                                           ")"))))
-                             (remove nil?)
-                             (string/join " |\n"))
-                        ")"
-                        ";"))
+                   (rule-from-partitioned-bnf (partition 2 basic-bnf) :bnf))
   (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" all-file-name-j)
-                   (str "RULE = "
-                        "("
-                        (->> (partition 2 basic-bnf)
-                             (map (fn [[n bnf-map]]
-                                    (let [j-bnf (get bnf-map :j-bnf (:bnf bnf-map))]
-                                      (when j-bnf
-                                        (str "("
-                                             "'" n ":' " "(" j-bnf ")"
-                                             ")")))))
-                             (remove nil?)
-                             (string/join " |\n"))
-                        ")"
-                        ";"))
+                   (rule-from-partitioned-bnf (partition 2 basic-bnf) (fn [bnf-map] (get bnf-map :j-bnf (:bnf bnf-map)))))
 
   (->> (partition 2 basic-bnf)
        (map (fn [[n {:keys [bnf]}]]
@@ -787,6 +779,17 @@
                 (when j-bnf
                   (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" n "-j" ".svg") (str "RULE = " "(" j-bnf ")" ";"))))))
        dorun))
+
+(defn produce-basic-bnf-diagrams-for-tag [basic-bnf tag]
+  (let [filtered-partitioned-bnf (->> (partition 2 basic-bnf)
+                                      (filter (fn [[k v]]
+                                                (let [{:keys [tags]} v]
+                                                  (when tags
+                                                    (tags tag))))))]
+    (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (name tag) ".svg")
+                     (rule-from-partitioned-bnf filtered-partitioned-bnf :bnf))
+    (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (str (name tag) "-j" ".svg"))
+                     (rule-from-partitioned-bnf filtered-partitioned-bnf (fn [bnf-map] (get bnf-map :j-bnf (:bnf bnf-map)))))))
 
 (defn safe-op-name [s]
   (get {'+ 'plus
@@ -884,6 +887,7 @@
 (comment
   (do
     (produce-basic-bnf-diagrams "basic-all.svg" "basic-all-j.svg" basic-bnf)
+    (produce-basic-bnf-diagrams-for-tag basic-bnf :symbol-all)
 
     (produce-bnf-diagrams op-maps "halite.svg" "jadeite.svg")
 
