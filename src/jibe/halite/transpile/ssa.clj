@@ -317,15 +317,15 @@
             inner-type (halite-types/no-maybe type)
             [dgraph value-id] (add-derivation dgraph [(list '$value! unguarded-id) inner-type])
             [dgraph then-id] (-> ctx
+                                 (assoc :dgraph dgraph)
                                  (update :tenv halite-envs/extend-scope var-sym inner-type)
                                  (update :env assoc var-sym value-id)
-                                 (assoc :dgraph dgraph)
-                                 (form-to-ssa then))
+                                 (form-to-ssa (if (= then unguarded-id) value-id then)))
             [dgraph else-id] (-> ctx
                                  (assoc :dgraph dgraph)
                                  (update :tenv halite-envs/extend-scope var-sym :Unset)
                                  (update :env assoc var-sym no-value-id)
-                                 (form-to-ssa else))
+                                 (form-to-ssa (if (= else unguarded-id) no-value-id else)))
             htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
         (add-derivation dgraph [(list 'if guard-id then-id else-id) htype])))))
 

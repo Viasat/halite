@@ -373,6 +373,46 @@
         $6 [(not $5) :Boolean $5]}
       '[$5])))
 
+(deftest test-form-to-ssa-correctly-handles-node-references-in-if-value
+  (binding [ssa/*next-id* (atom 0)]
+    (let [senv (halite-envs/spec-env
+                '{:ws/A
+                  {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
+                   :constraints [["c1" (= s p)]]
+                   :refines-to {}}})
+          sctx (ssa/build-spec-ctx senv :ws/A)
+          a (:ws/A sctx)
+          s-id (ssa/find-form (:derivations a) 's)
+          ctx (ssa/make-ssa-ctx sctx a)]
+      (is (= '[{$1 [s [:Maybe :Boolean]],
+                $2 [p [:Maybe :Boolean]],
+                $3 [(= $1 $2) :Boolean $4],
+                $4 [(not= $1 $2) :Boolean $3],
+                $5 [:Unset :Unset],
+                $6 [($value? $1) :Boolean $7],
+                $7 [(not $6) :Boolean $6],
+                $8 [($value! $1) :Boolean $9],
+                $9 [(not $8) :Boolean $8]
+                $10 [true :Boolean $11],
+                $11 [false :Boolean $10],
+                $12 [(if $6 $8 $11) :Boolean $13],
+                $13 [(not $12) :Boolean $12]}
+               $12]
+             (ssa/form-to-ssa ctx (list 'if-value s-id s-id false))))
+
+      (is (= '[{$1 [s [:Maybe :Boolean]],
+                $2 [p [:Maybe :Boolean]],
+                $3 [(= $1 $2) :Boolean $4],
+                $4 [(not= $1 $2) :Boolean $3],
+                $14 [:Unset :Unset],
+                $15 [($value? $1) :Boolean $16],
+                $16 [(not $15) :Boolean $15],
+                $17 [($value! $1) :Boolean $18],
+                $18 [(not $17) :Boolean $17],
+                $19 [(if $15 $14 $14) :Unset]}
+               $19]
+             (ssa/form-to-ssa ctx (list 'if-value s-id '$no-value s-id)))))))
+
 (def form-from-ssa* #'ssa/form-from-ssa*)
 
 (s/defn ^:private guards-from-ssa :- {s/Any s/Any}
