@@ -53,7 +53,7 @@
            (print-trace-summary (get @traces# spec-id#)))))))
 
 (defn- prune
-  [spec-id after {:keys [derivations] :as spec-info}]
+  [spec-id {:keys [derivations] :as spec-info}]
   (let [spec-info' (ssa/prune-derivations spec-info false)
         derivations' (:derivations spec-info')
         ids (->> derivations keys set), ids' (->> derivations' keys set)
@@ -82,42 +82,38 @@
    ;; :target (s/enum :nodes :constraints)
    :nodes (s/enum :all :constraints)})
 
-(defn- apply-rule-to-id [rule sctx ctx scope spec-id spec-info id & [replacement]]
+(defn- apply-rule-to-id [rule sctx ctx scope spec-id spec-info id]
   (let [{:keys [rule-name rewrite-fn nodes]} rule
-        dgraph (:dgraph ctx)
+        dgraph (:derivations spec-info)
         deriv (dgraph id)
-        form (rewrite-fn {:sctx sctx :ctx ctx :guard #{}} id deriv)
-        replace? (= :replace replacement)]
-    (when (and replace? (->> form (tree-seq coll? seq) (some #(= % id))))
+        form (rewrite-fn {:sctx sctx :ctx (assoc ctx :dgraph dgraph) :guard #{}} id deriv)]
+    (when (and (= :all nodes) (->> form (tree-seq coll? seq) (some #(= % id))))
       (throw (ex-info (format  "BUG! Rewrite rule %s used rewritten node id in replacement form!"
                                rule-name rule)
                       {:dgraph dgraph :id id :form form})))
     (if (some? form)
       (let [dgraph' (or (:dgraph (meta form)) dgraph)
             ctx (assoc ctx :dgraph dgraph')
-            [dgraph' id'] (if replace?
-                            (ssa/form-to-ssa ctx id form)
-                            (ssa/form-to-ssa ctx form))]
+            [dgraph' id'] (ssa/form-to-ssa ctx form)
+            spec-info' (cond-> (assoc spec-info :derivations dgraph')
+                         (= :all nodes) (ssa/replace-node id id')
+                         (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))]
         (trace!
          (binding [ssa/*elide-top-level-bindings* true]
-           (cond->
-            {:op :rewrite
-             :rule rule-name
-             :dgraph dgraph
-             :dgraph' dgraph'
-             :id id
-             :form (ssa/form-from-ssa scope dgraph id)
-             :id' id'
-             :result form
-             :form' (ssa/form-from-ssa scope dgraph' id')
-             :spec-id spec-id
-             :spec-info (assoc spec-info :derivations dgraph)
-             :spec-info' (cond-> (assoc spec-info :derivations dgraph')
-                           (not replace?) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' id)]) %)))}
-             spec-id (assoc :spec-id spec-id)
-             spec-info (assoc :spec-info (assoc spec-info :derivations dgraph)))))
-        [dgraph' id'])
-      [dgraph id])))
+           {:op :rewrite
+            :rule rule-name
+            :dgraph dgraph
+            :dgraph' dgraph'
+            :id id
+            :form (ssa/form-from-ssa scope dgraph id)
+            :id' id'
+            :result form
+            :form' (ssa/form-from-ssa scope dgraph' id')
+            :spec-id spec-id
+            :spec-info spec-info
+            :spec-info' spec-info'}))
+        spec-info')
+      spec-info)))
 
 (s/defn rewrite-spec-constraints :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
@@ -125,15 +121,10 @@
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (->> tenv (halite-envs/scope) keys set)]
     (->> (:constraints spec-info)
-         (map-indexed vector)
-         (reduce (fn [spec-info [i [cname cid]]]
-                   (let [dgraph (:derivations spec-info)
-                         [dgraph' cid'] (apply-rule-to-id rule sctx (assoc ctx :dgraph dgraph) scope spec-id spec-info cid)]
-                     (-> spec-info
-                         (assoc :derivations dgraph')
-                         (assoc-in [:constraints i] [cname cid']))))
+         (reduce (fn [spec-info [cname cid]]
+                   (apply-rule-to-id rule sctx ctx scope spec-id spec-info cid))
                  spec-info)
-         (prune spec-id (:rule-name rule)))))
+         (prune spec-id))))
 
 (s/defn rewrite-spec-derivations :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
@@ -144,13 +135,9 @@
     (->> (keys (:derivations spec-info))
          (filter reachable?)
          (reduce
-          (fn [{:keys [dgraph] :as ctx} id]
-            (let [[dgraph' id'] (apply-rule-to-id rule sctx ctx scope spec-id spec-info id :replace)]
-              (assoc ctx :dgraph dgraph')))
-          ctx)
-         :dgraph
-         (assoc spec-info :derivations)
-         (prune spec-id (:rule-name rule)))))
+          (fn [spec-info id]
+            (apply-rule-to-id rule sctx ctx scope spec-id spec-info id))
+          spec-info))))
 
 (s/defn rewrite-spec :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]

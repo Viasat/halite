@@ -43,7 +43,7 @@
   (binding [ssa/*next-id* (atom 0), ssa/*hide-non-halite-ops* false]
     (let [[dgraph id] (ssa/form-to-ssa ctx form)
           new-expr (rewrite-fn {:sctx {} :ctx (assoc ctx :dgraph dgraph) :guard #{}} id (ssa/deref-id dgraph id))
-          [dgraph id] (if (not= nil new-expr) (ssa/form-to-ssa (assoc ctx :dgraph dgraph) id new-expr) [dgraph id])
+          [dgraph id] (if (not= nil new-expr) (ssa/form-to-ssa (assoc ctx :dgraph dgraph) new-expr) [dgraph id])
           scope (set (keys (halite-envs/scope (:tenv ctx))))]
       (ssa/form-from-ssa scope dgraph id))))
 
@@ -728,30 +728,29 @@
                    (if-value b1
                              (if-value b2
                                        (let [v1 (get b2 :c2)
-                                             v2 (get b2 :bw)
-                                             v3 (get b1 :c1)
-                                             v4 (get b2 :c1)
-                                             v5 (get v4 :cw)]
+                                             v2 (get b2 :c1)
+                                             v3 (get v2 :cw)
+                                             v4 (get b1 :c1)
+                                             v5 (get b2 :bw)]
                                          (and
                                           (= (get b2 :bp) (get b1 :bp))
-                                          (if-value v2
-                                                    (let [v6 (get b1 :bw)] (if-value v6 (= v6 v2) false))
+                                          (if-value v5
+                                                    (let [v6 (get b1 :bw)] (if-value v6 (= v6 v5) false))
                                                     (let [v6 (get b1 :bw)] (if-value v6 false true)))
                                           (= (get b2 :bx) (get b1 :bx))
                                           (and
-                                           (if-value v5
-                                                     (let [v6 (get v3 :cw)] (if-value v6 (= v6 v5) false))
-                                                     (let [v6 (get v3 :cw)] (if-value v6 false true)))
-                                           (= (get v4 :cx) (get v3 :cx)))
+                                           (if-value v3
+                                                     (let [v6 (get v4 :cw)] (if-value v6 (= v6 v3) false))
+                                                     (let [v6 (get v4 :cw)] (if-value v6 false true)))
+                                           (= (get v2 :cx) (get v4 :cx)))
                                           (if-value v1
                                                     (let [v6 (get b1 :c2)]
                                                       (if-value v6
                                                                 (let [v7 (get v6 :cw)]
                                                                   (and
-                                                                   (if-value
-                                                                    v7
-                                                                    (let [v8 (get v1 :cw)] (if-value v8 (= v8 v7) false))
-                                                                    (let [v8 (get v1 :cw)] (if-value v8 false true)))
+                                                                   (if-value v7
+                                                                             (let [v8 (get v1 :cw)] (if-value v8 (= v8 v7) false))
+                                                                             (let [v8 (get v1 :cw)] (if-value v8 false true)))
                                                                    (= (get v6 :cx) (get v1 :cx))))
                                                                 false))
                                                     (let [v6 (get b1 :c2)] (if-value v6 false true)))))
@@ -829,11 +828,11 @@
                [["$all"
                  (let [v1 (< an 10)]
                    (and
+                    (not (and (< an 1) v1))
+                    (not (and (<= 10 an) (< an 20)))
                     (if v1
                       (if-value ap ap false)
-                      (= ap $no-value))
-                    (not (and (<= 10 an) (< an 20)))
-                    (not (and (< an 1) v1))))]]}
+                      (= ap $no-value))))]]}
              (-> senv
                  (ssa/build-spec-ctx :ws/A)
                  (rewriting/rewrite-sctx lower-when-expr)

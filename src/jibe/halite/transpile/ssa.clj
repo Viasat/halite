@@ -386,15 +386,6 @@
   (let [[dgraph arg-id] (form-to-ssa ctx (second form))]
     (add-derivation dgraph [(list 'error arg-id) :Nothing])))
 
-(s/defn rewrite-node :- Derivations
-  "Rewrite id node in place to be an alias of aliased-id"
-  [dgraph :- Derivations, id :- DerivationName, aliased-id :- DerivationName]
-  (let [[form htype neg-id] (dgraph aliased-id)]
-    (-> dgraph
-        (assoc-in [id 0] aliased-id)
-        (cond->
-         neg-id (assoc-in [id 2] neg-id)))))
-
 (s/defn replace-in-expr :- DerivResult
   [dgraph :- Derivations, id, replacements :- {DerivationName DerivationName}]
   (let [[form htype :as d] (deref-id dgraph id)]
@@ -426,46 +417,33 @@
                       (add-derivation dgraph [inst htype]))
         :else (throw (ex-info "Unrecognized derivation" {:dgraph dgraph :form form}))))))
 
-(s/defn dup-node :- DerivResult
-  "Create a copy of the given node (a shallow copy, no subnodes are duplicated), and return its id."
-  [dgraph :- Derivations, id :- DerivationName]
-  (let [node (dgraph id)
-        new-id (fresh-id!)]
-    [(assoc dgraph new-id node) new-id]))
-
 (s/defn form-to-ssa :- DerivResult
   "Add the SSA representation of form (an arbitrary halite expression) to the given directed graph,
-  returning a tuple of the resulting graph and the id of the node for form.
-
-  When replace-id is specified, replace the node with that id with the node for form. This is useful
-  for rewriting expressions in place."
-  ([{:keys [dgraph] :as ctx} :- SSACtx, form]
-   (cond
-     (int? form) (add-derivation dgraph [form :Integer])
-     (boolean? form) (add-derivation dgraph [form :Boolean])
-     (string? form) (add-derivation dgraph [form :String])
-     (= :Unset form) (add-derivation dgraph [form :Unset])
-     (symbol? form) (symbol-to-ssa ctx form)
-     (seq? form) (let [[op & args] form]
-                   (when-not (contains? supported-halite-ops op)
-                     (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
-                   (condp = (get renamed-ops op op)
-                     'let (let-to-ssa ctx form)
-                     'if (if-to-ssa ctx form)
-                     'when (when-to-ssa ctx form)
-                     'get (get-to-ssa ctx form)
-                     'refine-to (refine-to-to-ssa ctx form)
-                     '$do! (do!-to-ssa ctx form)
-                     'if-value (if-value-to-ssa ctx form)
-                     '$value! (value!-to-ssa ctx form)
-                     'error (error-to-ssa ctx form)
-                     (app-to-ssa ctx form)))
-     (map? form) (inst-literal-to-ssa ctx form)
-     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
-                           {:form form}))))
-  ([{:keys [dgraph] :as ctx} :- SSACtx, replace-id :- DerivationName, form]
-   (let [[dgraph id] (form-to-ssa ctx form)]
-     [(rewrite-node dgraph replace-id id) id])))
+  returning a tuple of the resulting graph and the id of the node for form."
+  [{:keys [dgraph] :as ctx} :- SSACtx, form]
+  (cond
+    (int? form) (add-derivation dgraph [form :Integer])
+    (boolean? form) (add-derivation dgraph [form :Boolean])
+    (string? form) (add-derivation dgraph [form :String])
+    (= :Unset form) (add-derivation dgraph [form :Unset])
+    (symbol? form) (symbol-to-ssa ctx form)
+    (seq? form) (let [[op & args] form]
+                  (when-not (contains? supported-halite-ops op)
+                    (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
+                  (condp = (get renamed-ops op op)
+                    'let (let-to-ssa ctx form)
+                    'if (if-to-ssa ctx form)
+                    'when (when-to-ssa ctx form)
+                    'get (get-to-ssa ctx form)
+                    'refine-to (refine-to-to-ssa ctx form)
+                    '$do! (do!-to-ssa ctx form)
+                    'if-value (if-value-to-ssa ctx form)
+                    '$value! (value!-to-ssa ctx form)
+                    'error (error-to-ssa ctx form)
+                    (app-to-ssa ctx form)))
+    (map? form) (inst-literal-to-ssa ctx form)
+    :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
+                          {:form form}))))
 
 (s/defn constraint-to-ssa :- [(s/one Derivations :dgraph), [(s/one s/Str :cname) (s/one DerivationName :form)]]
   "TODO: Refactor me as add-constraint, taking and returning SpecInfo."
@@ -587,6 +565,23 @@
   [{:keys [constraints] :as spec-info} :- SpecInfo, prune-negations? :- s/Bool]
   (let [roots (->> constraints (map second) set)]
     (update spec-info :derivations prune-dgraph roots prune-negations?)))
+
+(s/defn replace-node :- SpecInfo
+  "Replace node-id with replacement-id in spec-info."
+  [{:keys [derivations constraints] :as spec-info} :- SpecInfo node-id replacement-id]
+  (-> spec-info
+      (assoc
+       :derivations (update-vals derivations
+                                 (fn [[form htype neg-id]]
+                                   (cond->
+                                    [(cond
+                                       (seq? form) (map #(if (= % node-id) replacement-id %) form)
+                                       (map? form) (update-vals form #(if (= % node-id) replacement-id %))
+                                       :else form)
+                                     htype]
+                                     neg-id (conj neg-id))))
+       :constraints (map (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints))
+      (prune-derivations false)))
 
 ;;;;;;;; Guards ;;;;;;;;;;;;;;
 
