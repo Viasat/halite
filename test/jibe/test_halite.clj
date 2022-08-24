@@ -18,9 +18,9 @@
 
 (deftest test-halite-symbol-examples
   (are [string] (re-matches halite/symbol-regex string)
-    "foo" "$foo" "!20<90" "-->*/*<--" "+" "</>" "a.b/c.d" "a.b")
+    "foo" "$foo" "!20<90" "-->*/*<--" "+" "</>" "a.b/c.d" "a.b" "True" "nilable" "nil/foo")
   (are [string] (not (re-matches halite/symbol-regex string))
-    "72" "+8" "-9" "//" "/z" "foo/9" "-/1" "/" "foo//" "$//"))
+    "72" "+8" "-9" "//" "/z" "foo/9" "-/1" "/" "foo//" "$//" "true" "false" "nil" "a/nil" ""))
 
 (defn halite-symbol-differs-from-clj-symbol [string]
   (let [obj (try (edn/read-string string) (catch Exception ex nil))

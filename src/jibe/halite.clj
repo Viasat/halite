@@ -414,6 +414,7 @@
           /                          # prefix / name separator
         )?                           # prefix is optional
         (?: # name (suffix) part
+          (?!true$) (?!false$) (?!nil$) # these are not to be read as symbols
           (?: # first character of name
               [A-Za-z*!$?=<>_.]      # begin with non-numeric
               | [+-] (?=[^0-9]|$))   # for +/-, second character must be non-numeric
