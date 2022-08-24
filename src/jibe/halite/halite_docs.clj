@@ -130,19 +130,36 @@
                                                     (if expr-str
                                                       (let [i (halite-guide/h* (edn/read-string
                                                                                 {:readers {'d fixed-decimal/fixed-decimal-reader}}
-                                                                                expr-str))
+                                                                                expr-str)
+                                                                               true)
                                                             h-result (.-h-result i)
+                                                            err-result? (and (vector? h-result)
+                                                                             (= :throws (first h-result)))
                                                             j-result (.-j-result i)
-                                                            j-expr (.-j-expr i)]
-                                                        (apply merge [example
-                                                                      (when (= expr-str-j :auto)
-                                                                        {:expr-str-j j-expr})
-                                                                      (when (= result :auto)
-                                                                        {:result (pr-str h-result)})
-                                                                      (when (or (= result-j :auto)
-                                                                                (and expr-str-j
-                                                                                     (not (contains? example :result-j))))
-                                                                        {:result-j j-expr})]))
+                                                            j-expr (.-j-expr i)
+                                                            to-merge (apply merge [(when (= expr-str-j :auto)
+                                                                                     {:expr-str-j j-expr})
+                                                                                   (when (= result :auto)
+                                                                                     (if err-result?
+                                                                                       {:err-result (str (namespace (get h-result 2))
+                                                                                                         "/"
+                                                                                                         (name (get h-result 2)))}
+                                                                                       {:result (pr-str h-result)}))
+                                                                                   (when (or (= result-j :auto)
+                                                                                             (and expr-str-j
+                                                                                                  (not (contains? example :result-j))))
+                                                                                     (if err-result?
+                                                                                       {:err-result-j (str (namespace (get h-result 2))
+                                                                                                           "/"
+                                                                                                           (name (get h-result 2)))}
+                                                                                       {:result-j j-result}))])
+                                                            base-example (if (contains? to-merge :err-result)
+                                                                           (dissoc example :result)
+                                                                           example)
+                                                            base-example (if (contains? to-merge :err-result-j)
+                                                                           (dissoc base-example :result-j)
+                                                                           base-example)]
+                                                        (merge base-example to-merge))
                                                       example)))
                                                 (:examples m)))
                        m)]))
@@ -536,7 +553,7 @@
             :examples [{:expr-str "(first [10 20 30])"
                         :expr-str-j :auto
                         :result :auto}
-                       {:expr-str "(filter [])"
+                       {:expr-str "(first [])"
                         :expr-str-j :auto
                         :result :auto}]
             :see-also ['count 'rest]}
@@ -1079,7 +1096,8 @@
                  ({:halite  "\n\n;-- result --;\n\n"
                    :jadeite "\n\n### result ###\n\n"}
                   lang)
-                 (:result e)
+                 (or (:result e)
+                     (:err-result e))
                  "\n```\n\n</td>"])
               "</tr>"])
            "</table>\n\n"])
@@ -1093,12 +1111,12 @@
              [" [`" a "`](#" (safe-op-anchor a) ")"])
            "\n\n"])
         "---\n"]
-      flatten (apply str)))
+       flatten (apply str)))
 
 (def generated-msg
   "<!---
-This markdown file was generated. Do not edit.
--->\n\n")
+  This markdown file was generated. Do not edit.
+  -->\n\n")
 
 (defn produce-full-md []
   (->> op-maps

@@ -1,6 +1,6 @@
 <!---
-This markdown file was generated. Do not edit.
--->
+  This markdown file was generated. Do not edit.
+  -->
 
 # Jadeite operator reference (all operators)
 
@@ -933,7 +933,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 
 ### result ###
 
-[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+h-err/divide-by-zero
 ```
 
 </td></tr></table>
@@ -960,7 +960,7 @@ error("failure")
 
 ### result ###
 
-[:throws "h-err/spec-threw 0-0 : Spec threw error: \"failure\""]
+h-err/spec-threw
 ```
 
 </td></tr></table>
@@ -1046,7 +1046,7 @@ expt(2, -1)
 
 ### result ###
 
-[:throws "h-err/invalid-exponent 0-0 : Invalid exponent: -1"]
+h-err/invalid-exponent
 ```
 
 </td></tr></table>
@@ -1111,11 +1111,11 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 </td><td>
 
 ```java
-filter()
+[].first()
 
 ### result ###
 
-[:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'filter': expected 2, but got 1"]
+h-err/argument-empty
 ```
 
 </td></tr></table>
@@ -1455,7 +1455,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 
 ### result ###
 
-[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+h-err/divide-by-zero
 ```
 
 </td></tr></table>

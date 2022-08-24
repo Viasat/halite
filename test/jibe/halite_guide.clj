@@ -64,42 +64,49 @@
                     :list-literal-count 256
                     :expression-nesting-depth 10})
 
-(defn ^HInfo h* [expr]
-  (binding [halite/*limits* halite-limits
-            format-errors/*squash-throw-site* true]
-    (let [senv (halite-envs/spec-env {})
-          tenv (halite-envs/type-env {})
-          env (halite-envs/env {})
-          j-expr (try (jadeite/to-jadeite expr)
-                      (catch RuntimeException e
-                        [:throws (.getMessage e)]))
-          s (try (halite/syntax-check expr)
-                 nil
-                 (catch RuntimeException e
-                   [:syntax-check-throws (.getMessage e)]))
-          t (try (halite-lint/type-check senv tenv expr)
-                 (catch RuntimeException e
-                   [:throws (.getMessage e)]))
-          h-result (try (halite/eval-expr senv tenv env expr)
-                        (catch RuntimeException e
-                          [:throws (.getMessage e)]))
-          h-result-type (check-result-type senv tenv t h-result)
-          jh-expr (when (string? j-expr)
-                    (try
-                      (jadeite/to-halite j-expr)
-                      (catch RuntimeException e
-                        [:throws (.getMessage e)])))
+(defn ^HInfo h*
+  ([expr]
+   (h* expr false))
+  ([expr separate-err-id?]
+   (binding [halite/*limits* halite-limits
+             format-errors/*squash-throw-site* true]
+     (let [senv (halite-envs/spec-env {})
+           tenv (halite-envs/type-env {})
+           env (halite-envs/env {})
+           j-expr (try (jadeite/to-jadeite expr)
+                       (catch RuntimeException e
+                         [:throws (.getMessage e)]))
+           s (try (halite/syntax-check expr)
+                  nil
+                  (catch RuntimeException e
+                    [:syntax-check-throws (.getMessage e)]))
+           t (try (halite-lint/type-check senv tenv expr)
+                  (catch RuntimeException e
+                    [:throws (.getMessage e)]))
+           h-result (try (halite/eval-expr senv tenv env expr)
+                         (catch ExceptionInfo e
+                           (if separate-err-id?
+                             [:throws (.getMessage e) (:err-id (ex-data e))]
+                             [:throws (.getMessage e)]))
+                         (catch RuntimeException e
+                           [:throws (.getMessage e)]))
+           h-result-type (check-result-type senv tenv t h-result)
+           jh-expr (when (string? j-expr)
+                     (try
+                       (jadeite/to-halite j-expr)
+                       (catch RuntimeException e
+                         [:throws (.getMessage e)])))
 
-          jh-result (try
-                      (halite/eval-expr senv tenv env jh-expr)
+           jh-result (try
+                       (halite/eval-expr senv tenv env jh-expr)
+                       (catch RuntimeException e
+                         [:throws (.getMessage e)]))
+           jh-result-type (check-result-type senv tenv t jh-result)
+           j-result (try
+                      (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
                       (catch RuntimeException e
-                        [:throws (.getMessage e)]))
-          jh-result-type (check-result-type senv tenv t jh-result)
-          j-result (try
-                     (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
-                     (catch RuntimeException e
-                       [:throws (.getMessage e)]))]
-      (HInfo. s t j-expr h-result jh-result j-result))))
+                        [:throws (.getMessage e)]))]
+       (HInfo. s t j-expr h-result jh-result j-result)))))
 
 (defmacro h
   [expr & args]
