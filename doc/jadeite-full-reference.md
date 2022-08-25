@@ -1599,17 +1599,26 @@ Attempt to refine the given instance into an instance of type, spec-id.
 <table><tr><td colspan="3">
 
 ```java
-{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )
+{$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )
 
 ### result ###
+{:$type :my/Other$v1, :x 2, :y 0}
+```
 
+</td></tr><tr><td colspan="3">
+
+```java
+{$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )
+
+### result ###
+h-err/no-active-refinement-path
 ```
 
 </td></tr></table>
 
 #### Possible errors:
 
-* No refinement path
+* h-err/no-active-refinement-path
 * Spec not found
 
 See also: [`refines-to?`](#refines-to_Q)
@@ -1624,10 +1633,19 @@ Determine whether it is possible to refine the given instance into an instance o
 <table><tr><td colspan="3">
 
 ```java
-{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Spec$v1 )
+{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )
 
 ### result ###
+true
+```
 
+</td></tr><tr><td colspan="3">
+
+```java
+{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )
+
+### result ###
+false
 ```
 
 </td></tr></table>
@@ -1909,10 +1927,19 @@ This operation can be thought of as producing an instance if it is valid. This c
 <table><tr><td colspan="2">
 
 ```java
-valid {$type: spec/A$v1, n: -1, p: 1}
+valid {$type: my/Spec$v1, p: 1, n: -1}
 
 ### result ###
+{:$type :my/Spec$v1, :p 1, :n -1}
+```
 
+</td><td colspan="2">
+
+```java
+valid {$type: my/Spec$v1, p: 1, n: 1}
+
+### result ###
+:Unset
 ```
 
 </td></tr></table>
@@ -1931,10 +1958,19 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 <table><tr><td colspan="2">
 
 ```java
-valid? {$type: my/Spec$v1, n: 0, p: 1}
+valid? {$type: my/Spec$v1, p: 1, n: -1}
 
 ### result ###
+true
+```
 
+</td><td colspan="2">
+
+```java
+valid? {$type: my/Spec$v1, p: 1, n: 0}
+
+### result ###
+false
 ```
 
 </td></tr></table>
@@ -1983,7 +2019,16 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 whenValue(x) {x + 2}
 
 ### result ###
+3
+```
 
+</td><td colspan="1">
+
+```java
+whenValue(x) {x + 2}
+
+### result ###
+:Unset
 ```
 
 </td></tr></table>
@@ -2000,10 +2045,19 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 <table><tr><td colspan="3">
 
 ```java
-whenValueLet( x = (whenValue(o) {o + 2}) ) {x + 1}
+(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})
 
 ### result ###
+4
+```
 
+</td></tr><tr><td colspan="3">
+
+```java
+(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})
+
+### result ###
+:Unset
 ```
 
 </td></tr></table>

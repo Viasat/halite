@@ -1595,17 +1595,26 @@ Attempt to refine the given instance into an instance of type, spec-id.
 <table><tr><td colspan="3">
 
 ```clojure
-(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)
+(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)
 
 ;-- result --;
+{:$type :my/Other$v1, :x 2, :y 0}
+```
 
+</td></tr><tr><td colspan="3">
+
+```clojure
+(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)
+
+;-- result --;
+h-err/no-active-refinement-path
 ```
 
 </td></tr></table>
 
 #### Possible errors:
 
-* No refinement path
+* h-err/no-active-refinement-path
 * Spec not found
 
 See also: [`refines-to?`](#refines-to_Q)
@@ -1620,10 +1629,19 @@ Determine whether it is possible to refine the given instance into an instance o
 <table><tr><td colspan="3">
 
 ```clojure
-(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Spec$v1)
+(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)
 
 ;-- result --;
+true
+```
 
+</td></tr><tr><td colspan="3">
+
+```clojure
+(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)
+
+;-- result --;
+false
 ```
 
 </td></tr></table>
@@ -1902,13 +1920,22 @@ Evaluate the instance-expression and produce the result. If a constraint violati
 
 This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification.
 
-<table><tr><td colspan="2">
+<table><tr><td colspan="3">
 
 ```clojure
-(valid {:$type :spec/A$v1, :p 1, :n -1})
+(valid {:$type :my/Spec$v1, :p 1, :n -1})
 
 ;-- result --;
+{:$type :my/Spec$v1, :p 1, :n -1}
+```
 
+</td><td colspan="2">
+
+```clojure
+(valid {:$type :my/Spec$v1, :p 1, :n 1})
+
+;-- result --;
+:Unset
 ```
 
 </td></tr></table>
@@ -1927,10 +1954,19 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 <table><tr><td colspan="3">
 
 ```clojure
+(valid? {:$type :my/Spec$v1, :p 1, :n -1})
+
+;-- result --;
+true
+```
+
+</td></tr><tr><td colspan="3">
+
+```clojure
 (valid? {:$type :my/Spec$v1, :p 1, :n 0})
 
 ;-- result --;
-
+false
 ```
 
 </td></tr></table>
@@ -1979,7 +2015,16 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 (when-value x (+ x 2))
 
 ;-- result --;
+3
+```
 
+</td><td colspan="2">
+
+```clojure
+(when-value x (+ x 2))
+
+;-- result --;
+:Unset
 ```
 
 </td></tr></table>
@@ -1999,7 +2044,16 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 (when-value-let [x (when-value y (+ y 2))] (inc x))
 
 ;-- result --;
+4
+```
 
+</td></tr><tr><td colspan="3">
+
+```clojure
+(when-value-let [x (when-value y (+ y 2))] (inc x))
+
+;-- result --;
+:Unset
 ```
 
 </td></tr></table>
