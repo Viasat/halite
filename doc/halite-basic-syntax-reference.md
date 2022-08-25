@@ -44,27 +44,18 @@ Symbols are used to identify operators, variables in expressions, and specificat
 
 ```clojure
 a
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 a.b
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 a/b
-
-;-- result --;
-
 ```
 
 </td></tr></table>
@@ -82,18 +73,12 @@ Keywords are not values. There are no expressions that produce keywords. Anywher
 
 ```clojure
 :age
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 :x/y
-
-;-- result --;
-
 ```
 
 </td></tr></table>
@@ -115,65 +100,44 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 <table><tr><td colspan="1">
 
 ```clojure
-
-
-;-- result --;
-
+""
 ```
 
 </td><td colspan="1">
 
 ```clojure
-hello
-
-;-- result --;
-
+"hello"
 ```
 
 </td><td colspan="1">
 
 ```clojure
-say "hi" now
-
-;-- result --;
-
+"say \"hi\" now" 
 ```
 
 </td><td colspan="1">
 
 ```clojure
-one \ two
-
-;-- result --;
-
+"one \ two"
 ```
 
 </td><td colspan="1">
 
 ```clojure
-	
-
-
-;-- result --;
-
+"	
+"
 ```
 
 </td></tr><tr><td colspan="1">
 
 ```clojure
-☺
-
-;-- result --;
-
+"☺"
 ```
 
 </td><td colspan="1">
 
 ```clojure
-☺
-
-;-- result --;
-
+"☺"
 ```
 
 </td></tr></table>
@@ -189,54 +153,36 @@ Signed numeric integer values with no decimal places. Alternative integer repres
 
 ```clojure
 0
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 1
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 +1
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 -1
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 9223372036854775807
-
-;-- result --;
-
 ```
 
 </td></tr><tr><td colspan="1">
 
 ```clojure
 -9223372036854775808
-
-;-- result --;
-
 ```
 
 </td></tr></table>
@@ -252,36 +198,24 @@ Signed numeric values with decimal places.
 
 ```clojure
 #d "1.1"
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 #d "-1.1"
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 #d "1.00"
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 #d "0.00"
-
-;-- result --;
-
 ```
 
 </td></tr></table>
@@ -299,9 +233,6 @@ The contents of the instance are specified in pair-wise fashion with alternating
 
 ```clojure
 {:$type :text/Spec$v1 :x 1 :y -1}
-
-;-- result --;
-
 ```
 
 </td></tr></table>
@@ -317,18 +248,12 @@ A collection of values in a prescribed sequence.
 
 ```clojure
 []
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 [1 2 3]
-
-;-- result --;
-
 ```
 
 </td></tr></table>
@@ -346,18 +271,12 @@ The members of sets are not directly accessible. If it is necessary to access th
 
 ```clojure
 #{}
-
-;-- result --;
-
 ```
 
 </td><td colspan="1">
 
 ```clojure
 #{1 2 3}
-
-;-- result --;
-
 ```
 
 </td></tr></table>

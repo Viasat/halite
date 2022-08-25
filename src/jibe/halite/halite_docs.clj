@@ -40,12 +40,9 @@
                          :comment-2 "Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator."
                          :comment-3 "A common pattern in operator arguments is to provide a sequence of alternating symbols and values within square brackets. In these cases each symbol is bound to the corresponding value in pair-wise fashion."
                          :comment-3-j nil
-                         :examples [{:expr-str "a"
-                                     :expr-str-j "a"}
-                                    {:expr-str "a.b"
-                                     :expr-str-j "a.b"}
-                                    {:expr-str "a/b"
-                                     :expr-str-j "a/b"}]
+                         :examples [{:expr-str "a"}
+                                    {:expr-str "a.b"}
+                                    {:expr-str "a/b"}]
                          :tags #{:symbol-all :symbol-all-j}}
                 'keyword {:bnf "':' symbol"
                           :bnf-j nil
@@ -58,45 +55,28 @@
                 'boolean {:bnf "true | false"}
                 'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
                          :doc "Strings are sequences of characters. Strings can be multi-line. Quotation marks can be included if escaped with a \\. A backslash can be included with the character sequence: \\\\ . Strings can include special characters, e.g. \\t for a tab and \\n for a newline, as well as unicode via \\uNNNN. Unicode can also be directly entered in strings. Additional character representations may work but the only representations that are guaranteed to work are those documented here."
-                         :examples [{:expr-str ""
-                                     :expr-str-j ""}
-                                    {:expr-str "hello"
-                                     :expr-str-j "hello"}
-                                    {:expr-str "say \"hi\" now"
-                                     :expr-str-j "say \"hi\" now"}
-                                    {:expr-str "one \\ two"
-                                     :expr-str-j "one \\ two"}
-                                    {:expr-str "\t\n"
-                                     :expr-str-j "\t\n"}
-                                    {:expr-str "☺"
-                                     :expr-str-j "☺"}
-                                    {:expr-str "\u263A"
-                                     :expr-str-j "\u263A"}]}
+                         :examples [{:expr-str "\"\""}
+                                    {:expr-str "\"hello\""}
+                                    {:expr-str "\"say \\\"hi\\\" now\" "}
+                                    {:expr-str "\"one \\ two\""}
+                                    {:expr-str "\"\t\n\""}
+                                    {:expr-str "\"☺\""}
+                                    {:expr-str "\"\u263A\""}]}
                 'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
                           :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
-                          :examples [{:expr-str "0"
-                                      :expr-str-j "0"}
-                                     {:expr-str "1"
-                                      :expr-str-j "1"}
-                                     {:expr-str "+1"
-                                      :expr-str-j "+1"}
-                                     {:expr-str "-1"
-                                      :expr-str-j "-1"}
-                                     {:expr-str "9223372036854775807"
-                                      :expr-str-j "9223372036854775807"}
-                                     {:expr-str "-9223372036854775808"
-                                      :expr-str-j "-9223372036854775808"}]}
+                          :examples [{:expr-str "0"}
+                                     {:expr-str "1"}
+                                     {:expr-str "+1"}
+                                     {:expr-str "-1"}
+                                     {:expr-str "9223372036854775807"}
+                                     {:expr-str "-9223372036854775808"}]}
 
                 'fixed-decimal {:bnf "'#' 'd' [whitespace] '\"' ['-'] ('0' | ('1-9' {'0-9'})) '.' '0-9' {'0-9'} '\"'"
                                 :doc "Signed numeric values with decimal places."
-                                :examples [{:expr-str "#d \"1.1\""
-                                            :expr-str-j "#d \"1.1\""}
-                                           {:expr-str "#d \"-1.1\""
-                                            :expr-str-j "#d \"-1.1\""}
-                                           {:expr-str "#d \"1.00\""
-                                            :expr-str-j "#d \"1.00\""}
-                                           {:expr-str "#d \"0.00\""
-                                            :expr-str-j "#d \"0.00\""}]}
+                                :examples [{:expr-str "#d \"1.1\""}
+                                           {:expr-str "#d \"-1.1\""}
+                                           {:expr-str "#d \"1.00\""}
+                                           {:expr-str "#d \"0.00\""}]}
 
                 'instance {:bnf "'{' ':$type' keyword:spec-id {keyword value} '}' "
                            :bnf-j "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"
@@ -109,16 +89,14 @@
                 'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
                          :bnf-j "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
                          :doc "A collection of values in a prescribed sequence."
-                         :examples [{:expr-str "[]"
-                                     :expr-str-j "[]"}
+                         :examples [{:expr-str "[]"}
                                     {:expr-str "[1 2 3]"
                                      :expr-str-j "[1, 2, 3]"}]}
                 'set {:bnf "'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"
                       :bnf-j "'#' '{' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} '}'"
                       :doc "A collection of values in an unordered set. Duplicates are not allowed."
                       :comment "The members of sets are not directly accessible. If it is necessary to access the members of a set, it is recommended to design the data structures going into the sets in such a way that the set can be sorted into a vector for access."
-                      :examples [{:expr-str "#{}"
-                                  :expr-str-j "#{}"}
+                      :examples [{:expr-str "#{}"}
                                  {:expr-str "#{1 2 3}"
                                   :expr-str-j "#{1, 2, 3}"}]}
 
@@ -1465,6 +1443,12 @@
        (or (:result e)
            (:err-result e))))
 
+(defn example-text-no-result [lang e]
+  (str (if (= :halite lang)
+         (:expr-str e)
+         (or (:expr-str e)
+             (:expr-str-j e)))))
+
 (defn full-md [lang op-name op]
   (->> ["### "
         "<a name=\"" (safe-op-anchor op-name) "\"></a>"
@@ -1517,7 +1501,12 @@
        (spit "doc/jadeite-full-reference.md")))
 
 (defn basic-md [lang op-name op]
-  (let [bnf (if (= :halite lang) (:bnf op) (or (:bnf-j op) (:bnf op)))]
+  (let [bnf (if (= :halite lang)
+              (:bnf op)
+              (if (contains? (set (keys op)) :bnf-j)
+                (:bnf-j op)
+                (or (:bnf-j op)
+                    (:bnf op))))]
     (when bnf
       (->> ["### "
             "<a name=\"" (safe-op-anchor op-name) "\"></a>"
@@ -1529,7 +1518,7 @@
             (when-let [c (:comment op)] [c "\n\n"])
             (when-let [es (:examples op)]
               ["<table>"
-               (for [row (text-tile-rows (map (partial example-text lang) es))]
+               (for [row (text-tile-rows (map (partial example-text-no-result lang) es))]
                  ["<tr>"
                   (for [tile (:tiles row)]
                     ["<td colspan=\"" (:cols tile) "\">\n\n"
@@ -1595,4 +1584,3 @@
 
     (produce-basic-md)
     (produce-full-md)))
-

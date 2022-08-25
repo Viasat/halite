@@ -44,56 +44,18 @@ Symbols are used to identify operators, variables in expressions, and specificat
 
 ```java
 a
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 a.b
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 a/b
-
-### result ###
-
-```
-
-</td></tr></table>
-
----
-### <a name="keyword"></a>keyword
-
-
-
-!["':' symbol"](./halite-bnf-diagrams/basic-syntax/keyword-j.svg)
-
-Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated.
-
-<table><tr><td colspan="1">
-
-```java
-
-
-### result ###
-
-```
-
-</td><td colspan="1">
-
-```java
-
-
-### result ###
-
 ```
 
 </td></tr></table>
@@ -115,65 +77,44 @@ Keywords are not values. There are no expressions that produce keywords. Anywher
 <table><tr><td colspan="1">
 
 ```java
-
-
-### result ###
-
+""
 ```
 
 </td><td colspan="1">
 
 ```java
-hello
-
-### result ###
-
+"hello"
 ```
 
 </td><td colspan="1">
 
 ```java
-say "hi" now
-
-### result ###
-
+"say \"hi\" now" 
 ```
 
 </td><td colspan="1">
 
 ```java
-one \ two
-
-### result ###
-
+"one \ two"
 ```
 
 </td><td colspan="1">
 
 ```java
-	
-
-
-### result ###
-
+"	
+"
 ```
 
 </td></tr><tr><td colspan="1">
 
 ```java
-☺
-
-### result ###
-
+"☺"
 ```
 
 </td><td colspan="1">
 
 ```java
-☺
-
-### result ###
-
+"☺"
 ```
 
 </td></tr></table>
@@ -189,54 +130,36 @@ one \ two
 
 ```java
 0
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 1
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 +1
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 -1
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 9223372036854775807
-
-### result ###
-
 ```
 
 </td></tr><tr><td colspan="1">
 
 ```java
 -9223372036854775808
-
-### result ###
-
 ```
 
 </td></tr></table>
@@ -252,36 +175,24 @@ one \ two
 
 ```java
 #d "1.1"
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 #d "-1.1"
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 #d "1.00"
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
 #d "0.00"
-
-### result ###
-
 ```
 
 </td></tr></table>
@@ -298,10 +209,7 @@ The contents of the instance are specified in pair-wise fashion with alternating
 <table><tr><td colspan="2">
 
 ```java
-{$type: my/Spec$v1, x: 1, y: -1}
-
-### result ###
-
+{:$type :text/Spec$v1 :x 1 :y -1}
 ```
 
 </td></tr></table>
@@ -317,18 +225,12 @@ The contents of the instance are specified in pair-wise fashion with alternating
 
 ```java
 []
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
-[1, 2, 3]
-
-### result ###
-
+[1 2 3]
 ```
 
 </td></tr></table>
@@ -346,18 +248,12 @@ The members of sets are not directly accessible. If it is necessary to access th
 
 ```java
 #{}
-
-### result ###
-
 ```
 
 </td><td colspan="1">
 
 ```java
-#{1, 2, 3}
-
-### result ###
-
+#{1 2 3}
 ```
 
 </td></tr></table>
