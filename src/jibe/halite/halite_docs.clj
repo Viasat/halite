@@ -571,7 +571,7 @@
                       {:expr-str "(expt 2 -1)"
                        :expr-str-j :auto
                        :result :auto}]
-           :throws ["On overflow"
+           :throws ['h-err/overflow
                     'h-err/invalid-exponent]}
     'filter {:sigs [["'[' symbol:element set ']' boolean-expression" "set"]
                     ["'[' symbol:element vector ']' boolean-expression" "vector"]]

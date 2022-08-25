@@ -13,7 +13,7 @@
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.lib.format-errors :as format-errors :refer [throw-err with-exception-data text]]
             [schema.core :as s])
-  (:import [clojure.lang ExceptionInfo]))
+  (:import [clojure.lang BigInt ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
 
@@ -380,7 +380,11 @@
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
                            (throw-err (h-err/invalid-exponent {:exponent p})))
-                         (expt x p)) [:Integer :Integer] :Integer)
+                         (let [result (expt x p)]
+                           (when (instance? BigInt result)
+                             (throw-err (h-err/overflow {})))
+                           result))
+                       [:Integer :Integer] :Integer)
      'abs (apply mk-builtin habs (into [[:Integer] :Integer] decimal-sigs-unary))
      'str (mk-builtin (comp (partial check-limit :string-runtime-length) str) [& :String] :String)
      'subset? (mk-builtin set/subset? [(halite-types/set-type :Value) (halite-types/set-type :Value)] :Boolean)

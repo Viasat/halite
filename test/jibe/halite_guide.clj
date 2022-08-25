@@ -574,6 +574,18 @@
    "expt(1, 9223372036854775807)"
    "1")
   (h
+   (expt 9223372036854775807 1)
+   :Integer
+   9223372036854775807
+   "expt(9223372036854775807, 1)"
+   "9223372036854775807")
+  (h
+   (expt 9223372036854775807 2)
+   :Integer
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
+   "expt(9223372036854775807, 2)"
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
+  (h
    (expt 1 9223372036854775808N)
    [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
