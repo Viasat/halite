@@ -749,7 +749,7 @@ Decrement a numeric value.
 <table><tr><td colspan="1">
 
 ```java
-
+(dec 10)
 
 ### result ###
 9
@@ -758,7 +758,7 @@ Decrement a numeric value.
 </td><td colspan="1">
 
 ```java
-
+(dec 0)
 
 ### result ###
 -1
@@ -987,7 +987,7 @@ h-err/invalid-exponent
 
 #### Possible errors:
 
-* On overflow
+* h-err/overflow
 * h-err/invalid-exponent
 
 ---
@@ -1222,7 +1222,7 @@ Increment a numeric value.
 <table><tr><td colspan="1">
 
 ```java
-
+(inc 10)
 
 ### result ###
 11
@@ -1231,7 +1231,7 @@ Increment a numeric value.
 </td><td colspan="1">
 
 ```java
-
+(inc 0)
 
 ### result ###
 1
@@ -1516,9 +1516,6 @@ true
 </td><td colspan="1">
 
 ```java
-
-
-### result ###
 
 ```
 

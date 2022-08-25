@@ -55,7 +55,7 @@ a.b
 </td><td colspan="1">
 
 ```java
-a/b
+'a/b'
 ```
 
 </td></tr></table>
@@ -89,12 +89,18 @@ a/b
 </td><td colspan="1">
 
 ```java
-"say \"hi\" now" 
+"say \"hi\" now"
+
+### result ###
+"say \"hi\" now"
 ```
 
 </td><td colspan="1">
 
 ```java
+"one \\ two"
+
+### result ###
 "one \\ two"
 ```
 
@@ -102,18 +108,27 @@ a/b
 
 ```java
 "\t\n"
+
+### result ###
+"\t\n"
 ```
 
 </td></tr><tr><td colspan="1">
 
 ```java
 "☺"
+
+### result ###
+"☺"
 ```
 
 </td><td colspan="1">
 
 ```java
-"\u263A"
+"☺"
+
+### result ###
+"☺"
 ```
 
 </td></tr></table>
@@ -140,7 +155,7 @@ a/b
 </td><td colspan="1">
 
 ```java
-+1
+1
 ```
 
 </td><td colspan="1">

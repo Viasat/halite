@@ -985,7 +985,7 @@ h-err/invalid-exponent
 
 #### Possible errors:
 
-* On overflow
+* h-err/overflow
 * h-err/invalid-exponent
 
 ---
@@ -1512,9 +1512,6 @@ true
 </td><td colspan="1">
 
 ```clojure
-
-
-;-- result --;
 
 ```
 

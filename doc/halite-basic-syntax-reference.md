@@ -112,12 +112,18 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 </td><td colspan="1">
 
 ```clojure
-"say \"hi\" now" 
+"say \"hi\" now"
+
+;-- result --;
+"say \"hi\" now"
 ```
 
 </td><td colspan="1">
 
 ```clojure
+"one \\ two"
+
+;-- result --;
 "one \\ two"
 ```
 
@@ -125,11 +131,17 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 
 ```clojure
 "\t\n"
+
+;-- result --;
+"\t\n"
 ```
 
 </td></tr><tr><td colspan="1">
 
 ```clojure
+"☺"
+
+;-- result --;
 "☺"
 ```
 
@@ -137,6 +149,9 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 
 ```clojure
 "\u263A"
+
+;-- result --;
+"☺"
 ```
 
 </td></tr></table>

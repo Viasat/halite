@@ -19,151 +19,191 @@
 ;; define jadeite operator precedence
 ;; specify use of parens and {} in jadeite
 
+(defn expand-example [[op m]]
+  [op (if (:examples m)
+        (assoc m :examples (mapv (fn [example]
+                                   (let [{:keys [expr-str expr-str-j result result-j workspace-f instance]} example]
+                                     (if expr-str
+                                       (let [{:keys [h-result j-result j-expr]}
+                                             (if workspace-f
+                                               (let [workspace (workspace-f expr-str)
+                                                     ^HCInfo i (halite-guide/hc-body
+                                                                [workspace]
+                                                                :my
+                                                                (list 'get
+                                                                      (list 'refine-to instance :my/Result$v1)
+                                                                      :x))]
+                                                 {:h-result (.-h-result i)
+                                                  :j-result (.-j-result i)
+                                                  :j-expr (jadeite/to-jadeite (edn/read-string
+                                                                               {:readers {'d fixed-decimal/fixed-decimal-reader}}
+                                                                               expr-str))})
+                                               (let [i (halite-guide/h*
+                                                        (edn/read-string
+                                                         {:readers {'d fixed-decimal/fixed-decimal-reader}}
+                                                         expr-str)
+                                                        true)]
+                                                 {:h-result (.-h-result i)
+                                                  :j-result (.-j-result i)
+                                                  :j-expr (.-j-expr i)}))
+
+                                             err-result? (and (vector? h-result)
+                                                              (= :throws (first h-result)))
+                                             to-merge (apply merge [(when (= expr-str-j :auto)
+                                                                      {:expr-str-j j-expr})
+                                                                    (when (= result :auto)
+                                                                      (if err-result?
+                                                                        {:err-result (str (namespace (get h-result 2))
+                                                                                          "/"
+                                                                                          (name (get h-result 2)))}
+                                                                        {:result (pr-str h-result)}))
+                                                                    (when (or (= result-j :auto)
+                                                                              (and expr-str-j
+                                                                                   (not (contains? example :result-j))))
+                                                                      (if err-result?
+                                                                        {:err-result-j (str (namespace (get h-result 2))
+                                                                                            "/"
+                                                                                            (name (get h-result 2)))}
+                                                                        {:result-j j-result}))])
+                                             base-example (if (contains? to-merge :err-result)
+                                                            (dissoc example :result)
+                                                            example)
+                                             base-example (if (contains? to-merge :err-result-j)
+                                                            (dissoc base-example :result-j)
+                                                            base-example)]
+                                         (merge base-example to-merge))
+                                       example)))
+                                 (:examples m)))
+        m)])
+
+(defn expand-examples-map [op-maps]
+  (->> op-maps
+       (mapcat expand-example)
+       (apply sorted-map)))
+
+(defn expand-examples-vector [basic-bnf]
+  (->> basic-bnf
+       (partition 2)
+       (mapcat expand-example)
+       vec))
+
+;;;;
+
 (def misc-notes ["'whitespace' refers to characters such as spaces, tabs, and newlines."
                  "Whitespace is generally not called out in the following diagrams. However, it is specified for a few syntactic constructs that explicitly rely on whitespace."])
 
 (def misc-notes-halite ["For halite, whitespace also includes the comma. The comma can be used as an optional delimiter in sequences to improve readability."])
 
-(def basic-bnf ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"
+(def basic-bnf (expand-examples-vector
+                ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"
+                                         :tags #{:symbol-all :symbol-all-j}}
+                 'plus-minus-character {:bnf "'+' | '-'"
                                         :tags #{:symbol-all :symbol-all-j}}
-                'plus-minus-character {:bnf "'+' | '-'"
-                                       :tags #{:symbol-all :symbol-all-j}}
-                'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"
-                                   :tags #{:symbol-all :symbol-all-j}}
-                'simple-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"
-                                :tags #{:symbol-all :symbol-all-j}}
-                'symbol {:bnf "simple-symbol [ '/' simple-symbol]"
-                         :bnf-j "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"
-                         :doc "Symbols are identifiers that allow values and operations to be named. The following are reserved and cannot be used as user defined symbols: true, false, nil."
-                         :comment "Symbols are used to identify operators, variables in expressions, and specifications."
-                         :comment-j "Symbols are used to identify operators, variables in expressions, specifications, and fields within specifications."
-                         :comment-2 "Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator."
-                         :comment-3 "A common pattern in operator arguments is to provide a sequence of alternating symbols and values within square brackets. In these cases each symbol is bound to the corresponding value in pair-wise fashion."
-                         :comment-3-j nil
-                         :examples [{:expr-str "a"}
-                                    {:expr-str "a.b"}
-                                    {:expr-str "a/b"}]
-                         :tags #{:symbol-all :symbol-all-j}}
-                'keyword {:bnf "':' symbol"
-                          :bnf-j nil
-                          :doc "Keywords are identifiers that are used for instance field names. The following are reserved and cannot be used as user defined keywords: :true, :false, :nil."
-                          :comment "Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated."
-                          :examples [{:expr-str ":age"}
-                                     {:expr-str ":x/y"}]
-                          :tags #{:symbol-all}}
+                 'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"
+                                    :tags #{:symbol-all :symbol-all-j}}
+                 'simple-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"
+                                 :tags #{:symbol-all :symbol-all-j}}
+                 'symbol {:bnf "simple-symbol [ '/' simple-symbol]"
+                          :bnf-j "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"
+                          :doc "Symbols are identifiers that allow values and operations to be named. The following are reserved and cannot be used as user defined symbols: true, false, nil."
+                          :comment "Symbols are used to identify operators, variables in expressions, and specifications."
+                          :comment-j "Symbols are used to identify operators, variables in expressions, specifications, and fields within specifications."
+                          :comment-2 "Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator."
+                          :comment-3 "A common pattern in operator arguments is to provide a sequence of alternating symbols and values within square brackets. In these cases each symbol is bound to the corresponding value in pair-wise fashion."
+                          :comment-3-j nil
+                          :examples [{:expr-str "a"
+                                      :expr-str-j "a"}
+                                     {:expr-str "a.b"
+                                      :expr-str-j "a.b"}
+                                     {:expr-str "a/b"
+                                      :expr-str-j :auto}]
+                          :tags #{:symbol-all :symbol-all-j}}
+                 'keyword {:bnf "':' symbol"
+                           :bnf-j nil
+                           :doc "Keywords are identifiers that are used for instance field names. The following are reserved and cannot be used as user defined keywords: :true, :false, :nil."
+                           :comment "Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated."
+                           :examples [{:expr-str ":age"
+                                       :expr-str-j :auto}
+                                      {:expr-str ":x/y"
+                                       :expr-str-j :auto}]
+                           :tags #{:symbol-all}}
 
-                'boolean {:bnf "true | false"}
-                'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
-                         :doc "Strings are sequences of characters. Strings can be multi-line. Quotation marks can be included if escaped with a \\. A backslash can be included with the character sequence: \\\\ . Strings can include special characters, e.g. \\t for a tab and \\n for a newline, as well as unicode via \\uNNNN. Unicode can also be directly entered in strings. Additional character representations may work but the only representations that are guaranteed to work are those documented here."
-                         :examples [{:expr-str "\"\""}
-                                    {:expr-str "\"hello\""}
-                                    {:expr-str "\"say \\\"hi\\\" now\" "}
-                                    {:expr-str "\"one \\\\ two\""}
-                                    {:expr-str "\"\\t\\n\""}
-                                    {:expr-str "\"☺\""}
-                                    {:expr-str "\"\\u263A\""}]}
-                'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
-                          :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
-                          :examples [{:expr-str "0"}
-                                     {:expr-str "1"}
-                                     {:expr-str "+1"}
-                                     {:expr-str "-1"}
-                                     {:expr-str "9223372036854775807"}
-                                     {:expr-str "-9223372036854775808"}]}
+                 'boolean {:bnf "true | false"}
+                 'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
+                          :doc "Strings are sequences of characters. Strings can be multi-line. Quotation marks can be included if escaped with a \\. A backslash can be included with the character sequence: \\\\ . Strings can include special characters, e.g. \\t for a tab and \\n for a newline, as well as unicode via \\uNNNN. Unicode can also be directly entered in strings. Additional character representations may work but the only representations that are guaranteed to work are those documented here."
+                          :examples [{:expr-str "\"\""
+                                      :expr-str-j :auto}
+                                     {:expr-str "\"hello\""
+                                      :expr-str-j :auto}
+                                     {:expr-str "\"say \\\"hi\\\" now\""
+                                      :expr-str-j :auto
+                                      :result :auto}
+                                     {:expr-str "\"one \\\\ two\""
+                                      :expr-str-j :auto
+                                      :result :auto}
+                                     {:expr-str "\"\\t\\n\""
+                                      :expr-str-j :auto
+                                      :result :auto}
+                                     {:expr-str "\"☺\""
+                                      :expr-str-j :auto
+                                      :result :auto}
+                                     {:expr-str "\"\\u263A\""
+                                      :expr-str-j :auto
+                                      :result :auto}]}
+                 'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
+                           :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
+                           :examples [{:expr-str "0"
+                                       :expr-str-j :auto}
+                                      {:expr-str "1"
+                                       :expr-str-j :auto}
+                                      {:expr-str "+1"
+                                       :expr-str-j :auto}
+                                      {:expr-str "-1"
+                                       :expr-str-j :auto}
+                                      {:expr-str "9223372036854775807"
+                                       :expr-str-j :auto}
+                                      {:expr-str "-9223372036854775808"
+                                       :expr-str-j :auto}]}
 
-                'fixed-decimal {:bnf "'#' 'd' [whitespace] '\"' ['-'] ('0' | ('1-9' {'0-9'})) '.' '0-9' {'0-9'} '\"'"
-                                :doc "Signed numeric values with decimal places."
-                                :examples [{:expr-str "#d \"1.1\""}
-                                           {:expr-str "#d \"-1.1\""}
-                                           {:expr-str "#d \"1.00\""}
-                                           {:expr-str "#d \"0.00\""}]}
+                 'fixed-decimal {:bnf "'#' 'd' [whitespace] '\"' ['-'] ('0' | ('1-9' {'0-9'})) '.' '0-9' {'0-9'} '\"'"
+                                 :doc "Signed numeric values with decimal places."
+                                 :examples [{:expr-str "#d \"1.1\""
+                                             :expr-str-j :auto}
+                                            {:expr-str "#d \"-1.1\""
+                                             :expr-str-j :auto}
+                                            {:expr-str "#d \"1.00\""
+                                             :expr-str-j :auto}
+                                            {:expr-str "#d \"0.00\""
+                                             :expr-str-j :auto}]}
 
-                'instance {:bnf "'{' ':$type' keyword:spec-id {keyword value} '}' "
-                           :bnf-j "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"
-                           :doc "Represents an instance of a specification."
-                           :comment "The contents of the instance are specified in pair-wise fashion with alternating field names and field values."
-                           :comment-2 "The special field name ':$type' is mandatory but cannot be used as the other fields are."
-                           :comment-2-j "The special field name '$type' is mandatory but cannot be used as the other fields are."
-                           :examples [{:expr-str "{:$type :text/Spec$v1 :x 1 :y -1}"
-                                       :expr-str-j "{$type: my/Spec$v1, x: 1, y: -1}"}]}
-                'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
-                         :bnf-j "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
-                         :doc "A collection of values in a prescribed sequence."
-                         :examples [{:expr-str "[]"}
-                                    {:expr-str "[1 2 3]"
-                                     :expr-str-j "[1, 2, 3]"}]}
-                'set {:bnf "'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"
-                      :bnf-j "'#' '{' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} '}'"
-                      :doc "A collection of values in an unordered set. Duplicates are not allowed."
-                      :comment "The members of sets are not directly accessible. If it is necessary to access the members of a set, it is recommended to design the data structures going into the sets in such a way that the set can be sorted into a vector for access."
-                      :examples [{:expr-str "#{}"}
-                                 {:expr-str "#{1 2 3}"
-                                  :expr-str-j "#{1, 2, 3}"}]}
+                 'instance {:bnf "'{' ':$type' keyword:spec-id {keyword value} '}' "
+                            :bnf-j "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"
+                            :doc "Represents an instance of a specification."
+                            :comment "The contents of the instance are specified in pair-wise fashion with alternating field names and field values."
+                            :comment-2 "The special field name ':$type' is mandatory but cannot be used as the other fields are."
+                            :comment-2-j "The special field name '$type' is mandatory but cannot be used as the other fields are."
+                            :examples [{:expr-str "{:$type :text/Spec$v1 :x 1 :y -1}"
+                                        :expr-str-j "{$type: my/Spec$v1, x: 1, y: -1}"}]}
+                 'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
+                          :bnf-j "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
+                          :doc "A collection of values in a prescribed sequence."
+                          :examples [{:expr-str "[]"
+                                      :expr-str-j :auto}
+                                     {:expr-str "[1 2 3]"
+                                      :expr-str-j "[1, 2, 3]"}]}
+                 'set {:bnf "'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"
+                       :bnf-j "'#' '{' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} '}'"
+                       :doc "A collection of values in an unordered set. Duplicates are not allowed."
+                       :comment "The members of sets are not directly accessible. If it is necessary to access the members of a set, it is recommended to design the data structures going into the sets in such a way that the set can be sorted into a vector for access."
+                       :examples [{:expr-str "#{}"
+                                   :expr-str-j :auto}
+                                  {:expr-str "#{1 2 3}"
+                                   :expr-str-j "#{1, 2, 3}"}]}
 
-                'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"
-                        :doc "Expressions and many literals produce values."}
-                'any {:bnf "value | unset"
-                      :doc "Refers to either the presence of absence of a value."}])
-
-(defn expand-examples [op-maps]
-  (->> op-maps
-       (mapcat (fn [[op m]]
-                 [op (if (:examples m)
-                       (assoc m :examples (mapv (fn [example]
-                                                  (let [{:keys [expr-str expr-str-j result result-j workspace-f instance]} example]
-                                                    (if expr-str
-                                                      (let [{:keys [h-result j-result j-expr]}
-                                                            (if workspace-f
-                                                              (let [workspace (workspace-f expr-str)
-                                                                    ^HCInfo i (halite-guide/hc-body
-                                                                               [workspace]
-                                                                               :my
-                                                                               (list 'get
-                                                                                     (list 'refine-to instance :my/Result$v1)
-                                                                                     :x))]
-                                                                {:h-result (.-h-result i)
-                                                                 :j-result (.-j-result i)
-                                                                 :j-expr (jadeite/to-jadeite (edn/read-string
-                                                                                              {:readers {'d fixed-decimal/fixed-decimal-reader}}
-                                                                                              expr-str))})
-                                                              (let [i (halite-guide/h*
-                                                                       (edn/read-string
-                                                                        {:readers {'d fixed-decimal/fixed-decimal-reader}}
-                                                                        expr-str)
-                                                                       true)]
-                                                                {:h-result (.-h-result i)
-                                                                 :j-result (.-j-result i)
-                                                                 :j-expr (.-j-expr i)}))
-
-                                                            err-result? (and (vector? h-result)
-                                                                             (= :throws (first h-result)))
-                                                            to-merge (apply merge [(when (= expr-str-j :auto)
-                                                                                     {:expr-str-j j-expr})
-                                                                                   (when (= result :auto)
-                                                                                     (if err-result?
-                                                                                       {:err-result (str (namespace (get h-result 2))
-                                                                                                         "/"
-                                                                                                         (name (get h-result 2)))}
-                                                                                       {:result (pr-str h-result)}))
-                                                                                   (when (or (= result-j :auto)
-                                                                                             (and expr-str-j
-                                                                                                  (not (contains? example :result-j))))
-                                                                                     (if err-result?
-                                                                                       {:err-result-j (str (namespace (get h-result 2))
-                                                                                                           "/"
-                                                                                                           (name (get h-result 2)))}
-                                                                                       {:result-j j-result}))])
-                                                            base-example (if (contains? to-merge :err-result)
-                                                                           (dissoc example :result)
-                                                                           example)
-                                                            base-example (if (contains? to-merge :err-result-j)
-                                                                           (dissoc base-example :result-j)
-                                                                           base-example)]
-                                                        (merge base-example to-merge))
-                                                      example)))
-                                                (:examples m)))
-                       m)]))
-       (apply sorted-map)))
+                 'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"
+                         :doc "Expressions and many literals produce values."}
+                 'any {:bnf "value | unset"
+                       :doc "Refers to either the presence of absence of a value."}]))
 
 (defn make-workspace-fn [workspace]
   (fn [expr-str] (update-in workspace
@@ -179,7 +219,7 @@
                                                        expr-str))))))
 
 (def op-maps
-  (expand-examples
+  (expand-examples-map
    {'$no-value {:sigs [["" "unset"]]
                 :sigs-j [["'$no-value'" "unset"]]
                 :tags #{:optional-out}
@@ -1436,18 +1476,17 @@
             texts)))
 
 (defn example-text [lang e]
-  (str (e ({:halite :expr-str, :jadeite :expr-str-j} lang))
-       ({:halite  "\n\n;-- result --;\n"
-         :jadeite "\n\n### result ###\n"}
-        lang)
-       (or (:result e)
-           (:err-result e))))
-
-(defn example-text-no-result [lang e]
-  (str (if (= :halite lang)
-         (:expr-str e)
-         (or (:expr-str-j e)
-             (:expr-str e)))))
+  (let [expr (if (= :halite lang)
+               (:expr-str e)
+               (or (:expr-str-j e)
+                   (:expr-str e)))
+        result (or (:result e)
+                   (:err-result e))]
+    (str expr
+         (when result ({:halite  "\n\n;-- result --;\n"
+                        :jadeite "\n\n### result ###\n"}
+                       lang))
+         (when result result))))
 
 (defn full-md [lang op-name op]
   (->> ["### "
@@ -1518,7 +1557,7 @@
             (when-let [c (:comment op)] [c "\n\n"])
             (when-let [es (:examples op)]
               ["<table>"
-               (for [row (text-tile-rows (map (partial example-text-no-result lang) es))]
+               (for [row (text-tile-rows (map (partial example-text lang) es))]
                  ["<tr>"
                   (for [tile (:tiles row)]
                     ["<td colspan=\"" (:cols tile) "\">\n\n"
