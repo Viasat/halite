@@ -829,7 +829,7 @@
                      {:expr-str "(mod 1 0)"
                       :expr-str-j :auto
                       :result :auto}]
-          :thows ['h-err/divide-by-zero]}
+          :throws ['h-err/divide-by-zero]}
     'not {:sigs [["boolean" "boolean"]]
           :sigs-j [["'!' boolean" "boolean"]]
           :tags #{:boolean-op :boolean-out}
@@ -1044,7 +1044,7 @@
                          {:expr-str "(rescale #d \"1.23\" 0)"
                           :expr-str-j :auto
                           :result :auto}]
-              :thows ['h-err/arg-type-mismatch]
+              :throws ['h-err/arg-type-mismatch]
               :see-also ['*]}
     'rest {:sigs [["vector" "vector"]]
            :sigs-j [["vector '.' 'rest()'" "vector"]]
@@ -1469,6 +1469,7 @@
   (->> ["### "
         "<a name=\"" (safe-op-anchor op-name) "\"></a>"
         op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
+        (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
         (map-indexed
          (fn [i sig]
            ["![" (pr-str sig) "](./halite-bnf-diagrams/op/"

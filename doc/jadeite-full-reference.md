@@ -1099,6 +1099,8 @@ See also: [`get-in`](#get-in)
 
 A path of element accessors can be created by chaining together element access forms in sequence.
 
+The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'.
+
 ![["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }" "any"]](./halite-bnf-diagrams/op/get-in-0-j.svg)
 
 <table><tr><td colspan="2">
@@ -1378,6 +1380,10 @@ h-err/divide-by-zero
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* h-err/divide-by-zero
 
 ---
 ### <a name="not"></a>not
@@ -1729,6 +1735,10 @@ rescale(#d "1.23", 0)
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* h-err/arg-type-mismatch
 
 See also: [`*`](#_S)
 

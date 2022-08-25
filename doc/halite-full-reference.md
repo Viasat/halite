@@ -1097,6 +1097,8 @@ See also: [`get-in`](#get-in)
 
 Syntactic sugar for performing the equivalent of a chained series of 'get' operations. The second argument is a vector that represents the logical path to be navigated through the first argument.
 
+The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'.
+
 ![["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]](./halite-bnf-diagrams/op/get-in-0.svg)
 
 <table><tr><td colspan="2">
@@ -1376,6 +1378,10 @@ h-err/divide-by-zero
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* h-err/divide-by-zero
 
 ---
 ### <a name="not"></a>not
@@ -1725,6 +1731,10 @@ Arithmetic on numeric values never produce results in different number spaces. T
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* h-err/arg-type-mismatch
 
 See also: [`*`](#_S)
 
