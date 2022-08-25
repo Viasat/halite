@@ -1516,6 +1516,43 @@
        (apply str generated-msg "# Jadeite operator reference (all operators)\n\n")
        (spit "doc/jadeite-full-reference.md")))
 
+(defn basic-md [lang op-name op]
+  (let [bnf (if (= :halite lang) (:bnf op) (or (:bnf-j op) (:bnf op)))]
+    (when bnf
+      (->> ["### "
+            "<a name=\"" (safe-op-anchor op-name) "\"></a>"
+            op-name "\n\n" (if (= :halite lang) (or (:doc-j op) (:doc op))) "\n\n"
+            (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
+            ["![" (pr-str bnf) "](./halite-bnf-diagrams/basic-syntax/"
+             (url-encode (safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"]
+
+            (when-let [c (:comment op)] [c "\n\n"])
+            (when-let [es (:examples op)]
+              ["<table>"
+               (for [row (text-tile-rows (map (partial example-text lang) es))]
+                 ["<tr>"
+                  (for [tile (:tiles row)]
+                    ["<td colspan=\"" (:cols tile) "\">\n\n"
+                     "```" ({:halite "clojure", :jadeite "java"} lang) "\n"
+                     (:text tile)
+                     "\n```\n\n</td>"])
+                  "</tr>"])
+               "</table>\n\n"])
+            "---\n"]
+           flatten (apply str)))))
+
+(defn produce-basic-md []
+  (->> basic-bnf
+       (partition 2)
+       (map (partial apply basic-md :halite))
+       (apply str generated-msg "# Halite basic syntax reference\n\n")
+       (spit "doc/halite-basic-syntax-reference.md"))
+  (->> basic-bnf
+       (partition 2)
+       (map (partial apply basic-md :jadeite))
+       (apply str generated-msg "# Jadeite basic syntax reference\n\n")
+       (spit "doc/jadeite-basic-syntax-reference.md")))
+
 ;;
 
 (defn query-ops
@@ -1556,4 +1593,6 @@
          (map produce-bnf-diagram-for-tag)
          dorun)
 
+    (produce-basic-md)
     (produce-full-md)))
+
