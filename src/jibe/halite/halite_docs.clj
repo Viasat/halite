@@ -61,7 +61,7 @@
                                     {:expr-str "\"one \\ two\""}
                                     {:expr-str "\"\t\n\""}
                                     {:expr-str "\"☺\""}
-                                    {:expr-str "\"\u263A\""}]}
+                                    {:expr-str "\"\\u263A\""}]}
                 'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
                           :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
                           :examples [{:expr-str "0"}

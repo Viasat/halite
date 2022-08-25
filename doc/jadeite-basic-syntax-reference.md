@@ -114,7 +114,7 @@ a/b
 </td><td colspan="1">
 
 ```java
-"☺"
+"\u263A"
 ```
 
 </td></tr></table>
