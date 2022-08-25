@@ -148,7 +148,7 @@
                                       :expr-str-j :auto
                                       :result :auto}
                                      {:expr-str "\"\\u263A\""
-                                      :expr-str-j :auto
+                                      :expr-str-j "\"\\u263A\""
                                       :result :auto}]}
                  'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
                            :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
