@@ -208,7 +208,7 @@ The contents of the instance are specified in pair-wise fashion with alternating
 <table><tr><td colspan="2">
 
 ```java
-{:$type :text/Spec$v1 :x 1 :y -1}
+{$type: my/Spec$v1, x: 1, y: -1}
 ```
 
 </td></tr></table>
@@ -229,7 +229,7 @@ The contents of the instance are specified in pair-wise fashion with alternating
 </td><td colspan="1">
 
 ```java
-[1 2 3]
+[1, 2, 3]
 ```
 
 </td></tr></table>
@@ -252,7 +252,7 @@ The members of sets are not directly accessible. If it is necessary to access th
 </td><td colspan="1">
 
 ```java
-#{1 2 3}
+#{1, 2, 3}
 ```
 
 </td></tr></table>

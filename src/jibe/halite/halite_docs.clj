@@ -1446,8 +1446,8 @@
 (defn example-text-no-result [lang e]
   (str (if (= :halite lang)
          (:expr-str e)
-         (or (:expr-str e)
-             (:expr-str-j e)))))
+         (or (:expr-str-j e)
+             (:expr-str e)))))
 
 (defn full-md [lang op-name op]
   (->> ["### "
