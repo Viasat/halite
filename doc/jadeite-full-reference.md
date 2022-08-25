@@ -1097,7 +1097,7 @@ See also: [`get-in`](#get-in)
 ---
 ### <a name="get-in"></a>get-in
 
-Syntactic sugar for performing the equivalent of a chained series of 'get' operations. The second argument is a vector that represents the logical path to be navigated through the first argument.
+A path of element accessors can be created by chaining together element access forms in sequence.
 
 ![["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }" "any"]](./halite-bnf-diagrams/op/get-in-0-j.svg)
 
@@ -1277,7 +1277,7 @@ See also: [`difference`](#difference) [`union`](#union) [`subset?`](#subset_Q)
 ---
 ### <a name="let"></a>let
 
-Evaluate the expression argument in a nested context created by considering the first argument in a pairwise fashion and binding each symbol to the corresponding value.
+Evaluate the expression argument in a nested context created by binding each symbol to the corresponding value.
 
 ![["'{' symbol '=' value ';' {symbol '=' value ';'} any-expression '}'" "any"]](./halite-bnf-diagrams/op/let-0-j.svg)
 

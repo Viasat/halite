@@ -1468,7 +1468,7 @@
 (defn full-md [lang op-name op]
   (->> ["### "
         "<a name=\"" (safe-op-anchor op-name) "\"></a>"
-        op-name "\n\n" (:doc op) "\n\n"
+        op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
         (map-indexed
          (fn [i sig]
            ["![" (pr-str sig) "](./halite-bnf-diagrams/op/"
