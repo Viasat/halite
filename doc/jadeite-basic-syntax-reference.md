@@ -95,7 +95,7 @@ a/b
 </td><td colspan="1">
 
 ```java
-"one \ two"
+"one \\ two"
 ```
 
 </td><td colspan="1">

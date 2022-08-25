@@ -118,7 +118,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 </td><td colspan="1">
 
 ```clojure
-"one \ two"
+"one \\ two"
 ```
 
 </td><td colspan="1">
