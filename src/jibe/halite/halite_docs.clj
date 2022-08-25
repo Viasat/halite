@@ -40,17 +40,19 @@
                          :comment-2 "Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator."
                          :comment-3 "A common pattern in operator arguments is to provide a sequence of alternating symbols and values within square brackets. In these cases each symbol is bound to the corresponding value in pair-wise fashion."
                          :comment-3-j nil
-                         :examples [{:str "a"
-                                     :str-j "a"}
+                         :examples [{:expr-str "a"
+                                     :expr-str-j "a"}
                                     {:expr-str "a.b"
-                                     :expr-str-j "a.b"}]
+                                     :expr-str-j "a.b"}
+                                    {:expr-str "a/b"
+                                     :expr-str-j "a/b"}]
                          :tags #{:symbol-all :symbol-all-j}}
                 'keyword {:bnf "':' symbol"
                           :j-bnf nil
                           :doc "Keywords are identifiers that are used for instance field names. The following are reserved and cannot be used as user defined keywords: :true, :false, :nil."
                           :comment "Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated."
-                          :examples [{:str ":age"}
-                                     {:str ":x/y"}]
+                          :examples [{:expr-str ":age"}
+                                     {:expr-str ":x/y"}]
                           :tags #{:symbol-all}}
 
                 'boolean {:bnf "true | false"}
@@ -102,8 +104,8 @@
                            :comment "The contents of the instance are specified in pair-wise fashion with alternating field names and field values."
                            :comment-2 "The special field name ':$type' is mandatory but cannot be used as the other fields are."
                            :comment-2-j "The special field name '$type' is mandatory but cannot be used as the other fields are."
-                           :examples [{:str "{:$type :text/Spec$v1 :x 1 :y -1}"
-                                       :str-j "{$type: my/Spec$v1, x: 1, y: -1}"}]}
+                           :examples [{:expr-str "{:$type :text/Spec$v1 :x 1 :y -1}"
+                                       :expr-str-j "{$type: my/Spec$v1, x: 1, y: -1}"}]}
                 'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
                          :j-bnf "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
                          :doc "A collection of values in a prescribed sequence."
@@ -1456,8 +1458,7 @@
             texts)))
 
 (defn example-text [lang e]
-  (str (or (e ({:halite :expr-str, :jadeite :expr-str-j} lang))
-           (e ({:halite :str, :jadeite :str-j} lang)))
+  (str (e ({:halite :expr-str, :jadeite :expr-str-j} lang))
        ({:halite  "\n\n;-- result --;\n"
          :jadeite "\n\n### result ###\n"}
         lang)
