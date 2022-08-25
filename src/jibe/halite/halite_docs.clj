@@ -110,7 +110,7 @@
                           :comment-j "Symbols are used to identify operators, variables in expressions, specifications, and fields within specifications."
                           :comment-2 "Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator."
                           :comment-3 "A common pattern in operator arguments is to provide a sequence of alternating symbols and values within square brackets. In these cases each symbol is bound to the corresponding value in pair-wise fashion."
-                          :comment-3-j nil
+                          :comment-3-j "The following are also legal symbols, but they are reserved for system use: &&, ||, /, %, |"
                           :examples [{:expr-str "a"
                                       :expr-str-j "a"}
                                      {:expr-str "a.b"
@@ -1549,12 +1549,15 @@
     (when bnf
       (->> ["### "
             "<a name=\"" (safe-op-anchor op-name) "\"></a>"
-            op-name "\n\n" (if (= :halite lang) (or (:doc-j op) (:doc op))) "\n\n"
+            op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
             (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
             ["![" (pr-str bnf) "](./halite-bnf-diagrams/basic-syntax/"
              (url-encode (safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"]
 
-            (when-let [c (:comment op)] [c "\n\n"])
+            (let [c-1 (if (= :halite lang) (:comment op) (or (:comment-j op) (:comment op)))
+                  c-2 (if (= :halite lang) (:comment-2 op) (or (:comment-2-j op) (:comment-2 op)))
+                  c-3 (if (= :halite lang) (:comment-3 op) (or (:comment-3-j op) (:comment-3 op)))]
+              (when (or c-1 c-2 c-3) [(string/join " " [c-1 c-2 c-3]) "\n\n"]))
             (when-let [es (:examples op)]
               ["<table>"
                (for [row (text-tile-rows (map (partial example-text lang) es))]

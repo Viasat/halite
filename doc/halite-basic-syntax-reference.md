@@ -38,7 +38,7 @@ Symbols are identifiers that allow values and operations to be named. The follow
 
 !["simple-symbol [ '/' simple-symbol]"](./halite-bnf-diagrams/basic-syntax/symbol.svg)
 
-Symbols are used to identify operators, variables in expressions, and specifications.
+Symbols are used to identify operators, variables in expressions, and specifications. Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator. A common pattern in operator arguments is to provide a sequence of alternating symbols and values within square brackets. In these cases each symbol is bound to the corresponding value in pair-wise fashion.
 
 <table><tr><td colspan="1">
 
@@ -67,7 +67,7 @@ Keywords are identifiers that are used for instance field names. The following a
 
 !["':' symbol"](./halite-bnf-diagrams/basic-syntax/keyword.svg)
 
-Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated.
+Keywords are not values. There are no expressions that produce keywords. Anywhere that a keyword is called for in an operator arugment list, a literal keyword must be provided. Keywords themselves cannot be evaluated.  
 
 <table><tr><td colspan="1">
 
@@ -241,7 +241,7 @@ Represents an instance of a specification.
 
 !["'{' ':$type' keyword:spec-id {keyword value} '}' "](./halite-bnf-diagrams/basic-syntax/instance.svg)
 
-The contents of the instance are specified in pair-wise fashion with alternating field names and field values.
+The contents of the instance are specified in pair-wise fashion with alternating field names and field values. The special field name ':$type' is mandatory but cannot be used as the other fields are. 
 
 <table><tr><td colspan="2">
 
@@ -279,7 +279,7 @@ A collection of values in an unordered set. Duplicates are not allowed.
 
 !["'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"](./halite-bnf-diagrams/basic-syntax/set.svg)
 
-The members of sets are not directly accessible. If it is necessary to access the members of a set, it is recommended to design the data structures going into the sets in such a way that the set can be sorted into a vector for access.
+The members of sets are not directly accessible. If it is necessary to access the members of a set, it is recommended to design the data structures going into the sets in such a way that the set can be sorted into a vector for access.  
 
 <table><tr><td colspan="1">
 
