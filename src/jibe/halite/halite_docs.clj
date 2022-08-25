@@ -1309,6 +1309,36 @@
                                  :result :auto}]
                      :see-also ['if-value-let 'when 'when-value]}}))
 
+(def jadeite-operator-map {'= 'equalTo
+                           'sort-by 'sortBy
+                           'and '&&
+                           'div '/
+                           'get 'accessor
+                           'get-in 'accessor-chain
+                           'when-value 'whenValue
+                           'when-value-let 'whenValueLet
+                           'if-value 'ifValue
+                           'if-value-let 'ifValueLet
+                           'mod '%
+                           'not '!
+                           'not= 'notEqualTo
+                           'or '||
+                           'refine-to 'refineTo
+                           'refines-to? 'refinesTo?})
+
+(defn translate-op-name-to-jadeite [op-name]
+  (get jadeite-operator-map op-name op-name))
+
+(defn translate-op-maps-to-jadeite [op-maps]
+  (-> op-maps
+      (update-keys translate-op-name-to-jadeite)
+      (update-vals (fn [op]
+                     (if (:see-also op)
+                       (update-in op [:see-also] (partial mapv translate-op-name-to-jadeite))
+                       op)))))
+
+(def op-maps-j (translate-op-maps-to-jadeite op-maps))
+
 (defn produce-diagram [out-file-name ^String rule-str]
   (let [gtrd (GrammarToRRDiagram.)
         rts (RRDiagramToSVG.)
@@ -1345,14 +1375,16 @@
   (->> (partition 2 basic-bnf)
        (map (fn [[n {:keys [bnf]}]]
               (when bnf
-                (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" n ".svg") (str "RULE = " "(" bnf ")" ";")))))
+                (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" n ".svg")
+                                 (str "RULE = " "(" bnf ")" ";")))))
        dorun)
 
   (->> (partition 2 basic-bnf)
        (map (fn [[n bnf-map]]
               (let [bnf-j (get bnf-map :bnf-j (:bnf bnf-map))]
                 (when bnf-j
-                  (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" n "-j" ".svg") (str "RULE = " "(" bnf-j ")" ";"))))))
+                  (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (translate-op-name-to-jadeite n) "-j" ".svg")
+                                   (str "RULE = " "(" bnf-j ")" ";"))))))
        dorun))
 
 (defn produce-basic-bnf-diagrams-for-tag [basic-bnf tag]
@@ -1368,9 +1400,14 @@
 
 (defn safe-op-name [s]
   (get {'+ 'plus
-        '- 'minus} s s))
+        '- 'minus
+        '% 'mod
+        '&& 'and
+        '|| 'or
+        '! 'not
+        '/ 'div} s s))
 
-(defn produce-bnf-diagrams [op-maps all-filename all-filename-j]
+(defn produce-bnf-diagrams [op-maps op-maps-j all-filename all-filename-j]
   (let [op-keys (keys op-maps)
         rules-strs (->> op-maps
                         (mapcat (fn [[op {:keys [sigs]}]]
@@ -1384,7 +1421,7 @@
                                                               (when-not (string/starts-with? op "$") "')'")
                                                               " '»' " result-bnf ";")})
                                             (range))))))
-        rules-strs-j (->> op-maps
+        rules-strs-j (->> op-maps-j
                           (mapcat (fn [[op {:keys [sigs-j]}]]
                                     (->> sigs-j
                                          (map (fn [i [args-bnf result-bnf]]
@@ -1409,7 +1446,7 @@
                                            " ) "
 
                                            ")"))))
-        single-rules-strs-j (->> op-maps
+        single-rules-strs-j (->> op-maps-j
                                  (map (fn [[op {:keys [sigs-j]}]]
                                         [op (str " ( "
                                                  (->> sigs-j
@@ -1533,7 +1570,7 @@
        (map (partial apply full-md :halite))
        (apply str generated-msg "# Halite operator reference (all operators)\n\n")
        (spit "doc/halite-full-reference.md"))
-  (->> op-maps
+  (->> op-maps-j
        sort
        (map (partial apply full-md :jadeite))
        (apply str generated-msg "# Jadeite operator reference (all operators)\n\n")
@@ -1595,6 +1632,7 @@
 (defn produce-bnf-diagram-for-tag [tag]
   (produce-bnf-diagrams
    (query-ops tag)
+   (translate-op-maps-to-jadeite (query-ops tag))
    (str (name tag) ".svg")
    (str (name tag) "-j" ".svg")))
 
@@ -1603,7 +1641,7 @@
     (produce-basic-bnf-diagrams "basic-all.svg" "basic-all-j.svg" basic-bnf)
     (produce-basic-bnf-diagrams-for-tag basic-bnf :symbol-all)
 
-    (produce-bnf-diagrams op-maps "halite.svg" "jadeite.svg")
+    (produce-bnf-diagrams op-maps op-maps-j "halite.svg" "jadeite.svg")
 
     (->> [:boolean-op :boolean-out
           :string-op

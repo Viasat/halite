@@ -4,6 +4,35 @@
 
 # Jadeite operator reference (all operators)
 
+### <a name="_B"></a>!
+
+Performs logical negation of the argument.
+
+![["'!' boolean" "boolean"]](./halite-bnf-diagrams/op/not-0-j.svg)
+
+<table><tr><td colspan="1">
+
+```java
+!true
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
+!false
+
+### result ###
+true
+```
+
+</td></tr></table>
+
+See also: [`=>`](#_E_G) [`&&`](#&&) [`||`](#||)
+
+---
 ### <a name="_Dno-value"></a>$no-value
 
 Constant that produces the special 'unset' value which represents the lack of a value.
@@ -12,7 +41,7 @@ Constant that produces the special 'unset' value which represents the lack of a 
 
 Expected use is in an instance expression to indicate that a field in the instance does not have a value. However, it is suggested that alternatives include simply omitting the field name from the instance or using a variant of a 'when' expression to optionally produce a value for the field.
 
-See also: [`when`](#when) [`when-value`](#when-value) [`when-value-let`](#when-value-let)
+See also: [`when`](#when) [`whenValue`](#whenValue) [`whenValueLet`](#whenValueLet)
 
 ---
 ### <a name="_Dthis"></a>$this
@@ -20,6 +49,86 @@ See also: [`when`](#when) [`when-value`](#when-value) [`when-value-let`](#when-v
 Context dependent reference to the containing object.
 
 ![["<$this>" "unset"]](./halite-bnf-diagrams/op/%24this-0-j.svg)
+
+---
+### <a name="%"></a>%
+
+Computes the mathematical modulus of two numbers. Use care if one of the arguments is negative.
+
+![["integer '%' integer" "integer"]](./halite-bnf-diagrams/op/mod-0-j.svg)
+
+<table><tr><td colspan="1">
+
+```java
+(12 % 3)
+
+### result ###
+0
+```
+
+</td><td colspan="1">
+
+```java
+(14 % 4)
+
+### result ###
+2
+```
+
+</td><td colspan="1">
+
+```java
+(1 % 0)
+
+### result ###
+h-err/divide-by-zero
+```
+
+</td></tr></table>
+
+#### Possible errors:
+
+* h-err/divide-by-zero
+
+---
+### <a name="&&"></a>&&
+
+Perform a logical 'and' operation on the input values.
+
+![["boolean '&&' boolean" "boolean"]](./halite-bnf-diagrams/op/and-0-j.svg)
+
+The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated.
+
+<table><tr><td colspan="1">
+
+```java
+(true && false)
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
+(true && true)
+
+### result ###
+true
+```
+
+</td><td colspan="2">
+
+```java
+((2 > 1) && (3 > 2) && (4 > 3))
+
+### result ###
+true
+```
+
+</td></tr></table>
+
+See also: [`=>`](#_E_G) [`every?`](#every_Q) [`!`](#_B) [`||`](#||)
 
 ---
 ### <a name="_S"></a>*
@@ -168,6 +277,70 @@ Subtract one number from another.
 * h-err/overflow
 
 ---
+### <a name="/"></a>/
+
+Divide the first number by the second. When the first argument is an integer the result is truncated to an integer value. When the first argument is a fixed-decimal the result is truncated to the same precision as the first argument.
+
+![["integer '/' integer" "integer"]](./halite-bnf-diagrams/op/div-0-j.svg)
+
+![["fixed-decimal '/' integer" "fixed-decimal"]](./halite-bnf-diagrams/op/div-1-j.svg)
+
+As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale.
+
+<table><tr><td colspan="1">
+
+```java
+(12 / 3)
+
+### result ###
+4
+```
+
+</td><td colspan="1">
+
+```java
+(#d "12.3" / 3)
+
+### result ###
+#d "4.1"
+```
+
+</td><td colspan="1">
+
+```java
+(14 / 4)
+
+### result ###
+3
+```
+
+</td><td colspan="1">
+
+```java
+(#d "14.3" / 3)
+
+### result ###
+#d "4.7"
+```
+
+</td><td colspan="1">
+
+```java
+(1 / 0)
+
+### result ###
+h-err/divide-by-zero
+```
+
+</td></tr></table>
+
+#### Possible errors:
+
+* h-err/divide-by-zero
+
+See also: [`%`](#%)
+
+---
 ### <a name="_L"></a><
 
 Determine if a number is strictly less than another.
@@ -240,118 +413,6 @@ true
 </td></tr></table>
 
 ---
-### <a name="_E"></a>=
-
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
-
-![["value '==' value" "boolean"]](./halite-bnf-diagrams/op/%3D-0-j.svg)
-
-![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/%3D-1-j.svg)
-
-<table><tr><td colspan="1">
-
-```java
-(2 == 2)
-
-### result ###
-true
-```
-
-</td><td colspan="2">
-
-```java
-(#d "2.2" == #d "3.3")
-
-### result ###
-false
-```
-
-</td><td colspan="1">
-
-```java
-(2 == 3)
-
-### result ###
-false
-```
-
-</td><td colspan="1">
-
-```java
-("hi" == "hi")
-
-### result ###
-true
-```
-
-</td></tr><tr><td colspan="2">
-
-```java
-([1, 2, 3] == [1, 2, 3])
-
-### result ###
-true
-```
-
-</td><td colspan="2">
-
-```java
-([1, 2, 3] == #{1, 2, 3})
-
-### result ###
-false
-```
-
-</td></tr><tr><td colspan="2">
-
-```java
-(#{1, 2, 3} == #{1, 2, 3})
-
-### result ###
-true
-```
-
-</td><td colspan="2">
-
-```java
-([#{1, 2}, #{3}] == [#{1, 2}, #{3}])
-
-### result ###
-true
-```
-
-</td></tr><tr><td colspan="2">
-
-```java
-([#{1, 2}, #{3}] == [#{1, 2}, #{4}])
-
-### result ###
-false
-```
-
-</td></tr><tr><td colspan="4">
-
-```java
-({$type: my/Spec$v1, x: 1, y: -1} == {$type: my/Spec$v1, x: 1, y: 0})
-
-### result ###
-false
-```
-
-</td></tr><tr><td colspan="4">
-
-```java
-({$type: my/Spec$v1, x: 1, y: 0} == {$type: my/Spec$v1, x: 1, y: 0})
-
-### result ###
-true
-```
-
-</td></tr></table>
-
-See also: [`not=`](#not_E)
-
----
 ### <a name="_E_G"></a>=>
 
 Performs logical implication. If the first value is true, then the second value must also be true for the result to be true. If the first value is false, then the result is true.
@@ -387,7 +448,7 @@ true
 
 </td></tr></table>
 
-See also: [`and`](#and) [`every?`](#every_Q) [`not`](#not) [`or`](#or)
+See also: [`&&`](#&&) [`every?`](#every_Q) [`!`](#_B) [`||`](#||)
 
 ---
 ### <a name="_G"></a>>
@@ -506,44 +567,89 @@ abs(#d "-1.0")
 * Cannot compute absolute value most max negative value
 
 ---
-### <a name="and"></a>and
+### <a name="accessor"></a>accessor
 
-Perform a logical 'and' operation on the input values.
+Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
 
-![["boolean '&&' boolean" "boolean"]](./halite-bnf-diagrams/op/and-0-j.svg)
+![["(instance '.' symbol:instance-field)" "any"]](./halite-bnf-diagrams/op/accessor-0-j.svg)
 
-The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated.
+![["(vector '[' integer ']')" "value"]](./halite-bnf-diagrams/op/accessor-1-j.svg)
+
+The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
 
 <table><tr><td colspan="1">
 
 ```java
-(true && false)
+[10, 20, 30, 40][2]
 
 ### result ###
-false
-```
-
-</td><td colspan="1">
-
-```java
-(true && true)
-
-### result ###
-true
+30
 ```
 
 </td><td colspan="2">
 
 ```java
-((2 > 1) && (3 > 2) && (4 > 3))
+{$type: my/Spec$v1, x: -3, y: 2}.x
 
 ### result ###
-true
+-3
 ```
 
 </td></tr></table>
 
-See also: [`=>`](#_E_G) [`every?`](#every_Q) [`not`](#not) [`or`](#or)
+#### Possible errors:
+
+* [h-err/index-out-of-bounds]
+* [h-err/variables-not-in-spec]
+
+See also: [`accessor-chain`](#accessor-chain)
+
+---
+### <a name="accessor-chain"></a>accessor-chain
+
+A path of element accessors can be created by chaining together element access forms in sequence.
+
+The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'.
+
+![["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }" "any"]](./halite-bnf-diagrams/op/accessor-chain-0-j.svg)
+
+<table><tr><td colspan="2">
+
+```java
+[[10, 20], [30, 40]][1][0]
+
+### result ###
+30
+```
+
+</td></tr><tr><td colspan="4">
+
+```java
+{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: 20, b: 10}, y: 2}.x.a
+
+### result ###
+20
+```
+
+</td></tr><tr><td colspan="5">
+
+```java
+{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: [20, 30, 40], b: 10}, y: 2}.x.a[1]
+
+### result ###
+30
+```
+
+</td></tr></table>
+
+#### Possible errors:
+
+* l-err/get-in-path-cannot-be-empty
+* h-err/invalid-lookup-target
+* h-err/variables-not-in-spec
+* h-err/index-out-of-bounds
+
+See also: [`accessor`](#accessor)
 
 ---
 ### <a name="any_Q"></a>any?
@@ -574,7 +680,7 @@ false
 
 </td></tr></table>
 
-See also: [`every?`](#every_Q) [`or`](#or)
+See also: [`every?`](#every_Q) [`||`](#||)
 
 ---
 ### <a name="concat"></a>concat
@@ -822,68 +928,116 @@ This produces a set which contains all of the elements from the first set which 
 See also: [`intersection`](#intersection) [`union`](#union) [`subset?`](#subset_Q)
 
 ---
-### <a name="div"></a>div
+### <a name="equalTo"></a>equalTo
 
-Divide the first number by the second. When the first argument is an integer the result is truncated to an integer value. When the first argument is a fixed-decimal the result is truncated to the same precision as the first argument.
+Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
 
-![["integer '/' integer" "integer"]](./halite-bnf-diagrams/op/div-0-j.svg)
+![["value '==' value" "boolean"]](./halite-bnf-diagrams/op/equalTo-0-j.svg)
 
-![["fixed-decimal '/' integer" "fixed-decimal"]](./halite-bnf-diagrams/op/div-1-j.svg)
-
-As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale.
+![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/equalTo-1-j.svg)
 
 <table><tr><td colspan="1">
 
 ```java
-(12 / 3)
+(2 == 2)
 
 ### result ###
-4
+true
+```
+
+</td><td colspan="2">
+
+```java
+(#d "2.2" == #d "3.3")
+
+### result ###
+false
 ```
 
 </td><td colspan="1">
 
 ```java
-(#d "12.3" / 3)
+(2 == 3)
 
 ### result ###
-#d "4.1"
+false
 ```
 
 </td><td colspan="1">
 
 ```java
-(14 / 4)
+("hi" == "hi")
 
 ### result ###
-3
+true
 ```
 
-</td><td colspan="1">
+</td></tr><tr><td colspan="2">
 
 ```java
-(#d "14.3" / 3)
+([1, 2, 3] == [1, 2, 3])
 
 ### result ###
-#d "4.7"
+true
 ```
 
-</td><td colspan="1">
+</td><td colspan="2">
 
 ```java
-(1 / 0)
+([1, 2, 3] == #{1, 2, 3})
 
 ### result ###
-h-err/divide-by-zero
+false
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+(#{1, 2, 3} == #{1, 2, 3})
+
+### result ###
+true
+```
+
+</td><td colspan="2">
+
+```java
+([#{1, 2}, #{3}] == [#{1, 2}, #{3}])
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+([#{1, 2}, #{3}] == [#{1, 2}, #{4}])
+
+### result ###
+false
+```
+
+</td></tr><tr><td colspan="4">
+
+```java
+({$type: my/Spec$v1, x: 1, y: -1} == {$type: my/Spec$v1, x: 1, y: 0})
+
+### result ###
+false
+```
+
+</td></tr><tr><td colspan="4">
+
+```java
+({$type: my/Spec$v1, x: 1, y: 0} == {$type: my/Spec$v1, x: 1, y: 0})
+
+### result ###
+true
 ```
 
 </td></tr></table>
 
-#### Possible errors:
-
-* h-err/divide-by-zero
-
-See also: [`mod`](#mod)
+See also: [`notEqualTo`](#notEqualTo)
 
 ---
 ### <a name="error"></a>error
@@ -938,7 +1092,7 @@ false
 
 </td></tr></table>
 
-See also: [`any?`](#any_Q) [`and`](#and)
+See also: [`any?`](#any_Q) [`&&`](#&&)
 
 ---
 ### <a name="expt"></a>expt
@@ -1057,91 +1211,6 @@ h-err/argument-empty
 See also: [`count`](#count) [`rest`](#rest)
 
 ---
-### <a name="get"></a>get
-
-Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
-
-![["(instance '.' symbol:instance-field)" "any"]](./halite-bnf-diagrams/op/get-0-j.svg)
-
-![["(vector '[' integer ']')" "value"]](./halite-bnf-diagrams/op/get-1-j.svg)
-
-The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
-
-<table><tr><td colspan="1">
-
-```java
-[10, 20, 30, 40][2]
-
-### result ###
-30
-```
-
-</td><td colspan="2">
-
-```java
-{$type: my/Spec$v1, x: -3, y: 2}.x
-
-### result ###
--3
-```
-
-</td></tr></table>
-
-#### Possible errors:
-
-* [h-err/index-out-of-bounds]
-* [h-err/variables-not-in-spec]
-
-See also: [`get-in`](#get-in)
-
----
-### <a name="get-in"></a>get-in
-
-A path of element accessors can be created by chaining together element access forms in sequence.
-
-The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'.
-
-![["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }" "any"]](./halite-bnf-diagrams/op/get-in-0-j.svg)
-
-<table><tr><td colspan="2">
-
-```java
-[[10, 20], [30, 40]][1][0]
-
-### result ###
-30
-```
-
-</td></tr><tr><td colspan="4">
-
-```java
-{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: 20, b: 10}, y: 2}.x.a
-
-### result ###
-20
-```
-
-</td></tr><tr><td colspan="5">
-
-```java
-{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: [20, 30, 40], b: 10}, y: 2}.x.a[1]
-
-### result ###
-30
-```
-
-</td></tr></table>
-
-#### Possible errors:
-
-* l-err/get-in-path-cannot-be-empty
-* h-err/invalid-lookup-target
-* h-err/variables-not-in-spec
-* h-err/index-out-of-bounds
-
-See also: [`get`](#get)
-
----
 ### <a name="if"></a>if
 
 If the first argument is true, then evaluate the second argument, otherwise evaluate the third argument.
@@ -1171,22 +1240,22 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 See also: [`when`](#when)
 
 ---
-### <a name="if-value"></a>if-value
+### <a name="ifValue"></a>ifValue
 
 Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then evaluate the third argument.
 
-![["'ifValue' '(' symbol ')' any-expression 'else' any-expression" "any"]](./halite-bnf-diagrams/op/if-value-0-j.svg)
+![["'ifValue' '(' symbol ')' any-expression 'else' any-expression" "any"]](./halite-bnf-diagrams/op/ifValue-0-j.svg)
 
 When an optional instance field needs to be referenced, it is generally necessary to guard the access with either 'if-value' or 'when-value'. In this way, both the case of the field being set and unset are explicitly handled.
 
-See also: [`if-value-let`](#if-value-let) [`when-value`](#when-value)
+See also: [`ifValueLet`](#ifValueLet) [`whenValue`](#whenValue)
 
 ---
-### <a name="if-value-let"></a>if-value-let
+### <a name="ifValueLet"></a>ifValueLet
 
 If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol.
 
-![["'ifValueLet' '(' symbol '=' any:binding ')'  any-expression 'else' any-expression" "any"]](./halite-bnf-diagrams/op/if-value-let-0-j.svg)
+![["'ifValueLet' '(' symbol '=' any:binding ')'  any-expression 'else' any-expression" "any"]](./halite-bnf-diagrams/op/ifValueLet-0-j.svg)
 
 This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value.
 
@@ -1210,7 +1279,7 @@ This is similar to the 'if-value' operation, but applies generally to an express
 
 </td></tr></table>
 
-See also: [`if-value`](#if-value) [`when-value-let`](#when-value-let)
+See also: [`ifValue`](#ifValue) [`whenValueLet`](#whenValueLet)
 
 ---
 ### <a name="inc"></a>inc
@@ -1346,82 +1415,13 @@ map(x in #{10, 12})(x * 2)
 See also: [`reduce`](#reduce) [`filter`](#filter)
 
 ---
-### <a name="mod"></a>mod
-
-Computes the mathematical modulus of two numbers. Use care if one of the arguments is negative.
-
-![["integer '%' integer" "integer"]](./halite-bnf-diagrams/op/mod-0-j.svg)
-
-<table><tr><td colspan="1">
-
-```java
-(12 % 3)
-
-### result ###
-0
-```
-
-</td><td colspan="1">
-
-```java
-(14 % 4)
-
-### result ###
-2
-```
-
-</td><td colspan="1">
-
-```java
-(1 % 0)
-
-### result ###
-h-err/divide-by-zero
-```
-
-</td></tr></table>
-
-#### Possible errors:
-
-* h-err/divide-by-zero
-
----
-### <a name="not"></a>not
-
-Performs logical negation of the argument.
-
-![["'!' boolean" "boolean"]](./halite-bnf-diagrams/op/not-0-j.svg)
-
-<table><tr><td colspan="1">
-
-```java
-!true
-
-### result ###
-false
-```
-
-</td><td colspan="1">
-
-```java
-!false
-
-### result ###
-true
-```
-
-</td></tr></table>
-
-See also: [`=>`](#_E_G) [`and`](#and) [`or`](#or)
-
----
-### <a name="not_E"></a>not=
+### <a name="notEqualTo"></a>notEqualTo
 
 Produces a false value if all of the values are equal to each other. Otherwise produces a true value.
 
-![["value '!=' value" "boolean"]](./halite-bnf-diagrams/op/not%3D-0-j.svg)
+![["value '!=' value" "boolean"]](./halite-bnf-diagrams/op/notEqualTo-0-j.svg)
 
-![["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/not%3D-1-j.svg)
+![["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/notEqualTo-1-j.svg)
 
 <table><tr><td colspan="1">
 
@@ -1521,47 +1521,7 @@ true
 
 </td></tr></table>
 
-See also: [`=`](#_E)
-
----
-### <a name="or"></a>or
-
-Perform a logical 'or' operation on the input values.
-
-![["boolean '||' boolean" "boolean"]](./halite-bnf-diagrams/op/or-0-j.svg)
-
-The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated.
-
-<table><tr><td colspan="1">
-
-```java
-(true || false)
-
-### result ###
-true
-```
-
-</td><td colspan="1">
-
-```java
-(false || false)
-
-### result ###
-false
-```
-
-</td><td colspan="2">
-
-```java
-((1 > 2) || (2 > 3) || (4 > 3))
-
-### result ###
-true
-```
-
-</td></tr></table>
-
-See also: [`=>`](#_E_G) [`and`](#and) [`any?`](#any_Q) [`not`](#not)
+See also: [`equalTo`](#equalTo)
 
 ---
 ### <a name="range"></a>range
@@ -1620,11 +1580,11 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 See also: [`map`](#map) [`filter`](#filter)
 
 ---
-### <a name="refine-to"></a>refine-to
+### <a name="refineTo"></a>refineTo
 
 Attempt to refine the given instance into an instance of type, spec-id.
 
-![["instance '.' 'refineTo' '(' symbol:spec-id ')'" "instance"]](./halite-bnf-diagrams/op/refine-to-0-j.svg)
+![["instance '.' 'refineTo' '(' symbol:spec-id ')'" "instance"]](./halite-bnf-diagrams/op/refineTo-0-j.svg)
 
 <table><tr><td colspan="3">
 
@@ -1651,14 +1611,14 @@ h-err/no-active-refinement-path
 * h-err/no-active-refinement-path
 * Spec not found
 
-See also: [`refines-to?`](#refines-to_Q)
+See also: [`refinesTo?`](#refinesTo_Q)
 
 ---
-### <a name="refines-to_Q"></a>refines-to?
+### <a name="refinesTo_Q"></a>refinesTo?
 
 Determine whether it is possible to refine the given instance into an instance of type, spec-id.
 
-![["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]](./halite-bnf-diagrams/op/refines-to%3F-0-j.svg)
+![["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]](./halite-bnf-diagrams/op/refinesTo%3F-0-j.svg)
 
 <table><tr><td colspan="3">
 
@@ -1684,7 +1644,7 @@ false
 
 * Spec not found
 
-See also: [`refine-to`](#refine-to)
+See also: [`refineTo`](#refineTo)
 
 ---
 ### <a name="rescale"></a>rescale
@@ -1815,14 +1775,14 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 * Elements not sortable
 
-See also: [`sort-by`](#sort-by)
+See also: [`sortBy`](#sortBy)
 
 ---
-### <a name="sort-by"></a>sort-by
+### <a name="sortBy"></a>sortBy
 
 Produce a new vector by sorting all of the items in the input collection according to the values produced by applying the expression to each element. The expression must produce a unique, sortable value for each element.
 
-![["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]](./halite-bnf-diagrams/op/sort-by-0-j.svg)
+![["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]](./halite-bnf-diagrams/op/sortBy-0-j.svg)
 
 <table><tr><td colspan="3">
 
@@ -2041,11 +2001,11 @@ A primary use of this operator is in instance expression to optionally provide a
 </td></tr></table>
 
 ---
-### <a name="when-value"></a>when-value
+### <a name="whenValue"></a>whenValue
 
 Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset.
 
-![["'whenValue' '(' symbol ')' any-expression" "any"]](./halite-bnf-diagrams/op/when-value-0-j.svg)
+![["'whenValue' '(' symbol ')' any-expression" "any"]](./halite-bnf-diagrams/op/whenValue-0-j.svg)
 
 <table><tr><td colspan="1">
 
@@ -2067,14 +2027,14 @@ whenValue(x) {x + 2}
 
 </td></tr></table>
 
-See also: [`if-value`](#if-value) [`when`](#when) [`when-value-let`](#when-value-let)
+See also: [`ifValue`](#ifValue) [`when`](#when) [`whenValueLet`](#whenValueLet)
 
 ---
-### <a name="when-value-let"></a>when-value-let
+### <a name="whenValueLet"></a>whenValueLet
 
 If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'
 
-![["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]](./halite-bnf-diagrams/op/when-value-let-0-j.svg)
+![["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]](./halite-bnf-diagrams/op/whenValueLet-0-j.svg)
 
 <table><tr><td colspan="3">
 
@@ -2096,6 +2056,46 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 </td></tr></table>
 
-See also: [`if-value-let`](#if-value-let) [`when`](#when) [`when-value`](#when-value)
+See also: [`ifValueLet`](#ifValueLet) [`when`](#when) [`whenValue`](#whenValue)
+
+---
+### <a name="||"></a>||
+
+Perform a logical 'or' operation on the input values.
+
+![["boolean '||' boolean" "boolean"]](./halite-bnf-diagrams/op/or-0-j.svg)
+
+The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated.
+
+<table><tr><td colspan="1">
+
+```java
+(true || false)
+
+### result ###
+true
+```
+
+</td><td colspan="1">
+
+```java
+(false || false)
+
+### result ###
+false
+```
+
+</td><td colspan="2">
+
+```java
+((1 > 2) || (2 > 3) || (4 > 3))
+
+### result ###
+true
+```
+
+</td></tr></table>
+
+See also: [`=>`](#_E_G) [`&&`](#&&) [`any?`](#any_Q) [`!`](#_B)
 
 ---
