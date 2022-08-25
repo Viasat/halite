@@ -74,25 +74,6 @@
             (-> spec-info' :constraints first second clojure.pprint/pprint))
           (throw (ex-info (str "Found type error for " rule) {} ex)))))))
 
-(defn- prune
-  [spec-id {:keys [derivations] :as spec-info}]
-  (let [spec-info' (ssa/prune-derivations spec-info false)
-        derivations' (:derivations spec-info')
-        ids (->> derivations keys set), ids' (->> derivations' keys set)
-        pruned-ids (set/difference ids ids')]
-    (when (seq pruned-ids)
-      (trace!
-       (binding [ssa/*elide-top-level-bindings* true]
-         {:op :prune
-          :spec-id spec-id
-          :spec-info spec-info
-          :spec-info' spec-info'
-          :dgraph derivations
-          :dgraph' derivations'
-          :pruned-ids pruned-ids
-          :pruned (map #(ssa/form-from-ssa spec-info %) pruned-ids)})))
-    spec-info'))
-
 (s/defschema RewriteFnCtx
   {:sctx SpecCtx
    :ctx SSACtx
@@ -146,7 +127,7 @@
          (reduce (fn [spec-info [cname cid]]
                    (apply-rule-to-id rule sctx ctx scope spec-id spec-info cid))
                  spec-info)
-         (prune spec-id))))
+         (#(ssa/prune-derivations % false)))))
 
 (s/defn rewrite-spec-derivations :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
