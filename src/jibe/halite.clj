@@ -343,11 +343,17 @@
                                                    (halite-types/vector-type (halite-types/decimal-type s))])
                                                 (range 1 (inc fixed-decimal/max-scale))))
 
+(defn handle-overflow [f]
+  (fn [& args]
+    (try (apply f args)
+         (catch ArithmeticException _
+           (throw-err (h-err/overflow {}))))))
+
 (def builtins
   (s/with-fn-validation
-    {'+ (apply mk-builtin h+ (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
-     '- (apply mk-builtin h- (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
-     '* (apply mk-builtin h* (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
+    {'+ (apply mk-builtin (handle-overflow h+) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
+     '- (apply mk-builtin (handle-overflow h-) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
+     '* (apply mk-builtin (handle-overflow h*) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
      '< (apply mk-builtin h< (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      '<= (apply mk-builtin h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      '> (apply mk-builtin h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
@@ -361,8 +367,8 @@
      '=> (mk-builtin (fn [a b] (if a b true))
                      [:Boolean :Boolean] :Boolean)
      'contains? (mk-builtin contains? [(halite-types/set-type :Value) :Value] :Boolean)
-     'inc (mk-builtin inc [:Integer] :Integer)
-     'dec (mk-builtin dec [:Integer] :Integer)
+     'inc (mk-builtin (handle-overflow inc) [:Integer] :Integer)
+     'dec (mk-builtin (handle-overflow dec)  [:Integer] :Integer)
      'div (apply mk-builtin (fn [num divisor]
                               (when (= 0 divisor)
                                 (throw-err (h-err/divide-by-zero {:num num})))

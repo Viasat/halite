@@ -63,7 +63,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 
 #### Possible errors:
 
-* On overflow
+* h-err/overflow
 
 ---
 ### <a name="_A"></a>+
@@ -114,7 +114,7 @@ Add two numbers together.
 
 #### Possible errors:
 
-* On overflow
+* h-err/overflow
 
 ---
 ### <a name="-"></a>-
@@ -165,7 +165,7 @@ Subtract one number from another.
 
 #### Possible errors:
 
-* On overflow
+* h-err/overflow
 
 ---
 ### <a name="_L"></a><
@@ -766,7 +766,7 @@ Decrement a numeric value.
 
 #### Possible errors:
 
-* On overflow
+* h-err/overflow
 
 See also: [`inc`](#inc)
 
@@ -1239,7 +1239,7 @@ Increment a numeric value.
 
 #### Possible errors:
 
-* On overflow
+* h-err/overflow
 
 See also: [`dec`](#dec)
 

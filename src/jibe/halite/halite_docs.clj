@@ -197,7 +197,7 @@
         :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
         :doc "Multiply two numbers together."
         :comment "Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale."
-        :throws ["On overflow"]
+        :throws ['h-err/overflow]
         :examples [{:expr-str "(* 2 3)"
                     :expr-str-j :auto
                     :result :auto}
@@ -213,7 +213,7 @@
                  ["fixed-decimal '+' fixed-decimal" "fixed-decimal"]]
         :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
         :doc "Add two numbers together."
-        :throws ["On overflow"]
+        :throws ['h-err/overflow]
         :examples [{:expr-str "(+ 2 3)"
                     :expr-str-j :auto
                     :result :auto}
@@ -245,7 +245,7 @@
                    {:expr-str "(- 2 -3)"
                     :expr-str-j :auto
                     :result :auto}]
-        :throws ["On overflow"]}
+        :throws ['h-err/overflow]}
     '< {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
         :sigs-j [["((integer '<'  integer) | (fixed-decimal '<' fixed-decimal))" "boolean"]]
         :tags #{:integer-op :fixed-decimal-op :boolean-out}
@@ -485,7 +485,7 @@
           :sigs-j [["integer '-' '1' " "integer"]]
           :tags #{:integer-op :integer-out}
           :doc "Decrement a numeric value."
-          :throws ["On overflow"]
+          :throws ['h-err/overflow]
           :see-also ['inc]
           :examples [{:expr-str "(dec 10)"
                       :result :auto}
@@ -751,7 +751,7 @@
                       :result :auto}
                      {:expr-str "(inc 0)"
                       :result :auto}]
-          :throws ["On overflow"]
+          :throws ['h-err/overflow]
           :see-also ['dec]}
     'intersection {:sigs [["set set {set}" "set"]]
                    :sigs-j [["set '.' 'intersection' '(' set {',' set} ')'" "set"]]

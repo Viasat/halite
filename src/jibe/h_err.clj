@@ -191,6 +191,9 @@
 (deferr divide-by-zero [data]
         {:message "Cannot divide by zero"})
 
+(deferr overflow [data]
+        {:message "Numeric value overflow"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol

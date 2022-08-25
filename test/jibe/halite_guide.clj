@@ -769,9 +769,9 @@
   (h
    (inc 9223372036854775807)
    :Integer
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(9223372036854775807 + 1)"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (h
    (dec 9223372036854775807)
    :Integer
@@ -781,9 +781,9 @@
   (h
    (dec -9223372036854775808)
    :Integer
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(-9223372036854775808 - 1)"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (h
    (inc -9223372036854775808)
    :Integer
@@ -842,15 +842,15 @@
   (h
    (* 9223372036854775807 2)
    :Integer
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(9223372036854775807 * 2)"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (h
    (+ 9223372036854775807 1)
    :Integer
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(9223372036854775807 + 1)"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (h
    (- 9223372036854775807 1)
    :Integer
@@ -860,24 +860,24 @@
   (h
    (- 9223372036854775807 -1)
    :Integer
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(9223372036854775807 - -1)"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (h
    (- -9223372036854775808 1)
    :Integer
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(-9223372036854775808 - 1)"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (h
    -9223372036854775809N
    [:syntax-check-throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (+ -9223372036854775808 -1)
    :Integer
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(-9223372036854775808 + -1)"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (h
    (+ -9223372036854775808 1)
    :Integer
@@ -10034,9 +10034,9 @@
   (h
    (+ #d "922337203685477580.7" #d "0.1")
    [:Decimal 1]
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(#d \"922337203685477580.7\" + #d \"0.1\")"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (is
    (thrown-with-msg?
     NumberFormatException
@@ -10051,9 +10051,9 @@
   (h
    (- #d "-922337203685477580.8" #d "0.1")
    [:Decimal 1]
-   [:throws "long overflow"]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
    "(#d \"-922337203685477580.8\" - #d \"0.1\")"
-   [:throws "long overflow"])
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
   (is
    (thrown-with-msg?
     NumberFormatException
