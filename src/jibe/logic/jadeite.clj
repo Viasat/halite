@@ -101,7 +101,6 @@
                                                        (list* s (map toh args))
                                                        (throw (ex-info (str "No such global function: " s)
                                                                        {:op s :args args}))))
-        [[:call-method a [:symbol "reduce"] & args]] (concat ['reduce-] (map toh args) [(toh a)])
         [[:call-method a op & args]]                 (let [s (toh op)]
                                                        (if (global-fns s)
                                                          (throw (ex-info (str "No such method: " s)
@@ -226,7 +225,6 @@
                  and (infix " && " args)
                  dec (str "(" (toj a0) " - 1)")
                  div (infix " / " args)
-                 fn (str (infix a0) " -> " (toj a1))
                  get (if (keyword? a1)
                        (str (toj a0) '. (wrap-string (name a1)))
                        (str (toj a0) "[" (toj a1) "]"))
@@ -266,7 +264,6 @@
                         (str "notEqualTo" (infix ", " args))
                         (infix " != " args))
                  or (infix " || " args)
-                 reduce- (str (toj (last args)) ".reduce" (infix (drop-last args)))
                  refine-to (str (toj a0) ".refineTo( " (typename a1) " )")
                  refines-to? (str (toj a0) ".refinesTo?( " (typename a1) " )")
                  select (call-method "select" (reverse args))
