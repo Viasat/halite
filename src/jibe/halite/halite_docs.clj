@@ -59,7 +59,7 @@
                                     {:expr-str "\"hello\""}
                                     {:expr-str "\"say \\\"hi\\\" now\" "}
                                     {:expr-str "\"one \\ two\""}
-                                    {:expr-str "\"\t\n\""}
+                                    {:expr-str "\"\\t\\n\""}
                                     {:expr-str "\"☺\""}
                                     {:expr-str "\"\\u263A\""}]}
                 'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"

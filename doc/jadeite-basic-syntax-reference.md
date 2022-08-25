@@ -101,8 +101,7 @@ a/b
 </td><td colspan="1">
 
 ```java
-"	
-"
+"\t\n"
 ```
 
 </td></tr><tr><td colspan="1">

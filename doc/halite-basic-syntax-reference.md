@@ -124,8 +124,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 </td><td colspan="1">
 
 ```clojure
-"	
-"
+"\t\n"
 ```
 
 </td></tr><tr><td colspan="1">
