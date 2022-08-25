@@ -246,46 +246,53 @@
 
 (deftype HCInfo [s t h-result j-expr jh-result j-result])
 
-(defn ^HCInfo hc* [workspace-id expr]
-  (binding [format-errors/*squash-throw-site* true]
-    (let [senv (spec-env/for-workspace *spec-store* workspace-id)
-          tenv (halite-envs/type-env {})
-          env (halite-envs/env {})
-          j-expr (try (jadeite/to-jadeite expr)
-                      (catch RuntimeException e
-                        [:throws (.getMessage e)]))
-          s (try (halite/syntax-check expr)
-                 nil
-                 (catch RuntimeException e
-                   [:syntax-check-throws (.getMessage e)]))
-          t (try (halite-lint/type-check senv tenv expr)
-                 (catch RuntimeException e
-                   [:throws (.getMessage e)]))
-          h-result (try (halite/eval-expr senv tenv env expr)
-                        (catch RuntimeException e
-                          [:throws (.getMessage e)]))
-          jh-expr (when (string? j-expr)
-                    (try
-                      (jadeite/to-halite j-expr)
-                      (catch RuntimeException e
-                        [:throws (.getMessage e)])))
+(defn ^HCInfo hc*
+  ([workspace-id expr]
+   (hc* workspace-id expr false))
+  ([workspace-id expr separate-err-id?]
+   (binding [format-errors/*squash-throw-site* true]
+     (let [senv (spec-env/for-workspace *spec-store* workspace-id)
+           tenv (halite-envs/type-env {})
+           env (halite-envs/env {})
+           j-expr (try (jadeite/to-jadeite expr)
+                       (catch RuntimeException e
+                         [:throws (.getMessage e)]))
+           s (try (halite/syntax-check expr)
+                  nil
+                  (catch RuntimeException e
+                    [:syntax-check-throws (.getMessage e)]))
+           t (try (halite-lint/type-check senv tenv expr)
+                  (catch RuntimeException e
+                    [:throws (.getMessage e)]))
+           h-result (try (halite/eval-expr senv tenv env expr)
+                         (catch ExceptionInfo e
+                           (if separate-err-id?
+                             [:throws (.getMessage e) (:err-id (ex-data e))]
+                             [:throws (.getMessage e)]))
+                         (catch RuntimeException e
+                           [:throws (.getMessage e)]))
+           jh-expr (when (string? j-expr)
+                     (try
+                       (jadeite/to-halite j-expr)
+                       (catch RuntimeException e
+                         [:throws (.getMessage e)])))
 
-          jh-result (try
-                      (halite/eval-expr senv tenv env jh-expr)
+           jh-result (try
+                       (halite/eval-expr senv tenv env jh-expr)
+                       (catch RuntimeException e
+                         [:throws (.getMessage e)]))
+           j-result (try
+                      (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
                       (catch RuntimeException e
-                        [:throws (.getMessage e)]))
-          j-result (try
-                     (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
-                     (catch RuntimeException e
-                       [:throws (.getMessage e)]))]
+                        [:throws (.getMessage e)]))]
 
-      (HCInfo. s t h-result j-expr jh-result j-result))))
+       (HCInfo. s t h-result j-expr jh-result j-result)))))
 
 (defn hc-body [workspaces workspace-id expr]
   (with-close/with-close [spec-store ^java.io.Closeable (test-setup-specs/connect-to-spec-store)]
     (resource-spec-construct/create-all-async spec-store workspaces)
     (binding [*spec-store* (resource-spec/add-resource-spec-cache-to-spec-store spec-store)]
-      (hc* workspace-id expr))))
+      (hc* workspace-id expr true))))
 
 (defmacro hc [workspaces workspace-id comment? & raw-args]
   (let [raw-args (if (string? comment?)

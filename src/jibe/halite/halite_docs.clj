@@ -182,6 +182,19 @@
                        m)]))
        (apply sorted-map)))
 
+(defn make-workspace-fn [workspace]
+  (fn [expr-str] (update-in workspace
+                            [:specs
+                             0
+                             :jibe.data.model/spec-refinements
+                             0
+                             :jibe.data.model/refinement-e]
+                            (fn [_] (expression/parse :halite
+                                                      (string/replace
+                                                       "{:$type :my/Result$v1, :x <expr>}"
+                                                       "<expr>"
+                                                       expr-str))))))
+
 (def op-maps
   (expand-examples
    {'$no-value {:sigs [["" "unset"]]
@@ -788,18 +801,98 @@
                 :j-sigs [["instance '.' 'refineTo' '(' symbol:spec-id ')'" "instance"]]
                 :tags #{:instance-op :instance-out :spec-id-op}
                 :doc "Attempt to refine the given instance into an instance of type, spec-id."
-                :throws ["No refinement path"
+                :throws ['h-err/no-active-refinement-path
                          "Spec not found"]
-                :examples [{:str "(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)"
-                            :str-j "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )"}]
+                :examples [{:workspace-f (make-workspace-fn (workspace :my
+                                                                       {:my/Spec []
+                                                                        :my/Result []
+                                                                        :my/Other []}
+                                                                       (spec :Result :concrete
+                                                                             (variables [:x :my/Other$v1])
+                                                                             (refinements
+                                                                              [:r :from :my/Third$v1 [:halite "placeholder"]]))
+                                                                       (spec :Third :concrete)
+                                                                       (spec :Other :concrete
+                                                                             (variables [:x "Integer"]
+                                                                                        [:y "Integer"]))
+                                                                       (spec :Spec :concrete
+                                                                             (variables [:p "Integer"]
+                                                                                        [:n "Integer"])
+                                                                             (refinements
+                                                                              [:r :to :my/Other$v1 [:halite "{:$type :my/Other$v1 :x (inc p) :y (inc n)}"]]))))
+                            :instance {:$type :my/Third$v1}
+                            :expr-str "(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)"
+                            :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )"
+                            :result :auto
+                            :doc "Assuming a spec has a refinement defined to another."}
+                           {:workspace-f (make-workspace-fn (workspace :my
+                                                                       {:my/Spec []
+                                                                        :my/Result []
+                                                                        :my/Other []}
+                                                                       (spec :Result :concrete
+                                                                             (variables [:x :my/Other$v1])
+                                                                             (refinements
+                                                                              [:r :from :my/Third$v1 [:halite "placeholder"]]))
+                                                                       (spec :Third :concrete)
+                                                                       (spec :Other :concrete
+                                                                             (variables [:x "Integer"]
+                                                                                        [:y "Integer"]))
+                                                                       (spec :Spec :concrete
+                                                                             (variables [:p "Integer"]
+                                                                                        [:n "Integer"]))))
+                            :instance {:$type :my/Third$v1}
+                            :expr-str "(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)"
+                            :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )"
+                            :result :auto
+                            :doc "Assuming a spec does note have a refinement defined to another."}]
                 :see-also ['refines-to?]}
     'refines-to? {:sigs [["instance keyword:spec-id" "boolean"]]
                   :j-sigs [["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]]
                   :tags #{:instance-op :boolean-out :spec-id-op}
                   :doc "Determine whether it is possible to refine the given instance into an instance of type, spec-id."
                   :see-also ['refine-to]
-                  :examples [{:str "(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Spec$v1)"
-                              :str-j "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Spec$v1 )"}]
+                  :examples [{:workspace-f (make-workspace-fn (workspace :my
+                                                                         {:my/Spec []
+                                                                          :my/Result []
+                                                                          :my/Other []}
+                                                                         (spec :Result :concrete
+                                                                               (variables [:x "Boolean" :optional])
+                                                                               (refinements
+                                                                                [:r :from :my/Third$v1 [:halite "placeholder"]]))
+                                                                         (spec :Third :concrete)
+                                                                         (spec :Other :concrete
+                                                                               (variables [:x "Integer"]
+                                                                                          [:y "Integer"]))
+                                                                         (spec :Spec :concrete
+                                                                               (variables [:p "Integer"]
+                                                                                          [:n "Integer"])
+                                                                               (refinements
+                                                                                [:r :to :my/Other$v1 [:halite "{:$type :my/Other$v1 :x (inc p) :y (inc n)}"]]))))
+                              :instance {:$type :my/Third$v1}
+                              :expr-str "(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)"
+                              :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )"
+                              :result :auto
+                              :doc "Assuming a spec has a refinement defined to another."}
+                             {:workspace-f (make-workspace-fn (workspace :my
+                                                                         {:my/Spec []
+                                                                          :my/Result []
+                                                                          :my/Other []}
+                                                                         (spec :Result :concrete
+                                                                               (variables [:x "Boolean" :optional])
+                                                                               (refinements
+                                                                                [:r :from :my/Third$v1 [:halite "placeholder"]]))
+                                                                         (spec :Third :concrete)
+                                                                         (spec :Other :concrete
+                                                                               (variables [:x "Integer"]
+                                                                                          [:y "Integer"]))
+                                                                         (spec :Spec :concrete
+                                                                               (variables [:p "Integer"]
+                                                                                          [:n "Integer"]))))
+                              :instance {:$type :my/Third$v1}
+                              :expr-str "(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)"
+                              :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )"
+                              :result :auto
+                              :doc "Assuming a spec does note have a refinement defined to another."}]
                   :throws ["Spec not found"]}
     'rescale {:sigs [["fixed-decimal integer:new-scale" "(fixed-decimal | integer)"]]
               :j-sigs [["'rescale' '(' fixed-decimal ',' integer ')'" "(fixed-decimal | integer)"]]
@@ -907,15 +1000,87 @@
             :doc "Evaluate the instance-expression and produce the result. If a constraint violation occurs while evaluating the expression then produce an 'unset' value."
             :comment "This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification."
 
-            :examples [{:str "(valid {:$type :spec/A$v1, :p 1, :n -1})"
-                        :str-j "valid {$type: spec/A$v1, n: -1, p: 1}"}]
+            :examples [{:workspace-f (make-workspace-fn (workspace :my
+                                                                   {:my/Spec []
+                                                                    :my/Result []}
+                                                                   (spec :Result :concrete
+                                                                         (variables [:x :my/Spec$v1, :optional])
+                                                                         (refinements
+                                                                          [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                   (spec :Other :concrete)
+                                                                   (spec :Spec :concrete
+                                                                         (variables [:p "Integer"]
+                                                                                    [:n "Integer"]
+                                                                                    [:o "Integer" :optional])
+                                                                         (constraints [:pc [:halite "(> p 0)"]]
+                                                                                      [:pn [:halite "(< n 0)"]]))))
+                        :instance {:$type :my/Other$v1}
+                        :expr-str "(valid {:$type :my/Spec$v1, :p 1, :n -1})"
+                        :expr-str-j "valid {$type: my/Spec$v1, p: 1, n: -1}"
+                        :result :auto
+                        :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}
+                       {:workspace-f (make-workspace-fn (workspace :my
+                                                                   {:my/Spec []
+                                                                    :my/Result []}
+                                                                   (spec :Result :concrete
+                                                                         (variables [:x :my/Spec$v1, :optional])
+                                                                         (refinements
+                                                                          [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                   (spec :Other :concrete)
+                                                                   (spec :Spec :concrete
+                                                                         (variables [:p "Integer"]
+                                                                                    [:n "Integer"]
+                                                                                    [:o "Integer" :optional])
+                                                                         (constraints [:pc [:halite "(> p 0)"]]
+                                                                                      [:pn [:halite "(< n 0)"]]))))
+                        :instance {:$type :my/Other$v1}
+                        :expr-str "(valid {:$type :my/Spec$v1, :p 1, :n 1})"
+                        :expr-str-j "valid {$type: my/Spec$v1, p: 1, n: 1}"
+                        :result :auto
+                        :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}]
             :see-also ['valid?]}
     'valid? {:sigs [["instance-expression" "boolean"]]
              :j-sigs [["'valid?' instance-expression" "boolean"]]
              :doc "Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true."
              :comment "Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value."
-             :examples [{:str "(valid? {:$type :my/Spec$v1, :p 1, :n 0})"
-                         :str-j "valid? {$type: my/Spec$v1, n: 0, p: 1}"}]
+             :examples [{:workspace-f (make-workspace-fn (workspace :my
+                                                                    {:my/Spec []
+                                                                     :my/Result []}
+                                                                    (spec :Result :concrete
+                                                                          (variables [:x "Boolean" :optional])
+                                                                          (refinements
+                                                                           [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                    (spec :Other :concrete)
+                                                                    (spec :Spec :concrete
+                                                                          (variables [:p "Integer"]
+                                                                                     [:n "Integer"]
+                                                                                     [:o "Integer" :optional])
+                                                                          (constraints [:pc [:halite "(> p 0)"]]
+                                                                                       [:pn [:halite "(< n 0)"]]))))
+                         :instance {:$type :my/Other$v1}
+                         :expr-str "(valid? {:$type :my/Spec$v1, :p 1, :n -1})"
+                         :expr-str-j "valid? {$type: my/Spec$v1, p: 1, n: -1}"
+                         :result :auto
+                         :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}
+                        {:workspace-f (make-workspace-fn (workspace :my
+                                                                    {:my/Spec []
+                                                                     :my/Result []}
+                                                                    (spec :Result :concrete
+                                                                          (variables [:x "Boolean" :optional])
+                                                                          (refinements
+                                                                           [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                    (spec :Other :concrete)
+                                                                    (spec :Spec :concrete
+                                                                          (variables [:p "Integer"]
+                                                                                     [:n "Integer"]
+                                                                                     [:o "Integer" :optional])
+                                                                          (constraints [:pc [:halite "(> p 0)"]]
+                                                                                       [:pn [:halite "(< n 0)"]]))))
+                         :instance {:$type :my/Other$v1}
+                         :expr-str "(valid? {:$type :my/Spec$v1, :p 1, :n 0})"
+                         :expr-str-j "valid? {$type: my/Spec$v1, p: 1, n: 0}"
+                         :result :auto
+                         :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}]
              :tags #{:instance-op :boolean-out :special-form}
              :see-also ['valid]}
     'when {:sigs [["boolean any-expression" "any"]]
@@ -933,58 +1098,66 @@
                  :j-sigs [["'whenValue' '(' symbol ')' any-expression" "any"]]
                  :tags #{:optional-op :optional-out :control-flow :special-form}
                  :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset."
-                 :examples [{:str "(when-value x (+ x 2))"
-                             :str-j "whenValue(x) {x + 2}"}]
+                 :examples [{:workspace-f (make-workspace-fn (workspace :my
+                                                                        {:my/Spec []
+                                                                         :my/Result []}
+                                                                        (spec :Result :concrete
+                                                                              (variables [:x "Integer" :optional])
+                                                                              (refinements
+                                                                               [:r :from :my/Spec$v1 [:halite "placeholder"]]))
+                                                                        (spec :Spec :concrete
+                                                                              (variables [:x "Integer" :optional]))))
+                             :instance {:$type :my/Spec$v1, :x 1}
+                             :expr-str "(when-value x (+ x 2))"
+                             :expr-str-j "whenValue(x) {x + 2}"
+                             :doc "In the context of an instance with an optional field, x, when the field is set to the value of '1'."
+                             :result :auto}
+                            {:workspace-f (make-workspace-fn (workspace :my
+                                                                        {:my/Spec []
+                                                                         :my/Result []}
+                                                                        (spec :Result :concrete
+                                                                              (variables [:x "Integer" :optional])
+                                                                              (refinements
+                                                                               [:r :from :my/Spec$v1 [:halite "placeholder"]]))
+                                                                        (spec :Spec :concrete
+                                                                              (variables [:x "Integer" :optional]))))
+                             :instance {:$type :my/Spec$v1}
+                             :expr-str "(when-value x (+ x 2))"
+                             :expr-str-j "whenValue(x) {x + 2}"
+                             :doc "In the context of an instance with an optional field, x, when the field is unset."
+                             :result :auto}]
                  :see-also ['if-value 'when 'when-value-let]}
     'when-value-let {:sigs [["'[' symbol any:binding']' any-expression" "any"]]
                      :j-sigs [["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]]
                      :tags #{:optional-op :optional-out :control-flow :special-form}
                      :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'"
-                     :examples [{:workspace-f (fn [expr-str] (update-in (workspace :my
-                                                                                   {:my/Spec []
-                                                                                    :my/Result []}
-                                                                                   (spec :Spec :concrete
-                                                                                         (variables [:y "Integer" :optional]))
-                                                                                   (spec :Result :concrete
-                                                                                         (variables [:x "Integer" :optional])
-                                                                                         (refinements
-                                                                                          [:r :from :my/Spec$v1 [:halite "placeholder"]])))
-                                                                        [:specs
-                                                                         1
-                                                                         :jibe.data.model/spec-refinements
-                                                                         0
-                                                                         :jibe.data.model/refinement-e]
-                                                                        (fn [_] (expression/parse :halite
-                                                                                                  (string/replace
-                                                                                                   "{:$type :my/Result$v1, :x <expr>}"
-                                                                                                   "<expr>"
-                                                                                                   expr-str)))))
+                     :examples [{:workspace-f (make-workspace-fn (workspace :my
+                                                                            {:my/Spec []
+                                                                             :my/Result []}
+                                                                            (spec :Result :concrete
+                                                                                  (variables [:x "Integer" :optional])
+                                                                                  (refinements
+                                                                                   [:r :from :my/Spec$v1 [:halite "placeholder"]]))
+                                                                            (spec :Spec :concrete
+                                                                                  (variables [:y "Integer" :optional]))))
                                  :instance {:$type :my/Spec$v1, :y 1}
                                  :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
                                  :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
-                                 :result :auto}
-                                {:workspace-f (fn [expr-str] (update-in (workspace :my
-                                                                                   {:my/Spec []
-                                                                                    :my/Result []}
-                                                                                   (spec :Spec :concrete
-                                                                                         (variables [:y "Integer" :optional]))
-                                                                                   (spec :Result :concrete
-                                                                                         (variables [:x "Integer" :optional])
-                                                                                         (refinements
-                                                                                          [:r :from :my/Spec$v1 [:halite "placeholder"]])))
-                                                                        [:specs
-                                                                         1
-                                                                         :jibe.data.model/spec-refinements
-                                                                         0
-                                                                         :jibe.data.model/refinement-e]
-                                                                        (fn [_] (expression/parse :halite
-                                                                                                  (string/replace
-                                                                                                   "{:$type :my/Result$v1, :x <expr>}"
-                                                                                                   "<expr>"
-                                                                                                   expr-str)))))
+                                 :result :auto
+                                 :doc "In the context of an instance with an optional field, y, when the field is set to the value of '1'."}
+                                {:workspace-f (make-workspace-fn (workspace :my
+                                                                            {:my/Spec []
+                                                                             :my/Result []}
+                                                                            (spec :Result :concrete
+                                                                                  (variables [:x "Integer" :optional])
+                                                                                  (refinements
+                                                                                   [:r :from :my/Spec$v1 [:halite "placeholder"]]))
+                                                                            (spec :Spec :concrete
+                                                                                  (variables [:y "Integer" :optional]))))
                                  :instance {:$type :my/Spec$v1}
                                  :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
                                  :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
+                                 :doc "In the context of an instance with an optional field, y, when the field is unset."
                                  :result :auto}]
                      :see-also ['if-value-let 'when 'when-value]}}))
 
