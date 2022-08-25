@@ -107,7 +107,7 @@
                                (map #(list 'get %1 var-kw) arg-ids))))
                  (mk-junct logical-op))))))))
 
-(s/defn ^:private lower-instance-comparisons :- SpecCtx
+(s/defn lower-instance-comparisons :- SpecCtx
   [sctx :- SpecCtx]
   (rewrite-sctx sctx lower-instance-comparison-expr))
 
@@ -122,7 +122,7 @@
         (let [[_if pred-id then-id else-id] subform]
           (list 'if pred-id (list 'get then-id var-kw) (list 'get else-id var-kw)))))))
 
-(s/defn ^:private push-gets-into-ifs :- SpecCtx
+(s/defn push-gets-into-ifs :- SpecCtx
   [sctx :- SpecCtx]
   (rewrite-sctx sctx push-gets-into-ifs-expr))
 
@@ -276,7 +276,7 @@
     (let [[_valid? expr-id] form]
       (validity-guard sctx ctx expr-id))))
 
-(s/defn ^:private lower-valid? :- SpecCtx
+(s/defn lower-valid? :- SpecCtx
   [sctx :- SpecCtx]
   (halite-rewriting/rewrite-in-dependency-order*
    {:rule-name "lower-valid?"
@@ -303,7 +303,7 @@
                        (list 'let bindings refine-expr)))
                    expr-id)))))
 
-(s/defn ^:private lower-refine-to :- SpecCtx
+(s/defn lower-refine-to :- SpecCtx
   [sctx :- SpecCtx]
   (let [g (loom.graph/digraph (update-vals sctx (comp keys :refines-to)))]
     (halite-rewriting/rewrite-sctx* {:rule-name "lower-refine-to"
@@ -342,7 +342,7 @@
                result))
            spec-info))]))
 
-(s/defn ^:private lower-refinement-constraints :- SpecCtx
+(s/defn lower-refinement-constraints :- SpecCtx
   [sctx :- SpecCtx]
   (->> sctx
        (map (partial lower-refinement-constraints-in-spec sctx))
@@ -362,6 +362,10 @@
         (make-do
          (->> args (remove no-value-literal?) (map (comp (partial nth arg-ids) first)))
          (every? #(= :Unset (second (second %))) args))))))
+
+(s/defn lower-no-value-comparisons :- SpecCtx
+  [sctx :- SpecCtx]
+  (rewrite-sctx sctx lower-no-value-comparison-expr))
 
 (s/defn ^:private lower-when-expr
   [{{:keys [dgraph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
@@ -431,7 +435,7 @@
                                    (= op 'not=)
                                    (not= op 'not=)))))))))))
 
-(s/defn ^:private lower-maybe-comparisons :- SpecCtx
+(s/defn lower-maybe-comparisons :- SpecCtx
   [sctx :- SpecCtx]
   (rewrite-sctx sctx lower-maybe-comparison-expr))
 
@@ -449,7 +453,7 @@
                 (apply list op (assoc (vec arg-ids) i then-id))
                 (apply list op (assoc (vec arg-ids) i else-id))))))))
 
-(s/defn ^:private push-comparisons-into-maybe-ifs :- SpecCtx
+(s/defn push-comparisons-into-maybe-ifs :- SpecCtx
   [sctx :- SpecCtx]
   (rewrite-sctx sctx push-comparison-into-maybe-if-in-expr))
 
@@ -504,7 +508,7 @@
        (lower-refine-to)
        (lower-refinement-constraints)
        (lower-valid?)
-       (->>rewrite-sctx lower-when-expr)
+       (lower-when)
        (fixpoint
         #(-> %
              (rewrite-sctx bubble-up-do-expr)
@@ -537,8 +541,7 @@
         {:rule-name "eliminate-runtime-constraint-violations"
          :rewrite-fn eliminate-runtime-constraint-violations-in-expr
          :nodes :constraints}
-        deps-via-instance-literal)
-       (simplify)))
+        deps-via-instance-literal)))
 
 (s/defn ^:private cancel-get-of-instance-literal-expr
   [{{:keys [dgraph]} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]

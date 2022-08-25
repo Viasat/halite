@@ -9,7 +9,8 @@
             [jibe.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
-            [jibe.halite.transpile.simplify :refer [simplify]]
+            [jibe.halite.transpile.simplify :refer [simplify simplify-redundant-value! simplify-statically-known-value?]]
+            [jibe.halite.transpile.rewriting :as rewriting]
             [schema.core :as s]
             [viasat.choco-clj-opt :as choco-clj]))
 
@@ -357,6 +358,16 @@
    Opts
    {:default-int-bounds [-1000 1000]}))
 
+(defn- drop-constraints-except-for-Bounds
+  [sctx]
+  (reduce
+   (fn [sctx [spec-id spec-info]]
+     (assoc sctx spec-id
+            (cond-> spec-info
+              (not= :$propagate/Bounds spec-id) (assoc :constraints []))))
+   {}
+   sctx))
+
 (s/defn propagate :- SpecBound
   ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- SpecBound]
    (propagate senv default-options initial-bound))
@@ -369,17 +380,25 @@
        (-> senv
            (ssa/build-spec-ctx (:$type initial-bound))
            (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound))
-           (lowering/eliminate-runtime-constraint-violations)
+           (lowering/lower-refine-to)
+           (lowering/lower-refinement-constraints)
            (lowering/lower-when)
+           (lowering/eliminate-runtime-constraint-violations)
+           (lowering/lower-valid?)
+           (drop-constraints-except-for-Bounds)
            (lowering/eliminate-error-forms)
-           (lowering/eliminate-dos)
-           (lowering/lower)
-           (lowering/eliminate-dos)
-           ;; TODO: Figure out why these have to be done together to get the tests to pass...
            (->> (fixpoint #(-> %
+                               lowering/eliminate-dos
+                               (rewriting/rewrite-sctx simplify-redundant-value!)
+                               (rewriting/rewrite-sctx simplify-statically-known-value?)
                                lowering/cancel-get-of-instance-literal
+                               lowering/lower-instance-comparisons
                                lowering/push-if-value-into-if
-                               simplify)))
+                               lowering/lower-no-value-comparisons
+                               lowering/lower-maybe-comparisons
+                               lowering/push-gets-into-ifs
+                               lowering/push-comparisons-into-maybe-ifs)))
+           simplify
            :$propagate/Bounds
            (ssa/spec-from-ssa)
            (->> (to-choco-spec senv))

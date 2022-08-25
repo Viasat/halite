@@ -107,12 +107,12 @@
   (when (and (seq? form) (= '$value? (first form)) (= :Unset (deref-form dgraph (second form))))
     false))
 
-(s/defn ^:private simplify-statically-known-value?
+(s/defn simplify-statically-known-value?
   [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$value? (first form)) (not (halite-types/maybe-type? (second (ssa/deref-id dgraph (second form))))))
     true))
 
-(s/defn ^:private simplify-redundant-value!
+(s/defn simplify-redundant-value!
   [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$value! (first form)))
     (let [[_ inner-htype] (ssa/deref-id dgraph (second form))]
