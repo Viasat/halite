@@ -329,13 +329,22 @@ true
 false
 ```
 
-</td><td colspan="1">
+</td></tr><tr><td colspan="4">
 
 ```java
-
+({$type: my/Spec$v1, x: 1, y: -1} == {$type: my/Spec$v1, x: 1, y: 0})
 
 ### result ###
+false
+```
 
+</td></tr><tr><td colspan="4">
+
+```java
+({$type: my/Spec$v1, x: 1, y: 0} == {$type: my/Spec$v1, x: 1, y: 0})
+
+### result ###
+true
 ```
 
 </td></tr></table>
@@ -1067,13 +1076,13 @@ The $type value of an instance is not considered a field that can be extracted w
 30
 ```
 
-</td><td colspan="1">
+</td><td colspan="2">
 
 ```java
-:auto
+{$type: my/Spec$v1, x: -3, y: 2}.x
 
 ### result ###
-
+-3
 ```
 
 </td></tr></table>
@@ -1101,22 +1110,22 @@ Syntactic sugar for performing the equivalent of a chained series of 'get' opera
 30
 ```
 
-</td><td colspan="1">
+</td></tr><tr><td colspan="4">
 
 ```java
-:auto
+{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: 20, b: 10}, y: 2}.x.a
 
 ### result ###
-
+20
 ```
 
-</td><td colspan="1">
+</td></tr><tr><td colspan="5">
 
 ```java
-:auto
+{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: [20, 30, 40], b: 10}, y: 2}.x.a[1]
 
 ### result ###
-
+30
 ```
 
 </td></tr></table>
@@ -1179,13 +1188,22 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value.
 
-<table><tr><td colspan="1">
+<table><tr><td colspan="3">
 
 ```java
-:auto
+(ifValueLet ( x = (when((2 > 1)) {19}) ) {(x + 1)} else {0})
 
 ### result ###
-:auto
+20
+```
+
+</td></tr><tr><td colspan="3">
+
+```java
+(ifValueLet ( x = (when((1 > 2)) {19}) ) {(x + 1)} else {0})
+
+### result ###
+0
 ```
 
 </td></tr></table>
@@ -1475,6 +1493,15 @@ false
 
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{4}])
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="4">
+
+```java
+({$type: my/Spec$v1, x: 1, y: -1} != {$type: my/Spec$v1, x: 1, y: 0})
 
 ### result ###
 true

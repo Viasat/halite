@@ -330,10 +330,19 @@ false
 </td></tr><tr><td colspan="4">
 
 ```clojure
-(= {:$type :text/Spec$v1 :x 1 :y -1} {:$type :text/Spec$v1 :x 1 :y 0})
+(= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})
 
 ;-- result --;
+false
+```
 
+</td></tr><tr><td colspan="4">
+
+```clojure
+(= {:$type :my/Spec$v1 :x 1 :y 0} {:$type :my/Spec$v1 :x 1 :y 0})
+
+;-- result --;
+true
 ```
 
 </td></tr></table>
@@ -1071,7 +1080,7 @@ The $type value of an instance is not considered a field that can be extracted w
 (get {:$type :my/Spec$v1, :x -3, :y 2} :x)
 
 ;-- result --;
-
+-3
 ```
 
 </td></tr></table>
@@ -1102,19 +1111,19 @@ Syntactic sugar for performing the equivalent of a chained series of 'get' opera
 </td></tr><tr><td colspan="5">
 
 ```clojure
-(get {:$type :my/Spec$v1, :x {:$type :other/Spec$v1, :a 20, :b 10}, :y 2} [:x :a])
+(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a 20, :b 10}, :y 2} [:x :a])
 
 ;-- result --;
-
+20
 ```
 
 </td></tr><tr><td colspan="5">
 
 ```clojure
-(get {:$type :my/Spec$v1, :x {:$type :other/Spec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])
+(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])
 
 ;-- result --;
-
+30
 ```
 
 </td></tr></table>
@@ -1177,13 +1186,22 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value.
 
-<table><tr><td colspan="4">
+<table><tr><td colspan="3">
 
 ```clojure
-(if-value-let (value {:$type :my/Spec$v1, :n -3, :p 2}) "good" "bad")
+(if-value-let [x (when (> 2 1) 19)] (inc x) 0)
 
 ;-- result --;
-:auto
+20
+```
+
+</td></tr><tr><td colspan="3">
+
+```clojure
+(if-value-let [x (when (> 1 2) 19)] (inc x) 0)
+
+;-- result --;
+0
 ```
 
 </td></tr></table>
@@ -1479,7 +1497,16 @@ true
 </td></tr><tr><td colspan="4">
 
 ```clojure
-(not= {:$type :text/Spec$v1 :x 1 :y -1} {:$type :text/Spec$v1 :x 1 :y 0})
+(not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})
+
+;-- result --;
+true
+```
+
+</td><td colspan="1">
+
+```clojure
+
 
 ;-- result --;
 

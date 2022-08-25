@@ -7,6 +7,7 @@
             [jibe.halite-guide :as halite-guide]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.logic.expression :as expression]
+            [jibe.logic.jadeite :as jadeite]
             [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]])
   (:import [jibe.halite_guide HCInfo]
            [net.nextencia.rrdiagram.grammar.model GrammarToRRDiagram BNFToGrammar]
@@ -142,7 +143,9 @@
                                                                                      :x))]
                                                                 {:h-result (.-h-result i)
                                                                  :j-result (.-j-result i)
-                                                                 :j-expr (.-j-expr i)})
+                                                                 :j-expr (jadeite/to-jadeite (edn/read-string
+                                                                                              {:readers {'d fixed-decimal/fixed-decimal-reader}}
+                                                                                              expr-str))})
                                                               (let [i (halite-guide/h*
                                                                        (edn/read-string
                                                                         {:readers {'d fixed-decimal/fixed-decimal-reader}}
@@ -322,7 +325,36 @@
                    {:expr-str "(= [#{1 2} #{3}] [#{1 2} #{4}])"
                     :expr-str-j :auto
                     :result :auto}
-                   {:str "(= {:$type :text/Spec$v1 :x 1 :y -1} {:$type :text/Spec$v1 :x 1 :y 0})"}]}
+                   {:workspace-f (make-workspace-fn (workspace :my
+                                                               {:my/Spec []
+                                                                :my/Result []}
+                                                               (spec :Result :concrete
+                                                                     (variables [:x "Boolean"])
+                                                                     (refinements
+                                                                      [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                               (spec :Other :concrete)
+                                                               (spec :Spec :concrete
+                                                                     (variables [:x "Integer"]
+                                                                                [:y "Integer"]))))
+                    :instance {:$type :my/Other$v1}
+                    :expr-str "(= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:workspace-f (make-workspace-fn (workspace :my
+                                                               {:my/Spec []
+                                                                :my/Result []}
+                                                               (spec :Result :concrete
+                                                                     (variables [:x "Boolean"])
+                                                                     (refinements
+                                                                      [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                               (spec :Other :concrete)
+                                                               (spec :Spec :concrete
+                                                                     (variables [:x "Integer"]
+                                                                                [:y "Integer"]))))
+                    :instance {:$type :my/Other$v1}
+                    :expr-str "(= {:$type :my/Spec$v1 :x 1 :y 0} {:$type :my/Spec$v1 :x 1 :y 0})"
+                    :expr-str-j :auto
+                    :result :auto}]}
     '=> {:sigs [["boolean boolean" "boolean"]]
          :j-sigs [["boolean '=>' boolean" "boolean"]]
          :tags #{:boolean-op :boolean-out}
@@ -599,8 +631,22 @@
           :examples [{:expr-str "(get [10 20 30 40] 2)"
                       :expr-str-j :auto
                       :result :auto}
-                     {:str "(get {:$type :my/Spec$v1, :x -3, :y 2} :x)"
-                      :str-j :auto}]
+                     {:workspace-f (make-workspace-fn (workspace :my
+                                                                 {:my/Spec []
+                                                                  :my/SubSpec []
+                                                                  :my/Result []}
+                                                                 (spec :Result :concrete
+                                                                       (variables [:x "Integer"])
+                                                                       (refinements
+                                                                        [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                 (spec :Other :concrete)
+                                                                 (spec :Spec :concrete
+                                                                       (variables [:x "Integer"]
+                                                                                  [:y "Integer"]))))
+                      :instance {:$type :my/Other$v1}
+                      :expr-str "(get {:$type :my/Spec$v1, :x -3, :y 2} :x)"
+                      :expr-str-j :auto
+                      :result :auto}]
           :see-also ['get-in]}
     'get-in {:sigs [["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]]
              :notes ["if the last element of the lookup path is an integer, then the result is a value"
@@ -619,10 +665,44 @@
              :examples [{:expr-str "(get-in [[10 20] [30 40]] [1 0])"
                          :expr-str-j :auto
                          :result :auto}
-                        {:str "(get {:$type :my/Spec$v1, :x {:$type :other/Spec$v1, :a 20, :b 10}, :y 2} [:x :a])"
-                         :str-j :auto}
-                        {:str "(get {:$type :my/Spec$v1, :x {:$type :other/Spec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])"
-                         :str-j :auto}]
+                        {:workspace-f (make-workspace-fn (workspace :my
+                                                                    {:my/Spec []
+                                                                     :my/SubSpec []
+                                                                     :my/Result []}
+                                                                    (spec :Result :concrete
+                                                                          (variables [:x "Integer"])
+                                                                          (refinements
+                                                                           [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                    (spec :Other :concrete)
+                                                                    (spec :Spec :concrete
+                                                                          (variables [:x :my/SubSpec$v1]
+                                                                                     [:y "Integer"]))
+                                                                    (spec :SubSpec :concrete
+                                                                          (variables [:a "Integer"]
+                                                                                     [:b "Integer"]))))
+                         :instance {:$type :my/Other$v1}
+                         :expr-str "(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a 20, :b 10}, :y 2} [:x :a])"
+                         :expr-str-j :auto
+                         :result :auto}
+                        {:workspace-f (make-workspace-fn (workspace :my
+                                                                    {:my/Spec []
+                                                                     :my/SubSpec []
+                                                                     :my/Result []}
+                                                                    (spec :Result :concrete
+                                                                          (variables [:x "Integer"])
+                                                                          (refinements
+                                                                           [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                    (spec :Other :concrete)
+                                                                    (spec :Spec :concrete
+                                                                          (variables [:x :my/SubSpec$v1]
+                                                                                     [:y "Integer"]))
+                                                                    (spec :SubSpec :concrete
+                                                                          (variables [:a ["Integer"]]
+                                                                                     [:b "Integer"]))))
+                         :instance {:$type :my/Other$v1}
+                         :expr-str "(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])"
+                         :expr-str-j :auto
+                         :result :auto}]
              :see-also ['get]}
     'if {:sigs [["boolean any-expression any-expression" "any"]]
          :j-sigs [["'if' '(' boolean ')' any-expression 'else' any-expression" "any"]]
@@ -646,8 +726,41 @@
                    :tags #{:optional-op :control-flow :special-form}
                    :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol."
                    :comment "This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value."
-                   :examples [{:str "(if-value-let (value {:$type :my/Spec$v1, :n -3, :p 2}) \"good\" \"bad\")"
-                               :str-j :auto
+                   :examples [{:workspace-f (make-workspace-fn (workspace :my
+                                                                          {:my/Spec []
+                                                                           :my/Result []}
+                                                                          (spec :Result :concrete
+                                                                                (variables [:x "Integer"])
+                                                                                (refinements
+                                                                                 [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                          (spec :Other :concrete)
+                                                                          (spec :Spec :concrete
+                                                                                (variables [:p "Integer"]
+                                                                                           [:n "Integer"]
+                                                                                           [:o "Integer" :optional])
+                                                                                (constraints [:pc [:halite "(> p 0)"]]
+                                                                                             [:pn [:halite "(< n 0)"]]))))
+                               :instance {:$type :my/Other$v1}
+                               :expr-str "(if-value-let [x (when (> 2 1) 19)] (inc x) 0)"
+                               :expr-str-j :auto
+                               :result :auto}
+                              {:workspace-f (make-workspace-fn (workspace :my
+                                                                          {:my/Spec []
+                                                                           :my/Result []}
+                                                                          (spec :Result :concrete
+                                                                                (variables [:x "Integer"])
+                                                                                (refinements
+                                                                                 [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                          (spec :Other :concrete)
+                                                                          (spec :Spec :concrete
+                                                                                (variables [:p "Integer"]
+                                                                                           [:n "Integer"]
+                                                                                           [:o "Integer" :optional])
+                                                                                (constraints [:pc [:halite "(> p 0)"]]
+                                                                                             [:pn [:halite "(< n 0)"]]))))
+                               :instance {:$type :my/Other$v1}
+                               :expr-str "(if-value-let [x (when (> 1 2) 19)] (inc x) 0)"
+                               :expr-str-j :auto
                                :result :auto}]
                    :see-also ['if-value 'when-value-let]}
     'inc {:sigs [["integer" "integer"]]
@@ -758,7 +871,22 @@
                       {:expr-str "(not= [#{1 2} #{3}] [#{1 2} #{4}])"
                        :expr-str-j :auto
                        :result :auto}
-                      {:str "(not= {:$type :text/Spec$v1 :x 1 :y -1} {:$type :text/Spec$v1 :x 1 :y 0})"}]
+                      {:workspace-f (make-workspace-fn (workspace :my
+                                                                  {:my/Spec []
+                                                                   :my/Result []}
+                                                                  (spec :Result :concrete
+                                                                        (variables [:x "Boolean"])
+                                                                        (refinements
+                                                                         [:r :from :my/Other$v1 [:halite "placeholder"]]))
+                                                                  (spec :Other :concrete)
+                                                                  (spec :Spec :concrete
+                                                                        (variables [:x "Integer"]
+                                                                                   [:y "Integer"]))))
+                       :instance {:$type :my/Other$v1}
+                       :expr-str "(not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {}]
            :see-also ['=]}
     'or {:sigs [["boolean boolean {boolean}" "boolean"]]
          :j-sigs [["boolean '||' boolean" "boolean"]]
