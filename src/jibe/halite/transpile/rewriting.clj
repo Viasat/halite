@@ -34,11 +34,13 @@
            (throw (ex-info (format "BUG! Cycle detected after %s %s" (:op item#) (:rule item#))
                            {:item item#})))))))
 
-(defn print-trace-item [{:keys [rule op pruned-ids form form']}]
-  (if rule
-    (println (format "%s:  %s\n |->%s%s"
-                     rule form (apply str (repeat (dec (count rule)) \space)) form'))
-    (println "<<prune" (count pruned-ids) ">>")))
+(defn print-trace-item [{:keys [rule op pruned-ids id id' spec-info spec-info' total-ms]}]
+  (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* false, ssa/*elide-top-level-bindings* true]
+    (let [form (ssa/form-from-ssa spec-info id)
+          form' (ssa/form-from-ssa spec-info' id')
+          time-str (str total-ms "ms")]
+      (println (format "%s:  %s\n %s|->%s%s"
+                       rule form time-str (apply str (repeat (dec (- (count rule) (count time-str))) \space)) form')))))
 
 (defn print-trace-summary [trace]
   (doseq [item trace]
@@ -89,6 +91,7 @@
   (let [{:keys [rule-name rewrite-fn nodes]} rule
         dgraph (:derivations spec-info)
         deriv (dgraph id)
+        start-nanos (System/nanoTime)
         form (rewrite-fn {:sctx sctx :ctx (assoc ctx :dgraph dgraph) :guard #{}} id deriv)]
     (when (and (= :all nodes) (->> form (tree-seq coll? seq) (some #(= % id))))
       (throw (ex-info (format  "BUG! Rewrite rule %s used rewritten node id in replacement form!"
@@ -97,24 +100,27 @@
     (if (some? form)
       (let [dgraph' (or (:dgraph (meta form)) dgraph)
             ctx (assoc ctx :dgraph dgraph')
+            rule-nanos (System/nanoTime)
             [dgraph' id'] (ssa/form-to-ssa ctx form)
             spec-info' (cond-> (assoc spec-info :derivations dgraph')
                          (= :all nodes) (ssa/replace-node id id')
-                         (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))]
+                         (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))
+            end-nanos (System/nanoTime)
+            rule-ms (/ (- rule-nanos start-nanos) 1000000.0)
+            graph-ms (/ (- end-nanos rule-nanos) 1000000.0)
+            total-ms (/ (- end-nanos start-nanos) 1000000.0)]
         (trace!
-         (binding [ssa/*elide-top-level-bindings* true]
-           {:op :rewrite
-            :rule rule-name
-            :dgraph dgraph
-            :dgraph' dgraph'
-            :id id
-            :form (ssa/form-from-ssa scope dgraph id)
-            :id' id'
-            :result form
-            :form' (ssa/form-from-ssa scope dgraph' id')
-            :spec-id spec-id
-            :spec-info spec-info
-            :spec-info' spec-info'}))
+         {:op :rewrite
+          :rule rule-name
+          :id id
+          :id' id'
+          :result form
+          :spec-id spec-id
+          :spec-info spec-info
+          :spec-info' spec-info'
+          :total-ms total-ms
+          :rule-ms rule-ms
+          :graph-ms graph-ms})
         spec-info')
       spec-info)))
 
