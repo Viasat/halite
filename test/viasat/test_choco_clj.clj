@@ -197,6 +197,13 @@
         (is (= (+ a b) (get (choco-clj/propagate spec {'a a, 'b b}) 'c))
             (format "expected (= (+ %d %d) %d)" a b (+ a b)))))))
 
+(deftest test-pow-workaround
+  (binding [choco-clj/*default-int-bounds* [-10 10]]
+    (let [spec '{:vars {x :Int, p :Bool}
+                 :constraints #{(if p (< 0 (- (expt 2 x) (expt x 2))) true)}}]
+      (are [in out]
+           (= out (choco-clj/propagate spec in))
 
-
-
+        '{}        '{x [-10 10], p #{true false}}
+        '{p true}  '{x [0 10] p true}
+        '{x -3}    '{x -3, p false}))))

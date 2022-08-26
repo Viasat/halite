@@ -7,6 +7,7 @@
   (:import [org.chocosolver.solver Model Solver]
            [org.chocosolver.solver.variables Variable BoolVar IntVar]
            [org.chocosolver.solver.constraints Constraint]
+           [org.chocosolver.solver.constraints.extension Tuples]
            [org.chocosolver.solver.expression.discrete.arithmetic ArExpression ArExpression$IntPrimitive]
            [org.chocosolver.solver.expression.discrete.relational ReExpression]
            [org.chocosolver.solver.propagation PropagationEngine]
@@ -89,6 +90,10 @@
   [args]
   (into-array ReExpression args))
 
+(defn- int-vars ^"[Lorg.chocosolver.solver.variables.IntVar;"
+  [& ivars]
+  (into-array IntVar ivars))
+
 (defn- mod-workaround
   "We've got problems with the mod operator.
 
@@ -111,6 +116,44 @@
                   (relational [(.ge n (.intVar m (int 0)))]))
             (.reify c)))
     r))
+
+(defn- bounds-for-pow
+  "Ported from org.chocosolver.util.tools.VariableUtils/boundsForPow, but using
+  Math.pow to avoid its bug regarding negative exponents."
+  [^IntVar x, ^IntVar y]
+  (let [min-x (.getLB x), max-x (.getUB x)
+        min-y (.getLB y), max-y (.getUB y)
+        nums (map int [0 1
+                       (Math/pow min-x max-y)
+                       (Math/pow max-x max-y)
+                       (Math/pow (inc min-x) max-y)
+                       (Math/pow (dec max-x) max-y)
+                       (Math/pow min-x (max 0 (dec max-y)))
+                       (Math/pow max-x (max 0 (dec max-y)))
+                       (Math/pow (inc min-x) (max 0 (dec max-y)))
+                       (Math/pow (dec max-x) (max 0 (dec max-y)))])]
+    [(apply min nums) (apply max nums)]))
+
+(defn- pow-workaround
+  "The org.chocosolver.util.tools.VariableUtils/boundsForPow method, used by the expression building machinery
+  to compute initial bounds for the variable representing an exponentiation, is wrong in the case
+  where the base is in [1,3] and the exponent has a negative lower or upper bound.
+
+  The problem comes from org.chocosolver.util.tools.MathUtils.pow, which uses bitshifting
+  in the special case where the base is 2, even when the exponent is negative.
+
+  Ported from org.chocosolver.solver.expression.discrete.arithmetic.BiArExpression/intVar."
+  [^Model m ^ArExpression a ^ArExpression b]
+  (let [avar (.intVar a), bvar (.intVar b)
+        [lb ub] (bounds-for-pow avar bvar)
+        rvar (.intVar m (.generateName m "pow_exp_") (int lb) (int ub))
+        tuples (Tuples. true)]
+    (doseq [^int val1 avar, val2 bvar]
+      (let [r (int (Math/pow val1 val2))]
+        (when (.contains rvar r)
+          (.add tuples (int-array [val1 val2 r])))))
+    (.post (.table m (int-vars avar bvar rvar) tuples))
+    rvar))
 
 (defn- make-expr [^Model m vars form]
   (cond
@@ -155,7 +198,7 @@
                          ;; TODO: Implement our own mod propagators?
                          ;;'mod (.mod (.abs ^ArExpression arg1) ^ArExpression (first other-args))
                          'mod (mod-workaround m vars arg1 (first other-args))
-                         'expt (.pow ^ArExpression arg1 ^ArExpression (first other-args))
+                         'expt (pow-workaround m arg1 (first other-args))
                          'abs (.abs ^ArExpression arg1)
                          'if (let [[then else] other-args]
                                (if (instance? ReExpression then)
