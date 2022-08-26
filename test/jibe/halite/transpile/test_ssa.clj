@@ -421,15 +421,16 @@
   "To facilitate testing"
   [dgraph :- ssa/Derivations, bound :- #{s/Symbol}, guards]
   (binding [ssa/*hide-non-halite-ops* false]
-    (-> guards
-        (update-keys (partial form-from-ssa* dgraph {} bound #{}))
-        (update-vals
-         (fn [guards]
-           (if (seq guards)
-             (->> guards
-                  (map #(->> % (map (partial form-from-ssa* dgraph {} bound #{})) (mk-junct 'and)))
-                  (mk-junct 'or))
-             true))))))
+    (let [ordering (zipmap (ssa/topo-sort dgraph) (range))]
+      (-> guards
+          (update-keys (partial form-from-ssa* dgraph ordering {} bound #{}))
+          (update-vals
+           (fn [guards]
+             (if (seq guards)
+               (->> guards
+                    (map #(->> % (map (partial form-from-ssa* dgraph ordering {} bound #{})) (mk-junct 'and)))
+                    (mk-junct 'or))
+               true)))))))
 
 (deftest test-compute-guards
   (let [senv '{:ws/A

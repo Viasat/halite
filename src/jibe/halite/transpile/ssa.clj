@@ -670,7 +670,7 @@
         true
         (throw ex)))))
 
-(s/defn ^:private topo-sort :- [DerivationName]
+(s/defn topo-sort :- [DerivationName]
   [derivations :- Derivations]
   (dep/topo-sort (dgraph->dep-graph derivations)))
 
@@ -689,7 +689,7 @@
 (def ^:dynamic *hide-non-halite-ops* true)
 
 (s/defn ^:private form-from-ssa*
-  [dgraph :- Derivations, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
+  [dgraph :- Derivations, ordering :- {DerivationName s/Int}, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
   (if (bound? id)
     id
     (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
@@ -698,13 +698,13 @@
         (= :Unset form) '$no-value
         (symbol? form) (if (bound? form)
                          form
-                         (form-from-ssa* dgraph guards bound? curr-guard form))
+                         (form-from-ssa* dgraph ordering guards bound? curr-guard form))
         (seq? form) (cond
                       (= 'get (first form))
-                      (list 'get (form-from-ssa* dgraph guards bound? curr-guard (second form)) (last form))
+                      (list 'get (form-from-ssa* dgraph ordering guards bound? curr-guard (second form)) (last form))
 
                       (= 'refine-to (first form))
-                      (list 'refine-to (form-from-ssa* dgraph guards bound? curr-guard (second form)) (last form))
+                      (list 'refine-to (form-from-ssa* dgraph ordering guards bound? curr-guard (second form)) (last form))
 
                       (and (= '$do! (first form)) *hide-non-halite-ops*)
                       (let [unbound (remove bound? (take (- (count form) 2) (rest form)))
@@ -713,15 +713,15 @@
                                                  [(conj bound? id)
                                                   (conj bindings
                                                         id
-                                                        (form-from-ssa* dgraph guards bound? curr-guard id))])
+                                                        (form-from-ssa* dgraph ordering guards bound? curr-guard id))])
                                                [bound? []]
                                                unbound)]
-                        (-> (form-from-ssa* dgraph guards bound? curr-guard (last form))
+                        (-> (form-from-ssa* dgraph ordering guards bound? curr-guard (last form))
                             (cond->>
                              (seq unbound) (list 'let bindings))))
 
                       (and (= '$value! (first form)) *hide-non-halite-ops*)
-                      (form-from-ssa* dgraph guards bound? curr-guard (second form))
+                      (form-from-ssa* dgraph ordering guards bound? curr-guard (second form))
 
                       (= 'if (first form))
                       (let [[_if pred-id then-id else-id] form
@@ -731,27 +731,27 @@
                           (let [value-arg-id (second pred)
                                 [value-arg] (deref-id dgraph value-arg-id)]
                             (if (and (not (bound? value-arg-id)) (not (symbol? value-arg)))
-                              (list 'let [value-arg-id (form-from-ssa* dgraph guards bound? curr-guard value-arg-id)]
-                                    (form-from-ssa* dgraph guards (conj bound? (second pred)) curr-guard id))
+                              (list 'let [value-arg-id (form-from-ssa* dgraph ordering guards bound? curr-guard value-arg-id)]
+                                    (form-from-ssa* dgraph ordering guards (conj bound? (second pred)) curr-guard id))
                               (list 'if-value
-                                    (form-from-ssa* dgraph guards bound? curr-guard (second pred))
-                                    (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)
-                                    (let-bindable-exprs dgraph guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
+                                    (form-from-ssa* dgraph ordering guards bound? curr-guard (second pred))
+                                    (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard pred-id) then-id)
+                                    (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
                           (list 'if
-                                (form-from-ssa* dgraph guards bound? curr-guard pred-id)
-                                (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)
-                                (let-bindable-exprs dgraph guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
+                                (form-from-ssa* dgraph ordering guards bound? curr-guard pred-id)
+                                (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard pred-id) then-id)
+                                (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
 
                       (= 'when (first form))
                       (let [[_when pred-id then-id] form
                             [pred] (deref-id dgraph pred-id)]
                         (list 'when
-                              (form-from-ssa* dgraph guards bound? curr-guard pred-id)
-                              (let-bindable-exprs dgraph guards bound? (conj curr-guard pred-id) then-id)))
+                              (form-from-ssa* dgraph ordering guards bound? curr-guard pred-id)
+                              (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard pred-id) then-id)))
 
                       :else
-                      (apply list (first form) (map (partial form-from-ssa* dgraph guards bound? curr-guard) (rest form))))
-        (map? form) (-> form (dissoc :$type) (update-vals (partial form-from-ssa* dgraph guards bound? curr-guard)) (assoc :$type (:$type form)))
+                      (apply list (first form) (map #(form-from-ssa* dgraph ordering guards bound? curr-guard %) (rest form))))
+        (map? form) (-> form (dissoc :$type) (update-vals #(form-from-ssa* dgraph ordering guards bound? curr-guard %)) (assoc :$type (:$type form)))
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation"
                               {:id id :form form :dgraph dgraph :guards guards :bound? bound? :curr-guard curr-guard}))))))
 
@@ -768,7 +768,7 @@
   their branches depending on the value of the predicate.
   We need to ensure that our rewritten expressions never evaluate a form when the original
   expressions would not have evaluated it."
-  [dgraph :- Derivations, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
+  [dgraph :- Derivations, ordering :- {DerivationName s/Int}, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
   (let [subdgraph (select-keys dgraph (reachable-nodes dgraph id {:include-negations? true}))
         reachable-subdgraph (->> id
                                  (reachable-nodes subdgraph)
@@ -777,7 +777,6 @@
                           vals
                           (mapcat referenced-derivations)
                           frequencies)
-        ordering (zipmap (topo-sort subdgraph) (range))
         [bound? bindings] (->> subdgraph
                                (remove
                                 (fn [[id [form htype]]]
@@ -796,9 +795,9 @@
                                (reduce
                                 (fn [[bound-set bindings] id]
                                   [(conj bound-set id)
-                                   (conj bindings id (form-from-ssa* subdgraph guards bound-set curr-guard id))])
+                                   (conj bindings id (form-from-ssa* subdgraph ordering guards bound-set curr-guard id))])
                                 [bound? []]))]
-    (cond->> (form-from-ssa* subdgraph guards bound? curr-guard id)
+    (cond->> (form-from-ssa* subdgraph ordering guards bound? curr-guard id)
       (and (seq bindings) (not *elide-top-level-bindings*)) (list 'let bindings))))
 
 (defn- next-free-var [scope aliases]
@@ -848,9 +847,10 @@
   ([{:keys [spec-vars derivations] :as spec-info} :- SpecInfo, id :- DerivationName]
    (form-from-ssa (->> spec-vars keys (map symbol) set) derivations id))
   ([scope :- #{s/Symbol}, dgraph :- Derivations, id :- DerivationName]
-   (->> id
-        (let-bindable-exprs dgraph (compute-guards dgraph #{id}) scope #{})
-        (normalize-vars scope))))
+   (let [ordering (zipmap (topo-sort dgraph) (range))]
+     (->> id
+          (let-bindable-exprs dgraph ordering (compute-guards dgraph #{id}) scope #{})
+          (normalize-vars scope)))))
 
 (s/defn spec-from-ssa :- halite-envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
