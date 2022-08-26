@@ -96,7 +96,7 @@
   (let [declared-type (halite-types/no-maybe declared-type)]
     (cond
       (halite-types/spec-id declared-type) (when-not (refines-to? v declared-type)
-                                             (throw-err (h-err/no-active-refinement-path
+                                             (throw-err (h-err/no-refinement-path
                                                          {:type (symbol (:$type v))
                                                           :value v
                                                           :target-type (symbol (halite-types/spec-id declared-type))})))
@@ -178,9 +178,9 @@
     (when (seq missing-vars)
       (throw-err (h-err/missing-required-vars {:missing-vars (mapv symbol missing-vars) :form inst})))
     (when (seq invalid-vars)
-      (throw-err (h-err/variables-not-in-spec {:invalid-vars (mapv symbol invalid-vars)
-                                               :instance inst
-                                               :form (get inst (first invalid-vars))})))
+      (throw-err (h-err/field-name-not-in-spec {:invalid-vars (mapv symbol invalid-vars)
+                                                :instance inst
+                                                :form (get inst (first invalid-vars))})))
 
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
@@ -583,7 +583,7 @@
       (when-not (and (keyword? index) (halite-types/bare? index))
         (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
-        (throw-err (h-err/variables-not-in-spec {:form form, :invalid-vars [(symbol index)]})))
+        (throw-err (h-err/field-name-not-in-spec {:form form, :invalid-vars [(symbol index)]})))
       (get field-types index))
 
     :else (throw-err (h-err/invalid-lookup-target {:form form, :actual-type subexpr-type}))))
@@ -1046,7 +1046,7 @@
                                                                        :instance inst
                                                                        :underlying-error-message (.getMessage ^Exception result)
                                                                        :form expr}))
-      (nil? result) (throw-err (h-err/no-active-refinement-path {:type (symbol (:$type inst)), :value inst, :target-type (symbol t), :form expr}))
+      (nil? result) (throw-err (h-err/no-refinement-path {:type (symbol (:$type inst)), :value inst, :target-type (symbol t), :form expr}))
       :else result)))
 
 (defn ^:private check-collection-runtime-count [x]

@@ -63,34 +63,35 @@
                            'h-err/invalid-vector-index {:doc "An index was supplied to lookup a value in a vector, but the index was not an integer."}
                            'h-err/let-bindings-odd-count {:doc "A 'let' expression included an odd number of elements in the binding vector. This is invalid as the bindings are to be a sequence of pairs."}
                            'h-err/let-symbols-required {:doc "In a 'let' expression, the first item in each pair of items must be a symbol."}
-                           'h-err/limit-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. on the lengthso of vectors, etc. One of these limits was violated. See the exception data for more details."}
+                           'h-err/limit-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. limits on how deeply expressions may be nested. One of these limits was violated. See the exception data for more details."}
                            'h-err/literal-must-evaluate-to-value {:doc "All of the expressions that appear as elements in a collection literal, must be guaranteed to evaluate to values, i.e. they must never evaluate to 'unset'."}
                            'h-err/missing-required-vars {:doc "An attempt was made to construct an instance of a spec, without all of its mandatory fields being assigned values."}
                            'h-err/missing-type-field {:doc "An attempt was made to construct an instance without providing a value for the :$type field."
                                                       :doc-j "An atftempt was made to construct an instance without providing a value for the $type field."}
-                           'h-err/must-produce-value {:doc ""}
-                           'h-err/no-abstract {:doc ""}
-                           'h-err/no-active-refinement-path {:doc ""}
-                           'h-err/no-matching-signature {:doc ""}
-                           'h-err/not-boolean-body {:doc ""}
-                           'h-err/not-boolean-constraint {:doc ""}
-                           'h-err/not-sortable-body {:doc ""}
-                           'h-err/overflow {:doc ""}
-                           'h-err/reduce-not-vector {:doc ""}
-                           'h-err/refinement-error {:doc ""}
-                           'h-err/resource-spec-not-found {:doc ""}
-                           'h-err/size-exceeded {:doc ""}
-                           'h-err/sort-value-collision {:doc ""}
-                           'h-err/spec-threw {:doc ""}
-                           'h-err/symbol-undefined {:doc ""}
-                           'h-err/symbols-not-bound {:doc ""}
-                           'h-err/syntax-error {:doc ""}
-                           'h-err/undefined-symbol {:doc ""}
-                           'h-err/unknown-function-or-operator {:doc ""}
-                           'h-err/variables-not-in-spec {:doc ""}
-                           'h-err/wrong-arg-count {:doc ""}
-                           'h-err/wrong-arg-count-min {:doc ""}
-                           'l-err/argument-empty {:doc ""}
+                           'h-err/must-produce-value {:doc "When using 'map', the expression being evaluated on each element, must produce an actual value, i.e. it must be never produce 'unset'."}
+                           'h-err/no-abstract {:doc "An attempt was made to construct a concrete instance with a field whose value is an instance of an abstract spec. Any instances used to compose a concrete instance, must themselves be concrete."}
+                           'h-err/no-refinement-path {:doc "There was no refinement path found to convert a specific instance to a target spec type. There may have been a conditional refinement that did not match the instance, or perhaps there is no refinement path at all."}
+                           'h-err/no-matching-signature {:doc "An attempt was made to invoke an operation, but either the number of arguments or the types of the arguments was not valid."}
+                           'h-err/not-boolean-body {:doc "Either an 'any?', 'every?', or 'filter' call was attempted but the expression to evaluate for each element in the collection did not produce a boolean value."}
+                           'h-err/not-boolean-constraint {:doc "All constraint expressions on specs must produce boolean values. The constraints are predicates which evaluate to true or false to indicate whether the constraint has been met by the instance state."}
+                           'h-err/not-sortable-body {:doc "When using 'sort-by', the expression used for sorting must produce a value that can be sorted."}
+                           'h-err/overflow {:doc "The mathematical operation resulted in a number that is too large to fit in the bytes alloted for the numeric type."}
+                           'h-err/reduce-not-vector {:doc "The 'reduce' can only be applied to vectors. Specifically, sets cannot be reduced."}
+                           'h-err/refinement-error {:doc "An unanticipated error condition was encountered while computing the refinement of an instance."}
+                           'h-err/resource-spec-not-found {:doc "The spec identifier provided did not correspond to a known spec."}
+                           'h-err/size-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. limits on the lengths of strings. One of these limits was violated. See the exception data for more details."
+                                                 :see-also ['h-err/count-exceeded]}
+                           'h-err/sort-value-collision {:doc "When sorting a collection with 'sort-by', the sort expression must produce a unique value for each element in the collection."}
+                           'h-err/spec-threw {:doc "An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers this instance to be invalid. See the error string in the exception detail for details."}
+                           'h-err/symbol-undefined {:doc "An unbound symbol was referenced in an expression at evaluation time."}
+                           'h-err/symbols-not-bound {:doc "Unbound symbols are referenced in an expression at type-check time."}
+                           'h-err/syntax-error {:doc "An object appeared in an expression that is not one of the expected values for the language."}
+                           'h-err/undefined-symbol {:doc "An unbound symbol was referenced in an expression at type-check time."}
+                           'h-err/unknown-function-or-operator {:doc "The operator being invoked is not recognized as a valid operation."}
+                           'h-err/field-name-not-in-spec {:doc "The field name is not valid for the spec. The field name was provided to either define a field value in an instance or to lookup a field in an instance."}
+                           'h-err/wrong-arg-count {:doc "The number of arguments provided to the operation did not match what was expected."}
+                           'h-err/wrong-arg-count-min {:doc "The operation expected at least a certain number of arguments. This minimum was not met."}
+                           'l-err/argument-empty {:doc "The 'first' operation cannot be invoked on an empty vector. Perhaps use 'count' to check the length of the vector before invoking 'first'."}
                            'l-err/argument-mis-match {:doc ""}
                            'l-err/binding-expression-not-optional {:doc ""}
                            'l-err/binding-target-invalid-symbol {:doc ""}
@@ -763,7 +764,7 @@
           :doc "Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based."
           :comment "The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification."
           :throws [['h-err/index-out-of-bounds]
-                   ['h-err/variables-not-in-spec]]
+                   ['h-err/field-name-not-in-spec]]
           :examples [{:expr-str "(get [10 20 30 40] 2)"
                       :expr-str-j :auto
                       :result :auto}
@@ -796,7 +797,7 @@
              :doc-2 "The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'."
              :throws ['l-err/get-in-path-cannot-be-empty
                       'h-err/invalid-lookup-target
-                      'h-err/variables-not-in-spec
+                      'h-err/field-name-not-in-spec
                       'h-err/index-out-of-bounds]
              :examples [{:expr-str "(get-in [[10 20] [30 40]] [1 0])"
                          :expr-str-j :auto
@@ -1065,7 +1066,7 @@
                 :sigs-j [["instance '.' 'refineTo' '(' symbol:spec-id ')'" "instance"]]
                 :tags #{:instance-op :instance-out :spec-id-op}
                 :doc "Attempt to refine the given instance into an instance of type, spec-id."
-                :throws ['h-err/no-active-refinement-path
+                :throws ['h-err/no-refinement-path
                          "Spec not found"]
                 :examples [{:workspace-f (make-workspace-fn (workspace :my
                                                                        {:my/Spec []

@@ -11,13 +11,13 @@
 (deferr missing-required-vars [data]
         {:message "Missing required variables: :missing-vars"})
 
-(deferr variables-not-in-spec [data]
+(deferr field-name-not-in-spec [data]
         {:message "Variables not defined on spec: :invalid-vars"})
 
 (deferr resource-spec-not-found [data]
         {:message "Resource spec not found: :spec-id"})
 
-(deferr no-active-refinement-path [data]
+(deferr no-refinement-path [data]
         {:message "No active refinement path from ':type' to ':target-type'"})
 
 (deferr no-abstract [data]

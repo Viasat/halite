@@ -7302,13 +7302,13 @@
    :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} :$type)
     [:throws
-     "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: $type"]])
+     "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: $type"]])
   (hc
    :basic
    :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} :q)
     [:throws
-     "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: q"]])
+     "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
    :basic
    :my
@@ -7553,10 +7553,10 @@
      :p)
     :Integer
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}][1].refineTo( spec/A$v1 ).p"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]])
   (hc
    :basic-2
    :spec
@@ -7764,10 +7764,10 @@
    [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1)
     [:Instance :spec/C$v1]
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
     "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 )"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
@@ -7782,10 +7782,10 @@
    [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     :Boolean
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
     "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
@@ -7927,20 +7927,20 @@
    [(valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     [:Maybe [:Instance :spec/C$v1]]
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
     "(valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
    [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     :Boolean
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]
     "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
@@ -7968,17 +7968,17 @@
    :spec
    [(get {:$type :spec/A$v1, :p 1, :n -1} :$type)
     [:throws
-     "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: $type"]])
+     "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: $type"]])
   (hc
    :basic-2
    :spec
    [(refine-to {:$type :spec/E$v1} :spec/C$v1)
     [:Instance :spec/C$v1]
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]
     "{$type: spec/E$v1}.refineTo( spec/C$v1 )"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]])
   (hc
    :basic-2
    :spec
@@ -8564,10 +8564,10 @@
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:Instance :spec/U$v1]
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]
     "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'"]])
   (hc
    [(workspace
      :spec
@@ -8768,10 +8768,10 @@
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1)
     [:Instance :spec/T$v1]
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
   (hc
    [(workspace
      :spec
@@ -8790,10 +8790,10 @@
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]])
   (hc
    [(workspace
      :spec
@@ -9025,10 +9025,10 @@
      :spec/N$v1)
     [:Instance :spec/N$v1]
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]])
   (hc
    [(workspace
      :spec
@@ -9197,10 +9197,10 @@
      [(refine-to {:$type :spec/Inc$v1, :x 1, :y 2} :spec/BigInc$v1)
       [:Instance :spec/BigInc$v1]
       [:throws
-       "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]
+       "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]
       "{$type: spec/Inc$v1, x: 1, y: 2}.refineTo( spec/BigInc$v1 )"
       [:throws
-       "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]])
+       "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]])
     (hc
      ws
      :spec
@@ -9384,10 +9384,10 @@
      (get (refine-to x :spec/A$v1) :x))
     [:Vec :Integer]
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]
     "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x"
     [:throws
-     "h-err/no-active-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
+     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
   (hc
    [(workspace
      :spec
@@ -10605,7 +10605,7 @@
    :spec
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:q 1])
     [:throws
-     "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: q"]])
+     "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
    [(workspace
      :spec
@@ -10675,7 +10675,7 @@
    :spec
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:q])
     [:throws
-     "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: q"]])
+     "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
    [(workspace
      :spec
@@ -10791,7 +10791,7 @@
      :spec
      [(get {:$type :spec/T$v1, :x 10} :☺)
       [:throws
-       "h-err/variables-not-in-spec 0-0 : Variables not defined on spec: ☺"]])
+       "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: ☺"]])
     (hc
      [(workspace
        :spec
