@@ -164,16 +164,20 @@
   (pprint/pprint (:field-index (analyze-err-defs)))
   (pprint/pprint (field-used-by ...)))
 
+(defonce error-atom (atom {}))
+
 (defmacro deferr [err-id [data-arg] data]
-  (when trace-err-defs?
-    (let [t [(ns-name *ns*) :deferr err-id (:message data)]]
-      (swap! trace-atom conj t)))
-  `(defn ~err-id [~data-arg]
-     (merge ~data-arg
-            ~(merge {:err-id (keyword (last (string/split (str (ns-name *ns*)) #"\."))
-                                      (name err-id))
-                     :user-visible-error? true}
-                    data))))
+  (let [computed-err-id (keyword (last (string/split (str (ns-name *ns*)) #"\."))
+                                 (name err-id))]
+    (swap! error-atom assoc (symbol computed-err-id) data)
+    (when trace-err-defs?
+      (let [t [(ns-name *ns*) :deferr err-id (:message data)]]
+        (swap! trace-atom conj t)))
+    `(defn ~err-id [~data-arg]
+       (merge ~data-arg
+              ~(merge {:err-id computed-err-id
+                       :user-visible-error? true}
+                      data)))))
 
 (defn extend-err-data [data]
   (-> (merge (-> data :form meta (select-keys [:row :col :end-row :end-col]))

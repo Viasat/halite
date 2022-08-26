@@ -45,7 +45,7 @@
 (deferr when-expects-boolean [data]
         {:message "First argument to 'when' must be boolean"})
 
-(deferr let-needs-bare-symbol [data]
+(deferr let-needs-symbol [data]
         {:message "Binding target for 'let' must be a bare symbol, not: :sym"})
 
 (deferr let-invalid-symbol [data]
@@ -87,7 +87,7 @@
 (deferr reduce-needs-vector [data]
         {:message "Second binding expression to 'reduce' must be a vector."})
 
-(deferr first-argument-not-bare-symbol [data]
+(deferr first-argument-not-symbol [data]
         {:message "First argument to ':op' must be a bare symbol"})
 
 (deferr first-agument-not-optional [data]

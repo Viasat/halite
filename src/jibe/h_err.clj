@@ -95,7 +95,7 @@
 (deferr arg-type-mismatch [data]
         {:message ":position-text to ':op' must be :expected-type-description"})
 
-(deferr arg-types-both-vectors [data]
+(deferr not-both-vectors [data]
         {:message "When first argument to ':op' is a vector, second argument must also be a vector"})
 
 (deferr let-bindings-odd-count [data]
@@ -107,7 +107,7 @@
 (deferr cannot-bind-reserved-word [data]
         {:message "Cannot bind a value to the reserved word: :sym"})
 
-(deferr comprehend-binding-wrong-types [data]
+(deferr comprehend-binding-wrong-count [data]
         {:message "Binding form for 'op' must have one variable and one collection"})
 
 (deferr binding-target-must-be-symbol [data]
@@ -131,13 +131,13 @@
 (deferr not-sortable-body [data]
         {:message "Body expression in ':op' must be sortable, not :actual-type"})
 
-(deferr accumulator-target-must-be-bare-symbol [data]
+(deferr accumulator-target-must-be-symbol [data]
         {:message "Accumulator binding target for ':op' must be a bare symbol, not: :accumulator"})
 
 (deferr reduce-not-vector [data]
         {:message "Second binding expression to 'reduce' must be a vector."})
 
-(deferr if-value-must-be-bare-symbol [data]
+(deferr if-value-must-be-symbol [data]
         {:message "First argument to ':op' must be a bare symbol"})
 
 (deferr arguments-not-sets [data]

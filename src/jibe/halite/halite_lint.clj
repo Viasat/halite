@@ -150,7 +150,7 @@
      (reduce
       (fn [ctx [sym body]]
         (when-not (and (symbol? sym) (halite-types/bare? sym))
-          (throw-err (l-err/let-needs-bare-symbol {:form expr :sym sym})))
+          (throw-err (l-err/let-needs-symbol {:form expr :sym sym})))
         (when (re-find #"^[$]" (name sym))
           (throw-err (l-err/let-invalid-symbol {:form expr :sym sym})))
         (let [t (type-check* ctx body)]
@@ -225,7 +225,7 @@
   (let [[op sym set-expr unset-expr] expr]
     (halite/arg-count-exactly (if (= 'when-value op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (l-err/first-argument-not-bare-symbol {:op op :form expr})))
+      (throw-err (l-err/first-argument-not-symbol {:op op :form expr})))
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset

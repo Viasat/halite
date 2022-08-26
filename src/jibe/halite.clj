@@ -678,7 +678,7 @@
   (arg-count-exactly 2 expr)
   (let [[op [sym expr :as bindings] body] expr]
     (when-not (= 2 (count bindings))
-      (throw-err (h-err/comprehend-binding-wrong-types {:op op :form expr})))
+      (throw-err (h-err/comprehend-binding-wrong-count {:op op :form expr})))
     (when-not (and (symbol? sym) (halite-types/bare? sym))
       (throw-err (h-err/binding-target-must-be-symbol {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
@@ -727,7 +727,7 @@
   (arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
     (when-not (and (symbol? acc) (halite-types/bare? acc))
-      (throw-err (h-err/accumulator-target-must-be-bare-symbol {:op op, :accumulator acc, :form expr})))
+      (throw-err (h-err/accumulator-target-must-be-symbol {:op op, :accumulator acc, :form expr})))
     (when-not (and (symbol? elem) (halite-types/bare? elem))
       (throw-err (h-err/element-binding-target-must-be-symbol {:op op, :form expr, :element elem})))
     (when (= acc elem)
@@ -748,8 +748,8 @@
   (let [[op sym set-expr unset-expr] expr]
     (arg-count-exactly (if (= 'when-value op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (h-err/if-value-must-be-bare-symbol {:op op
-                                                      :form expr})))
+      (throw-err (h-err/if-value-must-be-symbol {:op op
+                                                 :form expr})))
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
@@ -845,7 +845,7 @@
     (when-not (halite-types/subtype? t (halite-types/coll-type :Value))
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op op :expected-type-description (text "a set or vector"), :form expr}))))
     (when (and (halite-types/subtype? s (halite-types/vector-type :Value)) (not (halite-types/subtype? t (halite-types/vector-type :Value))))
-      (throw-err (h-err/arg-types-both-vectors {:op op, :form expr})))
+      (throw-err (h-err/not-both-vectors {:op op, :form expr})))
     (halite-types/meet s
                        (halite-types/change-elem-type s (halite-types/elem-type t)))))
 

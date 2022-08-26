@@ -446,11 +446,11 @@
   (h
    (if-value true false true)
    [:throws
-    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
+    "h-err/if-value-must-be-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
   (h
    (when-value true false)
    [:throws
-    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
+    "h-err/if-value-must-be-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
   (h
    (if-value-let [y false] false)
    [:throws
@@ -946,11 +946,11 @@
   (h
    (if-value 3 1 2)
    [:throws
-    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
+    "h-err/if-value-must-be-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
   (h
    (when-value 3 1)
    [:throws
-    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
+    "h-err/if-value-must-be-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
   (h
    (if-value-let [3 4] 1 2)
    [:throws
@@ -5568,15 +5568,15 @@
   (h
    (every? [] true)
    [:throws
-    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-count 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (every? [#{1 2}] true)
    [:throws
-    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-count 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (every? [x #{} y #{1}] (> x y))
    [:throws
-    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-count 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (every? [x #{4 3}] (every? [y #{1 2}] (< y x)))
    :Boolean
@@ -5608,7 +5608,7 @@
   (h
    (every? [x #{} 1] false)
    [:throws
-    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-count 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (every? [_ #{}] false)
    :Boolean
@@ -5696,7 +5696,7 @@
   (h
    (any? [x #{1 2} y #{4 3}] (= x y))
    [:throws
-    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-count 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (any? [x #{1 3 2}] (any? [y #{4 6 2}] (= x y)))
    :Boolean
@@ -7597,7 +7597,7 @@
    :my
    [(if-value (get {:$type :my/Spec$v1, :p 1, :n -1} :o) 19 32)
     [:throws
-     "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"]])
+     "h-err/if-value-must-be-symbol 0-0 : First argument to 'if-value' must be a bare symbol"]])
   (hc
    :basic
    :my
@@ -9261,7 +9261,7 @@
   (h
    (map [x] x)
    [:throws
-    "h-err/comprehend-binding-wrong-types 0-0 : Binding form for 'op' must have one variable and one collection"])
+    "h-err/comprehend-binding-wrong-count 0-0 : Binding form for 'op' must have one variable and one collection"])
   (h
    (map [x []])
    [:throws
@@ -9683,11 +9683,11 @@
   (h
    (reduce [1 2] "as" true)
    [:throws
-    "h-err/accumulator-target-must-be-bare-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
+    "h-err/accumulator-target-must-be-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
   (h
    (reduce [1 2] [x 3] true)
    [:throws
-    "h-err/accumulator-target-must-be-bare-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
+    "h-err/accumulator-target-must-be-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
   (h
    (reduce [a 2] [x 3] true)
    [:throws
@@ -9970,7 +9970,7 @@
   (h
    (concat [2] #{1})
    [:throws
-    "h-err/arg-types-both-vectors 0-0 : When first argument to 'concat' is a vector, second argument must also be a vector"])
+    "h-err/not-both-vectors 0-0 : When first argument to 'concat' is a vector, second argument must also be a vector"])
   (h
    (concat #{} [1 2])
    [:Set :Integer]
@@ -10920,7 +10920,7 @@
   (h
    (let [a/b 1] a/b)
    [:throws
-    "l-err/let-needs-bare-symbol 0-0 : Binding target for 'let' must be a bare symbol, not: a/b"])
+    "l-err/let-needs-symbol 0-0 : Binding target for 'let' must be a bare symbol, not: a/b"])
   (h
    (let
     [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

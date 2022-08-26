@@ -6,6 +6,7 @@
             [clojure.string :as string]
             [jibe.halite-guide :as halite-guide]
             [jibe.lib.fixed-decimal :as fixed-decimal]
+            [jibe.lib.format-errors :as format-errors]
             [jibe.logic.expression :as expression]
             [jibe.logic.jadeite :as jadeite]
             [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]])
@@ -18,6 +19,117 @@
 ;; TODO:
 ;; define jadeite operator precedence
 ;; specify use of parens and {} in jadeite
+
+(def err-maps (merge-with merge
+                          @format-errors/error-atom
+                          {'h-err/abs-failure {:doc "The way the number space is divided the value of zero comes out of the positive number space. This means there is one more negative number than there are positive numbers. So there is one negative number whose absolute value cannot be represented. That negative number is the most negative value."}
+                           'h-err/accumulator-target-must-be-symbol {:doc "In 'reduce', it is necesary to define a symbol which is used to hold the accumulated value of the reduction."
+                                                                     :see-also ['h-err/element-binding-target-must-be-symbol]}
+                           'h-err/arg-type-mismatch {:doc "A relatively generic exception that indicates the operator being invoked cannot operate on the type of value provided."}
+                           'h-err/not-both-vectors {:doc "When the first argument to 'concat' is a vector, the second must also be a vector. A vector can be concated onto a set, but a set cannot be concated onto a vector."}
+                           'h-err/argument-empty {:doc "The operation cannot be invoked on an empty collection."}
+                           'h-err/argument-not-set-or-vector {:doc "The operation must be invoked a collection."}
+                           'h-err/argument-not-vector {:doc "The operation can only be invoked on a vector."}
+                           'h-err/arguments-not-sets {:doc "The operation can only be invoked on set arguments."}
+                           'h-err/binding-target-must-be-symbol {:doc "In binding forms, the first value of each pair must be a symbol. This symbol is an identifier that will be bound to the value of the second item in the pair."}
+                           'h-err/cannot-bind-reserved-word {:doc "There are a small number of symbols that are reserved for system use and cannot be used by users in bindings."}
+                           'h-err/cannot-conj-unset {:doc "Only actual values can be added into collections. Specifically 'unset' cannot be added into a collection."}
+                           'h-err/comprehend-binding-wrong-count {:doc "Collection comprehensions require a single binding that defines the symbol to be bound to the elements of the collection."}
+                           'h-err/comprehend-collection-invalid-type {:doc "Collection comprehensions can only be applies to collections, i.e. vectors or sets."}
+                           'h-err/divide-by-zero {:doc "Division by zero, whether directly or indirectly via modulus cannot be performed."}
+                           'h-err/element-accumulator-same-symbol {:doc "The 'reduce' operation requires distinct symbols for referring to the accumulator and the collection element."}
+                           'h-err/element-binding-target-must-be-symbol {:doc "In 'reduce', it is necesary to define a symbol which is used to hold each element of the collection."
+                                                                         :see-also ['h-err/accumulator-target-must-be-symbol]}
+                           'h-err/get-in-path-must-be-vector-literal {:doc ""}
+                           'h-err/if-value-must-be-symbol {:doc ""}
+                           'h-err/index-out-of-bounds {:doc ""}
+                           'h-err/invalid-exponent {:doc ""}
+                           'h-err/invalid-expression {:doc ""}
+                           'h-err/invalid-field-value {:doc ""}
+                           'h-err/invalid-instance {:doc ""}
+                           'h-err/invalid-instance-index {:doc ""}
+                           'h-err/invalid-keyword-char {:doc ""}
+                           'h-err/invalid-keyword-length {:doc ""}
+                           'h-err/invalid-lookup-target {:doc ""}
+                           'h-err/invalid-refinement-expression {:doc ""}
+                           'h-err/invalid-symbol-char {:doc ""}
+                           'h-err/invalid-symbol-length {:doc ""}
+                           'h-err/invalid-type-value {:doc ""}
+                           'h-err/invalid-value {:doc ""}
+                           'h-err/invalid-value-for-context {:doc ""}
+                           'h-err/invalid-vector-index {:doc ""}
+                           'h-err/let-bindings-odd-count {:doc ""}
+                           'h-err/let-symbols-required {:doc ""}
+                           'h-err/limit-exceeded {:doc ""}
+                           'h-err/literal-must-evaluate-to-value {:doc ""}
+                           'h-err/missing-required-vars {:doc ""}
+                           'h-err/missing-type-field {:doc ""}
+                           'h-err/must-produce-value {:doc ""}
+                           'h-err/no-abstract {:doc ""}
+                           'h-err/no-active-refinement-path {:doc ""}
+                           'h-err/no-matching-signature {:doc ""}
+                           'h-err/not-boolean-body {:doc ""}
+                           'h-err/not-boolean-constraint {:doc ""}
+                           'h-err/not-sortable-body {:doc ""}
+                           'h-err/overflow {:doc ""}
+                           'h-err/reduce-not-vector {:doc ""}
+                           'h-err/refinement-error {:doc ""}
+                           'h-err/resource-spec-not-found {:doc ""}
+                           'h-err/size-exceeded {:doc ""}
+                           'h-err/sort-value-collision {:doc ""}
+                           'h-err/spec-threw {:doc ""}
+                           'h-err/symbol-undefined {:doc ""}
+                           'h-err/symbols-not-bound {:doc ""}
+                           'h-err/syntax-error {:doc ""}
+                           'h-err/undefined-symbol {:doc ""}
+                           'h-err/unknown-function-or-operator {:doc ""}
+                           'h-err/variables-not-in-spec {:doc ""}
+                           'h-err/wrong-arg-count {:doc ""}
+                           'h-err/wrong-arg-count-min {:doc ""}
+                           'l-err/argument-empty {:doc ""}
+                           'l-err/argument-mis-match {:doc ""}
+                           'l-err/binding-expression-not-optional {:doc ""}
+                           'l-err/binding-target-invalid-symbol {:doc ""}
+                           'l-err/body-must-be-boolean {:doc ""}
+                           'l-err/body-must-be-integer {:doc ""}
+                           'l-err/cannot-bind-nothing {:doc ""}
+                           'l-err/cannot-bind-unset {:doc ""}
+                           'l-err/cannot-conj-unset {:doc ""}
+                           'l-err/cannot-index-into-empty-vector {:doc ""}
+                           'l-err/cannot-use-same-symbol {:doc ""}
+                           'l-err/collection-required {:doc ""}
+                           'l-err/disallowed-nothing {:doc ""}
+                           'l-err/first-agument-not-optional {:doc ""}
+                           'l-err/first-argument-not-symbol {:doc ""}
+                           'l-err/first-needs-vector {:doc ""}
+                           'l-err/function-not-found {:doc ""}
+                           'l-err/get-in-path-cannot-be-empty {:doc ""}
+                           'l-err/if-expects-boolean {:doc ""}
+                           'l-err/index-not-integer {:doc ""}
+                           'l-err/index-not-variable-name {:doc ""}
+                           'l-err/invalid-accumulator {:doc ""}
+                           'l-err/invalid-binding-form {:doc ""}
+                           'l-err/invalid-binding-target {:doc ""}
+                           'l-err/invalid-element-binding-target {:doc ""}
+                           'l-err/invalid-lookup-target {:doc ""}
+                           'l-err/let-bindings-empty {:doc ""}
+                           'l-err/let-invalid-symbol {:doc ""}
+                           'l-err/let-needs-symbol {:doc ""}
+                           'l-err/must-be-instance {:doc ""}
+                           'l-err/must-be-spec-id {:doc ""}
+                           'l-err/needs-collection {:doc ""}
+                           'l-err/needs-collection-second {:doc ""}
+                           'l-err/no-matching-signature {:doc ""}
+                           'l-err/no-such-variable {:doc ""}
+                           'l-err/reduce-needs-vector {:doc ""}
+                           'l-err/rest-needs-vector {:doc ""}
+                           'l-err/result-always {:doc ""}
+                           'l-err/spec-not-found {:doc ""}
+                           'l-err/syntax-error {:doc ""}
+                           'l-err/undefined {:doc ""}
+                           'l-err/undefined-use-of-unset-variable {:doc ""}
+                           'l-err/unknown-type {:doc ""}
+                           'l-err/when-expects-boolean {:doc ""}}))
 
 (defn expand-example [[op m]]
   [op (if (:examples m)
