@@ -14,12 +14,14 @@
 (use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-cycle?
-  (let [cycle-graph '{$1 [$2 :Integer]
-                      $2 [$1 :Integer]}]
+  (let [cycle-graph '{$1 [(+ $2 $3) :Integer]
+                      $2 [(+ $1 $3) :Integer]
+                      $3 [1 :Integer]}]
     (is (= true (ssa/cycle? cycle-graph))))
 
-  (let [non-cycle-graph '{$1 [$2 :Integer]
-                          $2 [$3 :Integer]}]
+  (let [non-cycle-graph '{$1 [(+ $2 $3) :Integer]
+                          $2 [2 :Integer]
+                          $3 [3 :Integer]}]
     (is (= false (ssa/cycle? non-cycle-graph)))))
 
 (deftest test-spec-to-ssa
@@ -604,9 +606,8 @@
 
       '[$4]
       '{$1 [12 :Integer]
-        $2 [$1 :Integer]
         $3 [x :Integer]
-        $4 [(< $3 $2) :Boolean]}
+        $4 [(< $3 $1) :Boolean]}
       '(< x 12)
 
       '[$1]

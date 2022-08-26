@@ -464,10 +464,10 @@
           [val?-form] (ssa/deref-id dgraph val?-id)]
       (when (and (seq? val?-form) (= '$value? (first val?-form)))
         (let [[_value? nested-if-id] val?-form
-              [nested-if-form] (ssa/deref-id dgraph nested-if-id)
-              value!-nested-if-id (ssa/find-form dgraph (list '$value! nested-if-id))]
+              [nested-if-form] (ssa/deref-id dgraph nested-if-id)]
           (when (and (seq? nested-if-form) (= 'if (first nested-if-form)))
             (let [[_if nested-pred-id nested-then-id nested-else-id] nested-if-form
+                  value!-nested-if-id (ssa/find-form dgraph (list '$value! nested-if-id))
                   #_(if ($value? (if <nested-pred-id>
                                    <nested-then-id>
                                    <nested-else-id>) :- <nested-if-id>) :- <val?-id>
@@ -607,27 +607,24 @@
         :else nil))))
 
 (s/defn ^:private drop-branches-containing-unguarded-errors
-  [sctx :- SpecCtx [spec-id {:keys [derivations constraints] :as spec-info}]]
+  [sctx :- SpecCtx spec-id {:keys [derivations constraints] :as spec-info}]
   ;; TODO: This is dumb. Refactor rewriting machinery so that we can compute spec-level info that is passed to rewriting rule.
   (let [guards (ssa/compute-guards derivations (set (map second constraints)))
         error-ids (set (find-error-ids derivations))
         unguarded-error? (fn [dgraph id]
                            (let [unconditionally-reachable (ssa/reachable-nodes dgraph id {:conditionally? false})]
                              (seq (set/intersection error-ids unconditionally-reachable))))]
-    [spec-id
+    (assoc
+     sctx spec-id
      (halite-rewriting/rewrite-spec
       {:rule-name "drop-branches-containing-unguarded-errors"
        :rewrite-fn (partial drop-branches-containing-unguarded-errors-rewrite-fn unguarded-error?)
        :nodes :all}
       sctx
-      spec-id)]))
+      spec-id
+      spec-info))))
 
 (s/defn eliminate-error-forms :- SpecCtx
   [sctx :- SpecCtx]
   (let [sctx (update-vals sctx (partial add-error-guards-as-constraints sctx))]
-    (fixpoint
-     (fn [sctx]
-       (->> sctx
-            (map (partial drop-branches-containing-unguarded-errors sctx))
-            (into {})))
-     sctx)))
+    (fixpoint #(reduce-kv drop-branches-containing-unguarded-errors % %) sctx)))

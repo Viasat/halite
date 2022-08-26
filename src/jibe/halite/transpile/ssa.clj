@@ -57,8 +57,6 @@
   (cond
     (seq? form) (->> form rest (filter symbol?))
     (map? form) (-> form (dissoc :$type) vals)
-    ;; this is a bit of a hack
-    (nil? (s/check DerivationName form)) [form]
     :else []))
 
 (s/defschema Derivations
@@ -68,10 +66,8 @@
   "Return the derivation in dgraph referenced by id, possibly
   indirectly."
   [dgraph :- Derivations id]
-  (loop [[form :as d] (dgraph id)]
-    (if (nil? (s/check DerivationName form))
-      (recur (dgraph form))
-      (or d (throw (ex-info "BUG! Failed to deref dgraph id." {:id id}))))))
+  (or (dgraph id)
+      (throw (ex-info "BUG! Failed to deref dgraph id." {:id id}))))
 
 (s/defschema ReachableNodesOpts
   {(s/optional-key :include-negations?) s/Bool
@@ -89,17 +85,26 @@
   ([dgraph :- Derivations, reached :- #{DerivationName}, id :- DerivationName, opts :- ReachableNodesOpts]
    (let [{:keys [include-negations? conditionally?]
           :or {include-negations? false, conditionally? true}} opts]
-     (loop [[next-id & ids] [id]
-            reached reached]
-       (cond
-         (nil? next-id) reached
-         (reached next-id) (recur ids reached)
-         :else (let [[form htype neg-id :as d] (dgraph next-id)]
-                 (recur
-                  (cond-> ids
-                    (or conditionally? (not (and (seq? form) (#{'if 'when} (first form))))) (into (referenced-derivations d))
-                    (and include-negations? neg-id) (conj neg-id))
-                  (conj reached next-id))))))))
+     (loop [ids (transient [id])
+            reached (transient reached)]
+       (let [n (count ids)]
+         (if (= 0 n)
+           (persistent! reached)
+           (let [next-id (nth ids (dec n)), ids (pop! ids)]
+             (if (reached next-id)
+               (recur ids reached)
+               (let [[form htype neg-id :as d] (dgraph next-id)
+                     ids (if (and (coll? form) (or conditionally? (not (and (seq? form) (#{'if 'when} (first form))))))
+                           (reduce (fn [ids v] (if (symbol? v) (conj! ids v) ids))
+                                   ids
+                                   (if (map? form)
+                                     (vals (dissoc form :$type))
+                                     (rest form)))
+                           ids)
+                     ids (if (and include-negations? neg-id)
+                           (conj! ids neg-id)
+                           ids)]
+                 (recur ids (conj! reached next-id)))))))))))
 
 (s/defschema SpecInfo
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
@@ -555,9 +560,13 @@
                                                            :conditionally? true}))
                    #{}
                    roots)]
-    (->> dgraph
-         (filter #(reachable (first %)))
-         (into {}))))
+    (persistent!
+     (reduce
+      (fn [dgraph id]
+        (cond-> dgraph
+          (not (reachable id)) (dissoc! id)))
+      (transient dgraph)
+      (keys dgraph)))))
 
 (s/defn prune-derivations :- SpecInfo
   "Prune nodes not reachable from the roots. When prune-negations? is true, negation nodes
@@ -580,7 +589,7 @@
                                        :else form)
                                      htype]
                                      neg-id (conj neg-id))))
-       :constraints (map (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints))
+       :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints))
       (prune-derivations false)))
 
 ;;;;;;;; Guards ;;;;;;;;;;;;;;
@@ -606,7 +615,6 @@
         result (update result id update-guards current)]
     (cond
       (or (integer? form) (boolean? form) (= :Unset form) (string? form)) result
-      (and (symbol? form) (nil? (s/check DerivationName form))) (compute-guards* dgraph current result form)
       (symbol? form) result
       (seq? form) (let [[op & args] form]
                     (condp = op
@@ -747,21 +755,6 @@
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation"
                               {:id id :form form :dgraph dgraph :guards guards :bound? bound? :curr-guard curr-guard}))))))
 
-(s/defn ^:private aliases :- {DerivationName DerivationName}
-  [dgraph]
-  (let [follow-alias (fn [aliased-id]
-                       (let [[form] (dgraph aliased-id)]
-                         (if (nil? (s/check DerivationName form))
-                           (recur form)
-                           aliased-id)))]
-    (reduce
-     (fn [aliases [id [form]]]
-       (if (nil? (s/check DerivationName form))
-         (assoc aliases id (follow-alias form))
-         aliases))
-     {}
-     dgraph)))
-
 (def ^:dynamic *elide-top-level-bindings*
   "When true, form-from-ssa elides top-level let bindings, to produce a partial expression.
   This is only to be used for debugging of rewrite rules!"
@@ -780,18 +773,10 @@
         reachable-subdgraph (->> id
                                  (reachable-nodes subdgraph)
                                  (select-keys subdgraph))
-        amap (aliases reachable-subdgraph)
         usage-counts (->> reachable-subdgraph
                           vals
                           (mapcat referenced-derivations)
                           frequencies)
-        usage-counts (reduce
-                      (fn [uc [aliasing-id id]]
-                        (-> uc
-                            (update id + (dec (get usage-counts aliasing-id 0)))
-                            (assoc aliasing-id 0)))
-                      usage-counts
-                      amap)
         ordering (zipmap (topo-sort subdgraph) (range))
         [bound? bindings] (->> subdgraph
                                (remove

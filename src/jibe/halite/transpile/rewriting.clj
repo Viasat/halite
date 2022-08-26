@@ -125,9 +125,8 @@
       spec-info)))
 
 (s/defn rewrite-spec-constraints :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
-  (let [spec-info (get sctx spec-id)
-        {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
+  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword spec-info]
+  (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (->> tenv (halite-envs/scope) keys set)]
     (->> (:constraints spec-info)
          (reduce (fn [spec-info [cname cid]]
@@ -136,35 +135,31 @@
          (#(ssa/prune-derivations % false)))))
 
 (s/defn rewrite-spec-derivations :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
-  (let [spec-info (get sctx spec-id)
-        {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
+  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword spec-info]
+  (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (->> tenv (halite-envs/scope) keys set)
         reachable? (ssa/reachable-derivations spec-info)]
-    (->> (keys (:derivations spec-info))
-         (filter reachable?)
-         (reduce
-          (fn [spec-info id]
-            (apply-rule-to-id rule sctx ctx scope spec-id spec-info id))
-          spec-info))))
+    (reduce
+     #(apply-rule-to-id rule sctx ctx scope spec-id %1 %2)
+     spec-info
+     reachable?)))
 
 (s/defn rewrite-spec :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
+  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, spec-info]
   ((condp = (:nodes rule)
      :all rewrite-spec-derivations
      :constraints rewrite-spec-constraints
      (throw (ex-info (format "BUG! Invalid rule, %s not recognized" (:nodes rule))
                      {:rule rule})))
-   rule sctx spec-id))
+   rule sctx spec-id spec-info))
 
 (s/defn rewrite-sctx* :- SpecCtx
   [rule :- RewriteRule, sctx :- SpecCtx]
-  (let [rewrite-machine (condp = (:nodes rule)
-                          :all rewrite-spec
-                          :constraints rewrite-spec-constraints
-                          :else (throw (ex-info (format "BUG! Invalid rule, %s not recognized" (:nodes rule))
-                                                {:rule rule})))]
-    (->> sctx keys (map #(vector % (rewrite-spec rule sctx %))) (into {}))))
+  (reduce-kv
+   (fn [m spec-id spec-info]
+     (assoc m spec-id (rewrite-spec rule sctx spec-id spec-info)))
+   sctx
+   sctx))
 
 (s/defn rewrite-in-dependency-order* :- SpecCtx
   [rule :- RewriteRule, deps-fn :- (s/pred ifn?), sctx :- SpecCtx]
@@ -183,7 +178,7 @@
          (remove #(= :nothing %))
          (reduce
           (fn [sctx spec-id]
-            (assoc sctx spec-id (rewrite-spec rule sctx spec-id)))
+            (assoc sctx spec-id (rewrite-spec rule sctx spec-id (sctx spec-id))))
           sctx))))
 
 (defmacro rewrite-sctx

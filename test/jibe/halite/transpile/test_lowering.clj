@@ -825,11 +825,11 @@
                [["$all"
                  (let [v1 (< an 10)]
                    (and
-                    (not (and (< an 1) v1))
-                    (not (and (<= 10 an) (< an 20)))
                     (if v1
                       (if-value ap ap false)
-                      (= ap $no-value))))]]}
+                      (= ap $no-value))
+                    (not (and (<= 10 an) (< an 20)))
+                    (not (and (< an 1) v1))))]]}
              (-> senv
                  (ssa/build-spec-ctx :ws/A)
                  (rewriting/rewrite-sctx lower-when-expr)
