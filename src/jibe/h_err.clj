@@ -32,11 +32,14 @@
 (deferr invalid-type-value [data]
         {:message "Expected namespaced keyword as value of :$type"})
 
-(deferr invalid-field-value [data]
+(deferr value-of-wrong-type [data]
+        {:message "Value of ':sym has wrong type"})
+
+(deferr field-value-of-wrong-type [data]
         {:message "Value of ':variable' has wrong type"})
 
-(deferr invalid-value-for-context [data]
-        {:message "Value of ':sym has wrong type"})
+(deferr invalid-collection-type [data]
+        {:message "Collection value is not of a supported type"})
 
 (deferr invalid-value [data]
         {:message "Invalid value"})
@@ -111,10 +114,10 @@
         {:message "Binding form for 'op' must have one variable and one collection"})
 
 (deferr binding-target-must-be-symbol [data]
-        {:message "Binding target for ':op' must be a bare symbol, not: :sym"})
+        {:message "Binding target for ':op' must be a symbol, not: :sym"})
 
 (deferr element-binding-target-must-be-symbol [data]
-        {:message "Element binding target for ':op' must be a bare symbol, not: :element"})
+        {:message "Element binding target for ':op' must be a symbol, not: :element"})
 
 (deferr element-accumulator-same-symbol [data]
         {:message "Cannot use the same symbol for accumulator and element binding: :element"})
@@ -132,13 +135,13 @@
         {:message "Body expression in ':op' must be sortable, not :actual-type"})
 
 (deferr accumulator-target-must-be-symbol [data]
-        {:message "Accumulator binding target for ':op' must be a bare symbol, not: :accumulator"})
+        {:message "Accumulator binding target for ':op' must be a symbol, not: :accumulator"})
 
 (deferr reduce-not-vector [data]
         {:message "Second binding expression to 'reduce' must be a vector."})
 
 (deferr if-value-must-be-symbol [data]
-        {:message "First argument to ':op' must be a bare symbol"})
+        {:message "First argument to ':op' must be a symbol"})
 
 (deferr arguments-not-sets [data]
         {:message "Arguments to ':op' must be sets"})

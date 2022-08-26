@@ -40,30 +40,34 @@
                            'h-err/element-accumulator-same-symbol {:doc "The 'reduce' operation requires distinct symbols for referring to the accumulator and the collection element."}
                            'h-err/element-binding-target-must-be-symbol {:doc "In 'reduce', it is necesary to define a symbol which is used to hold each element of the collection."
                                                                          :see-also ['h-err/accumulator-target-must-be-symbol]}
-                           'h-err/get-in-path-must-be-vector-literal {:doc ""}
-                           'h-err/if-value-must-be-symbol {:doc ""}
-                           'h-err/index-out-of-bounds {:doc ""}
-                           'h-err/invalid-exponent {:doc ""}
-                           'h-err/invalid-expression {:doc ""}
-                           'h-err/invalid-field-value {:doc ""}
-                           'h-err/invalid-instance {:doc ""}
-                           'h-err/invalid-instance-index {:doc ""}
-                           'h-err/invalid-keyword-char {:doc ""}
-                           'h-err/invalid-keyword-length {:doc ""}
-                           'h-err/invalid-lookup-target {:doc ""}
-                           'h-err/invalid-refinement-expression {:doc ""}
-                           'h-err/invalid-symbol-char {:doc ""}
-                           'h-err/invalid-symbol-length {:doc ""}
-                           'h-err/invalid-type-value {:doc ""}
-                           'h-err/invalid-value {:doc ""}
-                           'h-err/invalid-value-for-context {:doc ""}
-                           'h-err/invalid-vector-index {:doc ""}
-                           'h-err/let-bindings-odd-count {:doc ""}
-                           'h-err/let-symbols-required {:doc ""}
-                           'h-err/limit-exceeded {:doc ""}
-                           'h-err/literal-must-evaluate-to-value {:doc ""}
-                           'h-err/missing-required-vars {:doc ""}
-                           'h-err/missing-type-field {:doc ""}
+                           'h-err/get-in-path-must-be-vector-literal {:doc "The path to navigate in 'get-in' must be a literal, i.e. it cannot be an expression to compute a vector."}
+                           'h-err/if-value-must-be-symbol {:doc "The 'if-value' operator can only be applied to a symbol that is already bound to an optional value."}
+                           'h-err/index-out-of-bounds {:doc "The index falls outside of the bounds of the vector. A way to avoid this is to first test the length of the vector."}
+                           'h-err/invalid-exponent {:doc "The exponent cannot be negative."}
+                           'h-err/invalid-expression {:doc "The expression itself was not recognized as a value that could be evaluated."}
+                           'h-err/field-value-of-wrong-type {:doc "The value did not match the type of the spec field."}
+                           'h-err/value-of-wrong-type {:doc "The value did not match the expected type for this symbol in the context."}
+                           'h-err/invalid-instance {:doc "An attempt was made to create an instance that violated a spec constraint."}
+                           'h-err/invalid-instance-index {:doc "An attempt was made to a read a value from an instance, but a field name was not provided as an index, instead a value such as an integer was provided."}
+                           'h-err/invalid-keyword-char {:doc "Only certain characters, in certain sequences are allowed to appear in keywords."}
+                           'h-err/invalid-keyword-length {:doc "The length of keywords is limited. The supplied keyword exceeded the limit."}
+                           'h-err/invalid-lookup-target {:doc "An attempt was made to retrieve a field from an instance but the value was not known to be an instance of a specific spec. For example, the value may have been missing, as in the case of an optional field. Or perhaps the instance was a result of an expression and the result could have been an instance of many alternative specs."}
+                           'h-err/invalid-refinement-expression {:doc "A refinement expression must produce an instance whose :$type matches the type that is declared on the refinement."
+                                                                 :doc-j "A refinement expression must produce an instance whose $type matches the type that is declared on the refinement."}
+                           'h-err/invalid-symbol-char {:doc "Only certain characters, in certain sequences are allowed to appear in symbols."}
+                           'h-err/invalid-symbol-length {:doc "The length of symbols is limited. The supplied symbol exceeded the limit."}
+                           'h-err/invalid-type-value {:doc "The value of the :$type field in an instance must be a keyword that includes a '/' separator."
+                                                      :doc-j "The value of the $type field in an instance must be a symbol that includes a '/' separator."}
+                           'h-err/invalid-collection-type {:doc "This indicates that a collection value was provided, but the collection is not of a type that is supported."}
+                           'h-err/invalid-value {:doc "A value was supplied, but the type of the value is not recognized."}
+                           'h-err/invalid-vector-index {:doc "An index was supplied to lookup a value in a vector, but the index was not an integer."}
+                           'h-err/let-bindings-odd-count {:doc "A 'let' expression included an odd number of elements in the binding vector. This is invalid as the bindings are to be a sequence of pairs."}
+                           'h-err/let-symbols-required {:doc "In a 'let' expression, the first item in each pair of items must be a symbol."}
+                           'h-err/limit-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. on the lengthso of vectors, etc. One of these limits was violated. See the exception data for more details."}
+                           'h-err/literal-must-evaluate-to-value {:doc "All of the expressions that appear as elements in a collection literal, must be guaranteed to evaluate to values, i.e. they must never evaluate to 'unset'."}
+                           'h-err/missing-required-vars {:doc "An attempt was made to construct an instance of a spec, without all of its mandatory fields being assigned values."}
+                           'h-err/missing-type-field {:doc "An attempt was made to construct an instance without providing a value for the :$type field."
+                                                      :doc-j "An atftempt was made to construct an instance without providing a value for the $type field."}
                            'h-err/must-produce-value {:doc ""}
                            'h-err/no-abstract {:doc ""}
                            'h-err/no-active-refinement-path {:doc ""}

@@ -46,7 +46,7 @@
         {:message "First argument to 'when' must be boolean"})
 
 (deferr let-needs-symbol [data]
-        {:message "Binding target for 'let' must be a bare symbol, not: :sym"})
+        {:message "Binding target for 'let' must be a symbol, not: :sym"})
 
 (deferr let-invalid-symbol [data]
         {:message "Binding target for 'let' must not start with '$': :sym"})
@@ -61,7 +61,7 @@
         {:message "Binding form for ':op' must have one variable and one collection"})
 
 (deferr invalid-binding-target [data]
-        {:message "Binding target for ':op' must be a bare symbol, not: :sym"})
+        {:message "Binding target for ':op' must be a symbol, not: :sym"})
 
 (deferr binding-target-invalid-symbol [data]
         {:message "Binding target for ':op' must not start with '$': :sym"})
@@ -76,10 +76,10 @@
         {:message "Body expression in 'sort-by' must be Integer, not :body-type"})
 
 (deferr invalid-accumulator [data]
-        {:message "Accumulator binding target for ':op' must be a bare symbol, not: :accumulator"})
+        {:message "Accumulator binding target for ':op' must be a symbol, not: :accumulator"})
 
 (deferr invalid-element-binding-target [data]
-        {:message "Element binding target for ':op' must be a bare symbol, not: :element"})
+        {:message "Element binding target for ':op' must be a symbol, not: :element"})
 
 (deferr cannot-use-same-symbol [data]
         {:message "Cannot use the same symbol for accumulator and element binding: :element"})
@@ -88,7 +88,7 @@
         {:message "Second binding expression to 'reduce' must be a vector."})
 
 (deferr first-argument-not-symbol [data]
-        {:message "First argument to ':op' must be a bare symbol"})
+        {:message "First argument to ':op' must be a symbol"})
 
 (deferr first-agument-not-optional [data]
         {:message "First argument to ':op' must have an optional type"})

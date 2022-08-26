@@ -187,10 +187,10 @@
       (let [field-type (halite-envs/halite-type-from-var-type (:senv ctx) (get field-types field-kw))
             actual-type (check-fn ctx field-val)]
         (when-not (halite-types/subtype? actual-type field-type)
-          (throw-err (h-err/invalid-field-value {error-key inst
-                                                 :variable (symbol field-kw)
-                                                 :expected field-type
-                                                 :actual actual-type})))))
+          (throw-err (h-err/field-value-of-wrong-type {error-key inst
+                                                       :variable (symbol field-kw)
+                                                       :expected field-type
+                                                       :actual actual-type})))))
     (halite-types/concrete-spec-type t)))
 
 (s/defn ^:private get-typestring-for-coll [coll]
@@ -204,7 +204,7 @@
   (let [elem-types (map (partial check-fn ctx) coll)
         coll-type-string (get-typestring-for-coll coll)]
     (when (not coll-type-string)
-      (throw-err (h-err/invalid-value  {error-key coll})))
+      (throw-err (h-err/invalid-collection-type {error-key coll})))
     (doseq [[elem elem-type] (map vector coll elem-types)]
       (when (halite-types/maybe-type? elem-type)
         (throw-err (h-err/literal-must-evaluate-to-value {:coll-type-string (symbol coll-type-string)
@@ -1165,5 +1165,5 @@
             value (eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym))
             actual-type (type-of senv tenv value)]
         (when-not (halite-types/subtype? actual-type declared-type)
-          (throw-err (h-err/invalid-field-value {:variable sym :value value :expected declared-type :actual actual-type})))))
+          (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))
     (eval-expr* {:env env :senv senv} expr)))

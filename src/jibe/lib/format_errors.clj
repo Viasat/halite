@@ -169,7 +169,8 @@
 (defmacro deferr [err-id [data-arg] data]
   (let [computed-err-id (keyword (last (string/split (str (ns-name *ns*)) #"\."))
                                  (name err-id))]
-    (swap! error-atom assoc (symbol computed-err-id) data)
+    (swap! error-atom assoc (symbol computed-err-id) (assoc data
+                                                            :ns-name (ns-name *ns*)))
     (when trace-err-defs?
       (let [t [(ns-name *ns*) :deferr err-id (:message data)]]
         (swap! trace-atom conj t)))
