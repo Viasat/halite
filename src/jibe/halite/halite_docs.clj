@@ -27,7 +27,7 @@
                                                                      :see-also ['h-err/element-binding-target-must-be-symbol]}
                            'h-err/arg-type-mismatch {:doc "A relatively generic exception that indicates the operator being invoked cannot operate on the type of value provided."}
                            'h-err/not-both-vectors {:doc "When the first argument to 'concat' is a vector, the second must also be a vector. A vector can be concated onto a set, but a set cannot be concated onto a vector."}
-                           'h-err/argument-empty {:doc "The operation cannot be invoked on an empty collection."}
+                           'h-err/argument-empty {:doc "The 'first' operation cannot be invoked on an empty collection."}
                            'h-err/argument-not-set-or-vector {:doc "The operation must be invoked a collection."}
                            'h-err/argument-not-vector {:doc "The operation can only be invoked on a vector."}
                            'h-err/arguments-not-sets {:doc "The operation can only be invoked on set arguments."}
@@ -91,34 +91,20 @@
                            'h-err/field-name-not-in-spec {:doc "The field name is not valid for the spec. The field name was provided to either define a field value in an instance or to lookup a field in an instance."}
                            'h-err/wrong-arg-count {:doc "The number of arguments provided to the operation did not match what was expected."}
                            'h-err/wrong-arg-count-min {:doc "The operation expected at least a certain number of arguments. This minimum was not met."}
-                           'l-err/argument-empty {:doc "The 'first' operation cannot be invoked on an empty vector. Perhaps use 'count' to check the length of the vector before invoking 'first'."}
-                           'l-err/argument-mis-match {:doc ""}
-                           'l-err/binding-expression-not-optional {:doc ""}
-                           'l-err/binding-target-invalid-symbol {:doc ""}
-                           'l-err/body-must-be-boolean {:doc ""}
-                           'l-err/body-must-be-integer {:doc ""}
-                           'l-err/cannot-bind-nothing {:doc ""}
-                           'l-err/cannot-bind-unset {:doc ""}
-                           'l-err/cannot-conj-unset {:doc ""}
-                           'l-err/cannot-index-into-empty-vector {:doc ""}
-                           'l-err/cannot-use-same-symbol {:doc ""}
-                           'l-err/collection-required {:doc ""}
-                           'l-err/disallowed-nothing {:doc ""}
-                           'l-err/first-agument-not-optional {:doc ""}
-                           'l-err/first-argument-not-symbol {:doc ""}
-                           'l-err/first-needs-vector {:doc ""}
-                           'l-err/function-not-found {:doc ""}
-                           'l-err/get-in-path-cannot-be-empty {:doc ""}
-                           'l-err/if-expects-boolean {:doc ""}
-                           'l-err/index-not-integer {:doc ""}
-                           'l-err/index-not-variable-name {:doc ""}
+                           'l-err/binding-expression-not-optional {:doc "The expression being tested in an 'if-value-let' statement must optionally produce a value."}
+                           'l-err/binding-target-invalid-symbol {:doc "The symbols to be bound are not to start with a '$'."}
+                           'l-err/cannot-bind-nothing {:doc "It is not permitted to rebind the symbol used to represent 'unset'."}
+                           'l-err/cannot-bind-unset {:doc "It is not permitted to rebind the symbol used to represent 'unset'."}
+                           'l-err/disallowed-nothing {:doc "An expression was encountered that does not have a value, but it was used in a place where a value is required. Examples of expressions that do not have values are an invocation of 'error' and the binding of a symbol to an element in an empty collection."}
+                           'l-err/first-argument-not-optional {:doc "The value being tested in an 'if-value' statement must be optional."}
+                           'l-err/get-in-path-cannot-be-empty {:doc "A path must be provided to the 'get-in' operation."}
+                           'l-err/if-expects-boolean {:doc "The value being testing in an 'if' expression must be of type boolean."}
                            'l-err/invalid-accumulator {:doc ""}
                            'l-err/invalid-binding-form {:doc ""}
                            'l-err/invalid-binding-target {:doc ""}
                            'l-err/invalid-element-binding-target {:doc ""}
                            'l-err/invalid-lookup-target {:doc ""}
                            'l-err/let-bindings-empty {:doc ""}
-                           'l-err/let-invalid-symbol {:doc ""}
                            'l-err/let-needs-symbol {:doc ""}
                            'l-err/must-be-instance {:doc ""}
                            'l-err/must-be-spec-id {:doc ""}
@@ -127,7 +113,6 @@
                            'l-err/no-matching-signature {:doc ""}
                            'l-err/no-such-variable {:doc ""}
                            'l-err/reduce-needs-vector {:doc ""}
-                           'l-err/rest-needs-vector {:doc ""}
                            'l-err/result-always {:doc ""}
                            'l-err/spec-not-found {:doc ""}
                            'l-err/syntax-error {:doc ""}

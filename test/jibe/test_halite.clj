@@ -300,7 +300,7 @@
 
       'foo #"Undefined"
       '(get) #"Wrong number of arguments"
-      '(get [] 1) #"Cannot index into empty vector"
+      '(get [] 1) #"Index out of bounds"
       '(get xs (< 1 2)) #"must be an integer"
       '(get a :foo/bar) #"must be a variable name"
       '(get a 12) #"must be a variable name"

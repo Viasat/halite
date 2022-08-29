@@ -5848,7 +5848,7 @@
   (h
    (get [] 0)
    [:throws
-    "l-err/cannot-index-into-empty-vector 0-0 : Cannot index into empty vector"])
+    "h-err/index-out-of-bounds 0-0 : Index out of bounds, 0, for vector of length 0"])
   (h
    (get [10] 1)
    :Integer
@@ -7819,7 +7819,7 @@
      [v (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)]
       (if-value v [1] [2]))
     [:throws
-     "l-err/first-agument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]])
+     "l-err/first-argument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]])
   (hc
    :basic-2
    :spec
@@ -8010,7 +8010,7 @@
    :spec
    [(let [v {:$type :spec/A$v1, :p 10, :n -1}] (if-value v 1 2))
     [:throws
-     "l-err/first-agument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]]))
+     "l-err/first-argument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]]))
 
 (deftest
   test-misc-types
@@ -10902,7 +10902,7 @@
   (h
    (let [$ 1] $)
    [:throws
-    "l-err/let-invalid-symbol 0-0 : Binding target for 'let' must not start with '$': $"])
+    "l-err/binding-target-invalid-symbol 0-0 : Binding target for 'let' must not start with '$': $"])
   (h (let [a$ 1] a$) :Integer 1 "({ 'a$' = 1; 'a$' })" "1")
   (h
    (let [☺ 1] ☺)

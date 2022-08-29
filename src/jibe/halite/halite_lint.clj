@@ -4,7 +4,8 @@
 (ns jibe.halite.halite-lint
   "Analyize halite expressions to find patterns of usage unnecessary and
   undesireable for users, though legal and supported by the language."
-  (:require [jibe.halite.l-err :as l-err]
+  (:require [jibe.h-err :as h-err]
+            [jibe.halite.l-err :as l-err]
             [jibe.halite :as halite]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
@@ -68,9 +69,9 @@
     (halite-types/halite-vector-type? subexpr-type)
     (let [index-type (type-check* ctx index)]
       (when (= halite-types/empty-vector subexpr-type)
-        (throw-err (l-err/cannot-index-into-empty-vector {:form form})))
+        (throw-err (h-err/index-out-of-bounds {:form form :index index :length 0})))
       (when (not= :Integer index-type)
-        (throw-err (l-err/index-not-integer {:form form, :index-form index, :expected :Integer, :actual-type index-type})))
+        (throw-err (h-err/invalid-vector-index {:form form, :index-form index, :expected :Integer, :actual-type index-type})))
       (halite-types/elem-type subexpr-type))
 
     (and (halite-types/spec-type? subexpr-type)
@@ -79,7 +80,7 @@
     (let [field-types (-> (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)
                           (update-vals (partial halite-envs/halite-type-from-var-type (:senv ctx))))]
       (when-not (and (keyword? index) (halite-types/bare? index))
-        (throw-err (l-err/index-not-variable-name {:form form, :index-form index})))
+        (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
         (throw-err (l-err/no-such-variable {:form form, :index-form index, :spec-id (symbol (halite-types/spec-id subexpr-type))})))
       (get field-types index))
@@ -152,7 +153,7 @@
         (when-not (and (symbol? sym) (halite-types/bare? sym))
           (throw-err (l-err/let-needs-symbol {:form expr :sym sym})))
         (when (re-find #"^[$]" (name sym))
-          (throw-err (l-err/let-invalid-symbol {:form expr :sym sym})))
+          (throw-err (l-err/binding-target-invalid-symbol {:form expr :sym sym :op 'let})))
         (let [t (type-check* ctx body)]
           (when (= t :Unset)
             (throw-err (l-err/cannot-bind-unset {:form expr :sym sym :body body})))
@@ -176,10 +177,10 @@
     (let [coll-type (type-check* ctx expr)
           et (halite-types/elem-type coll-type)
           _ (when-not et
-              (throw-err (l-err/collection-required {:op op
-                                                     :form expr
-                                                     :expr-type coll-type
-                                                     :expr-type-string (or (halite-types/spec-id coll-type) coll-type)})))
+              (throw-err (h-err/comprehend-collection-invalid-type {:op op
+                                                                    :form expr
+                                                                    :expr-type coll-type
+                                                                    :expr-type-string (or (halite-types/spec-id coll-type) coll-type)})))
           body-type (type-check* (update ctx :tenv halite-envs/extend-scope sym et) body)]
       {:coll-type coll-type
        :body-type body-type})))
@@ -187,7 +188,7 @@
 (s/defn ^:private type-check-quantifier :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (when (not= :Boolean (:body-type (type-check-comprehend ctx expr)))
-    (throw-err (l-err/body-must-be-boolean {:op (first expr) :form expr})))
+    (throw-err (h-err/not-boolean-body {:op (first expr) :form expr})))
   :Boolean)
 
 (s/defn ^:private type-check-map :- halite-types/HaliteType
@@ -225,13 +226,13 @@
   (let [[op sym set-expr unset-expr] expr]
     (halite/arg-count-exactly (if (= 'when-value op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (l-err/first-argument-not-symbol {:op op :form expr})))
+      (throw-err (h-err/if-value-must-be-symbol {:op op :form expr})))
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
                        (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) unset-expr))]
       (when-not (halite-types/strict-maybe-type? sym-type)
-        (throw-err (l-err/first-agument-not-optional {:op op :form sym :expected (halite-types/maybe-type :Any) :actual sym-type})))
+        (throw-err (l-err/first-argument-not-optional {:op op :form sym :expected (halite-types/maybe-type :Any) :actual sym-type})))
       (let [inner-type (halite-types/no-maybe sym-type)
             set-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) set-expr)]
         (halite-types/meet set-type unset-type)))))
@@ -280,9 +281,9 @@
   (halite/arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
     (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
-      (throw-err (l-err/first-needs-vector {:form expr})))
+      (throw-err (h-err/argument-not-vector {:form expr})))
     (when (= halite-types/empty-vector arg-type)
-      (throw-err (l-err/argument-empty {:form expr})))
+      (throw-err (h-err/argument-empty {:form expr})))
     (second arg-type)))
 
 (s/defn ^:private type-check-rest :- halite-types/HaliteType
@@ -290,7 +291,7 @@
   (halite/arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
     (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
-      (throw-err (l-err/rest-needs-vector {:form expr})))
+      (throw-err (h-err/argument-not-vector {:form expr})))
     arg-type))
 
 (s/defn ^:private type-check-conj :- halite-types/HaliteType
@@ -301,7 +302,7 @@
       (throw-err (l-err/needs-collection {:op 'conj :form expr})))
     (doseq [[elem elem-type] (map vector (drop 2 expr) elem-types)]
       (when (halite-types/maybe-type? elem-type)
-        (throw-err (l-err/cannot-conj-unset {:form elem :type-string (halite-types/coll-type-string base-type)}))))
+        (throw-err (h-err/cannot-conj-unset {:form elem :type-string (halite-types/coll-type-string base-type)}))))
     (halite-types/change-elem-type
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
@@ -316,7 +317,7 @@
     (when-not (halite-types/subtype? t (halite-types/coll-type :Value))
       (throw-err (l-err/needs-collection-second {:op op :form expr})))
     (when (and (halite-types/subtype? s (halite-types/vector-type :Value)) (not (halite-types/subtype? t (halite-types/vector-type :Value))))
-      (throw-err (l-err/argument-mis-match {:op op :form expr})))
+      (throw-err (h-err/not-both-vectors {:op op :form expr})))
     (halite-types/meet s
                        (halite-types/change-elem-type s (halite-types/elem-type t)))))
 

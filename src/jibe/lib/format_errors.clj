@@ -193,7 +193,7 @@
        (fn [[k n]]
          (let [v (get data-map (keyword n))]
            (when (nil? v)
-             (log/error (str "string template key not found: " {:key n :msg-str msg-str})))
+             (log/error (str "string template key not found: " {:err-id err-id :key n :msg-str msg-str})))
            (when trace-err-defs?
              (let [original-v (get original-data-map (keyword n))
                    t [(keyword n)
