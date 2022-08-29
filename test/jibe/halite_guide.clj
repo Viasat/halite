@@ -50,7 +50,8 @@
        (= :throws (first x))))
 
 (defn- check-result-type [senv tenv t result]
-  (when-not (is-harness-error? result)
+  (when-not (or (is-harness-error? result)
+                (is-harness-error? t))
     (if (= :Unset result)
       (is (halite-types/maybe-type? t))
       (let [result-type (halite-lint/type-check senv tenv result)]
@@ -332,7 +333,7 @@
   (h false :Boolean false "false" "false")
   (h (and true false) :Boolean false "(true && false)" "false")
   (h (and true true) :Boolean true "(true && true)" "true")
-  (h (and true) [:throws "l-err/no-matching-signature 0-0 : No matching signature for '\"and\"'"])
+  (h (and true) [:throws "h-err/no-matching-signature 0-0 : No matching signature for '\"and\"'"])
   (h
    (and true (error "fail"))
    [:throws
@@ -362,7 +363,7 @@
   (h (or true true) :Boolean true "(true || true)" "true")
   (h (or true false) :Boolean true "(true || false)" "true")
   (h (or false false) :Boolean false "(false || false)" "false")
-  (h (or true) [:throws "l-err/no-matching-signature 0-0 : No matching signature for '\"or\"'"])
+  (h (or true) [:throws "h-err/no-matching-signature 0-0 : No matching signature for '\"or\"'"])
   (h
    (or)
    [:throws
@@ -394,14 +395,14 @@
    (= true)
    [:throws
     "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to '=': expected at least 2, but got 1"])
-  (h (= :k :k) [:throws "l-err/syntax-error 0-0 : Syntax error"])
+  (h (= :k :k) [:throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (= :my/Spec$v1 :my/Spec$v1)
-   [:throws "l-err/syntax-error 0-0 : Syntax error"])
+   [:throws "h-err/syntax-error 0-0 : Syntax error"])
   (h
    (= $no-value 1)
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (= $no-value $no-value)
    :Boolean
@@ -411,7 +412,7 @@
   (h
    (let [x 1] (= $no-value 1))
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (let [x $no-value] (= $no-value 1))
    [:throws
@@ -666,7 +667,7 @@
   (h
    (= 1 true)
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h (= 1 1 1) :Boolean true "equalTo(1, 1, 1)" "true")
   (h (not= 1 2) :Boolean true "(1 != 2)" "true")
   (h
@@ -680,7 +681,7 @@
   (h
    (not= false 3)
    [:throws
-    "l-err/result-always 0-0 : Result of 'not=' would always be true"])
+    "l-err/result-always-known 0-0 : Result of 'not=' would always be true"])
   (h (not= 1 2 3) :Boolean true "notEqualTo(1, 2, 3)" "true")
   (h (not= 1 1 1) :Boolean false "notEqualTo(1, 1, 1)" "false")
   (h (> 1 0) :Boolean true "(1 > 0)" "true")
@@ -1046,7 +1047,7 @@
   test-string-concatenation
   (h (str "a" "b") :String "ab" "str(\"a\", \"b\")" "\"ab\"")
   (h (str "a" "") :String "a" "str(\"a\", \"\")" "\"a\"")
-  (h (str "a") [:throws "l-err/no-matching-signature 0-0 : No matching signature for '\"str\"'"])
+  (h (str "a") [:throws "h-err/no-matching-signature 0-0 : No matching signature for '\"str\"'"])
   (h
    (str "a" "b" "c")
    :String
@@ -7079,7 +7080,7 @@
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (if-value o o o))
     [:throws
-     "l-err/undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
+     "l-err/disallowed-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
   (hc
    :basic
    :my
@@ -7087,7 +7088,7 @@
      [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)]
       (if-value o o o))
     [:throws
-     "l-err/undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
+     "l-err/disallowed-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
   (hc
    :basic
    :my
@@ -7346,7 +7347,7 @@
    :spec
    [(= {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1})
     [:throws
-     "l-err/result-always 0-0 : Result of '=' would always be false"]])
+     "l-err/result-always-known 0-0 : Result of '=' would always be false"]])
   (hc
    :basic-2
    :spec
@@ -7364,7 +7365,7 @@
      {:$type :spec/A$v1, :p 1, :n -1}
      (get {:$type :spec/B$v1, :x 10, :y -1} :z))
     [:throws
-     "l-err/result-always 0-0 : Result of '=' would always be false"]])
+     "l-err/result-always-known 0-0 : Result of '=' would always be false"]])
   (hc
    :basic-2
    :spec
@@ -7892,7 +7893,7 @@
       (if-value v v v)]
       (if-value w 1 2))
     [:throws
-     "l-err/undefined-use-of-unset-variable 0-0 : Disallowed use of Unset variable 'v'; you may want '$no-value'"]])
+     "l-err/disallowed-unset-variable 0-0 : Disallowed use of Unset variable 'v'; you may want '$no-value'"]])
   (hc
    :basic-2
    :spec
@@ -10214,11 +10215,11 @@
   (h
    (= #d "1.0" #d "1.00")
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (= #d "1.0" 1)
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (not= #d "1.0" #d "1.0")
    :Boolean
@@ -10240,7 +10241,7 @@
   (h
    (not= #d "1.0" #d "1.0" #d "1.00")
    [:throws
-    "l-err/result-always 0-0 : Result of 'not=' would always be true"])
+    "l-err/result-always-known 0-0 : Result of 'not=' would always be true"])
   (h
    (< #d "1.0" #d "1.1")
    :Boolean
@@ -10359,27 +10360,27 @@
   (h
    (= 0 #d "0.0")
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (= #d "0.0" #d "0.00")
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (= 1 #d "1.0")
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (= #d "1.00" #d "1.0")
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (= -1 #d "-1.0")
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (h
    (= #d "-1.00" #d "-1.0")
    [:throws
-    "l-err/result-always 0-0 : Result of '=' would always be false"])
+    "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (hf
    (reduce conj #{} [1 #d "1.0" #d "1.00"])
    [:Set :Value]
@@ -10528,6 +10529,7 @@
   test-reserved-words
   (h :Unset [:throws "h-err/syntax-error 0-0 : Syntax error"])
   (h $no-value :Unset :Unset "'$no-value'" "Unset")
+  (h (let [x $no-value] x) [:throws "l-err/cannot-bind-unset 0-0 : Disallowed binding 'x' to :Unset value; just use '$no-value'"])
   (h $this [:throws "h-err/undefined-symbol 0-0 : Undefined: '$this'"]))
 
 (deftest

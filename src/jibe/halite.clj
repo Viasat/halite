@@ -512,8 +512,7 @@
                                          (set? expr) :set-literal-count)
                                        expr)
                           (->> (map (partial syntax-check (inc depth)) expr) dorun))
-     :else (throw-err (h-err/syntax-error {:form expr
-                                           :form-class (class expr)})))))
+     :else (throw-err (h-err/syntax-error {:form expr :form-class (class expr)})))))
 
 (s/defn matches-signature?
   [sig :- FnSignature, actual-types :- [halite-types/HaliteType]]
@@ -583,7 +582,7 @@
       (when-not (and (keyword? index) (halite-types/bare? index))
         (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
-        (throw-err (h-err/field-name-not-in-spec {:form form, :invalid-vars [(symbol index)]})))
+        (throw-err (h-err/field-name-not-in-spec {:form form, :index-form index, :spec-id (symbol (halite-types/spec-id subexpr-type)) :invalid-vars [(symbol index)]})))
       (get field-types index))
 
     :else (throw-err (h-err/invalid-lookup-target {:form form, :actual-type subexpr-type}))))
@@ -607,7 +606,7 @@
   (arg-count-at-least 2 expr)
   :Boolean)
 
-(defn- add-position [n m]
+(defn add-position [n m]
   (let [m' (assoc m
                   :position-text (text (condp = n
                                          nil "Argument"

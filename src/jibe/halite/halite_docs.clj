@@ -101,20 +101,8 @@
                            'l-err/if-expects-boolean {:doc "The value being testing in an 'if' expression must be of type boolean."}
                            'l-err/let-bindings-empty {:doc "The bindings form of the 'let' cannot be empty. If there is nothing to bind, then the 'let' can be omitted."}
                            'l-err/let-needs-symbol {:doc "The bindings form of 'let' must consist of bare symbols associated with values."}
-                           'l-err/must-be-instance {:doc ""}
-                           'l-err/must-be-spec-id {:doc ""}
-                           'l-err/needs-collection {:doc ""}
-                           'l-err/needs-collection-second {:doc ""}
-                           'l-err/no-matching-signature {:doc ""}
-                           'l-err/no-such-variable {:doc ""}
-                           'l-err/reduce-needs-vector {:doc ""}
-                           'l-err/result-always {:doc ""}
-                           'l-err/spec-not-found {:doc ""}
-                           'l-err/syntax-error {:doc ""}
-                           'l-err/undefined {:doc ""}
-                           'l-err/undefined-use-of-unset-variable {:doc ""}
-                           'l-err/unknown-type {:doc ""}
-                           'l-err/when-expects-boolean {:doc ""}}))
+                           'l-err/result-always-known {:doc "The result of the equality check is always the same and can be known in advance, so it is not needed."}
+                           'l-err/disallowed-unset-variable {:doc "It is not allowed to bind 'unset' to symbols other than the built-in '$no-value'."}}))
 
 (defn expand-example [[op m]]
   [op (if (:examples m)
