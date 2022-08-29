@@ -23,25 +23,25 @@
 (def err-maps (merge-with merge
                           @format-errors/error-atom
                           {'h-err/abs-failure {:doc "The way the number space is divided the value of zero comes out of the positive number space. This means there is one more negative number than there are positive numbers. So there is one negative number whose absolute value cannot be represented. That negative number is the most negative value."}
-                           'h-err/accumulator-target-must-be-symbol {:doc "In 'reduce', it is necesary to define a symbol which is used to hold the accumulated value of the reduction."
-                                                                     :see-also ['h-err/element-binding-target-must-be-symbol]}
+                           'h-err/accumulator-target-must-be-bare-symbol {:doc "In 'reduce', it is necesary to define a symbol which is used to hold the accumulated value of the reduction. This symbol must not include a namespace."
+                                                                          :see-also ['h-err/element-binding-target-must-be-bare-symbol]}
                            'h-err/arg-type-mismatch {:doc "A relatively generic exception that indicates the operator being invoked cannot operate on the type of value provided."}
                            'h-err/not-both-vectors {:doc "When the first argument to 'concat' is a vector, the second must also be a vector. A vector can be concated onto a set, but a set cannot be concated onto a vector."}
                            'h-err/argument-empty {:doc "The 'first' operation cannot be invoked on an empty collection."}
                            'h-err/argument-not-set-or-vector {:doc "The operation must be invoked a collection."}
                            'h-err/argument-not-vector {:doc "The operation can only be invoked on a vector."}
                            'h-err/arguments-not-sets {:doc "The operation can only be invoked on set arguments."}
-                           'h-err/binding-target-must-be-symbol {:doc "In binding forms, the first value of each pair must be a symbol. This symbol is an identifier that will be bound to the value of the second item in the pair."}
+                           'h-err/binding-target-must-be-bare-symbol {:doc "In binding forms, the first value of each pair must be a symbol without a namespace. This symbol is an identifier that will be bound to the value of the second item in the pair."}
                            'h-err/cannot-bind-reserved-word {:doc "There are a small number of symbols that are reserved for system use and cannot be used by users in bindings."}
                            'h-err/cannot-conj-unset {:doc "Only actual values can be added into collections. Specifically 'unset' cannot be added into a collection."}
                            'h-err/comprehend-binding-wrong-count {:doc "Collection comprehensions require a single binding that defines the symbol to be bound to the elements of the collection."}
                            'h-err/comprehend-collection-invalid-type {:doc "Collection comprehensions can only be applies to collections, i.e. vectors or sets."}
                            'h-err/divide-by-zero {:doc "Division by zero, whether directly or indirectly via modulus cannot be performed."}
                            'h-err/element-accumulator-same-symbol {:doc "The 'reduce' operation requires distinct symbols for referring to the accumulator and the collection element."}
-                           'h-err/element-binding-target-must-be-symbol {:doc "In 'reduce', it is necesary to define a symbol which is used to hold each element of the collection."
-                                                                         :see-also ['h-err/accumulator-target-must-be-symbol]}
+                           'h-err/element-binding-target-must-be-bare-symbol {:doc "In 'reduce', it is necesary to define a symbol without a namepsace which is used to hold each element of the collection."
+                                                                              :see-also ['h-err/accumulator-target-must-be-bare-symbol]}
                            'h-err/get-in-path-must-be-vector-literal {:doc "The path to navigate in 'get-in' must be a literal, i.e. it cannot be an expression to compute a vector."}
-                           'h-err/if-value-must-be-symbol {:doc "The 'if-value' operator can only be applied to a symbol that is already bound to an optional value."}
+                           'h-err/if-value-must-be-bare-symbol {:doc "The 'if-value' operator can only be applied to a bare symbol that is already bound to an optional value."}
                            'h-err/index-out-of-bounds {:doc "The index falls outside of the bounds of the vector. A way to avoid this is to first test the length of the vector."}
                            'h-err/invalid-exponent {:doc "The exponent cannot be negative."}
                            'h-err/invalid-expression {:doc "The expression itself was not recognized as a value that could be evaluated."}
@@ -99,13 +99,8 @@
                            'l-err/first-argument-not-optional {:doc "The value being tested in an 'if-value' statement must be optional."}
                            'l-err/get-in-path-cannot-be-empty {:doc "A path must be provided to the 'get-in' operation."}
                            'l-err/if-expects-boolean {:doc "The value being testing in an 'if' expression must be of type boolean."}
-                           'l-err/invalid-accumulator {:doc ""}
-                           'l-err/invalid-binding-form {:doc ""}
-                           'l-err/invalid-binding-target {:doc ""}
-                           'l-err/invalid-element-binding-target {:doc ""}
-                           'l-err/invalid-lookup-target {:doc ""}
-                           'l-err/let-bindings-empty {:doc ""}
-                           'l-err/let-needs-symbol {:doc ""}
+                           'l-err/let-bindings-empty {:doc "The bindings form of the 'let' cannot be empty. If there is nothing to bind, then the 'let' can be omitted."}
+                           'l-err/let-needs-symbol {:doc "The bindings form of 'let' must consist of bare symbols associated with values."}
                            'l-err/must-be-instance {:doc ""}
                            'l-err/must-be-spec-id {:doc ""}
                            'l-err/needs-collection {:doc ""}

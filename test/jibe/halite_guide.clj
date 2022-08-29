@@ -446,11 +446,11 @@
   (h
    (if-value true false true)
    [:throws
-    "h-err/if-value-must-be-symbol 0-0 : First argument to 'if-value' must be a symbol"])
+    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
   (h
    (when-value true false)
    [:throws
-    "h-err/if-value-must-be-symbol 0-0 : First argument to 'when-value' must be a symbol"])
+    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
   (h
    (if-value-let [y false] false)
    [:throws
@@ -461,7 +461,7 @@
   (h
    (if-value-let [true false] false true)
    [:throws
-    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'if-value-let' must be a symbol, not: true"])
+    "h-err/binding-target-must-be-bare-symbol 0-0 : Binding target for 'if-value-let' must be a bare symbol, not: true"])
   (h
    (if-value-let [x false] false true)
    [:throws
@@ -946,15 +946,15 @@
   (h
    (if-value 3 1 2)
    [:throws
-    "h-err/if-value-must-be-symbol 0-0 : First argument to 'if-value' must be a symbol"])
+    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
   (h
    (when-value 3 1)
    [:throws
-    "h-err/if-value-must-be-symbol 0-0 : First argument to 'when-value' must be a symbol"])
+    "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])
   (h
    (if-value-let [3 4] 1 2)
    [:throws
-    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'if-value-let' must be a symbol, not: 3"])
+    "h-err/binding-target-must-be-bare-symbol 0-0 : Binding target for 'if-value-let' must be a bare symbol, not: 3"])
   (h
    (if-value-let [x 3] 1 2)
    [:throws
@@ -5645,11 +5645,11 @@
   (h
    (every? [19 true] false)
    [:throws
-    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'every?' must be a symbol, not: 19"])
+    "h-err/binding-target-must-be-bare-symbol 0-0 : Binding target for 'every?' must be a bare symbol, not: 19"])
   (h
    (every? [19 #{"a"}] true)
    [:throws
-    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'every?' must be a symbol, not: 19"])
+    "h-err/binding-target-must-be-bare-symbol 0-0 : Binding target for 'every?' must be a bare symbol, not: 19"])
   (h
    (every? [if +] true)
    [:throws "h-err/undefined-symbol 0-0 : Undefined: '+'"])
@@ -5688,7 +5688,7 @@
   (h
    (any? ["a" #{1 3 2}] true)
    [:throws
-    "h-err/binding-target-must-be-symbol 0-0 : Binding target for 'any?' must be a symbol, not: \"a\""])
+    "h-err/binding-target-must-be-bare-symbol 0-0 : Binding target for 'any?' must be a bare symbol, not: \"a\""])
   (h
    (any?)
    [:throws
@@ -7597,7 +7597,7 @@
    :my
    [(if-value (get {:$type :my/Spec$v1, :p 1, :n -1} :o) 19 32)
     [:throws
-     "h-err/if-value-must-be-symbol 0-0 : First argument to 'if-value' must be a symbol"]])
+     "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"]])
   (hc
    :basic
    :my
@@ -9683,11 +9683,11 @@
   (h
    (reduce [1 2] "as" true)
    [:throws
-    "h-err/accumulator-target-must-be-symbol 0-0 : Accumulator binding target for 'reduce' must be a symbol, not: 1"])
+    "h-err/accumulator-target-must-be-bare-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
   (h
    (reduce [1 2] [x 3] true)
    [:throws
-    "h-err/accumulator-target-must-be-symbol 0-0 : Accumulator binding target for 'reduce' must be a symbol, not: 1"])
+    "h-err/accumulator-target-must-be-bare-symbol 0-0 : Accumulator binding target for 'reduce' must be a bare symbol, not: 1"])
   (h
    (reduce [a 2] [x 3] true)
    [:throws

@@ -85,7 +85,7 @@
         (throw-err (l-err/no-such-variable {:form form, :index-form index, :spec-id (symbol (halite-types/spec-id subexpr-type))})))
       (get field-types index))
 
-    :else (throw-err (l-err/invalid-lookup-target {:form form, :actual-type subexpr-type}))))
+    :else (throw-err (h-err/invalid-lookup-target {:form form, :actual-type subexpr-type}))))
 
 (s/defn ^:private type-check-get :- halite-types/HaliteType
   [ctx :- TypeContext, form]
@@ -169,9 +169,9 @@
   (halite/arg-count-exactly 2 expr)
   (let [[op [sym expr :as bindings] body] expr]
     (when-not (= 2 (count bindings))
-      (throw-err (l-err/invalid-binding-form {:op op :form expr})))
+      (throw-err (h-err/comprehend-binding-wrong-count {:op op :form expr})))
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (l-err/invalid-binding-target {:op op :form expr :sym sym})))
+      (throw-err (h-err/binding-target-must-be-bare-symbol {:op op :form expr :sym sym})))
     (when (re-find #"^[$]" (name sym))
       (throw-err (l-err/binding-target-invalid-symbol {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
@@ -226,7 +226,7 @@
   (let [[op sym set-expr unset-expr] expr]
     (halite/arg-count-exactly (if (= 'when-value op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (h-err/if-value-must-be-symbol {:op op :form expr})))
+      (throw-err (h-err/if-value-must-be-bare-symbol {:op op :form expr})))
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
@@ -242,7 +242,7 @@
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
     (halite/arg-count-exactly (if (= 'when-value-let op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (l-err/invalid-binding-target {:op op :form expr :sym sym})))
+      (throw-err (h-err/binding-target-must-be-bare-symbol {:op op :form expr :sym sym})))
     (let [maybe-type (type-check* ctx maybe-expr)
           else-type (if (= 'when-value-let op)
                       :Unset

@@ -21,9 +21,6 @@
 (deferr no-such-variable [data]
         {:message "No such variable ':index-form' on spec ':spec-id'"})
 
-(deferr invalid-lookup-target [data]
-        {:message "Lookup target must be an instance of known type or non-empty vector"})
-
 (deferr result-always [data]
         {:message "Result of ':op' would always be :value"})
 
@@ -42,23 +39,11 @@
 (deferr cannot-bind-nothing [data]
         {:message "Disallowed binding ':sym' to \\colonNothing value; perhaps move to body of 'let'"})
 
-(deferr invalid-binding-form [data]
-        {:message "Binding form for ':op' must have one variable and one collection"})
-
-(deferr invalid-binding-target [data]
-        {:message "Binding target for ':op' must be a symbol, not: :sym"})
-
 (deferr binding-target-invalid-symbol [data]
         {:message "Binding target for ':op' must not start with '$': :sym"})
 
 (deferr collection-required [data]
         {:message "Collection required for ':op', not :expr-type-string"})
-
-(deferr invalid-accumulator [data]
-        {:message "Accumulator binding target for ':op' must be a symbol, not: :accumulator"})
-
-(deferr invalid-element-binding-target [data]
-        {:message "Element binding target for ':op' must be a symbol, not: :element"})
 
 (deferr reduce-needs-vector [data]
         {:message "Second binding expression to 'reduce' must be a vector."})

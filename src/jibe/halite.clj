@@ -680,7 +680,7 @@
     (when-not (= 2 (count bindings))
       (throw-err (h-err/comprehend-binding-wrong-count {:op op :form expr})))
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (h-err/binding-target-must-be-symbol {:op op :form expr :sym sym})))
+      (throw-err (h-err/binding-target-must-be-bare-symbol {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
           et (halite-types/elem-type coll-type)
           _ (when-not et
@@ -727,9 +727,9 @@
   (arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
     (when-not (and (symbol? acc) (halite-types/bare? acc))
-      (throw-err (h-err/accumulator-target-must-be-symbol {:op op, :accumulator acc, :form expr})))
+      (throw-err (h-err/accumulator-target-must-be-bare-symbol {:op op, :accumulator acc, :form expr})))
     (when-not (and (symbol? elem) (halite-types/bare? elem))
-      (throw-err (h-err/element-binding-target-must-be-symbol {:op op, :form expr, :element elem})))
+      (throw-err (h-err/element-binding-target-must-be-bare-symbol {:op op, :form expr, :element elem})))
     (when (= acc elem)
       (throw-err (h-err/element-accumulator-same-symbol {:form expr, :accumulator acc, :element elem})))
     (let [init-type (type-check* ctx init)
@@ -748,8 +748,8 @@
   (let [[op sym set-expr unset-expr] expr]
     (arg-count-exactly (if (= 'when-value op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (h-err/if-value-must-be-symbol {:op op
-                                                 :form expr})))
+      (throw-err (h-err/if-value-must-be-bare-symbol {:op op
+                                                      :form expr})))
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
@@ -765,8 +765,8 @@
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
     (arg-count-exactly (if (= 'when-value-let op) 2 3) expr)
     (when-not (and (symbol? sym) (halite-types/bare? sym))
-      (throw-err (h-err/binding-target-must-be-symbol {:op op
-                                                       :sym sym})))
+      (throw-err (h-err/binding-target-must-be-bare-symbol {:op op
+                                                            :sym sym})))
     (let [maybe-type (type-check* ctx maybe-expr)
           else-type (if (= 'when-value-let op)
                       :Unset
