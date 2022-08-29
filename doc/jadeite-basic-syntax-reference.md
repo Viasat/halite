@@ -25,18 +25,18 @@
 !["non-numeric-character | plus-minus-character | '0-9'"](./halite-bnf-diagrams/basic-syntax/symbol-character-j.svg)
 
 ---
-### <a name="simple-symbol"></a>simple-symbol
+### <a name="bare-symbol"></a>bare-symbol
 
 
 
-!["plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"](./halite-bnf-diagrams/basic-syntax/simple-symbol-j.svg)
+!["plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"](./halite-bnf-diagrams/basic-syntax/bare-symbol-j.svg)
 
 ---
 ### <a name="symbol"></a>symbol
 
 Symbols are identifiers that allow values and operations to be named. The following are reserved and cannot be used as user defined symbols: true, false, nil.
 
-!["(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"](./halite-bnf-diagrams/basic-syntax/symbol-j.svg)
+!["(bare-symbol [ '/' bare-symbol]) | ('’' bare-symbol [ '/' bare-symbol] '’')"](./halite-bnf-diagrams/basic-syntax/symbol-j.svg)
 
 Symbols are used to identify operators, variables in expressions, specifications, and fields within specifications. Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator. The following are also legal symbols, but they are reserved for system use: &&, ||, /, %, |
 

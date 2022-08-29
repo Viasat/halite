@@ -198,10 +198,10 @@
                                         :tags #{:symbol-all :symbol-all-j}}
                  'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"
                                     :tags #{:symbol-all :symbol-all-j}}
-                 'simple-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"
-                                 :tags #{:symbol-all :symbol-all-j}}
-                 'symbol {:bnf "simple-symbol [ '/' simple-symbol]"
-                          :bnf-j "(simple-symbol [ '/' simple-symbol]) | ('’' simple-symbol [ '/' simple-symbol] '’')"
+                 'bare-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"
+                               :tags #{:symbol-all :symbol-all-j}}
+                 'symbol {:bnf "bare-symbol [ '/' bare-symbol]"
+                          :bnf-j "(bare-symbol [ '/' bare-symbol]) | ('’' bare-symbol [ '/' bare-symbol] '’')"
                           :doc "Symbols are identifiers that allow values and operations to be named. The following are reserved and cannot be used as user defined symbols: true, false, nil."
                           :comment "Symbols are used to identify operators, variables in expressions, and specifications."
                           :comment-j "Symbols are used to identify operators, variables in expressions, specifications, and fields within specifications."

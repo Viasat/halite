@@ -600,7 +600,7 @@ The $type value of an instance is not considered a field that can be extracted w
 #### Possible errors:
 
 * [h-err/index-out-of-bounds]
-* [h-err/variables-not-in-spec]
+* [h-err/field-name-not-in-spec]
 
 See also: [`accessor-chain`](#accessor-chain)
 
@@ -646,7 +646,7 @@ The first path element in the path is looked up in the initial target. If there 
 
 * l-err/get-in-path-cannot-be-empty
 * h-err/invalid-lookup-target
-* h-err/variables-not-in-spec
+* h-err/field-name-not-in-spec
 * h-err/index-out-of-bounds
 
 See also: [`accessor`](#accessor)
@@ -1601,14 +1601,14 @@ Attempt to refine the given instance into an instance of type, spec-id.
 {$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )
 
 ### result ###
-h-err/no-active-refinement-path
+h-err/no-refinement-path
 ```
 
 </td></tr></table>
 
 #### Possible errors:
 
-* h-err/no-active-refinement-path
+* h-err/no-refinement-path
 * Spec not found
 
 See also: [`refinesTo?`](#refinesTo_Q)
