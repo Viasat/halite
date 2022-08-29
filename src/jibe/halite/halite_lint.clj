@@ -130,7 +130,7 @@
   (halite/arg-count-exactly 3 expr)
   (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw-err (l-err/if-expects-boolean {:form expr})))
+      (throw-err (h-err/arg-type-mismatch (halite/add-position 0 {:op 'if :expected-type-description (text "boolean") :expr expr}))))
     (halite-types/meet s t)))
 
 (s/defn ^:private type-check-when :- halite-types/HaliteType

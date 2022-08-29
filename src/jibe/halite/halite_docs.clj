@@ -98,7 +98,6 @@
                            'l-err/disallowed-nothing {:doc "An expression was encountered that does not have a value, but it was used in a place where a value is required. Examples of expressions that do not have values are an invocation of 'error' and the binding of a symbol to an element in an empty collection."}
                            'l-err/first-argument-not-optional {:doc "The value being tested in an 'if-value' statement must be optional."}
                            'l-err/get-in-path-cannot-be-empty {:doc "A path must be provided to the 'get-in' operation."}
-                           'l-err/if-expects-boolean {:doc "The value being testing in an 'if' expression must be of type boolean."}
                            'l-err/let-bindings-empty {:doc "The bindings form of the 'let' cannot be empty. If there is nothing to bind, then the 'let' can be omitted."}
                            'l-err/let-needs-symbol {:doc "The bindings form of 'let' must consist of bare symbols associated with values."}
                            'l-err/result-always-known {:doc "The result of the equality check is always the same and can be known in advance, so it is not needed."}
