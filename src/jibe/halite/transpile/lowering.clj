@@ -89,7 +89,7 @@
 
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
-(s/defn ^:private lower-instance-comparison-expr
+(s/defn lower-instance-comparison-expr
   [{{:keys [dgraph senv] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (#{'= 'not=} (first form)))
     (let [comparison-op (first form)
@@ -113,7 +113,7 @@
 
 ;;;;;;;;; Push gets inside instance-valued ifs ;;;;;;;;;;;
 
-(s/defn ^:private push-gets-into-ifs-expr
+(s/defn push-gets-into-ifs-expr
   [{{:keys [dgraph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'get (first form)))
     (let [[_get arg-id var-kw] form
@@ -350,7 +350,7 @@
 
 ;;;;;;;;;; Lowering Optionality ;;;;;;;;;;;;
 
-(s/defn ^:private lower-no-value-comparison-expr
+(s/defn lower-no-value-comparison-expr
   [{{:keys [dgraph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (contains? #{'= 'not=} (first form)))
     (let [[op & arg-ids] form
@@ -377,7 +377,7 @@
   [sctx :- SpecCtx]
   (rewrite-sctx sctx lower-when-expr))
 
-(s/defn ^:private lower-maybe-comparison-expr
+(s/defn lower-maybe-comparison-expr
   [{{:keys [dgraph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (let [opt-arg? (fn [[form htype]]
                    (halite-types/maybe-type? htype))
@@ -439,7 +439,7 @@
   [sctx :- SpecCtx]
   (rewrite-sctx sctx lower-maybe-comparison-expr))
 
-(s/defn ^:private push-comparison-into-maybe-if-in-expr
+(s/defn push-comparison-into-maybe-if-in-expr
   [{{:keys [dgraph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (let [maybe-if? (fn [[form htype]]
                     (and (seq? form)
@@ -457,7 +457,7 @@
   [sctx :- SpecCtx]
   (rewrite-sctx sctx push-comparison-into-maybe-if-in-expr))
 
-(s/defn ^:private push-if-value-into-if-in-expr
+(s/defn push-if-value-into-if-in-expr
   [{{:keys [dgraph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_if val?-id then-id else-id] form
@@ -543,7 +543,7 @@
          :nodes :constraints}
         deps-via-instance-literal)))
 
-(s/defn ^:private cancel-get-of-instance-literal-expr
+(s/defn cancel-get-of-instance-literal-expr
   [{{:keys [dgraph]} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when-let [[_get coll-id var-kw] (and (seq? form) (= 'get (first form)) form)]
     (let [[coll] (ssa/deref-id dgraph coll-id)]
@@ -556,7 +556,7 @@
   [sctx :- SpecCtx]
   (rewrite-sctx sctx cancel-get-of-instance-literal-expr))
 
-(s/defn ^:private eliminate-do-expr
+(s/defn eliminate-do-expr
   [rctx :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [tail-id (last form)]

@@ -119,19 +119,16 @@
       (when-not (halite-types/maybe-type? inner-htype)
         (second form)))))
 
-(s/defn ^:private simplify-step :- ssa/SpecCtx
-  [sctx :- ssa/SpecCtx]
-  (-> sctx
-      (rewriting/rewrite-sctx simplify-and)
-      (rewriting/rewrite-sctx simplify-not)
-      (rewriting/rewrite-sctx simplify-if-static-pred)
-      (rewriting/rewrite-sctx simplify-if-static-branches)
-      (rewriting/rewrite-sctx simplify-do)
-      (rewriting/rewrite-sctx simplify-no-value)
-      (rewriting/rewrite-sctx simplify-statically-known-value?)
-      (rewriting/rewrite-sctx simplify-redundant-value!)))
-
 (s/defn simplify :- ssa/SpecCtx
   "Perform semantics-preserving simplifications on the expressions in the specs."
   [sctx :- ssa/SpecCtx]
-  (fixpoint simplify-step sctx))
+  (rewriting/rewrite-reachable-sctx
+   sctx
+   [(rewriting/rule simplify-and)
+    (rewriting/rule simplify-not)
+    (rewriting/rule simplify-if-static-pred)
+    (rewriting/rule simplify-if-static-branches)
+    (rewriting/rule simplify-do)
+    (rewriting/rule simplify-no-value)
+    (rewriting/rule simplify-statically-known-value?)
+    (rewriting/rule simplify-redundant-value!)]))

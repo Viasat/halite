@@ -4,11 +4,13 @@
 (ns jibe.halite.transpile.rewriting
   "Functions to facilitate rewriting of halite specs."
   (:require [clojure.set :as set]
+            [clojure.core.reducers :as r]
             [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.transpile.ssa :as ssa
              :refer [SpecInfo SpecCtx SSACtx]]
+            [jibe.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 
@@ -124,6 +126,75 @@
         spec-info')
       spec-info)))
 
+(defn- apply-rule-to-deriv [rule sctx ctx scope spec-id spec-info id deriv]
+  (let [{:keys [rule-name rewrite-fn nodes]} rule
+        dgraph (:derivations spec-info)
+        start-nanos (System/nanoTime)
+        form (rewrite-fn {:sctx sctx :ctx (assoc ctx :dgraph dgraph) :guard #{}} id deriv)]
+    (when (and (= :all nodes) (->> form (tree-seq coll? seq) (some #(= % id))))
+      (throw (ex-info (format  "BUG! Rewrite rule %s used rewritten node id in replacement form!"
+                               rule-name rule)
+                      {:dgraph dgraph :id id :form form})))
+    (when (some? form)
+      (let [dgraph' (or (:dgraph (meta form)) dgraph)
+            ctx (assoc ctx :dgraph dgraph')
+            rule-nanos (System/nanoTime)
+            [dgraph' id'] (ssa/form-to-ssa ctx form)
+            spec-info' (-> (assoc spec-info :derivations dgraph') (ssa/replace-node id id'))
+            end-nanos (System/nanoTime)
+            rule-ms (/ (- rule-nanos start-nanos) 1000000.0)
+            graph-ms (/ (- end-nanos rule-nanos) 1000000.0)
+            total-ms (/ (- end-nanos start-nanos) 1000000.0)]
+        (trace!
+         {:op :rewrite
+          :rule rule-name
+          :id id
+          :id' id'
+          :result form
+          :spec-id spec-id
+          :spec-info spec-info
+          :spec-info' spec-info'
+          :total-ms total-ms
+          :rule-ms rule-ms
+          :graph-ms graph-ms})
+        spec-info'))))
+
+(s/defn apply-to-reachable :- (s/maybe SpecInfo)
+  [sctx ctx scope spec-id spec-info
+   roots,
+   rules :- [RewriteRule]]
+  (loop [spec-info spec-info
+         reached (transient #{})
+         ids-to-do (into clojure.lang.PersistentQueue/EMPTY roots)]
+    (if-let [id (peek ids-to-do)]
+      (if (contains? reached id)
+        (recur spec-info reached (pop ids-to-do))
+        (let [deriv (get (:derivations spec-info) id)]
+          (if-not deriv
+            spec-info
+            (recur (or (some #(apply-rule-to-deriv % sctx ctx scope spec-id spec-info id deriv)
+                             rules)
+                       spec-info)
+                   (conj! reached id)
+                   (-> ids-to-do
+                       pop
+                       (into (ssa/referenced-derivations deriv)))))))
+      spec-info)))
+
+(s/defn rewrite-reachable :- SpecInfo
+  [rules :- [RewriteRule], sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
+  (let [spec-info (get sctx spec-id)
+        {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
+        scope (->> tenv (halite-envs/scope) keys set)]
+    (-> (fixpoint #(apply-to-reachable sctx ctx scope spec-id %
+                                       (r/map second (:constraints %))
+                                       rules)
+                  spec-info)
+        (ssa/prune-derivations false))))
+
+(defn rewrite-reachable-sctx [sctx rules]
+  (->> sctx keys (map #(vector % (rewrite-reachable rules sctx %))) (into {})))
+
 (s/defn rewrite-spec-constraints :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
@@ -181,12 +252,13 @@
             (assoc sctx spec-id (rewrite-spec rule sctx spec-id (sctx spec-id))))
           sctx))))
 
-(defmacro rewrite-sctx
-  [sctx rewrite-fn-sym]
+(defmacro rule [rewrite-fn-sym]
   (when-not (symbol? rewrite-fn-sym)
     (throw (ex-info "second arg to rewrite-sctx must be a symbol resolving to a rewrite fn" {})))
-  `(rewrite-sctx*
-    {:rule-name ~(name rewrite-fn-sym) :rewrite-fn ~rewrite-fn-sym, :nodes :all}
-    ~sctx))
+  `{:rule-name ~(name rewrite-fn-sym) :rewrite-fn ~rewrite-fn-sym, :nodes :all})
+
+(defmacro rewrite-sctx
+  [sctx rewrite-fn-sym]
+  `(rewrite-sctx* (rule ~rewrite-fn-sym) ~sctx))
 
 (defmacro ->>rewrite-sctx [rewrite-fn-sym sctx] `(rewrite-sctx ~sctx ~rewrite-fn-sym))

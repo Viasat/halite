@@ -387,17 +387,16 @@
            (lowering/lower-valid?)
            (drop-constraints-except-for-Bounds)
            (lowering/eliminate-error-forms)
-           (->> (fixpoint #(-> %
-                               lowering/eliminate-dos
-                               (rewriting/rewrite-sctx simplify-redundant-value!)
-                               (rewriting/rewrite-sctx simplify-statically-known-value?)
-                               lowering/cancel-get-of-instance-literal
-                               lowering/lower-instance-comparisons
-                               lowering/push-if-value-into-if
-                               lowering/lower-no-value-comparisons
-                               lowering/lower-maybe-comparisons
-                               lowering/push-gets-into-ifs
-                               lowering/push-comparisons-into-maybe-ifs)))
+           (rewriting/rewrite-reachable-sctx [(rewriting/rule lowering/eliminate-do-expr)
+                                              (rewriting/rule simplify-redundant-value!)
+                                              (rewriting/rule simplify-statically-known-value?)
+                                              (rewriting/rule lowering/cancel-get-of-instance-literal-expr)
+                                              (rewriting/rule lowering/lower-instance-comparison-expr)
+                                              (rewriting/rule lowering/push-if-value-into-if-in-expr)
+                                              (rewriting/rule lowering/lower-no-value-comparison-expr)
+                                              (rewriting/rule lowering/lower-maybe-comparison-expr)
+                                              (rewriting/rule lowering/push-gets-into-ifs-expr)
+                                              (rewriting/rule lowering/push-comparison-into-maybe-if-in-expr)])
            simplify
            :$propagate/Bounds
            (ssa/spec-from-ssa)
