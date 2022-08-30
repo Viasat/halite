@@ -5,7 +5,7 @@
   (:require [jibe.halite :as halite]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.transpile.lowering :as lowering]
-            [jibe.halite.transpile.rewriting :as rewriting]
+            [jibe.halite.transpile.rewriting :as rewriting :refer [rewrite-reachable-sctx rule]]
             [jibe.halite.transpile.simplify :refer [simplify]]
             [jibe.halite.transpile.ssa :as ssa :refer [Derivations]]
             [jibe.halite.transpile.util :refer [fixpoint]]
@@ -107,7 +107,8 @@
                           (or (not= (get v4 :bb) v2)
                               (not= (get v4 :bn) v5))
                           (= an 45)))]]
-             (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints))))))
+             (-> sctx (rewrite-reachable-sctx [(rule lowering/lower-instance-comparison-expr)])
+                 :ws/A ssa/spec-from-ssa :constraints))))))
 
 (deftest test-lower-instance-comparisons-for-composition
   (binding [ssa/*next-id* (atom 0)]
@@ -277,8 +278,6 @@
            (not= (get {:$type :ws/B, :bn an, :bp v1} :bn) 4)
            false)))))
 
-(def push-gets-into-ifs #'lowering/push-gets-into-ifs)
-
 (deftest test-push-gets-into-ifs
   (binding [ssa/*next-id* (atom 0)]
     (let [senv (halite-envs/spec-env
@@ -294,7 +293,8 @@
       (is (= '[["$all" (not= 1 (if ab
                                  (get {:$type :ws/B :bn 2} :bn)
                                  (get {:$type :ws/B :bn 1} :bn)))]]
-             (-> sctx push-gets-into-ifs :ws/A ssa/spec-from-ssa :constraints))))))
+             (-> sctx (rewrite-reachable-sctx [(rule lowering/push-gets-into-ifs-expr)])
+                 :ws/A ssa/spec-from-ssa :constraints))))))
 
 (deftest test-push-gets-into-nested-ifs
   (binding [ssa/*next-id* (atom 0)]
@@ -309,10 +309,8 @@
                    :refines-to {}}})
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '[["$all" (= 12 (if a (if b (get b1 :n) (get b2 :n)) (if b (get b3 :n) (get b4 :n))))]]
-             (->> sctx (fixpoint push-gets-into-ifs)
-                  :ws/A ssa/spec-from-ssa :constraints))))))
-
-(def cancel-get-of-instance-literal #'lowering/cancel-get-of-instance-literal)
+             (-> sctx (rewrite-reachable-sctx [(rule lowering/push-gets-into-ifs-expr)])
+                 :ws/A ssa/spec-from-ssa :constraints))))))
 
 (deftest test-cancel-get-of-instance-literal
   (binding [ssa/*next-id* (atom 0)]
@@ -333,7 +331,8 @@
       (is (= '[["$all" (and
                         (< an (+ 1 an))
                         (= (get (get b :c) :cn) 12))]]
-             (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A ssa/spec-from-ssa :constraints))))))
+             (-> sctx (rewrite-reachable-sctx [(rule lowering/cancel-get-of-instance-literal-expr)])
+                 :ws/A ssa/spec-from-ssa :constraints))))))
 
 (deftest test-eliminate-runtime-constraint-violations
   (binding [ssa/*next-id* (atom 0)]
@@ -725,9 +724,9 @@
                   (and
                    (if-value b1
                              (if-value b2
-                                       (let [v1 (get b2 :c1)
-                                             v2 (get v1 :cw)
-                                             v3 (get b2 :c2)
+                                       (let [v1 (get b2 :c2)
+                                             v2 (get b2 :c1)
+                                             v3 (get v2 :cw)
                                              v4 (get b1 :c1)
                                              v5 (get b2 :bw)]
                                          (and
@@ -737,19 +736,19 @@
                                                     (let [v6 (get b1 :bw)] (if-value v6 false true)))
                                           (= (get b2 :bx) (get b1 :bx))
                                           (and
-                                           (if-value v2
-                                                     (let [v6 (get v4 :cw)] (if-value v6 (= v6 v2) false))
+                                           (if-value v3
+                                                     (let [v6 (get v4 :cw)] (if-value v6 (= v6 v3) false))
                                                      (let [v6 (get v4 :cw)] (if-value v6 false true)))
-                                           (= (get v1 :cx) (get v4 :cx)))
-                                          (if-value v3
+                                           (= (get v2 :cx) (get v4 :cx)))
+                                          (if-value v1
                                                     (let [v6 (get b1 :c2)]
                                                       (if-value v6
                                                                 (let [v7 (get v6 :cw)]
                                                                   (and
                                                                    (if-value v7
-                                                                             (let [v8 (get v3 :cw)] (if-value v8 (= v8 v7) false))
-                                                                             (let [v8 (get v3 :cw)] (if-value v8 false true)))
-                                                                   (= (get v6 :cx) (get v3 :cx))))
+                                                                             (let [v8 (get v1 :cw)] (if-value v8 (= v8 v7) false))
+                                                                             (let [v8 (get v1 :cw)] (if-value v8 false true)))
+                                                                   (= (get v6 :cx) (get v1 :cx))))
                                                                 false))
                                                     (let [v6 (get b1 :c2)] (if-value v6 false true)))))
                                        false)

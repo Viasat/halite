@@ -504,22 +504,21 @@
   "Return a semantically equivalent spec context containing specs that have been reduced to
   a minimal subset of halite."
   [sctx :- SpecCtx]
-  (->> sctx
-       (lower-refine-to)
-       (lower-refinement-constraints)
-       (lower-valid?)
-       (lower-when)
-       (fixpoint
-        #(-> %
-             (rewrite-sctx bubble-up-do-expr)
-             (rewrite-sctx flatten-do-expr)
-             (lower-instance-comparisons)
-             (push-gets-into-ifs)
-             (lower-maybe-comparisons)
-             (rewrite-sctx lower-no-value-comparison-expr)
-             (push-comparisons-into-maybe-ifs)
-             (push-if-value-into-if)))
-       (simplify)))
+  (-> sctx
+      (lower-refine-to)
+      (lower-refinement-constraints)
+      (lower-valid?)
+      (lower-when)
+      (halite-rewriting/rewrite-reachable-sctx
+       [(halite-rewriting/rule bubble-up-do-expr)
+        (halite-rewriting/rule flatten-do-expr)
+        (halite-rewriting/rule lower-instance-comparison-expr)
+        (halite-rewriting/rule push-gets-into-ifs-expr)
+        (halite-rewriting/rule lower-maybe-comparison-expr)
+        (halite-rewriting/rule lower-no-value-comparison-expr)
+        (halite-rewriting/rule push-comparison-into-maybe-if-in-expr)
+        (halite-rewriting/rule push-if-value-into-if-in-expr)])
+      (simplify)))
 
 ;;;;;;;;;; Semantics-modifying passes ;;;;;;;;;;;;;;;;
 
@@ -565,6 +564,8 @@
 (s/defn eliminate-dos :- SpecCtx
   [sctx :- SpecCtx]
   (rewrite-sctx sctx eliminate-do-expr))
+
+;;;; eliminate error forms
 
 (defn- find-error-ids [dgraph]
   (->> dgraph
