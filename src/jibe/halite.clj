@@ -604,6 +604,8 @@
 (s/defn ^:private type-check-equals :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-at-least 2 expr)
+  (->> (map (partial type-check* ctx) (rest expr))
+       dorun)
   :Boolean)
 
 (defn add-position [n m]

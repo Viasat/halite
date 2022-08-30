@@ -56,8 +56,6 @@
   (if (= '$no-value sym)
     :Unset
     (let [t (get (halite-envs/scope (:tenv ctx)) sym)]
-      (when-not t
-        (throw-err (h-err/undefined-symbol {:form sym})))
       (when (and (= :Unset t)
                  (not (or (= 'no-value sym)
                           (= '$no-value sym))))
