@@ -578,19 +578,18 @@
 (s/defn replace-node :- SpecInfo
   "Replace node-id with replacement-id in spec-info."
   [{:keys [derivations constraints] :as spec-info} :- SpecInfo node-id replacement-id]
-  (-> spec-info
-      (assoc
-       :derivations (update-vals derivations
-                                 (fn [[form htype neg-id]]
-                                   (cond->
-                                    [(cond
-                                       (seq? form) (map #(if (= % node-id) replacement-id %) form)
-                                       (map? form) (update-vals form #(if (= % node-id) replacement-id %))
-                                       :else form)
-                                     htype]
-                                     neg-id (conj neg-id))))
-       :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints))
-      (prune-derivations false)))
+  (assoc
+   spec-info
+   :derivations (update-vals derivations
+                             (fn [[form htype neg-id]]
+                               (cond->
+                                [(cond
+                                   (seq? form) (map #(if (= % node-id) replacement-id %) form)
+                                   (map? form) (update-vals form #(if (= % node-id) replacement-id %))
+                                   :else form)
+                                 htype]
+                                 neg-id (conj neg-id))))
+   :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints)))
 
 ;;;;;;;; Guards ;;;;;;;;;;;;;;
 
