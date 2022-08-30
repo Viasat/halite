@@ -550,7 +550,7 @@
     (or (get (halite-envs/scope (:tenv ctx)) sym)
         (throw-err (h-err/undefined-symbol {:form sym})))))
 
-(defn arg-count-exactly
+(defn- arg-count-exactly
   [n form]
   (when (not= n (count (rest form)))
     (throw-err (h-err/wrong-arg-count {:op (first form)
@@ -558,7 +558,7 @@
                                        :actual-arg-count (count (rest form))
                                        :form form}))))
 
-(defn arg-count-at-least
+(defn- arg-count-at-least
   [n form]
   (when (< (count (rest form)) n)
     (throw-err (h-err/wrong-arg-count-min {:op (first form)
