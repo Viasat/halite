@@ -15,7 +15,7 @@
 (deferr result-always-known [data]
         {:message "Result of ':op' would always be :value"})
 
-(deferr let-needs-symbol [data]
+(deferr let-needs-bare-symbol [data]
         {:message "Binding target for 'let' must be a symbol, not: :sym"})
 
 (deferr cannot-bind-unset [data]
@@ -36,5 +36,5 @@
 (deferr let-bindings-empty [data]
         {:message "Bindings form of 'let' cannot be empty in: :form"})
 
-(deferr get-in-path-cannot-be-empty [data]
+(deferr get-in-path-empty [data]
         {:message "The path parameter in 'get-in' cannot be empty: :form"})

@@ -10537,7 +10537,7 @@
   (h
    (get-in [10 20 30] [])
    [:throws
-    "l-err/get-in-path-cannot-be-empty 0-0 : The path parameter in 'get-in' cannot be empty: (get-in [10 20 30] [])"])
+    "l-err/get-in-path-empty 0-0 : The path parameter in 'get-in' cannot be empty: (get-in [10 20 30] [])"])
   (h (get-in [10 20 30] [1]) :Integer 20 "[10, 20, 30][1]" "20")
   (h
    (get-in [[10 11 12] [20 21] [30 31 32 33]] [2 3])
@@ -10922,7 +10922,7 @@
   (h
    (let [a/b 1] a/b)
    [:throws
-    "l-err/let-needs-symbol 0-0 : Binding target for 'let' must be a symbol, not: a/b"])
+    "l-err/let-needs-bare-symbol 0-0 : Binding target for 'let' must be a symbol, not: a/b"])
   (h
    (let
     [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

@@ -82,7 +82,7 @@
   [ctx :- TypeContext, form]
   (let [[_ subexpr indexes] form]
     (when (empty? indexes)
-      (throw-err (l-err/get-in-path-cannot-be-empty {:form form})))
+      (throw-err (l-err/get-in-path-empty {:form form})))
     (reduce (partial type-check-lookup ctx form) (type-check* ctx subexpr) indexes)))
 
 (s/defn ^:private type-check-equals :- halite-types/HaliteType
@@ -126,7 +126,7 @@
      (reduce
       (fn [ctx [sym body]]
         (when-not (and (symbol? sym) (halite-types/bare? sym))
-          (throw-err (l-err/let-needs-symbol {:form expr :sym sym})))
+          (throw-err (l-err/let-needs-bare-symbol {:form expr :sym sym})))
         (when (re-find #"^[$]" (name sym))
           (throw-err (l-err/binding-target-invalid-symbol {:form expr :sym sym :op 'let})))
         (let [t (type-check* ctx body)]

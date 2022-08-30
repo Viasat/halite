@@ -97,9 +97,9 @@
                            'l-err/cannot-bind-unset {:doc "It is not permitted to rebind the symbol used to represent 'unset'."}
                            'l-err/disallowed-nothing {:doc "An expression was encountered that does not have a value, but it was used in a place where a value is required. Examples of expressions that do not have values are an invocation of 'error' and the binding of a symbol to an element in an empty collection."}
                            'l-err/first-argument-not-optional {:doc "The value being tested in an 'if-value' statement must be optional."}
-                           'l-err/get-in-path-cannot-be-empty {:doc "A path must be provided to the 'get-in' operation."}
+                           'l-err/get-in-path-empty {:doc "A path must be provided to the 'get-in' operation."}
                            'l-err/let-bindings-empty {:doc "The bindings form of the 'let' cannot be empty. If there is nothing to bind, then the 'let' can be omitted."}
-                           'l-err/let-needs-symbol {:doc "The bindings form of 'let' must consist of bare symbols associated with values."}
+                           'l-err/let-needs-bare-symbol {:doc "The bindings form of 'let' must consist of bare symbols associated with values."}
                            'l-err/result-always-known {:doc "The result of the equality check is always the same and can be known in advance, so it is not needed."}
                            'l-err/disallowed-unset-variable {:doc "It is not allowed to bind 'unset' to symbols other than the built-in '$no-value'."}}))
 
@@ -762,7 +762,7 @@
              :doc "Syntactic sugar for performing the equivalent of a chained series of 'get' operations. The second argument is a vector that represents the logical path to be navigated through the first argument."
              :doc-j "A path of element accessors can be created by chaining together element access forms in sequence."
              :doc-2 "The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'."
-             :throws ['l-err/get-in-path-cannot-be-empty
+             :throws ['l-err/get-in-path-empty
                       'h-err/invalid-lookup-target
                       'h-err/field-name-not-in-spec
                       'h-err/index-out-of-bounds]
