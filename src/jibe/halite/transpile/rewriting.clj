@@ -37,7 +37,7 @@
                            {:item item#})))))))
 
 (defn print-trace-item [{:keys [rule op pruned-ids id id' spec-info spec-info' total-ms]}]
-  (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* false, ssa/*elide-top-level-bindings* true]
+  (binding [ssa/*hide-non-halite-ops* false, ssa/*elide-top-level-bindings* true]
     (let [form (ssa/form-from-ssa spec-info id)
           form' (ssa/form-from-ssa spec-info' id')
           time-str (str total-ms "ms")]
@@ -63,25 +63,23 @@
   (doseq [{:keys [op rule spec-info spec-info'] :as item} trace]
     (when (and rule spec-info spec-info')
       (try
-        (let [spec-info (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* true] (ssa/spec-from-ssa spec-info))
-              spec-info' (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* true] (ssa/spec-from-ssa spec-info'))]
+        (let [spec-info (binding [ssa/*hide-non-halite-ops* true] (ssa/spec-from-ssa spec-info))
+              spec-info' (binding [ssa/*hide-non-halite-ops* true] (ssa/spec-from-ssa spec-info'))]
           (halite/type-check-spec senv spec-info)
           (println "ok before" rule)
           (halite/type-check-spec senv spec-info')
           (println "ok after" rule))
         (catch clojure.lang.ExceptionInfo ex
           (reset! type-error-item item)
-          (let [spec-info (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa spec-info))
-                spec-info' (binding [ssa/*next-id* (atom 100000), ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa spec-info'))]
+          (let [spec-info (binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa spec-info))
+                spec-info' (binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa spec-info'))]
             (-> spec-info :constraints first second clojure.pprint/pprint)
             (print-trace-item item)
             (-> spec-info' :constraints first second clojure.pprint/pprint))
           (throw (ex-info (str "Found type error for " rule) {} ex)))))))
 
 (s/defschema RewriteFnCtx
-  {:sctx SpecCtx
-   :ctx SSACtx
-   :guard #{ssa/DerivationName}})
+  {:sctx SpecCtx :ctx SSACtx})
 
 (s/defschema RewriteRule
   {:rule-name s/Str
@@ -89,58 +87,24 @@
    ;; :target (s/enum :nodes :constraints)
    :nodes (s/enum :all :constraints)})
 
-(defn- apply-rule-to-id [rule sctx ctx scope spec-id spec-info id]
+(defn- apply-rule-to-node [rule sctx ctx scope spec-id spec-info id node]
   (let [{:keys [rule-name rewrite-fn nodes]} rule
-        dgraph (:derivations spec-info)
-        deriv (dgraph id)
+        ssa-graph (:ssa-graph spec-info)
         start-nanos (System/nanoTime)
-        form (rewrite-fn {:sctx sctx :ctx (assoc ctx :dgraph dgraph) :guard #{}} id deriv)]
+        form (rewrite-fn {:sctx sctx :ctx ctx} id node)]
     (when (and (= :all nodes) (->> form (tree-seq coll? seq) (some #(= % id))))
       (throw (ex-info (format  "BUG! Rewrite rule %s used rewritten node id in replacement form!"
                                rule-name rule)
-                      {:dgraph dgraph :id id :form form})))
-    (if (some? form)
-      (let [dgraph' (or (:dgraph (meta form)) dgraph)
-            ctx (assoc ctx :dgraph dgraph')
-            rule-nanos (System/nanoTime)
-            [dgraph' id'] (ssa/form-to-ssa ctx form)
-            spec-info' (cond-> (assoc spec-info :derivations dgraph')
-                         (= :all nodes) (ssa/replace-node id id')
-                         (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))
-            end-nanos (System/nanoTime)
-            rule-ms (/ (- rule-nanos start-nanos) 1000000.0)
-            graph-ms (/ (- end-nanos rule-nanos) 1000000.0)
-            total-ms (/ (- end-nanos start-nanos) 1000000.0)]
-        (trace!
-         {:op :rewrite
-          :rule rule-name
-          :id id
-          :id' id'
-          :result form
-          :spec-id spec-id
-          :spec-info spec-info
-          :spec-info' spec-info'
-          :total-ms total-ms
-          :rule-ms rule-ms
-          :graph-ms graph-ms})
-        spec-info')
-      spec-info)))
-
-(defn- apply-rule-to-deriv [rule sctx ctx scope spec-id spec-info id deriv]
-  (let [{:keys [rule-name rewrite-fn nodes]} rule
-        dgraph (:derivations spec-info)
-        start-nanos (System/nanoTime)
-        form (rewrite-fn {:sctx sctx :ctx (assoc ctx :dgraph dgraph) :guard #{}} id deriv)]
-    (when (and (= :all nodes) (->> form (tree-seq coll? seq) (some #(= % id))))
-      (throw (ex-info (format  "BUG! Rewrite rule %s used rewritten node id in replacement form!"
-                               rule-name rule)
-                      {:dgraph dgraph :id id :form form})))
+                      {:ssa-graph ssa-graph :id id :form form})))
     (when (some? form)
-      (let [dgraph' (or (:dgraph (meta form)) dgraph)
-            ctx (assoc ctx :dgraph dgraph')
+      (let [ssa-graph' (or (:ssa-graph (meta form)) ssa-graph)
+            ctx (assoc ctx :ssa-graph ssa-graph')
             rule-nanos (System/nanoTime)
-            [dgraph' id'] (ssa/form-to-ssa ctx form)
-            spec-info' (-> (assoc spec-info :derivations dgraph') (ssa/replace-node id id'))
+            [ssa-graph' id'] (ssa/form-to-ssa ctx form)
+            spec-info' #_(-> (assoc spec-info :ssa-graph ssa-graph') (ssa/replace-node id id'))
+            (cond-> (assoc spec-info :ssa-graph ssa-graph')
+              (= :all nodes) (ssa/replace-node id id')
+              (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))
             end-nanos (System/nanoTime)
             rule-ms (/ (- rule-nanos start-nanos) 1000000.0)
             graph-ms (/ (- end-nanos rule-nanos) 1000000.0)
@@ -157,30 +121,29 @@
           :total-ms total-ms
           :rule-ms rule-ms
           :graph-ms graph-ms})
-        [spec-info' (dgraph' id')]))))
+        [spec-info' (ssa/deref-id ssa-graph' id')]))))
 
 (s/defn apply-to-reachable :- (s/maybe SpecInfo)
   [sctx ctx scope spec-id spec-info
    roots,
    rules :- [RewriteRule]]
-  (loop [spec-info spec-info
+  (loop [{:keys [ssa-graph] :as spec-info} spec-info
          reached (transient #{})
          ids-to-do (into clojure.lang.PersistentQueue/EMPTY roots)]
     (if-let [id (peek ids-to-do)]
       (if (contains? reached id)
         (recur spec-info reached (pop ids-to-do))
-        (let [deriv (get (:derivations spec-info) id)]
-          (if-not deriv
-            spec-info
-            (let [[spec-info deriv]
-                  (or (some #(apply-rule-to-deriv % sctx ctx scope spec-id spec-info id deriv)
-                            rules)
-                      [spec-info deriv])]
-              (recur spec-info
-                     (conj! reached id)
-                     (-> ids-to-do
-                         pop
-                         (into (ssa/referenced-derivations deriv))))))))
+        (if (ssa/contains-id? ssa-graph id)
+          (let [node (ssa/deref-id ssa-graph id)
+                [spec-info' node']
+                ,(or (some #(apply-rule-to-node % sctx (assoc ctx :ssa-graph ssa-graph) scope spec-id spec-info id node) rules)
+                     [spec-info node])]
+            (recur spec-info'
+                   (conj! reached id)
+                   (-> ids-to-do
+                       pop
+                       (into (ssa/child-nodes node')))))
+          spec-info))
       spec-info)))
 
 (s/defn rewrite-reachable :- SpecInfo
@@ -192,10 +155,16 @@
                                        (r/map second (:constraints %))
                                        rules)
                   spec-info)
-        (ssa/prune-derivations false))))
+        (ssa/prune-ssa-graph false))))
 
 (defn rewrite-reachable-sctx [sctx rules]
   (->> sctx keys (map #(vector % (rewrite-reachable rules sctx %))) (into {})))
+
+(defn- apply-rule-to-id [rule sctx ctx scope spec-id spec-info id]
+  (let [result (apply-rule-to-node rule sctx ctx scope spec-id spec-info id (ssa/deref-id (:ssa-graph spec-info) id))]
+    (if (some? result)
+      (first result)
+      spec-info)))
 
 (s/defn rewrite-spec-constraints :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword spec-info]
@@ -205,22 +174,22 @@
          (reduce (fn [spec-info [cname cid]]
                    (apply-rule-to-id rule sctx ctx scope spec-id spec-info cid))
                  spec-info)
-         (#(ssa/prune-derivations % false)))))
+         (#(ssa/prune-ssa-graph % false)))))
 
-(s/defn rewrite-spec-derivations :- SpecInfo
+(s/defn ^:private rewrite-ssa-graph :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (->> tenv (halite-envs/scope) keys set)
-        reachable? (ssa/reachable-derivations spec-info)]
+        reachable? (ssa/reachable-nodes spec-info)]
     (reduce
-     #(apply-rule-to-id rule sctx ctx scope spec-id %1 %2)
+     #(apply-rule-to-id rule sctx (assoc ctx :ssa-graph (:ssa-graph %1)) scope spec-id %1 %2)
      spec-info
      reachable?)))
 
 (s/defn rewrite-spec :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, spec-info]
   ((condp = (:nodes rule)
-     :all rewrite-spec-derivations
+     :all rewrite-ssa-graph
      :constraints rewrite-spec-constraints
      (throw (ex-info (format "BUG! Invalid rule, %s not recognized" (:nodes rule))
                      {:rule rule})))

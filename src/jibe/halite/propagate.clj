@@ -372,8 +372,7 @@
   ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- SpecBound]
    (propagate senv default-options initial-bound))
   ([senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, initial-bound :- SpecBound]
-   (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)
-             ssa/*next-id* (atom 0)]
+   (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
      (let [flattened-vars (flatten-vars senv initial-bound)
            lowered-bounds (lower-spec-bound flattened-vars initial-bound)
            spec-ified-bound (spec-ify-bound senv initial-bound)]

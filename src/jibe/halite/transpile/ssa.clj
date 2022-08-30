@@ -26,7 +26,7 @@
       $value? $value!}
    (keys renamed-ops)))
 
-(s/defschema DerivationName
+(s/defschema NodeId
   (s/constrained s/Symbol #(re-matches #"\$[1-9][0-9]*" (name %))))
 
 (s/defschema SSATerm
@@ -45,44 +45,111 @@
    ;;#{SSATerm}
    {:$type halite-types/NamespacedKeyword
     s/Keyword SSATerm}
-   [(s/one SSAOp :op) (s/cond-pre DerivationName s/Keyword)]))
+   [(s/one SSAOp :op) (s/cond-pre NodeId s/Keyword)]))
 
-(s/defschema Derivation
-  [(s/one SSAForm :form) (s/one halite-types/HaliteType :type) (s/optional DerivationName :negation)])
+(s/defschema Node
+  [(s/one SSAForm :form) (s/one halite-types/HaliteType :type) (s/optional NodeId :negation)])
 
-(s/defn referenced-derivations :- [DerivationName]
-  "Return the derivation nodes directly referenced by a given derivation.
-  When the derivation is boolean, its negation node is NOT included."
-  [[form htype :as deriv] :- Derivation]
-  (cond
-    (seq? form) (->> form rest (filter symbol?))
-    (map? form) (-> form (dissoc :$type) vals)
-    :else []))
+(s/defn node-form :- SSAForm
+  [node :- Node]
+  (first node))
 
-(s/defschema Derivations
-  {DerivationName Derivation})
+(s/defn node-type :- halite-types/HaliteType
+  [node :- Node]
+  (second node))
 
-(s/defn deref-id :- Derivation
-  "Return the derivation in dgraph referenced by id, possibly
-  indirectly."
-  [dgraph :- Derivations id]
+(s/defn child-nodes :- [NodeId]
+  "Return the nodes directly referenced by a given node.
+  When the node has boolean type, its negation node is NOT included."
+  [node :- Node]
+  (let [form (node-form node)]
+    (cond
+      (seq? form) (->> form rest (filter symbol?))
+      (map? form) (-> form (dissoc :$type) vals)
+      :else [])))
+
+(s/defschema SSAGraph
+  "Invariants:
+
+  * No two nodes in dgraph have the same form.
+  * form-ids is the inverse of dgraph.
+  * next-id is larger than the integer suffix of any key in dgraph.
+  * dgraph is acyclic.
+  * The nodes with :Boolean type are the nodes that have a neg-id.
+  * Every neg-id has a corresponding entry in dgraph."
+  {:dgraph {NodeId Node}
+   :next-id s/Int
+   :form-ids {SSAForm NodeId}})
+
+(def empty-ssa-graph
+  {:dgraph {}
+   :next-id 1
+   :form-ids {}})
+
+(s/defn ^:private index-dgraph-forms :- {SSAForm NodeId}
+  [dgraph :- {NodeId Node}]
+  (persistent! (reduce-kv (fn [acc id [form]] (assoc! acc form id)) (transient {}) dgraph)))
+
+(s/defn make-ssa-graph :- SSAGraph
+  [dgraph :- {NodeId Node}]
+  {:dgraph dgraph
+   :next-id (or (->> dgraph keys (map #(Integer/parseInt (subs (name %) 1))) sort last) 1)
+   :form-ids (index-dgraph-forms dgraph)})
+
+(s/defschema SpecInfo
+  "A halite spec, but with all expressions encoded in a single SSA directed graph."
+  (assoc halite-envs/SpecInfo
+         :ssa-graph SSAGraph
+         :constraints [[(s/one s/Str :cname) (s/one NodeId :node)]]))
+
+(s/defn contains-id? :- s/Bool
+  [ssa-graph :- SSAGraph id]
+  (contains? (:dgraph ssa-graph) id))
+
+(s/defn deref-id :- Node
+  "Return the node in ssa-graph referenced by id."
+  [{:keys [dgraph] :as ssa-graph} :- SSAGraph id]
   (or (dgraph id)
-      (throw (ex-info "BUG! Failed to deref dgraph id." {:id id}))))
+      (throw (ex-info "BUG! Failed to deref node id." {:id id}))))
+
+(s/defn negated :- NodeId
+  "Return the id of the node that represents the negation of the node with given id."
+  [ssa-graph :- SSAGraph, id :- NodeId]
+  (when-not (contains-id? ssa-graph id)
+    (throw (ex-info "BUG! Asked for negation of expression not in ssa graph"
+                    {:ssa-graph ssa-graph :id id})))
+  (let [node (deref-id ssa-graph id)]
+    (when (not= (node-type node) :Boolean)
+      (throw (ex-info "BUG! Asked for negation of a non-boolean expression"
+                      {:ssa-graph ssa-graph :id id :node node})))
+    (when (not= 3 (count node))
+      (throw (ex-info "BUG! boolean node without neg-id!" {:ssa-graph ssa-graph :id id :node node})))
+    (let [neg-id (nth node 2)]
+      (when-not (contains-id? ssa-graph neg-id)
+        (throw (ex-info "BUG! ssa-graph does not contain negation"
+                        {:ssa-graph ssa-graph :id id :neg-id neg-id})))
+      neg-id)))
 
 (s/defschema ReachableNodesOpts
   {(s/optional-key :include-negations?) s/Bool
    (s/optional-key :conditionally?) s/Bool})
 
-(s/defn reachable-nodes :- #{DerivationName}
-  "Return the set of derivation nodes transitively reachable from the given id. For reachable boolean
+(s/defn reachable-nodes :- #{NodeId}
+  "Return the set of nodes transitively reachable from the given id. For reachable boolean
   nodes, their negation nodes are included when include-negations? is true.
   When conditionally? is false, the reachability analysis stops at conditional
   forms (if, when). The conditional nodes themselves are included, but their branches are not."
-  ([dgraph :- Derivations, id :- DerivationName]
-   (reachable-nodes dgraph id {}))
-  ([dgraph :- Derivations, id :- DerivationName, opts :- ReachableNodesOpts]
-   (reachable-nodes dgraph #{} id opts))
-  ([dgraph :- Derivations, reached :- #{DerivationName}, id :- DerivationName, opts :- ReachableNodesOpts]
+  ([{:keys [ssa-graph constraints] :as spec-info} :- SpecInfo]
+   (reduce
+    (fn [reachable id]
+      (reachable-nodes ssa-graph reachable id {:include-negations? false, :conditionally? true}))
+    #{}
+    (map second constraints)))
+  ([ssa-graph :- SSAGraph, id :- NodeId]
+   (reachable-nodes ssa-graph id {}))
+  ([ssa-graph :- SSAGraph, id :- NodeId, opts :- ReachableNodesOpts]
+   (reachable-nodes ssa-graph #{} id opts))
+  ([ssa-graph :- SSAGraph, reached :- #{NodeId}, id :- NodeId, opts :- ReachableNodesOpts]
    (let [{:keys [include-negations? conditionally?]
           :or {include-negations? false, conditionally? true}} opts]
      (loop [ids (transient [id])
@@ -93,7 +160,7 @@
            (let [next-id (nth ids (dec n)), ids (pop! ids)]
              (if (reached next-id)
                (recur ids reached)
-               (let [[form htype neg-id :as d] (dgraph next-id)
+               (let [node (deref-id ssa-graph next-id), form (node-form node), neg-id (when (= :Boolean (node-type node)) (negated ssa-graph next-id))
                      ids (if (and (coll? form) (or conditionally? (not (and (seq? form) (#{'if 'when} (first form))))))
                            (reduce (fn [ids v] (if (symbol? v) (conj! ids v) ids))
                                    ids
@@ -106,58 +173,81 @@
                            ids)]
                  (recur ids (conj! reached next-id)))))))))))
 
-(s/defschema SpecInfo
-  "A halite spec, but with all expressions encoded in a single SSA directed graph."
-  (assoc halite-envs/SpecInfo
-         :derivations Derivations
-         :constraints [[(s/one s/Str :cname) (s/one DerivationName :deriv)]]))
+(s/defn reachable-subgraph :- SSAGraph
+  "Return the subgraph reachable from id."
+  [{:keys [dgraph next-id] :as ssa-graph} :- SSAGraph, id :- NodeId]
+  (let [dgraph' (select-keys (:dgraph ssa-graph) (reachable-nodes ssa-graph id {:include-negations? true}))]
+    {:dgraph dgraph'
+     :next-id next-id
+     :form-ids (index-dgraph-forms dgraph')}))
 
-(s/defn reachable-derivations :- #{DerivationName}
-  [{:keys [derivations constraints] :as spec-info} :- SpecInfo]
-  (reduce
-   (fn [reachable id]
-     (reachable-nodes derivations reachable id {:include-negations? false, :conditionally? true}))
-   #{}
-   (map second constraints)))
+;;;;;;;;;; Pruning unreachable expressions ;;;;;;;;;;;
 
-(s/defschema DerivResult [(s/one Derivations :derivs) (s/one DerivationName :id)])
+;; Expression rewriting in the lowering passes may end up making expression nodes
+;; unreachable from the 'roots' of the SSA graph. This shouldn't affect semantics,
+;; but it may produce unnecessary let bindings when the graph is turned back into expressions.
+;; To avoid this, we prune unreachable expressions from the graph after lowering phases that might
+;; introduce them.
+;; HOWEVER! When a form is put into SSA, (possibly unreachable) nodes representing the negation of
+;; each boolean expression are added, and pruning will remove them! So, don't prune until you're "done".
 
-(s/defn find-form :- (s/maybe DerivationName)
-  [dgraph :- Derivations, ssa-form :- SSAForm]
-  (loop [[[id [form _] :as entry] & entries] dgraph]
-    (when entry
-      (if (= form ssa-form)
-        id
-        (recur entries)))))
+(s/defn prune-ssa-graph
+  "Prune nodes not reachable from the roots. When prune-negations? is true, negation nodes
+  that are not actually used in the root expressions are also pruned; otherwise, they are not."
+  ([spec-info :- SpecInfo, prune-negations? :- s/Bool]
+   (update spec-info :ssa-graph prune-ssa-graph (set (map second (:constraints spec-info))) prune-negations?))
+  ([{:keys [dgraph] :as ssa-graph} :- SSAGraph, roots :- #{NodeId}, prune-negations? :- s/Bool]
+   (let [reachable (reduce
+                    (fn [reachable id]
+                      (reachable-nodes ssa-graph reachable id {:include-negations? (not prune-negations?)
+                                                               :conditionally? true}))
+                    #{}
+                    roots)
+         dgraph (persistent!
+                 (reduce
+                  (fn [dgraph id]
+                    (cond-> dgraph
+                      (not (reachable id)) (dissoc! id)))
+                  (transient dgraph)
+                  (keys dgraph)))]
+     (assoc ssa-graph :dgraph dgraph :form-ids (index-dgraph-forms dgraph)))))
 
-(s/defn negated :- DerivationName
-  "Return the id of the node that represents the negation of the node with given id."
-  [dgraph :- Derivations, id :- DerivationName]
-  (when-not (contains? dgraph id)
-    (throw (ex-info "BUG! Asked for negation of expression not in derivation graph"
-                    {:dgraph dgraph :id id})))
-  (let [[form htype neg-id] (dgraph id)]
-    (when (not= htype :Boolean)
-      (throw (ex-info "BUG! Asked for negation of a non-boolean expression"
-                      {:dgraph dgraph :id id})))
-    (when-not (contains? dgraph neg-id)
-      (throw (ex-info "BUG! dgraph does not contain negation"
-                      {:dgraph dgraph :id id :neg-id neg-id})))
-    neg-id))
+(s/defschema NodeInGraph [(s/one SSAGraph :ssa-graph) (s/one NodeId :id)])
 
-(def ^:dynamic *next-id*
-  "During transpilation, holds an atom whose value is the next globally unique derivation id."
-  nil)
+(def DerivResult NodeInGraph)
 
-(defn- fresh-id! []
-  (symbol (str "$" (swap! *next-id* inc))))
+(s/defn find-form :- (s/maybe NodeId)
+  [{:keys [form-ids] :as ssa-graph} :- SSAGraph, ssa-form :- SSAForm]
+  (form-ids ssa-form))
 
 ;;;;;;;;;;;;;;;; Converting to SSA ;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare add-derivation)
+(s/defn ^:private insert-node :- NodeInGraph
+  [ssa-graph :- SSAGraph, form :- SSAForm, htype :- halite-types/HaliteType]
+  (let [id (symbol (str "$" (:next-id ssa-graph)))]
+    [(-> ssa-graph
+         (update :next-id inc)
+         (assoc-in [:dgraph id] [form htype])
+         (assoc-in [:form-ids form] id))
+     id]))
 
-(s/defn ^:private add-boolean-derivation :- DerivResult
-  "Ensure that ssa-form and its negation is present in dgraph, and that they refer to one another.
+(s/defn ^:private insert-node-and-negation :- NodeInGraph
+  [{:keys [next-id] :as ssa-graph} :- SSAGraph, form :- SSAForm & [neg-form]]
+  (let [id (symbol (str "$" next-id))
+        neg-id (symbol (str "$" (inc next-id)))
+        neg-form (if (some? neg-form) neg-form (list 'not id))]
+    [(-> ssa-graph
+         (assoc :next-id (+ 2 next-id))
+         (assoc-in [:dgraph id] [form :Boolean neg-id])
+         (assoc-in [:form-ids form] id)
+         (assoc-in [:dgraph neg-id] [neg-form :Boolean id])
+         (assoc-in [:form-ids neg-form] neg-id))
+     id]))
+
+(declare ensure-node)
+
+(s/defn ^:private ensure-boolean-node :- NodeInGraph
+  "Ensure that ssa-form and its negation are present in ssa-graph, and that they refer to one another.
   In the process, we can do some normalization of expressions, so that what would otherwise be distinct but
   equivalent nodes in the graph become the same node.
 
@@ -168,269 +258,258 @@
      (not (<= a b)) (< b a)
      (> a b)        (< b a)
      (>= a b)       (<= b a)"
-  [dgraph :- Derivations, [ssa-form htype :as d] :- Derivation]
+  [ssa-graph :- SSAGraph, ssa-form :- SSAForm]
   (let [op (when (seq? ssa-form) (first ssa-form))]
     (condp = op
-      '= (let [[id neg-id] (repeatedly 2 fresh-id!)]
-           [(assoc dgraph
-                   id (conj d neg-id)
-                   neg-id [(apply list 'not= (rest ssa-form)) :Boolean id])
-            id])
+      '= (insert-node-and-negation ssa-graph ssa-form (apply list 'not= (rest ssa-form)))
 
-      'not= (let [[dgraph id] (add-derivation dgraph [(apply list '= (rest ssa-form)) :Boolean])]
-              [dgraph (negated dgraph id)])
+      'not= (let [[ssa-graph id] (ensure-node ssa-graph (apply list '= (rest ssa-form)) :Boolean)]
+              [ssa-graph (negated ssa-graph id)])
 
-      'not [dgraph (negated dgraph (second ssa-form))]
+      'not [ssa-graph (negated ssa-graph (second ssa-form))]
 
-      '< (let [[id neg-id] (repeatedly 2 fresh-id!)]
-           [(assoc dgraph
-                   id (conj d neg-id)
-                   neg-id [(apply list '<= (reverse (rest ssa-form))) :Boolean id])
-            id])
+      '< (insert-node-and-negation ssa-graph ssa-form (apply list '<= (reverse (rest ssa-form))))
 
-      '> (add-derivation dgraph [(apply list '< (reverse (rest ssa-form))) :Boolean])
+      '> (ensure-node ssa-graph (apply list '< (reverse (rest ssa-form))) :Boolean)
 
-      '<= (let [[dgraph id] (add-derivation dgraph [(apply list '> (rest ssa-form)) :Boolean])]
-            [dgraph (negated dgraph id)])
+      '<= (let [[ssa-graph id] (ensure-node ssa-graph (apply list '> (rest ssa-form)) :Boolean)]
+            [ssa-graph (negated ssa-graph id)])
 
-      '>= (add-derivation dgraph [(apply list '<= (reverse (rest ssa-form))) :Boolean])
+      '>= (ensure-node ssa-graph (apply list '<= (reverse (rest ssa-form))) :Boolean)
 
       (condp = ssa-form
-        true (let [[id neg-id] (repeatedly 2 fresh-id!)]
-               [(assoc dgraph
-                       id (conj d neg-id)
-                       neg-id [false :Boolean id])
-                id])
-        false (let [[dgraph id] (add-derivation dgraph [true :Boolean])]
-                [dgraph (negated dgraph id)])
+        true (insert-node-and-negation ssa-graph true false)
+        false (let [[ssa-graph id] (ensure-node ssa-graph true :Boolean)]
+                [ssa-graph (negated ssa-graph id)])
 
-        (let [[id neg-id] (repeatedly 2 fresh-id!)]
-          [(assoc dgraph
-                  id (conj d neg-id)
-                  neg-id [(list 'not id) :Boolean id])
-           id])))))
+        (insert-node-and-negation ssa-graph ssa-form)))))
 
-(s/defn ^:private add-derivation :- DerivResult
-  [dgraph :- Derivations, [ssa-form htype :as d] :- Derivation]
-  (if-let [id (find-form dgraph ssa-form)]
-    (if (not= htype (get-in dgraph [id 1]))
-      (throw (ex-info (format "BUG! Tried to add derivation %s, but that form already recorded as %s" d (dgraph id))
-                      {:derivation d :dgraph dgraph}))
-      [dgraph id])
+(s/defn ^:private ensure-node :- NodeInGraph
+  [ssa-graph :- SSAGraph, ssa-form :- SSAForm, htype :- halite-types/HaliteType]
+  (if-let [id (find-form ssa-graph ssa-form)]
+    (let [node (deref-id ssa-graph id)]
+      (if (not= htype (node-type (deref-id ssa-graph id)))
+        (throw (ex-info (format "BUG! Tried to add node %s, but that form already recorded as %s" [ssa-form htype] node)
+                        {:node node :ssa-graph ssa-graph}))
+        [ssa-graph id]))
     (if (= :Boolean htype)
-      (add-boolean-derivation dgraph d)
-      (let [id (fresh-id!)]
-        [(assoc dgraph id d) id]))))
+      (ensure-boolean-node ssa-graph ssa-form)
+      (insert-node ssa-graph ssa-form htype))))
 
-(s/defn ^:private add-derivation-for-app :- DerivResult
-  [dgraph :- Derivations [op & args :as form]]
+(s/defn ^:private ensure-node-for-app :- NodeInGraph
+  [ssa-graph :- SSAGraph, [op & args :as form] :- SSAForm]
   (let [op (get renamed-ops op op)]
-    (add-derivation
-     dgraph
-     [(apply list op args)
-      (cond
-        ('#{+ - * div mod expt abs} op) :Integer
-        ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
-        :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
-                              {:form form})))])))
+    (ensure-node
+     ssa-graph
+     (cons op args)
+     (cond
+       ('#{+ - * div mod expt abs} op) :Integer
+       ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
+       :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
+                             {:form form}))))))
 
 (declare form-to-ssa)
 
 (s/defschema SSACtx
   {:senv (s/protocol halite-envs/SpecEnv)
    :tenv (s/protocol halite-envs/TypeEnv)
-   :env {s/Symbol DerivationName}
-   :dgraph Derivations})
+   :env {s/Symbol NodeId}
+   :ssa-graph SSAGraph})
 
 (def ^:private no-value-symbols
   "All of these symbols mean :Unset"
   #{'$no-value 'no-value 'no-value-})
 
-(s/defn ^:private let-to-ssa :- DerivResult
-  [{:keys [dgraph] :as ctx} :- SSACtx, [_ bindings body :as form]]
+(s/defn ^:private let-to-ssa :- NodeInGraph
+  [{:keys [ssa-graph] :as ctx} :- SSACtx, [_ bindings body :as form]]
   (let [[ctx bound-ids]
         (reduce
          (fn [[ctx bound-ids] [var-sym subexpr]]
-           (let [[dgraph id] (form-to-ssa ctx subexpr)
-                 [_ htype] (deref-id dgraph id)]
+           (let [[ssa-graph id] (form-to-ssa ctx subexpr)
+                 htype (node-type (deref-id ssa-graph id))]
              [(assoc ctx
                      :tenv (halite-envs/extend-scope (:tenv ctx) var-sym htype)
                      :env (assoc (:env ctx) var-sym id)
-                     :dgraph dgraph)
+                     :ssa-graph ssa-graph)
               (conj bound-ids id)]))
          [ctx []] (partition 2 bindings))]
-    (form-to-ssa ctx (concat (apply list '$do! bound-ids) [body]))))
+    (form-to-ssa ctx (doall (concat (apply list '$do! bound-ids) [body])))))
 
-(s/defn ^:private app-to-ssa :- DerivResult
+(s/defn ^:private app-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [op & args :as form]]
-  (let [[dgraph args] (reduce (fn [[dgraph args] arg]
-                                (let [[dgraph id] (form-to-ssa (assoc ctx :dgraph dgraph) arg)]
-                                  [dgraph (conj args id)]))
-                              [(:dgraph ctx) []]
+  (let [[ssa-graph args] (reduce (fn [[ssa-graph args] arg]
+                                (let [[ssa-graph id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) arg)]
+                                  [ssa-graph (conj args id)]))
+                              [(:ssa-graph ctx) []]
                               args)]
-    (add-derivation-for-app dgraph (apply list op args))))
+    (ensure-node-for-app ssa-graph (apply list op args))))
 
-(s/defn ^:private symbol-to-ssa :- DerivResult
-  [{:keys [dgraph tenv env]} :- SSACtx, form]
+(s/defn ^:private symbol-to-ssa :- NodeInGraph
+  [{:keys [ssa-graph tenv env]} :- SSACtx, form]
   (cond
-    (contains? no-value-symbols form) (add-derivation dgraph [:Unset :Unset])
-    (contains? dgraph form) [dgraph form]
-    (contains? env form) [dgraph (env form)]
+    (contains? no-value-symbols form) (ensure-node ssa-graph :Unset :Unset)
+    (contains-id? ssa-graph form) [ssa-graph form]
+    (contains? env form) [ssa-graph (env form)]
     :else (let [htype (or (get (halite-envs/scope tenv) form)
                           (throw (ex-info (format "BUG! Undefined: '%s'" form) {:tenv tenv :form form})))]
-            (add-derivation dgraph [form htype]))))
+            (ensure-node ssa-graph form htype))))
 
-(s/defn ^:private if-to-ssa :- DerivResult
+(s/defn ^:private if-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ pred then else :as form]]
-  (let [[dgraph pred-id] (form-to-ssa ctx pred)
-        [dgraph then-id] (form-to-ssa (assoc ctx :dgraph dgraph) then)
-        [dgraph else-id] (form-to-ssa (assoc ctx :dgraph dgraph) else)
-        htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
-    (add-derivation dgraph [(list 'if pred-id then-id else-id) htype])))
+  (let [[ssa-graph pred-id] (form-to-ssa ctx pred)
+        [ssa-graph then-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) then)
+        [ssa-graph else-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) else)
+        htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
+                                 (node-type (deref-id ssa-graph else-id)))]
+    (ensure-node ssa-graph (list 'if pred-id then-id else-id) htype)))
 
-(s/defn ^:private when-to-ssa :- DerivResult
+(s/defn ^:private when-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ pred then :as form]]
-  (let [[dgraph pred-id] (form-to-ssa ctx pred)
-        [dgraph then-id] (form-to-ssa (assoc ctx :dgraph dgraph) then)
-        [_ then-type] (deref-id dgraph then-id)]
-    (add-derivation dgraph [(list 'when pred-id then-id) (halite-types/meet then-type :Unset)])))
+  (let [[ssa-graph pred-id] (form-to-ssa ctx pred)
+        [ssa-graph then-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) then)
+        [_ then-type] (deref-id ssa-graph then-id)]
+    (ensure-node ssa-graph (list 'when pred-id then-id) (halite-types/meet then-type :Unset))))
 
-(s/defn ^:private if-value-to-ssa :- DerivResult
-  [ctx :- SSACtx, [_ var-sym then else :as form]]
+(s/defn ^:private if-value-to-ssa :- NodeInGraph
+  [{:keys [ssa-graph] :as ctx} :- SSACtx, [_ var-sym then else :as form]]
   (when-not (symbol? var-sym)
     (throw (ex-info "BUG! if-value form's predicate is not a symbol" {:form form})))
-  (let [[dgraph no-value-id] (add-derivation (:dgraph ctx) [:Unset :Unset])
-        [dgraph unguarded-id] (symbol-to-ssa (assoc ctx :dgraph dgraph) var-sym)
-        type (get-in dgraph [unguarded-id 1])]
+  (let [[ssa-graph no-value-id] (ensure-node ssa-graph :Unset :Unset)
+        [ssa-graph unguarded-id] (symbol-to-ssa (assoc ctx :ssa-graph ssa-graph) var-sym)
+        htype (node-type (deref-id ssa-graph unguarded-id))]
     (cond
-      (= type :Unset)
+      (= htype :Unset)
       (-> ctx
-          (assoc :dgraph dgraph)
+          (assoc :ssa-graph ssa-graph)
           (cond-> (not (contains? no-value-symbols var-sym)) (update :tenv halite-envs/extend-scope var-sym :Unset))
           (update :env assoc var-sym no-value-id)
           (form-to-ssa else))
 
-      (not (halite-types/maybe-type? type))
-      (let [[dgraph guard-id] (add-derivation dgraph [(list '$value? unguarded-id) :Boolean])
-            [dgraph then-id] (-> ctx (assoc :dgraph dgraph) (form-to-ssa then))
-            [dgraph else-id] (-> ctx (assoc :dgraph dgraph) (form-to-ssa else))
-            htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
-        (add-derivation dgraph [(list 'if guard-id then-id else-id) htype]))
+      (not (halite-types/maybe-type? htype))
+      (let [[ssa-graph guard-id] (ensure-node ssa-graph (list '$value? unguarded-id) :Boolean)
+            [ssa-graph then-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa then))
+            [ssa-graph else-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa else))
+            htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
+                                     (node-type (deref-id ssa-graph else-id)))]
+        (ensure-node ssa-graph (list 'if guard-id then-id else-id) htype))
 
       :else
-      (let [[dgraph guard-id] (add-derivation dgraph [(list '$value? unguarded-id) :Boolean])
-            inner-type (halite-types/no-maybe type)
-            [dgraph value-id] (add-derivation dgraph [(list '$value! unguarded-id) inner-type])
-            [dgraph then-id] (-> ctx
-                                 (assoc :dgraph dgraph)
+      (let [[ssa-graph guard-id] (ensure-node ssa-graph (list '$value? unguarded-id) :Boolean)
+            inner-type (halite-types/no-maybe htype)
+            [ssa-graph value-id] (ensure-node ssa-graph (list '$value! unguarded-id) inner-type)
+            [ssa-graph then-id] (-> ctx
+                                 (assoc :ssa-graph ssa-graph)
                                  (update :tenv halite-envs/extend-scope var-sym inner-type)
                                  (update :env assoc var-sym value-id)
                                  (form-to-ssa (if (= then unguarded-id) value-id then)))
-            [dgraph else-id] (-> ctx
-                                 (assoc :dgraph dgraph)
+            [ssa-graph else-id] (-> ctx
+                                 (assoc :ssa-graph ssa-graph)
                                  (update :tenv halite-envs/extend-scope var-sym :Unset)
                                  (update :env assoc var-sym no-value-id)
                                  (form-to-ssa (if (= else unguarded-id) no-value-id else)))
-            htype (halite-types/meet (get-in dgraph [then-id 1]) (get-in dgraph [else-id 1]))]
-        (add-derivation dgraph [(list 'if guard-id then-id else-id) htype])))))
+            htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
+                                     (node-type (deref-id ssa-graph else-id)))]
+        (ensure-node ssa-graph (list 'if guard-id then-id else-id) htype)))))
 
-(s/defn ^:private get-to-ssa :- DerivResult
-  [{:keys [dgraph senv] :as ctx} :- SSACtx, [_ subexpr var-kw :as form]]
-  (let [[dgraph id] (form-to-ssa ctx subexpr)
-        spec-id (->> id dgraph second halite-types/spec-id)
+(s/defn ^:private get-to-ssa :- NodeInGraph
+  [{:keys [ssa-graph senv] :as ctx} :- SSACtx, [_ subexpr var-kw :as form]]
+  (let [[ssa-graph id] (form-to-ssa ctx subexpr)
+        spec-id (->> id (deref-id ssa-graph) node-type halite-types/spec-id)
         htype (or (->> spec-id (halite-envs/lookup-spec senv) :spec-vars var-kw (halite-envs/halite-type-from-var-type senv))
                   (throw (ex-info (format "BUG! Couldn't determine type of field '%s' of spec '%s'" var-kw spec-id)
                                   {:form form})))]
-    (add-derivation dgraph [(list 'get id var-kw) htype])))
+    (ensure-node ssa-graph (list 'get id var-kw) htype)))
 
-(s/defn ^:private refine-to-to-ssa :- DerivResult
+(s/defn ^:private refine-to-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
-  (let [[dgraph id] (form-to-ssa ctx subexpr)]
+  (let [[ssa-graph id] (form-to-ssa ctx subexpr)]
     (when (nil? (halite-envs/lookup-spec (:senv ctx) spec-id))
       (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
                       {:form form :spec-id spec-id})))
-    (add-derivation dgraph [(list 'refine-to id spec-id) (halite-types/concrete-spec-type spec-id)])))
+    (ensure-node ssa-graph (list 'refine-to id spec-id) (halite-types/concrete-spec-type spec-id))))
 
-(s/defn ^:private inst-literal-to-ssa :- DerivResult
+(s/defn ^:private inst-literal-to-ssa :- NodeInGraph
   [ctx :- SSACtx, form]
   (let [spec-id (:$type form)
-        [dgraph inst] (reduce
-                       (fn [[dgraph inst] var-kw]
-                         (let [[dgraph id] (form-to-ssa (assoc ctx :dgraph dgraph) (get form var-kw))]
-                           [dgraph (assoc inst var-kw id)]))
-                       [(:dgraph ctx) {:$type spec-id}]
+        [ssa-graph inst] (reduce
+                       (fn [[ssa-graph inst] var-kw]
+                         (let [[ssa-graph id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) (get form var-kw))]
+                           [ssa-graph (assoc inst var-kw id)]))
+                       [(:ssa-graph ctx) {:$type spec-id}]
                        (-> form (dissoc :$type) keys sort))]
-    (add-derivation dgraph [inst (halite-types/concrete-spec-type spec-id)])))
+    (ensure-node ssa-graph inst (halite-types/concrete-spec-type spec-id))))
 
-(s/defn ^:private do!-to-ssa :- DerivResult
-  [{:keys [dgraph] :as ctx} :- SSACtx, [_do & args :as form]]
-  (let [[dgraph arg-ids] (reduce (fn [[dgraph arg-ids] arg]
-                                   (let [[dgraph id] (form-to-ssa (assoc ctx :dgraph dgraph) arg)]
-                                     [dgraph (conj arg-ids id)]))
-                                 [dgraph []]
-                                 args)
-        [_ htype] (deref-id dgraph (last arg-ids))]
-    (add-derivation dgraph [(apply list '$do! arg-ids) htype])))
+(s/defn ^:private do!-to-ssa :- NodeInGraph
+  [{:keys [ssa-graph] :as ctx} :- SSACtx, [_do & args :as form]]
+  (let [[ssa-graph arg-ids] (reduce (fn [[ssa-graph arg-ids] arg]
+                                      (let [[ssa-graph id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) arg)]
+                                        [ssa-graph (conj arg-ids id)]))
+                                    [ssa-graph []]
+                                    args)
+        [_ htype] (deref-id ssa-graph (last arg-ids))]
+    (ensure-node ssa-graph (apply list '$do! arg-ids) htype)))
 
-(s/defn ^:private value!-to-ssa :- DerivResult
-  [{:keys [dgraph] :as ctx} :- SSACtx, form]
-  (let [[dgraph arg-id] (form-to-ssa ctx (second form))
-        [subform htype] (deref-id dgraph arg-id)]
+(s/defn ^:private value!-to-ssa :- NodeInGraph
+  [{:keys [ssa-graph] :as ctx} :- SSACtx, form]
+  (let [[ssa-graph arg-id] (form-to-ssa ctx (second form))
+        [subform htype] (deref-id ssa-graph arg-id)]
     (when (= :Unset htype)
       (throw (ex-info "Invalid $value! form: type of inner expression is :Unset"
-                      {:dgraph dgraph :form form :subform subform})))
-    (add-derivation dgraph [(list '$value! arg-id) (halite-types/no-maybe htype)])))
+                      {:ssa-graph ssa-graph :form form :subform subform})))
+    (ensure-node ssa-graph (list '$value! arg-id) (halite-types/no-maybe htype))))
 
-(s/defn ^:private error-to-ssa :- DerivResult
-  [{:keys [dgraph] :as ctx} :- SSACtx form]
+(s/defn ^:private error-to-ssa :- NodeInGraph
+  [{:keys [ssa-graph] :as ctx} :- SSACtx form]
   (when-not (or (string? (second form))
                 (and (symbol? (second form))
-                     (contains? dgraph (second form))
-                     (string? (first (deref-id dgraph (second form))))))
-    (throw (ex-info "Only string literals currently allowed in error forms" {:form form :dgraph dgraph})))
-  (let [[dgraph arg-id] (form-to-ssa ctx (second form))]
-    (add-derivation dgraph [(list 'error arg-id) :Nothing])))
+                     (contains? ssa-graph (second form))
+                     (string? (first (deref-id ssa-graph (second form))))))
+    (throw (ex-info "Only string literals currently allowed in error forms" {:form form :ssa-graph ssa-graph})))
+  (let [[ssa-graph arg-id] (form-to-ssa ctx (second form))]
+    (ensure-node ssa-graph (list 'error arg-id) :Nothing)))
 
-(s/defn replace-in-expr :- DerivResult
-  [dgraph :- Derivations, id, replacements :- {DerivationName DerivationName}]
-  (let [[form htype :as d] (deref-id dgraph id)]
+(s/defn replace-in-expr :- NodeInGraph
+  [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
+  (let [node (deref-id ssa-graph id), form (node-form node), htype (node-type node)]
     (if-let [new-id (replacements id)]
-      [dgraph new-id]
+      [ssa-graph new-id]
       (cond
-        (or (int? form) (boolean? form)) [dgraph id]
-        (= :Unset form) [dgraph id]
+        (or (int? form) (boolean? form)) [ssa-graph id]
+        (= :Unset form) [ssa-graph id]
         (symbol? form) (if-let [replacement (replacements form)]
-                         (add-derivation dgraph [(assoc d 0 replacement) htype])
-                         [dgraph id])
+                         (ensure-node ssa-graph replacement htype)
+                         [ssa-graph id])
         (seq? form) (let [[op & args] form
-                          [dgraph new-args] (reduce
-                                             (fn [[dgraph args] term]
-                                               (if (symbol? term)
-                                                 (let [[dgraph id] (replace-in-expr dgraph term replacements)]
-                                                   [dgraph (conj args id)])
-                                                 [dgraph (conj args term)]))
-                                             [dgraph []]
-                                             args)]
-                      (add-derivation dgraph [(apply list op new-args) htype]))
+                          [ssa-graph new-args] (reduce
+                                                (fn [[ssa-graph args] term]
+                                                  (if (symbol? term)
+                                                    (let [[ssa-graph id] (replace-in-expr ssa-graph term replacements)]
+                                                      [ssa-graph (conj args id)])
+                                                    [ssa-graph (conj args term)]))
+                                                [ssa-graph []]
+                                                args)]
+                      (ensure-node ssa-graph (apply list op new-args) htype))
         (map? form) (let [spec-id (:$type form)
-                          [dgraph inst] (reduce
-                                         (fn [[dgraph inst] [var-kw var-id]]
-                                           (let [[dgraph id] (replace-in-expr dgraph var-id replacements)]
-                                             [dgraph (assoc inst var-kw id)]))
-                                         [dgraph {:$type (:$type form)}]
-                                         (dissoc form :$type))]
-                      (add-derivation dgraph [inst htype]))
-        :else (throw (ex-info "Unrecognized derivation" {:dgraph dgraph :form form}))))))
+                          [ssa-graph inst] (reduce
+                                            (fn [[ssa-graph inst] [var-kw var-id]]
+                                              (let [[ssa-graph id] (replace-in-expr ssa-graph var-id replacements)]
+                                                [ssa-graph (assoc inst var-kw id)]))
+                                            [ssa-graph {:$type (:$type form)}]
+                                            (dissoc form :$type))]
+                      (ensure-node ssa-graph inst htype))
+        :else (throw (ex-info "Unrecognized node form" {:ssa-graph ssa-graph :form form}))))))
 
-(s/defn form-to-ssa :- DerivResult
+(s/defn form-to-ssa :- NodeInGraph
   "Add the SSA representation of form (an arbitrary halite expression) to the given directed graph,
   returning a tuple of the resulting graph and the id of the node for form."
-  [{:keys [dgraph] :as ctx} :- SSACtx, form]
+  [{:keys [ssa-graph] :as ctx} :- SSACtx, form]
+  (when (nil? ssa-graph)
+    (throw (ex-info "WAT" {:ssa-graph ssa-graph :form form})))
   (cond
-    (int? form) (add-derivation dgraph [form :Integer])
-    (boolean? form) (add-derivation dgraph [form :Boolean])
-    (string? form) (add-derivation dgraph [form :String])
-    (= :Unset form) (add-derivation dgraph [form :Unset])
+    (int? form) (ensure-node ssa-graph form :Integer)
+    (boolean? form) (ensure-node ssa-graph form :Boolean)
+    (string? form) (ensure-node ssa-graph form :String)
+    (= :Unset form) (ensure-node ssa-graph form :Unset)
     (symbol? form) (symbol-to-ssa ctx form)
     (seq? form) (let [[op & args] form]
                   (when-not (contains? supported-halite-ops op)
@@ -450,25 +529,25 @@
     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                           {:form form}))))
 
-(s/defn constraint-to-ssa :- [(s/one Derivations :dgraph), [(s/one s/Str :cname) (s/one DerivationName :form)]]
+(s/defn constraint-to-ssa :- [(s/one SSAGraph :ssa-graph), [(s/one s/Str :cname) (s/one NodeId :form)]]
   "TODO: Refactor me as add-constraint, taking and returning SpecInfo."
-  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), derivations :- Derivations, [cname constraint-form]]
-  (let [[derivations id] (form-to-ssa {:senv senv :tenv tenv :env {} :dgraph derivations} constraint-form)]
-    [derivations [cname id]]))
+  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), ssa-graph :- SSAGraph, [cname constraint-form]]
+  (let [[ssa-graph id] (form-to-ssa {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph} constraint-form)]
+    [ssa-graph [cname id]]))
 
 (s/defn spec-to-ssa :- SpecInfo
   "Convert a halite spec into an SSA-based representation."
   [senv :- (s/protocol halite-envs/SpecEnv), spec-info :- halite-envs/SpecInfo]
   (let [tenv (halite-envs/type-env-from-spec senv spec-info)
-        [derivations constraints]
+        [ssa-graph constraints]
         ,,(reduce
-           (fn [[derivations constraints] constraint]
-             (let [[derivations constraint] (constraint-to-ssa senv tenv derivations constraint)]
-               [derivations (conj constraints constraint)]))
-           [{} []]
+           (fn [[ssa-graph constraints] constraint]
+             (let [[ssa-graph constraint] (constraint-to-ssa senv tenv ssa-graph constraint)]
+               [ssa-graph (conj constraints constraint)]))
+           [empty-ssa-graph []]
            (:constraints spec-info))]
     (assoc spec-info
-           :derivations derivations
+           :ssa-graph ssa-graph
            :constraints constraints)))
 
 (s/defschema SpecCtx
@@ -482,7 +561,7 @@
   It ought to be refactored away in favor of something less likely to lead to errors!"
   [sctx :- SpecCtx]
   (reify halite-envs/SpecEnv
-    (lookup-spec* [self spec-id] (some-> sctx spec-id (dissoc :derivations)))))
+    (lookup-spec* [self spec-id] (some-> sctx spec-id (dissoc :ssa-graph)))))
 
 (defn- spec-ref-from-type [htype]
   (cond
@@ -540,66 +619,32 @@
       (->> (reachable-specs senv))
       (update-vals (partial spec-to-ssa senv))))
 
-;;;;;;;;;; Pruning unreachable expressions ;;;;;;;;;;;
-
-;; Expression rewriting in the lowering passes may end up making expression nodes
-;; unreachable from the 'roots' of the derivations graph. This shouldn't affect semantics,
-;; but it may produce unnecessary let bindings when the graph is turned back into expressions.
-;; To avoid this, we prune unreachable expressions from the graph after lowering phases that might
-;; introduce them.
-;; HOWEVER! When a form is put into SSA, (possibly unreachable) nodes representing the negation of
-;; each boolean expression are added, and pruning will remove them! So, don't prune until you're "done".
-
-(s/defn prune-dgraph :- Derivations
-  "Prune nodes not reachable from the roots. When prune-negations? is true, negation nodes
-  that are not actually used in the root expressions are also pruned; otherwise, they are not."
-  [dgraph :- Derivations, roots :- #{DerivationName}, prune-negations? :- s/Bool]
-  (let [reachable (reduce
-                   (fn [reachable id]
-                     (reachable-nodes dgraph reachable id {:include-negations? (not prune-negations?)
-                                                           :conditionally? true}))
-                   #{}
-                   roots)]
-    (persistent!
-     (reduce
-      (fn [dgraph id]
-        (cond-> dgraph
-          (not (reachable id)) (dissoc! id)))
-      (transient dgraph)
-      (keys dgraph)))))
-
-(s/defn prune-derivations :- SpecInfo
-  "Prune nodes not reachable from the roots. When prune-negations? is true, negation nodes
-  that are not actually used in the root expressions are also pruned; otherwise, they are not."
-  [{:keys [constraints] :as spec-info} :- SpecInfo, prune-negations? :- s/Bool]
-  (let [roots (->> constraints (map second) set)]
-    (update spec-info :derivations prune-dgraph roots prune-negations?)))
-
 (s/defn replace-node :- SpecInfo
   "Replace node-id with replacement-id in spec-info."
-  [{:keys [derivations constraints] :as spec-info} :- SpecInfo node-id replacement-id]
-  (assoc
-   spec-info
-   :derivations (update-vals derivations
+  [{:keys [ssa-graph constraints] :as spec-info} :- SpecInfo node-id replacement-id]
+  (let [dgraph' (update-vals (:dgraph ssa-graph)
                              (fn [[form htype neg-id]]
                                (cond->
-                                [(cond
-                                   (seq? form) (map #(if (= % node-id) replacement-id %) form)
-                                   (map? form) (update-vals form #(if (= % node-id) replacement-id %))
-                                   :else form)
-                                 htype]
-                                 neg-id (conj neg-id))))
-   :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints)))
+                                   [(cond
+                                      (seq? form) (map #(if (= % node-id) replacement-id %) form)
+                                      (map? form) (update-vals form #(if (= % node-id) replacement-id %))
+                                      :else form)
+                                    htype]
+                                 neg-id (conj neg-id))))]
+    (assoc
+     spec-info
+     :ssa-graph (assoc ssa-graph :dgraph dgraph' :form-ids (index-dgraph-forms dgraph'))
+     :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints))))
 
 ;;;;;;;; Guards ;;;;;;;;;;;;;;
 
 (s/defschema ^:private Guards
-  "For every derivation, a representation in disjunctive normal form of what must be true for that
-  derivation to get 'evaluated'."
-  {DerivationName #{#{DerivationName}}})
+  "For every node, a representation in disjunctive normal form of what must be true for that
+  node to get 'evaluated'."
+  {NodeId #{#{NodeId}}})
 
-(s/defn ^:private update-guards :- #{#{DerivationName}}
-  [current :- #{#{DerivationName}}, guard :- #{DerivationName}]
+(s/defn ^:private update-guards :- #{#{NodeId}}
+  [current :- #{#{NodeId}}, guard :- #{NodeId}]
   (as-> current guards
     ;; Any existing conjuncts that are supersets of guard may be eliminated.
     (->> guards (remove (partial set/subset? guard)) set)
@@ -609,77 +654,78 @@
       (not (some #(set/subset? % guard) guards)) (conj guard))))
 
 (s/defn ^:private compute-guards* :- Guards
-  [dgraph :- Derivations, current :- #{DerivationName}, result :- Guards, id :- DerivationName]
-  (let [[form htype] (dgraph id)
+  [ssa-graph :- SSAGraph, current :- #{NodeId}, result :- Guards, id :- NodeId]
+  (let [node (deref-id ssa-graph id), form (node-form node), htype (node-type node)
         result (update result id update-guards current)]
     (cond
       (or (integer? form) (boolean? form) (= :Unset form) (string? form)) result
       (symbol? form) result
       (seq? form) (let [[op & args] form]
                     (condp = op
-                      'get (compute-guards* dgraph current result (first args))
-                      'refine-to (compute-guards* dgraph current result (first args))
+                      'get (compute-guards* ssa-graph current result (first args))
+                      'refine-to (compute-guards* ssa-graph current result (first args))
                       'when (let [[pred-id then-id] args
-                                  not-pred-id (negated dgraph pred-id)]
+                                  not-pred-id (negated ssa-graph pred-id)]
                               (as-> result result
-                                (compute-guards* dgraph current result pred-id)
-                                (compute-guards* dgraph (conj current pred-id) result then-id)))
+                                (compute-guards* ssa-graph current result pred-id)
+                                (compute-guards* ssa-graph (conj current pred-id) result then-id)))
                       'if (let [[pred-id then-id else-id] args
-                                not-pred-id (negated dgraph pred-id)]
+                                not-pred-id (negated ssa-graph pred-id)]
                             (as-> result result
-                              (compute-guards* dgraph current result pred-id)
-                              (compute-guards* dgraph (conj current pred-id) result then-id)
-                              (compute-guards* dgraph (conj current not-pred-id) result else-id)))
-                      (reduce (partial compute-guards* dgraph current) result args)))
-      (map? form) (->> (dissoc form :$type) vals (reduce (partial compute-guards* dgraph current) result))
+                              (compute-guards* ssa-graph current result pred-id)
+                              (compute-guards* ssa-graph (conj current pred-id) result then-id)
+                              (compute-guards* ssa-graph (conj current not-pred-id) result else-id)))
+                      (reduce (partial compute-guards* ssa-graph current) result args)))
+      (map? form) (->> (dissoc form :$type) vals (reduce (partial compute-guards* ssa-graph current) result))
       :else (throw (ex-info "BUG! Could not compute guards for form"
-                            {:id id :form form :dgraph dgraph :current current :result result})))))
+                            {:id id :form form :ssa-graph ssa-graph :current current :result result})))))
 
-(s/defn ^:private simplify-guards :- #{#{DerivationName}}
-  [dgraph :- Derivations, guards :- #{#{DerivationName}}]
+(s/defn ^:private simplify-guards :- #{#{NodeId}}
+  [ssa-graph :- SSAGraph, guards :- #{#{NodeId}}]
   ;; guards is in disjunctive normal form... if a conjunct and
   ;; its negation are both in guards, then the whole expression collapses to 'true'
   ;; This is just a heuristic intended primarily to catch when an expression shows up
   ;; in both branches of an if. This problem is in general co-NP-hard.
   ;; https://en.wikipedia.org/wiki/Disjunctive_normal_form
-  (let [negated-clauses (->> guards (map #(->> % (map (partial negated dgraph)) set)))]
+  (let [negated-clauses (->> guards (map #(->> % (map (partial negated ssa-graph)) set)))]
     (if (some (fn [negated-terms] (every? #(contains? guards #{%}) negated-terms)) negated-clauses)
       #{#{}} ; true
       guards)))
 
-(s/defn dgraph->dep-graph :- (s/protocol dep/DependencyGraph)
-  "Return a weavejester.dependency graph of the given dgraph, where
-  the nodes are derivation ids."
-  [derivations :- Derivations]
-  (->> derivations
+(s/defn ^:private ssa-graph->dep-graph :- (s/protocol dep/DependencyGraph)
+  "Return a weavejester.dependency graph of the given ssa-graph, where
+  the nodes are node ids."
+  [ssa-graph :- SSAGraph]
+  (->> ssa-graph
+       :dgraph
        (reduce
         (fn [g [id d]]
-          (reduce #(dep/depend %1 id %2) g (referenced-derivations d)))
+          (reduce #(dep/depend %1 id %2) g (child-nodes d)))
         (dep/graph))))
 
 (s/defn cycle? :- s/Bool
   "Returns true iff the given dgraph contains a cycle. dgraphs with
   cycles are incorrect!"
-  [dgraph :- Derivations]
+  [ssa-graph :- SSAGraph]
   (try
-    (dgraph->dep-graph dgraph)
+    (ssa-graph->dep-graph ssa-graph)
     false
     (catch clojure.lang.ExceptionInfo ex
       (if (-> ex ex-data :reason (= ::dep/circular-dependency))
         true
         (throw ex)))))
 
-(s/defn topo-sort :- [DerivationName]
-  [derivations :- Derivations]
-  (dep/topo-sort (dgraph->dep-graph derivations)))
+(s/defn topo-sort :- [NodeId]
+  [ssa-graph :- SSAGraph]
+  (dep/topo-sort (ssa-graph->dep-graph ssa-graph)))
 
 (s/defn compute-guards :- Guards
-  [dgraph :- Derivations, roots :- #{DerivationName}]
+  [ssa-graph :- SSAGraph, roots :- #{NodeId}]
   (-> (reduce
-       (partial compute-guards* dgraph #{})
-       (zipmap (keys dgraph) (repeat #{}))
+       (partial compute-guards* ssa-graph #{})
+       (zipmap (keys (:dgraph ssa-graph)) (repeat #{}))
        roots)
-      (update-vals (partial simplify-guards dgraph))))
+      (update-vals (partial simplify-guards ssa-graph))))
 
 ;;;;;;;;; Converting from SSA back into a more readable form ;;;;;;;;
 
@@ -688,22 +734,23 @@
 (def ^:dynamic *hide-non-halite-ops* true)
 
 (s/defn ^:private form-from-ssa*
-  [dgraph :- Derivations, ordering :- {DerivationName s/Int}, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
+  [ssa-graph :- SSAGraph, ordering :- {NodeId s/Int}, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{NodeId}, id]
   (if (bound? id)
     id
-    (let [[form _] (or (dgraph id) (throw (ex-info "BUG! Derivation not found" {:id id :derivations dgraph})))]
+    (let [node (or (deref-id ssa-graph id) (throw (ex-info "BUG! Node not found" {:id id :ssa-graph ssa-graph})))
+          form (node-form node)]
       (cond
         (or (integer? form) (boolean? form) (string? form)) form
         (= :Unset form) '$no-value
         (symbol? form) (if (bound? form)
                          form
-                         (form-from-ssa* dgraph ordering guards bound? curr-guard form))
+                         (form-from-ssa* ssa-graph ordering guards bound? curr-guard form))
         (seq? form) (cond
                       (= 'get (first form))
-                      (list 'get (form-from-ssa* dgraph ordering guards bound? curr-guard (second form)) (last form))
+                      (list 'get (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
 
                       (= 'refine-to (first form))
-                      (list 'refine-to (form-from-ssa* dgraph ordering guards bound? curr-guard (second form)) (last form))
+                      (list 'refine-to (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
 
                       (and (= '$do! (first form)) *hide-non-halite-ops*)
                       (let [unbound (remove bound? (take (- (count form) 2) (rest form)))
@@ -712,47 +759,47 @@
                                                  [(conj bound? id)
                                                   (conj bindings
                                                         id
-                                                        (form-from-ssa* dgraph ordering guards bound? curr-guard id))])
+                                                        (form-from-ssa* ssa-graph ordering guards bound? curr-guard id))])
                                                [bound? []]
                                                unbound)]
-                        (-> (form-from-ssa* dgraph ordering guards bound? curr-guard (last form))
+                        (-> (form-from-ssa* ssa-graph ordering guards bound? curr-guard (last form))
                             (cond->>
                              (seq unbound) (list 'let bindings))))
 
                       (and (= '$value! (first form)) *hide-non-halite-ops*)
-                      (form-from-ssa* dgraph ordering guards bound? curr-guard (second form))
+                      (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form))
 
                       (= 'if (first form))
                       (let [[_if pred-id then-id else-id] form
-                            [pred] (deref-id dgraph pred-id)
-                            [then] (deref-id dgraph then-id)]
+                            [pred] (deref-id ssa-graph pred-id)
+                            [then] (deref-id ssa-graph then-id)]
                         (if (and (seq? pred) (= '$value? (first pred)) *hide-non-halite-ops*)
                           (let [value-arg-id (second pred)
-                                [value-arg] (deref-id dgraph value-arg-id)]
+                                [value-arg] (deref-id ssa-graph value-arg-id)]
                             (if (and (not (bound? value-arg-id)) (not (symbol? value-arg)))
-                              (list 'let [value-arg-id (form-from-ssa* dgraph ordering guards bound? curr-guard value-arg-id)]
-                                    (form-from-ssa* dgraph ordering guards (conj bound? (second pred)) curr-guard id))
+                              (list 'let [value-arg-id (form-from-ssa* ssa-graph ordering guards bound? curr-guard value-arg-id)]
+                                    (form-from-ssa* ssa-graph ordering guards (conj bound? (second pred)) curr-guard id))
                               (list 'if-value
-                                    (form-from-ssa* dgraph ordering guards bound? curr-guard (second pred))
-                                    (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard pred-id) then-id)
-                                    (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
+                                    (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second pred))
+                                    (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard pred-id) then-id)
+                                    (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard (negated ssa-graph pred-id)) else-id))))
                           (list 'if
-                                (form-from-ssa* dgraph ordering guards bound? curr-guard pred-id)
-                                (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard pred-id) then-id)
-                                (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard (negated dgraph pred-id)) else-id))))
+                                (form-from-ssa* ssa-graph ordering guards bound? curr-guard pred-id)
+                                (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard pred-id) then-id)
+                                (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard (negated ssa-graph pred-id)) else-id))))
 
                       (= 'when (first form))
                       (let [[_when pred-id then-id] form
-                            [pred] (deref-id dgraph pred-id)]
+                            [pred] (deref-id ssa-graph pred-id)]
                         (list 'when
-                              (form-from-ssa* dgraph ordering guards bound? curr-guard pred-id)
-                              (let-bindable-exprs dgraph ordering guards bound? (conj curr-guard pred-id) then-id)))
+                              (form-from-ssa* ssa-graph ordering guards bound? curr-guard pred-id)
+                              (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard pred-id) then-id)))
 
                       :else
-                      (apply list (first form) (map #(form-from-ssa* dgraph ordering guards bound? curr-guard %) (rest form))))
-        (map? form) (-> form (dissoc :$type) (update-vals #(form-from-ssa* dgraph ordering guards bound? curr-guard %)) (assoc :$type (:$type form)))
+                      (apply list (first form) (map #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %) (rest form))))
+        (map? form) (-> form (dissoc :$type) (update-vals #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %)) (assoc :$type (:$type form)))
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation"
-                              {:id id :form form :dgraph dgraph :guards guards :bound? bound? :curr-guard curr-guard}))))))
+                              {:id id :form form :ssa-graph ssa-graph :guards guards :bound? bound? :curr-guard curr-guard}))))))
 
 (def ^:dynamic *elide-top-level-bindings*
   "When true, form-from-ssa elides top-level let bindings, to produce a partial expression.
@@ -767,16 +814,15 @@
   their branches depending on the value of the predicate.
   We need to ensure that our rewritten expressions never evaluate a form when the original
   expressions would not have evaluated it."
-  [dgraph :- Derivations, ordering :- {DerivationName s/Int}, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{DerivationName}, id]
-  (let [subdgraph (select-keys dgraph (reachable-nodes dgraph id {:include-negations? true}))
-        reachable-subdgraph (->> id
-                                 (reachable-nodes subdgraph)
-                                 (select-keys subdgraph))
-        usage-counts (->> reachable-subdgraph
-                          vals
-                          (mapcat referenced-derivations)
+  [ssa-graph :- SSAGraph, ordering :- {NodeId s/Int}, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{NodeId}, id]
+  (let [subgraph (reachable-subgraph ssa-graph id)
+        usage-counts (->> id
+                          (reachable-nodes subgraph)
+                          (mapv #(deref-id subgraph %))
+                          (mapcat child-nodes)
                           frequencies)
-        [bound? bindings] (->> subdgraph
+        [bound? bindings] (->> subgraph
+                               :dgraph
                                (remove
                                 (fn [[id [form htype]]]
                                   (or (bound? form) (bound? id)
@@ -794,9 +840,9 @@
                                (reduce
                                 (fn [[bound-set bindings] id]
                                   [(conj bound-set id)
-                                   (conj bindings id (form-from-ssa* subdgraph ordering guards bound-set curr-guard id))])
+                                   (conj bindings id (form-from-ssa* subgraph ordering guards bound-set curr-guard id))])
                                 [bound? []]))]
-    (cond->> (form-from-ssa* subdgraph ordering guards bound? curr-guard id)
+    (cond->> (form-from-ssa* subgraph ordering guards bound? curr-guard id)
       (and (seq bindings) (not *elide-top-level-bindings*)) (list 'let bindings))))
 
 (defn- next-free-var [scope aliases]
@@ -843,38 +889,38 @@
      :else (throw (ex-info "Couldn't normalize expression" {:expr expr})))))
 
 (s/defn form-from-ssa
-  ([{:keys [spec-vars derivations] :as spec-info} :- SpecInfo, id :- DerivationName]
-   (form-from-ssa (->> spec-vars keys (map symbol) set) derivations id))
-  ([scope :- #{s/Symbol}, dgraph :- Derivations, id :- DerivationName]
-   (let [ordering (zipmap (topo-sort dgraph) (range))]
+  ([{:keys [spec-vars ssa-graph] :as spec-info} :- SpecInfo, id :- NodeId]
+   (form-from-ssa (->> spec-vars keys (map symbol) set) ssa-graph id))
+  ([scope :- #{s/Symbol}, ssa-graph :- SSAGraph, id :- NodeId]
+   (let [ordering (zipmap (topo-sort ssa-graph) (range))]
      (->> id
-          (let-bindable-exprs dgraph ordering (compute-guards dgraph #{id}) scope #{})
+          (let-bindable-exprs ssa-graph ordering (compute-guards ssa-graph #{id}) scope #{})
           (normalize-vars scope)))))
 
 (s/defn spec-from-ssa :- halite-envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
   [spec-info :- SpecInfo]
-  (let [{:keys [derivations constraints spec-vars] :as spec-info} (prune-derivations spec-info false)
+  (let [{:keys [ssa-graph constraints spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
         scope (->> spec-vars keys (map symbol) set)
         constraint (mk-junct 'and constraints)
         ssa-ctx {:senv (halite-envs/spec-env {})
                  :tenv (halite-envs/type-env {})
                  :env {}
-                 :dgraph derivations}
-        [dgraph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
+                 :ssa-graph ssa-graph}
+        [ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
     (-> spec-info
-        (dissoc :derivations)
-        (assoc :constraints [["$all" (form-from-ssa scope dgraph id)]]))))
+        (dissoc :ssa-graph)
+        (assoc :constraints [["$all" (form-from-ssa scope ssa-graph id)]]))))
 
 (s/defn make-ssa-ctx :- SSACtx
-  [sctx :- SpecCtx, {:keys [derivations] :as spec-info} :- SpecInfo]
+  [sctx :- SpecCtx, {:keys [ssa-graph] :as spec-info} :- SpecInfo]
   (let [senv (as-spec-env sctx)
-        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :derivations))]
-    {:senv senv :tenv tenv :env {} :dgraph derivations}))
+        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :ssa-graph))]
+    {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph}))
 
 (s/defn build-spec-env :- (s/protocol halite-envs/SpecEnv)
   [sctx :- SpecCtx]
   (-> sctx (update-vals spec-from-ssa) (halite-envs/spec-env)))
 
-(defn pprint-dgraph [dgraph]
-  (pp/pprint (sort-by #(Integer/parseInt (subs (name (key %)) 1)) dgraph)))
+(defn pprint-ssa-graph [ssa-graph]
+  (pp/pprint (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph))))

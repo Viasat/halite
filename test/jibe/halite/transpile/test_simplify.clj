@@ -17,8 +17,7 @@
                 :refines-to {}}}]
     (are [expr simplified]
          (= simplified
-            (binding [ssa/*next-id* (atom 0)
-                      ssa/*hide-non-halite-ops* false]
+            (binding [ssa/*hide-non-halite-ops* false]
               (-> senv
                   (update-in [:ws/A :constraints] conj ["c" expr])
                   (halite-envs/spec-env)

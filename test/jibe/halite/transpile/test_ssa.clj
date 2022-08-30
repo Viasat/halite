@@ -14,14 +14,16 @@
 (use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-cycle?
-  (let [cycle-graph '{$1 [(+ $2 $3) :Integer]
-                      $2 [(+ $1 $3) :Integer]
-                      $3 [1 :Integer]}]
+  (let [cycle-graph (assoc ssa/empty-ssa-graph :dgraph
+                           '{$1 [(+ $2 $3) :Integer]
+                             $2 [(+ $1 $3) :Integer]
+                             $3 [1 :Integer]})]
     (is (= true (ssa/cycle? cycle-graph))))
 
-  (let [non-cycle-graph '{$1 [(+ $2 $3) :Integer]
-                          $2 [2 :Integer]
-                          $3 [3 :Integer]}]
+  (let [non-cycle-graph (assoc ssa/empty-ssa-graph :dgraph
+                               '{$1 [(+ $2 $3) :Integer]
+                                 $2 [2 :Integer]
+                                 $3 [3 :Integer]})]
     (is (= false (ssa/cycle? non-cycle-graph)))))
 
 (deftest test-spec-to-ssa
@@ -33,15 +35,14 @@
                {:spec-vars {:a "Integer", :b "Boolean"}, :constraints [], :refines-to {}}
                :ws/C
                {:spec-vars {:cn [:Maybe "Integer"]} :constraints [] :refines-to {}}}]
-    (are [constraints derivations new-constraints]
-         (= [derivations new-constraints]
-            (binding [ssa/*next-id* (atom 0)]
-              (-> senv
-                  (assoc-in [:ws/A :constraints] (map-indexed #(vector (str "c" %1) %2) constraints))
-                  (halite-envs/spec-env)
-                  (#(ssa/spec-to-ssa % (halite-envs/lookup-spec % :ws/A)))
-                  (#(vector (:derivations %)
-                            (map second (:constraints %)))))))
+    (are [constraints dgraph new-constraints]
+         (= [dgraph new-constraints]
+            (-> senv
+                (assoc-in [:ws/A :constraints] (map-indexed #(vector (str "c" %1) %2) constraints))
+                (halite-envs/spec-env)
+                (#(ssa/spec-to-ssa % (halite-envs/lookup-spec % :ws/A)))
+                (#(vector (:dgraph (:ssa-graph %))
+                          (map second (:constraints %))))))
 
       [] {} []
 
@@ -236,8 +237,8 @@
         $6 [(not= $1 $4) :Boolean $5]}
       '[$5]
 
-      ;; ;; if-value produces if, value? and value! nodes to facilitate semantics-preserving rewrites.
-      ;; ;; form-from-ssa must always collapse these back to an if-value form.
+      ;; if-value produces if, value? and value! nodes to facilitate semantics-preserving rewrites.
+      ;; form-from-ssa must always collapse these back to an if-value form.
       '[(if-value w w 1)]  ; (if ($value? w) ($value! w) 1)
       '{$1 [:Unset :Unset]
         $2 [w [:Maybe :Integer]]
@@ -293,8 +294,8 @@
         $7 [(if $3 $5 $6) :Integer]}
       '[$7]
 
-      ;; ;; We also need to be able to accept the internal nodes, which
-      ;; ;; may be produced by rewrite rules.
+      ;; We also need to be able to accept the internal nodes, which
+      ;; may be produced by rewrite rules.
       '[(if ($value? w) ($value! w) 1)]
       '{$1 [w [:Maybe :Integer]]
         $2 [($value? $1) :Boolean $3]
@@ -376,59 +377,56 @@
       '[$5])))
 
 (deftest test-form-to-ssa-correctly-handles-node-references-in-if-value
-  (binding [ssa/*next-id* (atom 0)]
-    (let [senv (halite-envs/spec-env
-                '{:ws/A
-                  {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
-                   :constraints [["c1" (= s p)]]
-                   :refines-to {}}})
-          sctx (ssa/build-spec-ctx senv :ws/A)
-          a (:ws/A sctx)
-          s-id (ssa/find-form (:derivations a) 's)
-          ctx (ssa/make-ssa-ctx sctx a)]
-      (is (= '[{$1 [s [:Maybe :Boolean]],
-                $2 [p [:Maybe :Boolean]],
-                $3 [(= $1 $2) :Boolean $4],
-                $4 [(not= $1 $2) :Boolean $3],
-                $5 [:Unset :Unset],
-                $6 [($value? $1) :Boolean $7],
-                $7 [(not $6) :Boolean $6],
-                $8 [($value! $1) :Boolean $9],
-                $9 [(not $8) :Boolean $8]
-                $10 [true :Boolean $11],
-                $11 [false :Boolean $10],
-                $12 [(if $6 $8 $11) :Boolean $13],
-                $13 [(not $12) :Boolean $12]}
-               $12]
-             (ssa/form-to-ssa ctx (list 'if-value s-id s-id false))))
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
+                 :constraints [["c1" (= s p)]]
+                 :refines-to {}}})
+        sctx (ssa/build-spec-ctx senv :ws/A)
+        a (:ws/A sctx)
+        s-id (ssa/find-form (:ssa-graph a) 's)
+        ctx (ssa/make-ssa-ctx sctx a)]
+    (is (= '{$1 [s [:Maybe :Boolean]],
+             $2 [p [:Maybe :Boolean]],
+             $3 [(= $1 $2) :Boolean $4],
+             $4 [(not= $1 $2) :Boolean $3],
+             $5 [:Unset :Unset],
+             $6 [($value? $1) :Boolean $7],
+             $7 [(not $6) :Boolean $6],
+             $8 [($value! $1) :Boolean $9],
+             $9 [(not $8) :Boolean $8]
+             $10 [true :Boolean $11],
+             $11 [false :Boolean $10],
+             $12 [(if $6 $8 $11) :Boolean $13],
+             $13 [(not $12) :Boolean $12]}
+           (:dgraph (first (ssa/form-to-ssa ctx (list 'if-value s-id s-id false))))))
 
-      (is (= '[{$1 [s [:Maybe :Boolean]],
-                $2 [p [:Maybe :Boolean]],
-                $3 [(= $1 $2) :Boolean $4],
-                $4 [(not= $1 $2) :Boolean $3],
-                $14 [:Unset :Unset],
-                $15 [($value? $1) :Boolean $16],
-                $16 [(not $15) :Boolean $15],
-                $17 [($value! $1) :Boolean $18],
-                $18 [(not $17) :Boolean $17],
-                $19 [(if $15 $14 $14) :Unset]}
-               $19]
-             (ssa/form-to-ssa ctx (list 'if-value s-id '$no-value s-id)))))))
+    (is (= '{$1 [s [:Maybe :Boolean]],
+             $2 [p [:Maybe :Boolean]],
+             $3 [(= $1 $2) :Boolean $4],
+             $4 [(not= $1 $2) :Boolean $3],
+             $5 [:Unset :Unset],
+             $6 [($value? $1) :Boolean $7],
+             $7 [(not $6) :Boolean $6],
+             $8 [($value! $1) :Boolean $9],
+             $9 [(not $8) :Boolean $8],
+             $10 [(if $6 $5 $5) :Unset]}
+           (:dgraph (first (ssa/form-to-ssa ctx (list 'if-value s-id '$no-value s-id))))))))
 
 (def form-from-ssa* #'ssa/form-from-ssa*)
 
 (s/defn ^:private guards-from-ssa :- {s/Any s/Any}
   "To facilitate testing"
-  [dgraph :- ssa/Derivations, bound :- #{s/Symbol}, guards]
+  [ssa-graph :- ssa/SSAGraph, bound :- #{s/Symbol}, guards]
   (binding [ssa/*hide-non-halite-ops* false]
-    (let [ordering (zipmap (ssa/topo-sort dgraph) (range))]
+    (let [ordering (zipmap (ssa/topo-sort ssa-graph) (range))]
       (-> guards
-          (update-keys (partial form-from-ssa* dgraph ordering {} bound #{}))
+          (update-keys (partial form-from-ssa* ssa-graph ordering {} bound #{}))
           (update-vals
            (fn [guards]
              (if (seq guards)
                (->> guards
-                    (map #(->> % (map (partial form-from-ssa* dgraph ordering {} bound #{})) (mk-junct 'and)))
+                    (map #(->> % (map (partial form-from-ssa* ssa-graph ordering {} bound #{})) (mk-junct 'and)))
                     (mk-junct 'or))
                true)))))))
 
@@ -443,21 +441,20 @@
                 :refines-to {}}}]
     (are [constraints guards]
          (= guards
-            (binding [ssa/*next-id* (atom 0)]
-              (let [spec-info (-> senv
-                                  (update-in [:ws/A :constraints] into
-                                             (map-indexed #(vector (str "c" %1) %2) constraints))
-                                  (halite-envs/spec-env)
-                                  (ssa/build-spec-ctx :ws/A)
-                                  :ws/A)]
-                (-> spec-info
-                    :derivations
-                    (ssa/compute-guards (->> spec-info :constraints (map second) set))
-                    (->> (guards-from-ssa
-                          (:derivations spec-info)
-                          (->> spec-info :spec-vars keys (map symbol) set))
-                         (remove (comp true? val))
-                         (into {}))))))
+            (let [spec-info (-> senv
+                                (update-in [:ws/A :constraints] into
+                                           (map-indexed #(vector (str "c" %1) %2) constraints))
+                                (halite-envs/spec-env)
+                                (ssa/build-spec-ctx :ws/A)
+                                :ws/A)]
+              (-> spec-info
+                  :ssa-graph
+                  (ssa/compute-guards (->> spec-info :constraints (map second) set))
+                  (->> (guards-from-ssa
+                        (:ssa-graph spec-info)
+                        (->> spec-info :spec-vars keys (map symbol) set))
+                       (remove (comp true? val))
+                       (into {})))))
 
       []
       {}
@@ -544,19 +541,17 @@
                    :constraints []
                    :refines-to {}}]
 
-    (are [constraints derivations new-constraint]
+    (are [constraints dgraph new-constraint]
          (= [["$all" new-constraint]]
-            (binding [ssa/*next-id* (atom 1000)]
-              (-> spec-info
-                  (assoc :derivations derivations
-                         :constraints
-                         (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
-                  (ssa/spec-from-ssa)
-                  :constraints)))
+            (-> spec-info
+                (assoc :ssa-graph (ssa/make-ssa-graph dgraph)
+                       :constraints (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
+                (ssa/spec-from-ssa)
+                :constraints))
 
       [] {} true
 
-      '[$1] '{$1 [b :Boolean]} 'b
+      '[$1] '{$1 [b :Boolean $2] $2 [(not $1) :Boolean $1]} 'b
 
       '[$3]
       '{$1 [1 :Integer]
@@ -568,9 +563,11 @@
       '[$3 $5]
       '{$1 [x :Integer]
         $2 [1 :Integer]
-        $3 [(< $2 $1) :Boolean]
+        $3 [(< $2 $1) :Boolean $6]
         $4 [10 :Integer]
-        $5 [(< $1 $4) :Boolean]}
+        $5 [(< $1 $4) :Boolean $7]
+        $6 [(<= $1 $2) :Boolean $3]
+        $7 [(<= $4 $1) :Boolean $5]}
       '(and (< 1 x) (< x 10))
 
       '[$6]
@@ -591,24 +588,29 @@
         $4 [z :Integer]
         $5 [10 :Integer]
         $6 [2 :Integer]
-        $7 [(< $1 $5) :Boolean]
-        $8 [(= $9 $10) :Boolean]
+        $7 [(< $1 $5) :Boolean $11]
+        $8 [(= $9 $10) :Boolean $12]
         $9 [(+ $3 $4) :Integer]
-        $10 [(* $6 $1) :Integer]}
+        $10 [(* $6 $1) :Integer]
+        $11 [(<= $5 $1) :Boolean $7]
+        $12 [(not= $9 $10) :Boolean $8]}
       '(let [v1 (+ x y)]
          (and (< v1 10)
               (= (+ y z) (* 2 v1))))
 
       '[$1]
-      '{$1 [(get $2 :foo) :Boolean]
-        $3 [b :Boolean]
-        $2 [{:$type :ws/Foo :foo $3} [:Instance :ws/Foo]]}
+      '{$1 [(get $2 :foo) :Boolean $4]
+        $3 [b :Boolean $5]
+        $2 [{:$type :ws/Foo :foo $3} [:Instance :ws/Foo]]
+        $4 [(not $1) :Boolean $1]
+        $5 [(not $3) :Boolean $3]}
       '(get {:$type :ws/Foo :foo b} :foo)
 
       '[$4]
       '{$1 [12 :Integer]
         $3 [x :Integer]
-        $4 [(< $3 $1) :Boolean]}
+        $4 [(< $3 $1) :Boolean $5]
+        $5 [(<= $1 $3) :Boolean $4]}
       '(< x 12)
 
       '[$1]
@@ -700,19 +702,18 @@
   '(if true (error "nope") true))
 
 (deftest test-spec-from-ssa-preserves-guards
-  (binding [ssa/*next-id* (atom 0)]
-    (let [senv (halite-envs/spec-env
-                '{:ws/A
-                  {:spec-vars {:p "Boolean", :q "Boolean"}
-                   :constraints [["c1" (if p (< (div 10 0) 1) true)]
-                                 ["c2" (if q true (and (< 1 (div 10 0)) (< (div 10 0) 1)))]
-                                 ["c3" (if (not q) (< 1 (div 10 0)) true)]]
-                   :refines-to {}}})
-          sctx (ssa/build-spec-ctx senv :ws/A)]
-      (is (= '[["$all" (and (if p (< (div 10 0) 1) true)
-                            (if q true (let [v1 (div 10 0)] (and (< 1 v1) (< v1 1))))
-                            (if (not q) (< 1 (div 10 0)) true))]]
-             (-> sctx (ssa/build-spec-env) (halite-envs/lookup-spec :ws/A) :constraints))))))
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:p "Boolean", :q "Boolean"}
+                 :constraints [["c1" (if p (< (div 10 0) 1) true)]
+                               ["c2" (if q true (and (< 1 (div 10 0)) (< (div 10 0) 1)))]
+                               ["c3" (if (not q) (< 1 (div 10 0)) true)]]
+                 :refines-to {}}})
+        sctx (ssa/build-spec-ctx senv :ws/A)]
+    (is (= '[["$all" (and (if p (< (div 10 0) 1) true)
+                          (if q true (let [v1 (div 10 0)] (and (< 1 v1) (< v1 1))))
+                          (if (not q) (< 1 (div 10 0)) true))]]
+           (-> sctx (ssa/build-spec-env) (halite-envs/lookup-spec :ws/A) :constraints)))))
 
 (deftest test-semantics-preservation
   ;; Test that this spec has the same interpretation after round-tripping through SSA representation.
@@ -725,8 +726,7 @@
                                ["a3" (and (<= 0 x) (< x 10))]
                                ["a4" (and (<= 0 y) (< y 10))]]
                  :refines-to {}}})
-        senv' (binding [ssa/*next-id* (atom 0)]
-                (-> senv (ssa/build-spec-ctx :ws/A) (ssa/build-spec-env)))
+        senv' (-> senv (ssa/build-spec-ctx :ws/A) (ssa/build-spec-env))
         tenv (halite-envs/type-env {})
         env (halite-envs/env {})
         check (fn [senv inst]
@@ -739,26 +739,25 @@
           (is (= (check senv inst) (check senv' inst))))))))
 
 (deftest test-replace-in-expr
-  (binding [ssa/*next-id* (atom 0)]
-    (let [senv (halite-envs/spec-env
-                '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}})
-          tenv (halite-envs/type-env '{x :Integer, y :Integer, p :Boolean})
-          ctx {:senv senv, :tenv tenv, :env {}, :dgraph {}}
-          [dgraph1 orig-id] (ssa/form-to-ssa ctx '(let [foo (+ x (- 0 y))]
-                                                    (or p
-                                                        (< foo 24)
-                                                        (<= 0 (get {:$type :ws/A :an (* foo 2)} :an)))))
-          old-add-id (->> dgraph1
-                          (filter (fn [[id [form]]] (and (seq? form) (= '+ (first form)))))
-                          ffirst)
-          [dgraph2 add-id] (ssa/form-to-ssa
-                            (assoc ctx :dgraph dgraph1)
-                            '(+ x y))
-          ;;_ (clojure.pprint/pprint (sort-by #(Integer/parseInt (subs (name (first %)) 1)) dgraph2))
-          [dgraph3 new-id] (ssa/replace-in-expr
-                            dgraph2 orig-id {old-add-id add-id})]
-      (is (= '(let [v1 (+ x y)]
-                (or p
-                    (< v1 24)
-                    (<= 0 (get {:$type :ws/A, :an (* v1 2)} :an))))
-             (ssa/form-from-ssa '#{x y p} dgraph3 new-id))))))
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}})
+        tenv (halite-envs/type-env '{x :Integer, y :Integer, p :Boolean})
+        ctx {:senv senv, :tenv tenv, :env {}, :ssa-graph ssa/empty-ssa-graph}
+        [ssa-graph1 orig-id] (ssa/form-to-ssa ctx '(let [foo (+ x (- 0 y))]
+                                                     (or p
+                                                         (< foo 24)
+                                                         (<= 0 (get {:$type :ws/A :an (* foo 2)} :an)))))
+        old-add-id (->> ssa-graph1
+                        :dgraph
+                        (filter (fn [[id [form]]] (and (seq? form) (= '+ (first form)))))
+                        ffirst)
+        [ssa-graph2 add-id] (ssa/form-to-ssa
+                             (assoc ctx :ssa-graph ssa-graph1)
+                             '(+ x y))
+        ;;_ (clojure.pprint/pprint (sort-by #(Integer/parseInt (subs (name (first %)) 1)) dgraph2))
+        [ssa-graph3 new-id] (ssa/replace-in-expr ssa-graph2 orig-id {old-add-id add-id})]
+    (is (= '(let [v1 (+ x y)]
+              (or p
+                  (< v1 24)
+                  (<= 0 (get {:$type :ws/A, :an (* v1 2)} :an))))
+           (ssa/form-from-ssa '#{x y p} ssa-graph3 new-id)))))

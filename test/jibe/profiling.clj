@@ -99,14 +99,14 @@
                   #'ssa/find-form
                   #'ssa/form-to-ssa
                   #'ssa/form-from-ssa
-                  #'ssa/add-derivation
+                  #'ssa/ensure-node
                   #'ssa/let-to-ssa
                   #'ssa/if-to-ssa
                   #'ssa/refine-to-to-ssa
                   #'ssa/do!-to-ssa
                   #'ssa/error-to-ssa
                   #'ssa/app-to-ssa
-                  #'ssa/prune-dgraph]))
+                  #'ssa/prune-ssa-graph]))
 
 (comment
 

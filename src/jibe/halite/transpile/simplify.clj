@@ -11,14 +11,16 @@
             [jibe.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]))
 
-(defn- deref-form [dgraph id]
-  (some->> id (ssa/deref-id dgraph) first))
+(defn- deref-form [ssa-graph id]
+  #_(when (ssa/contains-id? ssa-graph id)
+    (first (ssa/deref-id ssa-graph id)))
+  (->> id (ssa/deref-id ssa-graph) first))
 
 (s/defn ^:private simplify-and
-  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype :as d]]
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype :as d]]
   (when (and (seq? form) (= 'and (first form)))
     (let [child-terms (->> (rest form)
-                           (map #(vector % (deref-form dgraph %)))
+                           (map #(vector % (deref-form ssa-graph %)))
                            (remove (comp true? second)))]
       (cond
         ;; every term was literal true -- collapse to literal true
@@ -38,23 +40,23 @@
         (apply list 'and false (map first (remove (comp false? second) child-terms)))))))
 
 (s/defn ^:private simplify-not
-  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'not (first form)))
-    (let [subform (deref-form dgraph (second form))]
+    (let [subform (deref-form ssa-graph (second form))]
       (when (boolean? subform)
         (not subform)))))
 
 (s/defn ^:private simplify-if-static-pred
-  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_if pred-id then-id else-id] form
-          subform (deref-form dgraph pred-id)]
+          subform (deref-form ssa-graph pred-id)]
       (when (boolean? subform)
         (if subform then-id else-id)))))
 
 (defn- always-evaluates?
   "True if the given form cannot possibly produce a runtime error during evaluation."
-  [dgraph form]
+  [ssa-graph form]
   (cond
     (or (integer? form) (boolean? form) (symbol? form) (string? form)) true
     (seq? form) (let [[op & arg-ids] form
@@ -62,7 +64,7 @@
                                       (fn [r arg-id]
                                         (if (keyword? arg-id)
                                           true
-                                          (if (always-evaluates? dgraph (first (ssa/deref-id dgraph arg-id)))
+                                          (if (always-evaluates? ssa-graph (first (ssa/deref-id ssa-graph arg-id)))
                                             true
                                             (reduced false))))
                                       true
@@ -71,51 +73,51 @@
                     (< <= > >= and or not => abs = not= get valid? $value? $value! if $do!) args-evaluate?
                     ;; when divisor is statically known not to be zero, we know mod will evaluate
                     mod (and args-evaluate?
-                             (let [[form htype] (ssa/deref-id dgraph (second arg-ids))]
+                             (let [[form htype] (ssa/deref-id ssa-graph (second arg-ids))]
                                (and (integer? form) (not= 0 form))))
                     ;; assume false by default
                     false))
     :else false))
 
 (s/defn ^:private simplify-if-static-branches
-  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_ pred-id then-id else-id] form
-          pred (deref-form dgraph pred-id)]
-      (when (always-evaluates? dgraph pred)
-        (let [then (deref-form dgraph then-id)
-              else (deref-form dgraph else-id)
+          pred (deref-form ssa-graph pred-id)]
+      (when (always-evaluates? ssa-graph pred)
+        (let [then (deref-form ssa-graph then-id)
+              else (deref-form ssa-graph else-id)
               if-value? (and (seq? pred) (= '$value? (first pred)))]
           (cond
             (and (true? then) (true? else)) true
             (and (false? then) (false? else)) false
             (and (true? then) (false? else) (not if-value?)) pred-id
-            (and (false? then) (true? else) (not if-value?)) (ssa/negated dgraph pred-id)
+            (and (false? then) (true? else) (not if-value?)) (ssa/negated ssa-graph pred-id)
             (= then else) then-id))))))
 
 (s/defn ^:private simplify-do
-  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [side-effects (->> form (rest) (butlast)
-                            (remove (comp (partial always-evaluates? dgraph) (partial deref-form dgraph))))]
+                            (remove (comp (partial always-evaluates? ssa-graph) (partial deref-form ssa-graph))))]
       (cond
         (empty? side-effects) (last form)
         (< (count side-effects) (- (count form) 2)) `(~'$do! ~@side-effects ~(last form))))))
 
 (s/defn ^:private simplify-no-value
-  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
-  (when (and (seq? form) (= '$value? (first form)) (= :Unset (deref-form dgraph (second form))))
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (when (and (seq? form) (= '$value? (first form)) (= :Unset (deref-form ssa-graph (second form))))
     false))
 
 (s/defn simplify-statically-known-value?
-  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
-  (when (and (seq? form) (= '$value? (first form)) (not (halite-types/maybe-type? (second (ssa/deref-id dgraph (second form))))))
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (when (and (seq? form) (= '$value? (first form)) (not (halite-types/maybe-type? (second (ssa/deref-id ssa-graph (second form))))))
     true))
 
 (s/defn simplify-redundant-value!
-  [{{:keys [dgraph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$value! (first form)))
-    (let [[_ inner-htype] (ssa/deref-id dgraph (second form))]
+    (let [[_ inner-htype] (ssa/deref-id ssa-graph (second form))]
       (when-not (halite-types/maybe-type? inner-htype)
         (second form)))))
 
