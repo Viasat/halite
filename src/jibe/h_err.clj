@@ -104,8 +104,8 @@
 (deferr let-bindings-odd-count [data]
         {:message "Let bindings form must have an even number of forms"})
 
-(deferr let-symbols-required [data]
-        {:message "Even-numbered forms in let binding vector must be symbols"})
+(deferr let-needs-bare-symbol [data]
+        {:message "Even-numbered forms in let binding vector must be bare symbols"})
 
 (deferr cannot-bind-reserved-word [data]
         {:message "Cannot bind a value to the reserved word: :sym"})

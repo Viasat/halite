@@ -15,9 +15,6 @@
 (deferr result-always-known [data]
         {:message "Result of ':op' would always be :value"})
 
-(deferr let-needs-bare-symbol [data]
-        {:message "Binding target for 'let' must be a symbol, not: :sym"})
-
 (deferr cannot-bind-unset [data]
         {:message "Disallowed binding ':sym' to \\colonUnset value; just use '$no-value'"})
 

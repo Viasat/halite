@@ -664,8 +664,8 @@
     (type-check*
      (reduce
       (fn [ctx [sym body]]
-        (when-not (symbol? sym)
-          (throw-err (h-err/let-symbols-required {:form expr})))
+        (when-not (and (symbol? sym) (halite-types/bare? sym))
+          (throw-err (h-err/let-needs-bare-symbol {:form expr})))
         (when (reserved-words sym)
           (throw-err (h-err/cannot-bind-reserved-word {:sym sym
                                                        :form expr})))

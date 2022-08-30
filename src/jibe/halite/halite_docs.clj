@@ -62,7 +62,7 @@
                            'h-err/invalid-value {:doc "A value was supplied, but the type of the value is not recognized."}
                            'h-err/invalid-vector-index {:doc "An index was supplied to lookup a value in a vector, but the index was not an integer."}
                            'h-err/let-bindings-odd-count {:doc "A 'let' expression included an odd number of elements in the binding vector. This is invalid as the bindings are to be a sequence of pairs."}
-                           'h-err/let-symbols-required {:doc "In a 'let' expression, the first item in each pair of items must be a symbol."}
+                           'h-err/let-needs-bare-symbol {:doc "In a 'let' expression, the first item in each pair of items must be a symbol."}
                            'h-err/limit-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. limits on how deeply expressions may be nested. One of these limits was violated. See the exception data for more details."}
                            'h-err/literal-must-evaluate-to-value {:doc "All of the expressions that appear as elements in a collection literal, must be guaranteed to evaluate to values, i.e. they must never evaluate to 'unset'."}
                            'h-err/missing-required-vars {:doc "An attempt was made to construct an instance of a spec, without all of its mandatory fields being assigned values."}
@@ -99,7 +99,6 @@
                            'l-err/first-argument-not-optional {:doc "The value being tested in an 'if-value' statement must be optional."}
                            'l-err/get-in-path-empty {:doc "A path must be provided to the 'get-in' operation."}
                            'l-err/let-bindings-empty {:doc "The bindings form of the 'let' cannot be empty. If there is nothing to bind, then the 'let' can be omitted."}
-                           'l-err/let-needs-bare-symbol {:doc "The bindings form of 'let' must consist of bare symbols associated with values."}
                            'l-err/result-always-known {:doc "The result of the equality check is always the same and can be known in advance, so it is not needed."}
                            'l-err/disallowed-unset-variable {:doc "It is not allowed to bind 'unset' to symbols other than the built-in '$no-value'."}}))
 

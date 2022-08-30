@@ -399,7 +399,7 @@
     '(let) #"Wrong number of arguments"
     '(let [x] x) #"must have an even number of forms"
     '(let []) #"Wrong number of arguments"
-    '(let [1 2] 1) #"must be symbols"
+    '(let [1 2] 1) #"must be bare symbols"
     '(let [x "foo"] (+ x 1)) #"No matching signature"
     '(let [$type 7] 8) #"must not.*[$]"
     '(let [$foo 7] 8) #"must not.*[$]")

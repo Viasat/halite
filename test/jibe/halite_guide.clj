@@ -10005,11 +10005,11 @@
   (h
    (let [:x 1] x)
    [:throws
-    "h-err/let-symbols-required 0-0 : Even-numbered forms in let binding vector must be symbols"])
+    "h-err/let-needs-bare-symbol 0-0 : Even-numbered forms in let binding vector must be bare symbols"])
   (h
    (let [[a b] [1 2]] a)
    [:throws
-    "h-err/let-symbols-required 0-0 : Even-numbered forms in let binding vector must be symbols"])
+    "h-err/let-needs-bare-symbol 0-0 : Even-numbered forms in let binding vector must be bare symbols"])
   (h
    (let [x 1 y (inc x) z (inc y)] x z)
    [:throws
@@ -10018,6 +10018,9 @@
    (let [] 1)
    [:throws
     "l-err/let-bindings-empty 0-0 : Bindings form of 'let' cannot be empty in: (let [] 1)"])
+  (h
+   (let [x/y 1] x/y)
+   [:throws "h-err/let-needs-bare-symbol 0-0 : Even-numbered forms in let binding vector must be bare symbols"])
   (h
    (let [x 1] $no-value)
    :Unset
@@ -10894,7 +10897,7 @@
   (h
    (let [0 1] 0)
    [:throws
-    "h-err/let-symbols-required 0-0 : Even-numbered forms in let binding vector must be symbols"])
+    "h-err/let-needs-bare-symbol 0-0 : Even-numbered forms in let binding vector must be bare symbols"])
   (h (let [- 1] -) :Integer 1 "({ '-' = 1; '-' })" "1")
   (h (let [a- 1] a-) :Integer 1 "({ 'a-' = 1; 'a-' })" "1")
   (h (let [a-b 1] a-b) :Integer 1 "({ 'a-b' = 1; 'a-b' })" "1")
@@ -10921,8 +10924,7 @@
   (h (let [a.b 1] a.b) :Integer 1 "({ 'a.b' = 1; 'a.b' })" "1")
   (h
    (let [a/b 1] a/b)
-   [:throws
-    "l-err/let-needs-bare-symbol 0-0 : Binding target for 'let' must be a symbol, not: a/b"])
+   [:throws "h-err/let-needs-bare-symbol 0-0 : Even-numbered forms in let binding vector must be bare symbols"])
   (h
    (let
     [aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

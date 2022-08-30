@@ -125,8 +125,6 @@
     (type-check*
      (reduce
       (fn [ctx [sym body]]
-        (when-not (and (symbol? sym) (halite-types/bare? sym))
-          (throw-err (l-err/let-needs-bare-symbol {:form expr :sym sym})))
         (when (re-find #"^[$]" (name sym))
           (throw-err (l-err/binding-target-invalid-symbol {:form expr :sym sym :op 'let})))
         (let [t (type-check* ctx body)]
