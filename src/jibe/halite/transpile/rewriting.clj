@@ -157,7 +157,7 @@
           :total-ms total-ms
           :rule-ms rule-ms
           :graph-ms graph-ms})
-        spec-info'))))
+        [spec-info' (dgraph' id')]))))
 
 (s/defn apply-to-reachable :- (s/maybe SpecInfo)
   [sctx ctx scope spec-id spec-info
@@ -172,13 +172,15 @@
         (let [deriv (get (:derivations spec-info) id)]
           (if-not deriv
             spec-info
-            (recur (or (some #(apply-rule-to-deriv % sctx ctx scope spec-id spec-info id deriv)
-                             rules)
-                       spec-info)
-                   (conj! reached id)
-                   (-> ids-to-do
-                       pop
-                       (into (ssa/referenced-derivations deriv)))))))
+            (let [[spec-info deriv]
+                  (or (some #(apply-rule-to-deriv % sctx ctx scope spec-id spec-info id deriv)
+                            rules)
+                      [spec-info deriv])]
+              (recur spec-info
+                     (conj! reached id)
+                     (-> ids-to-do
+                         pop
+                         (into (ssa/referenced-derivations deriv))))))))
       spec-info)))
 
 (s/defn rewrite-reachable :- SpecInfo
