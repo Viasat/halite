@@ -298,4 +298,26 @@
     (is (= "#fixed-decimal/decimal \"1.2\""
            (pr-str #d "1.2")))))
 
+(deftest test-package-long
+  (is (= #d "0.0"
+         (#'fixed-decimal/package-long 1 0)))
+  (is (= #d "0.00"
+         (#'fixed-decimal/package-long 2 0)))
+  (is (= #d "0.1"
+         (#'fixed-decimal/package-long 1 1)))
+  (is (= #d "0.01"
+         (#'fixed-decimal/package-long 2 1)))
+  (is (= #d "0.001"
+         (#'fixed-decimal/package-long 3 1)))
+  (is (= #d "987.6"
+         (#'fixed-decimal/package-long 1 9876)))
+  (is (= #d "98.76"
+         (#'fixed-decimal/package-long 2 9876)))
+  (is (= #d "9.876"
+         (#'fixed-decimal/package-long 3 9876)))
+  (is (= #d "0.9876"
+         (#'fixed-decimal/package-long 4 9876)))
+  (is (= #d "0.09876"
+         (#'fixed-decimal/package-long 5 9876))))
+
 ;; (run-tests)

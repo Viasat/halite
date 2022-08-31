@@ -92,12 +92,12 @@
   (let [s (str n)
         fractional-start (- (count s) scale)]
     (FixedDecimal. (if (neg? n) "-" "")
-                   (let [integer (if (neg? fractional-start)
-                                   "0"
-                                   (subs s (if (neg? n) 1 0) fractional-start))]
-                     (if (or (zero? (count integer)))
-                       "0"
-                       integer))
+                   (if (neg? fractional-start)
+                     "0"
+                     (let [integer (subs s (if (neg? n) 1 0) fractional-start)]
+                       (if (zero? (count integer))
+                         "0"
+                         integer)))
                    (if (neg? fractional-start)
                      (str (apply str (repeat (- scale (count s)) "0")) s)
                      (subs s fractional-start)))))
