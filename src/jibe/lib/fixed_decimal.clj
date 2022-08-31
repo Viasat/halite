@@ -48,29 +48,11 @@
 
 ;;;;
 
-(schema/defn ^:private ten-to-the :- schema/Int
-  [n :- schema/Int]
-  (cond (zero? n) 1
-        (pos? n)  (reduce * 1 (repeat n     10))
-        (neg? n)  (reduce / 1 (repeat (- n) 10))))
-
-;;;;
-
-(declare fixed)
-
-(declare assert-fixed?)
-
-(declare fixed-decimal?)
-
-(declare assert-valid-scale)
-
 (schema/defn ^:private parse-fixed-decimal-str
   [s]
   (when-let [matches (re-matches #"(-?)([0-9]+).?([0-9]*)" s)]
     (let [[_ sign integer fractional] matches]
       (FixedDecimal. sign integer fractional))))
-
-;;
 
 (schema/defn get-scale :- Integer
   "Retrieve the number of decimal places in the fixed decimal value."
@@ -82,11 +64,9 @@
   [f :- FixedDecimal]
   [(get-scale f) (parse-long (str (.-sign f) (.-integer f) (.-fractional f)))])
 
-(schema/defn sort-key [f :- FixedDecimal]
-  "Note: this only provides for sorting of values with a given scale"
-  (extract-long f))
-
 (schema/defn ^:private package-long :- FixedDecimal
+  "Interpret the long value as if it were a fixed decimal with the given scale. Assumes that scale
+  is a positive value."
   [scale :- schema/Int
    n :- Long]
   (let [s (str n)
@@ -101,6 +81,50 @@
                    (if (neg? fractional-start)
                      (str (apply str (repeat (- scale (count s)) "0")) s)
                      (subs s fractional-start)))))
+
+(schema/defn sort-key [f :- FixedDecimal]
+  "Produce a value to use as the sort value for the fixed-decimal. Note: this only provides for
+  sorting of values with a given scale"
+  (extract-long f))
+
+;;;;
+
+(def max-scale 18)
+
+(schema/defn ^:private valid-scale? :- Boolean
+  [f :- FixedDecimal]
+  (< 0 (get-scale f) (inc max-scale)))
+
+(schema/defn ^:private assert-valid-scale
+  [f :- FixedDecimal
+   ex-data]
+  (when-not (valid-scale? f)
+    (throw (ex-info (str "invalid scale: " (pr-str f)) ex-data))))
+
+(defn- is-fixed? [f]
+  (cond
+    (and (instance? FixedDecimal f)
+         (valid-scale? f)) true
+    (instance? Long f) false
+    (instance? Integer f) false
+    :default (throw (ex-info (str "unknown numeric type: " [f (class f)]) {:n f
+                                                                           :class-n (class f)}))))
+
+(schema/defn fixed-decimal? :- Boolean
+  "Is the value a fixed decimal? Only returns true for objects created by this module."
+  [value :- schema/Any]
+  (instance? FixedDecimal value))
+
+(schema/defn ^:private assert-fixed?
+  [x :- schema/Any]
+  (when-not (is-fixed? x)
+    (throw (ex-info (str "not fixed number: " [x (class x)]) {:value x
+                                                              :class (class x)}))))
+
+(schema/defn fneg? :- Boolean
+  "Return true if the fixed decimal value is less than 0."
+  [f :- FixedDecimal]
+  (= "-" (.-sign f)))
 
 (schema/defn set-scale :- (schema/conditional
                            fixed-decimal? FixedDecimal
@@ -124,7 +148,7 @@
         scale-difference (- scale current-scale)
         new-f (cond
                 (= 0 scale) (let [long-value (parse-long (.-integer f))]
-                              (if (= "-" (.-sign f))
+                              (if (fneg? f)
                                 (- long-value)
                                 long-value))
 
@@ -143,26 +167,6 @@
         (when (nil? n)
           (throw (NumberFormatException. (str "For input string: " (string-representation new-f)))))))
     new-f))
-
-;;;;
-
-(def max-scale 18)
-
-(schema/defn ^:private valid-scale? :- Boolean
-  [f :- FixedDecimal]
-  (< 0 (get-scale f) (inc max-scale)))
-
-(schema/defn ^:private assert-valid-scale
-  [f :- FixedDecimal
-   ex-data]
-  (when-not (valid-scale? f)
-    (throw (ex-info (str "invalid scale: " (pr-str f)) ex-data))))
-
-(schema/defn fneg? :- Boolean
-  "Return true if the fixed decimal value is less than 0."
-  [f :- FixedDecimal]
-  (let [[_ n] (extract-long f)]
-    (neg? n)))
 
 (schema/defn ^:private fixed :- FixedDecimal
   "Constructor function"
@@ -192,26 +196,6 @@
   (fixed s))
 
 ;;;;
-
-(defn- is-fixed? [f]
-  (cond
-    (and (instance? FixedDecimal f)
-         (valid-scale? f)) true
-    (instance? Long f) false
-    (instance? Integer f) false
-    :default (throw (ex-info (str "unknown numeric type: " [f (class f)]) {:n f
-                                                                           :class-n (class f)}))))
-
-(schema/defn fixed-decimal? :- Boolean
-  "Is the value a fixed decimal? Only returns true for objects created by this module."
-  [value :- schema/Any]
-  (instance? FixedDecimal value))
-
-(schema/defn ^:private assert-fixed?
-  [x :- schema/Any]
-  (when-not (is-fixed? x)
-    (throw (ex-info (str "not fixed number: " [x (class x)]) {:value x
-                                                              :class (class x)}))))
 
 (defn- assert-matching-fixed? [& args]
   (when-not (and (every? is-fixed? args)
@@ -281,11 +265,14 @@
 (schema/defn shift-scale :- (schema/conditional
                              fixed-decimal? FixedDecimal
                              :else Long)
+  "Shift the decimal point to the right. Can only shift up to the scale of the fixed-decimal."
   [f :- FixedDecimal
    shift :- schema/Int]
   (when (neg? shift)
     (throw (ex-info (str "shift amount cannot be negative: " shift) {:f f
                                                                      :shift shift})))
-  (let [scale (get-scale f)]
-    (set-scale (f* f (ten-to-the shift))
-               (- scale shift))))
+  (let [[scale n] (extract-long f)]
+    (cond
+      (> shift scale) (throw (ex-info (str "invalid scale") {:f f :shift shift}))
+      (= shift scale) n
+      :else (package-long (- scale shift) n))))

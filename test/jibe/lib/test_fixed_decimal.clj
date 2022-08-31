@@ -284,10 +284,14 @@
          (fixed-decimal/shift-scale #d "-1.23" 1)))
   (is (= 123
          (fixed-decimal/shift-scale #d "1.23" 2)))
+  (is (= #d "-12.3"
+         (fixed-decimal/shift-scale #d "-1.23" 1)))
   (is (= -123
          (fixed-decimal/shift-scale #d "-1.23" 2)))
   (is (thrown-with-msg? ExceptionInfo #"invalid scale"
                         (fixed-decimal/shift-scale #d "1.23" 3)))
+  (is (thrown-with-msg? ExceptionInfo #"invalid scale"
+                        (fixed-decimal/shift-scale #d "-1.23" 3)))
   (is (= #d "1.23"
          (fixed-decimal/shift-scale #d "1.23" 0)))
   (is (thrown-with-msg? ExceptionInfo #"shift amount cannot be negative"
