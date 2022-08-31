@@ -47,6 +47,20 @@
 
 ;;;;
 
+(schema/defn ^:private ten-to-the :- schema/Int
+  [n :- schema/Int]
+  (cond (zero? n) 1
+        (pos? n)  (reduce * 1 (repeat n     10))
+        (neg? n)  (reduce / 1 (repeat (- n) 10))))
+
+;;;;
+
+(declare fixed)
+
+(declare assert-fixed?)
+
+(declare fixed-decimal?)
+
 (schema/defn ^:private fixed->BigDecimal :- BigDecimal
   [f :- FixedDecimal]
   (let [s (string-representation f)]
@@ -56,21 +70,20 @@
       (throw (NumberFormatException. (str "Character is neither a decimal digit number nore a decimal point: " s))))
     (BigDecimal. ^String s)))
 
+(schema/defn ^:private BigDecimal->fixed :- FixedDecimal
+  [bd :- BigDecimal]
+  (fixed (str bd)))
+
+;;
+
 (schema/defn sort-key [f :- FixedDecimal]
   (fixed->BigDecimal f))
 
-(def max-scale 18)
-
-(schema/defn ^:private valid-scale? :- Boolean
+(schema/defn get-scale :- Integer
+  "Retrieve the number of decimal places in the fixed decimal value."
   [f :- FixedDecimal]
-  (let [n (fixed->BigDecimal f)]
-    (< 0 (.scale ^BigDecimal n) (inc max-scale))))
-
-(schema/defn ^:private ten-to-the :- schema/Int
-  [n :- schema/Int]
-  (cond (zero? n) 1
-        (pos? n)  (reduce * 1 (repeat n     10))
-        (neg? n)  (reduce / 1 (repeat (- n) 10))))
+  (let [bd (fixed->BigDecimal f)]
+    (.scale ^BigDecimal bd)))
 
 (schema/defn ^:private extract-long-from-big-decimal :- schema/Int
   [bd :- BigDecimal]
@@ -91,11 +104,45 @@
     ;; e.g. (long 922337203685477580.7M) => 922337203685477632 ?!
     [scale (extract-long-from-big-decimal n)]))
 
-(schema/defn get-scale :- Integer
-  "Retrieve the number of decimal places in the fixed decimal value."
+(schema/defn ^:private package-long :- FixedDecimal
+  [scale :- schema/Int
+   n :- Long]
+  (BigDecimal->fixed (/ (.setScale (bigdec n) scale)
+                        (ten-to-the scale))))
+
+(schema/defn set-scale :- (schema/conditional
+                           fixed-decimal? FixedDecimal
+                           :else Long)
+  "Produce a fixed decimal or integer value by changing the scale of the fixed decimal number, 'f', to
+  'scale'. The scale argument must be an integer. If the effect of changing the scale is to add
+  precision then the original value is padded with zeros. If the effect is to reduce precision then
+  the original value is truncated. If the new scale is 0, then an integer is returned."
+  [f :- FixedDecimal
+   scale :- schema/Int]
+  (when-not (or (instance? Long scale)
+                (instance? Integer scale))
+    (throw (ex-info (str "unexpected scale: " [scale (class scale)]) {:scale scale
+                                                                      :class-scale (class scale)})))
+  (when (neg? scale)
+    (throw (ex-info (str "invalid scale: " scale) {:scale scale})))
+
+  (assert-fixed? f)
+  (extract-long f) ;; as an additional assertion
+  (let [bd (fixed->BigDecimal f)
+        result-big-decimal (cond
+                             (instance? Long scale) (.setScale ^BigDecimal bd ^Long scale RoundingMode/DOWN)
+                             (instance? Integer scale) (.setScale ^BigDecimal bd ^Integer scale RoundingMode/DOWN))]
+    (if (pos? scale)
+      (BigDecimal->fixed result-big-decimal)
+      (extract-long-from-big-decimal result-big-decimal))))
+
+;;;;
+
+(def max-scale 18)
+
+(schema/defn ^:private valid-scale? :- Boolean
   [f :- FixedDecimal]
-  (let [bd (fixed->BigDecimal f)]
-    (.scale ^BigDecimal bd)))
+  (< 0 (get-scale f) (inc max-scale)))
 
 (schema/defn fneg? :- Boolean
   "Return true if the fixed decimal value is less than 0."
@@ -118,10 +165,6 @@
     (extract-long f) ;; check for overflow
     f))
 
-(schema/defn ^:private BigDecimal->fixed :- FixedDecimal
-  [bd :- BigDecimal]
-  (fixed (str bd)))
-
 (schema/defn fixed-decimal-reader :- FixedDecimal
   "Convert a value from the clojure reader into a fixed decimal value. Intended to be used to read
   clojure tagged literals. Expects a string as input"
@@ -132,18 +175,7 @@
       (throw (ex-info (str "cannot have a leading 0 here: " (pr-str s)) {:string s}))))
   (fixed s))
 
-(schema/defn fixed-decimal? :- Boolean
-  "Is the value a fixed decimal? Only returns true for objects created by this module."
-  [value :- schema/Any]
-  (instance? FixedDecimal value))
-
 ;;;;
-
-(schema/defn ^:private package-long :- FixedDecimal
-  [scale :- schema/Int
-   n :- Long]
-  (BigDecimal->fixed (/ (.setScale (bigdec n) scale)
-                        (ten-to-the scale))))
 
 (defn- is-fixed? [f]
   (cond
@@ -154,6 +186,11 @@
     :default (throw (ex-info (str "unknown numeric type: " [f (class f)]) {:n f
                                                                            :class-n (class f)}))))
 
+(schema/defn fixed-decimal? :- Boolean
+  "Is the value a fixed decimal? Only returns true for objects created by this module."
+  [value :- schema/Any]
+  (instance? FixedDecimal value))
+
 (schema/defn ^:private assert-fixed?
   [x :- schema/Any]
   (when-not (is-fixed? x)
@@ -162,7 +199,7 @@
 
 (defn- assert-matching-fixed? [& args]
   (when-not (and (every? is-fixed? args)
-                 (apply = (map #(.scale ^BigDecimal (fixed->BigDecimal %)) args)))
+                 (apply = (map get-scale args)))
     (throw (ex-info (str "not fixed numbers with matching scale: " [args (map class args)]) {:args args
                                                                                              :classes (map class args)}))))
 
@@ -224,32 +261,6 @@
                      :class-args (map class args)})))
   (let [[scale n] (extract-long f)]
     (package-long scale (long (apply / n args)))))
-
-(schema/defn set-scale :- (schema/conditional
-                           fixed-decimal? FixedDecimal
-                           :else Long)
-  "Produce a fixed decimal or integer value by changing the scale of the fixed decimal number, 'f', to
-  'scale'. The scale argument must be an integer. If the effect of changing the scale is to add
-  precision then the original value is padded with zeros. If the effect is to reduce precision then
-  the original value is truncated. If the new scale is 0, then an integer is returned."
-  [f :- FixedDecimal
-   scale :- schema/Int]
-  (when-not (or (instance? Long scale)
-                (instance? Integer scale))
-    (throw (ex-info (str "unexpected scale: " [scale (class scale)]) {:scale scale
-                                                                      :class-scale (class scale)})))
-  (when (neg? scale)
-    (throw (ex-info (str "invalid scale: " scale) {:scale scale})))
-
-  (assert-fixed? f)
-  (extract-long f) ;; as an additional assertion
-  (let [bd (fixed->BigDecimal f)
-        result-big-decimal (cond
-                             (instance? Long scale) (.setScale ^BigDecimal bd ^Long scale RoundingMode/DOWN)
-                             (instance? Integer scale) (.setScale ^BigDecimal bd ^Integer scale RoundingMode/DOWN))]
-    (if (pos? scale)
-      (BigDecimal->fixed result-big-decimal)
-      (extract-long-from-big-decimal result-big-decimal))))
 
 (schema/defn shift-scale :- (schema/conditional
                              fixed-decimal? FixedDecimal
