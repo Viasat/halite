@@ -9857,6 +9857,18 @@
    "[#d \"3.3\", #d \"1.1\", #d \"2.2\"].sort()"
    "[#d \"1.1\", #d \"2.2\", #d \"3.3\"]")
   (h
+   (sort [#d "0.01" #d "0.002"])
+   [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
+  (h
+   (sort #{#d "0.01" #d "0.002"})
+   [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
+  (h
+   (sort [#d "0.01" 5])
+   [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
+  (h
+   (sort #{#d "0.01" 5})
+   [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
+  (h
    (sort #{1 3 2})
    [:Vec :Integer]
    [1 2 3]
