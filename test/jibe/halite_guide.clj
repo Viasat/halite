@@ -10056,7 +10056,7 @@
   (is
    (thrown-with-msg?
     NumberFormatException
-    #"For input string"
+    #"Invalid fixed-decimal string"
     (read-string "#d \"922337203685477580.8\"")))
   (h
    #d "-922337203685477580.8"
@@ -10073,7 +10073,7 @@
   (is
    (thrown-with-msg?
     NumberFormatException
-    #"For input string"
+    #"Invalid fixed-decimal string"
     (read-string "#d \"-922337203685477580.9\"")))
   (h
    #d "9.223372036854775807"

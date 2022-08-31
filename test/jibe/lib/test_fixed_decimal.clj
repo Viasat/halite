@@ -28,21 +28,21 @@
                         (read-string "#d \"-1\"")))
   (is (thrown-with-msg? ExceptionInfo #"cannot construct"
                         (read-string "#d \"\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \".0\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \".1\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"-.0\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"-.1\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"+10.0\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"- 0.0\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"-0.0 \"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \" -0.0\"")))
   (is (thrown-with-msg? ExceptionInfo #"cannot have a leading 0"
                         (read-string "#d \"01.0\"")))
@@ -52,13 +52,13 @@
                         (read-string "#d \"-01.0\"")))
   (is (thrown-with-msg? ExceptionInfo #"cannot have a leading 0"
                         (read-string "#d \"-00.0\"")))
-  (is (thrown-with-msg? NumberFormatException #"For input string"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"922337203685477580.8\"")))
-  (is (thrown-with-msg? NumberFormatException #"For input string"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"-922337203685477580.9\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"1.23E3\"")))
-  (is (thrown-with-msg? NumberFormatException #"neither a decimal digit number"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (read-string "#d \"1.23e3\"")))
   (is (not (fixed-decimal/fixed-decimal? "1.0")))
   (is (not (fixed-decimal/fixed-decimal? 1.2)))
@@ -132,6 +132,8 @@
          (fixed-decimal/f- #d "-1.1" #d "0.1")))
   (is (= #d "1.1"
          (fixed-decimal/f- #d "1.1" #d "0.0")))
+  (is (= #d "0.05"
+         (fixed-decimal/f- #d "32.90" #d "32.85")))
 
   (is (= #d "-922337203685477580.8"
          (fixed-decimal/f- #d "-922337203685477580.8" #d "0.0")))
@@ -278,8 +280,12 @@
 (deftest test-shift-scale
   (is (= #d "12.3"
          (fixed-decimal/shift-scale #d "1.23" 1)))
+  (is (= #d "-12.3"
+         (fixed-decimal/shift-scale #d "-1.23" 1)))
   (is (= 123
          (fixed-decimal/shift-scale #d "1.23" 2)))
+  (is (= -123
+         (fixed-decimal/shift-scale #d "-1.23" 2)))
   (is (thrown-with-msg? ExceptionInfo #"invalid scale"
                         (fixed-decimal/shift-scale #d "1.23" 3)))
   (is (= #d "1.23"

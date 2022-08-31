@@ -10,25 +10,26 @@
   'backing store' is treated as a Long, so if the Long would overflow, then the fixed decimal
   operation overflows."
   (:require [clojure.string :as string]
-            [schema.core :as schema])
-  (:import [java.math BigDecimal RoundingMode]))
+            [schema.core :as schema]))
 
 (set! *warn-on-reflection* true)
 
 (defprotocol FixedDecimalContents
   (string-representation [this]))
 
-(deftype FixedDecimal [value]
+(deftype FixedDecimal [^String sign ^String integer ^String fractional]
   FixedDecimalContents
   (string-representation [_]
-    value)
+    (str sign integer "." fractional))
 
   Object
   (equals [_ other]
     (and (instance? FixedDecimal other)
-         (= value (.value ^FixedDecimal other))))
+         (= sign (.-sign ^FixedDecimal other))
+         (= integer (.-integer ^FixedDecimal other))
+         (= fractional (.-fractional ^FixedDecimal other))))
   (hashCode [_]
-    (.hashCode value)))
+    (.hashCode [sign integer fractional])))
 
 (def ^:dynamic *reader-symbol* 'd)
 
@@ -61,54 +62,45 @@
 
 (declare fixed-decimal?)
 
-(schema/defn ^:private fixed->BigDecimal :- BigDecimal
-  [f :- FixedDecimal]
-  (let [s (string-representation f)]
-    (when (nil? (re-matches #"-?[0-9]+.?[0-9]*" s))
-      ;; manually throw NumberFormatException rather than relying on BigDecimal, because the error
-      ;; message from some JVMs was nil in this case
-      (throw (NumberFormatException. (str "Character is neither a decimal digit number nore a decimal point: " s))))
-    (BigDecimal. ^String s)))
+(declare assert-valid-scale)
 
-(schema/defn ^:private BigDecimal->fixed :- FixedDecimal
-  [bd :- BigDecimal]
-  (fixed (str bd)))
+(schema/defn ^:private parse-fixed-decimal-str
+  [s]
+  (when-let [matches (re-matches #"(-?)([0-9]+).?([0-9]*)" s)]
+    (let [[_ sign integer fractional] matches]
+      (FixedDecimal. sign integer fractional))))
 
 ;;
-
-(schema/defn sort-key [f :- FixedDecimal]
-  (fixed->BigDecimal f))
 
 (schema/defn get-scale :- Integer
   "Retrieve the number of decimal places in the fixed decimal value."
   [f :- FixedDecimal]
-  (let [bd (fixed->BigDecimal f)]
-    (.scale ^BigDecimal bd)))
-
-(schema/defn ^:private extract-long-from-big-decimal :- schema/Int
-  [bd :- BigDecimal]
-  (let [scale (.scale ^BigDecimal bd)]
-    (-> bd
-        ^BigDecimal (* (ten-to-the scale))
-        (.setScale 0)
-        .toPlainString
-        Long/parseLong)))
+  (count (.fractional f)))
 
 (schema/defn ^:private extract-long :- [(schema/one schema/Int :scale)
                                         (schema/one Long :long)]
   [f :- FixedDecimal]
-  (let [n (fixed->BigDecimal f)
-        scale (.scale ^BigDecimal n)]
-    ;; this verbose approach is used to convert the bigdecimal to a long, because the built-in
-    ;; 'long' function exhibited odd behaviors near the long limits
-    ;; e.g. (long 922337203685477580.7M) => 922337203685477632 ?!
-    [scale (extract-long-from-big-decimal n)]))
+  [(get-scale f) (parse-long (str (.-sign f) (.-integer f) (.-fractional f)))])
+
+(schema/defn sort-key [f :- FixedDecimal]
+  "Note: this only provides for sorting of values with a given scale"
+  (extract-long f))
 
 (schema/defn ^:private package-long :- FixedDecimal
   [scale :- schema/Int
    n :- Long]
-  (BigDecimal->fixed (/ (.setScale (bigdec n) scale)
-                        (ten-to-the scale))))
+  (let [s (str n)
+        fractional-start (- (count s) scale)]
+    (FixedDecimal. (if (neg? n) "-" "")
+                   (let [integer (if (neg? fractional-start)
+                                   "0"
+                                   (subs s (if (neg? n) 1 0) fractional-start))]
+                     (if (or (zero? (count integer)))
+                       "0"
+                       integer))
+                   (if (neg? fractional-start)
+                     (str (apply str (repeat (- scale (count s)) "0")) s)
+                     (subs s fractional-start)))))
 
 (schema/defn set-scale :- (schema/conditional
                            fixed-decimal? FixedDecimal
@@ -128,13 +120,29 @@
 
   (assert-fixed? f)
   (extract-long f) ;; as an additional assertion
-  (let [bd (fixed->BigDecimal f)
-        result-big-decimal (cond
-                             (instance? Long scale) (.setScale ^BigDecimal bd ^Long scale RoundingMode/DOWN)
-                             (instance? Integer scale) (.setScale ^BigDecimal bd ^Integer scale RoundingMode/DOWN))]
-    (if (pos? scale)
-      (BigDecimal->fixed result-big-decimal)
-      (extract-long-from-big-decimal result-big-decimal))))
+  (let [current-scale (get-scale f)
+        scale-difference (- scale current-scale)
+        new-f (cond
+                (= 0 scale) (let [long-value (parse-long (.-integer f))]
+                              (if (= "-" (.-sign f))
+                                (- long-value)
+                                long-value))
+
+                (= 0 scale-difference) f
+
+                (pos? scale-difference) (FixedDecimal. (.-sign f)
+                                                       (.-integer f)
+                                                       (str (.-fractional f) (apply str (repeat scale-difference "0"))))
+
+                (neg? scale-difference) (FixedDecimal. (.-sign f)
+                                                       (.-integer f)
+                                                       (subs (.-fractional f) 0 scale)))]
+    (when (fixed-decimal? new-f)
+      (assert-valid-scale new-f {:string (string-representation new-f)})
+      (let [[_ n] (extract-long new-f)]
+        (when (nil? n)
+          (throw (NumberFormatException. (str "For input string: " (string-representation new-f)))))))
+    new-f))
 
 ;;;;
 
@@ -143,6 +151,12 @@
 (schema/defn ^:private valid-scale? :- Boolean
   [f :- FixedDecimal]
   (< 0 (get-scale f) (inc max-scale)))
+
+(schema/defn ^:private assert-valid-scale
+  [f :- FixedDecimal
+   ex-data]
+  (when-not (valid-scale? f)
+    (throw (ex-info (str "invalid scale: " (pr-str f)) ex-data))))
 
 (schema/defn fneg? :- Boolean
   "Return true if the fixed decimal value is less than 0."
@@ -155,15 +169,17 @@
   [s :- String]
   (when (empty? s)
     (throw (ex-info "cannot construct fixed decimal number from empty string" {:string s})))
-  (let [f (FixedDecimal. s)]
-    (when-not (valid-scale? f)
-      (throw (ex-info (str "invalid scale: " (pr-str f)) {:string s})))
-    (let [[_ n] (extract-long f)]
-      (when (and (zero? n)
-                 (string/starts-with? s "-"))
-        (throw (ex-info (str "cannot be negative 0: " (pr-str f)) {:string s}))))
-    (extract-long f) ;; check for overflow
-    f))
+  (if-let [f (parse-fixed-decimal-str s)]
+    (do (assert-valid-scale f {:string s})
+        (let [[_ n] (extract-long f)]
+          (when (nil? n)
+            (throw (NumberFormatException. (str "Invalid fixed-decimal string: " s))))
+          (when (and (zero? n)
+                     (string/starts-with? s "-"))
+            (throw (ex-info (str "cannot be negative 0: " (pr-str f)) {:string s}))))
+        (extract-long f) ;; check for overflow
+        f)
+    (throw (NumberFormatException. (str "Invalid fixed-decimal string: " s)))))
 
 (schema/defn fixed-decimal-reader :- FixedDecimal
   "Convert a value from the clojure reader into a fixed decimal value. Intended to be used to read
