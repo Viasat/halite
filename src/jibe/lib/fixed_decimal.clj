@@ -48,7 +48,7 @@
 
 ;;;;
 
-(schema/defn ^:private parse-fixed-decimal-str
+(schema/defn ^:private parse-fixed-decimal-str :- (schema/maybe FixedDecimal)
   [s]
   (when-let [matches (re-matches #"(-?)([0-9]+).?([0-9]*)" s)]
     (let [[_ sign integer fractional] matches]
@@ -62,7 +62,14 @@
 (schema/defn ^:private extract-long :- [(schema/one schema/Int :scale)
                                         (schema/one Long :long)]
   [f :- FixedDecimal]
-  [(get-scale f) (parse-long (str (.-sign f) (.-integer f) (.-fractional f)))])
+  (let [long-value (parse-long (str (.-sign f) (.-integer f) (.-fractional f)))]
+    (when (nil? long-value)
+      (throw (NumberFormatException. (str "Invalid fixed-decimal string: " (string-representation f)))))
+    [(get-scale f) long-value]))
+
+(defn- assert-extract-long [f]
+  (extract-long f)
+  nil)
 
 (schema/defn ^:private package-long :- FixedDecimal
   "Interpret the long value as if it were a fixed decimal with the given scale. Assumes that scale
@@ -82,10 +89,11 @@
                      (str (apply str (repeat (- scale (count s)) "0")) s)
                      (subs s fractional-start)))))
 
-(schema/defn sort-key [f :- FixedDecimal]
+(schema/defn sort-key :- Long
+  [f :- FixedDecimal]
   "Produce a value to use as the sort value for the fixed-decimal. Note: this only provides for
   sorting of values with a given scale"
-  (extract-long f))
+  (second (extract-long f)))
 
 ;;;;
 
@@ -143,7 +151,8 @@
     (throw (ex-info (str "invalid scale: " scale) {:scale scale})))
 
   (assert-fixed? f)
-  (extract-long f) ;; as an additional assertion
+  (assert-extract-long f)
+
   (let [current-scale (get-scale f)
         scale-difference (- scale current-scale)
         new-f (cond
@@ -163,9 +172,7 @@
                                                        (subs (.-fractional f) 0 scale)))]
     (when (fixed-decimal? new-f)
       (assert-valid-scale new-f {:string (string-representation new-f)})
-      (let [[_ n] (extract-long new-f)]
-        (when (nil? n)
-          (throw (NumberFormatException. (str "For input string: " (string-representation new-f)))))))
+      (assert-extract-long new-f))
     new-f))
 
 (schema/defn ^:private fixed :- FixedDecimal
@@ -176,12 +183,9 @@
   (if-let [f (parse-fixed-decimal-str s)]
     (do (assert-valid-scale f {:string s})
         (let [[_ n] (extract-long f)]
-          (when (nil? n)
-            (throw (NumberFormatException. (str "Invalid fixed-decimal string: " s))))
           (when (and (zero? n)
                      (string/starts-with? s "-"))
             (throw (ex-info (str "cannot be negative 0: " (pr-str f)) {:string s}))))
-        (extract-long f) ;; check for overflow
         f)
     (throw (NumberFormatException. (str "Invalid fixed-decimal string: " s)))))
 
@@ -206,7 +210,7 @@
 (let [f-op (fn [op]
              (fn [& args]
                (apply assert-matching-fixed? args)
-               (let [[s _] (extract-long (first args))]
+               (let [s (get-scale (first args))]
                  (package-long s (apply op (map (comp second extract-long) args))))))]
   "Define addition and substraction on fixed decimal arguments. Overflows according to the size of a Long with positions
   carved out for decimal places."
@@ -227,8 +231,9 @@
   "Return absolue value of argument as a fixed decimal."
   [f :- FixedDecimal]
   (assert-fixed? f)
-  (let [[scale n] (extract-long f)]
-    (package-long scale (abs n))))
+  (let [new-f (FixedDecimal. "" (.-integer f) (.-fractional f))]
+    (assert-extract-long new-f)
+    new-f))
 
 (schema/defn f* :- FixedDecimal
   "Muliply the first argument, a fixed decimal, by all of the other arguments, which must be

@@ -202,10 +202,13 @@
          (fixed-decimal/fabs #d "-1.0")))
   (is (= #d "922337203685477580.7"
          (fixed-decimal/fabs #d "922337203685477580.7")))
-  (is (= #d "-92233720368547758.08" ;; NOTE: replicates behavior of Java & Clojure with wrap-around of abs
-         (fixed-decimal/fabs #d "-92233720368547758.08")))
-  (is (= #d "-9223372036854775.808" ;; NOTE: replicates behavior of Java & Clojure with wrap-around of abs
-         (fixed-decimal/fabs #d "-9223372036854775.808"))))
+
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
+                        ;; NOTE: does not replicate behavior of Java & Clojure with wrap-around of abs
+                        (fixed-decimal/fabs #d "-92233720368547758.08")))
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
+                        ;; NOTE: does not replicate behavior of Java & Clojure with wrap-around of abs
+                        (fixed-decimal/fabs #d "-9223372036854775.808"))))
 
 (deftest test-inqualities
   (is (fixed-decimal/f< #d "1.0" #d "2.0"))
@@ -274,7 +277,7 @@
          (fixed-decimal/set-scale #d "922337203685477580.7" 0)))
   (is (= #d "922337203685477580.7"
          (fixed-decimal/set-scale #d "922337203685477580.7" 1)))
-  (is (thrown-with-msg? NumberFormatException #"For input string"
+  (is (thrown-with-msg? NumberFormatException #"Invalid fixed-decimal string"
                         (fixed-decimal/set-scale #d "922337203685477580.7" 2))))
 
 (deftest test-shift-scale
@@ -323,5 +326,15 @@
          (#'fixed-decimal/package-long 4 9876)))
   (is (= #d "0.09876"
          (#'fixed-decimal/package-long 5 9876))))
+
+(deftest test-sort-key
+  (is (= 10
+         (fixed-decimal/sort-key #d "1.0")))
+  (is (= 11
+         (fixed-decimal/sort-key #d "1.1")))
+  (is (= 10
+         (fixed-decimal/sort-key #d "0.10")))
+  (is (= 11
+         (fixed-decimal/sort-key #d "0.11"))))
 
 ;; (run-tests)

@@ -305,7 +305,9 @@
 (def ^:private habs  (comp #(if (hneg? %)
                               (throw-err (h-err/abs-failure {:value %}))
                               %)
-                           (math-f abs  fixed-decimal/fabs)))
+                           (math-f abs #(try (fixed-decimal/fabs %)
+                                             (catch NumberFormatException ex
+                                               (throw-err (h-err/abs-failure {:value %})))))))
 (def           h<=   (math-f <=   fixed-decimal/f<=))
 (def           h>=   (math-f >=   fixed-decimal/f>=))
 (def           h<    (math-f <    fixed-decimal/f<))
