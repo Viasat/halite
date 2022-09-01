@@ -622,19 +622,35 @@
 (s/defn replace-node :- SpecInfo
   "Replace node-id with replacement-id in spec-info."
   [{:keys [ssa-graph constraints] :as spec-info} :- SpecInfo node-id replacement-id]
-  (let [dgraph' (update-vals (:dgraph ssa-graph)
-                             (fn [[form htype neg-id]]
-                               (cond->
-                                [(cond
-                                   (seq? form) (map #(if (= % node-id) replacement-id %) form)
-                                   (map? form) (update-vals form #(if (= % node-id) replacement-id %))
-                                   :else form)
-                                 htype]
-                                 neg-id (conj neg-id))))]
-    (assoc
-     spec-info
-     :ssa-graph (assoc ssa-graph :dgraph dgraph' :form-ids (index-dgraph-forms dgraph'))
-     :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints))))
+  (assoc
+   spec-info
+   :ssa-graph (loop [dgraph (transient (:dgraph ssa-graph))
+                     form-ids (transient (:form-ids ssa-graph))
+                     entries (:dgraph ssa-graph)]
+                (if (seq entries)
+                  (let [entry (first entries)
+                        id (key entry)
+                        [form htype neg-id] (val entry)]
+                    (cond
+                      (and (seq? form) (some #(= node-id %) (rest form)))
+                      (let [new-form (map #(if (= % node-id) replacement-id %) form)]
+                        (recur
+                         (assoc! dgraph id (cond-> [new-form htype] neg-id (conj neg-id)))
+                         (-> form-ids (dissoc! form) (assoc! new-form id))
+                         (rest entries)))
+
+                      (and (map? form) (some #(= node-id %) (vals form)))
+                      (let [new-form (update-vals form #(if (= % node-id) replacement-id %))]
+                        (recur
+                         (assoc! dgraph id (cond-> [new-form htype] neg-id (conj neg-id)))
+                         (-> form-ids (dissoc! form) (assoc! new-form id))
+                         (rest entries)))
+                      :else
+                      (recur dgraph form-ids (rest entries))))
+                  {:dgraph (persistent! dgraph)
+                   :form-ids (persistent! form-ids)
+                   :next-id (:next-id ssa-graph)}))
+   :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints)))
 
 ;;;;;;;; Guards ;;;;;;;;;;;;;;
 
