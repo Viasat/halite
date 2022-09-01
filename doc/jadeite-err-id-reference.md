@@ -229,8 +229,8 @@ The field name is not valid for the spec. The field name was provided to either 
 
 #### Produced by operators:
 
-* [`accessor`](jadeite-full-reference.md#accessor)
-* [`accessor-chain`](jadeite-full-reference.md#accessor-chain)
+* [`<accessor>`](jadeite-full-reference.md#_Laccessor_G)
+* [`<accessorChain>`](jadeite-full-reference.md#_LaccessorChain_G)
 
 ---
 ### <a name="h-err/field-value-of-wrong-type"></a>h-err/field-value-of-wrong-type
@@ -256,7 +256,7 @@ The path to navigate in 'get-in' must be a literal, i.e. it cannot be an express
 
 #### Produced by operators:
 
-* [`accessor-chain`](jadeite-full-reference.md#accessor-chain)
+* [`<accessorChain>`](jadeite-full-reference.md#_LaccessorChain_G)
 
 ---
 ### <a name="h-err/if-value-must-be-bare-symbol"></a>h-err/if-value-must-be-bare-symbol
@@ -282,8 +282,8 @@ The index falls outside of the bounds of the vector. A way to avoid this is to f
 
 #### Produced by operators:
 
-* [`accessor`](jadeite-full-reference.md#accessor)
-* [`accessor-chain`](jadeite-full-reference.md#accessor-chain)
+* [`<accessor>`](jadeite-full-reference.md#_Laccessor_G)
+* [`<accessorChain>`](jadeite-full-reference.md#_LaccessorChain_G)
 
 ---
 ### <a name="h-err/invalid-collection-type"></a>h-err/invalid-collection-type
@@ -340,8 +340,8 @@ An attempt was made to a read a value from an instance, but a field name was not
 
 #### Produced by operators:
 
-* [`accessor`](jadeite-full-reference.md#accessor)
-* [`accessor-chain`](jadeite-full-reference.md#accessor-chain)
+* [`<accessor>`](jadeite-full-reference.md#_Laccessor_G)
+* [`<accessorChain>`](jadeite-full-reference.md#_LaccessorChain_G)
 
 ---
 ### <a name="h-err/invalid-keyword-char"></a>h-err/invalid-keyword-char
@@ -380,7 +380,7 @@ An attempt was made to retrieve a field from an instance but the value was not k
 
 #### Produced by operators:
 
-* [`accessor-chain`](jadeite-full-reference.md#accessor-chain)
+* [`<accessorChain>`](jadeite-full-reference.md#_LaccessorChain_G)
 
 ---
 ### <a name="h-err/invalid-refinement-expression"></a>h-err/invalid-refinement-expression
@@ -455,8 +455,8 @@ An index was supplied to lookup a value in a vector, but the index was not an in
 
 #### Produced by operators:
 
-* [`accessor`](jadeite-full-reference.md#accessor)
-* [`accessor-chain`](jadeite-full-reference.md#accessor-chain)
+* [`<accessor>`](jadeite-full-reference.md#_Laccessor_G)
+* [`<accessorChain>`](jadeite-full-reference.md#_LaccessorChain_G)
 
 ---
 ### <a name="h-err/let-bindings-odd-count"></a>h-err/let-bindings-odd-count
@@ -916,7 +916,7 @@ A path must be provided to the 'get-in' operation.
 
 #### Produced by operators:
 
-* [`accessor-chain`](jadeite-full-reference.md#accessor-chain)
+* [`<accessorChain>`](jadeite-full-reference.md#_LaccessorChain_G)
 
 ---
 ### <a name="l-err/let-bindings-empty"></a>l-err/let-bindings-empty

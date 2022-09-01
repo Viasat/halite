@@ -413,6 +413,96 @@ true
 </td></tr></table>
 
 ---
+### <a name="_Laccessor_G"></a><accessor>
+
+Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
+
+![["(instance '.' symbol:instance-field)" "any"]](./halite-bnf-diagrams/op/%3Caccessor%3E-0-j.svg)
+
+![["(vector '[' integer ']')" "value"]](./halite-bnf-diagrams/op/%3Caccessor%3E-1-j.svg)
+
+The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
+
+<table><tr><td colspan="1">
+
+```java
+[10, 20, 30, 40][2]
+
+### result ###
+30
+```
+
+</td><td colspan="2">
+
+```java
+{$type: my/Spec$v1, x: -3, y: 2}.x
+
+### result ###
+-3
+```
+
+</td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/index-out-of-bounds`](jadeite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-instance-index`](jadeite-err-id-reference.md#h-err/invalid-instance-index)
+* [`h-err/invalid-vector-index`](jadeite-err-id-reference.md#h-err/invalid-vector-index)
+
+See also: [`<accessorChain>`](#_LaccessorChain_G)
+
+---
+### <a name="_LaccessorChain_G"></a><accessorChain>
+
+A path of element accessors can be created by chaining together element access forms in sequence.
+
+The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'.
+
+![["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }" "any"]](./halite-bnf-diagrams/op/%3CaccessorChain%3E-0-j.svg)
+
+<table><tr><td colspan="2">
+
+```java
+[[10, 20], [30, 40]][1][0]
+
+### result ###
+30
+```
+
+</td></tr><tr><td colspan="4">
+
+```java
+{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: 20, b: 10}, y: 2}.x.a
+
+### result ###
+20
+```
+
+</td></tr><tr><td colspan="5">
+
+```java
+{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: [20, 30, 40], b: 10}, y: 2}.x.a[1]
+
+### result ###
+30
+```
+
+</td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/get-in-path-must-be-vector-literal`](jadeite-err-id-reference.md#h-err/get-in-path-must-be-vector-literal)
+* [`h-err/index-out-of-bounds`](jadeite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-instance-index`](jadeite-err-id-reference.md#h-err/invalid-instance-index)
+* [`h-err/invalid-lookup-target`](jadeite-err-id-reference.md#h-err/invalid-lookup-target)
+* [`h-err/invalid-vector-index`](jadeite-err-id-reference.md#h-err/invalid-vector-index)
+* [`l-err/get-in-path-empty`](jadeite-err-id-reference.md#l-err/get-in-path-empty)
+
+See also: [`<accessor>`](#_Laccessor_G)
+
+---
 ### <a name="_E_G"></a>=>
 
 Performs logical implication. If the first value is true, then the second value must also be true for the result to be true. If the first value is false, then the result is true.
@@ -565,96 +655,6 @@ abs(#d "-1.0")
 #### Possible errors:
 
 * [`h-err/abs-failure`](jadeite-err-id-reference.md#h-err/abs-failure)
-
----
-### <a name="accessor"></a>accessor
-
-Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
-
-![["(instance '.' symbol:instance-field)" "any"]](./halite-bnf-diagrams/op/accessor-0-j.svg)
-
-![["(vector '[' integer ']')" "value"]](./halite-bnf-diagrams/op/accessor-1-j.svg)
-
-The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
-
-<table><tr><td colspan="1">
-
-```java
-[10, 20, 30, 40][2]
-
-### result ###
-30
-```
-
-</td><td colspan="2">
-
-```java
-{$type: my/Spec$v1, x: -3, y: 2}.x
-
-### result ###
--3
-```
-
-</td></tr></table>
-
-#### Possible errors:
-
-* [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
-* [`h-err/index-out-of-bounds`](jadeite-err-id-reference.md#h-err/index-out-of-bounds)
-* [`h-err/invalid-instance-index`](jadeite-err-id-reference.md#h-err/invalid-instance-index)
-* [`h-err/invalid-vector-index`](jadeite-err-id-reference.md#h-err/invalid-vector-index)
-
-See also: [`accessor-chain`](#accessor-chain)
-
----
-### <a name="accessor-chain"></a>accessor-chain
-
-A path of element accessors can be created by chaining together element access forms in sequence.
-
-The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'.
-
-![["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }" "any"]](./halite-bnf-diagrams/op/accessor-chain-0-j.svg)
-
-<table><tr><td colspan="2">
-
-```java
-[[10, 20], [30, 40]][1][0]
-
-### result ###
-30
-```
-
-</td></tr><tr><td colspan="4">
-
-```java
-{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: 20, b: 10}, y: 2}.x.a
-
-### result ###
-20
-```
-
-</td></tr><tr><td colspan="5">
-
-```java
-{$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: [20, 30, 40], b: 10}, y: 2}.x.a[1]
-
-### result ###
-30
-```
-
-</td></tr></table>
-
-#### Possible errors:
-
-* [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
-* [`h-err/get-in-path-must-be-vector-literal`](jadeite-err-id-reference.md#h-err/get-in-path-must-be-vector-literal)
-* [`h-err/index-out-of-bounds`](jadeite-err-id-reference.md#h-err/index-out-of-bounds)
-* [`h-err/invalid-instance-index`](jadeite-err-id-reference.md#h-err/invalid-instance-index)
-* [`h-err/invalid-lookup-target`](jadeite-err-id-reference.md#h-err/invalid-lookup-target)
-* [`h-err/invalid-vector-index`](jadeite-err-id-reference.md#h-err/invalid-vector-index)
-* [`l-err/get-in-path-empty`](jadeite-err-id-reference.md#l-err/get-in-path-empty)
-
-See also: [`accessor`](#accessor)
 
 ---
 ### <a name="any_Q"></a>any?
