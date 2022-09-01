@@ -63,7 +63,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 
 #### Possible errors:
 
-* h-err/overflow
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="_A"></a>+
@@ -114,7 +114,7 @@ Add two numbers together.
 
 #### Possible errors:
 
-* h-err/overflow
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="-"></a>-
@@ -165,7 +165,7 @@ Subtract one number from another.
 
 #### Possible errors:
 
-* h-err/overflow
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="_L"></a><
@@ -501,7 +501,7 @@ Since the negative number space contains one more value than the positive number
 
 #### Possible errors:
 
-* Cannot compute absolute value most max negative value
+* [`Cannot compute absolute value most max negative value`](halite-err-id-reference.md#Cannot compute absolute value most max negative value)
 
 ---
 ### <a name="and"></a>and
@@ -766,7 +766,7 @@ Decrement a numeric value.
 
 #### Possible errors:
 
-* h-err/overflow
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
 See also: [`inc`](#inc)
 
@@ -879,7 +879,7 @@ h-err/divide-by-zero
 
 #### Possible errors:
 
-* h-err/divide-by-zero
+* [`h-err/divide-by-zero`](halite-err-id-reference.md#h-err/divide-by-zero)
 
 See also: [`mod`](#mod)
 
@@ -905,7 +905,7 @@ h-err/spec-threw
 
 #### Possible errors:
 
-* Always
+* [`Always`](halite-err-id-reference.md#Always)
 
 ---
 ### <a name="every_Q"></a>every?
@@ -985,8 +985,8 @@ h-err/invalid-exponent
 
 #### Possible errors:
 
-* h-err/overflow
-* h-err/invalid-exponent
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
+* [`h-err/invalid-exponent`](halite-err-id-reference.md#h-err/invalid-exponent)
 
 ---
 ### <a name="filter"></a>filter
@@ -1050,7 +1050,7 @@ h-err/argument-empty
 
 #### Possible errors:
 
-* h-err/argument-empty
+* [`h-err/argument-empty`](halite-err-id-reference.md#h-err/argument-empty)
 
 See also: [`count`](#count) [`rest`](#rest)
 
@@ -1087,8 +1087,8 @@ The $type value of an instance is not considered a field that can be extracted w
 
 #### Possible errors:
 
-* [h-err/index-out-of-bounds]
-* [h-err/field-name-not-in-spec]
+* [`[h-err/index-out-of-bounds]`](halite-err-id-reference.md#[h-err/index-out-of-bounds])
+* [`[h-err/field-name-not-in-spec]`](halite-err-id-reference.md#[h-err/field-name-not-in-spec])
 
 See also: [`get-in`](#get-in)
 
@@ -1132,10 +1132,10 @@ The first path element in the path is looked up in the initial target. If there 
 
 #### Possible errors:
 
-* l-err/get-in-path-empty
-* h-err/invalid-lookup-target
-* h-err/field-name-not-in-spec
-* h-err/index-out-of-bounds
+* [`l-err/get-in-path-empty`](halite-err-id-reference.md#l-err/get-in-path-empty)
+* [`h-err/invalid-lookup-target`](halite-err-id-reference.md#h-err/invalid-lookup-target)
+* [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/index-out-of-bounds`](halite-err-id-reference.md#h-err/index-out-of-bounds)
 
 See also: [`get`](#get)
 
@@ -1239,7 +1239,7 @@ Increment a numeric value.
 
 #### Possible errors:
 
-* h-err/overflow
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
 See also: [`dec`](#dec)
 
@@ -1381,7 +1381,7 @@ h-err/divide-by-zero
 
 #### Possible errors:
 
-* h-err/divide-by-zero
+* [`h-err/divide-by-zero`](halite-err-id-reference.md#h-err/divide-by-zero)
 
 ---
 ### <a name="not"></a>not
@@ -1644,8 +1644,8 @@ h-err/no-refinement-path
 
 #### Possible errors:
 
-* h-err/no-refinement-path
-* Spec not found
+* [`h-err/no-refinement-path`](halite-err-id-reference.md#h-err/no-refinement-path)
+* [`Spec not found`](halite-err-id-reference.md#Spec not found)
 
 See also: [`refines-to?`](#refines-to_Q)
 
@@ -1678,7 +1678,7 @@ false
 
 #### Possible errors:
 
-* Spec not found
+* [`Spec not found`](halite-err-id-reference.md#Spec not found)
 
 See also: [`refine-to`](#refine-to)
 
@@ -1731,7 +1731,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 
 #### Possible errors:
 
-* h-err/arg-type-mismatch
+* [`h-err/arg-type-mismatch`](halite-err-id-reference.md#h-err/arg-type-mismatch)
 
 See also: [`*`](#_S)
 
@@ -1809,7 +1809,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 #### Possible errors:
 
-* Elements not sortable
+* [`Elements not sortable`](halite-err-id-reference.md#Elements not sortable)
 
 See also: [`sort-by`](#sort-by)
 
@@ -1833,8 +1833,8 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 #### Possible errors:
 
-* h-err/not-sortable-body
-* h-err/sort-value-collision
+* [`h-err/not-sortable-body`](halite-err-id-reference.md#h-err/not-sortable-body)
+* [`h-err/sort-value-collision`](halite-err-id-reference.md#h-err/sort-value-collision)
 
 See also: [`sort`](#sort)
 

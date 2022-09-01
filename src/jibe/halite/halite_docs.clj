@@ -1632,7 +1632,8 @@
            "</table>\n\n"])
         (when-let [t (:throws op)]
           ["#### Possible errors:\n\n"
-           (for [msg t] (str "* " msg "\n"))
+           (for [msg t]
+             (str "* " "[`" msg "`](halite-err-id-reference.md#" (safe-op-anchor msg) ")" "\n"))
            "\n"])
         (when-let [alsos (:see-also op)]
           ["See also:"
