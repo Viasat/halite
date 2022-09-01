@@ -151,11 +151,10 @@
   (let [spec-info (get sctx spec-id)
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (->> tenv (halite-envs/scope) keys set)]
-    (-> (fixpoint #(apply-to-reachable sctx ctx scope spec-id %
-                                       (r/map second (:constraints %))
-                                       rules)
-                  spec-info)
-        (ssa/prune-ssa-graph false))))
+    (fixpoint #(apply-to-reachable sctx ctx scope spec-id %
+                                   (r/map second (:constraints %))
+                                   rules)
+              spec-info)))
 
 (defn rewrite-reachable-sctx [sctx rules]
   (->> sctx keys (map #(vector % (rewrite-reachable rules sctx %))) (into {})))
