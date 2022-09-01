@@ -644,7 +644,7 @@ The first path element in the path is looked up in the initial target. If there 
 
 #### Possible errors:
 
-* l-err/get-in-path-cannot-be-empty
+* l-err/get-in-path-empty
 * h-err/invalid-lookup-target
 * h-err/field-name-not-in-spec
 * h-err/index-out-of-bounds
