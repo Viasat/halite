@@ -1428,7 +1428,7 @@
                                       'h-err/cannot-bind-reserved-word {:doc "There are a small number of symbols that are reserved for system use and cannot be used by users in bindings."}
                                       'h-err/cannot-conj-unset {:doc "Only actual values can be added into collections. Specifically 'unset' cannot be added into a collection."}
                                       'h-err/comprehend-binding-wrong-count {:doc "Collection comprehensions require a single binding that defines the symbol to be bound to the elements of the collection."}
-                                      'h-err/comprehend-collection-invalid-type {:doc "Collection comprehensions can only be applies to collections, i.e. vectors or sets."}
+                                      'h-err/comprehend-collection-invalid-type {:doc "Collection comprehensions can only be applied to collections, i.e. vectors or sets."}
                                       'h-err/divide-by-zero {:doc "Division by zero, whether directly or indirectly via modulus cannot be performed."}
                                       'h-err/element-accumulator-same-symbol {:doc "The 'reduce' operation requires distinct symbols for referring to the accumulator and the collection element."}
                                       'h-err/element-binding-target-must-be-bare-symbol {:doc "In 'reduce', it is necesary to define a symbol without a namepsace which is used to hold each element of the collection."

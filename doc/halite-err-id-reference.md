@@ -160,7 +160,7 @@ Collection comprehensions require a single binding that defines the symbol to be
 ---
 ### <a name="h-err/comprehend-collection-invalid-type"></a>h-err/comprehend-collection-invalid-type
 
-Collection comprehensions can only be applies to collections, i.e. vectors or sets.
+Collection comprehensions can only be applied to collections, i.e. vectors or sets.
 
 #### Error message template:
 
