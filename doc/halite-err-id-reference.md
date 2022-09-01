@@ -12,7 +12,7 @@ The way the number space is divided the value of zero comes out of the positive 
 
 > Cannot compute absolute value of: :value
 
-#### Produced by:
+#### Produced by operators:
 
 * [`abs`](halite-full-reference.md#abs)
 
@@ -24,6 +24,10 @@ In 'reduce', it is necesary to define a symbol which is used to hold the accumul
 #### Error message template:
 
 > Accumulator binding target for ':op' must be a bare symbol, not: :accumulator
+
+#### Produced by operators:
+
+* [`reduce`](halite-full-reference.md#reduce)
 
 See also: [`h-err/element-binding-target-must-be-bare-symbol`](#h-err/element-binding-target-must-be-bare-symbol)
 
@@ -45,7 +49,7 @@ The 'first' operation cannot be invoked on an empty collection.
 
 > Argument to first is always empty
 
-#### Produced by:
+#### Produced by operators:
 
 * [`first`](halite-full-reference.md#first)
 
@@ -58,6 +62,10 @@ The operation must be invoked a collection.
 
 > First argument to 'conj' must be a set or vector
 
+#### Produced by operators:
+
+* [`conj`](halite-full-reference.md#conj)
+
 ---
 ### <a name="h-err/argument-not-vector"></a>h-err/argument-not-vector
 
@@ -66,6 +74,11 @@ The operation can only be invoked on a vector.
 #### Error message template:
 
 > Argument to ':op' must be a vector
+
+#### Produced by operators:
+
+* [`first`](halite-full-reference.md#first)
+* [`rest`](halite-full-reference.md#rest)
 
 ---
 ### <a name="h-err/arguments-not-sets"></a>h-err/arguments-not-sets
@@ -76,6 +89,12 @@ The operation can only be invoked on set arguments.
 
 > Arguments to ':op' must be sets
 
+#### Produced by operators:
+
+* [`difference`](halite-full-reference.md#difference)
+* [`intersection`](halite-full-reference.md#intersection)
+* [`union`](halite-full-reference.md#union)
+
 ---
 ### <a name="h-err/binding-target-must-be-bare-symbol"></a>h-err/binding-target-must-be-bare-symbol
 
@@ -84,6 +103,16 @@ In binding forms, the first value of each pair must be a symbol without a namesp
 #### Error message template:
 
 > Binding target for ':op' must be a bare symbol, not: :sym
+
+#### Produced by operators:
+
+* [`any?`](halite-full-reference.md#any_Q)
+* [`every?`](halite-full-reference.md#every_Q)
+* [`filter`](halite-full-reference.md#filter)
+* [`if-value-let`](halite-full-reference.md#if-value-let)
+* [`map`](halite-full-reference.md#map)
+* [`reduce`](halite-full-reference.md#reduce)
+* [`sort-by`](halite-full-reference.md#sort-by)
 
 ---
 ### <a name="h-err/cannot-bind-reserved-word"></a>h-err/cannot-bind-reserved-word
@@ -94,6 +123,10 @@ There are a small number of symbols that are reserved for system use and cannot 
 
 > Cannot bind a value to the reserved word: :sym
 
+#### Produced by operators:
+
+* [`let`](halite-full-reference.md#let)
+
 ---
 ### <a name="h-err/cannot-conj-unset"></a>h-err/cannot-conj-unset
 
@@ -102,6 +135,10 @@ Only actual values can be added into collections. Specifically 'unset' cannot be
 #### Error message template:
 
 > Cannot conj possibly unset value to :type-string
+
+#### Produced by operators:
+
+* [`conj`](halite-full-reference.md#conj)
 
 ---
 ### <a name="h-err/comprehend-binding-wrong-count"></a>h-err/comprehend-binding-wrong-count
@@ -112,6 +149,14 @@ Collection comprehensions require a single binding that defines the symbol to be
 
 > Binding form for 'op' must have one variable and one collection
 
+#### Produced by operators:
+
+* [`any?`](halite-full-reference.md#any_Q)
+* [`every?`](halite-full-reference.md#every_Q)
+* [`filter`](halite-full-reference.md#filter)
+* [`map`](halite-full-reference.md#map)
+* [`sort`](halite-full-reference.md#sort)
+
 ---
 ### <a name="h-err/comprehend-collection-invalid-type"></a>h-err/comprehend-collection-invalid-type
 
@@ -120,6 +165,14 @@ Collection comprehensions can only be applies to collections, i.e. vectors or se
 #### Error message template:
 
 > Collection required for ':op', not :actual-type
+
+#### Produced by operators:
+
+* [`any?`](halite-full-reference.md#any_Q)
+* [`every?`](halite-full-reference.md#every_Q)
+* [`filter`](halite-full-reference.md#filter)
+* [`map`](halite-full-reference.md#map)
+* [`sort`](halite-full-reference.md#sort)
 
 ---
 ### <a name="h-err/divide-by-zero"></a>h-err/divide-by-zero
@@ -130,7 +183,7 @@ Division by zero, whether directly or indirectly via modulus cannot be performed
 
 > Cannot divide by zero
 
-#### Produced by:
+#### Produced by operators:
 
 * [`div`](halite-full-reference.md#div)
 * [`mod`](halite-full-reference.md#mod)
@@ -144,6 +197,10 @@ The 'reduce' operation requires distinct symbols for referring to the accumulato
 
 > Cannot use the same symbol for accumulator and element binding: :element
 
+#### Produced by operators:
+
+* [`reduce`](halite-full-reference.md#reduce)
+
 ---
 ### <a name="h-err/element-binding-target-must-be-bare-symbol"></a>h-err/element-binding-target-must-be-bare-symbol
 
@@ -152,6 +209,10 @@ In 'reduce', it is necesary to define a symbol without a namepsace which is used
 #### Error message template:
 
 > Element binding target for ':op' must be a bare symbol, not: :element
+
+#### Produced by operators:
+
+* [`reduce`](halite-full-reference.md#reduce)
 
 See also: [`h-err/accumulator-target-must-be-bare-symbol`](#h-err/accumulator-target-must-be-bare-symbol)
 
@@ -164,7 +225,11 @@ The field name is not valid for the spec. The field name was provided to either 
 
 > Variables not defined on spec: :invalid-vars
 
-#### Produced by:
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
+
+#### Produced by operators:
 
 * [`get`](halite-full-reference.md#get)
 * [`get-in`](halite-full-reference.md#get-in)
@@ -178,6 +243,10 @@ The value did not match the type of the spec field.
 
 > Value of ':variable' has wrong type
 
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
+
 ---
 ### <a name="h-err/get-in-path-must-be-vector-literal"></a>h-err/get-in-path-must-be-vector-literal
 
@@ -186,6 +255,10 @@ The path to navigate in 'get-in' must be a literal, i.e. it cannot be an express
 #### Error message template:
 
 > The path parameter in 'get-in' must be a vector literal: :form
+
+#### Produced by operators:
+
+* [`get-in`](halite-full-reference.md#get-in)
 
 ---
 ### <a name="h-err/if-value-must-be-bare-symbol"></a>h-err/if-value-must-be-bare-symbol
@@ -196,6 +269,10 @@ The 'if-value' operator can only be applied to a bare symbol that is already bou
 
 > First argument to ':op' must be a bare symbol
 
+#### Produced by operators:
+
+* [`if-value`](halite-full-reference.md#if-value)
+
 ---
 ### <a name="h-err/index-out-of-bounds"></a>h-err/index-out-of-bounds
 
@@ -205,7 +282,7 @@ The index falls outside of the bounds of the vector. A way to avoid this is to f
 
 > Index out of bounds, :index, for vector of length :length
 
-#### Produced by:
+#### Produced by operators:
 
 * [`get`](halite-full-reference.md#get)
 * [`get-in`](halite-full-reference.md#get-in)
@@ -228,7 +305,7 @@ The exponent cannot be negative.
 
 > Invalid exponent: :exponent
 
-#### Produced by:
+#### Produced by operators:
 
 * [`expt`](halite-full-reference.md#expt)
 
@@ -250,6 +327,10 @@ An attempt was made to create an instance that violated a spec constraint.
 
 > Invalid instance of ':spec-id', violates constraints :violated-constraints
 
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
+
 ---
 ### <a name="h-err/invalid-instance-index"></a>h-err/invalid-instance-index
 
@@ -258,6 +339,11 @@ An attempt was made to a read a value from an instance, but a field name was not
 #### Error message template:
 
 > Index must be a variable name (as a keyword) when target is an instance
+
+#### Produced by operators:
+
+* [`get`](halite-full-reference.md#get)
+* [`get-in`](halite-full-reference.md#get-in)
 
 ---
 ### <a name="h-err/invalid-keyword-char"></a>h-err/invalid-keyword-char
@@ -286,7 +372,7 @@ An attempt was made to retrieve a field from an instance but the value was not k
 
 > Lookup target must be an instance of known type or non-empty vector
 
-#### Produced by:
+#### Produced by operators:
 
 * [`get-in`](halite-full-reference.md#get-in)
 
@@ -298,6 +384,11 @@ A refinement expression must produce an instance whose :$type matches the type t
 #### Error message template:
 
 > Invalid refinement expression: :form
+
+#### Produced by operators:
+
+* [`refine-to`](halite-full-reference.md#refine-to)
+* [`refines-to?`](halite-full-reference.md#refines-to_Q)
 
 ---
 ### <a name="h-err/invalid-symbol-char"></a>h-err/invalid-symbol-char
@@ -344,6 +435,11 @@ An index was supplied to lookup a value in a vector, but the index was not an in
 
 > Index must be an integer when target is a vector
 
+#### Produced by operators:
+
+* [`get`](halite-full-reference.md#get)
+* [`get-in`](halite-full-reference.md#get-in)
+
 ---
 ### <a name="h-err/let-bindings-odd-count"></a>h-err/let-bindings-odd-count
 
@@ -353,6 +449,10 @@ A 'let' expression included an odd number of elements in the binding vector. Thi
 
 > Let bindings form must have an even number of forms
 
+#### Produced by operators:
+
+* [`let`](halite-full-reference.md#let)
+
 ---
 ### <a name="h-err/let-needs-bare-symbol"></a>h-err/let-needs-bare-symbol
 
@@ -361,6 +461,10 @@ In a 'let' expression, the first item in each pair of items must be a symbol.
 #### Error message template:
 
 > Even-numbered forms in let binding vector must be bare symbols
+
+#### Produced by operators:
+
+* [`let`](halite-full-reference.md#let)
 
 ---
 ### <a name="h-err/limit-exceeded"></a>h-err/limit-exceeded
@@ -380,6 +484,11 @@ All of the expressions that appear as elements in a collection literal, must be 
 
 > :coll-type-string literal element must always evaluate to a value
 
+#### Produced by elements:
+
+* [`set`](halite-basic-syntax-reference.md#set)
+* [`vector`](halite-basic-syntax-reference.md#vector)
+
 ---
 ### <a name="h-err/missing-required-vars"></a>h-err/missing-required-vars
 
@@ -388,6 +497,10 @@ An attempt was made to construct an instance of a spec, without all of its manda
 #### Error message template:
 
 > Missing required variables: :missing-vars
+
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
 
 ---
 ### <a name="h-err/missing-type-field"></a>h-err/missing-type-field
@@ -398,6 +511,10 @@ An attempt was made to construct an instance without providing a value for the :
 
 > Instance literal must have :$type field
 
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
+
 ---
 ### <a name="h-err/must-produce-value"></a>h-err/must-produce-value
 
@@ -407,6 +524,10 @@ When using 'map', the expression being evaluated on each element, must produce a
 
 > Expression provided to 'map' must produce a value: :form
 
+#### Produced by operators:
+
+* [`map`](halite-full-reference.md#map)
+
 ---
 ### <a name="h-err/no-abstract"></a>h-err/no-abstract
 
@@ -415,6 +536,10 @@ An attempt was made to construct a concrete instance with a field whose value is
 #### Error message template:
 
 > Instance cannot contain abstract value
+
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
 
 ---
 ### <a name="h-err/no-matching-signature"></a>h-err/no-matching-signature
@@ -434,7 +559,7 @@ There was no refinement path found to convert a specific instance to a target sp
 
 > No active refinement path from ':type' to ':target-type'
 
-#### Produced by:
+#### Produced by operators:
 
 * [`refine-to`](halite-full-reference.md#refine-to)
 
@@ -446,6 +571,12 @@ Either an 'any?', 'every?', or 'filter' call was attempted but the expression to
 #### Error message template:
 
 > Body expression in ':op' must be boolean
+
+#### Produced by operators:
+
+* [`any?`](halite-full-reference.md#any_Q)
+* [`every?`](halite-full-reference.md#every_Q)
+* [`filter`](halite-full-reference.md#filter)
 
 ---
 ### <a name="h-err/not-boolean-constraint"></a>h-err/not-boolean-constraint
@@ -465,6 +596,10 @@ When the first argument to 'concat' is a vector, the second must also be a vecto
 
 > When first argument to ':op' is a vector, second argument must also be a vector
 
+#### Produced by operators:
+
+* [`concat`](halite-full-reference.md#concat)
+
 ---
 ### <a name="h-err/not-sortable-body"></a>h-err/not-sortable-body
 
@@ -474,7 +609,7 @@ When using 'sort-by', the expression used for sorting must produce a value that 
 
 > Body expression in ':op' must be sortable, not :actual-type
 
-#### Produced by:
+#### Produced by operators:
 
 * [`sort-by`](halite-full-reference.md#sort-by)
 
@@ -487,7 +622,7 @@ The mathematical operation resulted in a number that is too large to fit in the 
 
 > Numeric value overflow
 
-#### Produced by:
+#### Produced by operators:
 
 * [`*`](halite-full-reference.md#_S)
 * [`+`](halite-full-reference.md#_A)
@@ -505,6 +640,10 @@ The 'reduce' can only be applied to vectors. Specifically, sets cannot be reduce
 
 > Second binding expression to 'reduce' must be a vector.
 
+#### Produced by operators:
+
+* [`reduce`](halite-full-reference.md#reduce)
+
 ---
 ### <a name="h-err/refinement-error"></a>h-err/refinement-error
 
@@ -513,6 +652,11 @@ An unanticipated error condition was encountered while computing the refinement 
 #### Error message template:
 
 > Refinement from ':type' failed unexpectedly: :underlying-error-message
+
+#### Produced by operators:
+
+* [`refine-to`](halite-full-reference.md#refine-to)
+* [`refines-to?`](halite-full-reference.md#refines-to_Q)
 
 ---
 ### <a name="h-err/resource-spec-not-found"></a>h-err/resource-spec-not-found
@@ -523,7 +667,11 @@ The spec identifier provided did not correspond to a known spec.
 
 > Resource spec not found: :spec-id
 
-#### Produced by:
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
+
+#### Produced by operators:
 
 * [`refine-to`](halite-full-reference.md#refine-to)
 * [`refines-to?`](halite-full-reference.md#refines-to_Q)
@@ -537,6 +685,16 @@ There are various, context specific, limits that are enforced. e.g. limits on th
 
 > :object-type size of :actual-count exceeds the max allowed size of :count-limit
 
+#### Produced by elements:
+
+* [`set`](halite-basic-syntax-reference.md#set)
+* [`string`](halite-basic-syntax-reference.md#string)
+* [`vector`](halite-basic-syntax-reference.md#vector)
+
+#### Produced by operators:
+
+* [`str`](halite-full-reference.md#str)
+
 See also: [`h-err/count-exceeded`](#h-err/count-exceeded)
 
 ---
@@ -548,7 +706,7 @@ When sorting a collection with 'sort-by', the sort expression must produce a uni
 
 > Multiple elements produced the same sort value, so the collection cannot be deterministically sorted
 
-#### Produced by:
+#### Produced by operators:
 
 * [`sort-by`](halite-full-reference.md#sort-by)
 
@@ -561,7 +719,7 @@ An explicit invocation of the 'error' operation was encountered in a spec. This 
 
 > Spec threw error: :spec-error-str
 
-#### Produced by:
+#### Produced by operators:
 
 * [`error`](halite-full-reference.md#error)
 
@@ -709,7 +867,7 @@ A path must be provided to the 'get-in' operation.
 
 > The path parameter in 'get-in' cannot be empty: :form
 
-#### Produced by:
+#### Produced by operators:
 
 * [`get-in`](halite-full-reference.md#get-in)
 

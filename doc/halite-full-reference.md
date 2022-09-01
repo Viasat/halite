@@ -572,6 +572,13 @@ false
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+* [`h-err/not-boolean-body`](halite-err-id-reference.md#h-err/not-boolean-body)
+
 See also: [`every?`](#every_Q) [`or`](#or)
 
 ---
@@ -614,6 +621,10 @@ Invoking this operation with a vector and an empty set has the effect of convert
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/not-both-vectors`](halite-err-id-reference.md#h-err/not-both-vectors)
+
 ---
 ### <a name="conj"></a>conj
 
@@ -653,6 +664,11 @@ Only definite values may be put into collections, i.e. collections cannot contai
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/argument-not-set-or-vector`](halite-err-id-reference.md#h-err/argument-not-set-or-vector)
+* [`h-err/cannot-conj-unset`](halite-err-id-reference.md#h-err/cannot-conj-unset)
 
 ---
 ### <a name="contains_Q"></a>contains?
@@ -817,6 +833,10 @@ This produces a set which contains all of the elements from the first set which 
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/arguments-not-sets`](halite-err-id-reference.md#h-err/arguments-not-sets)
+
 See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#union)
 
 ---
@@ -936,6 +956,13 @@ false
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+* [`h-err/not-boolean-body`](halite-err-id-reference.md#h-err/not-boolean-body)
+
 See also: [`and`](#and) [`any?`](#any_Q)
 
 ---
@@ -1017,6 +1044,13 @@ Produce a new collection which contains only the elements from the original coll
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+* [`h-err/not-boolean-body`](halite-err-id-reference.md#h-err/not-boolean-body)
+
 See also: [`filter`](#filter) [`map`](#map)
 
 ---
@@ -1051,6 +1085,7 @@ h-err/argument-empty
 #### Possible errors:
 
 * [`h-err/argument-empty`](halite-err-id-reference.md#h-err/argument-empty)
+* [`h-err/argument-not-vector`](halite-err-id-reference.md#h-err/argument-not-vector)
 
 See also: [`count`](#count) [`rest`](#rest)
 
@@ -1089,6 +1124,8 @@ The $type value of an instance is not considered a field that can be extracted w
 
 * [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
 * [`h-err/index-out-of-bounds`](halite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-instance-index`](halite-err-id-reference.md#h-err/invalid-instance-index)
+* [`h-err/invalid-vector-index`](halite-err-id-reference.md#h-err/invalid-vector-index)
 
 See also: [`get-in`](#get-in)
 
@@ -1133,8 +1170,11 @@ The first path element in the path is looked up in the initial target. If there 
 #### Possible errors:
 
 * [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/get-in-path-must-be-vector-literal`](halite-err-id-reference.md#h-err/get-in-path-must-be-vector-literal)
 * [`h-err/index-out-of-bounds`](halite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-instance-index`](halite-err-id-reference.md#h-err/invalid-instance-index)
 * [`h-err/invalid-lookup-target`](halite-err-id-reference.md#h-err/invalid-lookup-target)
+* [`h-err/invalid-vector-index`](halite-err-id-reference.md#h-err/invalid-vector-index)
 * [`l-err/get-in-path-empty`](halite-err-id-reference.md#l-err/get-in-path-empty)
 
 See also: [`get`](#get)
@@ -1177,6 +1217,10 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 When an optional instance field needs to be referenced, it is generally necessary to guard the access with either 'if-value' or 'when-value'. In this way, both the case of the field being set and unset are explicitly handled.
 
+#### Possible errors:
+
+* [`h-err/if-value-must-be-bare-symbol`](halite-err-id-reference.md#h-err/if-value-must-be-bare-symbol)
+
 See also: [`if-value-let`](#if-value-let) [`when-value`](#when-value)
 
 ---
@@ -1207,6 +1251,10 @@ This is similar to the 'if-value' operation, but applies generally to an express
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
 
 See also: [`if-value`](#if-value) [`when-value-let`](#when-value-let)
 
@@ -1272,6 +1320,10 @@ This produces a set which only contains values that appear in each of the argume
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/arguments-not-sets`](halite-err-id-reference.md#h-err/arguments-not-sets)
+
 See also: [`difference`](#difference) [`subset?`](#subset_Q) [`union`](#union)
 
 ---
@@ -1312,6 +1364,12 @@ Allows names to be given to values so that they can be referenced by the any-exp
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/cannot-bind-reserved-word`](halite-err-id-reference.md#h-err/cannot-bind-reserved-word)
+* [`h-err/let-bindings-odd-count`](halite-err-id-reference.md#h-err/let-bindings-odd-count)
+* [`h-err/let-needs-bare-symbol`](halite-err-id-reference.md#h-err/let-needs-bare-symbol)
+
 ---
 ### <a name="map"></a>map
 
@@ -1340,6 +1398,13 @@ Produce a new collection from a collection by evaluating the expression with the
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+* [`h-err/must-produce-value`](halite-err-id-reference.md#h-err/must-produce-value)
 
 See also: [`filter`](#filter) [`reduce`](#reduce)
 
@@ -1613,6 +1678,14 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/accumulator-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/accumulator-target-must-be-bare-symbol)
+* [`h-err/binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/element-accumulator-same-symbol`](halite-err-id-reference.md#h-err/element-accumulator-same-symbol)
+* [`h-err/element-binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/element-binding-target-must-be-bare-symbol)
+* [`h-err/reduce-not-vector`](halite-err-id-reference.md#h-err/reduce-not-vector)
+
 See also: [`filter`](#filter) [`map`](#map)
 
 ---
@@ -1644,7 +1717,9 @@ h-err/no-refinement-path
 
 #### Possible errors:
 
+* [`h-err/invalid-refinement-expression`](halite-err-id-reference.md#h-err/invalid-refinement-expression)
 * [`h-err/no-refinement-path`](halite-err-id-reference.md#h-err/no-refinement-path)
+* [`h-err/refinement-error`](halite-err-id-reference.md#h-err/refinement-error)
 * [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refines-to?`](#refines-to_Q)
@@ -1678,6 +1753,8 @@ false
 
 #### Possible errors:
 
+* [`h-err/invalid-refinement-expression`](halite-err-id-reference.md#h-err/invalid-refinement-expression)
+* [`h-err/refinement-error`](halite-err-id-reference.md#h-err/refinement-error)
 * [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refine-to`](#refine-to)
@@ -1776,6 +1853,10 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/argument-not-vector`](halite-err-id-reference.md#h-err/argument-not-vector)
+
 ---
 ### <a name="sort"></a>sort
 
@@ -1803,6 +1884,11 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+
 See also: [`sort-by`](#sort-by)
 
 ---
@@ -1825,6 +1911,7 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 #### Possible errors:
 
+* [`h-err/binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
 * [`h-err/not-sortable-body`](halite-err-id-reference.md#h-err/not-sortable-body)
 * [`h-err/sort-value-collision`](halite-err-id-reference.md#h-err/sort-value-collision)
 
@@ -1856,6 +1943,10 @@ Combine all of the input strings together in sequence to produce a new string.
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
 ---
 ### <a name="subset_Q"></a>subset?
@@ -1934,6 +2025,10 @@ This produces a set which contains all of the values that appear in any of the a
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/arguments-not-sets`](halite-err-id-reference.md#h-err/arguments-not-sets)
 
 See also: [`difference`](#difference) [`intersection`](#intersection) [`subset?`](#subset_Q)
 

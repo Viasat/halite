@@ -1123,6 +1123,9 @@
    "#{\"a\", \"☺\"}"
    "#{\"a\", \"☺\"}")
   (h #{1 "a"} [:Set :Value] #{1 "a"} "#{\"a\", 1}" "#{\"a\", 1}")
+  (h
+   #{(when true 1)}
+   [:throws "h-err/literal-must-evaluate-to-value 0-0 : set literal element must always evaluate to a value"])
   (h (count #{1 true "a"}) :Integer 3 "#{\"a\", 1, true}.count()" "3")
   (h (count #{}) :Integer 0 "#{}.count()" "0")
   (h
@@ -5732,6 +5735,9 @@
    "[[], [1], [\"a\", true]]")
   (h [[1] []] [:Vec [:Vec :Integer]] [[1] []] "[[1], []]" "[[1], []]")
   (h
+   [(when true 1)]
+   [:throws "h-err/literal-must-evaluate-to-value 0-0 : vector literal element must always evaluate to a value"])
+  (h
    (contains? [1 2 3] 1)
    [:throws
     "h-err/no-matching-signature 0-0 : No matching signature for 'contains?'"])
@@ -5845,7 +5851,9 @@
    "[10].conj(1, 2, 3)"
    "[10, 1, 2, 3]")
   (h (get [10 20] 0) :Integer 10 "[10, 20][0]" "10")
+  (h (get [10 20] :x) [:throws "h-err/invalid-vector-index 0-0 : Index must be an integer when target is a vector"])
   (h (get [10 20] (+ 1 0)) :Integer 20 "[10, 20][(1 + 0)]" "20")
+  (h (get [10 20] (str "a" "b")) [:throws "h-err/invalid-vector-index 0-0 : Index must be an integer when target is a vector"])
   (h
    (get [] 0)
    [:throws
@@ -7276,6 +7284,11 @@
     "{$type: my/Spec$v1, n: -1, p: 0}"
     [:throws
      "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints pc"]])
+  (hc
+   :basic
+   :my
+   [{:$type :my/Spec$v1, :p 0, :n -1, :x 20}
+    [:throws "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: x"]])
   (hc
    :basic
    :my
@@ -10567,6 +10580,9 @@
    "({ x = 1; [10, 20, 30][x] })"
    "20")
   (h
+   (get-in [[10 20 30]] [0 :x])
+   [:throws "h-err/invalid-vector-index 0-0 : Index must be an integer when target is a vector"])
+  (h
    (let [x 1] (get-in [10 20 30] [x]))
    :Integer
    20
@@ -10620,6 +10636,14 @@
      #:spec{:T []}
      (spec :T :concrete (variables [:ns ["Integer"]])))]
    :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [1 :ns])
+    [:throws "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"]])))]
+   :spec
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:q 1])
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
@@ -10636,6 +10660,14 @@
     "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[100]"
     [:throws
      "h-err/index-out-of-bounds 0-0 : Index out of bounds, 100, for vector of length 3"]])
+  (hc
+   [(workspace
+     :spec
+     #:spec{:T []}
+     (spec :T :concrete (variables [:ns ["Integer"]])))]
+   :spec
+   [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns :x])
+    [:throws "h-err/invalid-vector-index 0-0 : Index must be an integer when target is a vector"]])
   (hc
    :basic
    :my

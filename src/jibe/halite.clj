@@ -571,10 +571,13 @@
 (defn ^:private type-check-lookup [ctx form subexpr-type index]
   (cond
     (halite-types/halite-vector-type? subexpr-type)
-    (let [index-type (type-check* ctx index)]
-      (when (not= :Integer index-type)
-        (throw-err (h-err/invalid-vector-index {:form form :index-form index, :expected :Integer, :actual-type index-type})))
-      (halite-types/elem-type subexpr-type))
+    (do
+      (when (keyword? index)
+        (throw-err (h-err/invalid-vector-index {:form form :index-form index, :expected :Integer})))
+      (let [index-type (type-check* ctx index)]
+        (when (not= :Integer index-type)
+          (throw-err (h-err/invalid-vector-index {:form form :index-form index, :expected :Integer, :actual-type index-type})))
+        (halite-types/elem-type subexpr-type)))
 
     (and (halite-types/spec-type? subexpr-type)
          (halite-types/spec-id subexpr-type)

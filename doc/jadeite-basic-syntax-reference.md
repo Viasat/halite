@@ -133,6 +133,10 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
+
 ---
 ### <a name="integer"></a>integer
 
@@ -228,6 +232,16 @@ The contents of the instance are specified in pair-wise fashion with alternating
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/field-value-of-wrong-type`](jadeite-err-id-reference.md#h-err/field-value-of-wrong-type)
+* [`h-err/invalid-instance`](jadeite-err-id-reference.md#h-err/invalid-instance)
+* [`h-err/missing-required-vars`](jadeite-err-id-reference.md#h-err/missing-required-vars)
+* [`h-err/missing-type-field`](jadeite-err-id-reference.md#h-err/missing-type-field)
+* [`h-err/no-abstract`](jadeite-err-id-reference.md#h-err/no-abstract)
+* [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
+
 ---
 ### <a name="vector"></a>vector
 
@@ -248,6 +262,11 @@ A collection of values in a prescribed sequence.
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/literal-must-evaluate-to-value`](jadeite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
+* [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
 ---
 ### <a name="set"></a>set
@@ -271,6 +290,11 @@ The members of sets are not directly accessible. If it is necessary to access th
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/literal-must-evaluate-to-value`](jadeite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
+* [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
 ---
 ### <a name="value"></a>value

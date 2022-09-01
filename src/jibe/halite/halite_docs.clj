@@ -150,7 +150,8 @@
                                       :result :auto}
                                      {:expr-str "\"\\u263A\""
                                       :expr-str-j "\"\\u263A\""
-                                      :result :auto}]}
+                                      :result :auto}]
+                          :throws ['h-err/size-exceeded]}
                  'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
                            :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
                            :examples [{:expr-str "0"
@@ -184,14 +185,23 @@
                             :comment-2 "The special field name ':$type' is mandatory but cannot be used as the other fields are."
                             :comment-2-j "The special field name '$type' is mandatory but cannot be used as the other fields are."
                             :examples [{:expr-str "{:$type :text/Spec$v1 :x 1 :y -1}"
-                                        :expr-str-j "{$type: my/Spec$v1, x: 1, y: -1}"}]}
+                                        :expr-str-j "{$type: my/Spec$v1, x: 1, y: -1}"}]
+                            :throws ['h-err/no-abstract
+                                     'h-err/resource-spec-not-found
+                                     'h-err/missing-type-field
+                                     'h-err/missing-required-vars
+                                     'h-err/invalid-instance
+                                     'h-err/field-value-of-wrong-type
+                                     'h-err/field-name-not-in-spec]}
                  'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
                           :bnf-j "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
                           :doc "A collection of values in a prescribed sequence."
                           :examples [{:expr-str "[]"
                                       :expr-str-j :auto}
                                      {:expr-str "[1 2 3]"
-                                      :expr-str-j "[1, 2, 3]"}]}
+                                      :expr-str-j "[1, 2, 3]"}]
+                          :throws ['h-err/literal-must-evaluate-to-value
+                                   'h-err/size-exceeded]}
                  'set {:bnf "'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"
                        :bnf-j "'#' '{' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} '}'"
                        :doc "A collection of values in an unordered set. Duplicates are not allowed."
@@ -199,8 +209,9 @@
                        :examples [{:expr-str "#{}"
                                    :expr-str-j :auto}
                                   {:expr-str "#{1 2 3}"
-                                   :expr-str-j "#{1, 2, 3}"}]}
-
+                                   :expr-str-j "#{1, 2, 3}"}]
+                       :throws ['h-err/literal-must-evaluate-to-value
+                                'h-err/size-exceeded]}
                  'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"
                          :doc "Expressions and many literals produce values."}
                  'any {:bnf "value | unset"
@@ -459,6 +470,10 @@
                       {:expr-str "(any? [x #{1 2 3}] (> x 10))"
                        :expr-str-j :auto
                        :result :auto}]
+           :throws ['h-err/comprehend-binding-wrong-count
+                    'h-err/comprehend-collection-invalid-type
+                    'h-err/binding-target-must-be-bare-symbol
+                    'h-err/not-boolean-body]
            :see-also ['every? 'or]}
     'concat {:sigs [["vector vector" "vector"]
                     ["(set (set | vector))" "set"]]
@@ -475,7 +490,8 @@
                          :result :auto}
                         {:expr-str "(concat [] [])"
                          :expr-str-j :auto
-                         :result :auto}]}
+                         :result :auto}]
+             :throws ['h-err/not-both-vectors]}
     'conj {:sigs [["set value {value}" "set"]
                   ["vector value {value}" "vector"]]
            :sigs-j [["set '.' 'conj' '(' value {',' value} ')'" "set"]
@@ -491,7 +507,9 @@
                        :result :auto}
                       {:expr-str "(conj [] 1)"
                        :expr-str-j :auto
-                       :result :auto}]}
+                       :result :auto}]
+           :throws ['h-err/argument-not-set-or-vector
+                    'h-err/cannot-conj-unset]}
     'contains? {:sigs [["set value" "boolean"]]
                 :sigs-j [["set '.' 'contains?' '(' value ')'" "boolean"]]
                 :tags #{:set-op :boolean-out}
@@ -538,7 +556,7 @@
                  :doc "Compute the set difference of two sets."
                  :comment "This produces a set which contains all of the elements from the first set which do not appear in the second set."
                  :see-also ['intersection 'union 'subset?]
-
+                 :throws ['h-err/arguments-not-sets]
                  :examples [{:expr-str "(difference #{1 2 3} #{1 2})"
                              :expr-str-j :auto
                              :result :auto}
@@ -595,6 +613,10 @@
                         {:expr-str "(every? [x #{1 2 3}] (> x 1))"
                          :expr-str-j :auto
                          :result :auto}]
+             :throws ['h-err/comprehend-binding-wrong-count
+                      'h-err/comprehend-collection-invalid-type
+                      'h-err/binding-target-must-be-bare-symbol
+                      'h-err/not-boolean-body]
              :see-also ['any? 'and]}
     'expt {:sigs [["integer integer" "integer"]]
            :sigs-j [["'expt' '(' integer ',' integer ')'" "integer"]]
@@ -626,13 +648,18 @@
                         {:expr-str "(filter [x #{1 2 3}] (> x 2))"
                          :expr-str-j :auto
                          :result :auto}]
+             :throws ['h-err/comprehend-binding-wrong-count
+                      'h-err/comprehend-collection-invalid-type
+                      'h-err/binding-target-must-be-bare-symbol
+                      'h-err/not-boolean-body]
              :see-also ['map 'filter]}
     'first {:sigs [["vector" "value"]]
             :sigs-j [["vector '.' 'first()'" "value"]]
             :tags #{:vector-op}
             :doc "Produce the first element from a vector."
             :comment "To avoid runtime errors, if the vector might be empty, use 'count' to check the length first."
-            :throws ['h-err/argument-empty]
+            :throws ['h-err/argument-empty
+                     'h-err/argument-not-vector]
             :examples [{:expr-str "(first [10 20 30])"
                         :expr-str-j :auto
                         :result :auto}
@@ -648,7 +675,9 @@
           :doc "Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based."
           :comment "The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification."
           :throws ['h-err/index-out-of-bounds
-                   'h-err/field-name-not-in-spec]
+                   'h-err/field-name-not-in-spec
+                   'h-err/invalid-vector-index
+                   'h-err/invalid-instance-index]
           :examples [{:expr-str "(get [10 20 30 40] 2)"
                       :expr-str-j :auto
                       :result :auto}
@@ -682,7 +711,10 @@
              :throws ['l-err/get-in-path-empty
                       'h-err/invalid-lookup-target
                       'h-err/field-name-not-in-spec
-                      'h-err/index-out-of-bounds]
+                      'h-err/index-out-of-bounds
+                      'h-err/invalid-vector-index
+                      'h-err/invalid-instance-index
+                      'h-err/get-in-path-must-be-vector-literal]
              :examples [{:expr-str "(get-in [[10 20] [30 40]] [1 0])"
                          :expr-str-j :auto
                          :result :auto}
@@ -741,6 +773,7 @@
                :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then evaluate the third argument."
                :comment "When an optional instance field needs to be referenced, it is generally necessary to guard the access with either 'if-value' or 'when-value'. In this way, both the case of the field being set and unset are explicitly handled."
                :tags #{:optional-op :control-flow :special-form}
+               :throws ['h-err/if-value-must-be-bare-symbol]
                :see-also ['if-value-let 'when-value]}
     'if-value-let {:sigs [["'[' symbol any:binding ']' any-expression any-expression" "any"]]
                    :sigs-j [["'ifValueLet' '(' symbol '=' any:binding ')'  any-expression 'else' any-expression" "any"]]
@@ -783,6 +816,7 @@
                                :expr-str "(if-value-let [x (when (> 1 2) 19)] (inc x) 0)"
                                :expr-str-j :auto
                                :result :auto}]
+                   :throws ['h-err/binding-target-must-be-bare-symbol]
                    :see-also ['if-value 'when-value-let]}
     'inc {:sigs [["integer" "integer"]]
           :sigs-j [["integer '+' '1'" "integer"]]
@@ -805,6 +839,7 @@
                               {:expr-str "(intersection #{1 2 3} #{2 3 4} #{3 4})"
                                :expr-str-j :auto
                                :result :auto}]
+                   :throws ['h-err/arguments-not-sets]
                    :see-also ['difference 'union 'subset?]}
     'let {:sigs [["'[' symbol value {symbol value} ']' any-expression" "any"]]
           :sigs-j [["'{' symbol '=' value ';' {symbol '=' value ';'} any-expression '}'" "any"]]
@@ -821,7 +856,10 @@
                       :expr-str-j :auto
                       :result :auto
                       :doc "The values associated with symbols can be changed in nested contexts."}]
-          :doc-j "Evaluate the expression argument in a nested context created by binding each symbol to the corresponding value."}
+          :doc-j "Evaluate the expression argument in a nested context created by binding each symbol to the corresponding value."
+          :throws ['h-err/let-bindings-odd-count
+                   'h-err/let-needs-bare-symbol
+                   'h-err/cannot-bind-reserved-word]}
     'map {:sigs [["'[' symbol:element set ']' value-expression" "set"]
                  ["'[' symbol:element vector ']' value-expression" "vector"]]
           :sigs-j [["'map' '(' symbol:element 'in' set ')' value-expression" "set"]
@@ -834,6 +872,10 @@
                      {:expr-str "(map [x #{10 12}] (* x 2))"
                       :expr-str-j :auto
                       :result :auto}]
+          :throws ['h-err/comprehend-binding-wrong-count
+                   'h-err/comprehend-collection-invalid-type
+                   'h-err/binding-target-must-be-bare-symbol
+                   'h-err/must-produce-value]
           :see-also ['reduce 'filter]}
     'mod {:sigs [["integer integer" "integer"]]
           :sigs-j [["integer '%' integer" "integer"]]
@@ -944,6 +986,11 @@
              :examples [{:expr-str "(reduce [a 10] [x [1 2 3]] (+ a x))"
                          :expr-str-j :auto
                          :result :auto}]
+             :throws ['h-err/binding-target-must-be-bare-symbol
+                      'h-err/element-binding-target-must-be-bare-symbol
+                      'h-err/element-accumulator-same-symbol
+                      'h-err/accumulator-target-must-be-bare-symbol
+                      'h-err/reduce-not-vector]
              :see-also ['map 'filter]
              :notes ["'normally' a reduce will produce a value, but the body could produce a 'maybe' value or even always produce 'unset', in which case the reduce may not produce a value"]}
     'refine-to {:sigs [["instance keyword:spec-id" "instance"]]
@@ -951,7 +998,9 @@
                 :tags #{:instance-op :instance-out :spec-id-op}
                 :doc "Attempt to refine the given instance into an instance of type, spec-id."
                 :throws ['h-err/no-refinement-path
-                         'h-err/resource-spec-not-found]
+                         'h-err/resource-spec-not-found
+                         'h-err/refinement-error
+                         'h-err/invalid-refinement-expression]
                 :examples [{:workspace-f (make-workspace-fn (workspace :my
                                                                        {:my/Spec []
                                                                         :my/Result []
@@ -1042,7 +1091,9 @@
                               :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )"
                               :result :auto
                               :doc "Assuming a spec does note have a refinement defined to another."}]
-                  :throws ['h-err/resource-spec-not-found]}
+                  :throws ['h-err/resource-spec-not-found
+                           'h-err/refinement-error
+                           'h-err/invalid-refinement-expression]}
     'rescale {:sigs [["fixed-decimal integer:new-scale" "(fixed-decimal | integer)"]]
               :sigs-j [["'rescale' '(' fixed-decimal ',' integer ')'" "(fixed-decimal | integer)"]]
               :tags #{:integer-out :fixed-decimal-op :fixed-decimal-out}
@@ -1079,6 +1130,7 @@
                       {:expr-str "(rest [])"
                        :expr-str-j :auto
                        :result :auto}]
+           :throws ['h-err/argument-not-vector]
            :tags #{:vector-op :vector-out}}
     'sort {:sigs [["(set | vector)" "vector"]]
            :sigs-j [["(set | vector) '.' 'sort()'" "vector"]]
@@ -1090,13 +1142,16 @@
                       {:expr-str "(sort [#d \"3.3\" #d \"1.1\" #d \"2.2\"])"
                        :expr-str-j :auto
                        :result :auto}]
+           :throws ['h-err/comprehend-binding-wrong-count
+                    'h-err/comprehend-collection-invalid-type]
            :see-also ['sort-by]}
     'sort-by {:sigs [["'[' symbol:element (set | vector) ']' (integer-expression | fixed-decimal-expression)" "vector"]]
               :sigs-j [["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]]
               :tags #{:set-op :vector-op :vector-out :special-form}
               :doc "Produce a new vector by sorting all of the items in the input collection according to the values produced by applying the expression to each element. The expression must produce a unique, sortable value for each element."
               :throws ['h-err/not-sortable-body
-                       'h-err/sort-value-collision]
+                       'h-err/sort-value-collision
+                       'h-err/binding-target-must-be-bare-symbol]
               :examples [{:expr-str "(sort-by [x [[10 20] [30] [1 2 3]]] (first x))"
                           :expr-str-j :auto
                           :result :auto}]
@@ -1110,7 +1165,8 @@
                      {:expr-str "(str \"a\" \"\" \"c\")"
                       :expr-str-j :auto
                       :result :auto}]
-          :tags #{:string-op}}
+          :tags #{:string-op}
+          :throws ['h-err/size-exceeded]}
     'subset? {:sigs [["set set" "boolean"]]
               :sigs-j [["set '.' 'subset?' '(' set ')'" "boolean"]]
               :tags #{:set-op :boolean-out}
@@ -1140,6 +1196,7 @@
                         :result :auto}]
             :doc "Compute the union of all the sets."
             :comment "This produces a set which contains all of the values that appear in any of the arguments."
+            :throws ['h-err/arguments-not-sets]
             :see-also ['difference 'intersection 'subset?]}
     'valid {:sigs [["instance-expression" "any"]]
             :sigs-j [["'valid' instance-expression" "any"]]
@@ -1333,13 +1390,26 @@
                         (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                         (apply merge-with into)))
 
+(def thrown-by-basic-map (->> basic-bnf
+                              (partition 2)
+                              (map (fn [[k v]]
+                                     [k (:throws v)]))
+                              (remove (comp nil? second))
+                              (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                              (apply merge-with into)))
+
 (def err-maps
   (apply hash-map
          (mapcat (fn [[err-id err]]
-                   [err-id (if-let [thrown-by (thrown-by-map err-id)]
-                             (assoc err
-                                    :thrown-by (vec thrown-by)
-                                    :thrown-by-j (vec (map #(get jadeite-operator-map % %) (remove jadeite-ommitted-ops thrown-by))))
+                   [err-id (let [err (if-let [thrown-by (thrown-by-map err-id)]
+                                       (assoc err
+                                              :thrown-by (vec thrown-by)
+                                              :thrown-by-j (vec (map #(get jadeite-operator-map % %) (remove jadeite-ommitted-ops thrown-by))))
+                                       err)
+                                 err (if-let [thrown-by (thrown-by-basic-map err-id)]
+                                       (assoc err
+                                              :thrown-by-basic (vec thrown-by))
+                                       err)]
                              err)])
                  (filter (fn [[err-id err]]
                            (#{'jibe.halite.l-err 'jibe.h-err} (:ns-name err)))
@@ -1712,6 +1782,15 @@
                      "\n```\n\n</td>"])
                   "</tr>"])
                "</table>\n\n"])
+            (when-let [t (:throws op)]
+              ["#### Possible errors:\n\n"
+               (for [msg (sort t)]
+                 (str "* " "[`" msg "`]("
+                      (if (= :halite lang)
+                        "halite-err-id-reference.md"
+                        "jadeite-err-id-reference.md")
+                      "#" (safe-op-anchor msg) ")" "\n"))
+               "\n"])
             "---\n"]
            flatten (apply str)))))
 
@@ -1734,10 +1813,18 @@
         "#### Error message template:" "\n\n"
         "> " (:message err)
         "\n\n"
+        (when-let [thrown-bys (:thrown-by-basic err)]
+          ["#### Produced by elements:\n\n"
+           (for [a (sort thrown-bys)]
+             (str "* " "[`" a "`](" (if (= :halite lang)
+                                      "halite-basic-syntax-reference.md"
+                                      "jadeite-basic-syntax-reference.md")
+                  "#" (safe-op-anchor a) ")" "\n"))
+           "\n"])
         (when-let [thrown-bys (if (= :halite lang)
                                 (:thrown-by err)
                                 (:thrown-by-j err))]
-          ["#### Produced by:\n\n"
+          ["#### Produced by operators:\n\n"
            (for [a (sort thrown-bys)]
              (str "* " "[`" a "`](" (if (= :halite lang)
                                       "halite-full-reference.md"

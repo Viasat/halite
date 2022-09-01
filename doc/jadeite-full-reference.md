@@ -601,6 +601,8 @@ The $type value of an instance is not considered a field that can be extracted w
 
 * [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
 * [`h-err/index-out-of-bounds`](jadeite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-instance-index`](jadeite-err-id-reference.md#h-err/invalid-instance-index)
+* [`h-err/invalid-vector-index`](jadeite-err-id-reference.md#h-err/invalid-vector-index)
 
 See also: [`accessor-chain`](#accessor-chain)
 
@@ -645,8 +647,11 @@ The first path element in the path is looked up in the initial target. If there 
 #### Possible errors:
 
 * [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/get-in-path-must-be-vector-literal`](jadeite-err-id-reference.md#h-err/get-in-path-must-be-vector-literal)
 * [`h-err/index-out-of-bounds`](jadeite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-instance-index`](jadeite-err-id-reference.md#h-err/invalid-instance-index)
 * [`h-err/invalid-lookup-target`](jadeite-err-id-reference.md#h-err/invalid-lookup-target)
+* [`h-err/invalid-vector-index`](jadeite-err-id-reference.md#h-err/invalid-vector-index)
 * [`l-err/get-in-path-empty`](jadeite-err-id-reference.md#l-err/get-in-path-empty)
 
 See also: [`accessor`](#accessor)
@@ -679,6 +684,13 @@ false
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+* [`h-err/not-boolean-body`](jadeite-err-id-reference.md#h-err/not-boolean-body)
 
 See also: [`every?`](#every_Q) [`||`](#||)
 
@@ -722,6 +734,10 @@ Invoking this operation with a vector and an empty set has the effect of convert
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/not-both-vectors`](jadeite-err-id-reference.md#h-err/not-both-vectors)
+
 ---
 ### <a name="conj"></a>conj
 
@@ -761,6 +777,11 @@ Only definite values may be put into collections, i.e. collections cannot contai
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/argument-not-set-or-vector`](jadeite-err-id-reference.md#h-err/argument-not-set-or-vector)
+* [`h-err/cannot-conj-unset`](jadeite-err-id-reference.md#h-err/cannot-conj-unset)
 
 ---
 ### <a name="contains_Q"></a>contains?
@@ -891,6 +912,10 @@ This produces a set which contains all of the elements from the first set which 
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/arguments-not-sets`](jadeite-err-id-reference.md#h-err/arguments-not-sets)
 
 See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#union)
 
@@ -1059,6 +1084,13 @@ false
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+* [`h-err/not-boolean-body`](jadeite-err-id-reference.md#h-err/not-boolean-body)
+
 See also: [`&&`](#&&) [`any?`](#any_Q)
 
 ---
@@ -1140,6 +1172,13 @@ filter(x in #{1, 2, 3})(x > 2)
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+* [`h-err/not-boolean-body`](jadeite-err-id-reference.md#h-err/not-boolean-body)
+
 See also: [`filter`](#filter) [`map`](#map)
 
 ---
@@ -1174,6 +1213,7 @@ h-err/argument-empty
 #### Possible errors:
 
 * [`h-err/argument-empty`](jadeite-err-id-reference.md#h-err/argument-empty)
+* [`h-err/argument-not-vector`](jadeite-err-id-reference.md#h-err/argument-not-vector)
 
 See also: [`count`](#count) [`rest`](#rest)
 
@@ -1215,6 +1255,10 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 When an optional instance field needs to be referenced, it is generally necessary to guard the access with either 'if-value' or 'when-value'. In this way, both the case of the field being set and unset are explicitly handled.
 
+#### Possible errors:
+
+* [`h-err/if-value-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/if-value-must-be-bare-symbol)
+
 See also: [`ifValueLet`](#ifValueLet) [`whenValue`](#whenValue)
 
 ---
@@ -1246,6 +1290,10 @@ This is similar to the 'if-value' operation, but applies generally to an express
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+
 See also: [`ifValue`](#ifValue) [`whenValueLet`](#whenValueLet)
 
 ---
@@ -1276,6 +1324,10 @@ This produces a set which only contains values that appear in each of the argume
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/arguments-not-sets`](jadeite-err-id-reference.md#h-err/arguments-not-sets)
 
 See also: [`difference`](#difference) [`subset?`](#subset_Q) [`union`](#union)
 
@@ -1317,6 +1369,12 @@ Allows names to be given to values so that they can be referenced by the any-exp
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/cannot-bind-reserved-word`](jadeite-err-id-reference.md#h-err/cannot-bind-reserved-word)
+* [`h-err/let-bindings-odd-count`](jadeite-err-id-reference.md#h-err/let-bindings-odd-count)
+* [`h-err/let-needs-bare-symbol`](jadeite-err-id-reference.md#h-err/let-needs-bare-symbol)
+
 ---
 ### <a name="map"></a>map
 
@@ -1345,6 +1403,13 @@ map(x in #{10, 12})(x * 2)
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+* [`h-err/must-produce-value`](jadeite-err-id-reference.md#h-err/must-produce-value)
 
 See also: [`filter`](#filter) [`reduce`](#reduce)
 
@@ -1511,6 +1576,14 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/accumulator-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/accumulator-target-must-be-bare-symbol)
+* [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`h-err/element-accumulator-same-symbol`](jadeite-err-id-reference.md#h-err/element-accumulator-same-symbol)
+* [`h-err/element-binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/element-binding-target-must-be-bare-symbol)
+* [`h-err/reduce-not-vector`](jadeite-err-id-reference.md#h-err/reduce-not-vector)
+
 See also: [`filter`](#filter) [`map`](#map)
 
 ---
@@ -1542,7 +1615,9 @@ h-err/no-refinement-path
 
 #### Possible errors:
 
+* [`h-err/invalid-refinement-expression`](jadeite-err-id-reference.md#h-err/invalid-refinement-expression)
 * [`h-err/no-refinement-path`](jadeite-err-id-reference.md#h-err/no-refinement-path)
+* [`h-err/refinement-error`](jadeite-err-id-reference.md#h-err/refinement-error)
 * [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refinesTo?`](#refinesTo_Q)
@@ -1576,6 +1651,8 @@ false
 
 #### Possible errors:
 
+* [`h-err/invalid-refinement-expression`](jadeite-err-id-reference.md#h-err/invalid-refinement-expression)
+* [`h-err/refinement-error`](jadeite-err-id-reference.md#h-err/refinement-error)
 * [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refineTo`](#refineTo)
@@ -1674,6 +1751,10 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/argument-not-vector`](jadeite-err-id-reference.md#h-err/argument-not-vector)
+
 ---
 ### <a name="sort"></a>sort
 
@@ -1701,6 +1782,11 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
+* [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
+
 See also: [`sortBy`](#sortBy)
 
 ---
@@ -1723,6 +1809,7 @@ sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()
 
 #### Possible errors:
 
+* [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
 * [`h-err/not-sortable-body`](jadeite-err-id-reference.md#h-err/not-sortable-body)
 * [`h-err/sort-value-collision`](jadeite-err-id-reference.md#h-err/sort-value-collision)
 
@@ -1754,6 +1841,10 @@ str("a", "", "c")
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
 ---
 ### <a name="subset_Q"></a>subset?
@@ -1832,6 +1923,10 @@ This produces a set which contains all of the values that appear in any of the a
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/arguments-not-sets`](jadeite-err-id-reference.md#h-err/arguments-not-sets)
 
 See also: [`difference`](#difference) [`intersection`](#intersection) [`subset?`](#subset_Q)
 
