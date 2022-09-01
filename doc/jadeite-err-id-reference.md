@@ -155,7 +155,6 @@ Collection comprehensions require a single binding that defines the symbol to be
 * [`every?`](jadeite-full-reference.md#every_Q)
 * [`filter`](jadeite-full-reference.md#filter)
 * [`map`](jadeite-full-reference.md#map)
-* [`sort`](jadeite-full-reference.md#sort)
 
 ---
 ### <a name="h-err/comprehend-collection-invalid-type"></a>h-err/comprehend-collection-invalid-type
@@ -172,7 +171,6 @@ Collection comprehensions can only be applied to collections, i.e. vectors or se
 * [`every?`](jadeite-full-reference.md#every_Q)
 * [`filter`](jadeite-full-reference.md#filter)
 * [`map`](jadeite-full-reference.md#map)
-* [`sort`](jadeite-full-reference.md#sort)
 
 ---
 ### <a name="h-err/divide-by-zero"></a>h-err/divide-by-zero
@@ -809,6 +807,15 @@ The symbols to be bound are not to start with a '$'.
 
 > Binding target for ':op' must not start with '$': :sym
 
+#### Produced by operators:
+
+* [`any?`](jadeite-full-reference.md#any_Q)
+* [`every?`](jadeite-full-reference.md#every_Q)
+* [`filter`](jadeite-full-reference.md#filter)
+* [`let`](jadeite-full-reference.md#let)
+* [`map`](jadeite-full-reference.md#map)
+* [`sortBy`](jadeite-full-reference.md#sortBy)
+
 ---
 ### <a name="l-err/cannot-bind-nothing"></a>l-err/cannot-bind-nothing
 
@@ -818,6 +825,10 @@ It is not permitted to rebind the symbol used to represent 'unset'.
 
 > Disallowed binding ':sym' to \colonNothing value; perhaps move to body of 'let'
 
+#### Produced by operators:
+
+* [`let`](jadeite-full-reference.md#let)
+
 ---
 ### <a name="l-err/cannot-bind-unset"></a>l-err/cannot-bind-unset
 
@@ -826,6 +837,10 @@ It is not permitted to rebind the symbol used to represent 'unset'.
 #### Error message template:
 
 > Disallowed binding ':sym' to \colonUnset value; just use '$no-value'
+
+#### Produced by operators:
+
+* [`let`](jadeite-full-reference.md#let)
 
 ---
 ### <a name="l-err/disallowed-nothing"></a>l-err/disallowed-nothing
@@ -854,6 +869,10 @@ The value being tested in an 'if-value' statement must be optional.
 
 > First argument to ':op' must have an optional type
 
+#### Produced by operators:
+
+* [`ifValue`](jadeite-full-reference.md#ifValue)
+
 ---
 ### <a name="l-err/get-in-path-empty"></a>l-err/get-in-path-empty
 
@@ -876,6 +895,10 @@ The bindings form of the 'let' cannot be empty. If there is nothing to bind, the
 
 > Bindings form of 'let' cannot be empty in: :form
 
+#### Produced by operators:
+
+* [`let`](jadeite-full-reference.md#let)
+
 ---
 ### <a name="l-err/result-always-known"></a>l-err/result-always-known
 
@@ -884,5 +907,10 @@ The result of the equality check is always the same and can be known in advance,
 #### Error message template:
 
 > Result of ':op' would always be :value
+
+#### Produced by operators:
+
+* [`equalTo`](jadeite-full-reference.md#equalTo)
+* [`notEqualTo`](jadeite-full-reference.md#notEqualTo)
 
 ---

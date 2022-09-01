@@ -329,6 +329,7 @@
                  ["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]]
         :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :boolean-out :instance-op}
         :doc "Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents."
+        :throws ['l-err/result-always-known]
         :see-also ['not=]
         :examples [{:expr-str "(= 2 2)"
                     :expr-str-j :auto
@@ -472,6 +473,7 @@
                        :result :auto}]
            :throws ['h-err/comprehend-binding-wrong-count
                     'h-err/comprehend-collection-invalid-type
+                    'l-err/binding-target-invalid-symbol
                     'h-err/binding-target-must-be-bare-symbol
                     'h-err/not-boolean-body]
            :see-also ['every? 'or]}
@@ -615,6 +617,7 @@
                          :result :auto}]
              :throws ['h-err/comprehend-binding-wrong-count
                       'h-err/comprehend-collection-invalid-type
+                      'l-err/binding-target-invalid-symbol
                       'h-err/binding-target-must-be-bare-symbol
                       'h-err/not-boolean-body]
              :see-also ['any? 'and]}
@@ -650,6 +653,7 @@
                          :result :auto}]
              :throws ['h-err/comprehend-binding-wrong-count
                       'h-err/comprehend-collection-invalid-type
+                      'l-err/binding-target-invalid-symbol
                       'h-err/binding-target-must-be-bare-symbol
                       'h-err/not-boolean-body]
              :see-also ['map 'filter]}
@@ -773,7 +777,8 @@
                :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then evaluate the third argument."
                :comment "When an optional instance field needs to be referenced, it is generally necessary to guard the access with either 'if-value' or 'when-value'. In this way, both the case of the field being set and unset are explicitly handled."
                :tags #{:optional-op :control-flow :special-form}
-               :throws ['h-err/if-value-must-be-bare-symbol]
+               :throws ['h-err/if-value-must-be-bare-symbol
+                        'l-err/first-argument-not-optional]
                :see-also ['if-value-let 'when-value]}
     'if-value-let {:sigs [["'[' symbol any:binding ']' any-expression any-expression" "any"]]
                    :sigs-j [["'ifValueLet' '(' symbol '=' any:binding ')'  any-expression 'else' any-expression" "any"]]
@@ -859,7 +864,11 @@
           :doc-j "Evaluate the expression argument in a nested context created by binding each symbol to the corresponding value."
           :throws ['h-err/let-bindings-odd-count
                    'h-err/let-needs-bare-symbol
-                   'h-err/cannot-bind-reserved-word]}
+                   'h-err/cannot-bind-reserved-word
+                   'l-err/cannot-bind-unset
+                   'l-err/cannot-bind-nothing
+                   'l-err/binding-target-invalid-symbol
+                   'l-err/let-bindings-empty]}
     'map {:sigs [["'[' symbol:element set ']' value-expression" "set"]
                  ["'[' symbol:element vector ']' value-expression" "vector"]]
           :sigs-j [["'map' '(' symbol:element 'in' set ')' value-expression" "set"]
@@ -874,6 +883,7 @@
                       :result :auto}]
           :throws ['h-err/comprehend-binding-wrong-count
                    'h-err/comprehend-collection-invalid-type
+                   'l-err/binding-target-invalid-symbol
                    'h-err/binding-target-must-be-bare-symbol
                    'h-err/must-produce-value]
           :see-also ['reduce 'filter]}
@@ -907,6 +917,7 @@
                     ["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]]
            :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :instance-op :boolean-op :boolean-out}
            :doc "Produces a false value if all of the values are equal to each other. Otherwise produces a true value."
+           :throws ['l-err/result-always-known]
            :examples [{:expr-str "(not= 2 3)"
                        :expr-str-j :auto
                        :result :auto}
@@ -1142,8 +1153,6 @@
                       {:expr-str "(sort [#d \"3.3\" #d \"1.1\" #d \"2.2\"])"
                        :expr-str-j :auto
                        :result :auto}]
-           :throws ['h-err/comprehend-binding-wrong-count
-                    'h-err/comprehend-collection-invalid-type]
            :see-also ['sort-by]}
     'sort-by {:sigs [["'[' symbol:element (set | vector) ']' (integer-expression | fixed-decimal-expression)" "vector"]]
               :sigs-j [["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]]
@@ -1151,7 +1160,8 @@
               :doc "Produce a new vector by sorting all of the items in the input collection according to the values produced by applying the expression to each element. The expression must produce a unique, sortable value for each element."
               :throws ['h-err/not-sortable-body
                        'h-err/sort-value-collision
-                       'h-err/binding-target-must-be-bare-symbol]
+                       'h-err/binding-target-must-be-bare-symbol
+                       'l-err/binding-target-invalid-symbol]
               :examples [{:expr-str "(sort-by [x [[10 20] [30] [1 2 3]]] (first x))"
                           :expr-str-j :auto
                           :result :auto}]

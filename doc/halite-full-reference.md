@@ -347,6 +347,10 @@ true
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`l-err/result-always-known`](halite-err-id-reference.md#l-err/result-always-known)
+
 See also: [`not=`](#not_E)
 
 ---
@@ -578,6 +582,7 @@ false
 * [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
 * [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
 * [`h-err/not-boolean-body`](halite-err-id-reference.md#h-err/not-boolean-body)
+* [`l-err/binding-target-invalid-symbol`](halite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`every?`](#every_Q) [`or`](#or)
 
@@ -962,6 +967,7 @@ false
 * [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
 * [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
 * [`h-err/not-boolean-body`](halite-err-id-reference.md#h-err/not-boolean-body)
+* [`l-err/binding-target-invalid-symbol`](halite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`and`](#and) [`any?`](#any_Q)
 
@@ -1050,6 +1056,7 @@ Produce a new collection which contains only the elements from the original coll
 * [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
 * [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
 * [`h-err/not-boolean-body`](halite-err-id-reference.md#h-err/not-boolean-body)
+* [`l-err/binding-target-invalid-symbol`](halite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`filter`](#filter) [`map`](#map)
 
@@ -1220,6 +1227,7 @@ When an optional instance field needs to be referenced, it is generally necessar
 #### Possible errors:
 
 * [`h-err/if-value-must-be-bare-symbol`](halite-err-id-reference.md#h-err/if-value-must-be-bare-symbol)
+* [`l-err/first-argument-not-optional`](halite-err-id-reference.md#l-err/first-argument-not-optional)
 
 See also: [`if-value-let`](#if-value-let) [`when-value`](#when-value)
 
@@ -1369,6 +1377,10 @@ Allows names to be given to values so that they can be referenced by the any-exp
 * [`h-err/cannot-bind-reserved-word`](halite-err-id-reference.md#h-err/cannot-bind-reserved-word)
 * [`h-err/let-bindings-odd-count`](halite-err-id-reference.md#h-err/let-bindings-odd-count)
 * [`h-err/let-needs-bare-symbol`](halite-err-id-reference.md#h-err/let-needs-bare-symbol)
+* [`l-err/binding-target-invalid-symbol`](halite-err-id-reference.md#l-err/binding-target-invalid-symbol)
+* [`l-err/cannot-bind-nothing`](halite-err-id-reference.md#l-err/cannot-bind-nothing)
+* [`l-err/cannot-bind-unset`](halite-err-id-reference.md#l-err/cannot-bind-unset)
+* [`l-err/let-bindings-empty`](halite-err-id-reference.md#l-err/let-bindings-empty)
 
 ---
 ### <a name="map"></a>map
@@ -1405,6 +1417,7 @@ Produce a new collection from a collection by evaluating the expression with the
 * [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
 * [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
 * [`h-err/must-produce-value`](halite-err-id-reference.md#h-err/must-produce-value)
+* [`l-err/binding-target-invalid-symbol`](halite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`filter`](#filter) [`reduce`](#reduce)
 
@@ -1581,6 +1594,10 @@ true
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`l-err/result-always-known`](halite-err-id-reference.md#l-err/result-always-known)
 
 See also: [`=`](#_E)
 
@@ -1884,11 +1901,6 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 </td></tr></table>
 
-#### Possible errors:
-
-* [`h-err/comprehend-binding-wrong-count`](halite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
-* [`h-err/comprehend-collection-invalid-type`](halite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
-
 See also: [`sort-by`](#sort-by)
 
 ---
@@ -1914,6 +1926,7 @@ Produce a new vector by sorting all of the items in the input collection accordi
 * [`h-err/binding-target-must-be-bare-symbol`](halite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
 * [`h-err/not-sortable-body`](halite-err-id-reference.md#h-err/not-sortable-body)
 * [`h-err/sort-value-collision`](halite-err-id-reference.md#h-err/sort-value-collision)
+* [`l-err/binding-target-invalid-symbol`](halite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`sort`](#sort)
 

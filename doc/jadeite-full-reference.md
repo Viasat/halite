@@ -691,6 +691,7 @@ false
 * [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
 * [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
 * [`h-err/not-boolean-body`](jadeite-err-id-reference.md#h-err/not-boolean-body)
+* [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`every?`](#every_Q) [`||`](#||)
 
@@ -1029,6 +1030,10 @@ true
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
+
 See also: [`notEqualTo`](#notEqualTo)
 
 ---
@@ -1090,6 +1095,7 @@ false
 * [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
 * [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
 * [`h-err/not-boolean-body`](jadeite-err-id-reference.md#h-err/not-boolean-body)
+* [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`&&`](#&&) [`any?`](#any_Q)
 
@@ -1178,6 +1184,7 @@ filter(x in #{1, 2, 3})(x > 2)
 * [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
 * [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
 * [`h-err/not-boolean-body`](jadeite-err-id-reference.md#h-err/not-boolean-body)
+* [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`filter`](#filter) [`map`](#map)
 
@@ -1258,6 +1265,7 @@ When an optional instance field needs to be referenced, it is generally necessar
 #### Possible errors:
 
 * [`h-err/if-value-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/if-value-must-be-bare-symbol)
+* [`l-err/first-argument-not-optional`](jadeite-err-id-reference.md#l-err/first-argument-not-optional)
 
 See also: [`ifValueLet`](#ifValueLet) [`whenValue`](#whenValue)
 
@@ -1374,6 +1382,10 @@ Allows names to be given to values so that they can be referenced by the any-exp
 * [`h-err/cannot-bind-reserved-word`](jadeite-err-id-reference.md#h-err/cannot-bind-reserved-word)
 * [`h-err/let-bindings-odd-count`](jadeite-err-id-reference.md#h-err/let-bindings-odd-count)
 * [`h-err/let-needs-bare-symbol`](jadeite-err-id-reference.md#h-err/let-needs-bare-symbol)
+* [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
+* [`l-err/cannot-bind-nothing`](jadeite-err-id-reference.md#l-err/cannot-bind-nothing)
+* [`l-err/cannot-bind-unset`](jadeite-err-id-reference.md#l-err/cannot-bind-unset)
+* [`l-err/let-bindings-empty`](jadeite-err-id-reference.md#l-err/let-bindings-empty)
 
 ---
 ### <a name="map"></a>map
@@ -1410,6 +1422,7 @@ map(x in #{10, 12})(x * 2)
 * [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
 * [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
 * [`h-err/must-produce-value`](jadeite-err-id-reference.md#h-err/must-produce-value)
+* [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`filter`](#filter) [`reduce`](#reduce)
 
@@ -1519,6 +1532,10 @@ true
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
 
 See also: [`equalTo`](#equalTo)
 
@@ -1782,11 +1799,6 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 </td></tr></table>
 
-#### Possible errors:
-
-* [`h-err/comprehend-binding-wrong-count`](jadeite-err-id-reference.md#h-err/comprehend-binding-wrong-count)
-* [`h-err/comprehend-collection-invalid-type`](jadeite-err-id-reference.md#h-err/comprehend-collection-invalid-type)
-
 See also: [`sortBy`](#sortBy)
 
 ---
@@ -1812,6 +1824,7 @@ sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()
 * [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
 * [`h-err/not-sortable-body`](jadeite-err-id-reference.md#h-err/not-sortable-body)
 * [`h-err/sort-value-collision`](jadeite-err-id-reference.md#h-err/sort-value-collision)
+* [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`sort`](#sort)
 
