@@ -478,15 +478,15 @@
                      :ssa-graph ssa/empty-ssa-graph}}
         ctx (ssa/make-ssa-ctx sctx (:ws/A sctx))]
     (are [expr lowered]
-        (= lowered
-           (let [[ssa-graph cid] (ssa/form-to-ssa ctx expr)]
-             (-> sctx
-                 (update :ws/A assoc :ssa-graph ssa-graph :constraints [["c" cid]])
-                 (lower-maybe-comparisons)
-                 :ws/A
-                 (#(binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa %)))
-                 :constraints
-                 first second)))
+         (= lowered
+            (let [[ssa-graph cid] (ssa/form-to-ssa ctx expr)]
+              (-> sctx
+                  (update :ws/A assoc :ssa-graph ssa-graph :constraints [["c" cid]])
+                  (lower-maybe-comparisons)
+                  :ws/A
+                  (#(binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa %)))
+                  :constraints
+                  first second)))
 
       '(= v x)                '($do! x (if ($value? v) (= ($value! v) x) false))
       '(= x v y)              '($do! x y (if ($value? v) (= ($value! v) x y) false))
@@ -713,36 +713,36 @@
               [["$all"
                 (and
                  (if-value b1
-                   (if-value b2
-                     (let [v1 (get b2 :c2)
-                           v2 (get b2 :bw)
-                           v3 (get b2 :c1)
-                           v4 (get v3 :cw)
-                           v5 (get b1 :c1)]
-                       (and
-                        (= (get b2 :bp) (get b1 :bp))
-                        (if-value v2
-                          (let [v6 (get b1 :bw)] (if-value v6 (= v6 v2) false))
-                          (let [v6 (get b1 :bw)] (if-value v6 false true)))
-                        (= (get b2 :bx) (get b1 :bx))
-                        (and
-                         (if-value v4
-                           (let [v6 (get v5 :cw)] (if-value v6 (= v6 v4) false))
-                           (let [v6 (get v5 :cw)] (if-value v6 false true)))
-                         (= (get v3 :cx) (get v5 :cx)))
-                        (if-value v1
-                          (let [v6 (get b1 :c2)]
-                            (if-value v6
-                              (let [v7 (get v6 :cw)]
-                                (and
-                                 (if-value v7
-                                   (let [v8 (get v1 :cw)] (if-value v8 (= v8 v7) false))
-                                   (let [v8 (get v1 :cw)] (if-value v8 false true)))
-                                 (= (get v6 :cx) (get v1 :cx))))
-                              false))
-                          (let [v6 (get b1 :c2)] (if-value v6 false true)))))
-                     false)
-                   (if-value b2 false true))
+                           (if-value b2
+                                     (let [v1 (get b2 :c2)
+                                           v2 (get b2 :bw)
+                                           v3 (get b2 :c1)
+                                           v4 (get v3 :cw)
+                                           v5 (get b1 :c1)]
+                                       (and
+                                        (= (get b2 :bp) (get b1 :bp))
+                                        (if-value v2
+                                                  (let [v6 (get b1 :bw)] (if-value v6 (= v6 v2) false))
+                                                  (let [v6 (get b1 :bw)] (if-value v6 false true)))
+                                        (= (get b2 :bx) (get b1 :bx))
+                                        (and
+                                         (if-value v4
+                                                   (let [v6 (get v5 :cw)] (if-value v6 (= v6 v4) false))
+                                                   (let [v6 (get v5 :cw)] (if-value v6 false true)))
+                                         (= (get v3 :cx) (get v5 :cx)))
+                                        (if-value v1
+                                                  (let [v6 (get b1 :c2)]
+                                                    (if-value v6
+                                                              (let [v7 (get v6 :cw)]
+                                                                (and
+                                                                 (if-value v7
+                                                                           (let [v8 (get v1 :cw)] (if-value v8 (= v8 v7) false))
+                                                                           (let [v8 (get v1 :cw)] (if-value v8 false true)))
+                                                                 (= (get v6 :cx) (get v1 :cx))))
+                                                              false))
+                                                  (let [v6 (get b1 :c2)] (if-value v6 false true)))))
+                                     false)
+                           (if-value b2 false true))
                  (=> ap (if-value b1 true false)))]]
               :refines-to {}}
             (-> senv

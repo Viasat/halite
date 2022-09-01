@@ -13,7 +13,7 @@
 
 (defn- deref-form [ssa-graph id]
   #_(when (ssa/contains-id? ssa-graph id)
-    (first (ssa/deref-id ssa-graph id)))
+      (first (ssa/deref-id ssa-graph id)))
   (->> id (ssa/deref-id ssa-graph) first))
 
 (s/defn ^:private simplify-and

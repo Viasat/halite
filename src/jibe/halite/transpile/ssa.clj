@@ -338,10 +338,10 @@
 (s/defn ^:private app-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [op & args :as form]]
   (let [[ssa-graph args] (reduce (fn [[ssa-graph args] arg]
-                                (let [[ssa-graph id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) arg)]
-                                  [ssa-graph (conj args id)]))
-                              [(:ssa-graph ctx) []]
-                              args)]
+                                   (let [[ssa-graph id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) arg)]
+                                     [ssa-graph (conj args id)]))
+                                 [(:ssa-graph ctx) []]
+                                 args)]
     (ensure-node-for-app ssa-graph (apply list op args))))
 
 (s/defn ^:private symbol-to-ssa :- NodeInGraph
@@ -398,15 +398,15 @@
             inner-type (halite-types/no-maybe htype)
             [ssa-graph value-id] (ensure-node ssa-graph (list '$value! unguarded-id) inner-type)
             [ssa-graph then-id] (-> ctx
-                                 (assoc :ssa-graph ssa-graph)
-                                 (update :tenv halite-envs/extend-scope var-sym inner-type)
-                                 (update :env assoc var-sym value-id)
-                                 (form-to-ssa (if (= then unguarded-id) value-id then)))
+                                    (assoc :ssa-graph ssa-graph)
+                                    (update :tenv halite-envs/extend-scope var-sym inner-type)
+                                    (update :env assoc var-sym value-id)
+                                    (form-to-ssa (if (= then unguarded-id) value-id then)))
             [ssa-graph else-id] (-> ctx
-                                 (assoc :ssa-graph ssa-graph)
-                                 (update :tenv halite-envs/extend-scope var-sym :Unset)
-                                 (update :env assoc var-sym no-value-id)
-                                 (form-to-ssa (if (= else unguarded-id) no-value-id else)))
+                                    (assoc :ssa-graph ssa-graph)
+                                    (update :tenv halite-envs/extend-scope var-sym :Unset)
+                                    (update :env assoc var-sym no-value-id)
+                                    (form-to-ssa (if (= else unguarded-id) no-value-id else)))
             htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
                                      (node-type (deref-id ssa-graph else-id)))]
         (ensure-node ssa-graph (list 'if guard-id then-id else-id) htype)))))
@@ -432,11 +432,11 @@
   [ctx :- SSACtx, form]
   (let [spec-id (:$type form)
         [ssa-graph inst] (reduce
-                       (fn [[ssa-graph inst] var-kw]
-                         (let [[ssa-graph id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) (get form var-kw))]
-                           [ssa-graph (assoc inst var-kw id)]))
-                       [(:ssa-graph ctx) {:$type spec-id}]
-                       (-> form (dissoc :$type) keys sort))]
+                          (fn [[ssa-graph inst] var-kw]
+                            (let [[ssa-graph id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) (get form var-kw))]
+                              [ssa-graph (assoc inst var-kw id)]))
+                          [(:ssa-graph ctx) {:$type spec-id}]
+                          (-> form (dissoc :$type) keys sort))]
     (ensure-node ssa-graph inst (halite-types/concrete-spec-type spec-id))))
 
 (s/defn ^:private do!-to-ssa :- NodeInGraph
@@ -625,11 +625,11 @@
   (let [dgraph' (update-vals (:dgraph ssa-graph)
                              (fn [[form htype neg-id]]
                                (cond->
-                                   [(cond
-                                      (seq? form) (map #(if (= % node-id) replacement-id %) form)
-                                      (map? form) (update-vals form #(if (= % node-id) replacement-id %))
-                                      :else form)
-                                    htype]
+                                [(cond
+                                   (seq? form) (map #(if (= % node-id) replacement-id %) form)
+                                   (map? form) (update-vals form #(if (= % node-id) replacement-id %))
+                                   :else form)
+                                 htype]
                                  neg-id (conj neg-id))))]
     (assoc
      spec-info

@@ -449,7 +449,7 @@
       (let [[op & arg-ids] form
             args (mapv (partial ssa/deref-id ssa-graph) arg-ids)]
         (when-let [[i [[_if pred-id then-id else-id]]] (first (filter (comp maybe-if? second) (map-indexed vector args)))]
-          (let [result 
+          (let [result
                 (list 'if pred-id
                       (apply list op (assoc (vec arg-ids) i then-id))
                       (apply list op (assoc (vec arg-ids) i else-id)))]

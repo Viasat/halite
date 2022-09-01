@@ -230,8 +230,8 @@
                        [["$all" (= (refine-to {:dx dx, :$type :ws/D} :ws/B)
                                    {:bw bw,
                                     :c2 (if-value cw
-                                          {:cw cw, :$type :ws/C}
-                                          $no-value),
+                                                  {:cw cw, :$type :ws/C}
+                                                  $no-value),
                                     :$type :ws/B})]],
                        :refines-to {}}})]
     (is (= {:$type :ws/E, :bw {:$in #{5 :Unset}}, :cw 6, :dx {:$in [-10 10]}}
@@ -272,7 +272,7 @@
   (let [senv (halite-envs/spec-env nested-optionals-spec-env)]
 
     (are [bound expected]
-        (= expected (flatten-vars senv bound))
+         (= expected (flatten-vars senv bound))
 
       {:$type :ws/C}
       {::hp/spec-id :ws/C
@@ -406,7 +406,7 @@
 (deftest test-lower-spec-bound-for-nested-optionals
   (let [senv (halite-envs/spec-env nested-optionals-spec-env)]
     (are [bound lowered]
-        (= lowered (lower-spec-bound (flatten-vars senv bound) bound))
+         (= lowered (lower-spec-bound (flatten-vars senv bound) bound))
 
       {:$type :ws/A} {}
 
