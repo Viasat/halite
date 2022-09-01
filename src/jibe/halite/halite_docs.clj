@@ -1472,8 +1472,7 @@
                                       'h-err/reduce-not-vector {:doc "The 'reduce' can only be applied to vectors. Specifically, sets cannot be reduced."}
                                       'h-err/refinement-error {:doc "An unanticipated error condition was encountered while computing the refinement of an instance."}
                                       'h-err/resource-spec-not-found {:doc "The spec identifier provided did not correspond to a known spec."}
-                                      'h-err/size-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. limits on the lengths of strings. One of these limits was violated. See the exception data for more details."
-                                                            :see-also ['h-err/count-exceeded]}
+                                      'h-err/size-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. limits on the lengths of strings. One of these limits was violated. See the exception data for more details."}
                                       'h-err/sort-value-collision {:doc "When sorting a collection with 'sort-by', the sort expression must produce a unique value for each element in the collection."}
                                       'h-err/spec-threw {:doc "An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers this instance to be invalid. See the error string in the exception detail for details."}
                                       'h-err/symbol-undefined {:doc "An unbound symbol was referenced in an expression at evaluation time."}

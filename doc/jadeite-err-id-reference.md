@@ -693,8 +693,6 @@ There are various, context specific, limits that are enforced. e.g. limits on th
 
 * [`str`](jadeite-full-reference.md#str)
 
-See also: [`h-err/count-exceeded`](#h-err/count-exceeded)
-
 ---
 ### <a name="h-err/sort-value-collision"></a>h-err/sort-value-collision
 
