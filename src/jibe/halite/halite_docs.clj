@@ -729,8 +729,8 @@
           :tags #{:vector-op :instance-op :optional-out :instance-field-op}
           :doc "Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based."
           :comment "The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification."
-          :throws [['h-err/index-out-of-bounds]
-                   ['h-err/field-name-not-in-spec]]
+          :throws ['h-err/index-out-of-bounds
+                   'h-err/field-name-not-in-spec]
           :examples [{:expr-str "(get [10 20 30 40] 2)"
                       :expr-str-j :auto
                       :result :auto}

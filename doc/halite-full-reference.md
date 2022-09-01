@@ -1087,8 +1087,8 @@ The $type value of an instance is not considered a field that can be extracted w
 
 #### Possible errors:
 
-* [`[h-err/field-name-not-in-spec]`](halite-err-id-reference.md#[h-err/field-name-not-in-spec])
-* [`[h-err/index-out-of-bounds]`](halite-err-id-reference.md#[h-err/index-out-of-bounds])
+* [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/index-out-of-bounds`](halite-err-id-reference.md#h-err/index-out-of-bounds)
 
 See also: [`get-in`](#get-in)
 
