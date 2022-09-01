@@ -501,7 +501,7 @@ Since the negative number space contains one more value than the positive number
 
 #### Possible errors:
 
-* [`Cannot compute absolute value most max negative value`](halite-err-id-reference.md#Cannot compute absolute value most max negative value)
+* [`h-err/abs-failure`](halite-err-id-reference.md#h-err/abs-failure)
 
 ---
 ### <a name="and"></a>and
@@ -817,7 +817,7 @@ This produces a set which contains all of the elements from the first set which 
 
 </td></tr></table>
 
-See also: [`intersection`](#intersection) [`union`](#union) [`subset?`](#subset_Q)
+See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#union)
 
 ---
 ### <a name="div"></a>div
@@ -905,7 +905,7 @@ h-err/spec-threw
 
 #### Possible errors:
 
-* [`Always`](halite-err-id-reference.md#Always)
+* [`h-err/spec-threw`](halite-err-id-reference.md#h-err/spec-threw)
 
 ---
 ### <a name="every_Q"></a>every?
@@ -936,7 +936,7 @@ false
 
 </td></tr></table>
 
-See also: [`any?`](#any_Q) [`and`](#and)
+See also: [`and`](#and) [`any?`](#any_Q)
 
 ---
 ### <a name="expt"></a>expt
@@ -985,8 +985,8 @@ h-err/invalid-exponent
 
 #### Possible errors:
 
-* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 * [`h-err/invalid-exponent`](halite-err-id-reference.md#h-err/invalid-exponent)
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="filter"></a>filter
@@ -1017,7 +1017,7 @@ Produce a new collection which contains only the elements from the original coll
 
 </td></tr></table>
 
-See also: [`map`](#map) [`filter`](#filter)
+See also: [`filter`](#filter) [`map`](#map)
 
 ---
 ### <a name="first"></a>first
@@ -1087,8 +1087,8 @@ The $type value of an instance is not considered a field that can be extracted w
 
 #### Possible errors:
 
-* [`[h-err/index-out-of-bounds]`](halite-err-id-reference.md#[h-err/index-out-of-bounds])
 * [`[h-err/field-name-not-in-spec]`](halite-err-id-reference.md#[h-err/field-name-not-in-spec])
+* [`[h-err/index-out-of-bounds]`](halite-err-id-reference.md#[h-err/index-out-of-bounds])
 
 See also: [`get-in`](#get-in)
 
@@ -1132,10 +1132,10 @@ The first path element in the path is looked up in the initial target. If there 
 
 #### Possible errors:
 
-* [`l-err/get-in-path-empty`](halite-err-id-reference.md#l-err/get-in-path-empty)
-* [`h-err/invalid-lookup-target`](halite-err-id-reference.md#h-err/invalid-lookup-target)
 * [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
 * [`h-err/index-out-of-bounds`](halite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-lookup-target`](halite-err-id-reference.md#h-err/invalid-lookup-target)
+* [`l-err/get-in-path-empty`](halite-err-id-reference.md#l-err/get-in-path-empty)
 
 See also: [`get`](#get)
 
@@ -1272,7 +1272,7 @@ This produces a set which only contains values that appear in each of the argume
 
 </td></tr></table>
 
-See also: [`difference`](#difference) [`union`](#union) [`subset?`](#subset_Q)
+See also: [`difference`](#difference) [`subset?`](#subset_Q) [`union`](#union)
 
 ---
 ### <a name="let"></a>let
@@ -1341,7 +1341,7 @@ Produce a new collection from a collection by evaluating the expression with the
 
 </td></tr></table>
 
-See also: [`reduce`](#reduce) [`filter`](#filter)
+See also: [`filter`](#filter) [`reduce`](#reduce)
 
 ---
 ### <a name="mod"></a>mod
@@ -1613,7 +1613,7 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 </td></tr></table>
 
-See also: [`map`](#map) [`filter`](#filter)
+See also: [`filter`](#filter) [`map`](#map)
 
 ---
 ### <a name="refine-to"></a>refine-to
@@ -1645,7 +1645,7 @@ h-err/no-refinement-path
 #### Possible errors:
 
 * [`h-err/no-refinement-path`](halite-err-id-reference.md#h-err/no-refinement-path)
-* [`Spec not found`](halite-err-id-reference.md#Spec not found)
+* [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refines-to?`](#refines-to_Q)
 
@@ -1678,7 +1678,7 @@ false
 
 #### Possible errors:
 
-* [`Spec not found`](halite-err-id-reference.md#Spec not found)
+* [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refine-to`](#refine-to)
 
@@ -1806,10 +1806,6 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 ```
 
 </td></tr></table>
-
-#### Possible errors:
-
-* [`Elements not sortable`](halite-err-id-reference.md#Elements not sortable)
 
 See also: [`sort-by`](#sort-by)
 

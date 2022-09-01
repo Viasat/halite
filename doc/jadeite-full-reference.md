@@ -30,7 +30,7 @@ true
 
 </td></tr></table>
 
-See also: [`=>`](#_E_G) [`&&`](#&&) [`||`](#||)
+See also: [`&&`](#&&) [`=>`](#_E_G) [`||`](#||)
 
 ---
 ### <a name="_Dno-value"></a>$no-value
@@ -128,7 +128,7 @@ true
 
 </td></tr></table>
 
-See also: [`=>`](#_E_G) [`every?`](#every_Q) [`!`](#_B) [`||`](#||)
+See also: [`!`](#_B) [`=>`](#_E_G) [`every?`](#every_Q) [`||`](#||)
 
 ---
 ### <a name="_S"></a>*
@@ -448,7 +448,7 @@ true
 
 </td></tr></table>
 
-See also: [`&&`](#&&) [`every?`](#every_Q) [`!`](#_B) [`||`](#||)
+See also: [`!`](#_B) [`&&`](#&&) [`every?`](#every_Q) [`||`](#||)
 
 ---
 ### <a name="_G"></a>>
@@ -564,7 +564,7 @@ abs(#d "-1.0")
 
 #### Possible errors:
 
-* [`Cannot compute absolute value most max negative value`](halite-err-id-reference.md#Cannot compute absolute value most max negative value)
+* [`h-err/abs-failure`](halite-err-id-reference.md#h-err/abs-failure)
 
 ---
 ### <a name="accessor"></a>accessor
@@ -599,8 +599,8 @@ The $type value of an instance is not considered a field that can be extracted w
 
 #### Possible errors:
 
-* [`[h-err/index-out-of-bounds]`](halite-err-id-reference.md#[h-err/index-out-of-bounds])
 * [`[h-err/field-name-not-in-spec]`](halite-err-id-reference.md#[h-err/field-name-not-in-spec])
+* [`[h-err/index-out-of-bounds]`](halite-err-id-reference.md#[h-err/index-out-of-bounds])
 
 See also: [`accessor-chain`](#accessor-chain)
 
@@ -644,10 +644,10 @@ The first path element in the path is looked up in the initial target. If there 
 
 #### Possible errors:
 
-* [`l-err/get-in-path-empty`](halite-err-id-reference.md#l-err/get-in-path-empty)
-* [`h-err/invalid-lookup-target`](halite-err-id-reference.md#h-err/invalid-lookup-target)
 * [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
 * [`h-err/index-out-of-bounds`](halite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-lookup-target`](halite-err-id-reference.md#h-err/invalid-lookup-target)
+* [`l-err/get-in-path-empty`](halite-err-id-reference.md#l-err/get-in-path-empty)
 
 See also: [`accessor`](#accessor)
 
@@ -925,7 +925,7 @@ This produces a set which contains all of the elements from the first set which 
 
 </td></tr></table>
 
-See also: [`intersection`](#intersection) [`union`](#union) [`subset?`](#subset_Q)
+See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#union)
 
 ---
 ### <a name="equalTo"></a>equalTo
@@ -1061,7 +1061,7 @@ h-err/spec-threw
 
 #### Possible errors:
 
-* [`Always`](halite-err-id-reference.md#Always)
+* [`h-err/spec-threw`](halite-err-id-reference.md#h-err/spec-threw)
 
 ---
 ### <a name="every_Q"></a>every?
@@ -1092,7 +1092,7 @@ false
 
 </td></tr></table>
 
-See also: [`any?`](#any_Q) [`&&`](#&&)
+See also: [`&&`](#&&) [`any?`](#any_Q)
 
 ---
 ### <a name="expt"></a>expt
@@ -1141,8 +1141,8 @@ h-err/invalid-exponent
 
 #### Possible errors:
 
-* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 * [`h-err/invalid-exponent`](halite-err-id-reference.md#h-err/invalid-exponent)
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="filter"></a>filter
@@ -1173,7 +1173,7 @@ filter(x in #{1, 2, 3})(x > 2)
 
 </td></tr></table>
 
-See also: [`map`](#map) [`filter`](#filter)
+See also: [`filter`](#filter) [`map`](#map)
 
 ---
 ### <a name="first"></a>first
@@ -1343,7 +1343,7 @@ This produces a set which only contains values that appear in each of the argume
 
 </td></tr></table>
 
-See also: [`difference`](#difference) [`union`](#union) [`subset?`](#subset_Q)
+See also: [`difference`](#difference) [`subset?`](#subset_Q) [`union`](#union)
 
 ---
 ### <a name="let"></a>let
@@ -1412,7 +1412,7 @@ map(x in #{10, 12})(x * 2)
 
 </td></tr></table>
 
-See also: [`reduce`](#reduce) [`filter`](#filter)
+See also: [`filter`](#filter) [`reduce`](#reduce)
 
 ---
 ### <a name="notEqualTo"></a>notEqualTo
@@ -1577,7 +1577,7 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 </td></tr></table>
 
-See also: [`map`](#map) [`filter`](#filter)
+See also: [`filter`](#filter) [`map`](#map)
 
 ---
 ### <a name="refineTo"></a>refineTo
@@ -1609,7 +1609,7 @@ h-err/no-refinement-path
 #### Possible errors:
 
 * [`h-err/no-refinement-path`](halite-err-id-reference.md#h-err/no-refinement-path)
-* [`Spec not found`](halite-err-id-reference.md#Spec not found)
+* [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refinesTo?`](#refinesTo_Q)
 
@@ -1642,7 +1642,7 @@ false
 
 #### Possible errors:
 
-* [`Spec not found`](halite-err-id-reference.md#Spec not found)
+* [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refineTo`](#refineTo)
 
@@ -1770,10 +1770,6 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 ```
 
 </td></tr></table>
-
-#### Possible errors:
-
-* [`Elements not sortable`](halite-err-id-reference.md#Elements not sortable)
 
 See also: [`sortBy`](#sortBy)
 
@@ -2096,6 +2092,6 @@ true
 
 </td></tr></table>
 
-See also: [`=>`](#_E_G) [`&&`](#&&) [`any?`](#any_Q) [`!`](#_B)
+See also: [`!`](#_B) [`&&`](#&&) [`=>`](#_E_G) [`any?`](#any_Q)
 
 ---

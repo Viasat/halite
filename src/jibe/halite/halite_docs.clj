@@ -505,7 +505,7 @@
           :tags #{:integer-op :integer-out :fixed-decimal-op :fixed-decimal-out}
           :doc "Compute the absolute value of a number."
           :comment "Since the negative number space contains one more value than the positive number space, it is a runtime error to attempt to take the absolute value of the most negative value for a given number space."
-          :throws ["Cannot compute absolute value most max negative value"]
+          :throws ['h-err/abs-failure]
           :examples [{:expr-str "(abs -1)"
                       :expr-str-j :auto
                       :result :auto}
@@ -665,7 +665,7 @@
             :examples [{:expr-str "(error \"failure\")"
                         :expr-str-j :auto
                         :result :auto}]
-            :throws ["Always"]}
+            :throws ['h-err/spec-threw]}
     'every? {:sigs [["'[' symbol (set | vector) ']' boolean-expression" "boolean"]]
              :sigs-j [["'every?' '(' symbol 'in' (set | vector) ')' boolean-expression" "boolean"]]
              :tags #{:set-op :vector-op :boolean-out :special-form}
@@ -1033,7 +1033,7 @@
                 :tags #{:instance-op :instance-out :spec-id-op}
                 :doc "Attempt to refine the given instance into an instance of type, spec-id."
                 :throws ['h-err/no-refinement-path
-                         "Spec not found"]
+                         'h-err/resource-spec-not-found]
                 :examples [{:workspace-f (make-workspace-fn (workspace :my
                                                                        {:my/Spec []
                                                                         :my/Result []
@@ -1124,7 +1124,7 @@
                               :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )"
                               :result :auto
                               :doc "Assuming a spec does note have a refinement defined to another."}]
-                  :throws ["Spec not found"]}
+                  :throws ['h-err/resource-spec-not-found]}
     'rescale {:sigs [["fixed-decimal integer:new-scale" "(fixed-decimal | integer)"]]
               :sigs-j [["'rescale' '(' fixed-decimal ',' integer ')'" "(fixed-decimal | integer)"]]
               :tags #{:integer-out :fixed-decimal-op :fixed-decimal-out}
@@ -1167,7 +1167,6 @@
            :sigs-j [["(set | vector) '.' 'sort()'" "vector"]]
            :tags #{:set-op :vector-op :vector-out}
            :doc "Produce a new vector by sorting all of the items in the argument. Only collections of numeric values may be sorted."
-           :throws ["Elements not sortable"]
            :examples [{:expr-str "(sort [2 1 3])"
                        :expr-str-j :auto
                        :result :auto}
@@ -1632,12 +1631,12 @@
            "</table>\n\n"])
         (when-let [t (:throws op)]
           ["#### Possible errors:\n\n"
-           (for [msg t]
+           (for [msg (sort t)]
              (str "* " "[`" msg "`](halite-err-id-reference.md#" (safe-op-anchor msg) ")" "\n"))
            "\n"])
         (when-let [alsos (:see-also op)]
           ["See also:"
-           (for [a alsos]
+           (for [a (sort alsos)]
              [" [`" a "`](#" (safe-op-anchor a) ")"])
            "\n\n"])
         "---\n"]
@@ -1712,7 +1711,7 @@
         "Error message template: \"" (:message err) "\"\n\n"
         (when-let [alsos (:see-also err)]
           ["See also:"
-           (for [a alsos]
+           (for [a (sort alsos)]
              [" [`" a "`](#" (safe-op-anchor a) ")"])
            "\n\n"])
         "---\n"]
