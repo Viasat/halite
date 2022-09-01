@@ -112,6 +112,8 @@
                           :comment-2 "Symbols are not values. There are no expressions that produce symbols. Anywhere that a symbol is called for in an operator argument list, a literal symbol must be provided. Symbols passed as arguments to operators are not evaluated. Symbols used within expressions in general are evaluated prior to invoking the operator."
                           :comment-3 "A common pattern in operator arguments is to provide a sequence of alternating symbols and values within square brackets. In these cases each symbol is bound to the corresponding value in pair-wise fashion."
                           :comment-3-j "The following are also legal symbols, but they are reserved for system use: &&, ||, /, %, |"
+                          :throws ['h-err/invalid-symbol-char
+                                   'h-err/invalid-symbol-length]
                           :examples [{:expr-str "a"
                                       :expr-str-j "a"}
                                      {:expr-str "a.b"
@@ -127,7 +129,9 @@
                                        :expr-str-j :auto}
                                       {:expr-str ":x/y"
                                        :expr-str-j :auto}]
-                           :tags #{:symbol-all}}
+                           :tags #{:symbol-all}
+                           :throws ['h-err/invalid-keyword-char
+                                    'h-err/invalid-keyword-length]}
 
                  'boolean {:bnf "true | false"}
                  'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
@@ -192,7 +196,10 @@
                                      'h-err/missing-required-vars
                                      'h-err/invalid-instance
                                      'h-err/field-value-of-wrong-type
-                                     'h-err/field-name-not-in-spec]}
+                                     'h-err/field-name-not-in-spec
+                                     'h-err/invalid-type-value
+                                     'h-err/not-boolean-constraint ;; is this right?
+                                     ]}
                  'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
                           :bnf-j "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
                           :doc "A collection of values in a prescribed sequence."
@@ -821,7 +828,8 @@
                                :expr-str "(if-value-let [x (when (> 1 2) 19)] (inc x) 0)"
                                :expr-str-j :auto
                                :result :auto}]
-                   :throws ['h-err/binding-target-must-be-bare-symbol]
+                   :throws ['h-err/binding-target-must-be-bare-symbol
+                            'l-err/binding-expression-not-optional]
                    :see-also ['if-value 'when-value-let]}
     'inc {:sigs [["integer" "integer"]]
           :sigs-j [["integer '+' '1'" "integer"]]
@@ -868,7 +876,8 @@
                    'l-err/cannot-bind-unset
                    'l-err/cannot-bind-nothing
                    'l-err/binding-target-invalid-symbol
-                   'l-err/let-bindings-empty]}
+                   'l-err/let-bindings-empty
+                   'l-err/disallowed-unset-variable]}
     'map {:sigs [["'[' symbol:element set ']' value-expression" "set"]
                  ["'[' symbol:element vector ']' value-expression" "vector"]]
           :sigs-j [["'map' '(' symbol:element 'in' set ')' value-expression" "set"]

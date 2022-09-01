@@ -1301,6 +1301,7 @@ This is similar to the 'if-value' operation, but applies generally to an express
 #### Possible errors:
 
 * [`h-err/binding-target-must-be-bare-symbol`](jadeite-err-id-reference.md#h-err/binding-target-must-be-bare-symbol)
+* [`l-err/binding-expression-not-optional`](jadeite-err-id-reference.md#l-err/binding-expression-not-optional)
 
 See also: [`ifValue`](#ifValue) [`whenValueLet`](#whenValueLet)
 
@@ -1385,6 +1386,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 * [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 * [`l-err/cannot-bind-nothing`](jadeite-err-id-reference.md#l-err/cannot-bind-nothing)
 * [`l-err/cannot-bind-unset`](jadeite-err-id-reference.md#l-err/cannot-bind-unset)
+* [`l-err/disallowed-unset-variable`](jadeite-err-id-reference.md#l-err/disallowed-unset-variable)
 * [`l-err/let-bindings-empty`](jadeite-err-id-reference.md#l-err/let-bindings-empty)
 
 ---

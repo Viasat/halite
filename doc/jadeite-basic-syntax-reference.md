@@ -60,6 +60,11 @@ a.b
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/invalid-symbol-char`](jadeite-err-id-reference.md#h-err/invalid-symbol-char)
+* [`h-err/invalid-symbol-length`](jadeite-err-id-reference.md#h-err/invalid-symbol-length)
+
 ---
 ### <a name="boolean"></a>boolean
 
@@ -237,9 +242,11 @@ The contents of the instance are specified in pair-wise fashion with alternating
 * [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
 * [`h-err/field-value-of-wrong-type`](jadeite-err-id-reference.md#h-err/field-value-of-wrong-type)
 * [`h-err/invalid-instance`](jadeite-err-id-reference.md#h-err/invalid-instance)
+* [`h-err/invalid-type-value`](jadeite-err-id-reference.md#h-err/invalid-type-value)
 * [`h-err/missing-required-vars`](jadeite-err-id-reference.md#h-err/missing-required-vars)
 * [`h-err/missing-type-field`](jadeite-err-id-reference.md#h-err/missing-type-field)
 * [`h-err/no-abstract`](jadeite-err-id-reference.md#h-err/no-abstract)
+* [`h-err/not-boolean-constraint`](jadeite-err-id-reference.md#h-err/not-boolean-constraint)
 * [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
 ---

@@ -352,6 +352,10 @@ Only certain characters, in certain sequences are allowed to appear in keywords.
 
 > The keyword contains invalid characters: :form
 
+#### Produced by elements:
+
+* [`keyword`](halite-basic-syntax-reference.md#keyword)
+
 ---
 ### <a name="h-err/invalid-keyword-length"></a>h-err/invalid-keyword-length
 
@@ -360,6 +364,10 @@ The length of keywords is limited. The supplied keyword exceeded the limit.
 #### Error message template:
 
 > The keyword is too long
+
+#### Produced by elements:
+
+* [`keyword`](halite-basic-syntax-reference.md#keyword)
 
 ---
 ### <a name="h-err/invalid-lookup-target"></a>h-err/invalid-lookup-target
@@ -397,6 +405,10 @@ Only certain characters, in certain sequences are allowed to appear in symbols.
 
 > The symbol contains invalid characters: :form
 
+#### Produced by elements:
+
+* [`symbol`](halite-basic-syntax-reference.md#symbol)
+
 ---
 ### <a name="h-err/invalid-symbol-length"></a>h-err/invalid-symbol-length
 
@@ -406,6 +418,10 @@ The length of symbols is limited. The supplied symbol exceeded the limit.
 
 > The symbol is too long
 
+#### Produced by elements:
+
+* [`symbol`](halite-basic-syntax-reference.md#symbol)
+
 ---
 ### <a name="h-err/invalid-type-value"></a>h-err/invalid-type-value
 
@@ -414,6 +430,10 @@ The value of the :$type field in an instance must be a keyword that includes a '
 #### Error message template:
 
 > Expected namespaced keyword as value of :$type
+
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
 
 ---
 ### <a name="h-err/invalid-value"></a>h-err/invalid-value
@@ -584,6 +604,10 @@ All constraint expressions on specs must produce boolean values. The constraints
 #### Error message template:
 
 > Constraint expression ':expr' must have Boolean type
+
+#### Produced by elements:
+
+* [`instance`](halite-basic-syntax-reference.md#instance)
 
 ---
 ### <a name="h-err/not-both-vectors"></a>h-err/not-both-vectors
@@ -800,6 +824,10 @@ The expression being tested in an 'if-value-let' statement must optionally produ
 
 > Binding expression in ':op' must have an optional type
 
+#### Produced by operators:
+
+* [`if-value-let`](halite-full-reference.md#if-value-let)
+
 ---
 ### <a name="l-err/binding-target-invalid-symbol"></a>l-err/binding-target-invalid-symbol
 
@@ -861,6 +889,10 @@ It is not allowed to bind 'unset' to symbols other than the built-in '$no-value'
 #### Error message template:
 
 > Disallowed use of Unset variable ':form'; you may want '$no-value'
+
+#### Produced by operators:
+
+* [`let`](halite-full-reference.md#let)
 
 ---
 ### <a name="l-err/first-argument-not-optional"></a>l-err/first-argument-not-optional

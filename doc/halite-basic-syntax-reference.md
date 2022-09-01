@@ -60,6 +60,11 @@ a/b
 
 </td></tr></table>
 
+#### Possible errors:
+
+* [`h-err/invalid-symbol-char`](halite-err-id-reference.md#h-err/invalid-symbol-char)
+* [`h-err/invalid-symbol-length`](halite-err-id-reference.md#h-err/invalid-symbol-length)
+
 ---
 ### <a name="keyword"></a>keyword
 
@@ -82,6 +87,11 @@ Keywords are not values. There are no expressions that produce keywords. Anywher
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/invalid-keyword-char`](halite-err-id-reference.md#h-err/invalid-keyword-char)
+* [`h-err/invalid-keyword-length`](halite-err-id-reference.md#h-err/invalid-keyword-length)
 
 ---
 ### <a name="boolean"></a>boolean
@@ -260,9 +270,11 @@ The contents of the instance are specified in pair-wise fashion with alternating
 * [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
 * [`h-err/field-value-of-wrong-type`](halite-err-id-reference.md#h-err/field-value-of-wrong-type)
 * [`h-err/invalid-instance`](halite-err-id-reference.md#h-err/invalid-instance)
+* [`h-err/invalid-type-value`](halite-err-id-reference.md#h-err/invalid-type-value)
 * [`h-err/missing-required-vars`](halite-err-id-reference.md#h-err/missing-required-vars)
 * [`h-err/missing-type-field`](halite-err-id-reference.md#h-err/missing-type-field)
 * [`h-err/no-abstract`](halite-err-id-reference.md#h-err/no-abstract)
+* [`h-err/not-boolean-constraint`](halite-err-id-reference.md#h-err/not-boolean-constraint)
 * [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
 ---
