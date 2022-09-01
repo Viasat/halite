@@ -1308,6 +1308,8 @@
                                  :result :auto}]
                      :see-also ['if-value-let 'when 'when-value]}}))
 
+(def jadeite-ommitted-ops #{'dec 'inc})
+
 (def jadeite-operator-map {'= 'equalTo
                            'sort-by 'sortBy
                            'and '&&
@@ -1335,7 +1337,9 @@
   (apply hash-map
          (mapcat (fn [[err-id err]]
                    [err-id (if-let [thrown-by (thrown-by-map err-id)]
-                             (assoc err :thrown-by (vec thrown-by))
+                             (assoc err
+                                    :thrown-by (vec thrown-by)
+                                    :thrown-by-j (vec (map #(get jadeite-operator-map % %) (remove jadeite-ommitted-ops thrown-by))))
                              err)])
                  (filter (fn [[err-id err]]
                            (#{'jibe.halite.l-err 'jibe.h-err} (:ns-name err)))
@@ -1645,7 +1649,11 @@
         (when-let [t (:throws op)]
           ["#### Possible errors:\n\n"
            (for [msg (sort t)]
-             (str "* " "[`" msg "`](halite-err-id-reference.md#" (safe-op-anchor msg) ")" "\n"))
+             (str "* " "[`" msg "`]("
+                  (if (= :halite lang)
+                    "halite-err-id-reference.md"
+                    "jadeite-err-id-reference.md")
+                  "#" (safe-op-anchor msg) ")" "\n"))
            "\n"])
         (when-let [alsos (:see-also op)]
           ["See also:"
@@ -1668,6 +1676,8 @@
        (spit "doc/halite-full-reference.md"))
   (->> op-maps-j
        sort
+       (remove (fn [[k _]]
+                 (jadeite-ommitted-ops k)))
        (map (partial apply full-md :jadeite))
        (apply str generated-msg "# Jadeite operator reference (all operators)\n\n")
        (spit "doc/jadeite-full-reference.md")))
@@ -1717,17 +1727,22 @@
        (apply str generated-msg "# Jadeite basic syntax reference\n\n")
        (spit "doc/jadeite-basic-syntax-reference.md")))
 
-(defn err-md [err-id err]
+(defn err-md [lang err-id err]
   (->> ["### "
         "<a name=\"" (safe-op-anchor err-id) "\"></a>"
         err-id "\n\n" (:doc err) "\n\n"
         "#### Error message template:" "\n\n"
         "> " (:message err)
         "\n\n"
-        (when-let [thrown-bys (:thrown-by err)]
+        (when-let [thrown-bys (if (= :halite lang)
+                                (:thrown-by err)
+                                (:thrown-by-j err))]
           ["#### Produced by:\n\n"
            (for [a (sort thrown-bys)]
-             (str "* " "[`" a "`](halite-full-reference.md#" (safe-op-anchor a) ")" "\n"))
+             (str "* " "[`" a "`](" (if (= :halite lang)
+                                      "halite-full-reference.md"
+                                      "jadeite-full-reference.md")
+                  "#" (safe-op-anchor a) ")" "\n"))
            "\n"])
         (when-let [alsos (:see-also err)]
           ["See also:"
@@ -1740,9 +1755,14 @@
 (defn produce-err-md []
   (->> err-maps
        sort
-       (map (partial apply err-md))
+       (map (partial apply err-md :halite))
        (apply str generated-msg "# Halite err-id reference\n\n")
-       (spit "doc/halite-err-id-reference.md")))
+       (spit "doc/halite-err-id-reference.md"))
+  (->> err-maps
+       sort
+       (map (partial apply err-md :jadeite))
+       (apply str generated-msg "# Jadeite err-id reference\n\n")
+       (spit "doc/jadeite-err-id-reference.md")))
 
 ;;
 

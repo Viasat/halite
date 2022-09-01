@@ -88,7 +88,7 @@ h-err/divide-by-zero
 
 #### Possible errors:
 
-* [`h-err/divide-by-zero`](halite-err-id-reference.md#h-err/divide-by-zero)
+* [`h-err/divide-by-zero`](jadeite-err-id-reference.md#h-err/divide-by-zero)
 
 ---
 ### <a name="&&"></a>&&
@@ -172,7 +172,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 
 #### Possible errors:
 
-* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
+* [`h-err/overflow`](jadeite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="_A"></a>+
@@ -223,7 +223,7 @@ Add two numbers together.
 
 #### Possible errors:
 
-* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
+* [`h-err/overflow`](jadeite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="-"></a>-
@@ -274,7 +274,7 @@ Subtract one number from another.
 
 #### Possible errors:
 
-* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
+* [`h-err/overflow`](jadeite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="/"></a>/
@@ -336,7 +336,7 @@ h-err/divide-by-zero
 
 #### Possible errors:
 
-* [`h-err/divide-by-zero`](halite-err-id-reference.md#h-err/divide-by-zero)
+* [`h-err/divide-by-zero`](jadeite-err-id-reference.md#h-err/divide-by-zero)
 
 See also: [`%`](#%)
 
@@ -564,7 +564,7 @@ abs(#d "-1.0")
 
 #### Possible errors:
 
-* [`h-err/abs-failure`](halite-err-id-reference.md#h-err/abs-failure)
+* [`h-err/abs-failure`](jadeite-err-id-reference.md#h-err/abs-failure)
 
 ---
 ### <a name="accessor"></a>accessor
@@ -599,8 +599,8 @@ The $type value of an instance is not considered a field that can be extracted w
 
 #### Possible errors:
 
-* [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
-* [`h-err/index-out-of-bounds`](halite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/index-out-of-bounds`](jadeite-err-id-reference.md#h-err/index-out-of-bounds)
 
 See also: [`accessor-chain`](#accessor-chain)
 
@@ -644,10 +644,10 @@ The first path element in the path is looked up in the initial target. If there 
 
 #### Possible errors:
 
-* [`h-err/field-name-not-in-spec`](halite-err-id-reference.md#h-err/field-name-not-in-spec)
-* [`h-err/index-out-of-bounds`](halite-err-id-reference.md#h-err/index-out-of-bounds)
-* [`h-err/invalid-lookup-target`](halite-err-id-reference.md#h-err/invalid-lookup-target)
-* [`l-err/get-in-path-empty`](halite-err-id-reference.md#l-err/get-in-path-empty)
+* [`h-err/field-name-not-in-spec`](jadeite-err-id-reference.md#h-err/field-name-not-in-spec)
+* [`h-err/index-out-of-bounds`](jadeite-err-id-reference.md#h-err/index-out-of-bounds)
+* [`h-err/invalid-lookup-target`](jadeite-err-id-reference.md#h-err/invalid-lookup-target)
+* [`l-err/get-in-path-empty`](jadeite-err-id-reference.md#l-err/get-in-path-empty)
 
 See also: [`accessor`](#accessor)
 
@@ -846,39 +846,6 @@ Return how many items are in a collection.
 </td></tr></table>
 
 ---
-### <a name="dec"></a>dec
-
-Decrement a numeric value.
-
-![["integer '-' '1' " "integer"]](./halite-bnf-diagrams/op/dec-0-j.svg)
-
-<table><tr><td colspan="1">
-
-```java
-(dec 10)
-
-### result ###
-9
-```
-
-</td><td colspan="1">
-
-```java
-(dec 0)
-
-### result ###
--1
-```
-
-</td></tr></table>
-
-#### Possible errors:
-
-* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
-
-See also: [`inc`](#inc)
-
----
 ### <a name="difference"></a>difference
 
 Compute the set difference of two sets.
@@ -1061,7 +1028,7 @@ h-err/spec-threw
 
 #### Possible errors:
 
-* [`h-err/spec-threw`](halite-err-id-reference.md#h-err/spec-threw)
+* [`h-err/spec-threw`](jadeite-err-id-reference.md#h-err/spec-threw)
 
 ---
 ### <a name="every_Q"></a>every?
@@ -1141,8 +1108,8 @@ h-err/invalid-exponent
 
 #### Possible errors:
 
-* [`h-err/invalid-exponent`](halite-err-id-reference.md#h-err/invalid-exponent)
-* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
+* [`h-err/invalid-exponent`](jadeite-err-id-reference.md#h-err/invalid-exponent)
+* [`h-err/overflow`](jadeite-err-id-reference.md#h-err/overflow)
 
 ---
 ### <a name="filter"></a>filter
@@ -1206,7 +1173,7 @@ h-err/argument-empty
 
 #### Possible errors:
 
-* [`h-err/argument-empty`](halite-err-id-reference.md#h-err/argument-empty)
+* [`h-err/argument-empty`](jadeite-err-id-reference.md#h-err/argument-empty)
 
 See also: [`count`](#count) [`rest`](#rest)
 
@@ -1280,39 +1247,6 @@ This is similar to the 'if-value' operation, but applies generally to an express
 </td></tr></table>
 
 See also: [`ifValue`](#ifValue) [`whenValueLet`](#whenValueLet)
-
----
-### <a name="inc"></a>inc
-
-Increment a numeric value.
-
-![["integer '+' '1'" "integer"]](./halite-bnf-diagrams/op/inc-0-j.svg)
-
-<table><tr><td colspan="1">
-
-```java
-(inc 10)
-
-### result ###
-11
-```
-
-</td><td colspan="1">
-
-```java
-(inc 0)
-
-### result ###
-1
-```
-
-</td></tr></table>
-
-#### Possible errors:
-
-* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
-
-See also: [`dec`](#dec)
 
 ---
 ### <a name="intersection"></a>intersection
@@ -1608,8 +1542,8 @@ h-err/no-refinement-path
 
 #### Possible errors:
 
-* [`h-err/no-refinement-path`](halite-err-id-reference.md#h-err/no-refinement-path)
-* [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
+* [`h-err/no-refinement-path`](jadeite-err-id-reference.md#h-err/no-refinement-path)
+* [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refinesTo?`](#refinesTo_Q)
 
@@ -1642,7 +1576,7 @@ false
 
 #### Possible errors:
 
-* [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
+* [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refineTo`](#refineTo)
 
@@ -1789,8 +1723,8 @@ sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()
 
 #### Possible errors:
 
-* [`h-err/not-sortable-body`](halite-err-id-reference.md#h-err/not-sortable-body)
-* [`h-err/sort-value-collision`](halite-err-id-reference.md#h-err/sort-value-collision)
+* [`h-err/not-sortable-body`](jadeite-err-id-reference.md#h-err/not-sortable-body)
+* [`h-err/sort-value-collision`](jadeite-err-id-reference.md#h-err/sort-value-collision)
 
 See also: [`sort`](#sort)
 
