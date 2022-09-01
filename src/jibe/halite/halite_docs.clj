@@ -1704,6 +1704,26 @@
        (apply str generated-msg "# Jadeite basic syntax reference\n\n")
        (spit "doc/jadeite-basic-syntax-reference.md")))
 
+(defn err-md [err-id err]
+  (->> ["### "
+        "<a name=\"" (safe-op-anchor err-id) "\"></a>"
+        err-id "\n\n" (:doc err) "\n\n"
+        "Error message template: \"" (:message err) "\"\n\n"
+        (when-let [alsos (:see-also err)]
+          ["See also:"
+           (for [a alsos]
+             [" [`" a "`](#" (safe-op-anchor a) ")"])
+           "\n\n"])
+        "---\n"]
+       flatten (apply str)))
+
+(defn produce-err-md []
+  (->> err-maps
+       sort
+       (map (partial apply err-md))
+       (apply str generated-msg "# Halite err-id reference\n\n")
+       (spit "doc/halite-err-id-reference.md")))
+
 ;;
 
 (defn query-ops
@@ -1746,4 +1766,5 @@
          dorun)
 
     (produce-basic-md)
-    (produce-full-md)))
+    (produce-full-md)
+    (produce-err-md)))
