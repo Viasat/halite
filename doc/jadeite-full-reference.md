@@ -1693,10 +1693,6 @@ rescale(#d "1.23", 0)
 
 </td></tr></table>
 
-#### Possible errors:
-
-* [`h-err/arg-type-mismatch`](halite-err-id-reference.md#h-err/arg-type-mismatch)
-
 See also: [`*`](#_S)
 
 ---

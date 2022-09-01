@@ -1063,7 +1063,6 @@
                          {:expr-str "(rescale #d \"1.23\" 0)"
                           :expr-str-j :auto
                           :result :auto}]
-              :throws ['h-err/arg-type-mismatch]
               :see-also ['*]}
     'rest {:sigs [["vector" "vector"]]
            :sigs-j [["vector '.' 'rest()'" "vector"]]

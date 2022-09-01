@@ -36,10 +36,6 @@ A relatively generic exception that indicates the operator being invoked cannot 
 
 > :position-text to ':op' must be :expected-type-description
 
-#### Produced by:
-
-* [`rescale`](halite-full-reference.md#rescale)
-
 ---
 ### <a name="h-err/argument-empty"></a>h-err/argument-empty
 

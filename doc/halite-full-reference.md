@@ -1729,10 +1729,6 @@ Arithmetic on numeric values never produce results in different number spaces. T
 
 </td></tr></table>
 
-#### Possible errors:
-
-* [`h-err/arg-type-mismatch`](halite-err-id-reference.md#h-err/arg-type-mismatch)
-
 See also: [`*`](#_S)
 
 ---
