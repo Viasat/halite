@@ -12,6 +12,10 @@ The way the number space is divided the value of zero comes out of the positive 
 
 > Cannot compute absolute value of: :value
 
+#### Produced by:
+
+* [`abs`](halite-full-reference.md#abs)
+
 ---
 ### <a name="h-err/accumulator-target-must-be-bare-symbol"></a>h-err/accumulator-target-must-be-bare-symbol
 
@@ -32,6 +36,10 @@ A relatively generic exception that indicates the operator being invoked cannot 
 
 > :position-text to ':op' must be :expected-type-description
 
+#### Produced by:
+
+* [`rescale`](halite-full-reference.md#rescale)
+
 ---
 ### <a name="h-err/argument-empty"></a>h-err/argument-empty
 
@@ -40,6 +48,10 @@ The 'first' operation cannot be invoked on an empty collection.
 #### Error message template:
 
 > Argument to first is always empty
+
+#### Produced by:
+
+* [`first`](halite-full-reference.md#first)
 
 ---
 ### <a name="h-err/argument-not-set-or-vector"></a>h-err/argument-not-set-or-vector
@@ -122,6 +134,11 @@ Division by zero, whether directly or indirectly via modulus cannot be performed
 
 > Cannot divide by zero
 
+#### Produced by:
+
+* [`div`](halite-full-reference.md#div)
+* [`mod`](halite-full-reference.md#mod)
+
 ---
 ### <a name="h-err/element-accumulator-same-symbol"></a>h-err/element-accumulator-same-symbol
 
@@ -150,6 +167,11 @@ The field name is not valid for the spec. The field name was provided to either 
 #### Error message template:
 
 > Variables not defined on spec: :invalid-vars
+
+#### Produced by:
+
+* [`get`](halite-full-reference.md#get)
+* [`get-in`](halite-full-reference.md#get-in)
 
 ---
 ### <a name="h-err/field-value-of-wrong-type"></a>h-err/field-value-of-wrong-type
@@ -187,6 +209,11 @@ The index falls outside of the bounds of the vector. A way to avoid this is to f
 
 > Index out of bounds, :index, for vector of length :length
 
+#### Produced by:
+
+* [`get`](halite-full-reference.md#get)
+* [`get-in`](halite-full-reference.md#get-in)
+
 ---
 ### <a name="h-err/invalid-collection-type"></a>h-err/invalid-collection-type
 
@@ -204,6 +231,10 @@ The exponent cannot be negative.
 #### Error message template:
 
 > Invalid exponent: :exponent
+
+#### Produced by:
+
+* [`expt`](halite-full-reference.md#expt)
 
 ---
 ### <a name="h-err/invalid-expression"></a>h-err/invalid-expression
@@ -258,6 +289,10 @@ An attempt was made to retrieve a field from an instance but the value was not k
 #### Error message template:
 
 > Lookup target must be an instance of known type or non-empty vector
+
+#### Produced by:
+
+* [`get-in`](halite-full-reference.md#get-in)
 
 ---
 ### <a name="h-err/invalid-refinement-expression"></a>h-err/invalid-refinement-expression
@@ -403,6 +438,10 @@ There was no refinement path found to convert a specific instance to a target sp
 
 > No active refinement path from ':type' to ':target-type'
 
+#### Produced by:
+
+* [`refine-to`](halite-full-reference.md#refine-to)
+
 ---
 ### <a name="h-err/not-boolean-body"></a>h-err/not-boolean-body
 
@@ -439,6 +478,10 @@ When using 'sort-by', the expression used for sorting must produce a value that 
 
 > Body expression in ':op' must be sortable, not :actual-type
 
+#### Produced by:
+
+* [`sort-by`](halite-full-reference.md#sort-by)
+
 ---
 ### <a name="h-err/overflow"></a>h-err/overflow
 
@@ -447,6 +490,15 @@ The mathematical operation resulted in a number that is too large to fit in the 
 #### Error message template:
 
 > Numeric value overflow
+
+#### Produced by:
+
+* [`*`](halite-full-reference.md#_S)
+* [`+`](halite-full-reference.md#_A)
+* [`-`](halite-full-reference.md#-)
+* [`dec`](halite-full-reference.md#dec)
+* [`expt`](halite-full-reference.md#expt)
+* [`inc`](halite-full-reference.md#inc)
 
 ---
 ### <a name="h-err/reduce-not-vector"></a>h-err/reduce-not-vector
@@ -475,6 +527,11 @@ The spec identifier provided did not correspond to a known spec.
 
 > Resource spec not found: :spec-id
 
+#### Produced by:
+
+* [`refine-to`](halite-full-reference.md#refine-to)
+* [`refines-to?`](halite-full-reference.md#refines-to_Q)
+
 ---
 ### <a name="h-err/size-exceeded"></a>h-err/size-exceeded
 
@@ -495,6 +552,10 @@ When sorting a collection with 'sort-by', the sort expression must produce a uni
 
 > Multiple elements produced the same sort value, so the collection cannot be deterministically sorted
 
+#### Produced by:
+
+* [`sort-by`](halite-full-reference.md#sort-by)
+
 ---
 ### <a name="h-err/spec-threw"></a>h-err/spec-threw
 
@@ -503,6 +564,10 @@ An explicit invocation of the 'error' operation was encountered in a spec. This 
 #### Error message template:
 
 > Spec threw error: :spec-error-str
+
+#### Produced by:
+
+* [`error`](halite-full-reference.md#error)
 
 ---
 ### <a name="h-err/symbol-undefined"></a>h-err/symbol-undefined
@@ -647,6 +712,10 @@ A path must be provided to the 'get-in' operation.
 #### Error message template:
 
 > The path parameter in 'get-in' cannot be empty: :form
+
+#### Produced by:
+
+* [`get-in`](halite-full-reference.md#get-in)
 
 ---
 ### <a name="l-err/let-bindings-empty"></a>l-err/let-bindings-empty
