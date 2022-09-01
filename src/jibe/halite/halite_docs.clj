@@ -1390,8 +1390,8 @@
                            'sort-by 'sortBy
                            'and '&&
                            'div '/
-                           'get '<accessor>
-                           'get-in '<accessorChain>
+                           'get 'ACCESSOR
+                           'get-in 'ACCESSOR-CHAIN
                            'when-value 'whenValue
                            'when-value-let 'whenValueLet
                            'if-value 'ifValue
