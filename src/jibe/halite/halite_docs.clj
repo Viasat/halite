@@ -1708,7 +1708,9 @@
   (->> ["### "
         "<a name=\"" (safe-op-anchor err-id) "\"></a>"
         err-id "\n\n" (:doc err) "\n\n"
-        "Error message template: \"" (:message err) "\"\n\n"
+        "Error message template:" "\n\n"
+        "    > " (:message err)
+        "\n\n"
         (when-let [alsos (:see-also err)]
           ["See also:"
            (for [a (sort alsos)]
