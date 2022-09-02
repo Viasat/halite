@@ -10,12 +10,16 @@
 
 !["'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"](./halite-bnf-diagrams/basic-syntax/non-numeric-character.svg)
 
+Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j.svg)
+
 ---
 ### <a name="plus-minus-character"></a>plus-minus-character
 
 
 
 !["'+' | '-'"](./halite-bnf-diagrams/basic-syntax/plus-minus-character.svg)
+
+Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j.svg)
 
 ---
 ### <a name="symbol-character"></a>symbol-character
@@ -24,12 +28,16 @@
 
 !["non-numeric-character | plus-minus-character | '0-9'"](./halite-bnf-diagrams/basic-syntax/symbol-character.svg)
 
+Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j.svg)
+
 ---
 ### <a name="bare-symbol"></a>bare-symbol
 
 
 
 !["plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"](./halite-bnf-diagrams/basic-syntax/bare-symbol.svg)
+
+Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j.svg)
 
 ---
 ### <a name="symbol"></a>symbol
@@ -65,6 +73,8 @@ a/b
 * [`h-err/invalid-symbol-char`](halite-err-id-reference.md#h-err/invalid-symbol-char)
 * [`h-err/invalid-symbol-length`](halite-err-id-reference.md#h-err/invalid-symbol-length)
 
+Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j.svg)
+
 ---
 ### <a name="keyword"></a>keyword
 
@@ -92,6 +102,8 @@ Keywords are not values. There are no expressions that produce keywords. Anywher
 
 * [`h-err/invalid-keyword-char`](halite-err-id-reference.md#h-err/invalid-keyword-char)
 * [`h-err/invalid-keyword-length`](halite-err-id-reference.md#h-err/invalid-keyword-length)
+
+Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all.svg)
 
 ---
 ### <a name="boolean"></a>boolean

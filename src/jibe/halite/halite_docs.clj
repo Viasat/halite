@@ -1818,6 +1818,16 @@
                         "jadeite-err-id-reference.md")
                       "#" (safe-op-anchor msg) ")" "\n"))
                "\n"])
+            (when-let [tags (:tags op)]
+              ["Tags:"
+               (for [a (sort tags)]
+                 (let [a (name a)]
+                   [" [`" a "`](halite-bnf-diagrams/"
+                    (if (= :halite lang)
+                      a
+                      (str a "-j"))
+                    ".svg" ")"]))
+               "\n\n"])
             "---\n"]
            flatten (apply str)))))
 
