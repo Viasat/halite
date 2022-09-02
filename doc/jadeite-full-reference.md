@@ -32,6 +32,8 @@ true
 
 See also: [`&&`](#&&) [`=>`](#_E_G) [`||`](#||)
 
+Tags: [`boolean-op`](halite-bnf-diagrams/boolean-op-j.svg) [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg)
+
 ---
 ### <a name="_Dno-value"></a>$no-value
 
@@ -42,6 +44,8 @@ Constant that produces the special 'unset' value which represents the lack of a 
 Expected use is in an instance expression to indicate that a field in the instance does not have a value. However, it is suggested that alternatives include simply omitting the field name from the instance or using a variant of a 'when' expression to optionally produce a value for the field.
 
 See also: [`when`](#when) [`whenValue`](#whenValue) [`whenValueLet`](#whenValueLet)
+
+Tags: [`optional-out`](halite-bnf-diagrams/optional-out-j.svg)
 
 ---
 ### <a name="_Dthis"></a>$this
@@ -90,6 +94,8 @@ h-err/divide-by-zero
 
 * [`h-err/divide-by-zero`](jadeite-err-id-reference.md#h-err/divide-by-zero)
 
+Tags: [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`integer-out`](halite-bnf-diagrams/integer-out-j.svg)
+
 ---
 ### <a name="&&"></a>&&
 
@@ -129,6 +135,8 @@ true
 </td></tr></table>
 
 See also: [`!`](#_B) [`=>`](#_E_G) [`every?`](#every_Q) [`||`](#||)
+
+Tags: [`boolean-op`](halite-bnf-diagrams/boolean-op-j.svg) [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg)
 
 ---
 ### <a name="_S"></a>*
@@ -173,6 +181,8 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 #### Possible errors:
 
 * [`h-err/overflow`](jadeite-err-id-reference.md#h-err/overflow)
+
+Tags: [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`fixed-decimal-out`](halite-bnf-diagrams/fixed-decimal-out-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`integer-out`](halite-bnf-diagrams/integer-out-j.svg)
 
 ---
 ### <a name="_A"></a>+
@@ -225,6 +235,8 @@ Add two numbers together.
 
 * [`h-err/overflow`](jadeite-err-id-reference.md#h-err/overflow)
 
+Tags: [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`fixed-decimal-out`](halite-bnf-diagrams/fixed-decimal-out-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`integer-out`](halite-bnf-diagrams/integer-out-j.svg)
+
 ---
 ### <a name="-"></a>-
 
@@ -275,6 +287,8 @@ Subtract one number from another.
 #### Possible errors:
 
 * [`h-err/overflow`](jadeite-err-id-reference.md#h-err/overflow)
+
+Tags: [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`fixed-decimal-out`](halite-bnf-diagrams/fixed-decimal-out-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`integer-out`](halite-bnf-diagrams/integer-out-j.svg)
 
 ---
 ### <a name="/"></a>/
@@ -340,6 +354,8 @@ h-err/divide-by-zero
 
 See also: [`%`](#%)
 
+Tags: [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`fixed-decimal-out`](halite-bnf-diagrams/fixed-decimal-out-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`integer-out`](halite-bnf-diagrams/integer-out-j.svg)
+
 ---
 ### <a name="_L"></a><
 
@@ -376,6 +392,8 @@ false
 
 </td></tr></table>
 
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg)
+
 ---
 ### <a name="_L_E"></a><=
 
@@ -411,6 +429,8 @@ true
 ```
 
 </td></tr></table>
+
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg)
 
 ---
 ### <a name="_E_G"></a>=>
@@ -450,6 +470,8 @@ true
 
 See also: [`!`](#_B) [`&&`](#&&) [`every?`](#every_Q) [`||`](#||)
 
+Tags: [`boolean-op`](halite-bnf-diagrams/boolean-op-j.svg) [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg)
+
 ---
 ### <a name="_G"></a>>
 
@@ -486,6 +508,8 @@ false
 
 </td></tr></table>
 
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg)
+
 ---
 ### <a name="_G_E"></a>>=
 
@@ -521,6 +545,8 @@ true
 ```
 
 </td></tr></table>
+
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg)
 
 ---
 ### <a name="ACCESSOR"></a>ACCESSOR
@@ -561,6 +587,8 @@ The $type value of an instance is not considered a field that can be extracted w
 * [`h-err/invalid-vector-index`](jadeite-err-id-reference.md#h-err/invalid-vector-index)
 
 See also: [`ACCESSOR-CHAIN`](#ACCESSOR-CHAIN)
+
+Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
 
 ---
 ### <a name="ACCESSOR-CHAIN"></a>ACCESSOR-CHAIN
@@ -612,6 +640,8 @@ The first path element in the path is looked up in the initial target. If there 
 
 See also: [`ACCESSOR`](#ACCESSOR)
 
+Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
+
 ---
 ### <a name="abs"></a>abs
 
@@ -656,6 +686,8 @@ abs(#d "-1.0")
 
 * [`h-err/abs-failure`](jadeite-err-id-reference.md#h-err/abs-failure)
 
+Tags: [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`fixed-decimal-out`](halite-bnf-diagrams/fixed-decimal-out-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`integer-out`](halite-bnf-diagrams/integer-out-j.svg)
+
 ---
 ### <a name="any_Q"></a>any?
 
@@ -694,6 +726,8 @@ false
 * [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`every?`](#every_Q) [`||`](#||)
+
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
 
 ---
 ### <a name="concat"></a>concat
@@ -739,6 +773,8 @@ Invoking this operation with a vector and an empty set has the effect of convert
 
 * [`h-err/not-both-vectors`](jadeite-err-id-reference.md#h-err/not-both-vectors)
 
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`set-out`](halite-bnf-diagrams/set-out-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg) [`vector-out`](halite-bnf-diagrams/vector-out-j.svg)
+
 ---
 ### <a name="conj"></a>conj
 
@@ -783,6 +819,8 @@ Only definite values may be put into collections, i.e. collections cannot contai
 
 * [`h-err/argument-not-set-or-vector`](jadeite-err-id-reference.md#h-err/argument-not-set-or-vector)
 * [`h-err/cannot-conj-unset`](jadeite-err-id-reference.md#h-err/cannot-conj-unset)
+
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`set-out`](halite-bnf-diagrams/set-out-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg) [`vector-out`](halite-bnf-diagrams/vector-out-j.svg)
 
 ---
 ### <a name="contains_Q"></a>contains?
@@ -831,6 +869,8 @@ false
 
 </td></tr></table>
 
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`set-op`](halite-bnf-diagrams/set-op-j.svg)
+
 ---
 ### <a name="count"></a>count
 
@@ -866,6 +906,8 @@ Return how many items are in a collection.
 ```
 
 </td></tr></table>
+
+Tags: [`integer-out`](halite-bnf-diagrams/integer-out-j.svg) [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
 
 ---
 ### <a name="difference"></a>difference
@@ -919,6 +961,8 @@ This produces a set which contains all of the elements from the first set which 
 * [`h-err/arguments-not-sets`](jadeite-err-id-reference.md#h-err/arguments-not-sets)
 
 See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#union)
+
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`set-out`](halite-bnf-diagrams/set-out-j.svg)
 
 ---
 ### <a name="equalTo"></a>equalTo
@@ -1036,6 +1080,8 @@ true
 
 See also: [`notEqualTo`](#notEqualTo)
 
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
+
 ---
 ### <a name="error"></a>error
 
@@ -1059,6 +1105,8 @@ h-err/spec-threw
 #### Possible errors:
 
 * [`h-err/spec-threw`](jadeite-err-id-reference.md#h-err/spec-threw)
+
+Tags: [`nothing-out`](halite-bnf-diagrams/nothing-out-j.svg)
 
 ---
 ### <a name="every_Q"></a>every?
@@ -1098,6 +1146,8 @@ false
 * [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`&&`](#&&) [`any?`](#any_Q)
+
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
 
 ---
 ### <a name="expt"></a>expt
@@ -1149,6 +1199,8 @@ h-err/invalid-exponent
 * [`h-err/invalid-exponent`](jadeite-err-id-reference.md#h-err/invalid-exponent)
 * [`h-err/overflow`](jadeite-err-id-reference.md#h-err/overflow)
 
+Tags: [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`integer-out`](halite-bnf-diagrams/integer-out-j.svg)
+
 ---
 ### <a name="filter"></a>filter
 
@@ -1188,6 +1240,8 @@ filter(x in #{1, 2, 3})(x > 2)
 
 See also: [`filter`](#filter) [`map`](#map)
 
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`set-out`](halite-bnf-diagrams/set-out-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg) [`vector-out`](halite-bnf-diagrams/vector-out-j.svg)
+
 ---
 ### <a name="first"></a>first
 
@@ -1224,6 +1278,8 @@ h-err/argument-empty
 
 See also: [`count`](#count) [`rest`](#rest)
 
+Tags: [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
+
 ---
 ### <a name="if"></a>if
 
@@ -1253,6 +1309,8 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 See also: [`when`](#when)
 
+Tags: [`boolean-op`](halite-bnf-diagrams/boolean-op-j.svg) [`control-flow`](halite-bnf-diagrams/control-flow-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg)
+
 ---
 ### <a name="ifValue"></a>ifValue
 
@@ -1268,6 +1326,8 @@ When an optional instance field needs to be referenced, it is generally necessar
 * [`l-err/first-argument-not-optional`](jadeite-err-id-reference.md#l-err/first-argument-not-optional)
 
 See also: [`ifValueLet`](#ifValueLet) [`whenValue`](#whenValue)
+
+Tags: [`control-flow`](halite-bnf-diagrams/control-flow-j.svg) [`optional-op`](halite-bnf-diagrams/optional-op-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg)
 
 ---
 ### <a name="ifValueLet"></a>ifValueLet
@@ -1305,6 +1365,8 @@ This is similar to the 'if-value' operation, but applies generally to an express
 
 See also: [`ifValue`](#ifValue) [`whenValueLet`](#whenValueLet)
 
+Tags: [`control-flow`](halite-bnf-diagrams/control-flow-j.svg) [`optional-op`](halite-bnf-diagrams/optional-op-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg)
+
 ---
 ### <a name="intersection"></a>intersection
 
@@ -1339,6 +1401,8 @@ This produces a set which only contains values that appear in each of the argume
 * [`h-err/arguments-not-sets`](jadeite-err-id-reference.md#h-err/arguments-not-sets)
 
 See also: [`difference`](#difference) [`subset?`](#subset_Q) [`union`](#union)
+
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`set-out`](halite-bnf-diagrams/set-out-j.svg)
 
 ---
 ### <a name="let"></a>let
@@ -1389,6 +1453,8 @@ Allows names to be given to values so that they can be referenced by the any-exp
 * [`l-err/disallowed-unset-variable`](jadeite-err-id-reference.md#l-err/disallowed-unset-variable)
 * [`l-err/let-bindings-empty`](jadeite-err-id-reference.md#l-err/let-bindings-empty)
 
+Tags: [`special-form`](halite-bnf-diagrams/special-form-j.svg)
+
 ---
 ### <a name="map"></a>map
 
@@ -1427,6 +1493,8 @@ map(x in #{10, 12})(x * 2)
 * [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`filter`](#filter) [`reduce`](#reduce)
+
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`set-out`](halite-bnf-diagrams/set-out-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg) [`vector-out`](halite-bnf-diagrams/vector-out-j.svg)
 
 ---
 ### <a name="notEqualTo"></a>notEqualTo
@@ -1541,6 +1609,8 @@ true
 
 See also: [`equalTo`](#equalTo)
 
+Tags: [`boolean-op`](halite-bnf-diagrams/boolean-op-j.svg) [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`integer-op`](halite-bnf-diagrams/integer-op-j.svg) [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
+
 ---
 ### <a name="range"></a>range
 
@@ -1577,6 +1647,8 @@ range(10, 21, 5)
 
 </td></tr></table>
 
+Tags: [`vector-out`](halite-bnf-diagrams/vector-out-j.svg)
+
 ---
 ### <a name="reduce"></a>reduce
 
@@ -1604,6 +1676,8 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 * [`h-err/reduce-not-vector`](jadeite-err-id-reference.md#h-err/reduce-not-vector)
 
 See also: [`filter`](#filter) [`map`](#map)
+
+Tags: [`special-form`](halite-bnf-diagrams/special-form-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
 
 ---
 ### <a name="refineTo"></a>refineTo
@@ -1641,6 +1715,8 @@ h-err/no-refinement-path
 
 See also: [`refinesTo?`](#refinesTo_Q)
 
+Tags: [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`instance-out`](halite-bnf-diagrams/instance-out-j.svg) [`spec-id-op`](halite-bnf-diagrams/spec-id-op-j.svg)
+
 ---
 ### <a name="refinesTo_Q"></a>refinesTo?
 
@@ -1675,6 +1751,8 @@ false
 * [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refineTo`](#refineTo)
+
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`spec-id-op`](halite-bnf-diagrams/spec-id-op-j.svg)
 
 ---
 ### <a name="rescale"></a>rescale
@@ -1725,6 +1803,8 @@ rescale(#d "1.23", 0)
 
 See also: [`*`](#_S)
 
+Tags: [`fixed-decimal-op`](halite-bnf-diagrams/fixed-decimal-op-j.svg) [`fixed-decimal-out`](halite-bnf-diagrams/fixed-decimal-out-j.svg) [`integer-out`](halite-bnf-diagrams/integer-out-j.svg)
+
 ---
 ### <a name="rest"></a>rest
 
@@ -1774,6 +1854,8 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 * [`h-err/argument-not-vector`](jadeite-err-id-reference.md#h-err/argument-not-vector)
 
+Tags: [`vector-op`](halite-bnf-diagrams/vector-op-j.svg) [`vector-out`](halite-bnf-diagrams/vector-out-j.svg)
+
 ---
 ### <a name="sort"></a>sort
 
@@ -1803,6 +1885,8 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 See also: [`sortBy`](#sortBy)
 
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg) [`vector-out`](halite-bnf-diagrams/vector-out-j.svg)
+
 ---
 ### <a name="sortBy"></a>sortBy
 
@@ -1829,6 +1913,8 @@ sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()
 * [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
 See also: [`sort`](#sort)
+
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg) [`vector-out`](halite-bnf-diagrams/vector-out-j.svg)
 
 ---
 ### <a name="str"></a>str
@@ -1860,6 +1946,8 @@ str("a", "", "c")
 #### Possible errors:
 
 * [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
+
+Tags: [`string-op`](halite-bnf-diagrams/string-op-j.svg)
 
 ---
 ### <a name="subset_Q"></a>subset?
@@ -1900,6 +1988,8 @@ true
 </td></tr></table>
 
 See also: [`difference`](#difference) [`intersection`](#intersection) [`union`](#union)
+
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`set-op`](halite-bnf-diagrams/set-op-j.svg)
 
 ---
 ### <a name="union"></a>union
@@ -1945,6 +2035,8 @@ This produces a set which contains all of the values that appear in any of the a
 
 See also: [`difference`](#difference) [`intersection`](#intersection) [`subset?`](#subset_Q)
 
+Tags: [`set-op`](halite-bnf-diagrams/set-op-j.svg) [`set-out`](halite-bnf-diagrams/set-out-j.svg)
+
 ---
 ### <a name="valid"></a>valid
 
@@ -1975,6 +2067,8 @@ valid {$type: my/Spec$v1, p: 1, n: 1}
 </td></tr></table>
 
 See also: [`valid?`](#valid_Q)
+
+Tags: [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg)
 
 ---
 ### <a name="valid_Q"></a>valid?
@@ -2007,6 +2101,8 @@ false
 
 See also: [`valid`](#valid)
 
+Tags: [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg)
+
 ---
 ### <a name="when"></a>when
 
@@ -2035,6 +2131,8 @@ A primary use of this operator is in instance expression to optionally provide a
 ```
 
 </td></tr></table>
+
+Tags: [`boolean-op`](halite-bnf-diagrams/boolean-op-j.svg) [`control-flow`](halite-bnf-diagrams/control-flow-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg)
 
 ---
 ### <a name="whenValue"></a>whenValue
@@ -2065,6 +2163,8 @@ whenValue(x) {x + 2}
 
 See also: [`ifValue`](#ifValue) [`when`](#when) [`whenValueLet`](#whenValueLet)
 
+Tags: [`control-flow`](halite-bnf-diagrams/control-flow-j.svg) [`optional-op`](halite-bnf-diagrams/optional-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg)
+
 ---
 ### <a name="whenValueLet"></a>whenValueLet
 
@@ -2093,6 +2193,8 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 </td></tr></table>
 
 See also: [`ifValueLet`](#ifValueLet) [`when`](#when) [`whenValue`](#whenValue)
+
+Tags: [`control-flow`](halite-bnf-diagrams/control-flow-j.svg) [`optional-op`](halite-bnf-diagrams/optional-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg)
 
 ---
 ### <a name="||"></a>||
@@ -2133,5 +2235,7 @@ true
 </td></tr></table>
 
 See also: [`!`](#_B) [`&&`](#&&) [`=>`](#_E_G) [`any?`](#any_Q)
+
+Tags: [`boolean-op`](halite-bnf-diagrams/boolean-op-j.svg) [`boolean-out`](halite-bnf-diagrams/boolean-out-j.svg)
 
 ---

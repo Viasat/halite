@@ -247,7 +247,6 @@
                 :see-also ['when 'when-value 'when-value-let]}
     '$this {:sigs [["" "value"]]
             :sigs-j [["<$this>" "unset"]]
-            :tags #{}
             :doc "Context dependent reference to the containing object."}
     '* {:sigs [["integer integer" "integer"]
                ["fixed-decimal integer" "fixed-decimal"]]
@@ -1748,6 +1747,16 @@
            (for [a (sort alsos)]
              [" [`" a "`](#" (safe-op-anchor a) ")"])
            "\n\n"])
+        (when-let [tags (:tags op)]
+          ["Tags:"
+           (for [a (sort tags)]
+             (let [a (name a)]
+               [" [`" a "`](halite-bnf-diagrams/"
+                (if (= :halite lang)
+                  a
+                  (str a "-j"))
+                ".svg" ")"]))
+           "\n\n"])
         "---\n"]
        flatten (apply str)))
 
@@ -1874,7 +1883,7 @@
 (defn query-ops
   [tag]
   (apply sorted-map (mapcat identity (filter (fn [[op m]]
-                                               ((:tags m) tag))
+                                               (get (:tags m) tag))
                                              op-maps))))
 
 (defn produce-bnf-diagram-for-tag [tag]

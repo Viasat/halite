@@ -19,7 +19,7 @@ The way the number space is divided the value of zero comes out of the positive 
 ---
 ### <a name="h-err/accumulator-target-must-be-bare-symbol"></a>h-err/accumulator-target-must-be-bare-symbol
 
-In 'reduce', it is necesary to define a symbol which is used to hold the accumulated value of the reduction. This symbol must not include a namespace.
+In 'reduce', it is necesary to define a symbol to reference the accumulated value of the reduction. This symbol must not include a namespace.
 
 #### Error message template:
 
@@ -656,7 +656,7 @@ The mathematical operation resulted in a number that is too large to fit in the 
 ---
 ### <a name="h-err/reduce-not-vector"></a>h-err/reduce-not-vector
 
-The 'reduce' can only be applied to vectors. Specifically, sets cannot be reduced.
+The 'reduce' operation can only be applied to vectors. Specifically, sets cannot be reduced.
 
 #### Error message template:
 
@@ -733,7 +733,7 @@ When sorting a collection with 'sort-by', the sort expression must produce a uni
 ---
 ### <a name="h-err/spec-threw"></a>h-err/spec-threw
 
-An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers this instance to be invalid. See the error string in the exception detail for details.
+An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers it not possible to proceed in the encountered situation. See the error string in the exception detail for details.
 
 #### Error message template:
 
@@ -849,7 +849,7 @@ The symbols to be bound are not to start with a '$'.
 ---
 ### <a name="l-err/cannot-bind-nothing"></a>l-err/cannot-bind-nothing
 
-It is not permitted to rebind the symbol used to represent 'unset'.
+It is not permitted to bind a symbol to 'unset'. Instead of defining a symbol for this, consider using '$no-value'.
 
 #### Error message template:
 
@@ -936,7 +936,7 @@ The bindings form of the 'let' cannot be empty. If there is nothing to bind, the
 ---
 ### <a name="l-err/result-always-known"></a>l-err/result-always-known
 
-The result of the equality check is always the same and can be known in advance, so it is not needed.
+The result of the equality check is always the same and can be known in advance, so a check is not needed.
 
 #### Error message template:
 
