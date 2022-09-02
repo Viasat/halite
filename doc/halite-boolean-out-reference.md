@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite boolean-out reference
+# Halite reference: Produce booleans
 
-### <a name="boolean-out"></a>boolean-out
-
-Operations that produce boolean output values.
+### <a name="boolean-out"></a>Operations that produce boolean output values.
 
 For basic syntax of this data type see: [`boolean`](halite-basic-syntax-reference.md#boolean)
 

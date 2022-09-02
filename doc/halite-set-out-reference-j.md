@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite set-out reference
+# Jadeite reference: Produce sets
 
-### <a name="set-out"></a>set-out
-
-Operations that produce sets.
+### <a name="set-out"></a>Operations that produce sets.
 
 For basic syntax of this data type see: [`set`](jadeite-basic-syntax-reference.md#set)
 

@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite optional-out reference
+# Halite reference: Optionally produce values
 
-### <a name="optional-out"></a>optional-out
-
-Operations that produce optional values.
+### <a name="optional-out"></a>Operations that produce optional values.
 
 !["optional-out"](./halite-bnf-diagrams/optional-out.svg)
 

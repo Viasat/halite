@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite boolean-out reference
+# Jadeite reference: Produce booleans
 
-### <a name="boolean-out"></a>boolean-out
-
-Operations that produce boolean output values.
+### <a name="boolean-out"></a>Operations that produce boolean output values.
 
 For basic syntax of this data type see: [`boolean`](jadeite-basic-syntax-reference.md#boolean)
 

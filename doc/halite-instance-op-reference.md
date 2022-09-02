@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite instance-op reference
+# Halite reference: Instance operations
 
-### <a name="instance-op"></a>instance-op
-
-Operations that operate on spec instances.
+### <a name="instance-op"></a>Operations that operate on spec instances.
 
 For basic syntax of this data type see: [`instance`](halite-basic-syntax-reference.md#instance)
 

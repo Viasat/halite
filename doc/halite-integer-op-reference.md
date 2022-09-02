@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite integer-op reference
+# Halite reference: Integer operations
 
-### <a name="integer-op"></a>integer-op
-
-Operations that operate on integer values.
+### <a name="integer-op"></a>Operations that operate on integer values.
 
 For basic syntax of this data type see: [`integer`](halite-basic-syntax-reference.md#integer)
 

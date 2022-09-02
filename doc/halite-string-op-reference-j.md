@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite string-op reference
+# Jadeite reference: String operations
 
-### <a name="string-op"></a>string-op
-
-Operations that operate on string values.
+### <a name="string-op"></a>Operations that operate on string values.
 
 For basic syntax of this data type see: [`string`](jadeite-basic-syntax-reference.md#string)
 

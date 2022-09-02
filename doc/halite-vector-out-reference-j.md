@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite vector-out reference
+# Jadeite reference: Produce vectors
 
-### <a name="vector-out"></a>vector-out
-
-Operations that produce vectors.
+### <a name="vector-out"></a>Operations that produce vectors.
 
 For basic syntax of this data type see: [`vector`](jadeite-basic-syntax-reference.md#vector)
 

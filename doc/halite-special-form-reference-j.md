@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite special-form reference
+# Jadeite reference: Special forms
 
-### <a name="special-form"></a>special-form
-
-Operators that do not evaluate their arguments in the 'normal' way.
+### <a name="special-form"></a>Operators that do not evaluate their arguments in the 'normal' way.
 
 !["special-form"](./halite-bnf-diagrams/special-form-j.svg)
 

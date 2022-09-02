@@ -1765,7 +1765,7 @@
           ["Tags:"
            (for [a (sort tags)]
              (let [a (name a)]
-               [" [`" a "`]("
+               [" [`" (:label (tag-def-map (keyword a))) "`]("
                 (tag-md-filename lang a)
                 ")"]))
            "\n\n"])
@@ -1839,7 +1839,7 @@
               ["Tags:"
                (for [a (sort tags)]
                  (let [a (name a)]
-                   [" [`" a "`]("
+                   [" [`" (:label (tag-def-map (keyword a))) "`]("
                     (tag-md-filename lang a)
                     ")"]))
                "\n\n"])
@@ -1906,7 +1906,7 @@
 (defn tag-md [lang tag-name tag]
   (->> ["### "
         "<a name=\"" (safe-op-anchor tag-name) "\"></a>"
-        tag-name "\n\n" (:doc tag) "\n\n"
+        (:doc tag) "\n\n"
         (when-let [basic-ref (if (= :halite lang)
                                (:basic-ref tag)
                                (or (:basic-ref-j tag)
@@ -1941,7 +1941,10 @@
 (defn produce-tag-md [lang [tag-name tag]]
   (let [tag-name (name tag-name)]
     (->> (tag-md lang tag-name tag)
-         (str generated-msg "# " (if (= :halite lang) "Halite " "Jadeite ")  tag-name " reference\n\n")
+         (str generated-msg "# " (if (= :halite lang) "Halite" "Jadeite")
+              " reference: "
+              (:label tag)
+              "\n\n")
          (spit (str "doc/" (tag-md-filename lang tag-name))))))
 
 ;;
@@ -1959,48 +1962,68 @@
    (str (name tag) ".svg")
    (str (name tag) "-j" ".svg")))
 
-(def tag-def-map {:boolean-op {:doc "Operations that operate on boolean values."
+(def tag-def-map {:boolean-op {:label "Boolean operations"
+                               :doc "Operations that operate on boolean values."
                                :basic-ref 'boolean}
-                  :boolean-out {:doc "Operations that produce boolean output values."
+                  :boolean-out {:label "Produce booleans"
+                                :doc "Operations that produce boolean output values."
                                 :basic-ref 'boolean}
 
-                  :string-op {:doc "Operations that operate on string values."
+                  :string-op {:label "String operations"
+                              :doc "Operations that operate on string values."
                               :basic-ref 'string}
-                  :integer-op {:doc "Operations that operate on integer values."
+                  :integer-op {:label "Integer operations"
+                               :doc "Operations that operate on integer values."
                                :basic-ref 'integer}
-                  :integer-out {:doc "Operations that produce integer output values."
+                  :integer-out {:label "Produce integer"
+                                :doc "Operations that produce integer output values."
                                 :basic-ref 'integer}
 
-                  :fixed-decimal-op {:doc "Operations that operate on fixed-decimal values."
+                  :fixed-decimal-op {:label "Fixed-decimal operations"
+                                     :doc "Operations that operate on fixed-decimal values."
                                      :basic-ref 'fixed-decimal}
-                  :fixed-decimal-out {:doc "Operations that produce fixed-decimal output values."
+                  :fixed-decimal-out {:label "Produce fixed-decimals"
+                                      :doc "Operations that produce fixed-decimal output values."
                                       :basic-ref 'fixed-decimal}
 
-                  :set-op {:doc "Operations that operate on sets."
+                  :set-op {:label "Set operations"
+                           :doc "Operations that operate on sets."
                            :basic-ref 'set}
-                  :set-out {:doc "Operations that produce sets."
+                  :set-out {:label "Produce sets"
+                            :doc "Operations that produce sets."
                             :basic-ref 'set}
-                  :vector-op {:doc "Operations that operate on vectors."
+                  :vector-op {:label "Vector operations"
+                              :doc "Operations that operate on vectors."
                               :basic-ref 'vector}
-                  :vector-out {:doc "Operations that produce vectors."
+                  :vector-out {:label "Produce vectors"
+                               :doc "Operations that produce vectors."
                                :basic-ref 'vector}
 
-                  :instance-op {:doc "Operations that operate on spec instances."
+                  :instance-op {:label "Instance operations"
+                                :doc "Operations that operate on spec instances."
                                 :basic-ref 'instance}
-                  :instance-out {:doc "Operations that produce spec instances."
+                  :instance-out {:label "Produce instances"
+                                 :doc "Operations that produce spec instances."
                                  :basic-ref 'instance}
-                  :instance-field-op {:doc "Operations that operate on fields of spec-instances."
+                  :instance-field-op {:label "Instance field operations"
+                                      :doc "Operations that operate on fields of spec-instances."
                                       :basic-ref 'instance}
-                  :spec-id-op {:doc "Operations that operate on spec identifiers."
+                  :spec-id-op {:label "Spec-id operations"
+                               :doc "Operations that operate on spec identifiers."
                                :basic-ref 'keyword
                                :basic-ref-j 'symbol}
 
-                  :optional-op {:doc "Operations that operate on optional fields and optional values in general."}
-                  :optional-out {:doc "Operations that produce optional values."}
-                  :nothing-out {:doc "Operations that produce 'nothing'."}
+                  :optional-op {:label "Optional operations"
+                                :doc "Operations that operate on optional fields and optional values in general."}
+                  :optional-out {:label "Optionally produce values"
+                                 :doc "Operations that produce optional values."}
+                  :nothing-out {:label "Produce nothing"
+                                :doc "Operations that produce 'nothing'."}
 
-                  :control-flow {:doc "Operators that control the flow of execution of the code."}
-                  :special-form {:doc "Operators that do not evaluate their arguments in the 'normal' way."}})
+                  :control-flow {:label "Control flow"
+                                 :doc "Operators that control the flow of execution of the code."}
+                  :special-form {:label "Special forms"
+                                 :doc "Operators that do not evaluate their arguments in the 'normal' way."}})
 
 (comment
   (do

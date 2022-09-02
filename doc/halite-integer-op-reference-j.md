@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite integer-op reference
+# Jadeite reference: Integer operations
 
-### <a name="integer-op"></a>integer-op
-
-Operations that operate on integer values.
+### <a name="integer-op"></a>Operations that operate on integer values.
 
 For basic syntax of this data type see: [`integer`](jadeite-basic-syntax-reference.md#integer)
 

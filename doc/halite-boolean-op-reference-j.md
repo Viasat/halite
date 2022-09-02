@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite boolean-op reference
+# Jadeite reference: Boolean operations
 
-### <a name="boolean-op"></a>boolean-op
-
-Operations that operate on boolean values.
+### <a name="boolean-op"></a>Operations that operate on boolean values.
 
 For basic syntax of this data type see: [`boolean`](jadeite-basic-syntax-reference.md#boolean)
 

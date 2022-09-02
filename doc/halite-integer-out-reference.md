@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite integer-out reference
+# Halite reference: Produce integer
 
-### <a name="integer-out"></a>integer-out
-
-Operations that produce integer output values.
+### <a name="integer-out"></a>Operations that produce integer output values.
 
 For basic syntax of this data type see: [`integer`](halite-basic-syntax-reference.md#integer)
 

@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite instance-field-op reference
+# Halite reference: Instance field operations
 
-### <a name="instance-field-op"></a>instance-field-op
-
-Operations that operate on fields of spec-instances.
+### <a name="instance-field-op"></a>Operations that operate on fields of spec-instances.
 
 For basic syntax of this data type see: [`instance`](halite-basic-syntax-reference.md#instance)
 

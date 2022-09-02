@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite fixed-decimal-out reference
+# Jadeite reference: Produce fixed-decimals
 
-### <a name="fixed-decimal-out"></a>fixed-decimal-out
-
-Operations that produce fixed-decimal output values.
+### <a name="fixed-decimal-out"></a>Operations that produce fixed-decimal output values.
 
 For basic syntax of this data type see: [`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal)
 

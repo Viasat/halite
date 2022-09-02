@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite vector-op reference
+# Halite reference: Vector operations
 
-### <a name="vector-op"></a>vector-op
-
-Operations that operate on vectors.
+### <a name="vector-op"></a>Operations that operate on vectors.
 
 For basic syntax of this data type see: [`vector`](halite-basic-syntax-reference.md#vector)
 

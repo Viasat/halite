@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite boolean-op reference
+# Halite reference: Boolean operations
 
-### <a name="boolean-op"></a>boolean-op
-
-Operations that operate on boolean values.
+### <a name="boolean-op"></a>Operations that operate on boolean values.
 
 For basic syntax of this data type see: [`boolean`](halite-basic-syntax-reference.md#boolean)
 

@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite fixed-decimal-op reference
+# Halite reference: Fixed-decimal operations
 
-### <a name="fixed-decimal-op"></a>fixed-decimal-op
-
-Operations that operate on fixed-decimal values.
+### <a name="fixed-decimal-op"></a>Operations that operate on fixed-decimal values.
 
 For basic syntax of this data type see: [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal)
 

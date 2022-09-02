@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite instance-field-op reference
+# Jadeite reference: Instance field operations
 
-### <a name="instance-field-op"></a>instance-field-op
-
-Operations that operate on fields of spec-instances.
+### <a name="instance-field-op"></a>Operations that operate on fields of spec-instances.
 
 For basic syntax of this data type see: [`instance`](jadeite-basic-syntax-reference.md#instance)
 

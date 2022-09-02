@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite integer-out reference
+# Jadeite reference: Produce integer
 
-### <a name="integer-out"></a>integer-out
-
-Operations that produce integer output values.
+### <a name="integer-out"></a>Operations that produce integer output values.
 
 For basic syntax of this data type see: [`integer`](jadeite-basic-syntax-reference.md#integer)
 

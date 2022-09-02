@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite spec-id-op reference
+# Jadeite reference: Spec-id operations
 
-### <a name="spec-id-op"></a>spec-id-op
-
-Operations that operate on spec identifiers.
+### <a name="spec-id-op"></a>Operations that operate on spec identifiers.
 
 For basic syntax of this data type see: [`symbol`](jadeite-basic-syntax-reference.md#symbol)
 

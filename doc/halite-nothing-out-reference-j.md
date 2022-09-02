@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite nothing-out reference
+# Jadeite reference: Produce nothing
 
-### <a name="nothing-out"></a>nothing-out
-
-Operations that produce 'nothing'.
+### <a name="nothing-out"></a>Operations that produce 'nothing'.
 
 !["nothing-out"](./halite-bnf-diagrams/nothing-out-j.svg)
 

@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite spec-id-op reference
+# Halite reference: Spec-id operations
 
-### <a name="spec-id-op"></a>spec-id-op
-
-Operations that operate on spec identifiers.
+### <a name="spec-id-op"></a>Operations that operate on spec identifiers.
 
 For basic syntax of this data type see: [`keyword`](halite-basic-syntax-reference.md#keyword)
 

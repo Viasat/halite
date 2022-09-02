@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite vector-out reference
+# Halite reference: Produce vectors
 
-### <a name="vector-out"></a>vector-out
-
-Operations that produce vectors.
+### <a name="vector-out"></a>Operations that produce vectors.
 
 For basic syntax of this data type see: [`vector`](halite-basic-syntax-reference.md#vector)
 

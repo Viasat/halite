@@ -2,11 +2,9 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite set-op reference
+# Jadeite reference: Set operations
 
-### <a name="set-op"></a>set-op
-
-Operations that operate on sets.
+### <a name="set-op"></a>Operations that operate on sets.
 
 For basic syntax of this data type see: [`set`](jadeite-basic-syntax-reference.md#set)
 
