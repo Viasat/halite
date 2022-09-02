@@ -10,10 +10,6 @@ Operations that operate on sets.
 
 !["set-op"](./halite-bnf-diagrams/set-op-j.svg)
 
-#### [`equalTo`](jadeite-full-reference.md#equalTo)
-
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
-
 #### [`any?`](jadeite-full-reference.md#any_Q)
 
 Evaluates to true if the boolean-expression is true when the symbol is bound to some element in the collection.
@@ -37,6 +33,10 @@ Return how many items are in a collection.
 #### [`difference`](jadeite-full-reference.md#difference)
 
 Compute the set difference of two sets.
+
+#### [`equalTo`](jadeite-full-reference.md#equalTo)
+
+Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`every?`](jadeite-full-reference.md#every_Q)
 

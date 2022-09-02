@@ -10,9 +10,13 @@ Operations that operate on vectors.
 
 !["vector-op"](./halite-bnf-diagrams/vector-op-j.svg)
 
-#### [`equalTo`](jadeite-full-reference.md#equalTo)
+#### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
+
+#### [`ACCESSOR-CHAIN`](jadeite-full-reference.md#ACCESSOR-CHAIN)
+
+A path of element accessors can be created by chaining together element access forms in sequence.
 
 #### [`any?`](jadeite-full-reference.md#any_Q)
 
@@ -30,6 +34,10 @@ Add individual items to a collection.
 
 Return how many items are in a collection.
 
+#### [`equalTo`](jadeite-full-reference.md#equalTo)
+
+Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+
 #### [`every?`](jadeite-full-reference.md#every_Q)
 
 Evaluates to true if the boolean-expression is true when the symbol is bound to each the element in the collection.
@@ -41,14 +49,6 @@ Produce a new collection which contains only the elements from the original coll
 #### [`first`](jadeite-full-reference.md#first)
 
 Produce the first element from a vector.
-
-#### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)
-
-Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
-
-#### [`ACCESSOR-CHAIN`](jadeite-full-reference.md#ACCESSOR-CHAIN)
-
-A path of element accessors can be created by chaining together element access forms in sequence.
 
 #### [`map`](jadeite-full-reference.md#map)
 

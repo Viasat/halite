@@ -10,6 +10,14 @@ Operators that do not evaluate their arguments in the 'normal' way.
 
 !["special-form"](./halite-bnf-diagrams/special-form-j.svg)
 
+#### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)
+
+Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
+
+#### [`ACCESSOR-CHAIN`](jadeite-full-reference.md#ACCESSOR-CHAIN)
+
+A path of element accessors can be created by chaining together element access forms in sequence.
+
 #### [`any?`](jadeite-full-reference.md#any_Q)
 
 Evaluates to true if the boolean-expression is true when the symbol is bound to some element in the collection.
@@ -21,14 +29,6 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 #### [`filter`](jadeite-full-reference.md#filter)
 
 Produce a new collection which contains only the elements from the original collection for which the boolean-expression is true. When applied to a vector, the order of the elements in the result preserves the order from the original vector.
-
-#### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)
-
-Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
-
-#### [`ACCESSOR-CHAIN`](jadeite-full-reference.md#ACCESSOR-CHAIN)
-
-A path of element accessors can be created by chaining together element access forms in sequence.
 
 #### [`if`](jadeite-full-reference.md#if)
 

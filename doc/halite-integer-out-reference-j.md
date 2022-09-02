@@ -10,6 +10,10 @@ Operations that produce integer output values.
 
 !["integer-out"](./halite-bnf-diagrams/integer-out-j.svg)
 
+#### [`%`](jadeite-full-reference.md#%)
+
+Computes the mathematical modulus of two numbers. Use care if one of the arguments is negative.
+
 #### [`*`](jadeite-full-reference.md#_S)
 
 Multiply two numbers together.
@@ -21,6 +25,10 @@ Add two numbers together.
 #### [`-`](jadeite-full-reference.md#-)
 
 Subtract one number from another.
+
+#### [`/`](jadeite-full-reference.md#/)
+
+Divide the first number by the second. When the first argument is an integer the result is truncated to an integer value. When the first argument is a fixed-decimal the result is truncated to the same precision as the first argument.
 
 #### [`abs`](jadeite-full-reference.md#abs)
 
@@ -34,10 +42,6 @@ Return how many items are in a collection.
 
 Decrement a numeric value.
 
-#### [`/`](jadeite-full-reference.md#/)
-
-Divide the first number by the second. When the first argument is an integer the result is truncated to an integer value. When the first argument is a fixed-decimal the result is truncated to the same precision as the first argument.
-
 #### [`expt`](jadeite-full-reference.md#expt)
 
 Compute the numeric result of raising the first argument to the power given by the second argument. The exponent argument cannot be negative.
@@ -45,10 +49,6 @@ Compute the numeric result of raising the first argument to the power given by t
 #### [`inc`](jadeite-full-reference.md#inc)
 
 Increment a numeric value.
-
-#### [`%`](jadeite-full-reference.md#%)
-
-Computes the mathematical modulus of two numbers. Use care if one of the arguments is negative.
 
 #### [`rescale`](jadeite-full-reference.md#rescale)
 

@@ -1891,18 +1891,22 @@
         tag "\n\n" doc "\n\n"
         ["![" (pr-str tag) "](./halite-bnf-diagrams/"
          (url-encode tag) (when (= :jadeite lang) "-j") ".svg)\n\n"]
-        (when-let [op-names (tag-map (keyword tag))]
-          [(for [op-name (sort op-names)]
-             (let [op (op-maps op-name)
-                   op-name (if (= :halite lang)
-                             op-name
-                             (translate-op-name-to-jadeite op-name))]
-               (str "#### [`" op-name "`](" (if (= :halite lang)
-                                              "halite-full-reference.md"
-                                              "jadeite-full-reference.md")
-                    "#" (safe-op-anchor op-name) ")" "\n\n"
-                    (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op)))
-                    "\n\n")))])
+        [(when-let [op-names (tag-map (keyword tag))]
+           (->> op-names
+                (map (fn [op-name]
+                       (let [op (op-maps op-name)
+                             op-name (if (= :halite lang)
+                                       op-name
+                                       (translate-op-name-to-jadeite op-name))]
+                         {:op-name op-name
+                          :md (str "#### [`" op-name "`](" (if (= :halite lang)
+                                                             "halite-full-reference.md"
+                                                             "jadeite-full-reference.md")
+                                   "#" (safe-op-anchor op-name) ")" "\n\n"
+                                   (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op)))
+                                   "\n\n")})))
+                (sort-by :op-name)
+                (map :md)))]
         "---\n"]
        flatten (apply str)))
 

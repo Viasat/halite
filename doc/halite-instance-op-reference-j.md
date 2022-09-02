@@ -10,10 +10,6 @@ Operations that operate on spec instances.
 
 !["instance-op"](./halite-bnf-diagrams/instance-op-j.svg)
 
-#### [`equalTo`](jadeite-full-reference.md#equalTo)
-
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
-
 #### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)
 
 Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
@@ -21,6 +17,10 @@ Extract the given item from the first argument. If the first argument is an inst
 #### [`ACCESSOR-CHAIN`](jadeite-full-reference.md#ACCESSOR-CHAIN)
 
 A path of element accessors can be created by chaining together element access forms in sequence.
+
+#### [`equalTo`](jadeite-full-reference.md#equalTo)
+
+Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`notEqualTo`](jadeite-full-reference.md#notEqualTo)
 
