@@ -65,12 +65,16 @@ a.b
 * [`h-err/invalid-symbol-char`](jadeite-err-id-reference.md#h-err/invalid-symbol-char)
 * [`h-err/invalid-symbol-length`](jadeite-err-id-reference.md#h-err/invalid-symbol-length)
 
+Tags: [`instance-field-op`](halite-instance-field-op-reference-j.md) [`instance-op`](halite-instance-op-reference-j.md) [`instance-out`](halite-instance-out-reference-j.md) [`spec-id-op`](halite-spec-id-op-reference-j.md)
+
 ---
 ### <a name="boolean"></a>boolean
 
 
 
 !["true | false"](./halite-bnf-diagrams/basic-syntax/boolean-j.svg)
+
+Tags: [`boolean-op`](halite-boolean-op-reference-j.md) [`boolean-out`](halite-boolean-out-reference-j.md)
 
 ---
 ### <a name="string"></a>string
@@ -142,6 +146,8 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 
 * [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
+Tags: [`string-op`](halite-string-op-reference-j.md)
+
 ---
 ### <a name="integer"></a>integer
 
@@ -187,6 +193,8 @@ Signed numeric integer values with no decimal places. Alternative integer repres
 
 </td></tr></table>
 
+Tags: [`integer-op`](halite-integer-op-reference-j.md) [`integer-out`](halite-integer-out-reference-j.md)
+
 ---
 ### <a name="fixed-decimal"></a>fixed-decimal
 
@@ -220,6 +228,8 @@ Signed numeric values with decimal places.
 
 </td></tr></table>
 
+Tags: [`fixed-decimal-op`](halite-fixed-decimal-op-reference-j.md) [`fixed-decimal-out`](halite-fixed-decimal-out-reference-j.md)
+
 ---
 ### <a name="instance"></a>instance
 
@@ -249,6 +259,8 @@ The contents of the instance are specified in pair-wise fashion with alternating
 * [`h-err/not-boolean-constraint`](jadeite-err-id-reference.md#h-err/not-boolean-constraint)
 * [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
+Tags: [`instance-field-op`](halite-instance-field-op-reference-j.md) [`instance-op`](halite-instance-op-reference-j.md) [`instance-out`](halite-instance-out-reference-j.md)
+
 ---
 ### <a name="vector"></a>vector
 
@@ -274,6 +286,8 @@ A collection of values in a prescribed sequence.
 
 * [`h-err/literal-must-evaluate-to-value`](jadeite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
+
+Tags: [`vector-op`](halite-vector-op-reference-j.md) [`vector-out`](halite-vector-out-reference-j.md)
 
 ---
 ### <a name="set"></a>set
@@ -302,6 +316,8 @@ The members of sets are not directly accessible. If it is necessary to access th
 
 * [`h-err/literal-must-evaluate-to-value`](jadeite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
+
+Tags: [`set-op`](halite-set-op-reference-j.md) [`set-out`](halite-set-out-reference-j.md)
 
 ---
 ### <a name="value"></a>value

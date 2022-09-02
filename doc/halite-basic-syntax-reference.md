@@ -93,12 +93,16 @@ Keywords are not values. There are no expressions that produce keywords. Anywher
 * [`h-err/invalid-keyword-char`](halite-err-id-reference.md#h-err/invalid-keyword-char)
 * [`h-err/invalid-keyword-length`](halite-err-id-reference.md#h-err/invalid-keyword-length)
 
+Tags: [`instance-field-op`](halite-instance-field-op-reference.md) [`instance-op`](halite-instance-op-reference.md) [`instance-out`](halite-instance-out-reference.md) [`spec-id-op`](halite-spec-id-op-reference.md)
+
 ---
 ### <a name="boolean"></a>boolean
 
 
 
 !["true | false"](./halite-bnf-diagrams/basic-syntax/boolean.svg)
+
+Tags: [`boolean-op`](halite-boolean-op-reference.md) [`boolean-out`](halite-boolean-out-reference.md)
 
 ---
 ### <a name="string"></a>string
@@ -170,6 +174,8 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 
 * [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
+Tags: [`string-op`](halite-string-op-reference.md)
+
 ---
 ### <a name="integer"></a>integer
 
@@ -215,6 +221,8 @@ Signed numeric integer values with no decimal places. Alternative integer repres
 
 </td></tr></table>
 
+Tags: [`integer-op`](halite-integer-op-reference.md) [`integer-out`](halite-integer-out-reference.md)
+
 ---
 ### <a name="fixed-decimal"></a>fixed-decimal
 
@@ -248,6 +256,8 @@ Signed numeric values with decimal places.
 
 </td></tr></table>
 
+Tags: [`fixed-decimal-op`](halite-fixed-decimal-op-reference.md) [`fixed-decimal-out`](halite-fixed-decimal-out-reference.md)
+
 ---
 ### <a name="instance"></a>instance
 
@@ -277,6 +287,8 @@ The contents of the instance are specified in pair-wise fashion with alternating
 * [`h-err/not-boolean-constraint`](halite-err-id-reference.md#h-err/not-boolean-constraint)
 * [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
+Tags: [`instance-field-op`](halite-instance-field-op-reference.md) [`instance-op`](halite-instance-op-reference.md) [`instance-out`](halite-instance-out-reference.md)
+
 ---
 ### <a name="vector"></a>vector
 
@@ -302,6 +314,8 @@ A collection of values in a prescribed sequence.
 
 * [`h-err/literal-must-evaluate-to-value`](halite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
+
+Tags: [`vector-op`](halite-vector-op-reference.md) [`vector-out`](halite-vector-out-reference.md)
 
 ---
 ### <a name="set"></a>set
@@ -330,6 +344,8 @@ The members of sets are not directly accessible. If it is necessary to access th
 
 * [`h-err/literal-must-evaluate-to-value`](halite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
+
+Tags: [`set-op`](halite-set-op-reference.md) [`set-out`](halite-set-out-reference.md)
 
 ---
 ### <a name="value"></a>value

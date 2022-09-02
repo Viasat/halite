@@ -96,14 +96,10 @@
 (def misc-notes-halite ["For halite, whitespace also includes the comma. The comma can be used as an optional delimiter in sequences to improve readability."])
 
 (def basic-bnf (expand-examples-vector
-                ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"
-                                         :tags #{:symbol-all :symbol-all-j}}
-                 'plus-minus-character {:bnf "'+' | '-'"
-                                        :tags #{:symbol-all :symbol-all-j}}
-                 'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"
-                                    :tags #{:symbol-all :symbol-all-j}}
-                 'bare-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"
-                               :tags #{:symbol-all :symbol-all-j}}
+                ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"}
+                 'plus-minus-character {:bnf "'+' | '-'"}
+                 'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"}
+                 'bare-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"}
                  'symbol {:bnf "bare-symbol [ '/' bare-symbol]"
                           :bnf-j "(bare-symbol [ '/' bare-symbol]) | ('’' bare-symbol [ '/' bare-symbol] '’')"
                           :doc "Symbols are identifiers that allow values and operations to be named. The following are reserved and cannot be used as user defined symbols: true, false, nil."
@@ -120,7 +116,8 @@
                                       :expr-str-j "a.b"}
                                      {:expr-str "a/b"
                                       :expr-str-j :auto}]
-                          :tags #{:symbol-all :symbol-all-j}}
+                          :tags #{}
+                          :tags-j #{'spec-id-op 'instance-field-op 'instance-op 'instance-out}}
                  'keyword {:bnf "':' symbol"
                            :bnf-j nil
                            :doc "Keywords are identifiers that are used for instance field names. The following are reserved and cannot be used as user defined keywords: :true, :false, :nil."
@@ -129,11 +126,13 @@
                                        :expr-str-j :auto}
                                       {:expr-str ":x/y"
                                        :expr-str-j :auto}]
-                           :tags #{:symbol-all}
+                           :tags #{'spec-id-op 'instance-field-op 'instance-op 'instance-out}
+                           :tags-j #{}
                            :throws ['h-err/invalid-keyword-char
                                     'h-err/invalid-keyword-length]}
 
-                 'boolean {:bnf "true | false"}
+                 'boolean {:bnf "true | false"
+                           :tags #{'boolean-op 'boolean-out}}
                  'string {:bnf " '\"' {char | '\\' ('\\' | '\"' | 't' | 'n' | ('u' hex-digit hex-digit hex-digit hex-digit))} '\"'"
                           :doc "Strings are sequences of characters. Strings can be multi-line. Quotation marks can be included if escaped with a \\. A backslash can be included with the character sequence: \\\\ . Strings can include special characters, e.g. \\t for a tab and \\n for a newline, as well as unicode via \\uNNNN. Unicode can also be directly entered in strings. Additional character representations may work but the only representations that are guaranteed to work are those documented here."
                           :examples [{:expr-str "\"\""
@@ -155,6 +154,7 @@
                                      {:expr-str "\"\\u263A\""
                                       :expr-str-j "\"\\u263A\""
                                       :result :auto}]
+                          :tags #{'string-op}
                           :throws ['h-err/size-exceeded]}
                  'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
                            :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
@@ -169,7 +169,8 @@
                                       {:expr-str "9223372036854775807"
                                        :expr-str-j :auto}
                                       {:expr-str "-9223372036854775808"
-                                       :expr-str-j :auto}]}
+                                       :expr-str-j :auto}]
+                           :tags #{'integer-out 'integer-op}}
 
                  'fixed-decimal {:bnf "'#' 'd' [whitespace] '\"' ['-'] ('0' | ('1-9' {'0-9'})) '.' '0-9' {'0-9'} '\"'"
                                  :doc "Signed numeric values with decimal places."
@@ -180,7 +181,8 @@
                                             {:expr-str "#d \"1.00\""
                                              :expr-str-j :auto}
                                             {:expr-str "#d \"0.00\""
-                                             :expr-str-j :auto}]}
+                                             :expr-str-j :auto}]
+                                 :tags #{'fixed-decimal-op 'fixed-decimal-out}}
 
                  'instance {:bnf "'{' ':$type' keyword:spec-id {keyword value} '}' "
                             :bnf-j "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"
@@ -199,7 +201,8 @@
                                      'h-err/field-name-not-in-spec
                                      'h-err/invalid-type-value
                                      'h-err/not-boolean-constraint ;; is this right?
-                                     ]}
+                                     ]
+                            :tags #{'instance-out 'instance-op 'instance-field-op}}
                  'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
                           :bnf-j "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
                           :doc "A collection of values in a prescribed sequence."
@@ -208,7 +211,8 @@
                                      {:expr-str "[1 2 3]"
                                       :expr-str-j "[1, 2, 3]"}]
                           :throws ['h-err/literal-must-evaluate-to-value
-                                   'h-err/size-exceeded]}
+                                   'h-err/size-exceeded]
+                          :tags #{'vector-op 'vector-out}}
                  'set {:bnf "'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"
                        :bnf-j "'#' '{' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} '}'"
                        :doc "A collection of values in an unordered set. Duplicates are not allowed."
@@ -218,7 +222,8 @@
                                   {:expr-str "#{1 2 3}"
                                    :expr-str-j "#{1, 2, 3}"}]
                        :throws ['h-err/literal-must-evaluate-to-value
-                                'h-err/size-exceeded]}
+                                'h-err/size-exceeded]
+                       :tags #{'set-op 'set-out}}
                  'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"
                          :doc "Expressions and many literals produce values."}
                  'any {:bnf "value | unset"
@@ -1579,16 +1584,16 @@
                                    (str "RULE = " "(" bnf-j ")" ";"))))))
        dorun))
 
-(defn produce-basic-bnf-diagrams-for-tag [basic-bnf tag]
-  (let [filtered-partitioned-bnf (->> (partition 2 basic-bnf)
-                                      (filter (fn [[k v]]
-                                                (let [{:keys [tags]} v]
-                                                  (when tags
-                                                    (tags tag))))))]
-    (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (name tag) ".svg")
-                     (rule-from-partitioned-bnf filtered-partitioned-bnf :bnf))
-    (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (str (name tag) "-j" ".svg"))
-                     (rule-from-partitioned-bnf filtered-partitioned-bnf (fn [bnf-map] (get bnf-map :bnf-j (:bnf bnf-map)))))))
+#_(defn produce-basic-bnf-diagrams-for-tag [basic-bnf tag]
+    (let [filtered-partitioned-bnf (->> (partition 2 basic-bnf)
+                                        (filter (fn [[k v]]
+                                                  (let [{:keys [tags]} v]
+                                                    (when tags
+                                                      (tags tag))))))]
+      (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (name tag) ".svg")
+                       (rule-from-partitioned-bnf filtered-partitioned-bnf :bnf))
+      (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (str (name tag) "-j" ".svg"))
+                       (rule-from-partitioned-bnf filtered-partitioned-bnf (fn [bnf-map] (get bnf-map :bnf-j (:bnf bnf-map)))))))
 
 (defn safe-op-name [s]
   (get {'+ 'plus
@@ -1825,6 +1830,19 @@
                         "jadeite-err-id-reference.md")
                       "#" (safe-op-anchor msg) ")" "\n"))
                "\n"])
+            (when-let [tags (let [t (if (= :halite lang)
+                                      (:tags op)
+                                      (or (:tags-j op)
+                                          (:tags op)))]
+                              (when (seq t)
+                                t))]
+              ["Tags:"
+               (for [a (sort tags)]
+                 (let [a (name a)]
+                   [" [`" a "`]("
+                    (tag-md-filename lang a)
+                    ")"]))
+               "\n\n"])
             "---\n"]
            flatten (apply str)))))
 
@@ -1987,9 +2005,6 @@
 (comment
   (do
     (produce-basic-bnf-diagrams "basic-all.svg" "basic-all-j.svg" basic-bnf)
-    (->> [:symbol-all]
-         (map (partial produce-basic-bnf-diagrams-for-tag basic-bnf))
-         dorun)
 
     (produce-bnf-diagrams op-maps op-maps-j "halite.svg" "jadeite.svg")
 
