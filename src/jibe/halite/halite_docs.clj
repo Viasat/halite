@@ -1711,6 +1711,9 @@
                        lang))
          (when result result))))
 
+(defn tag-md-filename [lang tag]
+  (str "halite-" tag "-reference" (when (= :jadeite lang) "-j") ".md"))
+
 (defn full-md [lang op-name op]
   (->> ["### "
         "<a name=\"" (safe-op-anchor op-name) "\"></a>"
@@ -1751,11 +1754,9 @@
           ["Tags:"
            (for [a (sort tags)]
              (let [a (name a)]
-               [" [`" a "`](halite-bnf-diagrams/"
-                (if (= :halite lang)
-                  a
-                  (str a "-j"))
-                ".svg" ")"]))
+               [" [`" a "`]("
+                (tag-md-filename lang a)
+                ")"]))
            "\n\n"])
         "---\n"]
        flatten (apply str)))
@@ -1888,6 +1889,21 @@
        (apply str generated-msg "# Jadeite err-id reference\n\n")
        (spit "doc/jadeite-err-id-reference.md")))
 
+(defn tag-md [lang tag doc]
+  (->> ["### "
+        "<a name=\"" (safe-op-anchor tag) "\"></a>"
+        tag "\n\n" doc "\n\n"
+        ["![" (pr-str tag) "](./halite-bnf-diagrams/"
+         (url-encode tag) (when (= :jadeite lang) "-j") ".svg)\n\n"]
+        "---\n"]
+       flatten (apply str)))
+
+(defn produce-tag-md [lang [tag doc]]
+  (let [tag (name tag)]
+    (->> (tag-md lang tag doc)
+         (str generated-msg "# " (if (= :halite lang) "Halite " "Jadeite ")  tag " reference\n\n")
+         (spit (str "doc/" (tag-md-filename lang tag))))))
+
 ;;
 
 (defn query-ops
@@ -1903,30 +1919,50 @@
    (str (name tag) ".svg")
    (str (name tag) "-j" ".svg")))
 
+(def tags-map {:boolean-op "Operations that operate on boolean values."
+               :boolean-out "Operations that produce boolean output values."
+
+               :string-op "Operations that operate on string values."
+               :integer-op "Operations that operate on integer values."
+               :integer-out "Operations that produce integer output values."
+
+               :fixed-decimal-op "Operations that operate on fixed-decimal values."
+               :fixed-decimal-out "Operations that produce fixed-decimal output values."
+
+               :set-op "Operations that operate on sets."
+               :set-out "Operations that produce sets."
+               :vector-op "Operations that operate on vectors."
+               :vector-out "Operations that produce vectors."
+
+               :instance-op "Operations that operate on spec instances."
+               :instance-out "Operations that produce spec instances."
+               :instance-field-op "Operations that operate on fields of spec-instances."
+               :spec-id-op "Operations that operate on spec identifiers."
+
+               :optional-op "Operations that operate on optional fields and optional values in general."
+               :optional-out "Operations that produce optional values."
+               :nothing-out "Operations that produce 'nothing'."
+
+               :control-flow "Operators that control the flow of execution of the code."
+               :special-form "Operators that do not evaluate their arguments in the 'normal' way."})
+
 (comment
   (do
     (produce-basic-bnf-diagrams "basic-all.svg" "basic-all-j.svg" basic-bnf)
-    (produce-basic-bnf-diagrams-for-tag basic-bnf :symbol-all)
+    (->> [:symbol-all]
+         (map (partial produce-basic-bnf-diagrams-for-tag basic-bnf))
+         dorun)
 
     (produce-bnf-diagrams op-maps op-maps-j "halite.svg" "jadeite.svg")
 
-    (->> [:boolean-op :boolean-out
-          :string-op
-          :integer-op :integer-out
-          :fixed-decimal-op :fixed-decimal-out
-
-          :set-op :set-out
-          :vector-op :vector-out
-
-          :instance-op :instance-out :instance-field-op
-          :spec-id-op
-
-          :optional-op :optional-out
-          :nothing-out
-
-          :control-flow
-          :special-form]
+    (->> (keys tags-map)
          (map produce-bnf-diagram-for-tag)
+         dorun)
+    (->> tags-map
+         (map (partial produce-tag-md :halite))
+         dorun)
+    (->> tags-map
+         (map (partial produce-tag-md :jadeite))
          dorun)
 
     (produce-basic-md)
