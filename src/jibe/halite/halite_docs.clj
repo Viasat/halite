@@ -681,7 +681,7 @@
                  ["(vector integer)" "value"]]
           :sigs-j [["(instance '.' symbol:instance-field)" "any"]
                    ["(vector '[' integer ']')" "value"]]
-          :tags #{:vector-op :instance-op :optional-out :instance-field-op}
+          :tags #{:vector-op :instance-op :optional-out :instance-field-op :special-form}
           :doc "Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based."
           :comment "The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification."
           :throws ['h-err/index-out-of-bounds
@@ -714,7 +714,7 @@
                      "the non-terminal field names in the lookup path must be the names of mandatory fields"]
              :sigs-j [["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }"
                        "any"]]
-             :tags #{:vector-op :instance-op :optional-out :instance-field-op}
+             :tags #{:vector-op :instance-op :optional-out :instance-field-op :special-form}
              :doc "Syntactic sugar for performing the equivalent of a chained series of 'get' operations. The second argument is a vector that represents the logical path to be navigated through the first argument."
              :doc-j "A path of element accessors can be created by chaining together element access forms in sequence."
              :doc-2 "The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'."

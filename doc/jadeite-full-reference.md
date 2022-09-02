@@ -588,7 +588,7 @@ The $type value of an instance is not considered a field that can be extracted w
 
 See also: [`ACCESSOR-CHAIN`](#ACCESSOR-CHAIN)
 
-Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
+Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
 
 ---
 ### <a name="ACCESSOR-CHAIN"></a>ACCESSOR-CHAIN
@@ -640,7 +640,7 @@ The first path element in the path is looked up in the initial target. If there 
 
 See also: [`ACCESSOR`](#ACCESSOR)
 
-Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
+Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op-j.svg) [`instance-op`](halite-bnf-diagrams/instance-op-j.svg) [`optional-out`](halite-bnf-diagrams/optional-out-j.svg) [`special-form`](halite-bnf-diagrams/special-form-j.svg) [`vector-op`](halite-bnf-diagrams/vector-op-j.svg)
 
 ---
 ### <a name="abs"></a>abs

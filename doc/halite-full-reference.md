@@ -1186,7 +1186,7 @@ The $type value of an instance is not considered a field that can be extracted w
 
 See also: [`get-in`](#get-in)
 
-Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op.svg) [`instance-op`](halite-bnf-diagrams/instance-op.svg) [`optional-out`](halite-bnf-diagrams/optional-out.svg) [`vector-op`](halite-bnf-diagrams/vector-op.svg)
+Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op.svg) [`instance-op`](halite-bnf-diagrams/instance-op.svg) [`optional-out`](halite-bnf-diagrams/optional-out.svg) [`special-form`](halite-bnf-diagrams/special-form.svg) [`vector-op`](halite-bnf-diagrams/vector-op.svg)
 
 ---
 ### <a name="get-in"></a>get-in
@@ -1238,7 +1238,7 @@ The first path element in the path is looked up in the initial target. If there 
 
 See also: [`get`](#get)
 
-Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op.svg) [`instance-op`](halite-bnf-diagrams/instance-op.svg) [`optional-out`](halite-bnf-diagrams/optional-out.svg) [`vector-op`](halite-bnf-diagrams/vector-op.svg)
+Tags: [`instance-field-op`](halite-bnf-diagrams/instance-field-op.svg) [`instance-op`](halite-bnf-diagrams/instance-op.svg) [`optional-out`](halite-bnf-diagrams/optional-out.svg) [`special-form`](halite-bnf-diagrams/special-form.svg) [`vector-op`](halite-bnf-diagrams/vector-op.svg)
 
 ---
 ### <a name="if"></a>if
