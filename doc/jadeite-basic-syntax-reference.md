@@ -10,16 +10,12 @@
 
 !["'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"](./halite-bnf-diagrams/basic-syntax/non-numeric-character-j.svg)
 
-Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all-j.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j-j.svg)
-
 ---
 ### <a name="plus-minus-character"></a>plus-minus-character
 
 
 
 !["'+' | '-'"](./halite-bnf-diagrams/basic-syntax/plus-minus-character-j.svg)
-
-Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all-j.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j-j.svg)
 
 ---
 ### <a name="symbol-character"></a>symbol-character
@@ -28,16 +24,12 @@ Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all-j.svg) [`symbol-all-j`](hali
 
 !["non-numeric-character | plus-minus-character | '0-9'"](./halite-bnf-diagrams/basic-syntax/symbol-character-j.svg)
 
-Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all-j.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j-j.svg)
-
 ---
 ### <a name="bare-symbol"></a>bare-symbol
 
 
 
 !["plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"](./halite-bnf-diagrams/basic-syntax/bare-symbol-j.svg)
-
-Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all-j.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j-j.svg)
 
 ---
 ### <a name="symbol"></a>symbol
@@ -72,8 +64,6 @@ a.b
 
 * [`h-err/invalid-symbol-char`](jadeite-err-id-reference.md#h-err/invalid-symbol-char)
 * [`h-err/invalid-symbol-length`](jadeite-err-id-reference.md#h-err/invalid-symbol-length)
-
-Tags: [`symbol-all`](halite-bnf-diagrams/symbol-all-j.svg) [`symbol-all-j`](halite-bnf-diagrams/symbol-all-j-j.svg)
 
 ---
 ### <a name="boolean"></a>boolean
