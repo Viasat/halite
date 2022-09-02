@@ -1435,7 +1435,7 @@
                          (merge-with merge
                                      @format-errors/error-atom
                                      {'h-err/abs-failure {:doc "The way the number space is divided the value of zero comes out of the positive number space. This means there is one more negative number than there are positive numbers. So there is one negative number whose absolute value cannot be represented. That negative number is the most negative value."}
-                                      'h-err/accumulator-target-must-be-bare-symbol {:doc "In 'reduce', it is necesary to define a symbol which is used to hold the accumulated value of the reduction. This symbol must not include a namespace."
+                                      'h-err/accumulator-target-must-be-bare-symbol {:doc "In 'reduce', it is necesary to define a symbol to reference the accumulated value of the reduction. This symbol must not include a namespace."
                                                                                      :see-also ['h-err/element-binding-target-must-be-bare-symbol]}
                                       'h-err/arg-type-mismatch {:doc "A relatively generic exception that indicates the operator being invoked cannot operate on the type of value provided."}
                                       'h-err/not-both-vectors {:doc "When the first argument to 'concat' is a vector, the second must also be a vector. A vector can be concated onto a set, but a set cannot be concated onto a vector."}
@@ -1488,12 +1488,12 @@
                                       'h-err/not-boolean-constraint {:doc "All constraint expressions on specs must produce boolean values. The constraints are predicates which evaluate to true or false to indicate whether the constraint has been met by the instance state."}
                                       'h-err/not-sortable-body {:doc "When using 'sort-by', the expression used for sorting must produce a value that can be sorted."}
                                       'h-err/overflow {:doc "The mathematical operation resulted in a number that is too large to fit in the bytes alloted for the numeric type."}
-                                      'h-err/reduce-not-vector {:doc "The 'reduce' can only be applied to vectors. Specifically, sets cannot be reduced."}
+                                      'h-err/reduce-not-vector {:doc "The 'reduce' operation can only be applied to vectors. Specifically, sets cannot be reduced."}
                                       'h-err/refinement-error {:doc "An unanticipated error condition was encountered while computing the refinement of an instance."}
                                       'h-err/resource-spec-not-found {:doc "The spec identifier provided did not correspond to a known spec."}
                                       'h-err/size-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. limits on the lengths of strings. One of these limits was violated. See the exception data for more details."}
                                       'h-err/sort-value-collision {:doc "When sorting a collection with 'sort-by', the sort expression must produce a unique value for each element in the collection."}
-                                      'h-err/spec-threw {:doc "An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers this instance to be invalid. See the error string in the exception detail for details."}
+                                      'h-err/spec-threw {:doc "An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers it not possible to proceed in the encountered situation. See the error string in the exception detail for details."}
                                       'h-err/symbol-undefined {:doc "An unbound symbol was referenced in an expression at evaluation time."}
                                       'h-err/symbols-not-bound {:doc "Unbound symbols are referenced in an expression at type-check time."}
                                       'h-err/syntax-error {:doc "An object appeared in an expression that is not one of the expected values for the language."}
@@ -1504,13 +1504,13 @@
                                       'h-err/wrong-arg-count-min {:doc "The operation expected at least a certain number of arguments. This minimum was not met."}
                                       'l-err/binding-expression-not-optional {:doc "The expression being tested in an 'if-value-let' statement must optionally produce a value."}
                                       'l-err/binding-target-invalid-symbol {:doc "The symbols to be bound are not to start with a '$'."}
-                                      'l-err/cannot-bind-nothing {:doc "It is not permitted to rebind the symbol used to represent 'unset'."}
+                                      'l-err/cannot-bind-nothing {:doc "It is not permitted to bind a symbol to 'unset'. Instead of defining a symbol for this, consider using '$no-value'."}
                                       'l-err/cannot-bind-unset {:doc "It is not permitted to rebind the symbol used to represent 'unset'."}
                                       'l-err/disallowed-nothing {:doc "An expression was encountered that does not have a value, but it was used in a place where a value is required. Examples of expressions that do not have values are an invocation of 'error' and the binding of a symbol to an element in an empty collection."}
                                       'l-err/first-argument-not-optional {:doc "The value being tested in an 'if-value' statement must be optional."}
                                       'l-err/get-in-path-empty {:doc "A path must be provided to the 'get-in' operation."}
                                       'l-err/let-bindings-empty {:doc "The bindings form of the 'let' cannot be empty. If there is nothing to bind, then the 'let' can be omitted."}
-                                      'l-err/result-always-known {:doc "The result of the equality check is always the same and can be known in advance, so it is not needed."}
+                                      'l-err/result-always-known {:doc "The result of the equality check is always the same and can be known in advance, so a check is not needed."}
                                       'l-err/disallowed-unset-variable {:doc "It is not allowed to bind 'unset' to symbols other than the built-in '$no-value'."}})))))
 
 (defn translate-op-name-to-jadeite [op-name]
