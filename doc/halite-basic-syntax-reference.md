@@ -93,7 +93,9 @@ Keywords are not values. There are no expressions that produce keywords. Anywher
 * [`h-err/invalid-keyword-char`](halite-err-id-reference.md#h-err/invalid-keyword-char)
 * [`h-err/invalid-keyword-length`](halite-err-id-reference.md#h-err/invalid-keyword-length)
 
-Tags: [Instance field operations](halite-instance-field-op-reference.md),  [Instance operations](halite-instance-op-reference.md),  [Produce instances](halite-instance-out-reference.md),  [Spec-id operations](halite-spec-id-op-reference.md)
+#### Tags:
+
+ [Instance field operations](halite-instance-field-op-reference.md),  [Instance operations](halite-instance-op-reference.md),  [Produce instances](halite-instance-out-reference.md),  [Spec-id operations](halite-spec-id-op-reference.md)
 
 ---
 ### <a name="boolean"></a>boolean
@@ -102,7 +104,9 @@ Tags: [Instance field operations](halite-instance-field-op-reference.md),  [Inst
 
 !["true | false"](./halite-bnf-diagrams/basic-syntax/boolean.svg)
 
-Tags: [Boolean operations](halite-boolean-op-reference.md),  [Produce booleans](halite-boolean-out-reference.md)
+#### Tags:
+
+ [Boolean operations](halite-boolean-op-reference.md),  [Produce booleans](halite-boolean-out-reference.md)
 
 ---
 ### <a name="string"></a>string
@@ -174,7 +178,9 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 
 * [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
-Tags: [String operations](halite-string-op-reference.md)
+#### Tags:
+
+ [String operations](halite-string-op-reference.md)
 
 ---
 ### <a name="integer"></a>integer
@@ -221,7 +227,9 @@ Signed numeric integer values with no decimal places. Alternative integer repres
 
 </td></tr></table>
 
-Tags: [Integer operations](halite-integer-op-reference.md),  [Produce integer](halite-integer-out-reference.md)
+#### Tags:
+
+ [Integer operations](halite-integer-op-reference.md),  [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="fixed-decimal"></a>fixed-decimal
@@ -256,7 +264,9 @@ Signed numeric values with decimal places.
 
 </td></tr></table>
 
-Tags: [Fixed-decimal operations](halite-fixed-decimal-op-reference.md),  [Produce fixed-decimals](halite-fixed-decimal-out-reference.md)
+#### Tags:
+
+ [Fixed-decimal operations](halite-fixed-decimal-op-reference.md),  [Produce fixed-decimals](halite-fixed-decimal-out-reference.md)
 
 ---
 ### <a name="instance"></a>instance
@@ -287,7 +297,9 @@ The contents of the instance are specified in pair-wise fashion with alternating
 * [`h-err/not-boolean-constraint`](halite-err-id-reference.md#h-err/not-boolean-constraint)
 * [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
-Tags: [Instance field operations](halite-instance-field-op-reference.md),  [Instance operations](halite-instance-op-reference.md),  [Produce instances](halite-instance-out-reference.md)
+#### Tags:
+
+ [Instance field operations](halite-instance-field-op-reference.md),  [Instance operations](halite-instance-op-reference.md),  [Produce instances](halite-instance-out-reference.md)
 
 ---
 ### <a name="vector"></a>vector
@@ -315,7 +327,9 @@ A collection of values in a prescribed sequence.
 * [`h-err/literal-must-evaluate-to-value`](halite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
-Tags: [Vector operations](halite-vector-op-reference.md),  [Produce vectors](halite-vector-out-reference.md)
+#### Tags:
+
+ [Vector operations](halite-vector-op-reference.md),  [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="set"></a>set
@@ -345,7 +359,9 @@ The members of sets are not directly accessible. If it is necessary to access th
 * [`h-err/literal-must-evaluate-to-value`](halite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
-Tags: [Set operations](halite-set-op-reference.md),  [Produce sets](halite-set-out-reference.md)
+#### Tags:
+
+ [Set operations](halite-set-op-reference.md),  [Produce sets](halite-set-out-reference.md)
 
 ---
 ### <a name="value"></a>value

@@ -4,7 +4,7 @@
 
 # Jadeite reference: Produce sets
 
-### <a name="set-out"></a>Operations that produce sets.
+Operations that produce sets.
 
 For basic syntax of this data type see: [`set`](jadeite-basic-syntax-reference.md#set)
 

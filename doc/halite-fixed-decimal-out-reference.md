@@ -4,7 +4,7 @@
 
 # Halite reference: Produce fixed-decimals
 
-### <a name="fixed-decimal-out"></a>Operations that produce fixed-decimal output values.
+Operations that produce fixed-decimal output values.
 
 For basic syntax of this data type see: [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal)
 

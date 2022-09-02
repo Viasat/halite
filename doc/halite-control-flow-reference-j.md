@@ -4,7 +4,7 @@
 
 # Jadeite reference: Control flow
 
-### <a name="control-flow"></a>Operators that control the flow of execution of the code.
+Operators that control the flow of execution of the code.
 
 !["control-flow"](./halite-bnf-diagrams/control-flow-j.svg)
 

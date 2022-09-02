@@ -4,7 +4,7 @@
 
 # Halite reference: String operations
 
-### <a name="string-op"></a>Operations that operate on string values.
+Operations that operate on string values.
 
 For basic syntax of this data type see: [`string`](halite-basic-syntax-reference.md#string)
 

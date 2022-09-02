@@ -4,7 +4,7 @@
 
 # Halite reference: Produce vectors
 
-### <a name="vector-out"></a>Operations that produce vectors.
+Operations that produce vectors.
 
 For basic syntax of this data type see: [`vector`](halite-basic-syntax-reference.md#vector)
 

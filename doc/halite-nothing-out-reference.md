@@ -4,7 +4,7 @@
 
 # Halite reference: Produce nothing
 
-### <a name="nothing-out"></a>Operations that produce 'nothing'.
+Operations that produce 'nothing'.
 
 !["nothing-out"](./halite-bnf-diagrams/nothing-out.svg)
 

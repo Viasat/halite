@@ -4,7 +4,7 @@
 
 # Halite reference: Produce integer
 
-### <a name="integer-out"></a>Operations that produce integer output values.
+Operations that produce integer output values.
 
 For basic syntax of this data type see: [`integer`](halite-basic-syntax-reference.md#integer)
 

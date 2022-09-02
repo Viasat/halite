@@ -4,7 +4,7 @@
 
 # Halite reference: Special forms
 
-### <a name="special-form"></a>Operators that do not evaluate their arguments in the 'normal' way.
+Operators that do not evaluate their arguments in the 'normal' way.
 
 !["special-form"](./halite-bnf-diagrams/special-form.svg)
 

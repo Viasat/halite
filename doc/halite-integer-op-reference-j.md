@@ -4,7 +4,7 @@
 
 # Jadeite reference: Integer operations
 
-### <a name="integer-op"></a>Operations that operate on integer values.
+Operations that operate on integer values.
 
 For basic syntax of this data type see: [`integer`](jadeite-basic-syntax-reference.md#integer)
 

@@ -1762,7 +1762,7 @@
              [" [`" a "`](#" (safe-op-anchor a) ")"])
            "\n\n"])
         (when-let [tags (:tags op)]
-          ["Tags:"
+          ["#### Tags:" "\n\n"
            (string/join ", "
                         (for [a (sort tags)]
                           (let [a (name a)]
@@ -1837,7 +1837,7 @@
                                           (:tags op)))]
                               (when (seq t)
                                 t))]
-              ["Tags:"
+              ["#### Tags:" "\n\n"
                (string/join ", "
                             (for [a (sort tags)]
                               (let [a (name a)]
@@ -1906,9 +1906,7 @@
        (spit "doc/jadeite-err-id-reference.md")))
 
 (defn tag-md [lang tag-name tag]
-  (->> ["### "
-        "<a name=\"" (safe-op-anchor tag-name) "\"></a>"
-        (:doc tag) "\n\n"
+  (->> [(:doc tag) "\n\n"
         (when-let [basic-ref (if (= :halite lang)
                                (:basic-ref tag)
                                (or (:basic-ref-j tag)

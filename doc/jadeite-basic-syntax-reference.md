@@ -65,7 +65,9 @@ a.b
 * [`h-err/invalid-symbol-char`](jadeite-err-id-reference.md#h-err/invalid-symbol-char)
 * [`h-err/invalid-symbol-length`](jadeite-err-id-reference.md#h-err/invalid-symbol-length)
 
-Tags: [Instance field operations](halite-instance-field-op-reference-j.md),  [Instance operations](halite-instance-op-reference-j.md),  [Produce instances](halite-instance-out-reference-j.md),  [Spec-id operations](halite-spec-id-op-reference-j.md)
+#### Tags:
+
+ [Instance field operations](halite-instance-field-op-reference-j.md),  [Instance operations](halite-instance-op-reference-j.md),  [Produce instances](halite-instance-out-reference-j.md),  [Spec-id operations](halite-spec-id-op-reference-j.md)
 
 ---
 ### <a name="boolean"></a>boolean
@@ -74,7 +76,9 @@ Tags: [Instance field operations](halite-instance-field-op-reference-j.md),  [In
 
 !["true | false"](./halite-bnf-diagrams/basic-syntax/boolean-j.svg)
 
-Tags: [Boolean operations](halite-boolean-op-reference-j.md),  [Produce booleans](halite-boolean-out-reference-j.md)
+#### Tags:
+
+ [Boolean operations](halite-boolean-op-reference-j.md),  [Produce booleans](halite-boolean-out-reference-j.md)
 
 ---
 ### <a name="string"></a>string
@@ -146,7 +150,9 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 
 * [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
-Tags: [String operations](halite-string-op-reference-j.md)
+#### Tags:
+
+ [String operations](halite-string-op-reference-j.md)
 
 ---
 ### <a name="integer"></a>integer
@@ -193,7 +199,9 @@ Signed numeric integer values with no decimal places. Alternative integer repres
 
 </td></tr></table>
 
-Tags: [Integer operations](halite-integer-op-reference-j.md),  [Produce integer](halite-integer-out-reference-j.md)
+#### Tags:
+
+ [Integer operations](halite-integer-op-reference-j.md),  [Produce integer](halite-integer-out-reference-j.md)
 
 ---
 ### <a name="fixed-decimal"></a>fixed-decimal
@@ -228,7 +236,9 @@ Signed numeric values with decimal places.
 
 </td></tr></table>
 
-Tags: [Fixed-decimal operations](halite-fixed-decimal-op-reference-j.md),  [Produce fixed-decimals](halite-fixed-decimal-out-reference-j.md)
+#### Tags:
+
+ [Fixed-decimal operations](halite-fixed-decimal-op-reference-j.md),  [Produce fixed-decimals](halite-fixed-decimal-out-reference-j.md)
 
 ---
 ### <a name="instance"></a>instance
@@ -259,7 +269,9 @@ The contents of the instance are specified in pair-wise fashion with alternating
 * [`h-err/not-boolean-constraint`](jadeite-err-id-reference.md#h-err/not-boolean-constraint)
 * [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
-Tags: [Instance field operations](halite-instance-field-op-reference-j.md),  [Instance operations](halite-instance-op-reference-j.md),  [Produce instances](halite-instance-out-reference-j.md)
+#### Tags:
+
+ [Instance field operations](halite-instance-field-op-reference-j.md),  [Instance operations](halite-instance-op-reference-j.md),  [Produce instances](halite-instance-out-reference-j.md)
 
 ---
 ### <a name="vector"></a>vector
@@ -287,7 +299,9 @@ A collection of values in a prescribed sequence.
 * [`h-err/literal-must-evaluate-to-value`](jadeite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
-Tags: [Vector operations](halite-vector-op-reference-j.md),  [Produce vectors](halite-vector-out-reference-j.md)
+#### Tags:
+
+ [Vector operations](halite-vector-op-reference-j.md),  [Produce vectors](halite-vector-out-reference-j.md)
 
 ---
 ### <a name="set"></a>set
@@ -317,7 +331,9 @@ The members of sets are not directly accessible. If it is necessary to access th
 * [`h-err/literal-must-evaluate-to-value`](jadeite-err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
-Tags: [Set operations](halite-set-op-reference-j.md),  [Produce sets](halite-set-out-reference-j.md)
+#### Tags:
+
+ [Set operations](halite-set-op-reference-j.md),  [Produce sets](halite-set-out-reference-j.md)
 
 ---
 ### <a name="value"></a>value

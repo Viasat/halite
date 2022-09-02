@@ -4,7 +4,7 @@
 
 # Jadeite reference: Instance field operations
 
-### <a name="instance-field-op"></a>Operations that operate on fields of spec-instances.
+Operations that operate on fields of spec-instances.
 
 For basic syntax of this data type see: [`instance`](jadeite-basic-syntax-reference.md#instance)
 

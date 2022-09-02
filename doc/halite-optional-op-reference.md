@@ -4,7 +4,7 @@
 
 # Halite reference: Optional operations
 
-### <a name="optional-op"></a>Operations that operate on optional fields and optional values in general.
+Operations that operate on optional fields and optional values in general.
 
 !["optional-op"](./halite-bnf-diagrams/optional-op.svg)
 

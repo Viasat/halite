@@ -4,7 +4,7 @@
 
 # Jadeite reference: Produce instances
 
-### <a name="instance-out"></a>Operations that produce spec instances.
+Operations that produce spec instances.
 
 For basic syntax of this data type see: [`instance`](jadeite-basic-syntax-reference.md#instance)
 

@@ -4,7 +4,7 @@
 
 # Jadeite reference: Instance operations
 
-### <a name="instance-op"></a>Operations that operate on spec instances.
+Operations that operate on spec instances.
 
 For basic syntax of this data type see: [`instance`](jadeite-basic-syntax-reference.md#instance)
 

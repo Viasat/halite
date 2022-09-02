@@ -4,7 +4,7 @@
 
 # Jadeite reference: Spec-id operations
 
-### <a name="spec-id-op"></a>Operations that operate on spec identifiers.
+Operations that operate on spec identifiers.
 
 For basic syntax of this data type see: [`symbol`](jadeite-basic-syntax-reference.md#symbol)
 

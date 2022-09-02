@@ -4,7 +4,7 @@
 
 # Halite reference: Optionally produce values
 
-### <a name="optional-out"></a>Operations that produce optional values.
+Operations that produce optional values.
 
 !["optional-out"](./halite-bnf-diagrams/optional-out.svg)
 
