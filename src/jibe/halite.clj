@@ -400,7 +400,7 @@
                          [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
                          [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer)]
                         decimal-sigs-collections))
-     'range (mk-builtin (comp vec range)
+     'range (mk-builtin (comp (partial check-limit :vector-runtime-count) vec range)
                         [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer] (halite-types/vector-type :Integer))

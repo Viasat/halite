@@ -681,6 +681,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 #### Possible errors:
 
 * [`h-err/not-both-vectors`](halite-err-id-reference.md#h-err/not-both-vectors)
+* [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
 #### Tags:
 
@@ -730,6 +731,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 
 * [`h-err/argument-not-set-or-vector`](halite-err-id-reference.md#h-err/argument-not-set-or-vector)
 * [`h-err/cannot-conj-unset`](halite-err-id-reference.md#h-err/cannot-conj-unset)
+* [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
 #### Tags:
 
@@ -1830,6 +1832,10 @@ Produce a vector that contains integers in order starting at either the start va
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
 #### Tags:
 

@@ -342,7 +342,8 @@
         :doc "Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents."
         :throws ['l-err/result-always-known]
         :see-also ['not=]
-        :examples [{:expr-str "(= 2 2)"
+        :examples [;; TODO: include jadeite example of equalTo
+                   {:expr-str "(= 2 2)"
                     :expr-str-j :auto
                     :result :auto}
                    {:expr-str "(= #d \"2.2\" #d \"3.3\")"
@@ -504,7 +505,8 @@
                         {:expr-str "(concat [] [])"
                          :expr-str-j :auto
                          :result :auto}]
-             :throws ['h-err/not-both-vectors]}
+             :throws ['h-err/not-both-vectors
+                      'h-err/size-exceeded]}
     'conj {:sigs [["set value {value}" "set"]
                   ["vector value {value}" "vector"]]
            :sigs-j [["set '.' 'conj' '(' value {',' value} ')'" "set"]
@@ -522,7 +524,8 @@
                        :expr-str-j :auto
                        :result :auto}]
            :throws ['h-err/argument-not-set-or-vector
-                    'h-err/cannot-conj-unset]}
+                    'h-err/cannot-conj-unset
+                    'h-err/size-exceeded]}
     'contains? {:sigs [["set value" "boolean"]]
                 :sigs-j [["set '.' 'contains?' '(' value ')'" "boolean"]]
                 :tags #{:set-op :boolean-out}
@@ -931,7 +934,8 @@
            :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :instance-op :boolean-op :boolean-out}
            :doc "Produces a false value if all of the values are equal to each other. Otherwise produces a true value."
            :throws ['l-err/result-always-known]
-           :examples [{:expr-str "(not= 2 3)"
+           :examples [{;; TODO: include jadeite example of notEqualTo
+                       :expr-str "(not= 2 3)"
                        :expr-str-j :auto
                        :result :auto}
                       {:expr-str "(not= #d \"2.2\" #d \"2.2\")"
@@ -1002,6 +1006,7 @@
                        {:expr-str "(range 10 21 5)"
                         :expr-str-j :auto
                         :result :auto}]
+            :throws ['h-err/size-exceeded]
             :tags #{:vector-out}}
     'reduce {:sigs [["'[' symbol:accumulator value:accumulator-init ']' '[' symbol:element vector ']' any-expression" "any"]]
              :sigs-j [["'reduce' '(' symbol:accumulator '=' value:accumulator-init ';' symbol:element 'in' vector ')' any-expression" "any"]]
@@ -1390,7 +1395,7 @@
 
 (def jadeite-ommitted-ops #{'dec 'inc})
 
-(def jadeite-operator-map {'= 'equalTo
+(def jadeite-operator-map {'= 'equalTo ;; TODO: also include ==
                            'sort-by 'sortBy
                            'and '&&
                            'div '/
@@ -1402,7 +1407,7 @@
                            'if-value-let 'ifValueLet
                            'mod '%
                            'not '!
-                           'not= 'notEqualTo
+                           'not= 'notEqualTo ;; TODO: also include !=
                            'or '||
                            'refine-to 'refineTo
                            'refines-to? 'refinesTo?})
@@ -1725,6 +1730,69 @@
 (defn tag-md-filename [lang tag]
   (str "halite-" tag "-reference" (when (= :jadeite lang) "-j") ".md"))
 
+(def tag-def-map {:boolean-op {:label "Boolean operations"
+                               :doc "Operations that operate on boolean values."
+                               :basic-ref 'boolean}
+                  :boolean-out {:label "Produce booleans"
+                                :doc "Operations that produce boolean output values."
+                                :basic-ref 'boolean}
+
+                  :string-op {:label "String operations"
+                              :doc "Operations that operate on string values."
+                              :basic-ref 'string}
+                  :integer-op {:label "Integer operations"
+                               :doc "Operations that operate on integer values."
+                               :basic-ref 'integer}
+                  :integer-out {:label "Produce integer"
+                                :doc "Operations that produce integer output values."
+                                :basic-ref 'integer}
+
+                  :fixed-decimal-op {:label "Fixed-decimal operations"
+                                     :doc "Operations that operate on fixed-decimal values."
+                                     :basic-ref 'fixed-decimal}
+                  :fixed-decimal-out {:label "Produce fixed-decimals"
+                                      :doc "Operations that produce fixed-decimal output values."
+                                      :basic-ref 'fixed-decimal}
+
+                  :set-op {:label "Set operations"
+                           :doc "Operations that operate on sets."
+                           :basic-ref 'set}
+                  :set-out {:label "Produce sets"
+                            :doc "Operations that produce sets."
+                            :basic-ref 'set}
+                  :vector-op {:label "Vector operations"
+                              :doc "Operations that operate on vectors."
+                              :basic-ref 'vector}
+                  :vector-out {:label "Produce vectors"
+                               :doc "Operations that produce vectors."
+                               :basic-ref 'vector}
+
+                  :instance-op {:label "Instance operations"
+                                :doc "Operations that operate on spec instances."
+                                :basic-ref 'instance}
+                  :instance-out {:label "Produce instances"
+                                 :doc "Operations that produce spec instances."
+                                 :basic-ref 'instance}
+                  :instance-field-op {:label "Instance field operations"
+                                      :doc "Operations that operate on fields of spec-instances."
+                                      :basic-ref 'instance}
+                  :spec-id-op {:label "Spec-id operations"
+                               :doc "Operations that operate on spec identifiers."
+                               :basic-ref 'keyword
+                               :basic-ref-j 'symbol}
+
+                  :optional-op {:label "Optional operations"
+                                :doc "Operations that operate on optional fields and optional values in general."}
+                  :optional-out {:label "Optionally produce values"
+                                 :doc "Operations that produce optional values."}
+                  :nothing-out {:label "Produce nothing"
+                                :doc "Operations that produce 'nothing'."}
+
+                  :control-flow {:label "Control flow"
+                                 :doc "Operators that control the flow of execution of the code."}
+                  :special-form {:label "Special forms"
+                                 :doc "Operators that do not evaluate their arguments in the 'normal' way."}})
+
 (defn full-md [lang op-name op]
   (->> ["### "
         "<a name=\"" (safe-op-anchor op-name) "\"></a>"
@@ -1961,69 +2029,6 @@
    (translate-op-maps-to-jadeite (query-ops tag))
    (str (name tag) ".svg")
    (str (name tag) "-j" ".svg")))
-
-(def tag-def-map {:boolean-op {:label "Boolean operations"
-                               :doc "Operations that operate on boolean values."
-                               :basic-ref 'boolean}
-                  :boolean-out {:label "Produce booleans"
-                                :doc "Operations that produce boolean output values."
-                                :basic-ref 'boolean}
-
-                  :string-op {:label "String operations"
-                              :doc "Operations that operate on string values."
-                              :basic-ref 'string}
-                  :integer-op {:label "Integer operations"
-                               :doc "Operations that operate on integer values."
-                               :basic-ref 'integer}
-                  :integer-out {:label "Produce integer"
-                                :doc "Operations that produce integer output values."
-                                :basic-ref 'integer}
-
-                  :fixed-decimal-op {:label "Fixed-decimal operations"
-                                     :doc "Operations that operate on fixed-decimal values."
-                                     :basic-ref 'fixed-decimal}
-                  :fixed-decimal-out {:label "Produce fixed-decimals"
-                                      :doc "Operations that produce fixed-decimal output values."
-                                      :basic-ref 'fixed-decimal}
-
-                  :set-op {:label "Set operations"
-                           :doc "Operations that operate on sets."
-                           :basic-ref 'set}
-                  :set-out {:label "Produce sets"
-                            :doc "Operations that produce sets."
-                            :basic-ref 'set}
-                  :vector-op {:label "Vector operations"
-                              :doc "Operations that operate on vectors."
-                              :basic-ref 'vector}
-                  :vector-out {:label "Produce vectors"
-                               :doc "Operations that produce vectors."
-                               :basic-ref 'vector}
-
-                  :instance-op {:label "Instance operations"
-                                :doc "Operations that operate on spec instances."
-                                :basic-ref 'instance}
-                  :instance-out {:label "Produce instances"
-                                 :doc "Operations that produce spec instances."
-                                 :basic-ref 'instance}
-                  :instance-field-op {:label "Instance field operations"
-                                      :doc "Operations that operate on fields of spec-instances."
-                                      :basic-ref 'instance}
-                  :spec-id-op {:label "Spec-id operations"
-                               :doc "Operations that operate on spec identifiers."
-                               :basic-ref 'keyword
-                               :basic-ref-j 'symbol}
-
-                  :optional-op {:label "Optional operations"
-                                :doc "Operations that operate on optional fields and optional values in general."}
-                  :optional-out {:label "Optionally produce values"
-                                 :doc "Operations that produce optional values."}
-                  :nothing-out {:label "Produce nothing"
-                                :doc "Operations that produce 'nothing'."}
-
-                  :control-flow {:label "Control flow"
-                                 :doc "Operators that control the flow of execution of the code."}
-                  :special-form {:label "Special forms"
-                                 :doc "Operators that do not evaluate their arguments in the 'normal' way."}})
 
 (comment
   (do

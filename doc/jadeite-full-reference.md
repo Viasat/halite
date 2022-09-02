@@ -806,6 +806,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 #### Possible errors:
 
 * [`h-err/not-both-vectors`](jadeite-err-id-reference.md#h-err/not-both-vectors)
+* [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
 #### Tags:
 
@@ -855,6 +856,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 
 * [`h-err/argument-not-set-or-vector`](jadeite-err-id-reference.md#h-err/argument-not-set-or-vector)
 * [`h-err/cannot-conj-unset`](jadeite-err-id-reference.md#h-err/cannot-conj-unset)
+* [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
 #### Tags:
 
@@ -1716,6 +1718,10 @@ range(10, 21, 5)
 ```
 
 </td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/size-exceeded`](jadeite-err-id-reference.md#h-err/size-exceeded)
 
 #### Tags:
 

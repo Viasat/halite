@@ -715,6 +715,9 @@ There are various, context specific, limits that are enforced. e.g. limits on th
 
 #### Produced by operators:
 
+* [`concat`](halite-full-reference.md#concat)
+* [`conj`](halite-full-reference.md#conj)
+* [`range`](halite-full-reference.md#range)
 * [`str`](halite-full-reference.md#str)
 
 ---

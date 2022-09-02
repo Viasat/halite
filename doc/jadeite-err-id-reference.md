@@ -713,6 +713,9 @@ There are various, context specific, limits that are enforced. e.g. limits on th
 
 #### Produced by operators:
 
+* [`concat`](jadeite-full-reference.md#concat)
+* [`conj`](jadeite-full-reference.md#conj)
+* [`range`](jadeite-full-reference.md#range)
 * [`str`](jadeite-full-reference.md#str)
 
 ---
