@@ -14,7 +14,7 @@ Expected use is in an instance expression to indicate that a field in the instan
 
 See also: [`when`](#when) [`when-value`](#when-value) [`when-value-let`](#when-value-let)
 
-Tags: [`Optionally produce values`](halite-optional-out-reference.md)
+Tags: [Optionally produce values](halite-optional-out-reference.md)
 
 ---
 ### <a name="_Dthis"></a>$this
@@ -67,7 +67,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 
 * [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
-Tags: [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Produce fixed-decimals`](halite-fixed-decimal-out-reference.md) [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Produce fixed-decimals](halite-fixed-decimal-out-reference.md) [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="_A"></a>+
@@ -120,7 +120,7 @@ Add two numbers together.
 
 * [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
-Tags: [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Produce fixed-decimals`](halite-fixed-decimal-out-reference.md) [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Produce fixed-decimals](halite-fixed-decimal-out-reference.md) [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="-"></a>-
@@ -173,7 +173,7 @@ Subtract one number from another.
 
 * [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
-Tags: [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Produce fixed-decimals`](halite-fixed-decimal-out-reference.md) [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Produce fixed-decimals](halite-fixed-decimal-out-reference.md) [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="_L"></a><
@@ -211,7 +211,7 @@ false
 
 </td></tr></table>
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Integer operations`](halite-integer-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Integer operations](halite-integer-op-reference.md)
 
 ---
 ### <a name="_L_E"></a><=
@@ -249,7 +249,7 @@ true
 
 </td></tr></table>
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Integer operations`](halite-integer-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Integer operations](halite-integer-op-reference.md)
 
 ---
 ### <a name="_E"></a>=
@@ -365,7 +365,7 @@ true
 
 See also: [`not=`](#not_E)
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Instance operations`](halite-instance-op-reference.md) [`Integer operations`](halite-integer-op-reference.md) [`Set operations`](halite-set-op-reference.md) [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Instance operations](halite-instance-op-reference.md) [Integer operations](halite-integer-op-reference.md) [Set operations](halite-set-op-reference.md) [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="_E_G"></a>=>
@@ -405,7 +405,7 @@ true
 
 See also: [`and`](#and) [`every?`](#every_Q) [`not`](#not) [`or`](#or)
 
-Tags: [`Boolean operations`](halite-boolean-op-reference.md) [`Produce booleans`](halite-boolean-out-reference.md)
+Tags: [Boolean operations](halite-boolean-op-reference.md) [Produce booleans](halite-boolean-out-reference.md)
 
 ---
 ### <a name="_G"></a>>
@@ -443,7 +443,7 @@ false
 
 </td></tr></table>
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Integer operations`](halite-integer-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Integer operations](halite-integer-op-reference.md)
 
 ---
 ### <a name="_G_E"></a>>=
@@ -481,7 +481,7 @@ true
 
 </td></tr></table>
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Integer operations`](halite-integer-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Integer operations](halite-integer-op-reference.md)
 
 ---
 ### <a name="abs"></a>abs
@@ -527,7 +527,7 @@ Since the negative number space contains one more value than the positive number
 
 * [`h-err/abs-failure`](halite-err-id-reference.md#h-err/abs-failure)
 
-Tags: [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Produce fixed-decimals`](halite-fixed-decimal-out-reference.md) [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Produce fixed-decimals](halite-fixed-decimal-out-reference.md) [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="and"></a>and
@@ -569,7 +569,7 @@ true
 
 See also: [`=>`](#_E_G) [`every?`](#every_Q) [`not`](#not) [`or`](#or)
 
-Tags: [`Boolean operations`](halite-boolean-op-reference.md) [`Produce booleans`](halite-boolean-out-reference.md)
+Tags: [Boolean operations](halite-boolean-op-reference.md) [Produce booleans](halite-boolean-out-reference.md)
 
 ---
 ### <a name="any_Q"></a>any?
@@ -610,7 +610,7 @@ false
 
 See also: [`every?`](#every_Q) [`or`](#or)
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Set operations`](halite-set-op-reference.md) [`Special forms`](halite-special-form-reference.md) [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Set operations](halite-set-op-reference.md) [Special forms](halite-special-form-reference.md) [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="concat"></a>concat
@@ -656,7 +656,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 
 * [`h-err/not-both-vectors`](halite-err-id-reference.md#h-err/not-both-vectors)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Produce sets`](halite-set-out-reference.md) [`Vector operations`](halite-vector-op-reference.md) [`Produce vectors`](halite-vector-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Produce sets](halite-set-out-reference.md) [Vector operations](halite-vector-op-reference.md) [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="conj"></a>conj
@@ -703,7 +703,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 * [`h-err/argument-not-set-or-vector`](halite-err-id-reference.md#h-err/argument-not-set-or-vector)
 * [`h-err/cannot-conj-unset`](halite-err-id-reference.md#h-err/cannot-conj-unset)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Produce sets`](halite-set-out-reference.md) [`Vector operations`](halite-vector-op-reference.md) [`Produce vectors`](halite-vector-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Produce sets](halite-set-out-reference.md) [Vector operations](halite-vector-op-reference.md) [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="contains_Q"></a>contains?
@@ -752,7 +752,7 @@ false
 
 </td></tr></table>
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Set operations`](halite-set-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Set operations](halite-set-op-reference.md)
 
 ---
 ### <a name="count"></a>count
@@ -790,7 +790,7 @@ Return how many items are in a collection.
 
 </td></tr></table>
 
-Tags: [`Produce integer`](halite-integer-out-reference.md) [`Set operations`](halite-set-op-reference.md) [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Produce integer](halite-integer-out-reference.md) [Set operations](halite-set-op-reference.md) [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="dec"></a>dec
@@ -825,7 +825,7 @@ Decrement a numeric value.
 
 See also: [`inc`](#inc)
 
-Tags: [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="difference"></a>difference
@@ -880,7 +880,7 @@ This produces a set which contains all of the elements from the first set which 
 
 See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#union)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Produce sets`](halite-set-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Produce sets](halite-set-out-reference.md)
 
 ---
 ### <a name="div"></a>div
@@ -946,7 +946,7 @@ h-err/divide-by-zero
 
 See also: [`mod`](#mod)
 
-Tags: [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Produce fixed-decimals`](halite-fixed-decimal-out-reference.md) [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Produce fixed-decimals](halite-fixed-decimal-out-reference.md) [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="error"></a>error
@@ -972,7 +972,7 @@ h-err/spec-threw
 
 * [`h-err/spec-threw`](halite-err-id-reference.md#h-err/spec-threw)
 
-Tags: [`Produce nothing`](halite-nothing-out-reference.md)
+Tags: [Produce nothing](halite-nothing-out-reference.md)
 
 ---
 ### <a name="every_Q"></a>every?
@@ -1013,7 +1013,7 @@ false
 
 See also: [`and`](#and) [`any?`](#any_Q)
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Set operations`](halite-set-op-reference.md) [`Special forms`](halite-special-form-reference.md) [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Set operations](halite-set-op-reference.md) [Special forms](halite-special-form-reference.md) [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="expt"></a>expt
@@ -1065,7 +1065,7 @@ h-err/invalid-exponent
 * [`h-err/invalid-exponent`](halite-err-id-reference.md#h-err/invalid-exponent)
 * [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
-Tags: [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="filter"></a>filter
@@ -1106,7 +1106,7 @@ Produce a new collection which contains only the elements from the original coll
 
 See also: [`filter`](#filter) [`map`](#map)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Produce sets`](halite-set-out-reference.md) [`Special forms`](halite-special-form-reference.md) [`Vector operations`](halite-vector-op-reference.md) [`Produce vectors`](halite-vector-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Produce sets](halite-set-out-reference.md) [Special forms](halite-special-form-reference.md) [Vector operations](halite-vector-op-reference.md) [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="first"></a>first
@@ -1144,7 +1144,7 @@ h-err/argument-empty
 
 See also: [`count`](#count) [`rest`](#rest)
 
-Tags: [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="get"></a>get
@@ -1186,7 +1186,7 @@ The $type value of an instance is not considered a field that can be extracted w
 
 See also: [`get-in`](#get-in)
 
-Tags: [`Instance field operations`](halite-instance-field-op-reference.md) [`Instance operations`](halite-instance-op-reference.md) [`Optionally produce values`](halite-optional-out-reference.md) [`Special forms`](halite-special-form-reference.md) [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Instance field operations](halite-instance-field-op-reference.md) [Instance operations](halite-instance-op-reference.md) [Optionally produce values](halite-optional-out-reference.md) [Special forms](halite-special-form-reference.md) [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="get-in"></a>get-in
@@ -1238,7 +1238,7 @@ The first path element in the path is looked up in the initial target. If there 
 
 See also: [`get`](#get)
 
-Tags: [`Instance field operations`](halite-instance-field-op-reference.md) [`Instance operations`](halite-instance-op-reference.md) [`Optionally produce values`](halite-optional-out-reference.md) [`Special forms`](halite-special-form-reference.md) [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Instance field operations](halite-instance-field-op-reference.md) [Instance operations](halite-instance-op-reference.md) [Optionally produce values](halite-optional-out-reference.md) [Special forms](halite-special-form-reference.md) [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="if"></a>if
@@ -1269,7 +1269,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 See also: [`when`](#when)
 
-Tags: [`Boolean operations`](halite-boolean-op-reference.md) [`Control flow`](halite-control-flow-reference.md) [`Special forms`](halite-special-form-reference.md)
+Tags: [Boolean operations](halite-boolean-op-reference.md) [Control flow](halite-control-flow-reference.md) [Special forms](halite-special-form-reference.md)
 
 ---
 ### <a name="if-value"></a>if-value
@@ -1287,7 +1287,7 @@ When an optional instance field needs to be referenced, it is generally necessar
 
 See also: [`if-value-let`](#if-value-let) [`when-value`](#when-value)
 
-Tags: [`Control flow`](halite-control-flow-reference.md) [`Optional operations`](halite-optional-op-reference.md) [`Special forms`](halite-special-form-reference.md)
+Tags: [Control flow](halite-control-flow-reference.md) [Optional operations](halite-optional-op-reference.md) [Special forms](halite-special-form-reference.md)
 
 ---
 ### <a name="if-value-let"></a>if-value-let
@@ -1325,7 +1325,7 @@ This is similar to the 'if-value' operation, but applies generally to an express
 
 See also: [`if-value`](#if-value) [`when-value-let`](#when-value-let)
 
-Tags: [`Control flow`](halite-control-flow-reference.md) [`Optional operations`](halite-optional-op-reference.md) [`Special forms`](halite-special-form-reference.md)
+Tags: [Control flow](halite-control-flow-reference.md) [Optional operations](halite-optional-op-reference.md) [Special forms](halite-special-form-reference.md)
 
 ---
 ### <a name="inc"></a>inc
@@ -1360,7 +1360,7 @@ Increment a numeric value.
 
 See also: [`dec`](#dec)
 
-Tags: [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="intersection"></a>intersection
@@ -1397,7 +1397,7 @@ This produces a set which only contains values that appear in each of the argume
 
 See also: [`difference`](#difference) [`subset?`](#subset_Q) [`union`](#union)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Produce sets`](halite-set-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Produce sets](halite-set-out-reference.md)
 
 ---
 ### <a name="let"></a>let
@@ -1448,7 +1448,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 * [`l-err/disallowed-unset-variable`](halite-err-id-reference.md#l-err/disallowed-unset-variable)
 * [`l-err/let-bindings-empty`](halite-err-id-reference.md#l-err/let-bindings-empty)
 
-Tags: [`Special forms`](halite-special-form-reference.md)
+Tags: [Special forms](halite-special-form-reference.md)
 
 ---
 ### <a name="map"></a>map
@@ -1489,7 +1489,7 @@ Produce a new collection from a collection by evaluating the expression with the
 
 See also: [`filter`](#filter) [`reduce`](#reduce)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Produce sets`](halite-set-out-reference.md) [`Special forms`](halite-special-form-reference.md) [`Vector operations`](halite-vector-op-reference.md) [`Produce vectors`](halite-vector-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Produce sets](halite-set-out-reference.md) [Special forms](halite-special-form-reference.md) [Vector operations](halite-vector-op-reference.md) [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="mod"></a>mod
@@ -1531,7 +1531,7 @@ h-err/divide-by-zero
 
 * [`h-err/divide-by-zero`](halite-err-id-reference.md#h-err/divide-by-zero)
 
-Tags: [`Integer operations`](halite-integer-op-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Integer operations](halite-integer-op-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="not"></a>not
@@ -1562,7 +1562,7 @@ true
 
 See also: [`=>`](#_E_G) [`and`](#and) [`or`](#or)
 
-Tags: [`Boolean operations`](halite-boolean-op-reference.md) [`Produce booleans`](halite-boolean-out-reference.md)
+Tags: [Boolean operations](halite-boolean-op-reference.md) [Produce booleans](halite-boolean-out-reference.md)
 
 ---
 ### <a name="not_E"></a>not=
@@ -1675,7 +1675,7 @@ true
 
 See also: [`=`](#_E)
 
-Tags: [`Boolean operations`](halite-boolean-op-reference.md) [`Produce booleans`](halite-boolean-out-reference.md) [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Instance operations`](halite-instance-op-reference.md) [`Integer operations`](halite-integer-op-reference.md) [`Set operations`](halite-set-op-reference.md) [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Boolean operations](halite-boolean-op-reference.md) [Produce booleans](halite-boolean-out-reference.md) [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Instance operations](halite-instance-op-reference.md) [Integer operations](halite-integer-op-reference.md) [Set operations](halite-set-op-reference.md) [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="or"></a>or
@@ -1717,7 +1717,7 @@ true
 
 See also: [`=>`](#_E_G) [`and`](#and) [`any?`](#any_Q) [`not`](#not)
 
-Tags: [`Boolean operations`](halite-boolean-op-reference.md) [`Produce booleans`](halite-boolean-out-reference.md)
+Tags: [Boolean operations](halite-boolean-op-reference.md) [Produce booleans](halite-boolean-out-reference.md)
 
 ---
 ### <a name="range"></a>range
@@ -1755,7 +1755,7 @@ Produce a vector that contains integers in order starting at either the start va
 
 </td></tr></table>
 
-Tags: [`Produce vectors`](halite-vector-out-reference.md)
+Tags: [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="reduce"></a>reduce
@@ -1785,7 +1785,7 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 See also: [`filter`](#filter) [`map`](#map)
 
-Tags: [`Special forms`](halite-special-form-reference.md) [`Vector operations`](halite-vector-op-reference.md)
+Tags: [Special forms](halite-special-form-reference.md) [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="refine-to"></a>refine-to
@@ -1823,7 +1823,7 @@ h-err/no-refinement-path
 
 See also: [`refines-to?`](#refines-to_Q)
 
-Tags: [`Instance operations`](halite-instance-op-reference.md) [`Produce instances`](halite-instance-out-reference.md) [`Spec-id operations`](halite-spec-id-op-reference.md)
+Tags: [Instance operations](halite-instance-op-reference.md) [Produce instances](halite-instance-out-reference.md) [Spec-id operations](halite-spec-id-op-reference.md)
 
 ---
 ### <a name="refines-to_Q"></a>refines-to?
@@ -1860,7 +1860,7 @@ false
 
 See also: [`refine-to`](#refine-to)
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Instance operations`](halite-instance-op-reference.md) [`Spec-id operations`](halite-spec-id-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Instance operations](halite-instance-op-reference.md) [Spec-id operations](halite-spec-id-op-reference.md)
 
 ---
 ### <a name="rescale"></a>rescale
@@ -1911,7 +1911,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 
 See also: [`*`](#_S)
 
-Tags: [`Fixed-decimal operations`](halite-fixed-decimal-op-reference.md) [`Produce fixed-decimals`](halite-fixed-decimal-out-reference.md) [`Produce integer`](halite-integer-out-reference.md)
+Tags: [Fixed-decimal operations](halite-fixed-decimal-op-reference.md) [Produce fixed-decimals](halite-fixed-decimal-out-reference.md) [Produce integer](halite-integer-out-reference.md)
 
 ---
 ### <a name="rest"></a>rest
@@ -1962,7 +1962,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 * [`h-err/argument-not-vector`](halite-err-id-reference.md#h-err/argument-not-vector)
 
-Tags: [`Vector operations`](halite-vector-op-reference.md) [`Produce vectors`](halite-vector-out-reference.md)
+Tags: [Vector operations](halite-vector-op-reference.md) [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="sort"></a>sort
@@ -1993,7 +1993,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 See also: [`sort-by`](#sort-by)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Vector operations`](halite-vector-op-reference.md) [`Produce vectors`](halite-vector-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Vector operations](halite-vector-op-reference.md) [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="sort-by"></a>sort-by
@@ -2022,7 +2022,7 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 See also: [`sort`](#sort)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Special forms`](halite-special-form-reference.md) [`Vector operations`](halite-vector-op-reference.md) [`Produce vectors`](halite-vector-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Special forms](halite-special-form-reference.md) [Vector operations](halite-vector-op-reference.md) [Produce vectors](halite-vector-out-reference.md)
 
 ---
 ### <a name="str"></a>str
@@ -2055,7 +2055,7 @@ Combine all of the input strings together in sequence to produce a new string.
 
 * [`h-err/size-exceeded`](halite-err-id-reference.md#h-err/size-exceeded)
 
-Tags: [`String operations`](halite-string-op-reference.md)
+Tags: [String operations](halite-string-op-reference.md)
 
 ---
 ### <a name="subset_Q"></a>subset?
@@ -2097,7 +2097,7 @@ true
 
 See also: [`difference`](#difference) [`intersection`](#intersection) [`union`](#union)
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Set operations`](halite-set-op-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Set operations](halite-set-op-reference.md)
 
 ---
 ### <a name="union"></a>union
@@ -2143,7 +2143,7 @@ This produces a set which contains all of the values that appear in any of the a
 
 See also: [`difference`](#difference) [`intersection`](#intersection) [`subset?`](#subset_Q)
 
-Tags: [`Set operations`](halite-set-op-reference.md) [`Produce sets`](halite-set-out-reference.md)
+Tags: [Set operations](halite-set-op-reference.md) [Produce sets](halite-set-out-reference.md)
 
 ---
 ### <a name="valid"></a>valid
@@ -2176,7 +2176,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 
 See also: [`valid?`](#valid_Q)
 
-Tags: [`Instance operations`](halite-instance-op-reference.md) [`Optionally produce values`](halite-optional-out-reference.md) [`Special forms`](halite-special-form-reference.md)
+Tags: [Instance operations](halite-instance-op-reference.md) [Optionally produce values](halite-optional-out-reference.md) [Special forms](halite-special-form-reference.md)
 
 ---
 ### <a name="valid_Q"></a>valid?
@@ -2209,7 +2209,7 @@ false
 
 See also: [`valid`](#valid)
 
-Tags: [`Produce booleans`](halite-boolean-out-reference.md) [`Instance operations`](halite-instance-op-reference.md) [`Special forms`](halite-special-form-reference.md)
+Tags: [Produce booleans](halite-boolean-out-reference.md) [Instance operations](halite-instance-op-reference.md) [Special forms](halite-special-form-reference.md)
 
 ---
 ### <a name="when"></a>when
@@ -2240,7 +2240,7 @@ A primary use of this operator is in instance expression to optionally provide a
 
 </td></tr></table>
 
-Tags: [`Boolean operations`](halite-boolean-op-reference.md) [`Control flow`](halite-control-flow-reference.md) [`Optionally produce values`](halite-optional-out-reference.md) [`Special forms`](halite-special-form-reference.md)
+Tags: [Boolean operations](halite-boolean-op-reference.md) [Control flow](halite-control-flow-reference.md) [Optionally produce values](halite-optional-out-reference.md) [Special forms](halite-special-form-reference.md)
 
 ---
 ### <a name="when-value"></a>when-value
@@ -2271,7 +2271,7 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 See also: [`if-value`](#if-value) [`when`](#when) [`when-value-let`](#when-value-let)
 
-Tags: [`Control flow`](halite-control-flow-reference.md) [`Optional operations`](halite-optional-op-reference.md) [`Optionally produce values`](halite-optional-out-reference.md) [`Special forms`](halite-special-form-reference.md)
+Tags: [Control flow](halite-control-flow-reference.md) [Optional operations](halite-optional-op-reference.md) [Optionally produce values](halite-optional-out-reference.md) [Special forms](halite-special-form-reference.md)
 
 ---
 ### <a name="when-value-let"></a>when-value-let
@@ -2302,6 +2302,6 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 See also: [`if-value-let`](#if-value-let) [`when`](#when) [`when-value`](#when-value)
 
-Tags: [`Control flow`](halite-control-flow-reference.md) [`Optional operations`](halite-optional-op-reference.md) [`Optionally produce values`](halite-optional-out-reference.md) [`Special forms`](halite-special-form-reference.md)
+Tags: [Control flow](halite-control-flow-reference.md) [Optional operations](halite-optional-op-reference.md) [Optionally produce values](halite-optional-out-reference.md) [Special forms](halite-special-form-reference.md)
 
 ---

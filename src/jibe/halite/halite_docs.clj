@@ -1765,7 +1765,7 @@
           ["Tags:"
            (for [a (sort tags)]
              (let [a (name a)]
-               [" [`" (:label (tag-def-map (keyword a))) "`]("
+               [" [" (:label (tag-def-map (keyword a))) "]("
                 (tag-md-filename lang a)
                 ")"]))
            "\n\n"])
@@ -1839,7 +1839,7 @@
               ["Tags:"
                (for [a (sort tags)]
                  (let [a (name a)]
-                   [" [`" (:label (tag-def-map (keyword a))) "`]("
+                   [" [" (:label (tag-def-map (keyword a))) "]("
                     (tag-md-filename lang a)
                     ")"]))
                "\n\n"])
