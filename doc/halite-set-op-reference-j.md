@@ -8,6 +8,8 @@
 
 Operations that operate on sets.
 
+For basic syntax of this data type see: [`set`](jadeite-basic-syntax-reference.md#set)
+
 !["set-op"](./halite-bnf-diagrams/set-op-j.svg)
 
 #### [`any?`](jadeite-full-reference.md#any_Q)

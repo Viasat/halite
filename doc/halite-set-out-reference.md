@@ -8,6 +8,8 @@
 
 Operations that produce sets.
 
+For basic syntax of this data type see: [`set`](halite-basic-syntax-reference.md#set)
+
 !["set-out"](./halite-bnf-diagrams/set-out.svg)
 
 #### [`concat`](halite-full-reference.md#concat)

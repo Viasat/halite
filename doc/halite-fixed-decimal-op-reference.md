@@ -8,6 +8,8 @@
 
 Operations that operate on fixed-decimal values.
 
+For basic syntax of this data type see: [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal)
+
 !["fixed-decimal-op"](./halite-bnf-diagrams/fixed-decimal-op.svg)
 
 #### [`*`](halite-full-reference.md#_S)

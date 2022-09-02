@@ -8,6 +8,8 @@
 
 Operations that operate on spec instances.
 
+For basic syntax of this data type see: [`instance`](halite-basic-syntax-reference.md#instance)
+
 !["instance-op"](./halite-bnf-diagrams/instance-op.svg)
 
 #### [`=`](halite-full-reference.md#_E)

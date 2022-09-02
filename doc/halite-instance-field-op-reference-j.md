@@ -8,6 +8,8 @@
 
 Operations that operate on fields of spec-instances.
 
+For basic syntax of this data type see: [`instance`](jadeite-basic-syntax-reference.md#instance)
+
 !["instance-field-op"](./halite-bnf-diagrams/instance-field-op-j.svg)
 
 #### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)

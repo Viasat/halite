@@ -8,6 +8,8 @@
 
 Operations that operate on boolean values.
 
+For basic syntax of this data type see: [`boolean`](jadeite-basic-syntax-reference.md#boolean)
+
 !["boolean-op"](./halite-bnf-diagrams/boolean-op-j.svg)
 
 #### [`!`](jadeite-full-reference.md#_B)

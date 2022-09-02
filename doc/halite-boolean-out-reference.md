@@ -8,6 +8,8 @@
 
 Operations that produce boolean output values.
 
+For basic syntax of this data type see: [`boolean`](halite-basic-syntax-reference.md#boolean)
+
 !["boolean-out"](./halite-bnf-diagrams/boolean-out.svg)
 
 #### [`<`](halite-full-reference.md#_L)

@@ -8,6 +8,8 @@
 
 Operations that operate on vectors.
 
+For basic syntax of this data type see: [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 !["vector-op"](./halite-bnf-diagrams/vector-op-j.svg)
 
 #### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)

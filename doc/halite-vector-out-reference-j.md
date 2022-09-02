@@ -8,6 +8,8 @@
 
 Operations that produce vectors.
 
+For basic syntax of this data type see: [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 !["vector-out"](./halite-bnf-diagrams/vector-out-j.svg)
 
 #### [`concat`](jadeite-full-reference.md#concat)

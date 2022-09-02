@@ -1885,13 +1885,23 @@
        (apply str generated-msg "# Jadeite err-id reference\n\n")
        (spit "doc/jadeite-err-id-reference.md")))
 
-(defn tag-md [lang tag doc]
+(defn tag-md [lang tag-name tag]
   (->> ["### "
-        "<a name=\"" (safe-op-anchor tag) "\"></a>"
-        tag "\n\n" doc "\n\n"
-        ["![" (pr-str tag) "](./halite-bnf-diagrams/"
-         (url-encode tag) (when (= :jadeite lang) "-j") ".svg)\n\n"]
-        [(when-let [op-names (tag-map (keyword tag))]
+        "<a name=\"" (safe-op-anchor tag-name) "\"></a>"
+        tag-name "\n\n" (:doc tag) "\n\n"
+        (when-let [basic-ref (if (= :halite lang)
+                               (:basic-ref tag)
+                               (or (:basic-ref-j tag)
+                                   (:basic-ref tag)))]
+          ["For basic syntax of this data type see: [`" basic-ref "`]" "("
+           (if (= :halite lang)
+             "halite-basic-syntax-reference.md"
+             "jadeite-basic-syntax-reference.md")
+           "#" basic-ref
+           ")" "\n\n"])
+        ["![" (pr-str tag-name) "](./halite-bnf-diagrams/"
+         (url-encode tag-name) (when (= :jadeite lang) "-j") ".svg)\n\n"]
+        [(when-let [op-names (tag-map (keyword tag-name))]
            (->> op-names
                 (map (fn [op-name]
                        (let [op (op-maps op-name)
@@ -1910,11 +1920,11 @@
         "---\n"]
        flatten (apply str)))
 
-(defn produce-tag-md [lang [tag doc]]
-  (let [tag (name tag)]
-    (->> (tag-md lang tag doc)
-         (str generated-msg "# " (if (= :halite lang) "Halite " "Jadeite ")  tag " reference\n\n")
-         (spit (str "doc/" (tag-md-filename lang tag))))))
+(defn produce-tag-md [lang [tag-name tag]]
+  (let [tag-name (name tag-name)]
+    (->> (tag-md lang tag-name tag)
+         (str generated-msg "# " (if (= :halite lang) "Halite " "Jadeite ")  tag-name " reference\n\n")
+         (spit (str "doc/" (tag-md-filename lang tag-name))))))
 
 ;;
 
@@ -1931,32 +1941,48 @@
    (str (name tag) ".svg")
    (str (name tag) "-j" ".svg")))
 
-(def tags-def-map {:boolean-op "Operations that operate on boolean values."
-                   :boolean-out "Operations that produce boolean output values."
+(def tag-def-map {:boolean-op {:doc "Operations that operate on boolean values."
+                               :basic-ref 'boolean}
+                  :boolean-out {:doc "Operations that produce boolean output values."
+                                :basic-ref 'boolean}
 
-                   :string-op "Operations that operate on string values."
-                   :integer-op "Operations that operate on integer values."
-                   :integer-out "Operations that produce integer output values."
+                  :string-op {:doc "Operations that operate on string values."
+                              :basic-ref 'string}
+                  :integer-op {:doc "Operations that operate on integer values."
+                               :basic-ref 'integer}
+                  :integer-out {:doc "Operations that produce integer output values."
+                                :basic-ref 'integer}
 
-                   :fixed-decimal-op "Operations that operate on fixed-decimal values."
-                   :fixed-decimal-out "Operations that produce fixed-decimal output values."
+                  :fixed-decimal-op {:doc "Operations that operate on fixed-decimal values."
+                                     :basic-ref 'fixed-decimal}
+                  :fixed-decimal-out {:doc "Operations that produce fixed-decimal output values."
+                                      :basic-ref 'fixed-decimal}
 
-                   :set-op "Operations that operate on sets."
-                   :set-out "Operations that produce sets."
-                   :vector-op "Operations that operate on vectors."
-                   :vector-out "Operations that produce vectors."
+                  :set-op {:doc "Operations that operate on sets."
+                           :basic-ref 'set}
+                  :set-out {:doc "Operations that produce sets."
+                            :basic-ref 'set}
+                  :vector-op {:doc "Operations that operate on vectors."
+                              :basic-ref 'vector}
+                  :vector-out {:doc "Operations that produce vectors."
+                               :basic-ref 'vector}
 
-                   :instance-op "Operations that operate on spec instances."
-                   :instance-out "Operations that produce spec instances."
-                   :instance-field-op "Operations that operate on fields of spec-instances."
-                   :spec-id-op "Operations that operate on spec identifiers."
+                  :instance-op {:doc "Operations that operate on spec instances."
+                                :basic-ref 'instance}
+                  :instance-out {:doc "Operations that produce spec instances."
+                                 :basic-ref 'instance}
+                  :instance-field-op {:doc "Operations that operate on fields of spec-instances."
+                                      :basic-ref 'instance}
+                  :spec-id-op {:doc "Operations that operate on spec identifiers."
+                               :basic-ref 'keyword
+                               :basic-ref-j 'symbol}
 
-                   :optional-op "Operations that operate on optional fields and optional values in general."
-                   :optional-out "Operations that produce optional values."
-                   :nothing-out "Operations that produce 'nothing'."
+                  :optional-op {:doc "Operations that operate on optional fields and optional values in general."}
+                  :optional-out {:doc "Operations that produce optional values."}
+                  :nothing-out {:doc "Operations that produce 'nothing'."}
 
-                   :control-flow "Operators that control the flow of execution of the code."
-                   :special-form "Operators that do not evaluate their arguments in the 'normal' way."})
+                  :control-flow {:doc "Operators that control the flow of execution of the code."}
+                  :special-form {:doc "Operators that do not evaluate their arguments in the 'normal' way."}})
 
 (comment
   (do
@@ -1967,13 +1993,13 @@
 
     (produce-bnf-diagrams op-maps op-maps-j "halite.svg" "jadeite.svg")
 
-    (->> (keys tags-def-map)
+    (->> (keys tag-def-map)
          (map produce-bnf-diagram-for-tag)
          dorun)
-    (->> tags-def-map
+    (->> tag-def-map
          (map (partial produce-tag-md :halite))
          dorun)
-    (->> tags-def-map
+    (->> tag-def-map
          (map (partial produce-tag-md :jadeite))
          dorun)
 

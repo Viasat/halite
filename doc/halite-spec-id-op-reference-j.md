@@ -8,6 +8,8 @@
 
 Operations that operate on spec identifiers.
 
+For basic syntax of this data type see: [`symbol`](jadeite-basic-syntax-reference.md#symbol)
+
 !["spec-id-op"](./halite-bnf-diagrams/spec-id-op-j.svg)
 
 #### [`refineTo`](jadeite-full-reference.md#refineTo)

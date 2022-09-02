@@ -8,6 +8,8 @@
 
 Operations that operate on integer values.
 
+For basic syntax of this data type see: [`integer`](halite-basic-syntax-reference.md#integer)
+
 !["integer-op"](./halite-bnf-diagrams/integer-op.svg)
 
 #### [`*`](halite-full-reference.md#_S)
