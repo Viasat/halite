@@ -1408,6 +1408,12 @@
                         (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                         (apply merge-with into)))
 
+(def tag-map (->> (-> op-maps
+                      (update-vals :tags))
+                  (remove (comp nil? second))
+                  (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                  (apply merge-with into)))
+
 (def thrown-by-basic-map (->> basic-bnf
                               (partition 2)
                               (map (fn [[k v]]
@@ -1885,6 +1891,18 @@
         tag "\n\n" doc "\n\n"
         ["![" (pr-str tag) "](./halite-bnf-diagrams/"
          (url-encode tag) (when (= :jadeite lang) "-j") ".svg)\n\n"]
+        (when-let [op-names (tag-map (keyword tag))]
+          [(for [op-name (sort op-names)]
+             (let [op (op-maps op-name)
+                   op-name (if (= :halite lang)
+                             op-name
+                             (translate-op-name-to-jadeite op-name))]
+               (str "#### [`" op-name "`](" (if (= :halite lang)
+                                              "halite-full-reference.md"
+                                              "jadeite-full-reference.md")
+                    "#" (safe-op-anchor op-name) ")" "\n\n"
+                    (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op)))
+                    "\n\n")))])
         "---\n"]
        flatten (apply str)))
 
@@ -1909,32 +1927,32 @@
    (str (name tag) ".svg")
    (str (name tag) "-j" ".svg")))
 
-(def tags-map {:boolean-op "Operations that operate on boolean values."
-               :boolean-out "Operations that produce boolean output values."
+(def tags-def-map {:boolean-op "Operations that operate on boolean values."
+                   :boolean-out "Operations that produce boolean output values."
 
-               :string-op "Operations that operate on string values."
-               :integer-op "Operations that operate on integer values."
-               :integer-out "Operations that produce integer output values."
+                   :string-op "Operations that operate on string values."
+                   :integer-op "Operations that operate on integer values."
+                   :integer-out "Operations that produce integer output values."
 
-               :fixed-decimal-op "Operations that operate on fixed-decimal values."
-               :fixed-decimal-out "Operations that produce fixed-decimal output values."
+                   :fixed-decimal-op "Operations that operate on fixed-decimal values."
+                   :fixed-decimal-out "Operations that produce fixed-decimal output values."
 
-               :set-op "Operations that operate on sets."
-               :set-out "Operations that produce sets."
-               :vector-op "Operations that operate on vectors."
-               :vector-out "Operations that produce vectors."
+                   :set-op "Operations that operate on sets."
+                   :set-out "Operations that produce sets."
+                   :vector-op "Operations that operate on vectors."
+                   :vector-out "Operations that produce vectors."
 
-               :instance-op "Operations that operate on spec instances."
-               :instance-out "Operations that produce spec instances."
-               :instance-field-op "Operations that operate on fields of spec-instances."
-               :spec-id-op "Operations that operate on spec identifiers."
+                   :instance-op "Operations that operate on spec instances."
+                   :instance-out "Operations that produce spec instances."
+                   :instance-field-op "Operations that operate on fields of spec-instances."
+                   :spec-id-op "Operations that operate on spec identifiers."
 
-               :optional-op "Operations that operate on optional fields and optional values in general."
-               :optional-out "Operations that produce optional values."
-               :nothing-out "Operations that produce 'nothing'."
+                   :optional-op "Operations that operate on optional fields and optional values in general."
+                   :optional-out "Operations that produce optional values."
+                   :nothing-out "Operations that produce 'nothing'."
 
-               :control-flow "Operators that control the flow of execution of the code."
-               :special-form "Operators that do not evaluate their arguments in the 'normal' way."})
+                   :control-flow "Operators that control the flow of execution of the code."
+                   :special-form "Operators that do not evaluate their arguments in the 'normal' way."})
 
 (comment
   (do
@@ -1945,13 +1963,13 @@
 
     (produce-bnf-diagrams op-maps op-maps-j "halite.svg" "jadeite.svg")
 
-    (->> (keys tags-map)
+    (->> (keys tags-def-map)
          (map produce-bnf-diagram-for-tag)
          dorun)
-    (->> tags-map
+    (->> tags-def-map
          (map (partial produce-tag-md :halite))
          dorun)
-    (->> tags-map
+    (->> tags-def-map
          (map (partial produce-tag-md :jadeite))
          dorun)
 

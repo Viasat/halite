@@ -10,4 +10,8 @@ Operations that operate on string values.
 
 !["string-op"](./halite-bnf-diagrams/string-op-j.svg)
 
+#### [`str`](jadeite-full-reference.md#str)
+
+Combine all of the input strings together in sequence to produce a new string.
+
 ---

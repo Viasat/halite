@@ -10,4 +10,72 @@ Operators that do not evaluate their arguments in the 'normal' way.
 
 !["special-form"](./halite-bnf-diagrams/special-form.svg)
 
+#### [`any?`](halite-full-reference.md#any_Q)
+
+Evaluates to true if the boolean-expression is true when the symbol is bound to some element in the collection.
+
+#### [`every?`](halite-full-reference.md#every_Q)
+
+Evaluates to true if the boolean-expression is true when the symbol is bound to each the element in the collection.
+
+#### [`filter`](halite-full-reference.md#filter)
+
+Produce a new collection which contains only the elements from the original collection for which the boolean-expression is true. When applied to a vector, the order of the elements in the result preserves the order from the original vector.
+
+#### [`get`](halite-full-reference.md#get)
+
+Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
+
+#### [`get-in`](halite-full-reference.md#get-in)
+
+Syntactic sugar for performing the equivalent of a chained series of 'get' operations. The second argument is a vector that represents the logical path to be navigated through the first argument.
+
+#### [`if`](halite-full-reference.md#if)
+
+If the first argument is true, then evaluate the second argument, otherwise evaluate the third argument.
+
+#### [`if-value`](halite-full-reference.md#if-value)
+
+Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then evaluate the third argument.
+
+#### [`if-value-let`](halite-full-reference.md#if-value-let)
+
+If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol.
+
+#### [`let`](halite-full-reference.md#let)
+
+Evaluate the expression argument in a nested context created by considering the first argument in a pairwise fashion and binding each symbol to the corresponding value.
+
+#### [`map`](halite-full-reference.md#map)
+
+Produce a new collection from a collection by evaluating the expression with the symbol bound to each element of the original collection, one-by-one. The results of evaluating the expression will be in the resulting collection. When operating on a vector, the order of the output vector will correspond to the order of the items in the original vector.
+
+#### [`reduce`](halite-full-reference.md#reduce)
+
+Evalue the expression repeatedly for each element in the vector. The accumulator value will have a value of accumulator-init on the first evaluation of the expression. Subsequent evaluations of the expression will chain the prior result in as the value of the accumulator. The result of the final evaluation of the expression will be produced as the result of the reduce operation. The elements are processed in order.
+
+#### [`sort-by`](halite-full-reference.md#sort-by)
+
+Produce a new vector by sorting all of the items in the input collection according to the values produced by applying the expression to each element. The expression must produce a unique, sortable value for each element.
+
+#### [`valid`](halite-full-reference.md#valid)
+
+Evaluate the instance-expression and produce the result. If a constraint violation occurs while evaluating the expression then produce an 'unset' value.
+
+#### [`valid?`](halite-full-reference.md#valid_Q)
+
+Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true.
+
+#### [`when`](halite-full-reference.md#when)
+
+If the first argument is true, then evaluate the second argument, otherwise produce 'unset'.
+
+#### [`when-value`](halite-full-reference.md#when-value)
+
+Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset.
+
+#### [`when-value-let`](halite-full-reference.md#when-value-let)
+
+If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'
+
 ---
