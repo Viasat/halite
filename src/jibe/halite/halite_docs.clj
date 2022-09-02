@@ -1763,11 +1763,12 @@
            "\n\n"])
         (when-let [tags (:tags op)]
           ["Tags:"
-           (for [a (sort tags)]
-             (let [a (name a)]
-               [" [" (:label (tag-def-map (keyword a))) "]("
-                (tag-md-filename lang a)
-                ")"]))
+           (string/join ", "
+                        (for [a (sort tags)]
+                          (let [a (name a)]
+                            (str " [" (:label (tag-def-map (keyword a))) "]("
+                                 (tag-md-filename lang a)
+                                 ")"))))
            "\n\n"])
         "---\n"]
        flatten (apply str)))
@@ -1837,11 +1838,12 @@
                               (when (seq t)
                                 t))]
               ["Tags:"
-               (for [a (sort tags)]
-                 (let [a (name a)]
-                   [" [" (:label (tag-def-map (keyword a))) "]("
-                    (tag-md-filename lang a)
-                    ")"]))
+               (string/join ", "
+                            (for [a (sort tags)]
+                              (let [a (name a)]
+                                (str " [" (:label (tag-def-map (keyword a))) "]("
+                                     (tag-md-filename lang a)
+                                     ")"))))
                "\n\n"])
             "---\n"]
            flatten (apply str)))))
