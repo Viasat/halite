@@ -984,6 +984,11 @@
     (:tail expr)
     expr))
 
+(defn- unwrap-tail-set [s]
+  (->> s
+       (map unwrap-tail)
+       set))
+
 (defn- find-collection-spec-refs [context expr]
   (->> expr
        (map (partial find-spec-refs context))
@@ -1005,13 +1010,13 @@
 
     (#{'if 'if-value} (first expr))
     (let [[_ check then else] expr]
-      (into (into (find-spec-refs context check)
+      (into (into (unwrap-tail-set (find-spec-refs context check))
                   (find-spec-refs context then))
             (find-spec-refs context else)))
 
     (#{'when 'when-value} (first expr))
     (let [[_ check then] expr]
-      (into (find-spec-refs context check)
+      (into (unwrap-tail-set (find-spec-refs context check))
             (find-spec-refs context then)))
 
     (= 'if-value-let (first expr))
@@ -1070,3 +1075,9 @@
      (set? expr) (set (find-collection-spec-refs context expr))
      (vector? expr) (vec (find-collection-spec-refs context expr))
      :default (throw (ex-info "unexpected expr to find-spec-refs" {:expr expr})))))
+
+(defn find-spec-refs-but-tail
+  [spec-id expr]
+  (->> (disj (find-spec-refs {} expr) (wrap-tail spec-id))
+       (map unwrap-tail)
+       set))

@@ -1278,9 +1278,9 @@
   (is (= #{{:tail :my/Spec}}
          (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
                                             x))))
-  (is (= #{{:tail :my/Spec} {:tail :my/Other}}
+  (is (= #{:my/Spec {:tail :my/Other}}
          (halite-analysis/find-spec-refs '(when {:$type :my/Spec} {:$type :my/Other}))))
-  (is (= #{{:tail :my/Spec}}
+  (is (= #{{:tail :my/Spec} :my/Spec}
          (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
                                             (when x (if x x x))))))
   (is (= #{{:tail :my/Spec} :my/Spec}
@@ -1296,6 +1296,11 @@
   (is (= #{:my/Spec :my/Other}
          (halite-analysis/find-spec-refs '(refine-to {:$type :my/Spec} :my/Other))))
   (is (= #{:my/Spec :my/Other}
-         (halite-analysis/find-spec-refs '(refine-to? {:$type :my/Spec} :my/Other)))))
+         (halite-analysis/find-spec-refs '(refine-to? {:$type :my/Spec} :my/Other))))
+
+  (is (= #{{:tail :my/Spec} {:tail :my/Other}}
+         (halite-analysis/find-spec-refs '(if true {:$type :my/Spec} {:$type :my/Other}))))
+  (is (= #{:my/Other}
+         (halite-analysis/find-spec-refs-but-tail :my/Spec '(if true {:$type :my/Spec} {:$type :my/Other})))))
 
 ;; (run-tests)
