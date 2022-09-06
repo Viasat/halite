@@ -969,3 +969,104 @@
     (set? expr) (set (encode-collection-fixed-decimals expr))
     (vector? expr) (vec (encode-collection-fixed-decimals expr))
     :default (throw (ex-info "unexpected expr to encode-fixed-decimals" {:expr expr}))))
+
+;;;;
+
+(declare find-spec-refs)
+
+(defn- wrap-tail [expr]
+  {:tail expr})
+
+(defn- unwrap-tail [expr]
+  (if (and (map? expr)
+           (= 1 (count expr))
+           (contains? expr :tail))
+    (:tail expr)
+    expr))
+
+(defn- find-collection-spec-refs [context expr]
+  (->> expr
+       (map (partial find-spec-refs context))
+       (reduce into #{})))
+
+(defn- find-seq-spec-refs [context expr]
+  (cond
+    (= 'let (first expr))
+    (let [[_ bindings body] expr
+          sub-results (->> bindings
+                           (partition 2)
+                           (map (comp (partial find-spec-refs context) second)))
+          context' (merge context (zipmap
+                                   (->> bindings (partition 2) (map first))
+                                   sub-results))]
+      (into (->> sub-results
+                 (reduce into #{}))
+            (find-spec-refs context' body)))
+
+    (#{'if 'if-value} (first expr))
+    (let [[_ check then else] expr]
+      (into (into (find-spec-refs context check)
+                  (find-spec-refs context then))
+            (find-spec-refs context else)))
+
+    (#{'when 'when-value} (first expr))
+    (let [[_ check then] expr]
+      (into (find-spec-refs context check)
+            (find-spec-refs context then)))
+
+    (= 'if-value-let (first expr))
+    (let [[_ [binding-symbol binding-expr] then else] expr
+          sub-result (find-spec-refs context binding-expr)]
+      (into (into sub-result
+                  (find-spec-refs context then))
+            (find-spec-refs (assoc context binding-symbol binding-expr) else)))
+
+    (= 'when-value-let (first expr))
+    (let [[_ [binding-symbol binding-expr] then] expr
+          sub-result (find-spec-refs context binding-expr)]
+      (into sub-result
+            (find-spec-refs (assoc context binding-symbol binding-expr) then)))
+
+    (= 'reduce (first expr))
+    (let [[_ [binding-symbol binding-expr] [binding-symbol-2 binding-expr-2] body] expr
+          sub-result (find-spec-refs context binding-expr)
+          sub-result-2 (find-spec-refs context binding-expr-2)]
+      (into (into sub-result
+                  sub-result-2)
+            (find-spec-refs (assoc context
+                                   binding-symbol binding-expr
+                                   binding-symbol-2 binding-expr-2)
+                            body)))
+
+    (= #{'any? 'every? 'filter 'map 'sort-by} (first expr))
+    (let [[_ [binding-symbol binding-expr] body] expr
+          sub-result (find-spec-refs context binding-expr)]
+      (into sub-result
+            (find-spec-refs (assoc context binding-symbol binding-expr) body)))
+
+    :default
+    (->> (find-collection-spec-refs context (rest expr))
+         (map unwrap-tail)
+         set)))
+
+(defn find-spec-refs
+  "Return a set of spec-ids for specs that are referenced by the expr. If a spec-id is referenced in a
+  tail position then wrap it in a map that indicates this."
+  ([expr]
+   (find-spec-refs {} expr))
+  ([context expr]
+   (cond
+     (boolean? expr) #{}
+     (halite/integer-or-long? expr) #{}
+     (halite/fixed-decimal? expr) #{}
+     (string? expr) #{}
+     (symbol? expr) (get context expr)
+     (keyword? expr) (if (halite-types/namespaced-keyword? expr)
+                       #{(wrap-tail expr)}
+                       #{})
+     (map? expr) (into #{(first (find-spec-refs context (:$type expr)))}
+                       (find-collection-spec-refs context (-> expr (dissoc :$type) vals)))
+     (seq? expr) (find-seq-spec-refs context expr)
+     (set? expr) (set (find-collection-spec-refs context expr))
+     (vector? expr) (vec (find-collection-spec-refs context expr))
+     :default (throw (ex-info "unexpected expr to find-spec-refs" {:expr expr})))))

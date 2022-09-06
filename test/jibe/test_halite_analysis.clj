@@ -1261,4 +1261,41 @@
                                                        z #{#d "0.0001"}]
                                                    #d "1.2")))))
 
+(deftest test-find-spec-refs
+  (is (= #{}
+         (halite-analysis/find-spec-refs '1)))
+  (is (= #{{:tail :my/Spec}}
+         (halite-analysis/find-spec-refs '{:$type :my/Spec})))
+  (is (= #{:my/Spec}
+         (halite-analysis/find-spec-refs '(= {:$type :my/Spec} {:$type :my/Spec}))))
+  (is (= #{{:tail :my/Other} {:tail :my/Spec}}
+         (halite-analysis/find-spec-refs '{:$type :my/Spec
+                                           :a {:$type :my/Other}})))
+  (is (= #{:my/Other {:tail :my/Spec}}
+         (halite-analysis/find-spec-refs '{:$type :my/Spec
+                                           :a (= {:$type :my/Other}
+                                                 {:$type :my/Other})})))
+  (is (= #{{:tail :my/Spec}}
+         (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
+                                            x))))
+  (is (= #{{:tail :my/Spec} {:tail :my/Other}}
+         (halite-analysis/find-spec-refs '(when {:$type :my/Spec} {:$type :my/Other}))))
+  (is (= #{{:tail :my/Spec}}
+         (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
+                                            (when x (if x x x))))))
+  (is (= #{{:tail :my/Spec} :my/Spec}
+         (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
+                                            (when x (if x x (get x :a)))))))
+  (is (= #{{:tail :my/Spec} :my/Spec}
+         (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
+                                            (when x (if x x (get-in x [:a])))))))
+  (is (= #{:my/Spec}
+         (halite-analysis/find-spec-refs '(any? [x [{:$type :my/Spec}]] true))))
+  (is (= #{:my/Spec :my/Other}
+         (halite-analysis/find-spec-refs '(any? [x [{:$type :my/Spec}]] {:$type :my/Other}))))
+  (is (= #{:my/Spec :my/Other}
+         (halite-analysis/find-spec-refs '(refine-to {:$type :my/Spec} :my/Other))))
+  (is (= #{:my/Spec :my/Other}
+         (halite-analysis/find-spec-refs '(refine-to? {:$type :my/Spec} :my/Other)))))
+
 ;; (run-tests)
