@@ -868,6 +868,43 @@
                    (hp/propagate senv {:$type :my/A
                                        :$refines-to {:my/C {:c1 {:$in [20 50]}}}}))))))
 
+(deftest test-semantics-preserving-instance-elimination
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:an "Integer"}
+                       :refines-to {}
+                       :constraints [["a1" (let [b {:$type :ws/B :bm (div 100 an) :bn an}]
+                                             (and (< -5 an) (< an 5)))]]}
+                :ws/B {:spec-vars {:bm "Integer" :bn "Integer"}
+                       :refines-to {}
+                       :constraints [["b1" (and (<= -3 bn) (<= bn 3))]]}})]
+    (is (= {:$type :ws/A :an {:$in #{-3 -2 -1 1 2 3}}}
+           (hp/propagate senv {:$type :ws/A :an {:$in (set (range -5 6))}})))))
+
+(deftest test-short-circuiting-ifs
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:an "Integer" :ap "Boolean"}
+                       :refines-to {}
+                       :constraints [["a1" (let [b (when ap {:$type :ws/B :bn an})]
+                                             (and (<= -3 an) (<= an 3)))]]}
+                :ws/B {:spec-vars {:bn "Integer"}
+                       :refines-to {}
+                       :constraints [["b1" (< (div 20 bn) 20)]]}})]
+
+    (is (= {:$type :ws/A
+            :an {:$in (set (range -3 4))}
+            :ap {:$in #{true false}}}
+           (hp/propagate senv {:$type :ws/A :an {:$in (set (range -5 6))}})))
+
+    (is (= {:$type :ws/A
+            :an {:$in (disj (set (range -3 4)) 0)}
+            :ap true}
+           (hp/propagate senv {:$type :ws/A :an {:$in (set (range -5 6))} :ap true})))
+
+    (is (= {:$type :ws/A
+            :an 0
+            :ap false}
+           (hp/propagate senv {:$type :ws/A :an 0})))))
+
 #_(deftest example-abstract-propagation
     (s/with-fn-validation
       (let [senv (halite-envs/spec-env

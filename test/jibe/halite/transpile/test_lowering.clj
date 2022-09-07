@@ -872,6 +872,125 @@
                :constraints
                first second)))))
 
+(def rewrite-instance-valued-do-child #'lowering/rewrite-instance-valued-do-child)
+
+(deftest test-rewrite-instance-valued-do-child
+  (let [senv '{:ws/A
+               {:spec-vars {:ap "Boolean", :ab :ws/B, :an "Integer", :ad :ws/D}
+                :refines-to {}
+                :constraints []}
+               :ws/B
+               {:spec-vars {:bn [:Maybe "Integer"] :bp [:Maybe "Boolean"]}
+                :refines-to {}
+                :constraints []}
+               :ws/C
+               {:spec-vars {:cm "Integer", :cn "Integer"}
+                :refines-to {}
+                :constraints []}
+               :ws/D
+               {:spec-vars {:dn "Integer" :dc :ws/C}
+                :refines-to {}
+                :constraints []}}]
+    (are [in out]
+         (= out
+            (let [sctx (-> senv
+                           (update-in [:ws/A :constraints] conj ["a1" (list '$do! in 'ap)])
+                           halite-envs/spec-env
+                           (ssa/build-spec-ctx :ws/A))
+                  ctx (ssa/make-ssa-ctx sctx (:ws/A sctx))
+                  do-id (get-in sctx [:ws/A :constraints 0 1])
+                  do-form (-> sctx :ws/A :ssa-graph (ssa/deref-id do-id) ssa/node-form)
+                  child-id (second do-form)]
+              (rewrite-instance-valued-do-child {:sctx sctx :ctx ctx} child-id)))
+
+      'ab true
+
+      '{:$type :ws/B} true
+
+      '{:$type :ws/B :bn 12} true
+
+      '{:$type :ws/B :bn 42 :bp false} true
+
+      '{:$type :ws/B :bn (let [x (get ab :bn)] (if-value x (+ x 1) 0))}
+      '($do! $11 true)
+
+      '{:$type :ws/B :bn (+ 3 an) :bc {:$type :ws/C :cm (+ 1 an) :cn (+ 2 an)}}
+      '($do! $3 $5 true $8 true)
+
+      '(if ap {:$type :ws/B :bn (+ 1 an)} {:$type :ws/B :bn (+ 2 an)})
+      '(if $1 ($do! $5 true) ($do! $8 true))
+
+      '(get ad :dc) true
+
+      '(get {:$type :ws/D :dc {:$type :ws/C :cm (+ an 1) :cn 2}} :dc)
+      '($do! $3 true true)
+
+      '(if ap {:$type :ws/B} $no-value) '(if $1 true $4)
+
+      '($do! {:$type :ws/B :bn (+ 1 an)} {:$type :ws/B :bn (+ 2 an)})
+      '($do! $3 true $6 true true))))
+
+(def rewrite-no-value-do-child #'lowering/rewrite-no-value-do-child)
+
+(deftest test-rewrite-no-value-do-child
+  (let [senv '{:ws/A
+               {:spec-vars {:aw [:Maybe "Integer"] :ap "Boolean" :an "Integer"}
+                :refines-to {}
+                :constraints []}}]
+    (are [in out]
+         (= out
+            (let [sctx (-> senv
+                           (update-in [:ws/A :constraints] conj ["a1" (list '$do! in 'true)])
+                           halite-envs/spec-env
+                           (ssa/build-spec-ctx :ws/A))
+                  ctx (ssa/make-ssa-ctx sctx (:ws/A sctx))
+                  do-id (get-in sctx [:ws/A :constraints 0 1])
+                  do-form (-> sctx :ws/A :ssa-graph (ssa/deref-id do-id) ssa/node-form)
+                  child-id (second do-form)]
+             ;;(ssa/pprint-ssa-graph (:ssa-graph ctx))
+              (rewrite-no-value-do-child {:sctx sctx :ctx ctx} child-id)))
+
+      'aw 'aw
+      '$no-value true
+      '(if ap aw an) '(if $1 aw $4)
+      '(if ap aw $no-value) '(if $1 aw true)
+      '($do! $no-value $no-value) '($do! true true)
+      '(if ap (if (< an 0) $no-value 1) true) '(if $1 (if $5 true $8) $10))))
+
+(deftest test-eliminate-unused-instance-valued-exprs-in-dos
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:ap "Boolean", :ab :ws/B, :an "Integer", :ad :ws/D}
+                 :refines-to {}
+                 :constraints [["a1" (let [b (if ap
+                                               {:$type :ws/B :bn (+ 1 an)}
+                                               {:$type :ws/B :bn (+ 2 an)})]
+                                       true)]]}
+                :ws/B
+                {:spec-vars {:bn [:Maybe "Integer"] :bp [:Maybe "Boolean"]}
+                 :refines-to {}
+                 :constraints []}
+                :ws/C
+                {:spec-vars {:cm "Integer", :cn "Integer"}
+                 :refines-to {}
+                 :constraints []}
+                :ws/D
+                {:spec-vars {:dn "Integer" :dc :ws/C}
+                 :refines-to {}
+                 :constraints []}})
+        sctx (ssa/build-spec-ctx senv :ws/A)]
+    (is (= '(let [v1 (if ap
+                       (let [v1 (+ 1 an)]
+                         true)
+                       (let [v1 (+ 2 an)]
+                         true))]
+              true)
+           (-> sctx
+               (lowering/eliminate-unused-instance-valued-exprs-in-dos)
+               :ws/A
+               (ssa/spec-from-ssa)
+               :constraints first second)))))
+
 (defonce ^:dynamic *results* (atom nil))
 (defonce ^:dynamic *trace* (atom nil))
 

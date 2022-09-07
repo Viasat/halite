@@ -10,7 +10,7 @@
             [jibe.halite.transpile.ssa :as ssa
              :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
             [jibe.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as halite-rewriting]
-            [jibe.halite.transpile.simplify :refer [simplify]]
+            [jibe.halite.transpile.simplify :refer [simplify always-evaluates?]]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
             [loom.alg]
             [loom.graph]
@@ -49,7 +49,7 @@
        (filter (comp do-form? first second))
        first))
 
-(s/defn ^:private bubble-up-do-expr
+(s/defn bubble-up-do-expr
   [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (cond
     (map? form)
@@ -81,7 +81,7 @@
 
 ;; Finally, we can 'flatten' $do! forms.
 
-(s/defn ^:private flatten-do-expr
+(s/defn flatten-do-expr
   [{ctx :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when (do-form? form)
     (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
@@ -645,3 +645,128 @@
   [sctx :- SpecCtx]
   (let [sctx (update-vals sctx (partial add-error-guards-as-constraints sctx))]
     (fixpoint #(reduce-kv drop-branches-containing-unguarded-errors % %) sctx)))
+
+(s/defn ^:private instance-compatible-type? :- s/Bool
+  "Returns true if there exists an expression of type htype that could evaluate to an instance, and false otherwise."
+  [htype :- halite-types/HaliteType]
+  (or (#{:Any :Value} htype)
+      (and (vector? htype) (= :Instance (first htype)))
+      (and (halite-types/maybe-type? htype)
+           (let [inner (halite-types/no-maybe htype)]
+             (and (vector? inner) (= :Instance (first inner)))))))
+
+(s/defn ^:private rewrite-instance-valued-do-child
+  [{:keys [sctx ctx] :as rctx} :- halite-rewriting/RewriteFnCtx, id]
+  (let [{:keys [ssa-graph]} ctx
+        node (ssa/deref-id ssa-graph id), form (ssa/node-form node), htype (ssa/node-type node)
+        rewrite-child-exprs (fn [child-exprs]
+                              (-> child-exprs
+                                  (->> (remove #(->> % (ssa/deref-id ssa-graph) ssa/node-form (always-evaluates? ssa-graph)))
+                                       (mapcat #(let [node (ssa/deref-id ssa-graph %)
+                                                      form (ssa/node-form node)
+                                                      htype (ssa/node-type node)]
+                                                  (if (instance-compatible-type? htype)
+                                                    (let [r (rewrite-instance-valued-do-child rctx %)]
+                                                      (if (and (seq? r) (= '$do! (first r)))
+                                                        (rest r)
+                                                        [r]))
+                                                    [%]))))
+                                  (make-do true)))]
+    (when-not (instance-compatible-type? htype)
+      (throw (ex-info "BUG! Called rewrite-instance-valued-do-child with expr that can never evaluate to an instance."
+                      {:ssa-graph ssa-graph :id id :form form :htype htype})))
+    (cond
+      (symbol? form) true
+      (map? form) (-> form
+                      (dissoc :$type)
+                      (vals)
+                      (rewrite-child-exprs))
+      (seq? form) (let [[op & args] form]
+                    (cond
+                      (= 'if op) (let [[pred-id then-id else-id] args
+                                       then-type (ssa/node-type (ssa/deref-id ssa-graph then-id))
+                                       else-type (ssa/node-type (ssa/deref-id ssa-graph else-id))]
+                                   (if (and (not (instance-compatible-type? then-type))
+                                            (not (instance-compatible-type? else-type)))
+                                     id
+                                     (list 'if pred-id
+                                           (cond->> then-id
+                                             (instance-compatible-type? then-type)
+                                             (rewrite-instance-valued-do-child rctx))
+                                           (cond->> else-id
+                                             (instance-compatible-type? else-type)
+                                             (rewrite-instance-valued-do-child rctx)))))
+
+                      (= 'get op) (rewrite-instance-valued-do-child rctx (first args))
+
+                      (= '$do! op) (rewrite-child-exprs args)
+
+                      (#{'when 'refine-to} op) (throw (ex-info "BUG! Expected this operator to be lowered away by now."
+                                                               {:ssa-graph ssa-graph :id id :form form :op op}))
+
+                      :else (throw (ex-info "BUG! Unrecognized instance-valued form"
+                                            {:ssa-graph ssa-graph :id id :form form}))))
+      :else (throw (ex-info "BUG! Unrecognized instance-valued form"
+                            {:ssa-graph ssa-graph :id id :form form})))))
+
+(s/defn eliminate-unused-instance-valued-exprs-in-do-expr
+  [{:keys [sctx ctx] :as rctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  (let [ssa-graph (:ssa-graph ctx)]
+    (when (and (seq? form) (= '$do! (first form)))
+      (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]
+        (when (some instance-compatible-type? child-htypes)
+          (make-do
+           (mapv (fn [child htype]
+                   (cond->> child
+                     (instance-compatible-type? htype) (rewrite-instance-valued-do-child rctx)))
+                 (butlast (rest form)) child-htypes)
+           (last form)))))))
+
+(s/defn eliminate-unused-instance-valued-exprs-in-dos
+  "Rewrite every instance-valued non-tail child expression of a $do! as an expression that
+  evaluates to:
+    true exactly when the rewritten expression evaluates
+    a runtime error exactly when the rewritten expression evaluates to a runtime error
+
+  Note that instance literal constraints are ignored! This pass should only be applied
+  after all constraints implied by instance literals have been made explicit."
+  [sctx :- SpecCtx]
+  (rewrite-sctx sctx eliminate-unused-instance-valued-exprs-in-do-expr))
+
+(s/defn ^:private rewrite-no-value-do-child
+  [{:keys [ctx] :as rctx} :- halite-rewriting/RewriteFnCtx, id]
+  (let [{:keys [ssa-graph]} ctx
+        node (ssa/deref-id ssa-graph id), form (ssa/node-form node), htype (ssa/node-type node)]
+    (when-not (halite-types/subtype? :Unset htype)
+      (throw (ex-info "BUG! Called rewrite-no-value-do-child with expr that could not possibly evaluate to $no-value"
+                      {:ssa-graph ssa-graph :id id :form form :htype htype})))
+
+    (cond
+      (symbol? form) form
+      (= :Unset form) true
+      (seq? form) (let [[op & args] form]
+                    (cond
+                      (= 'if op) (let [[pred-id then-id else-id] args]
+                                   (list 'if pred-id
+                                         (cond->> then-id
+                                           (halite-types/maybe-type? (ssa/node-type (ssa/deref-id ssa-graph then-id)))
+                                           (rewrite-no-value-do-child rctx))
+                                         (cond->> else-id
+                                           (halite-types/maybe-type? (ssa/node-type (ssa/deref-id ssa-graph else-id)))
+                                           (rewrite-no-value-do-child rctx))))
+                      (= '$do! op) (apply list '$do! (mapv #(rewrite-no-value-do-child rctx %) args))
+                      :else id))
+      :else id)))
+
+(s/defn eliminate-unused-no-value-exprs-in-do-expr
+  [rctx :- halite-rewriting/RewriteFnCtx id [form htype]]
+  (let [ssa-graph (:ssa-graph (:ctx rctx))]
+    (when (and (seq? form) (= '$do! (first form)))
+      (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]
+        (when (some #(halite-types/subtype? :Unset %) child-htypes)
+          (make-do
+           (mapv (fn [child htype]
+                   (cond->> child
+                     (halite-types/maybe-type? htype) (rewrite-no-value-do-child rctx)))
+                 (butlast (rest form)) child-htypes)
+           (last form)))))))

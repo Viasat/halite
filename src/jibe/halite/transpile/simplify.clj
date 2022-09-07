@@ -54,9 +54,9 @@
       (when (boolean? subform)
         (if subform then-id else-id)))))
 
-(defn- always-evaluates?
+(s/defn always-evaluates? :- s/Bool
   "True if the given form cannot possibly produce a runtime error during evaluation."
-  [ssa-graph form]
+  [ssa-graph :- ssa/SSAGraph, form]
   (cond
     (or (integer? form) (boolean? form) (symbol? form) (string? form)) true
     (seq? form) (let [[op & arg-ids] form
