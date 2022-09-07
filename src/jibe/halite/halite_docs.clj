@@ -341,7 +341,7 @@
         :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :boolean-out :instance-op}
         :doc "Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents."
         :throws ['l-err/result-always-known]
-        :see-also ['not=]
+        :see-also ['= 'not=]
         :examples [{:expr-str "(= 2 2)"
                     :expr-str-j :auto
                     :result :auto}
@@ -675,7 +675,7 @@
                       'l-err/binding-target-invalid-symbol
                       'h-err/binding-target-must-be-bare-symbol
                       'h-err/not-boolean-body]
-             :see-also ['map 'filter]}
+             :see-also ['map]}
     'first {:sigs [["vector" "value"]]
             :sigs-j [["vector '.' 'first()'" "value"]]
             :tags #{:vector-op}
@@ -995,7 +995,7 @@
                        :expr-str-j :auto
                        :result :auto}
                       {}]
-           :see-also ['=]}
+           :see-also ['= 'not=]}
     'or {:sigs [["boolean boolean {boolean}" "boolean"]]
          :sigs-j [["boolean '||' boolean" "boolean"]]
          :tags #{:boolean-op :boolean-out}
@@ -1861,7 +1861,7 @@
            "\n"])
         (when-let [alsos (:see-also op)]
           ["See also:"
-           (for [a (sort alsos)]
+           (for [a (sort (remove #(= op-name %) alsos))]
              [" [`" a "`](#" (safe-op-anchor a) ")"])
            "\n\n"])
         (when-let [tags (:tags op)]

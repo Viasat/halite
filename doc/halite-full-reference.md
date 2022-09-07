@@ -1170,7 +1170,7 @@ Produce a new collection which contains only the elements from the original coll
 * [`h-err/not-boolean-body`](halite-err-id-reference.md#h-err/not-boolean-body)
 * [`l-err/binding-target-invalid-symbol`](halite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
-See also: [`filter`](#filter) [`map`](#map)
+See also: [`map`](#map)
 
 #### Tags:
 

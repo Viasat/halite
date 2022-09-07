@@ -147,7 +147,7 @@ true
 
 * [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
 
-See also: [`==`](#_E_E) [`equalTo`](#equalTo)
+See also: [`==`](#_E_E) [`equalTo`](#equalTo) [`notEqualTo`](#notEqualTo)
 
 #### Tags:
 
@@ -737,7 +737,7 @@ true
 
 * [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
 
-See also: [`!=`](#_B_E) [`notEqualTo`](#notEqualTo)
+See also: [`!=`](#_B_E) [`equalTo`](#equalTo) [`notEqualTo`](#notEqualTo)
 
 #### Tags:
 
@@ -1433,7 +1433,7 @@ true
 
 * [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
 
-See also: [`!=`](#_B_E) [`notEqualTo`](#notEqualTo)
+See also: [`!=`](#_B_E) [`==`](#_E_E) [`notEqualTo`](#notEqualTo)
 
 #### Tags:
 
@@ -1601,7 +1601,7 @@ filter(x in #{1, 2, 3})(x > 2)
 * [`h-err/not-boolean-body`](jadeite-err-id-reference.md#h-err/not-boolean-body)
 * [`l-err/binding-target-invalid-symbol`](jadeite-err-id-reference.md#l-err/binding-target-invalid-symbol)
 
-See also: [`filter`](#filter) [`map`](#map)
+See also: [`map`](#map)
 
 #### Tags:
 
@@ -1986,7 +1986,7 @@ true
 
 * [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
 
-See also: [`==`](#_E_E) [`equalTo`](#equalTo)
+See also: [`!=`](#_B_E) [`==`](#_E_E) [`equalTo`](#equalTo)
 
 #### Tags:
 
