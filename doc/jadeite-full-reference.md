@@ -1085,13 +1085,31 @@ false
 </td><td colspan="1">
 
 ```java
+equalTo(1, 1, 1)
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="1">
+
+```java
+equalTo(1, 1, 2)
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
 ("hi" == "hi")
 
 ### result ###
 true
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 ([1, 2, 3] == [1, 2, 3])
@@ -1100,7 +1118,7 @@ true
 true
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="2">
 
 ```java
 ([1, 2, 3] == #{1, 2, 3})
@@ -1109,7 +1127,7 @@ true
 false
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 (#{1, 2, 3} == #{1, 2, 3})
@@ -1118,7 +1136,7 @@ false
 true
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] == [#{1, 2}, #{3}])
@@ -1127,7 +1145,7 @@ true
 true
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] == [#{1, 2}, #{4}])

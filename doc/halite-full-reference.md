@@ -300,13 +300,31 @@ false
 </td><td colspan="1">
 
 ```clojure
-(= "hi" "hi")
+(= 1 1 1)
 
 ;-- result --;
 true
 ```
 
 </td></tr><tr><td colspan="1">
+
+```clojure
+(= 1 1 2)
+
+;-- result --;
+false
+```
+
+</td><td colspan="1">
+
+```clojure
+(= "hi" "hi")
+
+;-- result --;
+true
+```
+
+</td><td colspan="1">
 
 ```clojure
 (= [1 2 3] [1 2 3])
@@ -324,7 +342,7 @@ true
 false
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (= #{3 1 2} #{1 2 3})
@@ -333,7 +351,7 @@ false
 true
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```clojure
 (= [#{1 2} #{3}] [#{1 2} #{3}])
@@ -342,7 +360,7 @@ true
 true
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="2">
 
 ```clojure
 (= [#{1 2} #{3}] [#{1 2} #{4}])

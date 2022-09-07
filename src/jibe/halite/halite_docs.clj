@@ -342,14 +342,19 @@
         :doc "Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents."
         :throws ['l-err/result-always-known]
         :see-also ['not=]
-        :examples [;; TODO: include jadeite example of equalTo
-                   {:expr-str "(= 2 2)"
+        :examples [{:expr-str "(= 2 2)"
                     :expr-str-j :auto
                     :result :auto}
                    {:expr-str "(= #d \"2.2\" #d \"3.3\")"
                     :expr-str-j :auto
                     :result :auto}
                    {:expr-str "(= 2 3)"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(= 1 1 1)"
+                    :expr-str-j :auto
+                    :result :auto}
+                   {:expr-str "(= 1 1 2)"
                     :expr-str-j :auto
                     :result :auto}
                    {:expr-str "(= \"hi\" \"hi\")"
