@@ -1896,18 +1896,28 @@
   This markdown file was generated. Do not edit.
   -->\n\n")
 
+(defn full-intro [lang]
+  ["## All Operators\n\n"
+   "The syntax for all of the operators is summarized in the following \n\n"
+   "![" "all operators" "](./halite-bnf-diagrams/" (if (= :halite lang) "halite" "jadeite") ".svg)\n\n"
+   "## Operators\n\n"])
+
 (defn produce-full-md []
   (->> op-maps
        sort
        (map (partial apply full-md :halite))
-       (apply str generated-msg "# Halite operator reference (all operators)\n\n")
+       (apply str generated-msg
+              (apply str "# Halite operator reference (all operators)\n\n"
+                     (full-intro :halite)))
        (spit "doc/halite-full-reference.md"))
   (->> op-maps-j
        sort
        (remove (fn [[k _]]
                  (jadeite-ommitted-ops k)))
        (map (partial apply full-md :jadeite))
-       (apply str generated-msg "# Jadeite operator reference (all operators)\n\n")
+       (apply str generated-msg
+              (apply str "# Jadeite operator reference (all operators)\n\n"
+                     (full-intro :jadeite)))
        (spit "doc/jadeite-full-reference.md")))
 
 (defn basic-md [lang op-name op]

@@ -4,6 +4,14 @@
 
 # Halite operator reference (all operators)
 
+## All Operators
+
+The syntax for all of the operators is summarized in the following 
+
+![all operators](./halite-bnf-diagrams/halite.svg)
+
+## Operators
+
 ### <a name="_Dno-value"></a>$no-value
 
 Constant that produces the special 'unset' value which represents the lack of a value.

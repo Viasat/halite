@@ -4,6 +4,14 @@
 
 # Jadeite operator reference (all operators)
 
+## All Operators
+
+The syntax for all of the operators is summarized in the following 
+
+![all operators](./halite-bnf-diagrams/jadeite.svg)
+
+## Operators
+
 ### <a name="_B"></a>!
 
 Performs logical negation of the argument.
