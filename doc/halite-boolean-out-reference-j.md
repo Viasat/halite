@@ -14,6 +14,10 @@ For basic syntax of this data type see: [`boolean`](jadeite-basic-syntax-referen
 
 Performs logical negation of the argument.
 
+#### [`!=`](jadeite-full-reference.md#_B_E)
+
+Produces a false value if all of the values are equal to each other. Otherwise produces a true value.
+
 #### [`&&`](jadeite-full-reference.md#&&)
 
 Perform a logical 'and' operation on the input values.
@@ -25,6 +29,10 @@ Determine if a number is strictly less than another.
 #### [`<=`](jadeite-full-reference.md#_L_E)
 
 Determine if a number is less than or equal to another.
+
+#### [`==`](jadeite-full-reference.md#_E_E)
+
+Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`=>`](jadeite-full-reference.md#_E_G)
 

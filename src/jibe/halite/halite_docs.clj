@@ -1447,6 +1447,12 @@
                   (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                   (apply merge-with into)))
 
+(def tag-map-j (->> (-> op-maps-j
+                        (update-vals :tags))
+                    (remove (comp nil? second))
+                    (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                    (apply merge-with into)))
+
 (def thrown-by-basic-map (->> basic-bnf
                               (partition 2)
                               (map (fn [[k v]]
@@ -2031,13 +2037,10 @@
            ")" "\n\n"])
         ["![" (pr-str tag-name) "](./halite-bnf-diagrams/"
          (url-encode tag-name) (when (= :jadeite lang) "-j") ".svg)\n\n"]
-        [(when-let [op-names (tag-map (keyword tag-name))]
+        [(when-let [op-names ((if (= :halite lang) tag-map tag-map-j) (keyword tag-name))]
            (->> op-names
                 (map (fn [op-name]
-                       (let [op (op-maps op-name)
-                             op-name (if (= :halite lang)
-                                       op-name
-                                       (translate-op-name-to-jadeite op-name))]
+                       (let [op ((if (= :halite lang) op-maps op-maps-j) op-name)]
                          {:op-name op-name
                           :md (str "#### [`" op-name "`](" (if (= :halite lang)
                                                              "halite-full-reference.md"

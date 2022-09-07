@@ -10,6 +10,14 @@ For basic syntax of this data type see: [`vector`](jadeite-basic-syntax-referenc
 
 !["vector-op"](./halite-bnf-diagrams/vector-op-j.svg)
 
+#### [`!=`](jadeite-full-reference.md#_B_E)
+
+Produces a false value if all of the values are equal to each other. Otherwise produces a true value.
+
+#### [`==`](jadeite-full-reference.md#_E_E)
+
+Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+
 #### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)
 
 Extract the given item from the first argument. If the first argument is an instance, extract the value for the given field from the given instance. For optional fields, this may produce 'unset'. Otherwise this will always produce a value. If the first argument is a vector, then extract the value at the given index in the vector. The index in this case is zero based.
