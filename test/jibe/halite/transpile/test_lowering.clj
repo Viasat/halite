@@ -168,6 +168,10 @@
                :ws/C
                {:spec-vars {:cn "Integer"}
                 :constraints [["c1" (< 12 cn)]]
+                :refines-to {}}
+               :ws/D
+               {:spec-vars {:dn [:Maybe "Integer"]}
+                :constraints [["d1" (if-value dn (< 0 dn) true)]]
                 :refines-to {}}}]
     (are [in out]
          (= out
@@ -192,7 +196,12 @@
       '(if (< 12 $2) ($do! $3 (not= $1 $no-value)) false)
 
       '(let [c (if (< an 12) {:$type :ws/C :cn 10} {:$type :ws/C :cn 13})] true)
-      '(if $3 (< 12 $5) (< 12 $7)))))
+      '(if $3 (< 12 $5) (< 12 $7))
+
+      ;; When the constraint from :ws/D is inlined, it'll
+      ;; have the form '(if ($value? $no-value) ... true), which should
+      ;; be simplified in-place to just 'true.
+      '(let [d {:$type :ws/D}] (< 1 an)) true)))
 
 (def lower-valid? #'lowering/lower-valid?)
 
@@ -361,6 +370,26 @@
                :ws/A
                (ssa/spec-from-ssa)
                :constraints first second)))))
+
+(deftest test-eliminate-runtime-constraint-violations-and-if-value
+  (let [senv (halite-envs/spec-env
+              '{:ws/A
+                {:spec-vars {:ap [:Maybe "Boolean"]}
+                 :refines-to {}
+                 :constraints [["a1" (let [b {:$type :ws/B :bp ap}]
+                                       true)]]}
+                :ws/B
+                {:spec-vars {:bp [:Maybe "Boolean"]}
+                 :refines-to {}
+                 :constraints [["bp" (if-value bp (if bp false true) true)]]}})
+        sctx (ssa/build-spec-ctx senv :ws/A)]
+    (is (= '(if (if-value ap (if ap false true) true) (let [v1 {:$type :ws/B, :bp ap}] true) false)
+           (rewriting/with-tracing [traces]
+             (-> sctx
+                 (lowering/eliminate-runtime-constraint-violations)
+                 :ws/A
+                 (ssa/spec-from-ssa)
+                 :constraints first second))))))
 
 (def lower-refinement-constraints #'lowering/lower-refinement-constraints)
 

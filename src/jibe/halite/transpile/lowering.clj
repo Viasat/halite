@@ -162,14 +162,26 @@
            (partition 2 bindings))]
     (list 'let bindings (replace-in-expr replacements expr))))
 
+(defn- replace-in-if-expr
+  [replacements [_if pred-expr then-expr else-expr]]
+  (if (and (seq? pred-expr)
+           (= '$value? (first pred-expr))
+           (= '$no-value (replacements (second pred-expr))))
+    (replace-in-expr replacements else-expr)
+    (list 'if
+          (replace-in-expr replacements pred-expr)
+          (replace-in-expr replacements then-expr)
+          (replace-in-expr replacements else-expr))))
+
 (defn- replace-in-expr
   [replacements expr]
   (cond
     (or (integer? expr) (boolean? expr) (string? expr) (keyword? expr)) expr
     (symbol? expr) (get replacements expr expr)
     (seq? expr) (let [[op & args] expr]
-                  (if (= op 'let)
-                    (replace-in-let-expr replacements (first args) (last args))
+                  (condp = op
+                    'let (replace-in-let-expr replacements (first args) (last args))
+                    'if (replace-in-if-expr replacements expr)
                     (apply list op (map (partial replace-in-expr replacements) args))))
     (map? expr) (update-vals expr (partial replace-in-expr replacements))
     :else (throw (ex-info "BUG! Invalid expression" {:expr expr}))))
@@ -182,7 +194,9 @@
         inst-entries (dissoc inst :$type)
         scope (->> spec-vars keys (map symbol) set)
         inlined-constraints (->> constraints
-                                 (map (fn [[cname id]] (ssa/form-from-ssa scope ssa-graph id)))
+                                 (map (fn [[cname id]]
+                                        (binding [ssa/*hide-non-halite-ops* false]
+                                          (ssa/form-from-ssa scope ssa-graph id))))
                                  (mk-junct 'and)
                                  (replace-in-expr
                                   (-> spec-vars (update-vals (constantly '$no-value)) (merge inst-entries) (update-keys symbol))))
