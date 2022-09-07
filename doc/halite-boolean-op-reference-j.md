@@ -22,6 +22,10 @@ Perform a logical 'and' operation on the input values.
 
 Performs logical implication. If the first value is true, then the second value must also be true for the result to be true. If the first value is false, then the result is true.
 
+#### [`equalTo`](jadeite-full-reference.md#equalTo)
+
+Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+
 #### [`if`](jadeite-full-reference.md#if)
 
 If the first argument is true, then evaluate the second argument, otherwise evaluate the third argument.

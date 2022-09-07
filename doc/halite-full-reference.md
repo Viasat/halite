@@ -397,7 +397,7 @@ See also: [`not=`](#not_E)
 
 #### Tags:
 
- [Produce booleans](halite-boolean-out-reference.md),  [Fixed-decimal operations](halite-fixed-decimal-op-reference.md),  [Instance operations](halite-instance-op-reference.md),  [Integer operations](halite-integer-op-reference.md),  [Set operations](halite-set-op-reference.md),  [Vector operations](halite-vector-op-reference.md)
+ [Boolean operations](halite-boolean-op-reference.md),  [Produce booleans](halite-boolean-out-reference.md),  [Fixed-decimal operations](halite-fixed-decimal-op-reference.md),  [Instance operations](halite-instance-op-reference.md),  [Integer operations](halite-integer-op-reference.md),  [Set operations](halite-set-op-reference.md),  [Vector operations](halite-vector-op-reference.md)
 
 ---
 ### <a name="_E_G"></a>=>
