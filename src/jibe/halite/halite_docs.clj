@@ -339,7 +339,7 @@
         :sigs-j [["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]
                  ["value '==' value" "boolean"]]
         :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :boolean-out :boolean-op :instance-op}
-        :doc "Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents."
+        :doc "Determine if values are equivalent. For vectors and sets this performs a comparison of their contents."
         :throws ['l-err/result-always-known]
         :see-also ['= 'not=]
         :examples [{:expr-str "(= 2 2)"

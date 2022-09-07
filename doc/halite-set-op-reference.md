@@ -12,7 +12,7 @@ For basic syntax of this data type see: [`set`](halite-basic-syntax-reference.md
 
 #### [`=`](halite-full-reference.md#_E)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`any?`](halite-full-reference.md#any_Q)
 

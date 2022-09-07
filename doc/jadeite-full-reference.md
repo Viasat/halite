@@ -624,7 +624,7 @@ true
 ---
 ### <a name="_E_E"></a>==
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 ![["value '==' value" "boolean"]](./halite-bnf-diagrams/op/doublequal-0-j.svg)
 
@@ -1318,7 +1318,7 @@ See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#unio
 ---
 ### <a name="equalTo"></a>equalTo
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 ![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/equalTo-0-j.svg)
 

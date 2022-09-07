@@ -44,7 +44,7 @@ Determine if a number is less than or equal to another.
 
 #### [`==`](jadeite-full-reference.md#_E_E)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`>`](jadeite-full-reference.md#_G)
 
@@ -64,7 +64,7 @@ Decrement a numeric value.
 
 #### [`equalTo`](jadeite-full-reference.md#equalTo)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`expt`](jadeite-full-reference.md#expt)
 

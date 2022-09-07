@@ -16,7 +16,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 #### [`==`](jadeite-full-reference.md#_E_E)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`any?`](jadeite-full-reference.md#any_Q)
 
@@ -44,7 +44,7 @@ Compute the set difference of two sets.
 
 #### [`equalTo`](jadeite-full-reference.md#equalTo)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`every?`](jadeite-full-reference.md#every_Q)
 

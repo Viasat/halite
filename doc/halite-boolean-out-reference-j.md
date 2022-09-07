@@ -32,7 +32,7 @@ Determine if a number is less than or equal to another.
 
 #### [`==`](jadeite-full-reference.md#_E_E)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`=>`](jadeite-full-reference.md#_E_G)
 
@@ -56,7 +56,7 @@ Determine if a specific value is in a set.
 
 #### [`equalTo`](jadeite-full-reference.md#equalTo)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`every?`](jadeite-full-reference.md#every_Q)
 

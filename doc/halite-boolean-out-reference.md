@@ -20,7 +20,7 @@ Determine if a number is less than or equal to another.
 
 #### [`=`](halite-full-reference.md#_E)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`=>`](halite-full-reference.md#_E_G)
 

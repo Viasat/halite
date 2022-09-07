@@ -16,7 +16,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 #### [`==`](jadeite-full-reference.md#_E_E)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`ACCESSOR`](jadeite-full-reference.md#ACCESSOR)
 
@@ -44,7 +44,7 @@ Return how many items are in a collection.
 
 #### [`equalTo`](jadeite-full-reference.md#equalTo)
 
-Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 #### [`every?`](jadeite-full-reference.md#every_Q)
 
