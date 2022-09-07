@@ -945,6 +945,8 @@ The result of the equality check is always the same and can be known in advance,
 
 #### Produced by operators:
 
+* [`!=`](jadeite-full-reference.md#_B_E)
+* [`==`](jadeite-full-reference.md#_E_E)
 * [`equalTo`](jadeite-full-reference.md#equalTo)
 * [`notEqualTo`](jadeite-full-reference.md#notEqualTo)
 

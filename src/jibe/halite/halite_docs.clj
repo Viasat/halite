@@ -1454,13 +1454,19 @@
     (first op-names-j)
     op-name))
 
+(defn translate-op-name-to-jadeite-plural [op-name]
+  (if-let [op-names-j (get jadeite-operator-map op-name)]
+    op-names-j
+    [op-name]))
+
 (def err-maps
   (apply hash-map
          (mapcat (fn [[err-id err]]
                    [err-id (let [err (if-let [thrown-by (thrown-by-map err-id)]
                                        (assoc err
                                               :thrown-by (vec thrown-by)
-                                              :thrown-by-j (vec (map translate-op-name-to-jadeite (remove jadeite-ommitted-ops thrown-by))))
+                                              :thrown-by-j (vec (mapcat translate-op-name-to-jadeite-plural
+                                                                        (remove jadeite-ommitted-ops thrown-by))))
                                        err)
                                  err (if-let [thrown-by (thrown-by-basic-map err-id)]
                                        (assoc err
