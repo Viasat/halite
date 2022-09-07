@@ -7580,7 +7580,28 @@
     [:Instance :*]
     {:$type :spec/A$v1, :p 1, :n -1}
     "({ vs = [{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}]; (if(true) {vs[0]} else {vs[1]}) })"
-    "{$type: spec/A$v1, n: -1, p: 1}"]))
+    "{$type: spec/A$v1, n: -1, p: 1}"])
+  (hc
+   [(workspace :spec
+               {:spec/A []
+                :spec/B []
+                :spec/C []
+                :spec/D []}
+               (spec :A :concrete
+                     (refinements [:as_b :to :spec/B$v1 [:halite "{:$type :spec/B$v1}"]]
+                                  [:as_d :to :spec/D$v1 [:halite "{:$type :spec/D$v1}"]]))
+
+               (spec :B :abstract)
+               (spec :C :concrete
+                     (variables [:b :spec/B$v1])
+                     (refinements [:as_d :to :spec/D$v1 [:halite "(refine-to b :spec/D$v1)"]]))
+               (spec :D :concrete))]
+   :spec
+   [(refine-to {:$type :spec/C$v1, :b {:$type :spec/A$v1}} :spec/D$v1)
+    [:Instance :spec/D$v1]
+    {:$type :spec/D$v1}
+    "{$type: spec/C$v1, b: {$type: spec/A$v1}}.refineTo( spec/D$v1 )"
+    "{$type: spec/D$v1}"]))
 
 (deftest
   test-instances-optionality
