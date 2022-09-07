@@ -961,6 +961,12 @@
                       {:expr-str "(not= 2 2)"
                        :expr-str-j :auto
                        :result :auto}
+                      {:expr-str "(not= 1 1 2)"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(not= 1 1 1)"
+                       :expr-str-j :auto
+                       :result :auto}
                       {:expr-str "(not= \"hi\" \"bye\")"
                        :expr-str-j :auto
                        :result :auto}

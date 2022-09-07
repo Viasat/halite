@@ -75,13 +75,31 @@ false
 </td><td colspan="1">
 
 ```java
+notEqualTo(1, 1, 2)
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="1">
+
+```java
+notEqualTo(1, 1, 1)
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
 ("hi" != "bye")
 
 ### result ###
 true
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 ([1, 2, 3] != [1, 2, 3, 4])
@@ -90,7 +108,7 @@ true
 true
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="2">
 
 ```java
 ([1, 2, 3] != #{1, 2, 3})
@@ -99,7 +117,7 @@ true
 true
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 (#{1, 2, 3} != #{1, 2, 3})
@@ -108,7 +126,7 @@ true
 false
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{3}])
@@ -117,7 +135,7 @@ false
 false
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{4}])
@@ -1914,13 +1932,31 @@ false
 </td><td colspan="1">
 
 ```java
+notEqualTo(1, 1, 2)
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="1">
+
+```java
+notEqualTo(1, 1, 1)
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
 ("hi" != "bye")
 
 ### result ###
 true
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 ([1, 2, 3] != [1, 2, 3, 4])
@@ -1929,7 +1965,7 @@ true
 true
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="2">
 
 ```java
 ([1, 2, 3] != #{1, 2, 3})
@@ -1938,7 +1974,7 @@ true
 true
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 (#{1, 2, 3} != #{1, 2, 3})
@@ -1947,7 +1983,7 @@ true
 false
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{3}])
@@ -1956,7 +1992,7 @@ false
 false
 ```
 
-</td></tr><tr><td colspan="2">
+</td><td colspan="2">
 
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{4}])
