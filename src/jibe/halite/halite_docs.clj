@@ -1412,22 +1412,22 @@
 
 (def jadeite-ommitted-ops #{'dec 'inc})
 
-(def jadeite-operator-map {'= 'equalTo ;; TODO: also include ==
-                           'sort-by 'sortBy
-                           'and '&&
-                           'div '/
-                           'get 'ACCESSOR
-                           'get-in 'ACCESSOR-CHAIN
-                           'when-value 'whenValue
-                           'when-value-let 'whenValueLet
-                           'if-value 'ifValue
-                           'if-value-let 'ifValueLet
-                           'mod '%
-                           'not '!
-                           'not= 'notEqualTo ;; TODO: also include !=
-                           'or '||
-                           'refine-to 'refineTo
-                           'refines-to? 'refinesTo?})
+(def jadeite-operator-map {'= ['equalTo '==]
+                           'sort-by ['sortBy]
+                           'and ['&&]
+                           'div ['/]
+                           'get ['ACCESSOR]
+                           'get-in ['ACCESSOR-CHAIN]
+                           'when-value ['whenValue]
+                           'when-value-let ['whenValueLet]
+                           'if-value ['ifValue]
+                           'if-value-let ['ifValueLet]
+                           'mod ['%]
+                           'not ['!]
+                           'not= ['notEqualTo '!=]
+                           'or ['||]
+                           'refine-to ['refineTo]
+                           'refines-to? ['refinesTo?]})
 
 (def thrown-by-map (->> (-> op-maps
                             (update-vals :throws))
@@ -1449,13 +1449,18 @@
                               (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                               (apply merge-with into)))
 
+(defn translate-op-name-to-jadeite [op-name]
+  (if-let [op-names-j (get jadeite-operator-map op-name)]
+    (first op-names-j)
+    op-name))
+
 (def err-maps
   (apply hash-map
          (mapcat (fn [[err-id err]]
                    [err-id (let [err (if-let [thrown-by (thrown-by-map err-id)]
                                        (assoc err
                                               :thrown-by (vec thrown-by)
-                                              :thrown-by-j (vec (map #(get jadeite-operator-map % %) (remove jadeite-ommitted-ops thrown-by))))
+                                              :thrown-by-j (vec (map translate-op-name-to-jadeite (remove jadeite-ommitted-ops thrown-by))))
                                        err)
                                  err (if-let [thrown-by (thrown-by-basic-map err-id)]
                                        (assoc err
@@ -1544,9 +1549,6 @@
                                       'l-err/let-bindings-empty {:doc "The bindings form of the 'let' cannot be empty. If there is nothing to bind, then the 'let' can be omitted."}
                                       'l-err/result-always-known {:doc "The result of the equality check is always the same and can be known in advance, so a check is not needed."}
                                       'l-err/disallowed-unset-variable {:doc "It is not allowed to bind 'unset' to symbols other than the built-in '$no-value'."}})))))
-
-(defn translate-op-name-to-jadeite [op-name]
-  (get jadeite-operator-map op-name op-name))
 
 (defn translate-op-maps-to-jadeite [op-maps]
   (-> op-maps
