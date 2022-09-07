@@ -336,8 +336,8 @@
                      :expr-str-j :auto
                      :result :auto}]}
     '= {:sigs [["value value {value}" "boolean"]]
-        :sigs-j [["value '==' value" "boolean"]
-                 ["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]]
+        :sigs-j [["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]
+                 ["value '==' value" "boolean"]]
         :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :boolean-out :boolean-op :instance-op}
         :doc "Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents."
         :throws ['l-err/result-always-known]
@@ -946,8 +946,8 @@
                       :result :auto}]
           :see-also ['=> 'and 'or]}
     'not= {:sigs [["value value {value}" "boolean"]]
-           :sigs-j [["value '!=' value" "boolean"]
-                    ["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]]
+           :sigs-j [["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]
+                    ["value '!=' value" "boolean"]]
            :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :instance-op :boolean-op :boolean-out}
            :doc "Produces a false value if all of the values are equal to each other. Otherwise produces a true value."
            :throws ['l-err/result-always-known]
@@ -1575,7 +1575,10 @@
          (mapcat (fn [[k v]]
                    (->> (translate-op-name-to-jadeite-plural k)
                         (mapcat (fn [k']
-                                  [k' v])))))
+                                  [k' (cond
+                                        (#{'== '!=} k') (update-in v [:sigs-j] (comp vector second))
+                                        (#{'equalTo 'notEqualTo} k') (update-in v [:sigs-j] (comp vector first))
+                                        :default v)])))))
          (apply sorted-map))))
 
 (def op-maps-j (translate-op-maps-to-jadeite op-maps))

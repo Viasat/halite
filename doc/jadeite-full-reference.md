@@ -43,8 +43,6 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ![["value '!=' value" "boolean"]](./halite-bnf-diagrams/op/notequal-0-j.svg)
 
-![["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/notequal-1-j.svg)
-
 <table><tr><td colspan="1">
 
 ```java
@@ -629,8 +627,6 @@ true
 Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 ![["value '==' value" "boolean"]](./halite-bnf-diagrams/op/doublequal-0-j.svg)
-
-![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/doublequal-1-j.svg)
 
 <table><tr><td colspan="1">
 
@@ -1324,9 +1320,7 @@ See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#unio
 
 Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
 
-![["value '==' value" "boolean"]](./halite-bnf-diagrams/op/equalTo-0-j.svg)
-
-![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/equalTo-1-j.svg)
+![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/equalTo-0-j.svg)
 
 <table><tr><td colspan="1">
 
@@ -1898,9 +1892,7 @@ See also: [`filter`](#filter) [`reduce`](#reduce)
 
 Produces a false value if all of the values are equal to each other. Otherwise produces a true value.
 
-![["value '!=' value" "boolean"]](./halite-bnf-diagrams/op/notEqualTo-0-j.svg)
-
-![["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/notEqualTo-1-j.svg)
+![["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/notEqualTo-0-j.svg)
 
 <table><tr><td colspan="1">
 
