@@ -37,6 +37,123 @@ See also: [`&&`](#&&) [`=>`](#_E_G) [`||`](#||)
  [Boolean operations](halite-boolean-op-reference-j.md),  [Produce booleans](halite-boolean-out-reference-j.md)
 
 ---
+### <a name="_B_E"></a>!=
+
+Produces a false value if all of the values are equal to each other. Otherwise produces a true value.
+
+![["value '!=' value" "boolean"]](./halite-bnf-diagrams/op/notequal-0-j.svg)
+
+![["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/notequal-1-j.svg)
+
+<table><tr><td colspan="1">
+
+```java
+(2 != 3)
+
+### result ###
+true
+```
+
+</td><td colspan="2">
+
+```java
+(#d "2.2" != #d "2.2")
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
+(2 != 2)
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
+("hi" != "bye")
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+([1, 2, 3] != [1, 2, 3, 4])
+
+### result ###
+true
+```
+
+</td><td colspan="2">
+
+```java
+([1, 2, 3] != #{1, 2, 3})
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+(#{1, 2, 3} != #{1, 2, 3})
+
+### result ###
+false
+```
+
+</td><td colspan="2">
+
+```java
+([#{1, 2}, #{3}] != [#{1, 2}, #{3}])
+
+### result ###
+false
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+([#{1, 2}, #{3}] != [#{1, 2}, #{4}])
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="4">
+
+```java
+({$type: my/Spec$v1, x: 1, y: -1} != {$type: my/Spec$v1, x: 1, y: 0})
+
+### result ###
+true
+```
+
+</td><td colspan="1">
+
+```java
+
+```
+
+</td></tr></table>
+
+#### Possible errors:
+
+* [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
+
+See also: [`==`](#_E_E) [`equalTo`](#equalTo)
+
+#### Tags:
+
+ [Boolean operations](halite-boolean-op-reference-j.md),  [Produce booleans](halite-boolean-out-reference-j.md),  [Fixed-decimal operations](halite-fixed-decimal-op-reference-j.md),  [Instance operations](halite-instance-op-reference-j.md),  [Integer operations](halite-integer-op-reference-j.md),  [Set operations](halite-set-op-reference-j.md),  [Vector operations](halite-vector-op-reference-j.md)
+
+---
 ### <a name="_Dno-value"></a>$no-value
 
 Constant that produces the special 'unset' value which represents the lack of a value.
@@ -487,6 +604,144 @@ true
 #### Tags:
 
  [Produce booleans](halite-boolean-out-reference-j.md),  [Fixed-decimal operations](halite-fixed-decimal-op-reference-j.md),  [Integer operations](halite-integer-op-reference-j.md)
+
+---
+### <a name="_E_E"></a>==
+
+Determine if two values are equivalent. For vectors and sets this performs a comparison of their contents.
+
+![["value '==' value" "boolean"]](./halite-bnf-diagrams/op/doublequal-0-j.svg)
+
+![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/doublequal-1-j.svg)
+
+<table><tr><td colspan="1">
+
+```java
+(2 == 2)
+
+### result ###
+true
+```
+
+</td><td colspan="2">
+
+```java
+(#d "2.2" == #d "3.3")
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
+(2 == 3)
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
+equalTo(1, 1, 1)
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="1">
+
+```java
+equalTo(1, 1, 2)
+
+### result ###
+false
+```
+
+</td><td colspan="1">
+
+```java
+("hi" == "hi")
+
+### result ###
+true
+```
+
+</td><td colspan="2">
+
+```java
+([1, 2, 3] == [1, 2, 3])
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+([1, 2, 3] == #{1, 2, 3})
+
+### result ###
+false
+```
+
+</td><td colspan="2">
+
+```java
+(#{1, 2, 3} == #{1, 2, 3})
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+([#{1, 2}, #{3}] == [#{1, 2}, #{3}])
+
+### result ###
+true
+```
+
+</td><td colspan="2">
+
+```java
+([#{1, 2}, #{3}] == [#{1, 2}, #{4}])
+
+### result ###
+false
+```
+
+</td></tr><tr><td colspan="4">
+
+```java
+({$type: my/Spec$v1, x: 1, y: -1} == {$type: my/Spec$v1, x: 1, y: 0})
+
+### result ###
+false
+```
+
+</td></tr><tr><td colspan="4">
+
+```java
+({$type: my/Spec$v1, x: 1, y: 0} == {$type: my/Spec$v1, x: 1, y: 0})
+
+### result ###
+true
+```
+
+</td></tr></table>
+
+#### Possible errors:
+
+* [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
+
+See also: [`!=`](#_B_E) [`notEqualTo`](#notEqualTo)
+
+#### Tags:
+
+ [Produce booleans](halite-boolean-out-reference-j.md),  [Fixed-decimal operations](halite-fixed-decimal-op-reference-j.md),  [Instance operations](halite-instance-op-reference-j.md),  [Integer operations](halite-integer-op-reference-j.md),  [Set operations](halite-set-op-reference-j.md),  [Vector operations](halite-vector-op-reference-j.md)
 
 ---
 ### <a name="_E_G"></a>=>

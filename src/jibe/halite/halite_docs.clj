@@ -1557,15 +1557,20 @@
                                       'l-err/disallowed-unset-variable {:doc "It is not allowed to bind 'unset' to symbols other than the built-in '$no-value'."}})))))
 
 (defn translate-op-maps-to-jadeite [op-maps]
-  (-> op-maps
-      (update-keys translate-op-name-to-jadeite)
-      (update-vals (fn [op]
-                     (if (:see-also op)
-                       (update-in op [:see-also] #(->> %
-                                                       (mapcat translate-op-name-to-jadeite-plural)
-                                                       sort
-                                                       vec))
-                       op)))))
+  (let [op-maps (-> op-maps
+                    (update-vals (fn [op]
+                                   (if (:see-also op)
+                                     (update-in op [:see-also] #(->> %
+                                                                     (mapcat translate-op-name-to-jadeite-plural)
+                                                                     sort
+                                                                     vec))
+                                     op))))]
+    (->> op-maps
+         (mapcat (fn [[k v]]
+                   (->> (translate-op-name-to-jadeite-plural k)
+                        (mapcat (fn [k']
+                                  [k' v])))))
+         (apply sorted-map))))
 
 (def op-maps-j (translate-op-maps-to-jadeite op-maps))
 
@@ -1635,7 +1640,9 @@
         '&& 'and
         '|| 'or
         '! 'not
-        '/ 'div} s s))
+        '/ 'div
+        '== 'doublequal
+        '!= 'notequal} s s))
 
 (defn produce-bnf-diagrams [op-maps op-maps-j all-filename all-filename-j]
   (let [op-keys (keys op-maps)
