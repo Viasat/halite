@@ -1178,7 +1178,7 @@ true
 
 * [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
 
-See also: [`notEqualTo`](#notEqualTo)
+See also: [`!=`](#_B_E) [`notEqualTo`](#notEqualTo)
 
 #### Tags:
 
@@ -1731,7 +1731,7 @@ true
 
 * [`l-err/result-always-known`](jadeite-err-id-reference.md#l-err/result-always-known)
 
-See also: [`equalTo`](#equalTo)
+See also: [`==`](#_E_E) [`equalTo`](#equalTo)
 
 #### Tags:
 

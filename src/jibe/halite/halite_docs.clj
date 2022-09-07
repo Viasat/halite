@@ -1561,7 +1561,10 @@
       (update-keys translate-op-name-to-jadeite)
       (update-vals (fn [op]
                      (if (:see-also op)
-                       (update-in op [:see-also] (partial mapv translate-op-name-to-jadeite))
+                       (update-in op [:see-also] #(->> %
+                                                       (mapcat translate-op-name-to-jadeite-plural)
+                                                       sort
+                                                       vec))
                        op)))))
 
 (def op-maps-j (translate-op-maps-to-jadeite op-maps))
