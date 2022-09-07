@@ -1595,6 +1595,42 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 h-err/divide-by-zero
 ```
 
+</td><td colspan="1">
+
+```clojure
+(mod 1 3)
+
+;-- result --;
+1
+```
+
+</td><td colspan="1">
+
+```clojure
+(mod -1 3)
+
+;-- result --;
+2
+```
+
+</td></tr><tr><td colspan="1">
+
+```clojure
+(mod 1 -3)
+
+;-- result --;
+-2
+```
+
+</td><td colspan="1">
+
+```clojure
+(mod -1 -3)
+
+;-- result --;
+-1
+```
+
 </td></tr></table>
 
 #### Possible errors:

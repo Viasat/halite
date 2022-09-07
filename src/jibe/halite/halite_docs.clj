@@ -915,6 +915,18 @@
                       :result :auto}
                      {:expr-str "(mod 1 0)"
                       :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(mod 1 3)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(mod -1 3)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(mod 1 -3)"
+                      :expr-str-j :auto
+                      :result :auto}
+                     {:expr-str "(mod -1 -3)"
+                      :expr-str-j :auto
                       :result :auto}]
           :throws ['h-err/divide-by-zero]}
     'not {:sigs [["boolean" "boolean"]]
