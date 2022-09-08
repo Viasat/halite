@@ -235,7 +235,7 @@
                  'nothing {:bnf "nothing"
                            :doc "The absence of a value."}
                  'any {:bnf "value | unset"
-                       :doc "Refers to either the presence of absence of a value."}]))
+                       :doc "Refers to either the presence of absence of a value, or a pseudo-value indicating the lack of a value."}]))
 
 (defn make-workspace-fn [workspace]
   (fn [expr-str] (update-in workspace
