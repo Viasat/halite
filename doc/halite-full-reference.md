@@ -18,7 +18,7 @@ Constant that produces the special 'unset' value which represents the lack of a 
 
 ![["" "unset"]](./halite-bnf-diagrams/op/%24no-value-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`unset`](halite-basic-syntax-reference.md#unset)
 
@@ -46,7 +46,7 @@ Multiply two numbers together.
 
 ![["fixed-decimal integer" "fixed-decimal"]](./halite-bnf-diagrams/op/*-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -98,7 +98,7 @@ Add two numbers together.
 
 ![["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]](./halite-bnf-diagrams/op/plus-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -157,7 +157,7 @@ Subtract one number from another.
 
 ![["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]](./halite-bnf-diagrams/op/minus-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -214,7 +214,7 @@ Determine if a number is strictly less than another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -258,7 +258,7 @@ Determine if a number is less than or equal to another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C%3D-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -302,7 +302,7 @@ Determine if values are equivalent. For vectors and sets this performs a compari
 
 ![["value value {value}" "boolean"]](./halite-bnf-diagrams/op/%3D-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`value`](halite-basic-syntax-reference.md#value)
 
@@ -442,7 +442,7 @@ Performs logical implication. If the first value is true, then the second value 
 
 ![["boolean boolean" "boolean"]](./halite-bnf-diagrams/op/%3D%3E-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean)
 
@@ -488,7 +488,7 @@ Determine if a number is strictly greater than another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -532,7 +532,7 @@ Determine if a number is greater than or equal to another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E%3D-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -578,7 +578,7 @@ Compute the absolute value of a number.
 
 ![["fixed-decimal" "fixed-decimal"]](./halite-bnf-diagrams/op/abs-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -628,7 +628,7 @@ Perform a logical 'and' operation on the input values.
 
 ![["boolean boolean {boolean}" "boolean"]](./halite-bnf-diagrams/op/and-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean)
 
@@ -676,7 +676,7 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 
 ![["'[' symbol (set | vector) ']' boolean-expression" "boolean"]](./halite-bnf-diagrams/op/any%3F-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -725,7 +725,7 @@ Combine two collections into one.
 
 ![["(set (set | vector))" "set"]](./halite-bnf-diagrams/op/concat-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -778,7 +778,7 @@ Add individual items to a collection.
 
 ![["vector value {value}" "vector"]](./halite-bnf-diagrams/op/conj-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`set`](halite-basic-syntax-reference.md#set), [`value`](halite-basic-syntax-reference.md#value), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -830,7 +830,7 @@ Determine if a specific value is in a set.
 
 ![["set value" "boolean"]](./halite-bnf-diagrams/op/contains%3F-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`value`](halite-basic-syntax-reference.md#value)
 
@@ -885,7 +885,7 @@ Return how many items are in a collection.
 
 ![["(set | vector)" "integer"]](./halite-bnf-diagrams/op/count-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -929,7 +929,7 @@ Decrement a numeric value.
 
 ![["integer" "integer"]](./halite-bnf-diagrams/op/dec-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -970,7 +970,7 @@ Compute the set difference of two sets.
 
 ![["set set" "set"]](./halite-bnf-diagrams/op/difference-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`set`](halite-basic-syntax-reference.md#set)
 
@@ -1033,7 +1033,7 @@ Divide the first number by the second. When the first argument is an integer the
 
 ![["fixed-decimal integer" "fixed-decimal"]](./halite-bnf-diagrams/op/div-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -1103,7 +1103,7 @@ Produce a runtime error with the provided string as an error message.
 
 ![["string" "nothing"]](./halite-bnf-diagrams/op/error-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`nothing`](halite-basic-syntax-reference.md#nothing)
 
@@ -1135,7 +1135,7 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 
 ![["'[' symbol (set | vector) ']' boolean-expression" "boolean"]](./halite-bnf-diagrams/op/every%3F-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -1182,7 +1182,7 @@ Compute the numeric result of raising the first argument to the power given by t
 
 ![["integer integer" "integer"]](./halite-bnf-diagrams/op/expt-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -1242,7 +1242,7 @@ Produce a new collection which contains only the elements from the original coll
 
 ![["'[' symbol:element vector ']' boolean-expression" "vector"]](./halite-bnf-diagrams/op/filter-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -1287,7 +1287,7 @@ Produce the first element from a vector.
 
 ![["vector" "value"]](./halite-bnf-diagrams/op/first-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`value`](halite-basic-syntax-reference.md#value), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -1333,7 +1333,7 @@ Extract the given item from the first argument. If the first argument is an inst
 
 ![["(vector integer)" "value"]](./halite-bnf-diagrams/op/get-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`instance`](halite-basic-syntax-reference.md#instance), [`integer`](halite-basic-syntax-reference.md#integer), [`keyword`](halite-basic-syntax-reference.md#keyword), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -1381,7 +1381,7 @@ The first path element in the path is looked up in the initial target. If there 
 
 ![["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]](./halite-bnf-diagrams/op/get-in-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`instance`](halite-basic-syntax-reference.md#instance), [`integer`](halite-basic-syntax-reference.md#integer), [`keyword`](halite-basic-syntax-reference.md#keyword), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -1437,7 +1437,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 ![["boolean any-expression any-expression" "any"]](./halite-bnf-diagrams/op/if-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`boolean`](halite-basic-syntax-reference.md#boolean)
 
@@ -1474,7 +1474,7 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 ![["symbol any-expression any-expression" "any"]](./halite-bnf-diagrams/op/if-value-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 
@@ -1498,7 +1498,7 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 ![["'[' symbol any:binding ']' any-expression any-expression" "any"]](./halite-bnf-diagrams/op/if-value-let-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 
@@ -1542,7 +1542,7 @@ Increment a numeric value.
 
 ![["integer" "integer"]](./halite-bnf-diagrams/op/inc-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -1583,7 +1583,7 @@ Compute the set intersection of the sets.
 
 ![["set set {set}" "set"]](./halite-bnf-diagrams/op/intersection-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`set`](halite-basic-syntax-reference.md#set)
 
@@ -1626,7 +1626,7 @@ Evaluate the expression argument in a nested context created by considering the 
 
 ![["'[' symbol value {symbol value} ']' any-expression" "any"]](./halite-bnf-diagrams/op/let-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 
@@ -1685,7 +1685,7 @@ Produce a new collection from a collection by evaluating the expression with the
 
 ![["'[' symbol:element vector ']' value-expression" "vector"]](./halite-bnf-diagrams/op/map-1.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`set`](halite-basic-syntax-reference.md#set), [`symbol`](halite-basic-syntax-reference.md#symbol), [`value`](halite-basic-syntax-reference.md#value), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -1730,7 +1730,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 
 ![["integer integer" "integer"]](./halite-bnf-diagrams/op/mod-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -1814,7 +1814,7 @@ Performs logical negation of the argument.
 
 ![["boolean" "boolean"]](./halite-bnf-diagrams/op/not-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean)
 
@@ -1851,7 +1851,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 
 ![["value value {value}" "boolean"]](./halite-bnf-diagrams/op/not%3D-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`value`](halite-basic-syntax-reference.md#value)
 
@@ -1988,7 +1988,7 @@ Perform a logical 'or' operation on the input values.
 
 ![["boolean boolean {boolean}" "boolean"]](./halite-bnf-diagrams/op/or-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean)
 
@@ -2036,7 +2036,7 @@ Produce a vector that contains integers in order starting at either the start va
 
 ![["[integer:start] integer:end [integer:increment]" "vector"]](./halite-bnf-diagrams/op/range-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -2084,7 +2084,7 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 ![["'[' symbol:accumulator value:accumulator-init ']' '[' symbol:element vector ']' any-expression" "any"]](./halite-bnf-diagrams/op/reduce-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -2120,7 +2120,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 ![["instance keyword:spec-id" "instance"]](./halite-bnf-diagrams/op/refine-to-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`instance`](halite-basic-syntax-reference.md#instance), [`keyword`](halite-basic-syntax-reference.md#keyword)
 
@@ -2164,7 +2164,7 @@ Determine whether it is possible to refine the given instance into an instance o
 
 ![["instance keyword:spec-id" "boolean"]](./halite-bnf-diagrams/op/refines-to%3F-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`instance`](halite-basic-syntax-reference.md#instance), [`keyword`](halite-basic-syntax-reference.md#keyword)
 
@@ -2207,7 +2207,7 @@ Produce a number by adjusting the scale of the fixed-decimal to the new-scale. I
 
 ![["fixed-decimal integer:new-scale" "(fixed-decimal | integer)"]](./halite-bnf-diagrams/op/rescale-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
@@ -2264,7 +2264,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ![["vector" "vector"]](./halite-bnf-diagrams/op/rest-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -2321,7 +2321,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 ![["(set | vector)" "vector"]](./halite-bnf-diagrams/op/sort-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -2358,7 +2358,7 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 ![["'[' symbol:element (set | vector) ']' (integer-expression | fixed-decimal-expression)" "vector"]](./halite-bnf-diagrams/op/sort-by-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer), [`set`](halite-basic-syntax-reference.md#set), [`symbol`](halite-basic-syntax-reference.md#symbol), [`vector`](halite-basic-syntax-reference.md#vector)
 
@@ -2393,7 +2393,7 @@ Combine all of the input strings together in sequence to produce a new string.
 
 ![["string string {string}" "string"]](./halite-bnf-diagrams/op/str-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`string`](halite-basic-syntax-reference.md#string)
 
@@ -2432,7 +2432,7 @@ Return false if there are any items in the first set which do not appear in the 
 
 ![["set set" "boolean"]](./halite-bnf-diagrams/op/subset%3F-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set)
 
@@ -2480,7 +2480,7 @@ Compute the union of all the sets.
 
 ![["set set {set}" "set"]](./halite-bnf-diagrams/op/union-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`set`](halite-basic-syntax-reference.md#set)
 
@@ -2532,7 +2532,7 @@ Evaluate the instance-expression and produce the result. If a constraint violati
 
 ![["instance-expression" "any"]](./halite-bnf-diagrams/op/valid-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`instance`](halite-basic-syntax-reference.md#instance)
 
@@ -2571,7 +2571,7 @@ Evaluate the instance expression and produce false if a constraint violation occ
 
 ![["instance-expression" "boolean"]](./halite-bnf-diagrams/op/valid%3F-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`instance`](halite-basic-syntax-reference.md#instance)
 
@@ -2610,7 +2610,7 @@ If the first argument is true, then evaluate the second argument, otherwise prod
 
 ![["boolean any-expression" "any"]](./halite-bnf-diagrams/op/when-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`boolean`](halite-basic-syntax-reference.md#boolean)
 
@@ -2647,7 +2647,7 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 ![["symbol any-expression:binding" "any"]](./halite-bnf-diagrams/op/when-value-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 
@@ -2684,7 +2684,7 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 ![["'[' symbol any:binding']' any-expression" "any"]](./halite-bnf-diagrams/op/when-value-let-0.svg)
 
-### Basic elements:
+#### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 

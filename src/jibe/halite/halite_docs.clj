@@ -1922,7 +1922,7 @@
                                         (or (:basic-ref-j op)
                                             (:basic-ref op)))
                                       sort)]
-          ["### Basic elements:\n\n"
+          ["#### Basic elements:\n\n"
            (string/join ", "
                         (for [basic-ref basic-refs]
                           (str "[`" basic-ref "`]"
