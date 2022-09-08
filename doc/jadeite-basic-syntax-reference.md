@@ -327,7 +327,7 @@ The members of sets are not directly accessible. If it is necessary to access th
 </td><td colspan="1">
 
 ```java
-#{[1, 2], [3]}
+#{1, 2, 3}
 ```
 
 </td><td colspan="1">

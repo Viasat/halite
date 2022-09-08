@@ -221,7 +221,7 @@
                        :comment "The members of sets are not directly accessible. If it is necessary to access the members of a set, it is recommended to design the data structures going into the sets in such a way that the set can be sorted into a vector for access."
                        :examples [{:expr-str "#{}"
                                    :expr-str-j :auto}
-                                  {:expr-str "#{[1 2] [3]}"
+                                  {:expr-str "#{1 2 3}"
                                    :expr-str-j :auto}
                                   {:expr-str "#{[1 2] [3]}"
                                    :expr-str-j :auto}]
