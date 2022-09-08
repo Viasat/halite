@@ -209,7 +209,9 @@
                           :examples [{:expr-str "[]"
                                       :expr-str-j :auto}
                                      {:expr-str "[1 2 3]"
-                                      :expr-str-j "[1, 2, 3]"}]
+                                      :expr-str-j :auto}
+                                     {:expr-str "[#{1 2} #{3}]"
+                                      :expr-str-j :auto}]
                           :throws ['h-err/literal-must-evaluate-to-value
                                    'h-err/size-exceeded]
                           :tags #{'vector-op 'vector-out}}
@@ -219,8 +221,10 @@
                        :comment "The members of sets are not directly accessible. If it is necessary to access the members of a set, it is recommended to design the data structures going into the sets in such a way that the set can be sorted into a vector for access."
                        :examples [{:expr-str "#{}"
                                    :expr-str-j :auto}
-                                  {:expr-str "#{1 2 3}"
-                                   :expr-str-j "#{1, 2, 3}"}]
+                                  {:expr-str "#{[1 2] [3]}"
+                                   :expr-str-j :auto}
+                                  {:expr-str "#{[1 2] [3]}"
+                                   :expr-str-j :auto}]
                        :throws ['h-err/literal-must-evaluate-to-value
                                 'h-err/size-exceeded]
                        :tags #{'set-op 'set-out}}
@@ -1441,18 +1445,6 @@
                         (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                         (apply merge-with into)))
 
-(def tag-map (->> (-> op-maps
-                      (update-vals :tags))
-                  (remove (comp nil? second))
-                  (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
-                  (apply merge-with into)))
-
-(def tag-map-j (->> (-> op-maps-j
-                        (update-vals :tags))
-                    (remove (comp nil? second))
-                    (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
-                    (apply merge-with into)))
-
 (def thrown-by-basic-map (->> basic-bnf
                               (partition 2)
                               (map (fn [[k v]]
@@ -1588,6 +1580,18 @@
          (apply sorted-map))))
 
 (def op-maps-j (translate-op-maps-to-jadeite op-maps))
+
+(def tag-map (->> (-> op-maps
+                      (update-vals :tags))
+                  (remove (comp nil? second))
+                  (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                  (apply merge-with into)))
+
+(def tag-map-j (->> (-> op-maps-j
+                        (update-vals :tags))
+                    (remove (comp nil? second))
+                    (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                    (apply merge-with into)))
 
 (defn produce-diagram [out-file-name ^String rule-str]
   (let [gtrd (GrammarToRRDiagram.)
