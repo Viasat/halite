@@ -1935,7 +1935,8 @@
            "\n\n"])
         (when-let [c (:comment op)] [c "\n\n"])
         (when-let [es (:examples op)]
-          ["<table>"
+          ["#### Examples:\n\n"
+           "<table>"
            (for [row (text-tile-rows (map (partial example-text lang) es))]
              ["<tr>"
               (for [tile (:tiles row)]

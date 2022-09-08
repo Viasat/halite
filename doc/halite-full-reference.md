@@ -52,6 +52,8 @@ Multiply two numbers together.
 
 Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale.
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -101,6 +103,8 @@ Add two numbers together.
 #### Basic elements:
 
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -161,6 +165,8 @@ Subtract one number from another.
 
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -218,6 +224,8 @@ Determine if a number is strictly less than another.
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -262,6 +270,8 @@ Determine if a number is less than or equal to another.
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -305,6 +315,8 @@ Determine if values are equivalent. For vectors and sets this performs a compari
 #### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`value`](halite-basic-syntax-reference.md#value)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -446,6 +458,8 @@ Performs logical implication. If the first value is true, then the second value 
 
 [`boolean`](halite-basic-syntax-reference.md#boolean)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -492,6 +506,8 @@ Determine if a number is strictly greater than another.
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -535,6 +551,8 @@ Determine if a number is greater than or equal to another.
 #### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -583,6 +601,8 @@ Compute the absolute value of a number.
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 Since the negative number space contains one more value than the positive number space, it is a runtime error to attempt to take the absolute value of the most negative value for a given number space.
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -634,6 +654,8 @@ Perform a logical 'and' operation on the input values.
 
 The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated.
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -681,6 +703,8 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
 The operation does not short-circuit. The boolean-expression is evaluated for all elements even if a prior element has caused the boolean-expression to evaluate to true. Operating on an empty collection produces a false value.
+
+#### Examples:
 
 <table><tr><td colspan="2">
 
@@ -730,6 +754,8 @@ Combine two collections into one.
 [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
 Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed.
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -784,6 +810,8 @@ Add individual items to a collection.
 
 Only definite values may be put into collections, i.e. collections cannot contain 'unset' values.
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -835,6 +863,8 @@ Determine if a specific value is in a set.
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`value`](halite-basic-syntax-reference.md#value)
 
 Since collections themselves are compared by their contents, this works for collections nested inside of sets.
+
+#### Examples:
 
 <table><tr><td colspan="2">
 
@@ -889,6 +919,8 @@ Return how many items are in a collection.
 
 [`integer`](halite-basic-syntax-reference.md#integer), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -933,6 +965,8 @@ Decrement a numeric value.
 
 [`integer`](halite-basic-syntax-reference.md#integer)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -975,6 +1009,8 @@ Compute the set difference of two sets.
 [`set`](halite-basic-syntax-reference.md#set)
 
 This produces a set which contains all of the elements from the first set which do not appear in the second set.
+
+#### Examples:
 
 <table><tr><td colspan="2">
 
@@ -1038,6 +1074,8 @@ Divide the first number by the second. When the first argument is an integer the
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale.
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -1109,6 +1147,8 @@ Produce a runtime error with the provided string as an error message.
 
 Used to indicate when an unexpected condition has occurred and the data at hand is invalid. It is preferred to use constraints to capture such conditions earlier.
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -1140,6 +1180,8 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
 Does not short-circuit. The boolean-expression is evaluated for all elements, even once a prior element has evaluated to false. Operating on an empty collection produces a true value.
+
+#### Examples:
 
 <table><tr><td colspan="2">
 
@@ -1185,6 +1227,8 @@ Compute the numeric result of raising the first argument to the power given by t
 #### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -1246,6 +1290,8 @@ Produce a new collection which contains only the elements from the original coll
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
+#### Examples:
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -1293,6 +1339,8 @@ Produce the first element from a vector.
 
 To avoid runtime errors, if the vector might be empty, use 'count' to check the length first.
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -1339,6 +1387,8 @@ Extract the given item from the first argument. If the first argument is an inst
 
 The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
 
+#### Examples:
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -1384,6 +1434,8 @@ The first path element in the path is looked up in the initial target. If there 
 #### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`instance`](halite-basic-syntax-reference.md#instance), [`integer`](halite-basic-syntax-reference.md#integer), [`keyword`](halite-basic-syntax-reference.md#keyword), [`vector`](halite-basic-syntax-reference.md#vector)
+
+#### Examples:
 
 <table><tr><td colspan="2">
 
@@ -1440,6 +1492,8 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 #### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`boolean`](halite-basic-syntax-reference.md#boolean)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -1504,6 +1558,8 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value.
 
+#### Examples:
+
 <table><tr><td colspan="3">
 
 ```clojure
@@ -1545,6 +1601,8 @@ Increment a numeric value.
 #### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -1589,6 +1647,8 @@ Compute the set intersection of the sets.
 
 This produces a set which only contains values that appear in each of the arguments.
 
+#### Examples:
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -1631,6 +1691,8 @@ Evaluate the expression argument in a nested context created by considering the 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 
 Allows names to be given to values so that they can be referenced by the any-expression.
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -1689,6 +1751,8 @@ Produce a new collection from a collection by evaluating the expression with the
 
 [`set`](halite-basic-syntax-reference.md#set), [`symbol`](halite-basic-syntax-reference.md#symbol), [`value`](halite-basic-syntax-reference.md#value), [`vector`](halite-basic-syntax-reference.md#vector)
 
+#### Examples:
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -1733,6 +1797,8 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 #### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -1818,6 +1884,8 @@ Performs logical negation of the argument.
 
 [`boolean`](halite-basic-syntax-reference.md#boolean)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -1854,6 +1922,8 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 #### Basic elements:
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`value`](halite-basic-syntax-reference.md#value)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -1994,6 +2064,8 @@ Perform a logical 'or' operation on the input values.
 
 The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated.
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -2039,6 +2111,8 @@ Produce a vector that contains integers in order starting at either the start va
 #### Basic elements:
 
 [`integer`](halite-basic-syntax-reference.md#integer), [`vector`](halite-basic-syntax-reference.md#vector)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -2088,6 +2162,8 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol), [`vector`](halite-basic-syntax-reference.md#vector)
 
+#### Examples:
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -2123,6 +2199,8 @@ Attempt to refine the given instance into an instance of type, spec-id.
 #### Basic elements:
 
 [`instance`](halite-basic-syntax-reference.md#instance), [`keyword`](halite-basic-syntax-reference.md#keyword)
+
+#### Examples:
 
 <table><tr><td colspan="3">
 
@@ -2168,6 +2246,8 @@ Determine whether it is possible to refine the given instance into an instance o
 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`instance`](halite-basic-syntax-reference.md#instance), [`keyword`](halite-basic-syntax-reference.md#keyword)
 
+#### Examples:
+
 <table><tr><td colspan="3">
 
 ```clojure
@@ -2212,6 +2292,8 @@ Produce a number by adjusting the scale of the fixed-decimal to the new-scale. I
 [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 Arithmetic on numeric values never produce results in different number spaces. This operation provides an explicit way to convert a fixed-decimal value into a value with the scale of a different number space. This includes the ability to convert a fixed-decimal value into an integer.
+
+#### Examples:
 
 <table><tr><td colspan="2">
 
@@ -2267,6 +2349,8 @@ Produce a new vector which contains the same element of the argument, in the sam
 #### Basic elements:
 
 [`vector`](halite-basic-syntax-reference.md#vector)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -2325,6 +2409,8 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
+#### Examples:
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -2362,6 +2448,8 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 [`integer`](halite-basic-syntax-reference.md#integer), [`set`](halite-basic-syntax-reference.md#set), [`symbol`](halite-basic-syntax-reference.md#symbol), [`vector`](halite-basic-syntax-reference.md#vector)
 
+#### Examples:
+
 <table><tr><td colspan="3">
 
 ```clojure
@@ -2396,6 +2484,8 @@ Combine all of the input strings together in sequence to produce a new string.
 #### Basic elements:
 
 [`string`](halite-basic-syntax-reference.md#string)
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -2437,6 +2527,8 @@ Return false if there are any items in the first set which do not appear in the 
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set)
 
 According to this operation, a set is always a subset of itself and every set is a subset of the empty set. Using this operation and an equality check in combination allows a 'superset?' predicate to be computed.
+
+#### Examples:
 
 <table><tr><td colspan="2">
 
@@ -2485,6 +2577,8 @@ Compute the union of all the sets.
 [`set`](halite-basic-syntax-reference.md#set)
 
 This produces a set which contains all of the values that appear in any of the arguments.
+
+#### Examples:
 
 <table><tr><td colspan="1">
 
@@ -2538,6 +2632,8 @@ Evaluate the instance-expression and produce the result. If a constraint violati
 
 This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification.
 
+#### Examples:
+
 <table><tr><td colspan="3">
 
 ```clojure
@@ -2576,6 +2672,8 @@ Evaluate the instance expression and produce false if a constraint violation occ
 [`boolean`](halite-basic-syntax-reference.md#boolean), [`instance`](halite-basic-syntax-reference.md#instance)
 
 Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value.
+
+#### Examples:
 
 <table><tr><td colspan="3">
 
@@ -2616,6 +2714,8 @@ If the first argument is true, then evaluate the second argument, otherwise prod
 
 A primary use of this operator is in instance expression to optionally provide a value for a an optional field.
 
+#### Examples:
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -2650,6 +2750,8 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 #### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
+
+#### Examples:
 
 <table><tr><td colspan="2">
 
@@ -2687,6 +2789,8 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 #### Basic elements:
 
 [`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
+
+#### Examples:
 
 <table><tr><td colspan="3">
 
