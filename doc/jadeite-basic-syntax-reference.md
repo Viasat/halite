@@ -371,7 +371,7 @@ The absence of a value.
 ---
 ### <a name="any"></a>any
 
-Refers to either the presence of absence of a value.
+Refers to either the presence of absence of a value, or a pseudo-value indicating the lack of a value.
 
 !["value | unset"](./halite-bnf-diagrams/basic-syntax/any-j.svg)
 
