@@ -18,6 +18,10 @@ Performs logical negation of the argument.
 
 ![["'!' boolean" "boolean"]](./halite-bnf-diagrams/op/not-0-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -50,6 +54,10 @@ See also: [`&&`](#&&) [`=>`](#_E_G) [`||`](#||)
 Produces a false value if all of the values are equal to each other. Otherwise produces a true value.
 
 ![["value '!=' value" "boolean"]](./halite-bnf-diagrams/op/notequal-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`value`](jadeite-basic-syntax-reference.md#value)
 
 <table><tr><td colspan="1">
 
@@ -184,6 +192,10 @@ Constant that produces the special 'unset' value which represents the lack of a 
 
 ![["'$no-value'" "unset"]](./halite-bnf-diagrams/op/%24no-value-0-j.svg)
 
+### Basic elements:
+
+[`unset`](jadeite-basic-syntax-reference.md#unset)
+
 Expected use is in an instance expression to indicate that a field in the instance does not have a value. However, it is suggested that alternatives include simply omitting the field name from the instance or using a variant of a 'when' expression to optionally produce a value for the field.
 
 See also: [`when`](#when) [`whenValue`](#whenValue) [`whenValueLet`](#whenValueLet)
@@ -205,6 +217,10 @@ Context dependent reference to the containing object.
 Computes the mathematical modulus of two numbers. Use care if one of the arguments is negative.
 
 ![["integer '%' integer" "integer"]](./halite-bnf-diagrams/op/mod-0-j.svg)
+
+### Basic elements:
+
+[`integer`](jadeite-basic-syntax-reference.md#integer)
 
 <table><tr><td colspan="1">
 
@@ -286,6 +302,10 @@ Perform a logical 'and' operation on the input values.
 
 ![["boolean '&&' boolean" "boolean"]](./halite-bnf-diagrams/op/and-0-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean)
+
 The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated.
 
 <table><tr><td colspan="1">
@@ -331,6 +351,10 @@ Multiply two numbers together.
 ![["integer '*' integer" "integer"]](./halite-bnf-diagrams/op/*-0-j.svg)
 
 ![["fixed-decimal '*' integer" "fixed-decimal"]](./halite-bnf-diagrams/op/*-1-j.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
 
 Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale.
 
@@ -379,6 +403,10 @@ Add two numbers together.
 ![["integer '+' integer" "integer"]](./halite-bnf-diagrams/op/plus-0-j.svg)
 
 ![["fixed-decimal '+' fixed-decimal" "fixed-decimal"]](./halite-bnf-diagrams/op/plus-1-j.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
 
 <table><tr><td colspan="1">
 
@@ -435,6 +463,10 @@ Subtract one number from another.
 
 ![["fixed-decimal '-' fixed-decimal" "fixed-decimal"]](./halite-bnf-diagrams/op/minus-1-j.svg)
 
+### Basic elements:
+
+[`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -489,6 +521,10 @@ Divide the first number by the second. When the first argument is an integer the
 ![["integer '/' integer" "integer"]](./halite-bnf-diagrams/op/div-0-j.svg)
 
 ![["fixed-decimal '/' integer" "fixed-decimal"]](./halite-bnf-diagrams/op/div-1-j.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
 
 As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale.
 
@@ -556,6 +592,10 @@ Determine if a number is strictly less than another.
 
 ![["((integer '<'  integer) | (fixed-decimal '<' fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C-0-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -596,6 +636,10 @@ Determine if a number is less than or equal to another.
 
 ![["((integer '<=' integer) | (fixed-decimal '<=' fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C%3D-0-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -635,6 +679,10 @@ true
 Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 ![["value '==' value" "boolean"]](./halite-bnf-diagrams/op/doublequal-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`value`](jadeite-basic-syntax-reference.md#value)
 
 <table><tr><td colspan="1">
 
@@ -772,6 +820,10 @@ Performs logical implication. If the first value is true, then the second value 
 
 ![["boolean '=>' boolean" "boolean"]](./halite-bnf-diagrams/op/%3D%3E-0-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -814,6 +866,10 @@ Determine if a number is strictly greater than another.
 
 ![["((integer '>'  integer) | (fixed-decimal '>' fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E-0-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -853,6 +909,10 @@ false
 Determine if a number is greater than or equal to another.
 
 ![["((integer '>='  integer) | (fixed-decimal '>=' fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E%3D-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
 
 <table><tr><td colspan="1">
 
@@ -895,6 +955,10 @@ Extract the given item from the first argument. If the first argument is an inst
 ![["(instance '.' symbol:instance-field)" "any"]](./halite-bnf-diagrams/op/ACCESSOR-0-j.svg)
 
 ![["(vector '[' integer ']')" "value"]](./halite-bnf-diagrams/op/ACCESSOR-1-j.svg)
+
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`instance`](jadeite-basic-syntax-reference.md#instance), [`integer`](jadeite-basic-syntax-reference.md#integer), [`symbol`](jadeite-basic-syntax-reference.md#symbol), [`vector`](jadeite-basic-syntax-reference.md#vector)
 
 The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
 
@@ -939,6 +1003,10 @@ A path of element accessors can be created by chaining together element access f
 The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'.
 
 ![["( (instance:target '.' symbol:instance-field) | (vector:target '[' integer ']') ){ ( ('.' symbol:instance-field) | ('[' integer ']' ) ) }" "any"]](./halite-bnf-diagrams/op/ACCESSOR-CHAIN-0-j.svg)
+
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`instance`](jadeite-basic-syntax-reference.md#instance), [`integer`](jadeite-basic-syntax-reference.md#integer), [`symbol`](jadeite-basic-syntax-reference.md#symbol), [`vector`](jadeite-basic-syntax-reference.md#vector)
 
 <table><tr><td colspan="2">
 
@@ -994,6 +1062,10 @@ Compute the absolute value of a number.
 
 ![["'abs' '(' fixed-decimal ')'" "fixed-decimal"]](./halite-bnf-diagrams/op/abs-1-j.svg)
 
+### Basic elements:
+
+[`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
+
 Since the negative number space contains one more value than the positive number space, it is a runtime error to attempt to take the absolute value of the most negative value for a given number space.
 
 <table><tr><td colspan="1">
@@ -1040,6 +1112,10 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 
 ![["'any?' '(' symbol 'in' (set | vector) ')' boolean-expression" "boolean"]](./halite-bnf-diagrams/op/any%3F-0-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`set`](jadeite-basic-syntax-reference.md#set), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 The operation does not short-circuit. The boolean-expression is evaluated for all elements even if a prior element has caused the boolean-expression to evaluate to true. Operating on an empty collection produces a false value.
 
 <table><tr><td colspan="2">
@@ -1084,6 +1160,10 @@ Combine two collections into one.
 ![["vector '.' 'concat' '('  vector ')'" "vector"]](./halite-bnf-diagrams/op/concat-0-j.svg)
 
 ![["(set '.' 'concat' '(' (set | vector) ')')" "set"]](./halite-bnf-diagrams/op/concat-1-j.svg)
+
+### Basic elements:
+
+[`set`](jadeite-basic-syntax-reference.md#set), [`vector`](jadeite-basic-syntax-reference.md#vector)
 
 Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed.
 
@@ -1134,6 +1214,10 @@ Add individual items to a collection.
 
 ![["vector '.' 'conj' '(' value {',' value} ')'" "vector"]](./halite-bnf-diagrams/op/conj-1-j.svg)
 
+### Basic elements:
+
+[`set`](jadeite-basic-syntax-reference.md#set), [`value`](jadeite-basic-syntax-reference.md#value), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 Only definite values may be put into collections, i.e. collections cannot contain 'unset' values.
 
 <table><tr><td colspan="1">
@@ -1181,6 +1265,10 @@ Only definite values may be put into collections, i.e. collections cannot contai
 Determine if a specific value is in a set.
 
 ![["set '.' 'contains?' '(' value ')'" "boolean"]](./halite-bnf-diagrams/op/contains%3F-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`set`](jadeite-basic-syntax-reference.md#set), [`value`](jadeite-basic-syntax-reference.md#value)
 
 Since collections themselves are compared by their contents, this works for collections nested inside of sets.
 
@@ -1233,6 +1321,10 @@ Return how many items are in a collection.
 
 ![["(set | vector) '.' 'count()'" "integer"]](./halite-bnf-diagrams/op/count-0-j.svg)
 
+### Basic elements:
+
+[`integer`](jadeite-basic-syntax-reference.md#integer), [`set`](jadeite-basic-syntax-reference.md#set), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -1272,6 +1364,10 @@ Return how many items are in a collection.
 Compute the set difference of two sets.
 
 ![["set '.' 'difference' '(' set ')'" "set"]](./halite-bnf-diagrams/op/difference-0-j.svg)
+
+### Basic elements:
+
+[`set`](jadeite-basic-syntax-reference.md#set)
 
 This produces a set which contains all of the elements from the first set which do not appear in the second set.
 
@@ -1329,6 +1425,10 @@ See also: [`intersection`](#intersection) [`subset?`](#subset_Q) [`union`](#unio
 Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 ![["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/equalTo-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`value`](jadeite-basic-syntax-reference.md#value)
 
 <table><tr><td colspan="1">
 
@@ -1466,6 +1566,10 @@ Produce a runtime error with the provided string as an error message.
 
 ![["'error' '(' string ')'" "nothing"]](./halite-bnf-diagrams/op/error-0-j.svg)
 
+### Basic elements:
+
+[`nothing`](jadeite-basic-syntax-reference.md#nothing)
+
 Used to indicate when an unexpected condition has occurred and the data at hand is invalid. It is preferred to use constraints to capture such conditions earlier.
 
 <table><tr><td colspan="1">
@@ -1493,6 +1597,10 @@ h-err/spec-threw
 Evaluates to true if the boolean-expression is true when the symbol is bound to each the element in the collection.
 
 ![["'every?' '(' symbol 'in' (set | vector) ')' boolean-expression" "boolean"]](./halite-bnf-diagrams/op/every%3F-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`set`](jadeite-basic-syntax-reference.md#set), [`vector`](jadeite-basic-syntax-reference.md#vector)
 
 Does not short-circuit. The boolean-expression is evaluated for all elements, even once a prior element has evaluated to false. Operating on an empty collection produces a true value.
 
@@ -1536,6 +1644,10 @@ See also: [`&&`](#&&) [`any?`](#any_Q)
 Compute the numeric result of raising the first argument to the power given by the second argument. The exponent argument cannot be negative.
 
 ![["'expt' '(' integer ',' integer ')'" "integer"]](./halite-bnf-diagrams/op/expt-0-j.svg)
+
+### Basic elements:
+
+[`integer`](jadeite-basic-syntax-reference.md#integer)
 
 <table><tr><td colspan="1">
 
@@ -1593,6 +1705,10 @@ Produce a new collection which contains only the elements from the original coll
 
 ![["'filter' '(' symbol 'in' vector ')' boolean-expression" "vector"]](./halite-bnf-diagrams/op/filter-1-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`set`](jadeite-basic-syntax-reference.md#set), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="2">
 
 ```java
@@ -1634,6 +1750,10 @@ Produce the first element from a vector.
 
 ![["vector '.' 'first()'" "value"]](./halite-bnf-diagrams/op/first-0-j.svg)
 
+### Basic elements:
+
+[`value`](jadeite-basic-syntax-reference.md#value), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 To avoid runtime errors, if the vector might be empty, use 'count' to check the length first.
 
 <table><tr><td colspan="1">
@@ -1674,6 +1794,10 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 ![["'if' '(' boolean ')' any-expression 'else' any-expression" "any"]](./halite-bnf-diagrams/op/if-0-j.svg)
 
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`boolean`](jadeite-basic-syntax-reference.md#boolean)
+
 <table><tr><td colspan="2">
 
 ```java
@@ -1707,6 +1831,10 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 ![["'ifValue' '(' symbol ')' any-expression 'else' any-expression" "any"]](./halite-bnf-diagrams/op/ifValue-0-j.svg)
 
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`symbol`](jadeite-basic-syntax-reference.md#symbol)
+
 When an optional instance field needs to be referenced, it is generally necessary to guard the access with either 'if-value' or 'when-value'. In this way, both the case of the field being set and unset are explicitly handled.
 
 #### Possible errors:
@@ -1726,6 +1854,10 @@ See also: [`ifValueLet`](#ifValueLet) [`whenValue`](#whenValue)
 If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol.
 
 ![["'ifValueLet' '(' symbol '=' any:binding ')'  any-expression 'else' any-expression" "any"]](./halite-bnf-diagrams/op/ifValueLet-0-j.svg)
+
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`symbol`](jadeite-basic-syntax-reference.md#symbol)
 
 This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value.
 
@@ -1767,6 +1899,10 @@ Compute the set intersection of the sets.
 
 ![["set '.' 'intersection' '(' set {',' set} ')'" "set"]](./halite-bnf-diagrams/op/intersection-0-j.svg)
 
+### Basic elements:
+
+[`set`](jadeite-basic-syntax-reference.md#set)
+
 This produces a set which only contains values that appear in each of the arguments.
 
 <table><tr><td colspan="2">
@@ -1805,6 +1941,10 @@ See also: [`difference`](#difference) [`subset?`](#subset_Q) [`union`](#union)
 Evaluate the expression argument in a nested context created by binding each symbol to the corresponding value.
 
 ![["'{' symbol '=' value ';' {symbol '=' value ';'} any-expression '}'" "any"]](./halite-bnf-diagrams/op/let-0-j.svg)
+
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`symbol`](jadeite-basic-syntax-reference.md#symbol)
 
 Allows names to be given to values so that they can be referenced by the any-expression.
 
@@ -1861,6 +2001,10 @@ Produce a new collection from a collection by evaluating the expression with the
 
 ![["'map' '(' symbol:element 'in' vector ')' value-expression" "vector"]](./halite-bnf-diagrams/op/map-1-j.svg)
 
+### Basic elements:
+
+[`set`](jadeite-basic-syntax-reference.md#set), [`symbol`](jadeite-basic-syntax-reference.md#symbol), [`value`](jadeite-basic-syntax-reference.md#value), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="2">
 
 ```java
@@ -1901,6 +2045,10 @@ See also: [`filter`](#filter) [`reduce`](#reduce)
 Produces a false value if all of the values are equal to each other. Otherwise produces a true value.
 
 ![["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]](./halite-bnf-diagrams/op/notEqualTo-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`value`](jadeite-basic-syntax-reference.md#value)
 
 <table><tr><td colspan="1">
 
@@ -2035,6 +2183,10 @@ Produce a vector that contains integers in order starting at either the start va
 
 ![["'range' '(' [integer:start ','] integer:end [',' integer:increment] ')'" "vector"]](./halite-bnf-diagrams/op/range-0-j.svg)
 
+### Basic elements:
+
+[`integer`](jadeite-basic-syntax-reference.md#integer), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -2079,6 +2231,10 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 ![["'reduce' '(' symbol:accumulator '=' value:accumulator-init ';' symbol:element 'in' vector ')' any-expression" "any"]](./halite-bnf-diagrams/op/reduce-0-j.svg)
 
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`symbol`](jadeite-basic-syntax-reference.md#symbol), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="3">
 
 ```java
@@ -2110,6 +2266,10 @@ See also: [`filter`](#filter) [`map`](#map)
 Attempt to refine the given instance into an instance of type, spec-id.
 
 ![["instance '.' 'refineTo' '(' symbol:spec-id ')'" "instance"]](./halite-bnf-diagrams/op/refineTo-0-j.svg)
+
+### Basic elements:
+
+[`instance`](jadeite-basic-syntax-reference.md#instance), [`symbol`](jadeite-basic-syntax-reference.md#symbol)
 
 <table><tr><td colspan="3">
 
@@ -2151,6 +2311,10 @@ Determine whether it is possible to refine the given instance into an instance o
 
 ![["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]](./halite-bnf-diagrams/op/refinesTo%3F-0-j.svg)
 
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`instance`](jadeite-basic-syntax-reference.md#instance), [`symbol`](jadeite-basic-syntax-reference.md#symbol)
+
 <table><tr><td colspan="3">
 
 ```java
@@ -2189,6 +2353,10 @@ See also: [`refineTo`](#refineTo)
 Produce a number by adjusting the scale of the fixed-decimal to the new-scale. If the scale is being reduced, the original number is truncated. If the scale is being increased, then the original number is padded with zeroes in the decimal places. If the new-scale is zero, then the result is an integer.
 
 ![["'rescale' '(' fixed-decimal ',' integer ')'" "(fixed-decimal | integer)"]](./halite-bnf-diagrams/op/rescale-0-j.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](jadeite-basic-syntax-reference.md#integer)
 
 Arithmetic on numeric values never produce results in different number spaces. This operation provides an explicit way to convert a fixed-decimal value into a value with the scale of a different number space. This includes the ability to convert a fixed-decimal value into an integer.
 
@@ -2243,6 +2411,10 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ![["vector '.' 'rest()'" "vector"]](./halite-bnf-diagrams/op/rest-0-j.svg)
 
+### Basic elements:
+
+[`vector`](jadeite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -2296,6 +2468,10 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 ![["(set | vector) '.' 'sort()'" "vector"]](./halite-bnf-diagrams/op/sort-0-j.svg)
 
+### Basic elements:
+
+[`set`](jadeite-basic-syntax-reference.md#set), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="1">
 
 ```java
@@ -2329,6 +2505,10 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 ![["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]](./halite-bnf-diagrams/op/sortBy-0-j.svg)
 
+### Basic elements:
+
+[`integer`](jadeite-basic-syntax-reference.md#integer), [`set`](jadeite-basic-syntax-reference.md#set), [`symbol`](jadeite-basic-syntax-reference.md#symbol), [`vector`](jadeite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="3">
 
 ```java
@@ -2359,6 +2539,10 @@ See also: [`sort`](#sort)
 Combine all of the input strings together in sequence to produce a new string.
 
 ![["'str' '(' string ',' string {',' string} ')'" "string"]](./halite-bnf-diagrams/op/str-0-j.svg)
+
+### Basic elements:
+
+[`string`](jadeite-basic-syntax-reference.md#string)
 
 <table><tr><td colspan="1">
 
@@ -2394,6 +2578,10 @@ str("a", "", "c")
 Return false if there are any items in the first set which do not appear in the second set. Otherwise return true.
 
 ![["set '.' 'subset?' '(' set ')'" "boolean"]](./halite-bnf-diagrams/op/subset%3F-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`set`](jadeite-basic-syntax-reference.md#set)
 
 According to this operation, a set is always a subset of itself and every set is a subset of the empty set. Using this operation and an equality check in combination allows a 'superset?' predicate to be computed.
 
@@ -2438,6 +2626,10 @@ See also: [`difference`](#difference) [`intersection`](#intersection) [`union`](
 Compute the union of all the sets.
 
 ![["set '.' 'union' '(' set {',' set} ')'" "set"]](./halite-bnf-diagrams/op/union-0-j.svg)
+
+### Basic elements:
+
+[`set`](jadeite-basic-syntax-reference.md#set)
 
 This produces a set which contains all of the values that appear in any of the arguments.
 
@@ -2487,6 +2679,10 @@ Evaluate the instance-expression and produce the result. If a constraint violati
 
 ![["'valid' instance-expression" "any"]](./halite-bnf-diagrams/op/valid-0-j.svg)
 
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`instance`](jadeite-basic-syntax-reference.md#instance)
+
 This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification.
 
 <table><tr><td colspan="2">
@@ -2521,6 +2717,10 @@ See also: [`valid?`](#valid_Q)
 Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true.
 
 ![["'valid?' instance-expression" "boolean"]](./halite-bnf-diagrams/op/valid%3F-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean), [`instance`](jadeite-basic-syntax-reference.md#instance)
 
 Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value.
 
@@ -2557,6 +2757,10 @@ If the first argument is true, then evaluate the second argument, otherwise prod
 
 ![["'when' '(' boolean ')' any-expression" "any"]](./halite-bnf-diagrams/op/when-0-j.svg)
 
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`boolean`](jadeite-basic-syntax-reference.md#boolean)
+
 A primary use of this operator is in instance expression to optionally provide a value for a an optional field.
 
 <table><tr><td colspan="2">
@@ -2589,6 +2793,10 @@ A primary use of this operator is in instance expression to optionally provide a
 Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset.
 
 ![["'whenValue' '(' symbol ')' any-expression" "any"]](./halite-bnf-diagrams/op/whenValue-0-j.svg)
+
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`symbol`](jadeite-basic-syntax-reference.md#symbol)
 
 <table><tr><td colspan="1">
 
@@ -2623,6 +2831,10 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 ![["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]](./halite-bnf-diagrams/op/whenValueLet-0-j.svg)
 
+### Basic elements:
+
+[`any`](jadeite-basic-syntax-reference.md#any), [`symbol`](jadeite-basic-syntax-reference.md#symbol)
+
 <table><tr><td colspan="3">
 
 ```java
@@ -2655,6 +2867,10 @@ See also: [`ifValueLet`](#ifValueLet) [`when`](#when) [`whenValue`](#whenValue)
 Perform a logical 'or' operation on the input values.
 
 ![["boolean '||' boolean" "boolean"]](./halite-bnf-diagrams/op/or-0-j.svg)
+
+### Basic elements:
+
+[`boolean`](jadeite-basic-syntax-reference.md#boolean)
 
 The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated.
 

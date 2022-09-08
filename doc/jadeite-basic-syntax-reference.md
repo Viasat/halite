@@ -355,6 +355,20 @@ Expressions and many literals produce values.
 !["boolean | string | integer | fixed-decimal | instance | vector | set"](./halite-bnf-diagrams/basic-syntax/value-j.svg)
 
 ---
+### <a name="unset"></a>unset
+
+A pseudo-value that represents the lack of a value.
+
+!["unset"](./halite-bnf-diagrams/basic-syntax/unset-j.svg)
+
+---
+### <a name="nothing"></a>nothing
+
+The absence of a value.
+
+!["nothing"](./halite-bnf-diagrams/basic-syntax/nothing-j.svg)
+
+---
 ### <a name="any"></a>any
 
 Refers to either the presence of absence of a value.

@@ -18,6 +18,10 @@ Constant that produces the special 'unset' value which represents the lack of a 
 
 ![["" "unset"]](./halite-bnf-diagrams/op/%24no-value-0.svg)
 
+### Basic elements:
+
+[`unset`](halite-basic-syntax-reference.md#unset)
+
 Expected use is in an instance expression to indicate that a field in the instance does not have a value. However, it is suggested that alternatives include simply omitting the field name from the instance or using a variant of a 'when' expression to optionally produce a value for the field.
 
 See also: [`when`](#when) [`when-value`](#when-value) [`when-value-let`](#when-value-let)
@@ -41,6 +45,10 @@ Multiply two numbers together.
 ![["integer integer" "integer"]](./halite-bnf-diagrams/op/*-0.svg)
 
 ![["fixed-decimal integer" "fixed-decimal"]](./halite-bnf-diagrams/op/*-1.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 Note that fixed-decimal values cannot be multiplied together. Rather the multiplication operator is used to scale a fixed-decimal value within the number space of a given scale of fixed-decimal. This can also be used to effectively convert an arbitrary integer value into a fixed-decimal number space by multiplying the integer by unity in the fixed-decimal number space of the desired scale.
 
@@ -89,6 +97,10 @@ Add two numbers together.
 ![["integer integer {integer}" "integer"]](./halite-bnf-diagrams/op/plus-0.svg)
 
 ![["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]](./halite-bnf-diagrams/op/plus-1.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 <table><tr><td colspan="1">
 
@@ -145,6 +157,10 @@ Subtract one number from another.
 
 ![["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]](./halite-bnf-diagrams/op/minus-1.svg)
 
+### Basic elements:
+
+[`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -198,6 +214,10 @@ Determine if a number is strictly less than another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C-0.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -238,6 +258,10 @@ Determine if a number is less than or equal to another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3C%3D-0.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -277,6 +301,10 @@ true
 Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
 
 ![["value value {value}" "boolean"]](./halite-bnf-diagrams/op/%3D-0.svg)
+
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`value`](halite-basic-syntax-reference.md#value)
 
 <table><tr><td colspan="1">
 
@@ -414,6 +442,10 @@ Performs logical implication. If the first value is true, then the second value 
 
 ![["boolean boolean" "boolean"]](./halite-bnf-diagrams/op/%3D%3E-0.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -456,6 +488,10 @@ Determine if a number is strictly greater than another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E-0.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -495,6 +531,10 @@ false
 Determine if a number is greater than or equal to another.
 
 ![["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]](./halite-bnf-diagrams/op/%3E%3D-0.svg)
+
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 <table><tr><td colspan="1">
 
@@ -537,6 +577,10 @@ Compute the absolute value of a number.
 ![["integer" "integer"]](./halite-bnf-diagrams/op/abs-0.svg)
 
 ![["fixed-decimal" "fixed-decimal"]](./halite-bnf-diagrams/op/abs-1.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 Since the negative number space contains one more value than the positive number space, it is a runtime error to attempt to take the absolute value of the most negative value for a given number space.
 
@@ -584,6 +628,10 @@ Perform a logical 'and' operation on the input values.
 
 ![["boolean boolean {boolean}" "boolean"]](./halite-bnf-diagrams/op/and-0.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean)
+
 The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated.
 
 <table><tr><td colspan="1">
@@ -627,6 +675,10 @@ See also: [`=>`](#_E_G) [`every?`](#every_Q) [`not`](#not) [`or`](#or)
 Evaluates to true if the boolean-expression is true when the symbol is bound to some element in the collection.
 
 ![["'[' symbol (set | vector) ']' boolean-expression" "boolean"]](./halite-bnf-diagrams/op/any%3F-0.svg)
+
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
 The operation does not short-circuit. The boolean-expression is evaluated for all elements even if a prior element has caused the boolean-expression to evaluate to true. Operating on an empty collection produces a false value.
 
@@ -672,6 +724,10 @@ Combine two collections into one.
 ![["vector vector" "vector"]](./halite-bnf-diagrams/op/concat-0.svg)
 
 ![["(set (set | vector))" "set"]](./halite-bnf-diagrams/op/concat-1.svg)
+
+### Basic elements:
+
+[`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
 Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed.
 
@@ -722,6 +778,10 @@ Add individual items to a collection.
 
 ![["vector value {value}" "vector"]](./halite-bnf-diagrams/op/conj-1.svg)
 
+### Basic elements:
+
+[`set`](halite-basic-syntax-reference.md#set), [`value`](halite-basic-syntax-reference.md#value), [`vector`](halite-basic-syntax-reference.md#vector)
+
 Only definite values may be put into collections, i.e. collections cannot contain 'unset' values.
 
 <table><tr><td colspan="1">
@@ -769,6 +829,10 @@ Only definite values may be put into collections, i.e. collections cannot contai
 Determine if a specific value is in a set.
 
 ![["set value" "boolean"]](./halite-bnf-diagrams/op/contains%3F-0.svg)
+
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`value`](halite-basic-syntax-reference.md#value)
 
 Since collections themselves are compared by their contents, this works for collections nested inside of sets.
 
@@ -821,6 +885,10 @@ Return how many items are in a collection.
 
 ![["(set | vector)" "integer"]](./halite-bnf-diagrams/op/count-0.svg)
 
+### Basic elements:
+
+[`integer`](halite-basic-syntax-reference.md#integer), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -861,6 +929,10 @@ Decrement a numeric value.
 
 ![["integer" "integer"]](./halite-bnf-diagrams/op/dec-0.svg)
 
+### Basic elements:
+
+[`integer`](halite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -897,6 +969,10 @@ See also: [`inc`](#inc)
 Compute the set difference of two sets.
 
 ![["set set" "set"]](./halite-bnf-diagrams/op/difference-0.svg)
+
+### Basic elements:
+
+[`set`](halite-basic-syntax-reference.md#set)
 
 This produces a set which contains all of the elements from the first set which do not appear in the second set.
 
@@ -956,6 +1032,10 @@ Divide the first number by the second. When the first argument is an integer the
 ![["integer integer" "integer"]](./halite-bnf-diagrams/op/div-0.svg)
 
 ![["fixed-decimal integer" "fixed-decimal"]](./halite-bnf-diagrams/op/div-1.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale.
 
@@ -1023,6 +1103,10 @@ Produce a runtime error with the provided string as an error message.
 
 ![["string" "nothing"]](./halite-bnf-diagrams/op/error-0.svg)
 
+### Basic elements:
+
+[`nothing`](halite-basic-syntax-reference.md#nothing)
+
 Used to indicate when an unexpected condition has occurred and the data at hand is invalid. It is preferred to use constraints to capture such conditions earlier.
 
 <table><tr><td colspan="1">
@@ -1050,6 +1134,10 @@ h-err/spec-threw
 Evaluates to true if the boolean-expression is true when the symbol is bound to each the element in the collection.
 
 ![["'[' symbol (set | vector) ']' boolean-expression" "boolean"]](./halite-bnf-diagrams/op/every%3F-0.svg)
+
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
 
 Does not short-circuit. The boolean-expression is evaluated for all elements, even once a prior element has evaluated to false. Operating on an empty collection produces a true value.
 
@@ -1093,6 +1181,10 @@ See also: [`and`](#and) [`any?`](#any_Q)
 Compute the numeric result of raising the first argument to the power given by the second argument. The exponent argument cannot be negative.
 
 ![["integer integer" "integer"]](./halite-bnf-diagrams/op/expt-0.svg)
+
+### Basic elements:
+
+[`integer`](halite-basic-syntax-reference.md#integer)
 
 <table><tr><td colspan="1">
 
@@ -1150,6 +1242,10 @@ Produce a new collection which contains only the elements from the original coll
 
 ![["'[' symbol:element vector ']' boolean-expression" "vector"]](./halite-bnf-diagrams/op/filter-1.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -1190,6 +1286,10 @@ See also: [`map`](#map)
 Produce the first element from a vector.
 
 ![["vector" "value"]](./halite-bnf-diagrams/op/first-0.svg)
+
+### Basic elements:
+
+[`value`](halite-basic-syntax-reference.md#value), [`vector`](halite-basic-syntax-reference.md#vector)
 
 To avoid runtime errors, if the vector might be empty, use 'count' to check the length first.
 
@@ -1232,6 +1332,10 @@ Extract the given item from the first argument. If the first argument is an inst
 ![["(instance keyword:instance-field)" "any"]](./halite-bnf-diagrams/op/get-0.svg)
 
 ![["(vector integer)" "value"]](./halite-bnf-diagrams/op/get-1.svg)
+
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`instance`](halite-basic-syntax-reference.md#instance), [`integer`](halite-basic-syntax-reference.md#integer), [`keyword`](halite-basic-syntax-reference.md#keyword), [`vector`](halite-basic-syntax-reference.md#vector)
 
 The $type value of an instance is not considered a field that can be extracted with this operator. When dealing with instances of abstract specifications, it is necessary to refine an instance to a given specification before accessing a field of that specification.
 
@@ -1276,6 +1380,10 @@ Syntactic sugar for performing the equivalent of a chained series of 'get' opera
 The first path element in the path is looked up in the initial target. If there are more path elements, the next path element is looked up in the result of the first lookup. This is repeated as long as there are more path elements. If this is used to lookup instance fields, then all of the field names must reference mandatory fields unless the field name is the final element of the path. The result will always be a value unless the final path element is a reference to an optional field. In this case, the result may be a value or may be 'unset'.
 
 ![["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]](./halite-bnf-diagrams/op/get-in-0.svg)
+
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`instance`](halite-basic-syntax-reference.md#instance), [`integer`](halite-basic-syntax-reference.md#integer), [`keyword`](halite-basic-syntax-reference.md#keyword), [`vector`](halite-basic-syntax-reference.md#vector)
 
 <table><tr><td colspan="2">
 
@@ -1329,6 +1437,10 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 ![["boolean any-expression any-expression" "any"]](./halite-bnf-diagrams/op/if-0.svg)
 
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`boolean`](halite-basic-syntax-reference.md#boolean)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -1362,6 +1474,10 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 ![["symbol any-expression any-expression" "any"]](./halite-bnf-diagrams/op/if-value-0.svg)
 
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
+
 When an optional instance field needs to be referenced, it is generally necessary to guard the access with either 'if-value' or 'when-value'. In this way, both the case of the field being set and unset are explicitly handled.
 
 #### Possible errors:
@@ -1381,6 +1497,10 @@ See also: [`if-value-let`](#if-value-let) [`when-value`](#when-value)
 If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol.
 
 ![["'[' symbol any:binding ']' any-expression any-expression" "any"]](./halite-bnf-diagrams/op/if-value-let-0.svg)
+
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 
 This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value.
 
@@ -1422,6 +1542,10 @@ Increment a numeric value.
 
 ![["integer" "integer"]](./halite-bnf-diagrams/op/inc-0.svg)
 
+### Basic elements:
+
+[`integer`](halite-basic-syntax-reference.md#integer)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -1458,6 +1582,10 @@ See also: [`dec`](#dec)
 Compute the set intersection of the sets.
 
 ![["set set {set}" "set"]](./halite-bnf-diagrams/op/intersection-0.svg)
+
+### Basic elements:
+
+[`set`](halite-basic-syntax-reference.md#set)
 
 This produces a set which only contains values that appear in each of the arguments.
 
@@ -1497,6 +1625,10 @@ See also: [`difference`](#difference) [`subset?`](#subset_Q) [`union`](#union)
 Evaluate the expression argument in a nested context created by considering the first argument in a pairwise fashion and binding each symbol to the corresponding value.
 
 ![["'[' symbol value {symbol value} ']' any-expression" "any"]](./halite-bnf-diagrams/op/let-0.svg)
+
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 
 Allows names to be given to values so that they can be referenced by the any-expression.
 
@@ -1553,6 +1685,10 @@ Produce a new collection from a collection by evaluating the expression with the
 
 ![["'[' symbol:element vector ']' value-expression" "vector"]](./halite-bnf-diagrams/op/map-1.svg)
 
+### Basic elements:
+
+[`set`](halite-basic-syntax-reference.md#set), [`symbol`](halite-basic-syntax-reference.md#symbol), [`value`](halite-basic-syntax-reference.md#value), [`vector`](halite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -1593,6 +1729,10 @@ See also: [`filter`](#filter) [`reduce`](#reduce)
 Computes the mathematical modulus of two numbers. Use care if one of the arguments is negative.
 
 ![["integer integer" "integer"]](./halite-bnf-diagrams/op/mod-0.svg)
+
+### Basic elements:
+
+[`integer`](halite-basic-syntax-reference.md#integer)
 
 <table><tr><td colspan="1">
 
@@ -1674,6 +1814,10 @@ Performs logical negation of the argument.
 
 ![["boolean" "boolean"]](./halite-bnf-diagrams/op/not-0.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -1706,6 +1850,10 @@ See also: [`=>`](#_E_G) [`and`](#and) [`or`](#or)
 Produces a false value if all of the values are equal to each other. Otherwise produces a true value.
 
 ![["value value {value}" "boolean"]](./halite-bnf-diagrams/op/not%3D-0.svg)
+
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`value`](halite-basic-syntax-reference.md#value)
 
 <table><tr><td colspan="1">
 
@@ -1840,6 +1988,10 @@ Perform a logical 'or' operation on the input values.
 
 ![["boolean boolean {boolean}" "boolean"]](./halite-bnf-diagrams/op/or-0.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean)
+
 The operation does not short-circuit. Even if the first argument evaluates to true the other arguments are still evaluated.
 
 <table><tr><td colspan="1">
@@ -1883,6 +2035,10 @@ See also: [`=>`](#_E_G) [`and`](#and) [`any?`](#any_Q) [`not`](#not)
 Produce a vector that contains integers in order starting at either the start value or 0 if no start is provided. The final element of the vector will be no more than one less than the end value. If an increment is provided then only every increment integer will be included in the result.
 
 ![["[integer:start] integer:end [integer:increment]" "vector"]](./halite-bnf-diagrams/op/range-0.svg)
+
+### Basic elements:
+
+[`integer`](halite-basic-syntax-reference.md#integer), [`vector`](halite-basic-syntax-reference.md#vector)
 
 <table><tr><td colspan="1">
 
@@ -1928,6 +2084,10 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 ![["'[' symbol:accumulator value:accumulator-init ']' '[' symbol:element vector ']' any-expression" "any"]](./halite-bnf-diagrams/op/reduce-0.svg)
 
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol), [`vector`](halite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -1959,6 +2119,10 @@ See also: [`filter`](#filter) [`map`](#map)
 Attempt to refine the given instance into an instance of type, spec-id.
 
 ![["instance keyword:spec-id" "instance"]](./halite-bnf-diagrams/op/refine-to-0.svg)
+
+### Basic elements:
+
+[`instance`](halite-basic-syntax-reference.md#instance), [`keyword`](halite-basic-syntax-reference.md#keyword)
 
 <table><tr><td colspan="3">
 
@@ -2000,6 +2164,10 @@ Determine whether it is possible to refine the given instance into an instance o
 
 ![["instance keyword:spec-id" "boolean"]](./halite-bnf-diagrams/op/refines-to%3F-0.svg)
 
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`instance`](halite-basic-syntax-reference.md#instance), [`keyword`](halite-basic-syntax-reference.md#keyword)
+
 <table><tr><td colspan="3">
 
 ```clojure
@@ -2038,6 +2206,10 @@ See also: [`refine-to`](#refine-to)
 Produce a number by adjusting the scale of the fixed-decimal to the new-scale. If the scale is being reduced, the original number is truncated. If the scale is being increased, then the original number is padded with zeroes in the decimal places. If the new-scale is zero, then the result is an integer.
 
 ![["fixed-decimal integer:new-scale" "(fixed-decimal | integer)"]](./halite-bnf-diagrams/op/rescale-0.svg)
+
+### Basic elements:
+
+[`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal), [`integer`](halite-basic-syntax-reference.md#integer)
 
 Arithmetic on numeric values never produce results in different number spaces. This operation provides an explicit way to convert a fixed-decimal value into a value with the scale of a different number space. This includes the ability to convert a fixed-decimal value into an integer.
 
@@ -2092,6 +2264,10 @@ Produce a new vector which contains the same element of the argument, in the sam
 
 ![["vector" "vector"]](./halite-bnf-diagrams/op/rest-0.svg)
 
+### Basic elements:
+
+[`vector`](halite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -2145,6 +2321,10 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 
 ![["(set | vector)" "vector"]](./halite-bnf-diagrams/op/sort-0.svg)
 
+### Basic elements:
+
+[`set`](halite-basic-syntax-reference.md#set), [`vector`](halite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="1">
 
 ```clojure
@@ -2178,6 +2358,10 @@ Produce a new vector by sorting all of the items in the input collection accordi
 
 ![["'[' symbol:element (set | vector) ']' (integer-expression | fixed-decimal-expression)" "vector"]](./halite-bnf-diagrams/op/sort-by-0.svg)
 
+### Basic elements:
+
+[`integer`](halite-basic-syntax-reference.md#integer), [`set`](halite-basic-syntax-reference.md#set), [`symbol`](halite-basic-syntax-reference.md#symbol), [`vector`](halite-basic-syntax-reference.md#vector)
+
 <table><tr><td colspan="3">
 
 ```clojure
@@ -2208,6 +2392,10 @@ See also: [`sort`](#sort)
 Combine all of the input strings together in sequence to produce a new string.
 
 ![["string string {string}" "string"]](./halite-bnf-diagrams/op/str-0.svg)
+
+### Basic elements:
+
+[`string`](halite-basic-syntax-reference.md#string)
 
 <table><tr><td colspan="1">
 
@@ -2243,6 +2431,10 @@ Combine all of the input strings together in sequence to produce a new string.
 Return false if there are any items in the first set which do not appear in the second set. Otherwise return true.
 
 ![["set set" "boolean"]](./halite-bnf-diagrams/op/subset%3F-0.svg)
+
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`set`](halite-basic-syntax-reference.md#set)
 
 According to this operation, a set is always a subset of itself and every set is a subset of the empty set. Using this operation and an equality check in combination allows a 'superset?' predicate to be computed.
 
@@ -2287,6 +2479,10 @@ See also: [`difference`](#difference) [`intersection`](#intersection) [`union`](
 Compute the union of all the sets.
 
 ![["set set {set}" "set"]](./halite-bnf-diagrams/op/union-0.svg)
+
+### Basic elements:
+
+[`set`](halite-basic-syntax-reference.md#set)
 
 This produces a set which contains all of the values that appear in any of the arguments.
 
@@ -2336,6 +2532,10 @@ Evaluate the instance-expression and produce the result. If a constraint violati
 
 ![["instance-expression" "any"]](./halite-bnf-diagrams/op/valid-0.svg)
 
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`instance`](halite-basic-syntax-reference.md#instance)
+
 This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification.
 
 <table><tr><td colspan="3">
@@ -2370,6 +2570,10 @@ See also: [`valid?`](#valid_Q)
 Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true.
 
 ![["instance-expression" "boolean"]](./halite-bnf-diagrams/op/valid%3F-0.svg)
+
+### Basic elements:
+
+[`boolean`](halite-basic-syntax-reference.md#boolean), [`instance`](halite-basic-syntax-reference.md#instance)
 
 Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value.
 
@@ -2406,6 +2610,10 @@ If the first argument is true, then evaluate the second argument, otherwise prod
 
 ![["boolean any-expression" "any"]](./halite-bnf-diagrams/op/when-0.svg)
 
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`boolean`](halite-basic-syntax-reference.md#boolean)
+
 A primary use of this operator is in instance expression to optionally provide a value for a an optional field.
 
 <table><tr><td colspan="2">
@@ -2439,6 +2647,10 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 ![["symbol any-expression:binding" "any"]](./halite-bnf-diagrams/op/when-value-0.svg)
 
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
+
 <table><tr><td colspan="2">
 
 ```clojure
@@ -2471,6 +2683,10 @@ See also: [`if-value`](#if-value) [`when`](#when) [`when-value-let`](#when-value
 If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'
 
 ![["'[' symbol any:binding']' any-expression" "any"]](./halite-bnf-diagrams/op/when-value-let-0.svg)
+
+### Basic elements:
+
+[`any`](halite-basic-syntax-reference.md#any), [`symbol`](halite-basic-syntax-reference.md#symbol)
 
 <table><tr><td colspan="3">
 

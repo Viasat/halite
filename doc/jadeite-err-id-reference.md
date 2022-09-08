@@ -850,7 +850,7 @@ The symbols to be bound are not to start with a '$'.
 ---
 ### <a name="l-err/cannot-bind-nothing"></a>l-err/cannot-bind-nothing
 
-It is not permitted to bind a symbol to 'unset'. Instead of defining a symbol for this, consider using '$no-value'.
+It is not permitted to bind a symbol to 'nothing'.
 
 #### Error message template:
 
@@ -863,7 +863,7 @@ It is not permitted to bind a symbol to 'unset'. Instead of defining a symbol fo
 ---
 ### <a name="l-err/cannot-bind-unset"></a>l-err/cannot-bind-unset
 
-It is not permitted to rebind the symbol used to represent 'unset'.
+It is not permitted to rebind the symbol used to represent 'unset'. Instead of defining a symbol for this, consider using '$no-value'.
 
 #### Error message template:
 
