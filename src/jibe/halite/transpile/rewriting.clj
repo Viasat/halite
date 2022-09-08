@@ -22,9 +22,44 @@
      (binding [*rewrite-traces* ~traces-sym]
        ~@body)))
 
-(defmacro trace! [item-form]
+(defn print-trace-item [{:keys [rule op pruned-ids id id' spec-info spec-info' total-ms]}]
+  (binding [ssa/*hide-non-halite-ops* false, ssa/*elide-top-level-bindings* true]
+    (let [form (ssa/form-from-ssa spec-info id)
+          form' (ssa/form-from-ssa spec-info' id')
+          time-str (str total-ms "ms")]
+      (println (format "%s:  %s\n %s|->%s%s"
+                       rule form time-str (apply str (repeat (dec (- (count rule) (count time-str))) \space)) form')))))
+
+(def type-error-item (atom nil))
+
+(defn type-check-trace-item [senv {:keys [op rule spec-info spec-info'] :as item} & {:keys [verbose?]}]
+  (when (and rule spec-info spec-info')
+    (let [report-err
+          (fn [stage ex]
+            (reset! type-error-item item)
+            (binding [ssa/*hide-non-halite-ops* true]
+              (-> (ssa/spec-from-ssa spec-info)  :constraints first second clojure.pprint/pprint)
+              (print-trace-item item)
+              (-> (ssa/spec-from-ssa spec-info') :constraints first second clojure.pprint/pprint))
+            (throw (ex-info (format "Found type error %s %s" stage rule) {} ex)))]
+      (try
+        (binding [ssa/*hide-non-halite-ops* true]
+          (halite/type-check-spec senv (ssa/spec-from-ssa spec-info))
+          (when verbose? (println "ok before" rule)))
+        (catch Exception ex
+          (report-err "before" ex)))
+
+      (try
+        (binding [ssa/*hide-non-halite-ops* true]
+          (halite/type-check-spec senv (ssa/spec-from-ssa spec-info')))
+        (when verbose? (println "ok after" rule))
+        (catch Exception ex
+          (report-err "after" ex))))))
+
+(defmacro trace! [sctx item-form]
   `(when *rewrite-traces*
-     (let [item# ~item-form
+     (let [senv# (ssa/as-spec-env ~sctx)
+           item# ~item-form
            spec-id# (:spec-id item#)]
        (swap! *rewrite-traces*
               (fn [traces#]
@@ -34,15 +69,8 @@
        (when-let [dgraph# (:dgraph' item#)]
          (when (ssa/cycle? dgraph#)
            (throw (ex-info (format "BUG! Cycle detected after %s %s" (:op item#) (:rule item#))
-                           {:item item#})))))))
-
-(defn print-trace-item [{:keys [rule op pruned-ids id id' spec-info spec-info' total-ms]}]
-  (binding [ssa/*hide-non-halite-ops* false, ssa/*elide-top-level-bindings* true]
-    (let [form (ssa/form-from-ssa spec-info id)
-          form' (ssa/form-from-ssa spec-info' id')
-          time-str (str total-ms "ms")]
-      (println (format "%s:  %s\n %s|->%s%s"
-                       rule form time-str (apply str (repeat (dec (- (count rule) (count time-str))) \space)) form')))))
+                           {:item item#}))))
+       (type-check-trace-item senv# item#))))
 
 (defn print-trace-summary [trace]
   (doseq [item trace]
@@ -57,26 +85,8 @@
          (finally
            (print-trace-summary (get @traces# spec-id#)))))))
 
-(def type-error-item (atom nil))
-
 (defn type-check-trace [senv trace]
-  (doseq [{:keys [op rule spec-info spec-info'] :as item} trace]
-    (when (and rule spec-info spec-info')
-      (try
-        (let [spec-info (binding [ssa/*hide-non-halite-ops* true] (ssa/spec-from-ssa spec-info))
-              spec-info' (binding [ssa/*hide-non-halite-ops* true] (ssa/spec-from-ssa spec-info'))]
-          (halite/type-check-spec senv spec-info)
-          (println "ok before" rule)
-          (halite/type-check-spec senv spec-info')
-          (println "ok after" rule))
-        (catch clojure.lang.ExceptionInfo ex
-          (reset! type-error-item item)
-          (let [spec-info (binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa spec-info))
-                spec-info' (binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa spec-info'))]
-            (-> spec-info :constraints first second clojure.pprint/pprint)
-            (print-trace-item item)
-            (-> spec-info' :constraints first second clojure.pprint/pprint))
-          (throw (ex-info (str "Found type error for " rule) {} ex)))))))
+  (run! #(type-check-trace-item senv % :verbose? true) trace))
 
 (s/defschema RewriteFnCtx
   {:sctx SpecCtx :ctx SSACtx})
@@ -110,6 +120,7 @@
             graph-ms (/ (- end-nanos rule-nanos) 1000000.0)
             total-ms (/ (- end-nanos start-nanos) 1000000.0)]
         (trace!
+         sctx
          {:op :rewrite
           :rule rule-name
           :id id

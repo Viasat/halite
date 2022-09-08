@@ -345,6 +345,7 @@
                               (assoc :ssa-graph ssa-graph)
                               (update :constraints conj [(str target-id) id]))]
                (halite-rewriting/trace!
+                sctx
                 {:op :add-constraint
                  :rule "lower-refinement-to-constraint"
                  :spec-id spec-id
