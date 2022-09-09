@@ -1664,6 +1664,16 @@
                     (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                     (apply merge-with into)))
 
+(defn adjust-connector-style
+  "RRDiagramToSVG provides an interface for setting on connector path strokes
+  only their color, nothing else. So to adjust width, we have to apply unstable
+  private knowledge."
+  [svg-str]
+  (let [desired-style "fill: none; stroke: #888888; stroke-width: 3pt;"]
+    (string/replace svg-str
+                    #"(<style.*?>.*[.]c[{]).*?([}].*</style>)"
+                    (str "$1" desired-style "$2"))))
+
 (defn produce-diagram [out-file-name ^String rule-str]
   (let [gtrd (GrammarToRRDiagram.)
         rts (RRDiagramToSVG.)
@@ -1673,7 +1683,8 @@
                       (into [])
                       (map #(.convert gtrd %))
                       (map #(.convert rts %))
-                      first)]
+                      first
+                      adjust-connector-style)]
     (spit out-file-name rule-svg)))
 
 (defn- rule-from-partitioned-bnf [partitioned-bnf k-f]
