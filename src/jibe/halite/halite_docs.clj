@@ -2057,16 +2057,20 @@
             "---\n"]
            flatten (apply str)))))
 
+(defn produce-basic-core-md [lang]
+  (str (->> basic-bnf
+            (partition 2)
+            (map (partial apply basic-md lang))
+            (apply str))
+       "### Type Graph"
+       "![" "type graph" "](./types.dot.png)\n\n"))
+
 (defn produce-basic-md []
-  (->> basic-bnf
-       (partition 2)
-       (map (partial apply basic-md :halite))
-       (apply str generated-msg "# Halite basic syntax reference\n\n")
+  (->> (produce-basic-core-md :halite)
+       (str generated-msg "# Halite basic syntax reference\n\n")
        (spit "doc/halite-basic-syntax-reference.md"))
-  (->> basic-bnf
-       (partition 2)
-       (map (partial apply basic-md :jadeite))
-       (apply str generated-msg "# Jadeite basic syntax reference\n\n")
+  (->> (produce-basic-core-md :jadeite)
+       (str generated-msg "# Jadeite basic syntax reference\n\n")
        (spit "doc/jadeite-basic-syntax-reference.md")))
 
 (defn err-md [lang err-id err]

@@ -404,3 +404,5 @@ Refers to either the presence of absence of a value, or a pseudo-value indicatin
 !["value | unset"](./halite-bnf-diagrams/basic-syntax/any.svg)
 
 ---
+### Type Graph![type graph](./types.dot.png)
+
