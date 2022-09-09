@@ -22,17 +22,18 @@
                      (tv [:Decimal S] :Value)
                      (tv :String :Value)
                      (tv :Boolean :Value)
-                     (tv [:Instance KW R2] :Value)
+                     (tv :PreInstance [:Instance KW R2] :Value)
                      (tv [:Set T] [:Coll T] :Value)
                      (tv [:Vec T] [:Coll T])})
       (tv :Nothing :Unset #{(tv (m :Integer) :Any)
                             (tv (m [:Decimal S]) :Any)
                             (tv (m :String) :Any)
                             (tv (m :Boolean) :Any)
-                            (tv (m [:Instance KW R2]) :Any)
+                            (tv (m :PreInstance) (m [:Instance KW R2]) :Any)
                             (tv (m [:Set T]) (m [:Coll T]) :Any)
                             (tv (m [:Vec T]) (m [:Coll T]))})
       (tv [:Instance KW R2] (m [:Instance KW R2]))
+      (tv :PreInstance  (m :PreInstance))
       (tv :Integer      (m :Integer))
       (tv [:Decimal S]  (m [:Decimal S]))
       (tv :String       (m :String))
@@ -114,7 +115,7 @@
 
 (s/defschema TypeAtom
   "Type atoms are always unqualified keywords."
-  (s/enum :Integer :String :Boolean :Value :Nothing :Any :Unset))
+  (s/enum :Integer :String :Boolean :Value :Nothing :Any :Unset :PreInstance))
 
 (declare maybe-type?)
 
@@ -216,7 +217,7 @@
                          :else
                          (if (and (:maybe? s) (:maybe? t))
                            {:kind :Unset}
-                           {:kind :Nothing}))))
+                           {:kind :PreInstance}))))
 
 (defn- spec-id-ptn [s]
   (when (and (= :Instance (:kind s))
@@ -365,9 +366,9 @@
                    (instance-join sp tp)
                    (some (fn [gtp-sub]
                            (when (contains? s-sub-ptns gtp-sub)
-                              ;;(prn :consider gtp-super)
+                             ;;(prn :consider gtp-super)
                              (if (symbol? (:arg gtp-sub))
-                                ;; If shared node has type param, compare original type params
+                               ;; If shared node has type param, compare original type params
                                (case (:kind gtp-sub)
                                  (:Vec :Set :Coll) (when-let [arg (if (and (:arg sp) (:arg tp))
                                                                     (join (:arg sp) (:arg tp))
@@ -379,7 +380,7 @@
                                                       :r2 (some :r2 [sp tp])))
                                  (:Decimal) (when (apply = (remove nil? [(:arg sp) (:arg tp)]))
                                               (assoc gtp-sub :arg (some :arg [sp tp]))))
-                                ;; No param in meet, return unmodified
+                               ;; No param in meet, return unmodified
                                gtp-sub)))
                          (get @*ptn-subtypes gtp)))]
     (ptn-type join-ptn)))

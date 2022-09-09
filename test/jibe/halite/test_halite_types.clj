@@ -26,7 +26,8 @@
       [:Maybe [:Decimal 3]]      {:maybe? true,  :kind :Decimal,  :arg 3, :r2 nil}
       [:Maybe [:Set T]]          {:maybe? true,  :kind :Set,      :arg T, :r2 nil}
       :Unset                     {:maybe? false, :kind :Unset,    :arg nil, :r2 nil}
-      :Nothing                   {:maybe? false, :kind :Nothing,  :arg nil, :r2 nil})))
+      :Nothing                   {:maybe? false, :kind :Nothing,  :arg nil, :r2 nil}
+      :PreInstance               {:maybe? false, :kind :PreInstance, :arg nil, :r2 nil})))
 
 (deftest type-ptn-round-trip
   (let [T 'T]
@@ -46,7 +47,8 @@
       [:Maybe [:Set T]]
       :Unset
       [:Coll T]
-      [:Maybe [:Coll T]])))
+      [:Maybe [:Coll T]]
+      :PreInstance)))
 
 (deftest test-schema
   (are [t]
@@ -54,13 +56,17 @@
     :Integer
     [:Decimal 1]
     [:Maybe [:Set :Nothing]]
-    [:Coll [:Decimal 3]]))
+    [:Coll [:Decimal 3]]
+    :PreInstance
+    [:Maybe :PreInstance]))
 
 (deftest test-not-schema
   (are [t]
-       (s/check halite-types/HaliteType t)
+       (boolean (s/check halite-types/HaliteType t))
     [:Decimal]
-    [:Decimal "1"]))
+    [:Decimal "1"]
+    [:Instance :Z #{:ws/B :ws/C}]
+    [:Maybe [:PreInstance]]))
 
 #_(deftest type-nodename
     (are [t tn] (= tn (halite-types/type-nodename t))
@@ -100,7 +106,9 @@
     [:Vec :String] [:Maybe [:Coll :Value]]
     [:Vec [:Set [:Vec :Integer]]] [:Vec [:Set [:Coll :Value]]]
     [:Vec [:Set [:Vec [:Decimal 4]]]] [:Vec [:Set [:Coll :Value]]]
-    [:Instance :ws/C #{:ws/A :ws/B}] [:Instance :* #{:ws/A}]))
+    [:Instance :ws/C #{:ws/A :ws/B}] [:Instance :* #{:ws/A}]
+    :PreInstance [:Instance :* #{:ws/A}]
+    [:Maybe :PreInstance] [:Maybe [:Instance :* #{:ws/A}]]))
 
 (deftest not-subtypes
   (are [s t] (not (halite-types/subtype? s t))
@@ -113,7 +121,9 @@
     [:Set :Integer] [:Set [:Decimal 1]]
     [:Instance :ws/A] [:Maybe [:Instance :ws/B]]
     [:Instance :ws/A] [:Instance :ws/B]
-    [:Instance :* #{:ws/A :ws/B}] [:Instance :ws/D #{:ws/C}]))
+    [:Instance :* #{:ws/A :ws/B}] [:Instance :ws/D #{:ws/C}]
+    :PreInstance :Boolean
+    [:Maybe :PreInstance] :Boolean))
 
 (deftest meet
   (are [a b m] (= m (halite-types/meet a b) (halite-types/meet b a))
@@ -151,7 +161,16 @@
     [:Maybe [:Instance :ws/A]] [:Instance :*] [:Maybe [:Instance :*]]
     [:Maybe [:Instance :ws/A]] [:Maybe [:Instance :*]] [:Maybe [:Instance :*]]
     :Nothing :Unset :Unset
-    [:Instance :* #{:ws/A :ws/B}] [:Instance :* #{:ws/B :ws/C}] [:Instance :* #{:ws/B}]))
+    [:Instance :* #{:ws/A :ws/B}] [:Instance :* #{:ws/B :ws/C}] [:Instance :* #{:ws/B}]
+    :Nothing [:Instance :* #{:ws/A :ws/B}] [:Instance :* #{:ws/A :ws/B}]
+    :Nothing :PreInstance :PreInstance
+    :PreInstance :Boolean :Value
+    :PreInstance [:Maybe [:Instance :* #{:ws/A :ws/B}]] [:Maybe [:Instance :* #{:ws/A :ws/B}]]
+    [:Instance :ws/A] [:Instance :*] [:Instance :*]
+    :Unset :PreInstance [:Maybe :PreInstance]
+    :Unset [:Instance :*] [:Maybe [:Instance :*]]
+    :PreInstance [:Maybe :PreInstance] [:Maybe :PreInstance]
+    [:Maybe :PreInstance] [:Maybe [:Instance :ws/A]] [:Maybe [:Instance :ws/A]]))
 
 (deftest join
   (are [a b m] (= m (halite-types/join a b) (halite-types/join b a))
@@ -169,14 +188,21 @@
     [:Decimal 2] [:Maybe [:Decimal 1]] :Nothing
     [:Decimal 2] [:Maybe [:Decimal 2]] [:Decimal 2]
     [:Maybe [:Decimal 1]] [:Maybe [:Decimal 2]] :Unset
-    [:Instance :* #{:ws/A :ws/B}] [:Instance :* #{:ws/B :ws/C}] [:Instance :* #{:ws/A :ws/B :ws/C}]))
+    [:Instance :* #{:ws/A :ws/B}] [:Instance :* #{:ws/B :ws/C}] [:Instance :* #{:ws/A :ws/B :ws/C}]
+    :Nothing [:Instance :* #{:ws/A :ws/B}] :Nothing
+    :Nothing :PreInstance :Nothing
+    [:Instance :ws/A] [:Instance :ws/B] :PreInstance
+    [:Instance :ws/A] [:Instance :*] [:Instance :ws/A]
+    [:Instance :ws/A] [:Instance :* #{:ws/B :ws/C}] [:Instance :ws/A #{:ws/B :ws/C}]
+    [:Instance :ws/A] [:Maybe :PreInstance] :PreInstance
+    :Unset [:Maybe :PreInstance] :Unset))
 
 (def gen-type
   (let [r (gen/recursive-gen (fn [inner]
                                (gen/one-of [(gen/fmap (fn [i] [:Vec i]) inner)
                                             (gen/fmap (fn [i] [:Set i]) inner)
                                             (gen/fmap (fn [i] [:Coll i]) inner)]))
-                             (gen/one-of [(gen/elements [:Integer :String :Boolean :Nothing :Value])
+                             (gen/one-of [(gen/elements [:Integer :String :Boolean :Nothing :Value :PreInstance])
                                           (gen/fmap (fn [[a r2]] [:Instance a (disj r2 a)])
                                                     (gen/tuple (gen/elements [:* :ws/A :ws/B :ws/C])
                                                                (gen/set (gen/elements [:ws/A :ws/B :ws/C]))))
@@ -500,7 +526,7 @@
   (is (= {:maybe? false :kind :Instance :arg :ws/A}
          (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :ws/A}
                                        {:maybe? false :kind :Instance :arg :ws/A})))
-  (is (= {:kind :Nothing}
+  (is (= {:kind :PreInstance}
          (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :ws/A}
                                        {:maybe? false :kind :Instance :arg :ws/B})))
   (is (= {:maybe? false :kind :Instance :arg :ws/A}
@@ -527,7 +553,7 @@
   (is (= {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B :ws/Z}}
          (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
                                        {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/Z}})))
-  (is (= {:kind :Nothing}
+  (is (= {:kind :PreInstance}
          (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
                                        {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
 

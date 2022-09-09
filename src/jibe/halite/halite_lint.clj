@@ -91,7 +91,7 @@
     (reduce
      (fn [s t]
        (let [j (halite-types/join s t)]
-         (when (= j :Nothing)
+         (when (#{:Nothing :PreInstance} j)
            (throw-err (l-err/result-always-known {:op (first expr)
                                                   :value (if (= '= (first expr)) 'false 'true)
                                                   :form expr})))
