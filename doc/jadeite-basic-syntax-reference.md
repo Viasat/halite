@@ -157,7 +157,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 ---
 ### <a name="integer"></a>integer
 
-Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here.
+Signed, eight byte numeric integer values. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here. The largest positive integer is 9223372036854775807. The most negative integer is -9223372036854775808.
 
 !["[plus-minus-character] '0-9' {'0-9'}"](./halite-bnf-diagrams/basic-syntax/integer-j.svg)
 
@@ -197,6 +197,12 @@ Signed numeric integer values with no decimal places. Alternative integer repres
 -9223372036854775808
 ```
 
+</td><td colspan="1">
+
+```java
+0
+```
+
 </td></tr></table>
 
 #### Tags:
@@ -206,7 +212,7 @@ Signed numeric integer values with no decimal places. Alternative integer repres
 ---
 ### <a name="fixed-decimal"></a>fixed-decimal
 
-Signed numeric values with decimal places.
+Signed numeric values with decimal places. The scale (i.e. the number of digits to the right of the decimal place), must be between one and 18. Conceptually, the entire numeric value must fit into the same number of bytes as an 'integer'. So the largest fixed-decimal value with a scale of one is: #d "922337203685477580.7", and the most negative value with a scale of one is: #d "-922337203685477580.8". Similarly, the largest fixed-decimal value with a scale of 18 is: #d "9.223372036854775807" and the most negative value with a scale of 18 is: #d "-9.223372036854775808". The scale of the fixed-decimal value can be set to what is needed, but as more precision is added to the right of the decimal place, fewer digits are available to the left of the decimal place.
 
 !["'#' 'd' [whitespace] '\"' ['-'] ('0' | ('1-9' {'0-9'})) '.' '0-9' {'0-9'} '\"'"](./halite-bnf-diagrams/basic-syntax/fixed-decimal-j.svg)
 
@@ -232,6 +238,30 @@ Signed numeric values with decimal places.
 
 ```java
 #d "0.00"
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+#d "922337203685477580.7"
+```
+
+</td><td colspan="2">
+
+```java
+#d "-922337203685477580.8"
+```
+
+</td></tr><tr><td colspan="2">
+
+```java
+#d "9.223372036854775807"
+```
+
+</td><td colspan="2">
+
+```java
+#d "-9.223372036854775808"
 ```
 
 </td></tr></table>

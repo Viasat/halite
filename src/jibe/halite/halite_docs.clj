@@ -157,7 +157,7 @@
                           :tags #{'string-op}
                           :throws ['h-err/size-exceeded]}
                  'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
-                           :doc "Signed numeric integer values with no decimal places. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here."
+                           :doc "Signed, eight byte numeric integer values. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here. The largest positive integer is 9223372036854775807. The most negative integer is -9223372036854775808."
                            :examples [{:expr-str "0"
                                        :expr-str-j :auto}
                                       {:expr-str "1"
@@ -169,11 +169,13 @@
                                       {:expr-str "9223372036854775807"
                                        :expr-str-j :auto}
                                       {:expr-str "-9223372036854775808"
+                                       :expr-str-j :auto}
+                                      {:expr-str "-0"
                                        :expr-str-j :auto}]
                            :tags #{'integer-out 'integer-op}}
 
                  'fixed-decimal {:bnf "'#' 'd' [whitespace] '\"' ['-'] ('0' | ('1-9' {'0-9'})) '.' '0-9' {'0-9'} '\"'"
-                                 :doc "Signed numeric values with decimal places."
+                                 :doc "Signed numeric values with decimal places. The scale (i.e. the number of digits to the right of the decimal place), must be between one and 18. Conceptually, the entire numeric value must fit into the same number of bytes as an 'integer'. So the largest fixed-decimal value with a scale of one is: #d \"922337203685477580.7\", and the most negative value with a scale of one is: #d \"-922337203685477580.8\". Similarly, the largest fixed-decimal value with a scale of 18 is: #d \"9.223372036854775807\" and the most negative value with a scale of 18 is: #d \"-9.223372036854775808\". The scale of the fixed-decimal value can be set to what is needed, but as more precision is added to the right of the decimal place, fewer digits are available to the left of the decimal place."
                                  :examples [{:expr-str "#d \"1.1\""
                                              :expr-str-j :auto}
                                             {:expr-str "#d \"-1.1\""
@@ -181,6 +183,14 @@
                                             {:expr-str "#d \"1.00\""
                                              :expr-str-j :auto}
                                             {:expr-str "#d \"0.00\""
+                                             :expr-str-j :auto}
+                                            {:expr-str "#d \"922337203685477580.7\""
+                                             :expr-str-j :auto}
+                                            {:expr-str "#d \"-922337203685477580.8\""
+                                             :expr-str-j :auto}
+                                            {:expr-str "#d \"9.223372036854775807\""
+                                             :expr-str-j :auto}
+                                            {:expr-str "#d \"-9.223372036854775808\""
                                              :expr-str-j :auto}]
                                  :tags #{'fixed-decimal-op 'fixed-decimal-out}}
 
