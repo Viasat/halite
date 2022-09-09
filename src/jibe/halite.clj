@@ -708,7 +708,7 @@
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     (when (halite-types/maybe-type? body-type)
       (throw-err (h-err/must-produce-value {:form expr})))
-    [(first coll-type) (if (halite-types/subtype? coll-type halite-types/empty-coll)
+    [(first coll-type) (if (some #(halite-types/subtype? coll-type %) halite-types/empty-colls)
                          :Nothing
                          body-type)]))
 
@@ -816,7 +816,7 @@
   (let [arg-type (type-check* ctx (second expr))]
     (when-not (halite-types/subtype? arg-type (halite-types/vector-type :Value))
       (throw-err (h-err/argument-not-vector {:op 'first, :form expr})))
-    (when (= halite-types/empty-vector arg-type)
+    (when (halite-types/empty-vectors arg-type)
       (throw-err (h-err/argument-empty {:form expr})))
     (second arg-type)))
 

@@ -32,7 +32,7 @@
         {:keys [signatures impl deprecated?] :as builtin} (get halite/builtins op)
         actual-types (map (partial type-check* ctx) args)]
     (doseq [[arg t] (map vector args actual-types)]
-      (when (= :Nothing t)
+      (when (halite-types/nothing-like? t)
         (throw-err (l-err/disallowed-nothing {:form form
                                               :nothing-arg arg}))))
     ;; linter has tighter signature requirements on some builtin functions
@@ -62,7 +62,7 @@
   (cond
     (halite-types/halite-vector-type? subexpr-type)
     (let [index-type (type-check* ctx index)]
-      (when (= halite-types/empty-vector subexpr-type)
+      (when (halite-types/empty-vectors subexpr-type)
         (throw-err (h-err/index-out-of-bounds {:form form :index index :length 0})))
       (halite-types/elem-type subexpr-type))
 
@@ -91,7 +91,7 @@
     (reduce
      (fn [s t]
        (let [j (halite-types/join s t)]
-         (when (#{:Nothing :PreInstance} j)
+         (when (halite-types/nothing-like? j)
            (throw-err (l-err/result-always-known {:op (first expr)
                                                   :value (if (= '= (first expr)) 'false 'true)
                                                   :form expr})))
@@ -130,7 +130,7 @@
         (let [t (type-check* ctx body)]
           (when (= t :Unset)
             (throw-err (l-err/cannot-bind-unset {:form expr :sym sym :body body})))
-          (when (= t :Nothing)
+          (when (halite-types/nothing-like? t)
             (throw-err (l-err/cannot-bind-nothing {:form expr :sym sym :body body})))
           (update ctx :tenv halite-envs/extend-scope sym t)))
       ctx
@@ -156,7 +156,7 @@
 (s/defn ^:private type-check-map :- halite-types/HaliteType
   [ctx :- TypeContext, expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
-    [(first coll-type) (if (halite-types/subtype? coll-type halite-types/empty-coll)
+    [(first coll-type) (if (some #(halite-types/subtype? coll-type %) halite-types/empty-colls)
                          :Nothing
                          body-type)]))
 

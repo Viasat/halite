@@ -402,10 +402,11 @@
 ;; helpers for callers to use to avoid making assumptions about how types are represented
 
 (def empty-vector [:Vec :Nothing])
+(def empty-vectors #{[:Vec :Nothing] [:Vec :PreInstance]})
 
 (def empty-set [:Set :Nothing])
 
-(def empty-coll [:Coll :Nothing])
+(def empty-colls #{[:Coll :Nothing] [:Coll :PreInstance]})
 
 (s/defn concrete-spec-type :- HaliteType
   "Construct a type representing concrete instances of the given spec-id"
@@ -485,3 +486,6 @@
 (s/defn decimal-type? [t]
   (and (vector? t)
        (= :Decimal (first t))))
+
+(s/defn nothing-like? [t]
+  (#{:Nothing :PreInstance} t))
