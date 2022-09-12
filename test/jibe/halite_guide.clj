@@ -294,7 +294,10 @@
   ([spec-map expr]
    (let [spec-env (reify halite-envs/SpecEnv
                     (lookup-spec* [_ spec-id]
-                      (spec-map spec-id)))]
+                      (some->> (spec-map spec-id)
+                               (merge {:spec-vars {}
+                                       :constraints []
+                                       :refines-to {}}))))]
      (hc* nil spec-env expr true)))
   ([workspaces workspace-id expr]
    (with-close/with-close [spec-store ^java.io.Closeable (test-setup-specs/connect-to-spec-store)]

@@ -2203,22 +2203,36 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 #### Examples:
 
-<table><tr><td colspan="4">
+<table><tr><td colspan="3">
 
 ```clojure
-;-- Assuming a spec has a refinement defined to another.
+;-- A basic refinement.
+;-- context --;
+{:my/Spec$v1
+ {:refines-to
+  #:an{:Other$v1 {:name "r", :expr {:$type :an/Other$v1}}}},
+ :an/Other$v1 {}}
+
+;--
+
+(refine-to {:$type :my/Spec$v1} :an/Other$v1)
+
+;-- result --;
+{:$type :an/Other$v1}
+```
+
+</td></tr><tr><td colspan="4">
+
+```clojure
+;-- An example of a refinement that transforms data values.
 ;-- context --;
 {:my/Spec$v1
  {:spec-vars {:p "Integer", :n "Integer"},
-  :constraints [],
   :refines-to
   #:an{:Other$v1
        {:name "r",
         :expr {:$type :an/Other$v1, :x (inc p), :y (dec n)}}}},
- :an/Other$v1
- {:spec-vars {:x "Integer", :y "Integer"},
-  :constraints [],
-  :refines-to {}}}
+ :an/Other$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
 
 ;--
 
@@ -2231,8 +2245,13 @@ Attempt to refine the given instance into an instance of type, spec-id.
 </td></tr><tr><td colspan="4">
 
 ```clojure
-;-- Assuming a spec does not have a refinement defined to another.
-(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)
+;-- An example where the refinement being invoked does not exist.
+;-- context --;
+{:my/Spec$v1 {}, :an/Other$v1 {}}
+
+;--
+
+(refine-to {:$type :my/Spec$v1} :an/Other$v1)
 
 ;-- result --;
 h-err/no-refinement-path

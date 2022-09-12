@@ -1141,41 +1141,31 @@
                          'h-err/resource-spec-not-found
                          'h-err/refinement-error
                          'h-err/invalid-refinement-expression]
-                :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
+                :examples [{:spec-map {:my/Spec$v1 {:refines-to {:an/Other$v1 {:name "r"
+                                                                               :expr '{:$type :an/Other$v1}}}}
+                                       :an/Other$v1 {}}
+                            :expr-str "(refine-to {:$type :my/Spec$v1} :an/Other$v1)"
+                            :expr-str-j :auto
+                            :result :auto
+                            :doc "A basic refinement."}
+                           {:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
                                                                 :n "Integer"}
-                                                    :constraints []
                                                     :refines-to {:an/Other$v1 {:name "r"
                                                                                :expr '{:$type :an/Other$v1
                                                                                        :x (inc p)
                                                                                        :y (dec n)}}}}
                                        :an/Other$v1 {:spec-vars {:x "Integer"
-                                                                 :y "Integer"}
-                                                     :constraints []
-                                                     :refines-to {}}}
+                                                                 :y "Integer"}}}
                             :expr-str "(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)"
                             :expr-str-j :auto
                             :result :auto
-                            :doc "Assuming a spec has a refinement defined to another."}
-                           {:workspace-f (make-workspace-fn (workspace :my
-                                                                       {:my/Spec []
-                                                                        :my/Result []
-                                                                        :my/Other []}
-                                                                       (spec :Result :concrete
-                                                                             (variables [:x :my/Other$v1])
-                                                                             (refinements
-                                                                              [:r :from :my/Third$v1 [:halite "placeholder"]]))
-                                                                       (spec :Third :concrete)
-                                                                       (spec :Other :concrete
-                                                                             (variables [:x "Integer"]
-                                                                                        [:y "Integer"]))
-                                                                       (spec :Spec :concrete
-                                                                             (variables [:p "Integer"]
-                                                                                        [:n "Integer"]))))
-                            :instance {:$type :my/Third$v1}
-                            :expr-str "(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)"
-                            :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )"
+                            :doc "An example of a refinement that transforms data values."}
+                           {:spec-map {:my/Spec$v1 {}
+                                       :an/Other$v1 {}}
+                            :expr-str "(refine-to {:$type :my/Spec$v1} :an/Other$v1)"
+                            :expr-str-j :auto
                             :result :auto
-                            :doc "Assuming a spec does not have a refinement defined to another."}]
+                            :doc "An example where the refinement being invoked does not exist."}]
                 :see-also ['refines-to?]}
     'refines-to? {:sigs [["instance keyword:spec-id" "boolean"]]
                   :sigs-j [["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]]

@@ -2351,7 +2351,33 @@ Attempt to refine the given instance into an instance of type, spec-id.
 <table><tr><td colspan="3">
 
 ```java
-### Assuming a spec has a refinement defined to another.
+### A basic refinement.
+### context ###
+{
+  "my/Spec$v1" : {
+    "refines-to" : {
+      "an/Other$v1" : {
+        "name" : "r",
+        "expr" : {
+          "$type" : "an/Other$v1"
+        }
+      }
+    }
+  },
+  "an/Other$v1" : { }
+}
+###
+
+{$type: my/Spec$v1}.refineTo( an/Other$v1 )
+
+### result ###
+{:$type :an/Other$v1}
+```
+
+</td></tr><tr><td colspan="3">
+
+```java
+### An example of a refinement that transforms data values.
 ### context ###
 {
   "my/Spec$v1" : {
@@ -2359,7 +2385,6 @@ Attempt to refine the given instance into an instance of type, spec-id.
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : [ ],
     "refines-to" : {
       "an/Other$v1" : {
         "name" : "r",
@@ -2375,9 +2400,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
     "spec-vars" : {
       "x" : "Integer",
       "y" : "Integer"
-    },
-    "constraints" : [ ],
-    "refines-to" : { }
+    }
   }
 }
 ###
@@ -2391,8 +2414,15 @@ Attempt to refine the given instance into an instance of type, spec-id.
 </td></tr><tr><td colspan="4">
 
 ```java
-### Assuming a spec does not have a refinement defined to another.
-{$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )
+### An example where the refinement being invoked does not exist.
+### context ###
+{
+  "my/Spec$v1" : { },
+  "an/Other$v1" : { }
+}
+###
+
+{$type: my/Spec$v1}.refineTo( an/Other$v1 )
 
 ### result ###
 h-err/no-refinement-path
