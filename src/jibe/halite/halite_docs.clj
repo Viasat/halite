@@ -2,7 +2,9 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.halite-docs
-  (:require [clojure.edn :as edn]
+  (:require [cheshire.core :as json]
+            [clojure.edn :as edn]
+            [clojure.pprint :as pprint]
             [clojure.string :as string]
             [jibe.halite-guide :as halite-guide]
             [jibe.lib.fixed-decimal :as fixed-decimal]
@@ -38,30 +40,40 @@
 (defn expand-example [[op m]]
   [op (if (:examples m)
         (assoc m :examples (mapv (fn [example]
-                                   (let [{:keys [expr-str expr-str-j result result-j workspace-f instance]} example]
+                                   (let [{:keys [expr-str expr-str-j result result-j workspace-f instance spec-map]} example]
                                      (if expr-str
                                        (let [{:keys [h-result j-result j-expr]}
-                                             (if workspace-f
-                                               (let [workspace (workspace-f expr-str)
+                                             (if spec-map
+                                               (let [h-expr (edn/read-string
+                                                             {:readers {'d fixed-decimal/fixed-decimal-reader}}
+                                                             expr-str)
                                                      ^HCInfo i (halite-guide/hc-body
-                                                                [workspace]
-                                                                :my
-                                                                (list 'get
-                                                                      (list 'refine-to instance :my/Result$v1)
-                                                                      :x))]
+                                                                spec-map
+                                                                h-expr)]
                                                  {:h-result (.-h-result i)
                                                   :j-result (.-j-result i)
-                                                  :j-expr (jadeite/to-jadeite (edn/read-string
-                                                                               {:readers {'d fixed-decimal/fixed-decimal-reader}}
-                                                                               expr-str))})
-                                               (let [i (halite-guide/h*
-                                                        (edn/read-string
-                                                         {:readers {'d fixed-decimal/fixed-decimal-reader}}
-                                                         expr-str)
-                                                        true)]
-                                                 {:h-result (.-h-result i)
-                                                  :j-result (.-j-result i)
-                                                  :j-expr (.-j-expr i)}))
+                                                  :j-expr (jadeite/to-jadeite h-expr)})
+                                               (if workspace-f
+                                                 (let [workspace (workspace-f expr-str)
+                                                       ^HCInfo i (halite-guide/hc-body
+                                                                  [workspace]
+                                                                  :my
+                                                                  (list 'get
+                                                                        (list 'refine-to instance :my/Result$v1)
+                                                                        :x))]
+                                                   {:h-result (.-h-result i)
+                                                    :j-result (.-j-result i)
+                                                    :j-expr (jadeite/to-jadeite (edn/read-string
+                                                                                 {:readers {'d fixed-decimal/fixed-decimal-reader}}
+                                                                                 expr-str))})
+                                                 (let [i (halite-guide/h*
+                                                          (edn/read-string
+                                                           {:readers {'d fixed-decimal/fixed-decimal-reader}}
+                                                           expr-str)
+                                                          true)]
+                                                   {:h-result (.-h-result i)
+                                                    :j-result (.-j-result i)
+                                                    :j-expr (.-j-expr i)})))
 
                                              err-result? (and (vector? h-result)
                                                               (= :throws (first h-result)))
@@ -1129,26 +1141,19 @@
                          'h-err/resource-spec-not-found
                          'h-err/refinement-error
                          'h-err/invalid-refinement-expression]
-                :examples [{:workspace-f (make-workspace-fn (workspace :my
-                                                                       {:my/Spec []
-                                                                        :my/Result []
-                                                                        :my/Other []}
-                                                                       (spec :Result :concrete
-                                                                             (variables [:x :my/Other$v1])
-                                                                             (refinements
-                                                                              [:r :from :my/Third$v1 [:halite "placeholder"]]))
-                                                                       (spec :Third :concrete)
-                                                                       (spec :Other :concrete
-                                                                             (variables [:x "Integer"]
-                                                                                        [:y "Integer"]))
-                                                                       (spec :Spec :concrete
-                                                                             (variables [:p "Integer"]
-                                                                                        [:n "Integer"])
-                                                                             (refinements
-                                                                              [:r :to :my/Other$v1 [:halite "{:$type :my/Other$v1 :x (inc p) :y (inc n)}"]]))))
-                            :instance {:$type :my/Third$v1}
-                            :expr-str "(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)"
-                            :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )"
+                :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
+                                                                :n "Integer"}
+                                                    :constraints []
+                                                    :refines-to {:an/Other$v1 {:name "r"
+                                                                               :expr '{:$type :an/Other$v1
+                                                                                       :x (inc p)
+                                                                                       :y (dec n)}}}}
+                                       :an/Other$v1 {:spec-vars {:x "Integer"
+                                                                 :y "Integer"}
+                                                     :constraints []
+                                                     :refines-to {}}}
+                            :expr-str "(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)"
+                            :expr-str-j :auto
                             :result :auto
                             :doc "Assuming a spec has a refinement defined to another."}
                            {:workspace-f (make-workspace-fn (workspace :my
@@ -1869,13 +1874,23 @@
             texts)))
 
 (defn example-text [lang e]
-  (let [expr (if (= :halite lang)
+  (let [{:keys [spec-map]} e
+        expr (if (= :halite lang)
                (:expr-str e)
                (or (:expr-str-j e)
                    (:expr-str e)))
         result (or (:result e)
                    (:err-result e))]
-    (str expr
+    (str (when spec-map
+           (str ({:halite  ";-- context --;\n"
+                  :jadeite "### context ###\n"}
+                 lang)
+                ({:halite (with-out-str (pprint/pprint spec-map))
+                  :jadeite (json/encode spec-map {:pretty true})} lang)
+                ({:halite  "\n;--\n\n"
+                  :jadeite "\n###\n\n"}
+                 lang)))
+         expr
          (when result ({:halite  "\n\n;-- result --;\n"
                         :jadeite "\n\n### result ###\n"}
                        lang))

@@ -2202,13 +2202,28 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 #### Examples:
 
-<table><tr><td colspan="3">
+<table><tr><td colspan="4">
 
 ```clojure
-(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)
+;-- context --;
+{:my/Spec$v1
+ {:spec-vars {:p "Integer", :n "Integer"},
+  :constraints [],
+  :refines-to
+  #:an{:Other$v1
+       {:name "r",
+        :expr {:$type :an/Other$v1, :x (inc p), :y (dec n)}}}},
+ :an/Other$v1
+ {:spec-vars {:x "Integer", :y "Integer"},
+  :constraints [],
+  :refines-to {}}}
+
+;--
+
+(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
 
 ;-- result --;
-{:$type :my/Other$v1, :x 2, :y 0}
+{:$type :an/Other$v1, :x 2, :y -2}
 ```
 
 </td></tr><tr><td colspan="3">
