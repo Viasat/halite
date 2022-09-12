@@ -165,6 +165,17 @@ true
 </td></tr><tr><td colspan="4">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "Integer",
+      "y" : "Integer"
+    }
+  }
+}
+###
+
 ({$type: my/Spec$v1, x: 1, y: -1} != {$type: my/Spec$v1, x: 1, y: 0})
 
 ### result ###
@@ -808,6 +819,17 @@ false
 </td></tr><tr><td colspan="4">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "Integer",
+      "y" : "Integer"
+    }
+  }
+}
+###
+
 ({$type: my/Spec$v1, x: 1, y: -1} == {$type: my/Spec$v1, x: 1, y: 0})
 
 ### result ###
@@ -817,6 +839,17 @@ false
 </td></tr><tr><td colspan="4">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "Integer",
+      "y" : "Integer"
+    }
+  }
+}
+###
+
 ({$type: my/Spec$v1, x: 1, y: 0} == {$type: my/Spec$v1, x: 1, y: 0})
 
 ### result ###
@@ -1004,6 +1037,17 @@ The $type value of an instance is not considered a field that can be extracted w
 </td><td colspan="2">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "Integer",
+      "y" : "Integer"
+    }
+  }
+}
+###
+
 {$type: my/Spec$v1, x: -3, y: 2}.x
 
 ### result ###
@@ -1052,6 +1096,23 @@ The first path element in the path is looked up in the initial target. If there 
 </td></tr><tr><td colspan="4">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "my/SubSpec$v1",
+      "y" : "Integer"
+    }
+  },
+  "my/SubSpec$v1" : {
+    "spec-vars" : {
+      "a" : "Integer",
+      "b" : "Integer"
+    }
+  }
+}
+###
+
 {$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: 20, b: 10}, y: 2}.x.a
 
 ### result ###
@@ -1061,6 +1122,23 @@ The first path element in the path is looked up in the initial target. If there 
 </td></tr><tr><td colspan="5">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "my/SubSpec$v1",
+      "y" : "Integer"
+    }
+  },
+  "my/SubSpec$v1" : {
+    "spec-vars" : {
+      "a" : [ "Integer" ],
+      "b" : "Integer"
+    }
+  }
+}
+###
+
 {$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: [20, 30, 40], b: 10}, y: 2}.x.a[1]
 
 ### result ###
@@ -1580,6 +1658,17 @@ false
 </td></tr><tr><td colspan="4">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "Integer",
+      "y" : "Integer"
+    }
+  }
+}
+###
+
 ({$type: my/Spec$v1, x: 1, y: -1} == {$type: my/Spec$v1, x: 1, y: 0})
 
 ### result ###
@@ -1589,6 +1678,17 @@ false
 </td></tr><tr><td colspan="4">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "Integer",
+      "y" : "Integer"
+    }
+  }
+}
+###
+
 ({$type: my/Spec$v1, x: 1, y: 0} == {$type: my/Spec$v1, x: 1, y: 0})
 
 ### result ###
@@ -2223,6 +2323,17 @@ true
 </td></tr><tr><td colspan="4">
 
 ```java
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : "Integer",
+      "y" : "Integer"
+    }
+  }
+}
+###
+
 ({$type: my/Spec$v1, x: 1, y: -1} != {$type: my/Spec$v1, x: 1, y: 0})
 
 ### result ###
@@ -2908,7 +3019,19 @@ This operation can be thought of as producing an instance if it is valid. This c
 
 ```java
 ### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-valid {$type: my/Spec$v1, p: 1, n: -1}
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "p" : "Integer",
+      "n" : "Integer"
+    },
+    "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
+  }
+}
+###
+
+(valid {$type: my/Spec$v1, n: -1, p: 1})
 
 ### result ###
 {:$type :my/Spec$v1, :p 1, :n -1}
@@ -2918,6 +3041,18 @@ valid {$type: my/Spec$v1, p: 1, n: -1}
 
 ```java
 ### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "p" : "Integer",
+      "n" : "Integer"
+    },
+    "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
+  }
+}
+###
+
 valid {$type: my/Spec$v1, p: 1, n: 1}
 
 ### result ###
@@ -2951,7 +3086,19 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 
 ```java
 ### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-valid? {$type: my/Spec$v1, p: 1, n: -1}
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "p" : "Integer",
+      "n" : "Integer"
+    },
+    "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
+  }
+}
+###
+
+(valid? {$type: my/Spec$v1, n: -1, p: 1})
 
 ### result ###
 true
@@ -2961,7 +3108,19 @@ true
 
 ```java
 ### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-valid? {$type: my/Spec$v1, p: 1, n: 0}
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "p" : "Integer",
+      "n" : "Integer"
+    },
+    "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
+  }
+}
+###
+
+(valid? {$type: my/Spec$v1, n: 0, p: 1})
 
 ### result ###
 false

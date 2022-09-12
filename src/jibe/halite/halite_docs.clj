@@ -426,32 +426,14 @@
                    {:expr-str "(= [#{1 2} #{3}] [#{1 2} #{4}])"
                     :expr-str-j :auto
                     :result :auto}
-                   {:workspace-f (make-workspace-fn (workspace :my
-                                                               {:my/Spec []
-                                                                :my/Result []}
-                                                               (spec :Result :concrete
-                                                                     (variables [:x "Boolean"])
-                                                                     (refinements
-                                                                      [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                               (spec :Other :concrete)
-                                                               (spec :Spec :concrete
-                                                                     (variables [:x "Integer"]
-                                                                                [:y "Integer"]))))
+                   {:spec-map {:my/Spec$v1 {:spec-vars {:x "Integer"
+                                                        :y "Integer"}}}
                     :instance {:$type :my/Other$v1}
                     :expr-str "(= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
                     :expr-str-j :auto
                     :result :auto}
-                   {:workspace-f (make-workspace-fn (workspace :my
-                                                               {:my/Spec []
-                                                                :my/Result []}
-                                                               (spec :Result :concrete
-                                                                     (variables [:x "Boolean"])
-                                                                     (refinements
-                                                                      [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                               (spec :Other :concrete)
-                                                               (spec :Spec :concrete
-                                                                     (variables [:x "Integer"]
-                                                                                [:y "Integer"]))))
+                   {:spec-map {:my/Spec$v1 {:spec-vars {:x "Integer"
+                                                        :y "Integer"}}}
                     :instance {:$type :my/Other$v1}
                     :expr-str "(= {:$type :my/Spec$v1 :x 1 :y 0} {:$type :my/Spec$v1 :x 1 :y 0})"
                     :expr-str-j :auto
@@ -775,19 +757,8 @@
           :examples [{:expr-str "(get [10 20 30 40] 2)"
                       :expr-str-j :auto
                       :result :auto}
-                     {:workspace-f (make-workspace-fn (workspace :my
-                                                                 {:my/Spec []
-                                                                  :my/SubSpec []
-                                                                  :my/Result []}
-                                                                 (spec :Result :concrete
-                                                                       (variables [:x "Integer"])
-                                                                       (refinements
-                                                                        [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                 (spec :Other :concrete)
-                                                                 (spec :Spec :concrete
-                                                                       (variables [:x "Integer"]
-                                                                                  [:y "Integer"]))))
-                      :instance {:$type :my/Other$v1}
+                     {:spec-map {:my/Spec$v1 {:spec-vars {:x "Integer"
+                                                          :y "Integer"}}}
                       :expr-str "(get {:$type :my/Spec$v1, :x -3, :y 2} :x)"
                       :expr-str-j :auto
                       :result :auto}]
@@ -814,40 +785,17 @@
              :examples [{:expr-str "(get-in [[10 20] [30 40]] [1 0])"
                          :expr-str-j :auto
                          :result :auto}
-                        {:workspace-f (make-workspace-fn (workspace :my
-                                                                    {:my/Spec []
-                                                                     :my/SubSpec []
-                                                                     :my/Result []}
-                                                                    (spec :Result :concrete
-                                                                          (variables [:x "Integer"])
-                                                                          (refinements
-                                                                           [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                    (spec :Other :concrete)
-                                                                    (spec :Spec :concrete
-                                                                          (variables [:x :my/SubSpec$v1]
-                                                                                     [:y "Integer"]))
-                                                                    (spec :SubSpec :concrete
-                                                                          (variables [:a "Integer"]
-                                                                                     [:b "Integer"]))))
-                         :instance {:$type :my/Other$v1}
+                        {:spec-map {:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1
+                                                             :y "Integer"}}
+                                    :my/SubSpec$v1 {:spec-vars {:a "Integer"
+                                                                :b "Integer"}}}
                          :expr-str "(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a 20, :b 10}, :y 2} [:x :a])"
                          :expr-str-j :auto
                          :result :auto}
-                        {:workspace-f (make-workspace-fn (workspace :my
-                                                                    {:my/Spec []
-                                                                     :my/SubSpec []
-                                                                     :my/Result []}
-                                                                    (spec :Result :concrete
-                                                                          (variables [:x "Integer"])
-                                                                          (refinements
-                                                                           [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                    (spec :Other :concrete)
-                                                                    (spec :Spec :concrete
-                                                                          (variables [:x :my/SubSpec$v1]
-                                                                                     [:y "Integer"]))
-                                                                    (spec :SubSpec :concrete
-                                                                          (variables [:a ["Integer"]]
-                                                                                     [:b "Integer"]))))
+                        {:spec-map {:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1
+                                                             :y "Integer"}}
+                                    :my/SubSpec$v1 {:spec-vars {:a ["Integer"]
+                                                                :b "Integer"}}}
                          :instance {:$type :my/Other$v1}
                          :expr-str "(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])"
                          :expr-str-j :auto
@@ -1068,18 +1016,8 @@
                       {:expr-str "(not= [#{1 2} #{3}] [#{1 2} #{4}])"
                        :expr-str-j :auto
                        :result :auto}
-                      {:workspace-f (make-workspace-fn (workspace :my
-                                                                  {:my/Spec []
-                                                                   :my/Result []}
-                                                                  (spec :Result :concrete
-                                                                        (variables [:x "Boolean"])
-                                                                        (refinements
-                                                                         [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                  (spec :Other :concrete)
-                                                                  (spec :Spec :concrete
-                                                                        (variables [:x "Integer"]
-                                                                                   [:y "Integer"]))))
-                       :instance {:$type :my/Other$v1}
+                      {:spec-map {:my/Spec$v1 {:spec-vars {:x "Integer"
+                                                           :y "Integer"}}}
                        :expr-str "(not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
                        :expr-str-j :auto
                        :result :auto}
@@ -1319,40 +1257,18 @@
             :doc "Evaluate the instance-expression and produce the result. If a constraint violation occurs while evaluating the expression then produce an 'unset' value."
             :comment "This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification."
 
-            :examples [{:workspace-f (make-workspace-fn (workspace :my
-                                                                   {:my/Spec []
-                                                                    :my/Result []}
-                                                                   (spec :Result :concrete
-                                                                         (variables [:x :my/Spec$v1, :optional])
-                                                                         (refinements
-                                                                          [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                   (spec :Other :concrete)
-                                                                   (spec :Spec :concrete
-                                                                         (variables [:p "Integer"]
-                                                                                    [:n "Integer"]
-                                                                                    [:o "Integer" :optional])
-                                                                         (constraints [:pc [:halite "(> p 0)"]]
-                                                                                      [:pn [:halite "(< n 0)"]]))))
-                        :instance {:$type :my/Other$v1}
+            :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
+                                                            :n "Integer"}
+                                                :constraints [["cp" '(> p 0)]
+                                                              ["cn" '(< n 0)]]}}
                         :expr-str "(valid {:$type :my/Spec$v1, :p 1, :n -1})"
-                        :expr-str-j "valid {$type: my/Spec$v1, p: 1, n: -1}"
+                        :expr-str-j :auto
                         :result :auto
                         :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}
-                       {:workspace-f (make-workspace-fn (workspace :my
-                                                                   {:my/Spec []
-                                                                    :my/Result []}
-                                                                   (spec :Result :concrete
-                                                                         (variables [:x :my/Spec$v1, :optional])
-                                                                         (refinements
-                                                                          [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                   (spec :Other :concrete)
-                                                                   (spec :Spec :concrete
-                                                                         (variables [:p "Integer"]
-                                                                                    [:n "Integer"]
-                                                                                    [:o "Integer" :optional])
-                                                                         (constraints [:pc [:halite "(> p 0)"]]
-                                                                                      [:pn [:halite "(< n 0)"]]))))
-                        :instance {:$type :my/Other$v1}
+                       {:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
+                                                            :n "Integer"}
+                                                :constraints [["cp" '(> p 0)]
+                                                              ["cn" '(< n 0)]]}}
                         :expr-str "(valid {:$type :my/Spec$v1, :p 1, :n 1})"
                         :expr-str-j "valid {$type: my/Spec$v1, p: 1, n: 1}"
                         :result :auto
@@ -1363,42 +1279,20 @@
              :basic-ref ['instance 'boolean]
              :doc "Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true."
              :comment "Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value."
-             :examples [{:workspace-f (make-workspace-fn (workspace :my
-                                                                    {:my/Spec []
-                                                                     :my/Result []}
-                                                                    (spec :Result :concrete
-                                                                          (variables [:x "Boolean" :optional])
-                                                                          (refinements
-                                                                           [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                    (spec :Other :concrete)
-                                                                    (spec :Spec :concrete
-                                                                          (variables [:p "Integer"]
-                                                                                     [:n "Integer"]
-                                                                                     [:o "Integer" :optional])
-                                                                          (constraints [:pc [:halite "(> p 0)"]]
-                                                                                       [:pn [:halite "(< n 0)"]]))))
-                         :instance {:$type :my/Other$v1}
+             :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
+                                                             :n "Integer"}
+                                                 :constraints [["cp" '(> p 0)]
+                                                               ["cn" '(< n 0)]]}}
                          :expr-str "(valid? {:$type :my/Spec$v1, :p 1, :n -1})"
-                         :expr-str-j "valid? {$type: my/Spec$v1, p: 1, n: -1}"
+                         :expr-str-j :auto
                          :result :auto
                          :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}
-                        {:workspace-f (make-workspace-fn (workspace :my
-                                                                    {:my/Spec []
-                                                                     :my/Result []}
-                                                                    (spec :Result :concrete
-                                                                          (variables [:x "Boolean" :optional])
-                                                                          (refinements
-                                                                           [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                    (spec :Other :concrete)
-                                                                    (spec :Spec :concrete
-                                                                          (variables [:p "Integer"]
-                                                                                     [:n "Integer"]
-                                                                                     [:o "Integer" :optional])
-                                                                          (constraints [:pc [:halite "(> p 0)"]]
-                                                                                       [:pn [:halite "(< n 0)"]]))))
-                         :instance {:$type :my/Other$v1}
+                        {:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
+                                                             :n "Integer"}
+                                                 :constraints [["cp" '(> p 0)]
+                                                               ["cn" '(< n 0)]]}}
                          :expr-str "(valid? {:$type :my/Spec$v1, :p 1, :n 0})"
-                         :expr-str-j "valid? {$type: my/Spec$v1, p: 1, n: 0}"
+                         :expr-str-j :auto
                          :result :auto
                          :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}]
              :tags #{:instance-op :boolean-out :special-form}
