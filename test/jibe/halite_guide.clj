@@ -249,10 +249,11 @@
 
 (defn ^HCInfo hc*
   ([workspace-id expr]
-   (hc* workspace-id expr false))
-  ([workspace-id expr separate-err-id?]
+   (hc* workspace-id nil expr false))
+  ([workspace-id spec-env expr separate-err-id?]
    (binding [format-errors/*squash-throw-site* true]
-     (let [senv (spec-env/for-workspace *spec-store* workspace-id)
+     (let [senv (or spec-env
+                    (spec-env/for-workspace *spec-store* workspace-id))
            tenv (halite-envs/type-env {})
            env (halite-envs/env {})
            j-expr (try (jadeite/to-jadeite expr)
@@ -289,11 +290,17 @@
 
        (HCInfo. s t h-result j-expr jh-result j-result)))))
 
-(defn hc-body [workspaces workspace-id expr]
-  (with-close/with-close [spec-store ^java.io.Closeable (test-setup-specs/connect-to-spec-store)]
-    (resource-spec-construct/create-all-async spec-store workspaces)
-    (binding [*spec-store* (resource-spec/add-resource-spec-cache-to-spec-store spec-store)]
-      (hc* workspace-id expr true))))
+(defn hc-body
+  ([spec-map expr]
+   (let [spec-env (reify halite-envs/SpecEnv
+                    (lookup-spec* [_ spec-id]
+                      (spec-map spec-id)))]
+     (hc* nil spec-env expr true)))
+  ([workspaces workspace-id expr]
+   (with-close/with-close [spec-store ^java.io.Closeable (test-setup-specs/connect-to-spec-store)]
+     (resource-spec-construct/create-all-async spec-store workspaces)
+     (binding [*spec-store* (resource-spec/add-resource-spec-cache-to-spec-store spec-store)]
+       (hc* workspace-id nil expr true)))))
 
 (defmacro hc [workspaces workspace-id comment? & raw-args]
   (let [raw-args (if (string? comment?)
