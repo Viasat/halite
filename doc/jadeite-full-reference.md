@@ -2032,9 +2032,10 @@ Allows names to be given to values so that they can be referenced by the any-exp
 3
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="4">
 
 ```java
+### The values associated with symbols can be changed in nested contexts.
 ({ x = 1; ({ x = 2; x }) })
 
 ### result ###
@@ -2350,6 +2351,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 <table><tr><td colspan="3">
 
 ```java
+### Assuming a spec has a refinement defined to another.
 ### context ###
 {
   "my/Spec$v1" : {
@@ -2386,9 +2388,10 @@ Attempt to refine the given instance into an instance of type, spec-id.
 {:$type :an/Other$v1, :x 2, :y -2}
 ```
 
-</td></tr><tr><td colspan="3">
+</td></tr><tr><td colspan="4">
 
 ```java
+### Assuming a spec does note have a refinement defined to another.
 {$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )
 
 ### result ###
@@ -2426,15 +2429,17 @@ Determine whether it is possible to refine the given instance into an instance o
 <table><tr><td colspan="3">
 
 ```java
+### Assuming a spec has a refinement defined to another.
 {$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )
 
 ### result ###
 true
 ```
 
-</td></tr><tr><td colspan="3">
+</td></tr><tr><td colspan="4">
 
 ```java
+### Assuming a spec does note have a refinement defined to another.
 {$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )
 
 ### result ###
@@ -2809,18 +2814,20 @@ This operation can be thought of as producing an instance if it is valid. This c
 
 #### Examples:
 
-<table><tr><td colspan="2">
+<table><tr><td colspan="6">
 
 ```java
+### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
 valid {$type: my/Spec$v1, p: 1, n: -1}
 
 ### result ###
 {:$type :my/Spec$v1, :p 1, :n -1}
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="6">
 
 ```java
+### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
 valid {$type: my/Spec$v1, p: 1, n: 1}
 
 ### result ###
@@ -2850,18 +2857,20 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 
 #### Examples:
 
-<table><tr><td colspan="2">
+<table><tr><td colspan="6">
 
 ```java
+### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
 valid? {$type: my/Spec$v1, p: 1, n: -1}
 
 ### result ###
 true
 ```
 
-</td><td colspan="2">
+</td></tr><tr><td colspan="6">
 
 ```java
+### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
 valid? {$type: my/Spec$v1, p: 1, n: 0}
 
 ### result ###
@@ -2928,18 +2937,20 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 
 #### Examples:
 
-<table><tr><td colspan="1">
+<table><tr><td colspan="6">
 
 ```java
+### In the context of an instance with an optional field, x, when the field is set to the value of '1'.
 whenValue(x) {x + 2}
 
 ### result ###
 3
 ```
 
-</td><td colspan="1">
+</td></tr><tr><td colspan="5">
 
 ```java
+### In the context of an instance with an optional field, x, when the field is unset.
 whenValue(x) {x + 2}
 
 ### result ###
@@ -2967,18 +2978,20 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 #### Examples:
 
-<table><tr><td colspan="3">
+<table><tr><td colspan="6">
 
 ```java
+### In the context of an instance with an optional field, y, when the field is set to the value of '1'.
 (whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})
 
 ### result ###
 4
 ```
 
-</td></tr><tr><td colspan="3">
+</td></tr><tr><td colspan="5">
 
 ```java
+### In the context of an instance with an optional field, y, when the field is unset.
 (whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})
 
 ### result ###

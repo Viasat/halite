@@ -1874,14 +1874,20 @@
             texts)))
 
 (defn example-text [lang e]
-  (let [{:keys [spec-map]} e
+  (let [{:keys [spec-map doc]} e
         expr (if (= :halite lang)
                (:expr-str e)
                (or (:expr-str-j e)
                    (:expr-str e)))
         result (or (:result e)
                    (:err-result e))]
-    (str (when spec-map
+    (str (when doc
+           (str ({:halite  ";-- "
+                  :jadeite "### "}
+                 lang)
+                doc
+                "\n"))
+         (when spec-map
            (str ({:halite  ";-- context --;\n"
                   :jadeite "### context ###\n"}
                  lang)
