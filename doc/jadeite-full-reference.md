@@ -2459,8 +2459,61 @@ Determine whether it is possible to refine the given instance into an instance o
 <table><tr><td colspan="3">
 
 ```java
-### Assuming a spec has a refinement defined to another.
-{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )
+### A basic refinement.
+### context ###
+{
+  "my/Spec$v1" : {
+    "refines-to" : {
+      "an/Other$v1" : {
+        "name" : "r",
+        "expr" : {
+          "$type" : "an/Other$v1"
+        }
+      }
+    }
+  },
+  "an/Other$v1" : { }
+}
+###
+
+{$type: my/Spec$v1}.refinesTo?( an/Other$v1 )
+
+### result ###
+true
+```
+
+</td></tr><tr><td colspan="3">
+
+```java
+### An example of a refinement that transforms data values.
+### context ###
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "p" : "Integer",
+      "n" : "Integer"
+    },
+    "refines-to" : {
+      "an/Other$v1" : {
+        "name" : "r",
+        "expr" : {
+          "$type" : "an/Other$v1",
+          "x" : [ "inc", "p" ],
+          "y" : [ "dec", "n" ]
+        }
+      }
+    }
+  },
+  "an/Other$v1" : {
+    "spec-vars" : {
+      "x" : "Integer",
+      "y" : "Integer"
+    }
+  }
+}
+###
+
+{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( an/Other$v1 )
 
 ### result ###
 true
@@ -2469,8 +2522,15 @@ true
 </td></tr><tr><td colspan="4">
 
 ```java
-### Assuming a spec does not have a refinement defined to another.
-{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )
+### An example where the refinement being invoked does not exist.
+### context ###
+{
+  "my/Spec$v1" : { },
+  "an/Other$v1" : { }
+}
+###
+
+{$type: my/Spec$v1}.refinesTo?( an/Other$v1 )
 
 ### result ###
 false
