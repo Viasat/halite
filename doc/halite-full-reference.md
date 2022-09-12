@@ -2231,7 +2231,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 </td></tr><tr><td colspan="4">
 
 ```clojure
-;-- Assuming a spec does note have a refinement defined to another.
+;-- Assuming a spec does not have a refinement defined to another.
 (refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)
 
 ;-- result --;
@@ -2279,7 +2279,7 @@ true
 </td></tr><tr><td colspan="4">
 
 ```clojure
-;-- Assuming a spec does note have a refinement defined to another.
+;-- Assuming a spec does not have a refinement defined to another.
 (refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)
 
 ;-- result --;

@@ -2391,7 +2391,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 </td></tr><tr><td colspan="4">
 
 ```java
-### Assuming a spec does note have a refinement defined to another.
+### Assuming a spec does not have a refinement defined to another.
 {$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )
 
 ### result ###
@@ -2439,7 +2439,7 @@ true
 </td></tr><tr><td colspan="4">
 
 ```java
-### Assuming a spec does note have a refinement defined to another.
+### Assuming a spec does not have a refinement defined to another.
 {$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )
 
 ### result ###

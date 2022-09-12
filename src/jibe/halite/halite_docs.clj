@@ -1175,7 +1175,7 @@
                             :expr-str "(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)"
                             :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refineTo( my/Other$v1 )"
                             :result :auto
-                            :doc "Assuming a spec does note have a refinement defined to another."}]
+                            :doc "Assuming a spec does not have a refinement defined to another."}]
                 :see-also ['refines-to?]}
     'refines-to? {:sigs [["instance keyword:spec-id" "boolean"]]
                   :sigs-j [["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]]
@@ -1225,7 +1225,7 @@
                               :expr-str "(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Other$v1)"
                               :expr-str-j "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Other$v1 )"
                               :result :auto
-                              :doc "Assuming a spec does note have a refinement defined to another."}]
+                              :doc "Assuming a spec does not have a refinement defined to another."}]
                   :throws ['h-err/resource-spec-not-found
                            'h-err/refinement-error
                            'h-err/invalid-refinement-expression]}
