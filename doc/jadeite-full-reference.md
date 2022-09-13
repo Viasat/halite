@@ -29,7 +29,7 @@ Performs logical negation of the argument.
 ```java
 !true
 
-### result ###
+//-- result --
 false
 ```
 
@@ -38,7 +38,7 @@ false
 ```java
 !false
 
-### result ###
+//-- result --
 true
 ```
 
@@ -68,7 +68,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 ```java
 (2 != 3)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -77,7 +77,7 @@ true
 ```java
 (#d "2.2" != #d "2.2")
 
-### result ###
+//-- result --
 false
 ```
 
@@ -86,7 +86,7 @@ false
 ```java
 (2 != 2)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -95,7 +95,7 @@ false
 ```java
 notEqualTo(1, 1, 2)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -104,7 +104,7 @@ true
 ```java
 notEqualTo(1, 1, 1)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -113,7 +113,7 @@ false
 ```java
 ("hi" != "bye")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -122,7 +122,7 @@ true
 ```java
 ([1, 2, 3] != [1, 2, 3, 4])
 
-### result ###
+//-- result --
 true
 ```
 
@@ -131,7 +131,7 @@ true
 ```java
 ([1, 2, 3] != #{1, 2, 3})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -140,7 +140,7 @@ true
 ```java
 (#{1, 2, 3} != #{1, 2, 3})
 
-### result ###
+//-- result --
 false
 ```
 
@@ -149,7 +149,7 @@ false
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{3}])
 
-### result ###
+//-- result --
 false
 ```
 
@@ -158,14 +158,14 @@ false
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{4}])
 
-### result ###
+//-- result --
 true
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -174,11 +174,11 @@ true
     }
   }
 }
-###
+//
 
 ({$type: my/Spec$v1, x: 1, y: -1} != {$type: my/Spec$v1, x: 1, y: 0})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -244,7 +244,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 ```java
 (12 % 3)
 
-### result ###
+//-- result --
 0
 ```
 
@@ -253,7 +253,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 ```java
 (14 % 4)
 
-### result ###
+//-- result --
 2
 ```
 
@@ -262,7 +262,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 ```java
 (1 % 0)
 
-### result ###
+//-- result --
 h-err/divide-by-zero
 ```
 
@@ -271,7 +271,7 @@ h-err/divide-by-zero
 ```java
 (1 % 3)
 
-### result ###
+//-- result --
 1
 ```
 
@@ -280,7 +280,7 @@ h-err/divide-by-zero
 ```java
 (-1 % 3)
 
-### result ###
+//-- result --
 2
 ```
 
@@ -289,7 +289,7 @@ h-err/divide-by-zero
 ```java
 (1 % -3)
 
-### result ###
+//-- result --
 -2
 ```
 
@@ -298,7 +298,7 @@ h-err/divide-by-zero
 ```java
 (-1 % -3)
 
-### result ###
+//-- result --
 -1
 ```
 
@@ -332,7 +332,7 @@ The operation does not short-circuit. Even if the first argument evaluates to fa
 ```java
 (true && false)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -341,7 +341,7 @@ false
 ```java
 (true && true)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -350,7 +350,7 @@ true
 ```java
 ((2 > 1) && (3 > 2) && (4 > 3))
 
-### result ###
+//-- result --
 true
 ```
 
@@ -384,7 +384,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 ```java
 (2 * 3)
 
-### result ###
+//-- result --
 6
 ```
 
@@ -393,7 +393,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 ```java
 (#d "2.2" * 3)
 
-### result ###
+//-- result --
 #d "6.6"
 ```
 
@@ -402,7 +402,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 ```java
 (2 * 3 * 4)
 
-### result ###
+//-- result --
 24
 ```
 
@@ -436,7 +436,7 @@ Add two numbers together.
 ```java
 (2 + 3)
 
-### result ###
+//-- result --
 5
 ```
 
@@ -445,7 +445,7 @@ Add two numbers together.
 ```java
 (#d "2.2" + #d "3.3")
 
-### result ###
+//-- result --
 #d "5.5"
 ```
 
@@ -454,7 +454,7 @@ Add two numbers together.
 ```java
 (2 + 3 + 4)
 
-### result ###
+//-- result --
 9
 ```
 
@@ -463,7 +463,7 @@ Add two numbers together.
 ```java
 (2 + -3)
 
-### result ###
+//-- result --
 -1
 ```
 
@@ -497,7 +497,7 @@ Subtract one number from another.
 ```java
 (2 - 3)
 
-### result ###
+//-- result --
 -1
 ```
 
@@ -506,7 +506,7 @@ Subtract one number from another.
 ```java
 (#d "2.2" - #d "3.3")
 
-### result ###
+//-- result --
 #d "-1.1"
 ```
 
@@ -515,7 +515,7 @@ Subtract one number from another.
 ```java
 (2 - 3 - 4)
 
-### result ###
+//-- result --
 -5
 ```
 
@@ -524,7 +524,7 @@ Subtract one number from another.
 ```java
 (2 - -3)
 
-### result ###
+//-- result --
 5
 ```
 
@@ -560,7 +560,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```java
 (12 / 3)
 
-### result ###
+//-- result --
 4
 ```
 
@@ -569,7 +569,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```java
 (#d "12.3" / 3)
 
-### result ###
+//-- result --
 #d "4.1"
 ```
 
@@ -578,7 +578,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```java
 (14 / 4)
 
-### result ###
+//-- result --
 3
 ```
 
@@ -587,7 +587,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```java
 (#d "14.3" / 3)
 
-### result ###
+//-- result --
 #d "4.7"
 ```
 
@@ -596,7 +596,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```java
 (1 / 0)
 
-### result ###
+//-- result --
 h-err/divide-by-zero
 ```
 
@@ -630,7 +630,7 @@ Determine if a number is strictly less than another.
 ```java
 (2 < 3)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -639,7 +639,7 @@ true
 ```java
 (#d "2.2" < #d "3.3")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -648,7 +648,7 @@ true
 ```java
 (2 < 2)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -676,7 +676,7 @@ Determine if a number is less than or equal to another.
 ```java
 (2 <= 3)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -685,7 +685,7 @@ true
 ```java
 (#d "2.2" <= #d "3.3")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -694,7 +694,7 @@ true
 ```java
 (2 <= 2)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -722,7 +722,7 @@ Determine if values are equivalent. For vectors and sets this performs a compari
 ```java
 (2 == 2)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -731,7 +731,7 @@ true
 ```java
 (#d "2.2" == #d "3.3")
 
-### result ###
+//-- result --
 false
 ```
 
@@ -740,7 +740,7 @@ false
 ```java
 (2 == 3)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -749,7 +749,7 @@ false
 ```java
 equalTo(1, 1, 1)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -758,7 +758,7 @@ true
 ```java
 equalTo(1, 1, 2)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -767,7 +767,7 @@ false
 ```java
 ("hi" == "hi")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -776,7 +776,7 @@ true
 ```java
 ([1, 2, 3] == [1, 2, 3])
 
-### result ###
+//-- result --
 true
 ```
 
@@ -785,7 +785,7 @@ true
 ```java
 ([1, 2, 3] == #{1, 2, 3})
 
-### result ###
+//-- result --
 false
 ```
 
@@ -794,7 +794,7 @@ false
 ```java
 (#{1, 2, 3} == #{1, 2, 3})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -803,7 +803,7 @@ true
 ```java
 ([#{1, 2}, #{3}] == [#{1, 2}, #{3}])
 
-### result ###
+//-- result --
 true
 ```
 
@@ -812,14 +812,14 @@ true
 ```java
 ([#{1, 2}, #{3}] == [#{1, 2}, #{4}])
 
-### result ###
+//-- result --
 false
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -828,18 +828,18 @@ false
     }
   }
 }
-###
+//
 
 ({$type: my/Spec$v1, x: 1, y: -1} == {$type: my/Spec$v1, x: 1, y: 0})
 
-### result ###
+//-- result --
 false
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -848,11 +848,11 @@ false
     }
   }
 }
-###
+//
 
 ({$type: my/Spec$v1, x: 1, y: 0} == {$type: my/Spec$v1, x: 1, y: 0})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -886,7 +886,7 @@ Performs logical implication. If the first value is true, then the second value 
 ```java
 ((2 > 1) => (1 < 2))
 
-### result ###
+//-- result --
 true
 ```
 
@@ -895,7 +895,7 @@ true
 ```java
 ((2 > 1) => (1 > 2))
 
-### result ###
+//-- result --
 false
 ```
 
@@ -904,7 +904,7 @@ false
 ```java
 ((1 > 2) => false)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -934,7 +934,7 @@ Determine if a number is strictly greater than another.
 ```java
 (3 > 2)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -943,7 +943,7 @@ true
 ```java
 (#d "3.3" > #d "2.2")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -952,7 +952,7 @@ true
 ```java
 (2 > 2)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -980,7 +980,7 @@ Determine if a number is greater than or equal to another.
 ```java
 (3 >= 2)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -989,7 +989,7 @@ true
 ```java
 (#d "3.3" >= #d "2.2")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -998,7 +998,7 @@ true
 ```java
 (2 >= 2)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1030,14 +1030,14 @@ The $type value of an instance is not considered a field that can be extracted w
 ```java
 [10, 20, 30, 40][2]
 
-### result ###
+//-- result --
 30
 ```
 
 </td><td colspan="2">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -1046,11 +1046,11 @@ The $type value of an instance is not considered a field that can be extracted w
     }
   }
 }
-###
+//
 
 {$type: my/Spec$v1, x: -3, y: 2}.x
 
-### result ###
+//-- result --
 -3
 ```
 
@@ -1089,14 +1089,14 @@ The first path element in the path is looked up in the initial target. If there 
 ```java
 [[10, 20], [30, 40]][1][0]
 
-### result ###
+//-- result --
 30
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -1111,18 +1111,18 @@ The first path element in the path is looked up in the initial target. If there 
     }
   }
 }
-###
+//
 
 {$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: 20, b: 10}, y: 2}.x.a
 
-### result ###
+//-- result --
 20
 ```
 
 </td></tr><tr><td colspan="5">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -1137,11 +1137,11 @@ The first path element in the path is looked up in the initial target. If there 
     }
   }
 }
-###
+//
 
 {$type: my/Spec$v1, x: {$type: my/SubSpec$v1, a: [20, 30, 40], b: 10}, y: 2}.x.a[1]
 
-### result ###
+//-- result --
 30
 ```
 
@@ -1185,7 +1185,7 @@ Since the negative number space contains one more value than the positive number
 ```java
 abs(-1)
 
-### result ###
+//-- result --
 1
 ```
 
@@ -1194,7 +1194,7 @@ abs(-1)
 ```java
 abs(1)
 
-### result ###
+//-- result --
 1
 ```
 
@@ -1203,7 +1203,7 @@ abs(1)
 ```java
 abs(#d "-1.0")
 
-### result ###
+//-- result --
 #d "1.0"
 ```
 
@@ -1237,7 +1237,7 @@ The operation does not short-circuit. The boolean-expression is evaluated for al
 ```java
 any?(x in [1, 2, 3])(x > 1)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1246,7 +1246,7 @@ true
 ```java
 any?(x in #{1, 2, 3})(x > 10)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -1288,7 +1288,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 ```java
 [1, 2].concat([3])
 
-### result ###
+//-- result --
 [1 2 3]
 ```
 
@@ -1297,7 +1297,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 ```java
 #{1, 2}.concat([3, 4])
 
-### result ###
+//-- result --
 #{1 4 3 2}
 ```
 
@@ -1306,7 +1306,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 ```java
 [].concat([])
 
-### result ###
+//-- result --
 []
 ```
 
@@ -1343,7 +1343,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 ```java
 [1, 2].conj(3)
 
-### result ###
+//-- result --
 [1 2 3]
 ```
 
@@ -1352,7 +1352,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 ```java
 #{1, 2}.conj(3, 4)
 
-### result ###
+//-- result --
 #{1 4 3 2}
 ```
 
@@ -1361,7 +1361,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 ```java
 [].conj(1)
 
-### result ###
+//-- result --
 [1]
 ```
 
@@ -1397,7 +1397,7 @@ Since collections themselves are compared by their contents, this works for coll
 ```java
 #{"a", "b"}.contains?("a")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1406,7 +1406,7 @@ true
 ```java
 #{"a", "b"}.contains?("c")
 
-### result ###
+//-- result --
 false
 ```
 
@@ -1415,7 +1415,7 @@ false
 ```java
 #{#{1, 2}, #{3}}.contains?(#{1, 2})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1424,7 +1424,7 @@ true
 ```java
 #{[1, 2], [3]}.contains?([4])
 
-### result ###
+//-- result --
 false
 ```
 
@@ -1452,7 +1452,7 @@ Return how many items are in a collection.
 ```java
 [10, 20, 30].count()
 
-### result ###
+//-- result --
 3
 ```
 
@@ -1461,7 +1461,7 @@ Return how many items are in a collection.
 ```java
 #{"a", "b"}.count()
 
-### result ###
+//-- result --
 2
 ```
 
@@ -1470,7 +1470,7 @@ Return how many items are in a collection.
 ```java
 [].count()
 
-### result ###
+//-- result --
 0
 ```
 
@@ -1500,7 +1500,7 @@ This produces a set which contains all of the elements from the first set which 
 ```java
 #{1, 2, 3}.difference(#{1, 2})
 
-### result ###
+//-- result --
 #{3}
 ```
 
@@ -1509,7 +1509,7 @@ This produces a set which contains all of the elements from the first set which 
 ```java
 #{1, 2, 3}.difference(#{})
 
-### result ###
+//-- result --
 #{1 3 2}
 ```
 
@@ -1518,7 +1518,7 @@ This produces a set which contains all of the elements from the first set which 
 ```java
 #{1, 2, 3}.difference(#{1, 2, 3, 4})
 
-### result ###
+//-- result --
 #{}
 ```
 
@@ -1527,7 +1527,7 @@ This produces a set which contains all of the elements from the first set which 
 ```java
 #{[1, 2], [3]}.difference(#{[1, 2]})
 
-### result ###
+//-- result --
 #{[3]}
 ```
 
@@ -1561,7 +1561,7 @@ Determine if values are equivalent. For vectors and sets this performs a compari
 ```java
 (2 == 2)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1570,7 +1570,7 @@ true
 ```java
 (#d "2.2" == #d "3.3")
 
-### result ###
+//-- result --
 false
 ```
 
@@ -1579,7 +1579,7 @@ false
 ```java
 (2 == 3)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -1588,7 +1588,7 @@ false
 ```java
 equalTo(1, 1, 1)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1597,7 +1597,7 @@ true
 ```java
 equalTo(1, 1, 2)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -1606,7 +1606,7 @@ false
 ```java
 ("hi" == "hi")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1615,7 +1615,7 @@ true
 ```java
 ([1, 2, 3] == [1, 2, 3])
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1624,7 +1624,7 @@ true
 ```java
 ([1, 2, 3] == #{1, 2, 3})
 
-### result ###
+//-- result --
 false
 ```
 
@@ -1633,7 +1633,7 @@ false
 ```java
 (#{1, 2, 3} == #{1, 2, 3})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1642,7 +1642,7 @@ true
 ```java
 ([#{1, 2}, #{3}] == [#{1, 2}, #{3}])
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1651,14 +1651,14 @@ true
 ```java
 ([#{1, 2}, #{3}] == [#{1, 2}, #{4}])
 
-### result ###
+//-- result --
 false
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -1667,18 +1667,18 @@ false
     }
   }
 }
-###
+//
 
 ({$type: my/Spec$v1, x: 1, y: -1} == {$type: my/Spec$v1, x: 1, y: 0})
 
-### result ###
+//-- result --
 false
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -1687,11 +1687,11 @@ false
     }
   }
 }
-###
+//
 
 ({$type: my/Spec$v1, x: 1, y: 0} == {$type: my/Spec$v1, x: 1, y: 0})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1727,7 +1727,7 @@ Used to indicate when an unexpected condition has occurred and the data at hand 
 ```java
 error("failure")
 
-### result ###
+//-- result --
 h-err/spec-threw
 ```
 
@@ -1761,7 +1761,7 @@ Does not short-circuit. The boolean-expression is evaluated for all elements, ev
 ```java
 every?(x in [1, 2, 3])(x > 0)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -1770,7 +1770,7 @@ true
 ```java
 every?(x in #{1, 2, 3})(x > 1)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -1808,7 +1808,7 @@ Compute the numeric result of raising the first argument to the power given by t
 ```java
 expt(2, 3)
 
-### result ###
+//-- result --
 8
 ```
 
@@ -1817,7 +1817,7 @@ expt(2, 3)
 ```java
 expt(-2, 3)
 
-### result ###
+//-- result --
 -8
 ```
 
@@ -1826,7 +1826,7 @@ expt(-2, 3)
 ```java
 expt(2, 0)
 
-### result ###
+//-- result --
 1
 ```
 
@@ -1835,7 +1835,7 @@ expt(2, 0)
 ```java
 expt(2, -1)
 
-### result ###
+//-- result --
 h-err/invalid-exponent
 ```
 
@@ -1870,7 +1870,7 @@ Produce a new collection which contains only the elements from the original coll
 ```java
 filter(x in [1, 2, 3])(x > 2)
 
-### result ###
+//-- result --
 [3]
 ```
 
@@ -1879,7 +1879,7 @@ filter(x in [1, 2, 3])(x > 2)
 ```java
 filter(x in #{1, 2, 3})(x > 2)
 
-### result ###
+//-- result --
 #{3}
 ```
 
@@ -1919,7 +1919,7 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 ```java
 [10, 20, 30].first()
 
-### result ###
+//-- result --
 10
 ```
 
@@ -1928,7 +1928,7 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 ```java
 [].first()
 
-### result ###
+//-- result --
 h-err/argument-empty
 ```
 
@@ -1963,7 +1963,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 ```java
 (if((2 > 1)) {10} else {-1})
 
-### result ###
+//-- result --
 10
 ```
 
@@ -1972,7 +1972,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 ```java
 (if((2 > 1)) {10} else {error("fail")})
 
-### result ###
+//-- result --
 10
 ```
 
@@ -2028,7 +2028,7 @@ This is similar to the 'if-value' operation, but applies generally to an express
 ```java
 (ifValueLet ( x = (when((2 > 1)) {19}) ) {(x + 1)} else {0})
 
-### result ###
+//-- result --
 20
 ```
 
@@ -2037,7 +2037,7 @@ This is similar to the 'if-value' operation, but applies generally to an express
 ```java
 (ifValueLet ( x = (when((1 > 2)) {19}) ) {(x + 1)} else {0})
 
-### result ###
+//-- result --
 0
 ```
 
@@ -2074,7 +2074,7 @@ This produces a set which only contains values that appear in each of the argume
 ```java
 #{1, 2, 3}.intersection(#{2, 3, 4})
 
-### result ###
+//-- result --
 #{3 2}
 ```
 
@@ -2083,7 +2083,7 @@ This produces a set which only contains values that appear in each of the argume
 ```java
 #{1, 2, 3}.intersection(#{2, 3, 4}, #{3, 4})
 
-### result ###
+//-- result --
 #{3}
 ```
 
@@ -2119,7 +2119,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 ```java
 ({ x = 1; (x + 1) })
 
-### result ###
+//-- result --
 2
 ```
 
@@ -2128,17 +2128,17 @@ Allows names to be given to values so that they can be referenced by the any-exp
 ```java
 ({ x = 1; y = 2; (x + y) })
 
-### result ###
+//-- result --
 3
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### The values associated with symbols can be changed in nested contexts.
+//-- The values associated with symbols can be changed in nested contexts.
 ({ x = 1; ({ x = 2; x }) })
 
-### result ###
+//-- result --
 2
 ```
 
@@ -2179,7 +2179,7 @@ Produce a new collection from a collection by evaluating the expression with the
 ```java
 map(x in [10, 11, 12])(x + 1)
 
-### result ###
+//-- result --
 [11 12 13]
 ```
 
@@ -2188,7 +2188,7 @@ map(x in [10, 11, 12])(x + 1)
 ```java
 map(x in #{10, 12})(x * 2)
 
-### result ###
+//-- result --
 #{20 24}
 ```
 
@@ -2226,7 +2226,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 ```java
 (2 != 3)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -2235,7 +2235,7 @@ true
 ```java
 (#d "2.2" != #d "2.2")
 
-### result ###
+//-- result --
 false
 ```
 
@@ -2244,7 +2244,7 @@ false
 ```java
 (2 != 2)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -2253,7 +2253,7 @@ false
 ```java
 notEqualTo(1, 1, 2)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -2262,7 +2262,7 @@ true
 ```java
 notEqualTo(1, 1, 1)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -2271,7 +2271,7 @@ false
 ```java
 ("hi" != "bye")
 
-### result ###
+//-- result --
 true
 ```
 
@@ -2280,7 +2280,7 @@ true
 ```java
 ([1, 2, 3] != [1, 2, 3, 4])
 
-### result ###
+//-- result --
 true
 ```
 
@@ -2289,7 +2289,7 @@ true
 ```java
 ([1, 2, 3] != #{1, 2, 3})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -2298,7 +2298,7 @@ true
 ```java
 (#{1, 2, 3} != #{1, 2, 3})
 
-### result ###
+//-- result --
 false
 ```
 
@@ -2307,7 +2307,7 @@ false
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{3}])
 
-### result ###
+//-- result --
 false
 ```
 
@@ -2316,14 +2316,14 @@ false
 ```java
 ([#{1, 2}, #{3}] != [#{1, 2}, #{4}])
 
-### result ###
+//-- result --
 true
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### context ###
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -2332,11 +2332,11 @@ true
     }
   }
 }
-###
+//
 
 ({$type: my/Spec$v1, x: 1, y: -1} != {$type: my/Spec$v1, x: 1, y: 0})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -2376,7 +2376,7 @@ Produce a vector that contains integers in order starting at either the start va
 ```java
 range(3)
 
-### result ###
+//-- result --
 [0 1 2]
 ```
 
@@ -2385,7 +2385,7 @@ range(3)
 ```java
 range(10, 12)
 
-### result ###
+//-- result --
 [10 11]
 ```
 
@@ -2394,7 +2394,7 @@ range(10, 12)
 ```java
 range(10, 21, 5)
 
-### result ###
+//-- result --
 [10 15 20]
 ```
 
@@ -2426,7 +2426,7 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 ```java
 (reduce( a = 10; x in [1, 2, 3] ) { (a + x) })
 
-### result ###
+//-- result --
 16
 ```
 
@@ -2462,8 +2462,8 @@ Attempt to refine the given instance into an instance of type, spec-id.
 <table><tr><td colspan="3">
 
 ```java
-### A basic refinement.
-### context ###
+//-- A basic refinement.
+//-- context --
 {
   "my/Spec$v1" : {
     "refines-to" : {
@@ -2477,19 +2477,19 @@ Attempt to refine the given instance into an instance of type, spec-id.
   },
   "an/Other$v1" : { }
 }
-###
+//
 
 {$type: my/Spec$v1}.refineTo( an/Other$v1 )
 
-### result ###
+//-- result --
 {:$type :an/Other$v1}
 ```
 
 </td></tr><tr><td colspan="3">
 
 ```java
-### An example of a refinement that transforms data values.
-### context ###
+//-- An example of a refinement that transforms data values.
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -2514,28 +2514,28 @@ Attempt to refine the given instance into an instance of type, spec-id.
     }
   }
 }
-###
+//
 
 {$type: my/Spec$v1, n: -1, p: 1}.refineTo( an/Other$v1 )
 
-### result ###
+//-- result --
 {:$type :an/Other$v1, :x 2, :y -2}
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### An example where the refinement being invoked does not exist.
-### context ###
+//-- An example where the refinement being invoked does not exist.
+//-- context --
 {
   "my/Spec$v1" : { },
   "an/Other$v1" : { }
 }
-###
+//
 
 {$type: my/Spec$v1}.refineTo( an/Other$v1 )
 
-### result ###
+//-- result --
 h-err/no-refinement-path
 ```
 
@@ -2570,8 +2570,8 @@ Determine whether it is possible to refine the given instance into an instance o
 <table><tr><td colspan="3">
 
 ```java
-### A basic refinement.
-### context ###
+//-- A basic refinement.
+//-- context --
 {
   "my/Spec$v1" : {
     "refines-to" : {
@@ -2585,19 +2585,19 @@ Determine whether it is possible to refine the given instance into an instance o
   },
   "an/Other$v1" : { }
 }
-###
+//
 
 {$type: my/Spec$v1}.refinesTo?( an/Other$v1 )
 
-### result ###
+//-- result --
 true
 ```
 
 </td></tr><tr><td colspan="3">
 
 ```java
-### An example of a refinement that transforms data values.
-### context ###
+//-- An example of a refinement that transforms data values.
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -2622,28 +2622,28 @@ true
     }
   }
 }
-###
+//
 
 {$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( an/Other$v1 )
 
-### result ###
+//-- result --
 true
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```java
-### An example where the refinement being invoked does not exist.
-### context ###
+//-- An example where the refinement being invoked does not exist.
+//-- context --
 {
   "my/Spec$v1" : { },
   "an/Other$v1" : { }
 }
-###
+//
 
 {$type: my/Spec$v1}.refinesTo?( an/Other$v1 )
 
-### result ###
+//-- result --
 false
 ```
 
@@ -2681,7 +2681,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 ```java
 rescale(#d "1.23", 1)
 
-### result ###
+//-- result --
 #d "1.2"
 ```
 
@@ -2690,7 +2690,7 @@ rescale(#d "1.23", 1)
 ```java
 rescale(#d "1.23", 2)
 
-### result ###
+//-- result --
 #d "1.23"
 ```
 
@@ -2699,7 +2699,7 @@ rescale(#d "1.23", 2)
 ```java
 rescale(#d "1.23", 3)
 
-### result ###
+//-- result --
 #d "1.230"
 ```
 
@@ -2708,7 +2708,7 @@ rescale(#d "1.23", 3)
 ```java
 rescale(#d "1.23", 0)
 
-### result ###
+//-- result --
 1
 ```
 
@@ -2738,7 +2738,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 ```java
 [1, 2, 3].rest()
 
-### result ###
+//-- result --
 [2 3]
 ```
 
@@ -2747,7 +2747,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 ```java
 [1, 2].rest()
 
-### result ###
+//-- result --
 [2]
 ```
 
@@ -2756,7 +2756,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 ```java
 [1].rest()
 
-### result ###
+//-- result --
 []
 ```
 
@@ -2765,7 +2765,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 ```java
 [].rest()
 
-### result ###
+//-- result --
 []
 ```
 
@@ -2797,7 +2797,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 ```java
 [2, 1, 3].sort()
 
-### result ###
+//-- result --
 [1 2 3]
 ```
 
@@ -2806,7 +2806,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 ```java
 [#d "3.3", #d "1.1", #d "2.2"].sort()
 
-### result ###
+//-- result --
 [#d "1.1" #d "2.2" #d "3.3"]
 ```
 
@@ -2836,7 +2836,7 @@ Produce a new vector by sorting all of the items in the input collection accordi
 ```java
 sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()
 
-### result ###
+//-- result --
 [[1 2 3] [10 20] [30]]
 ```
 
@@ -2873,7 +2873,7 @@ Combine all of the input strings together in sequence to produce a new string.
 ```java
 str("a", "b")
 
-### result ###
+//-- result --
 "ab"
 ```
 
@@ -2882,7 +2882,7 @@ str("a", "b")
 ```java
 str("a", "", "c")
 
-### result ###
+//-- result --
 "ac"
 ```
 
@@ -2916,7 +2916,7 @@ According to this operation, a set is always a subset of itself and every set is
 ```java
 #{1, 2}.subset?(#{1, 2, 3, 4})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -2925,7 +2925,7 @@ true
 ```java
 #{1, 5}.subset?(#{1, 2})
 
-### result ###
+//-- result --
 false
 ```
 
@@ -2934,7 +2934,7 @@ false
 ```java
 #{1, 2}.subset?(#{1, 2})
 
-### result ###
+//-- result --
 true
 ```
 
@@ -2966,7 +2966,7 @@ This produces a set which contains all of the values that appear in any of the a
 ```java
 #{1}.union(#{2, 3})
 
-### result ###
+//-- result --
 #{1 3 2}
 ```
 
@@ -2975,7 +2975,7 @@ This produces a set which contains all of the values that appear in any of the a
 ```java
 #{1}.union(#{2, 3}, #{4})
 
-### result ###
+//-- result --
 #{1 4 3 2}
 ```
 
@@ -2984,7 +2984,7 @@ This produces a set which contains all of the values that appear in any of the a
 ```java
 #{1}.union(#{})
 
-### result ###
+//-- result --
 #{1}
 ```
 
@@ -3018,8 +3018,8 @@ This operation can be thought of as producing an instance if it is valid. This c
 <table><tr><td colspan="6">
 
 ```java
-### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-### context ###
+//-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -3029,19 +3029,19 @@ This operation can be thought of as producing an instance if it is valid. This c
     "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
   }
 }
-###
+//
 
 (valid {$type: my/Spec$v1, n: -1, p: 1})
 
-### result ###
+//-- result --
 {:$type :my/Spec$v1, :p 1, :n -1}
 ```
 
 </td></tr><tr><td colspan="6">
 
 ```java
-### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-### context ###
+//-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -3051,11 +3051,11 @@ This operation can be thought of as producing an instance if it is valid. This c
     "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
   }
 }
-###
+//
 
 valid {$type: my/Spec$v1, p: 1, n: 1}
 
-### result ###
+//-- result --
 :Unset
 ```
 
@@ -3085,8 +3085,8 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 <table><tr><td colspan="6">
 
 ```java
-### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-### context ###
+//-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -3096,19 +3096,19 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
     "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
   }
 }
-###
+//
 
 (valid? {$type: my/Spec$v1, n: -1, p: 1})
 
-### result ###
+//-- result --
 true
 ```
 
 </td></tr><tr><td colspan="6">
 
 ```java
-### When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-### context ###
+//-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
+//-- context --
 {
   "my/Spec$v1" : {
     "spec-vars" : {
@@ -3118,11 +3118,11 @@ true
     "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
   }
 }
-###
+//
 
 (valid? {$type: my/Spec$v1, n: 0, p: 1})
 
-### result ###
+//-- result --
 false
 ```
 
@@ -3154,7 +3154,7 @@ A primary use of this operator is in instance expression to optionally provide a
 ```java
 (when((2 > 1)) {"bigger"})
 
-### result ###
+//-- result --
 "bigger"
 ```
 
@@ -3163,7 +3163,7 @@ A primary use of this operator is in instance expression to optionally provide a
 ```java
 (when((2 < 1)) {"bigger"})
 
-### result ###
+//-- result --
 :Unset
 ```
 
@@ -3189,20 +3189,20 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 <table><tr><td colspan="6">
 
 ```java
-### In the context of an instance with an optional field, x, when the field is set to the value of '1'.
+//-- In the context of an instance with an optional field, x, when the field is set to the value of '1'.
 whenValue(x) {x + 2}
 
-### result ###
+//-- result --
 3
 ```
 
 </td></tr><tr><td colspan="5">
 
 ```java
-### In the context of an instance with an optional field, x, when the field is unset.
+//-- In the context of an instance with an optional field, x, when the field is unset.
 whenValue(x) {x + 2}
 
-### result ###
+//-- result --
 :Unset
 ```
 
@@ -3230,20 +3230,20 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 <table><tr><td colspan="6">
 
 ```java
-### In the context of an instance with an optional field, y, when the field is set to the value of '1'.
+//-- In the context of an instance with an optional field, y, when the field is set to the value of '1'.
 (whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})
 
-### result ###
+//-- result --
 4
 ```
 
 </td></tr><tr><td colspan="5">
 
 ```java
-### In the context of an instance with an optional field, y, when the field is unset.
+//-- In the context of an instance with an optional field, y, when the field is unset.
 (whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})
 
-### result ###
+//-- result --
 :Unset
 ```
 
@@ -3275,7 +3275,7 @@ The operation does not short-circuit. Even if the first argument evaluates to tr
 ```java
 (true || false)
 
-### result ###
+//-- result --
 true
 ```
 
@@ -3284,7 +3284,7 @@ true
 ```java
 (false || false)
 
-### result ###
+//-- result --
 false
 ```
 
@@ -3293,7 +3293,7 @@ false
 ```java
 ((1 > 2) || (2 > 3) || (4 > 3))
 
-### result ###
+//-- result --
 true
 ```
 

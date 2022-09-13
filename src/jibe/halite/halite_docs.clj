@@ -302,7 +302,10 @@
                  'nothing {:bnf "nothing"
                            :doc "The absence of a value."}
                  'any {:bnf "value | unset"
-                       :doc "Refers to either the presence of absence of a value, or a pseudo-value indicating the lack of a value."}]))
+                       :doc "Refers to either the presence of absence of a value, or a pseudo-value indicating the lack of a value."}
+                 'comment {:bnf "';' comment"
+                           :bnf-j "'//' comment"
+                           :doc "Comments that are not evaluated as part of the expression."}]))
 
 (defn make-workspace-fn [workspace]
   (fn [expr-str] (update-in workspace
@@ -1784,21 +1787,21 @@
                    (:err-result e))]
     (str (when doc
            (str ({:halite  ";-- "
-                  :jadeite "### "}
+                  :jadeite "//-- "}
                  lang)
                 doc
                 "\n"))
          (when spec-map
-           (str ({:halite  ";-- context --;\n"
-                  :jadeite "### context ###\n"}
+           (str ({:halite  ";-- context --\n"
+                  :jadeite "//-- context --\n"}
                  lang)
                 (spec-map-str lang spec-map)
                 ({:halite  "\n;--\n\n"
-                  :jadeite "\n###\n\n"}
+                  :jadeite "\n//\n\n"}
                  lang)))
          expr
-         (when result ({:halite  "\n\n;-- result --;\n"
-                        :jadeite "\n\n### result ###\n"}
+         (when result ({:halite  "\n\n;-- result --\n"
+                        :jadeite "\n\n//-- result --\n"}
                        lang))
          (when result result))))
 

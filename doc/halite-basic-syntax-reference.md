@@ -132,7 +132,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 ```clojure
 "say \"hi\" now"
 
-;-- result --;
+;-- result --
 "say \"hi\" now"
 ```
 
@@ -141,7 +141,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 ```clojure
 "one \\ two"
 
-;-- result --;
+;-- result --
 "one \\ two"
 ```
 
@@ -150,7 +150,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 ```clojure
 "\t\n"
 
-;-- result --;
+;-- result --
 "\t\n"
 ```
 
@@ -159,7 +159,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 ```clojure
 "☺"
 
-;-- result --;
+;-- result --
 "☺"
 ```
 
@@ -168,7 +168,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 ```clojure
 "\u263A"
 
-;-- result --;
+;-- result --
 "☺"
 ```
 
@@ -432,6 +432,13 @@ The absence of a value.
 Refers to either the presence of absence of a value, or a pseudo-value indicating the lack of a value.
 
 !["value | unset"](./halite-bnf-diagrams/basic-syntax/any.svg)
+
+---
+### <a name="comment"></a>comment
+
+Comments that are not evaluated as part of the expression.
+
+!["';' comment"](./halite-bnf-diagrams/basic-syntax/comment.svg)
 
 ---
 ### Type Graph![type graph](./types.dot.png)

@@ -59,7 +59,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 ```clojure
 (* 2 3)
 
-;-- result --;
+;-- result --
 6
 ```
 
@@ -68,7 +68,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 ```clojure
 (* #d "2.2" 3)
 
-;-- result --;
+;-- result --
 #d "6.6"
 ```
 
@@ -77,7 +77,7 @@ Note that fixed-decimal values cannot be multiplied together. Rather the multipl
 ```clojure
 (* 2 3 4)
 
-;-- result --;
+;-- result --
 24
 ```
 
@@ -111,7 +111,7 @@ Add two numbers together.
 ```clojure
 (+ 2 3)
 
-;-- result --;
+;-- result --
 5
 ```
 
@@ -120,7 +120,7 @@ Add two numbers together.
 ```clojure
 (+ #d "2.2" #d "3.3")
 
-;-- result --;
+;-- result --
 #d "5.5"
 ```
 
@@ -129,7 +129,7 @@ Add two numbers together.
 ```clojure
 (+ 2 3 4)
 
-;-- result --;
+;-- result --
 9
 ```
 
@@ -138,7 +138,7 @@ Add two numbers together.
 ```clojure
 (+ 2 -3)
 
-;-- result --;
+;-- result --
 -1
 ```
 
@@ -172,7 +172,7 @@ Subtract one number from another.
 ```clojure
 (- 2 3)
 
-;-- result --;
+;-- result --
 -1
 ```
 
@@ -181,7 +181,7 @@ Subtract one number from another.
 ```clojure
 (- #d "2.2" #d "3.3")
 
-;-- result --;
+;-- result --
 #d "-1.1"
 ```
 
@@ -190,7 +190,7 @@ Subtract one number from another.
 ```clojure
 (- 2 3 4)
 
-;-- result --;
+;-- result --
 -5
 ```
 
@@ -199,7 +199,7 @@ Subtract one number from another.
 ```clojure
 (- 2 -3)
 
-;-- result --;
+;-- result --
 5
 ```
 
@@ -231,7 +231,7 @@ Determine if a number is strictly less than another.
 ```clojure
 (< 2 3)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -240,7 +240,7 @@ true
 ```clojure
 (< #d "2.2" #d "3.3")
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -249,7 +249,7 @@ true
 ```clojure
 (< 2 2)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -277,7 +277,7 @@ Determine if a number is less than or equal to another.
 ```clojure
 (<= 2 3)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -286,7 +286,7 @@ true
 ```clojure
 (<= #d "2.2" #d "3.3")
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -295,7 +295,7 @@ true
 ```clojure
 (<= 2 2)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -323,7 +323,7 @@ Determine if values are equivalent. For vectors and sets this performs a compari
 ```clojure
 (= 2 2)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -332,7 +332,7 @@ true
 ```clojure
 (= #d "2.2" #d "3.3")
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -341,7 +341,7 @@ false
 ```clojure
 (= 2 3)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -350,7 +350,7 @@ false
 ```clojure
 (= 1 1 1)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -359,7 +359,7 @@ true
 ```clojure
 (= 1 1 2)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -368,7 +368,7 @@ false
 ```clojure
 (= "hi" "hi")
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -377,7 +377,7 @@ true
 ```clojure
 (= [1 2 3] [1 2 3])
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -386,7 +386,7 @@ true
 ```clojure
 (= [1 2 3] #{1 2 3})
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -395,7 +395,7 @@ false
 ```clojure
 (= #{3 1 2} #{1 2 3})
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -404,7 +404,7 @@ true
 ```clojure
 (= [#{1 2} #{3}] [#{1 2} #{3}])
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -413,35 +413,35 @@ true
 ```clojure
 (= [#{1 2} #{3}] [#{1 2} #{4}])
 
-;-- result --;
+;-- result --
 false
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```clojure
-;-- context --;
+;-- context --
 #:my{:Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
 
 ;--
 
 (= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})
 
-;-- result --;
+;-- result --
 false
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```clojure
-;-- context --;
+;-- context --
 #:my{:Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
 
 ;--
 
 (= {:$type :my/Spec$v1 :x 1 :y 0} {:$type :my/Spec$v1 :x 1 :y 0})
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -475,7 +475,7 @@ Performs logical implication. If the first value is true, then the second value 
 ```clojure
 (=> (> 2 1) (< 1 2))
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -484,7 +484,7 @@ true
 ```clojure
 (=> (> 2 1) (> 1 2))
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -493,7 +493,7 @@ false
 ```clojure
 (=> (> 1 2) false)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -523,7 +523,7 @@ Determine if a number is strictly greater than another.
 ```clojure
 (> 3 2)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -532,7 +532,7 @@ true
 ```clojure
 (> #d "3.3" #d "2.2" )
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -541,7 +541,7 @@ true
 ```clojure
 (> 2 2)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -569,7 +569,7 @@ Determine if a number is greater than or equal to another.
 ```clojure
 (>= 3 2)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -578,7 +578,7 @@ true
 ```clojure
 (>= #d "3.3" #d "2.2" )
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -587,7 +587,7 @@ true
 ```clojure
 (>= 2 2)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -619,7 +619,7 @@ Since the negative number space contains one more value than the positive number
 ```clojure
 (abs -1)
 
-;-- result --;
+;-- result --
 1
 ```
 
@@ -628,7 +628,7 @@ Since the negative number space contains one more value than the positive number
 ```clojure
 (abs 1)
 
-;-- result --;
+;-- result --
 1
 ```
 
@@ -637,7 +637,7 @@ Since the negative number space contains one more value than the positive number
 ```clojure
 (abs #d "-1.0")
 
-;-- result --;
+;-- result --
 #d "1.0"
 ```
 
@@ -671,7 +671,7 @@ The operation does not short-circuit. Even if the first argument evaluates to fa
 ```clojure
 (and true false)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -680,7 +680,7 @@ false
 ```clojure
 (and true true)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -689,7 +689,7 @@ true
 ```clojure
 (and (> 2 1) (> 3 2) (> 4 3))
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -721,7 +721,7 @@ The operation does not short-circuit. The boolean-expression is evaluated for al
 ```clojure
 (any? [x [1 2 3]] (> x 1))
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -730,7 +730,7 @@ true
 ```clojure
 (any? [x #{1 2 3}] (> x 10))
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -772,7 +772,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 ```clojure
 (concat [1 2] [3])
 
-;-- result --;
+;-- result --
 [1 2 3]
 ```
 
@@ -781,7 +781,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 ```clojure
 (concat #{1 2} [3 4])
 
-;-- result --;
+;-- result --
 #{1 4 3 2}
 ```
 
@@ -790,7 +790,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 ```clojure
 (concat [] [])
 
-;-- result --;
+;-- result --
 []
 ```
 
@@ -827,7 +827,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 ```clojure
 (conj [1 2] 3)
 
-;-- result --;
+;-- result --
 [1 2 3]
 ```
 
@@ -836,7 +836,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 ```clojure
 (conj #{1 2} 3 4)
 
-;-- result --;
+;-- result --
 #{1 4 3 2}
 ```
 
@@ -845,7 +845,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 ```clojure
 (conj [] 1)
 
-;-- result --;
+;-- result --
 [1]
 ```
 
@@ -881,7 +881,7 @@ Since collections themselves are compared by their contents, this works for coll
 ```clojure
 (contains? #{"a" "b"} "a")
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -890,7 +890,7 @@ true
 ```clojure
 (contains? #{"a" "b"} "c")
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -899,7 +899,7 @@ false
 ```clojure
 (contains? #{#{1 2} #{3}} #{1 2})
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -908,7 +908,7 @@ true
 ```clojure
 (contains? #{[1 2] [3]} [4])
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -936,7 +936,7 @@ Return how many items are in a collection.
 ```clojure
 (count [10 20 30])
 
-;-- result --;
+;-- result --
 3
 ```
 
@@ -945,7 +945,7 @@ Return how many items are in a collection.
 ```clojure
 (count #{"a" "b"})
 
-;-- result --;
+;-- result --
 2
 ```
 
@@ -954,7 +954,7 @@ Return how many items are in a collection.
 ```clojure
 (count [])
 
-;-- result --;
+;-- result --
 0
 ```
 
@@ -982,7 +982,7 @@ Decrement a numeric value.
 ```clojure
 (dec 10)
 
-;-- result --;
+;-- result --
 9
 ```
 
@@ -991,7 +991,7 @@ Decrement a numeric value.
 ```clojure
 (dec 0)
 
-;-- result --;
+;-- result --
 -1
 ```
 
@@ -1027,7 +1027,7 @@ This produces a set which contains all of the elements from the first set which 
 ```clojure
 (difference #{1 2 3} #{1 2})
 
-;-- result --;
+;-- result --
 #{3}
 ```
 
@@ -1036,7 +1036,7 @@ This produces a set which contains all of the elements from the first set which 
 ```clojure
 (difference #{1 2 3} #{})
 
-;-- result --;
+;-- result --
 #{1 3 2}
 ```
 
@@ -1045,7 +1045,7 @@ This produces a set which contains all of the elements from the first set which 
 ```clojure
 (difference #{1 2 3} #{1 2 3 4})
 
-;-- result --;
+;-- result --
 #{}
 ```
 
@@ -1054,7 +1054,7 @@ This produces a set which contains all of the elements from the first set which 
 ```clojure
 (difference #{[1 2] [3]} #{[1 2]})
 
-;-- result --;
+;-- result --
 #{[3]}
 ```
 
@@ -1092,7 +1092,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```clojure
 (div 12 3)
 
-;-- result --;
+;-- result --
 4
 ```
 
@@ -1101,7 +1101,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```clojure
 (div #d "12.3" 3)
 
-;-- result --;
+;-- result --
 #d "4.1"
 ```
 
@@ -1110,7 +1110,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```clojure
 (div 14 4)
 
-;-- result --;
+;-- result --
 3
 ```
 
@@ -1119,7 +1119,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```clojure
 (div #d "14.3" 3)
 
-;-- result --;
+;-- result --
 #d "4.7"
 ```
 
@@ -1128,7 +1128,7 @@ As with multiplication, fixed-decimal values cannot be divided by each other, in
 ```clojure
 (div 1 0)
 
-;-- result --;
+;-- result --
 h-err/divide-by-zero
 ```
 
@@ -1164,7 +1164,7 @@ Used to indicate when an unexpected condition has occurred and the data at hand 
 ```clojure
 (error "failure")
 
-;-- result --;
+;-- result --
 h-err/spec-threw
 ```
 
@@ -1198,7 +1198,7 @@ Does not short-circuit. The boolean-expression is evaluated for all elements, ev
 ```clojure
 (every? [x [1 2 3]] (> x 0))
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -1207,7 +1207,7 @@ true
 ```clojure
 (every? [x #{1 2 3}] (> x 1))
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -1245,7 +1245,7 @@ Compute the numeric result of raising the first argument to the power given by t
 ```clojure
 (expt 2 3)
 
-;-- result --;
+;-- result --
 8
 ```
 
@@ -1254,7 +1254,7 @@ Compute the numeric result of raising the first argument to the power given by t
 ```clojure
 (expt -2 3)
 
-;-- result --;
+;-- result --
 -8
 ```
 
@@ -1263,7 +1263,7 @@ Compute the numeric result of raising the first argument to the power given by t
 ```clojure
 (expt 2 0)
 
-;-- result --;
+;-- result --
 1
 ```
 
@@ -1272,7 +1272,7 @@ Compute the numeric result of raising the first argument to the power given by t
 ```clojure
 (expt 2 -1)
 
-;-- result --;
+;-- result --
 h-err/invalid-exponent
 ```
 
@@ -1307,7 +1307,7 @@ Produce a new collection which contains only the elements from the original coll
 ```clojure
 (filter [x [1 2 3]] (> x 2))
 
-;-- result --;
+;-- result --
 [3]
 ```
 
@@ -1316,7 +1316,7 @@ Produce a new collection which contains only the elements from the original coll
 ```clojure
 (filter [x #{1 2 3}] (> x 2))
 
-;-- result --;
+;-- result --
 #{3}
 ```
 
@@ -1356,7 +1356,7 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 ```clojure
 (first [10 20 30])
 
-;-- result --;
+;-- result --
 10
 ```
 
@@ -1365,7 +1365,7 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 ```clojure
 (first [])
 
-;-- result --;
+;-- result --
 h-err/argument-empty
 ```
 
@@ -1404,21 +1404,21 @@ The $type value of an instance is not considered a field that can be extracted w
 ```clojure
 (get [10 20 30 40] 2)
 
-;-- result --;
+;-- result --
 30
 ```
 
 </td><td colspan="3">
 
 ```clojure
-;-- context --;
+;-- context --
 #:my{:Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
 
 ;--
 
 (get {:$type :my/Spec$v1, :x -3, :y 2} :x)
 
-;-- result --;
+;-- result --
 -3
 ```
 
@@ -1457,14 +1457,14 @@ The first path element in the path is looked up in the initial target. If there 
 ```clojure
 (get-in [[10 20] [30 40]] [1 0])
 
-;-- result --;
+;-- result --
 30
 ```
 
 </td></tr><tr><td colspan="5">
 
 ```clojure
-;-- context --;
+;-- context --
 #:my{:Spec$v1 {:spec-vars {:x :my/SubSpec$v1, :y "Integer"}},
      :SubSpec$v1 {:spec-vars {:a "Integer", :b "Integer"}}}
 
@@ -1472,14 +1472,14 @@ The first path element in the path is looked up in the initial target. If there 
 
 (get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a 20, :b 10}, :y 2} [:x :a])
 
-;-- result --;
+;-- result --
 20
 ```
 
 </td></tr><tr><td colspan="5">
 
 ```clojure
-;-- context --;
+;-- context --
 #:my{:Spec$v1 {:spec-vars {:x :my/SubSpec$v1, :y "Integer"}},
      :SubSpec$v1 {:spec-vars {:a ["Integer"], :b "Integer"}}}
 
@@ -1487,7 +1487,7 @@ The first path element in the path is looked up in the initial target. If there 
 
 (get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])
 
-;-- result --;
+;-- result --
 30
 ```
 
@@ -1527,7 +1527,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 ```clojure
 (if (> 2 1) 10 -1)
 
-;-- result --;
+;-- result --
 10
 ```
 
@@ -1536,7 +1536,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 ```clojure
 (if (> 2 1) 10 (error "fail"))
 
-;-- result --;
+;-- result --
 10
 ```
 
@@ -1592,7 +1592,7 @@ This is similar to the 'if-value' operation, but applies generally to an express
 ```clojure
 (if-value-let [x (when (> 2 1) 19)] (inc x) 0)
 
-;-- result --;
+;-- result --
 20
 ```
 
@@ -1601,7 +1601,7 @@ This is similar to the 'if-value' operation, but applies generally to an express
 ```clojure
 (if-value-let [x (when (> 1 2) 19)] (inc x) 0)
 
-;-- result --;
+;-- result --
 0
 ```
 
@@ -1636,7 +1636,7 @@ Increment a numeric value.
 ```clojure
 (inc 10)
 
-;-- result --;
+;-- result --
 11
 ```
 
@@ -1645,7 +1645,7 @@ Increment a numeric value.
 ```clojure
 (inc 0)
 
-;-- result --;
+;-- result --
 1
 ```
 
@@ -1681,7 +1681,7 @@ This produces a set which only contains values that appear in each of the argume
 ```clojure
 (intersection #{1 2 3} #{2 3 4})
 
-;-- result --;
+;-- result --
 #{3 2}
 ```
 
@@ -1690,7 +1690,7 @@ This produces a set which only contains values that appear in each of the argume
 ```clojure
 (intersection #{1 2 3} #{2 3 4} #{3 4})
 
-;-- result --;
+;-- result --
 #{3}
 ```
 
@@ -1726,7 +1726,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 ```clojure
 (let [x 1] (inc x))
 
-;-- result --;
+;-- result --
 2
 ```
 
@@ -1735,7 +1735,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 ```clojure
 (let [x 1 y 2] (+ x y))
 
-;-- result --;
+;-- result --
 3
 ```
 
@@ -1745,7 +1745,7 @@ Allows names to be given to values so that they can be referenced by the any-exp
 ;-- The values associated with symbols can be changed in nested contexts.
 (let [x 1] (let [x 2] x))
 
-;-- result --;
+;-- result --
 2
 ```
 
@@ -1786,7 +1786,7 @@ Produce a new collection from a collection by evaluating the expression with the
 ```clojure
 (map [x [10 11 12]] (inc x))
 
-;-- result --;
+;-- result --
 [11 12 13]
 ```
 
@@ -1795,7 +1795,7 @@ Produce a new collection from a collection by evaluating the expression with the
 ```clojure
 (map [x #{10 12}] (* x 2))
 
-;-- result --;
+;-- result --
 #{20 24}
 ```
 
@@ -1833,7 +1833,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 ```clojure
 (mod 12 3)
 
-;-- result --;
+;-- result --
 0
 ```
 
@@ -1842,7 +1842,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 ```clojure
 (mod 14 4)
 
-;-- result --;
+;-- result --
 2
 ```
 
@@ -1851,7 +1851,7 @@ Computes the mathematical modulus of two numbers. Use care if one of the argumen
 ```clojure
 (mod 1 0)
 
-;-- result --;
+;-- result --
 h-err/divide-by-zero
 ```
 
@@ -1860,7 +1860,7 @@ h-err/divide-by-zero
 ```clojure
 (mod 1 3)
 
-;-- result --;
+;-- result --
 1
 ```
 
@@ -1869,7 +1869,7 @@ h-err/divide-by-zero
 ```clojure
 (mod -1 3)
 
-;-- result --;
+;-- result --
 2
 ```
 
@@ -1878,7 +1878,7 @@ h-err/divide-by-zero
 ```clojure
 (mod 1 -3)
 
-;-- result --;
+;-- result --
 -2
 ```
 
@@ -1887,7 +1887,7 @@ h-err/divide-by-zero
 ```clojure
 (mod -1 -3)
 
-;-- result --;
+;-- result --
 -1
 ```
 
@@ -1919,7 +1919,7 @@ Performs logical negation of the argument.
 ```clojure
 (not true)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -1928,7 +1928,7 @@ false
 ```clojure
 (not false)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -1958,7 +1958,7 @@ Produces a false value if all of the values are equal to each other. Otherwise p
 ```clojure
 (not= 2 3)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -1967,7 +1967,7 @@ true
 ```clojure
 (not= #d "2.2" #d "2.2")
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -1976,7 +1976,7 @@ false
 ```clojure
 (not= 2 2)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -1985,7 +1985,7 @@ false
 ```clojure
 (not= 1 1 2)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -1994,7 +1994,7 @@ true
 ```clojure
 (not= 1 1 1)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -2003,7 +2003,7 @@ false
 ```clojure
 (not= "hi" "bye")
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2012,7 +2012,7 @@ true
 ```clojure
 (not= [1 2 3] [1 2 3 4])
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2021,7 +2021,7 @@ true
 ```clojure
 (not= [1 2 3] #{1 2 3})
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2030,7 +2030,7 @@ true
 ```clojure
 (not= #{3 1 2} #{1 2 3})
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -2039,7 +2039,7 @@ false
 ```clojure
 (not= [#{1 2} #{3}] [#{1 2} #{3}])
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -2048,21 +2048,21 @@ false
 ```clojure
 (not= [#{1 2} #{3}] [#{1 2} #{4}])
 
-;-- result --;
+;-- result --
 true
 ```
 
 </td></tr><tr><td colspan="4">
 
 ```clojure
-;-- context --;
+;-- context --
 #:my{:Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
 
 ;--
 
 (not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2104,7 +2104,7 @@ The operation does not short-circuit. Even if the first argument evaluates to tr
 ```clojure
 (or true false)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2113,7 +2113,7 @@ true
 ```clojure
 (or false false)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -2122,7 +2122,7 @@ false
 ```clojure
 (or (> 1 2) (> 2 3) (> 4 3))
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2152,7 +2152,7 @@ Produce a vector that contains integers in order starting at either the start va
 ```clojure
 (range 3)
 
-;-- result --;
+;-- result --
 [0 1 2]
 ```
 
@@ -2161,7 +2161,7 @@ Produce a vector that contains integers in order starting at either the start va
 ```clojure
 (range 10 12)
 
-;-- result --;
+;-- result --
 [10 11]
 ```
 
@@ -2170,7 +2170,7 @@ Produce a vector that contains integers in order starting at either the start va
 ```clojure
 (range 10 21 5)
 
-;-- result --;
+;-- result --
 [10 15 20]
 ```
 
@@ -2202,7 +2202,7 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 ```clojure
 (reduce [a 10] [x [1 2 3]] (+ a x))
 
-;-- result --;
+;-- result --
 16
 ```
 
@@ -2239,7 +2239,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 ```clojure
 ;-- A basic refinement.
-;-- context --;
+;-- context --
 {:my/Spec$v1
  {:refines-to
   #:an{:Other$v1 {:name "r", :expr {:$type :an/Other$v1}}}},
@@ -2249,7 +2249,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 (refine-to {:$type :my/Spec$v1} :an/Other$v1)
 
-;-- result --;
+;-- result --
 {:$type :an/Other$v1}
 ```
 
@@ -2257,7 +2257,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 ```clojure
 ;-- An example of a refinement that transforms data values.
-;-- context --;
+;-- context --
 {:my/Spec$v1
  {:spec-vars {:p "Integer", :n "Integer"},
   :refines-to
@@ -2270,7 +2270,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 (refine-to {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
 
-;-- result --;
+;-- result --
 {:$type :an/Other$v1, :x 2, :y -2}
 ```
 
@@ -2278,14 +2278,14 @@ Attempt to refine the given instance into an instance of type, spec-id.
 
 ```clojure
 ;-- An example where the refinement being invoked does not exist.
-;-- context --;
+;-- context --
 {:my/Spec$v1 {}, :an/Other$v1 {}}
 
 ;--
 
 (refine-to {:$type :my/Spec$v1} :an/Other$v1)
 
-;-- result --;
+;-- result --
 h-err/no-refinement-path
 ```
 
@@ -2321,7 +2321,7 @@ Determine whether it is possible to refine the given instance into an instance o
 
 ```clojure
 ;-- A basic refinement.
-;-- context --;
+;-- context --
 {:my/Spec$v1
  {:refines-to
   #:an{:Other$v1 {:name "r", :expr {:$type :an/Other$v1}}}},
@@ -2331,7 +2331,7 @@ Determine whether it is possible to refine the given instance into an instance o
 
 (refines-to? {:$type :my/Spec$v1} :an/Other$v1)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2339,7 +2339,7 @@ true
 
 ```clojure
 ;-- An example of a refinement that transforms data values.
-;-- context --;
+;-- context --
 {:my/Spec$v1
  {:spec-vars {:p "Integer", :n "Integer"},
   :refines-to
@@ -2352,7 +2352,7 @@ true
 
 (refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2360,14 +2360,14 @@ true
 
 ```clojure
 ;-- An example where the refinement being invoked does not exist.
-;-- context --;
+;-- context --
 {:my/Spec$v1 {}, :an/Other$v1 {}}
 
 ;--
 
 (refines-to? {:$type :my/Spec$v1} :an/Other$v1)
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -2405,7 +2405,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 ```clojure
 (rescale #d "1.23" 1)
 
-;-- result --;
+;-- result --
 #d "1.2"
 ```
 
@@ -2414,7 +2414,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 ```clojure
 (rescale #d "1.23" 2)
 
-;-- result --;
+;-- result --
 #d "1.23"
 ```
 
@@ -2423,7 +2423,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 ```clojure
 (rescale #d "1.23" 3)
 
-;-- result --;
+;-- result --
 #d "1.230"
 ```
 
@@ -2432,7 +2432,7 @@ Arithmetic on numeric values never produce results in different number spaces. T
 ```clojure
 (rescale #d "1.23" 0)
 
-;-- result --;
+;-- result --
 1
 ```
 
@@ -2462,7 +2462,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 ```clojure
 (rest [1 2 3])
 
-;-- result --;
+;-- result --
 [2 3]
 ```
 
@@ -2471,7 +2471,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 ```clojure
 (rest [1 2])
 
-;-- result --;
+;-- result --
 [2]
 ```
 
@@ -2480,7 +2480,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 ```clojure
 (rest [1])
 
-;-- result --;
+;-- result --
 []
 ```
 
@@ -2489,7 +2489,7 @@ Produce a new vector which contains the same element of the argument, in the sam
 ```clojure
 (rest [])
 
-;-- result --;
+;-- result --
 []
 ```
 
@@ -2521,7 +2521,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 ```clojure
 (sort [2 1 3])
 
-;-- result --;
+;-- result --
 [1 2 3]
 ```
 
@@ -2530,7 +2530,7 @@ Produce a new vector by sorting all of the items in the argument. Only collectio
 ```clojure
 (sort [#d "3.3" #d "1.1" #d "2.2"])
 
-;-- result --;
+;-- result --
 [#d "1.1" #d "2.2" #d "3.3"]
 ```
 
@@ -2560,7 +2560,7 @@ Produce a new vector by sorting all of the items in the input collection accordi
 ```clojure
 (sort-by [x [[10 20] [30] [1 2 3]]] (first x))
 
-;-- result --;
+;-- result --
 [[1 2 3] [10 20] [30]]
 ```
 
@@ -2597,7 +2597,7 @@ Combine all of the input strings together in sequence to produce a new string.
 ```clojure
 (str "a" "b")
 
-;-- result --;
+;-- result --
 "ab"
 ```
 
@@ -2606,7 +2606,7 @@ Combine all of the input strings together in sequence to produce a new string.
 ```clojure
 (str "a" "" "c")
 
-;-- result --;
+;-- result --
 "ac"
 ```
 
@@ -2640,7 +2640,7 @@ According to this operation, a set is always a subset of itself and every set is
 ```clojure
 (subset? #{1 2} #{1 2 3 4})
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2649,7 +2649,7 @@ true
 ```clojure
 (subset? #{1 5} #{1 2})
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -2658,7 +2658,7 @@ false
 ```clojure
 (subset? #{1 2} #{1 2})
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2690,7 +2690,7 @@ This produces a set which contains all of the values that appear in any of the a
 ```clojure
 (union #{1} #{2 3})
 
-;-- result --;
+;-- result --
 #{1 3 2}
 ```
 
@@ -2699,7 +2699,7 @@ This produces a set which contains all of the values that appear in any of the a
 ```clojure
 (union #{1} #{2 3} #{4})
 
-;-- result --;
+;-- result --
 #{1 4 3 2}
 ```
 
@@ -2708,7 +2708,7 @@ This produces a set which contains all of the values that appear in any of the a
 ```clojure
 (union #{1} #{})
 
-;-- result --;
+;-- result --
 #{1}
 ```
 
@@ -2743,7 +2743,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 
 ```clojure
 ;-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-;-- context --;
+;-- context --
 #:my{:Spec$v1
      {:spec-vars {:p "Integer", :n "Integer"},
       :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
@@ -2752,7 +2752,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 
 (valid {:$type :my/Spec$v1, :p 1, :n -1})
 
-;-- result --;
+;-- result --
 {:$type :my/Spec$v1, :p 1, :n -1}
 ```
 
@@ -2760,7 +2760,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 
 ```clojure
 ;-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-;-- context --;
+;-- context --
 #:my{:Spec$v1
      {:spec-vars {:p "Integer", :n "Integer"},
       :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
@@ -2769,7 +2769,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 
 (valid {:$type :my/Spec$v1, :p 1, :n 1})
 
-;-- result --;
+;-- result --
 :Unset
 ```
 
@@ -2800,7 +2800,7 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 
 ```clojure
 ;-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-;-- context --;
+;-- context --
 #:my{:Spec$v1
      {:spec-vars {:p "Integer", :n "Integer"},
       :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
@@ -2809,7 +2809,7 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 
 (valid? {:$type :my/Spec$v1, :p 1, :n -1})
 
-;-- result --;
+;-- result --
 true
 ```
 
@@ -2817,7 +2817,7 @@ true
 
 ```clojure
 ;-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
-;-- context --;
+;-- context --
 #:my{:Spec$v1
      {:spec-vars {:p "Integer", :n "Integer"},
       :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
@@ -2826,7 +2826,7 @@ true
 
 (valid? {:$type :my/Spec$v1, :p 1, :n 0})
 
-;-- result --;
+;-- result --
 false
 ```
 
@@ -2858,7 +2858,7 @@ A primary use of this operator is in instance expression to optionally provide a
 ```clojure
 (when (> 2 1) "bigger")
 
-;-- result --;
+;-- result --
 "bigger"
 ```
 
@@ -2867,7 +2867,7 @@ A primary use of this operator is in instance expression to optionally provide a
 ```clojure
 (when (< 2 1) "bigger")
 
-;-- result --;
+;-- result --
 :Unset
 ```
 
@@ -2896,7 +2896,7 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 ;-- In the context of an instance with an optional field, x, when the field is set to the value of '1'.
 (when-value x (+ x 2))
 
-;-- result --;
+;-- result --
 3
 ```
 
@@ -2906,7 +2906,7 @@ Consider the value bound to the symbol. If it is a 'value', then evaluate the se
 ;-- In the context of an instance with an optional field, x, when the field is unset.
 (when-value x (+ x 2))
 
-;-- result --;
+;-- result --
 :Unset
 ```
 
@@ -2937,7 +2937,7 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 ;-- In the context of an instance with an optional field, y, when the field is set to the value of '1'.
 (when-value-let [x (when-value y (+ y 2))] (inc x))
 
-;-- result --;
+;-- result --
 4
 ```
 
@@ -2947,7 +2947,7 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 ;-- In the context of an instance with an optional field, y, when the field is unset.
 (when-value-let [x (when-value y (+ y 2))] (inc x))
 
-;-- result --;
+;-- result --
 :Unset
 ```
 
