@@ -79,8 +79,7 @@
 (defn- spec-maybe-type?
   [htype]
   (or (halite-types/spec-type? htype)
-      (and (halite-types/maybe-type? htype) (vector? htype)
-           (halite-types/spec-type? (second htype)))))
+      (halite-types/spec-type? (halite-types/no-maybe htype))))
 
 (defn- unwrap-maybe [htype]
   (cond-> htype
@@ -371,93 +370,52 @@
 
 ;;;;;;;;;; Convert choco bounds to spec bounds ;;;;;;;;;
 
-(s/defschema ^:private UnflattenedChocoBounds
-  {(s/optional-key :$refines-to) {halite-types/NamespacedKeyword (s/recursive #'UnflattenedChocoBounds)}
-   halite-types/BareKeyword (s/cond-pre choco-clj/VarBound (s/recursive #'UnflattenedChocoBounds))})
-
-(s/defn ^:private unflatten-choco-bounds
-  [choco-bounds :- {[s/Keyword] choco-clj/VarBound}]
-  (->> choco-bounds
-       (group-by (comp first key))
-       (map (fn [[var-kw bounds]]
-              (let [[var-kws var-bound] (first bounds)
-                    bounds (into {} bounds)]
-                [var-kw (if (= [var-kw] var-kws)
-                          var-bound
-                          (-> bounds
-                              (update-keys rest)
-                              (unflatten-choco-bounds)))])))
-       (into {})))
-
-(defn- decompose-var-name [sym]
-  (let [sym-name (name sym)]
-    (-> sym-name
-        (str/split #"\||\?")
-        (cond-> (str/ends-with? sym-name "?") (conj "?"))
-        (->> (remove empty?)
-             (mapcat (fn [part]
-                       (if-let [[_ ns n] (re-matches #">([^$]*)[$](.*)" part)]
-                         [:$refines-to (keyword ns n)]
-                         [(keyword part)])))))))
-
-(s/defn ^:private atom-bound :- AtomBound
-  [choco-bound :- choco-clj/VarBound]
-  (if (or (vector? choco-bound) (set? choco-bound))
-    {:$in choco-bound}
-    choco-bound))
-
-(s/defn ^:private remove-unset :- AtomBound
-  [atom-bound :- AtomBound]
-  (if (map? atom-bound)
-    (let [in-val (:$in atom-bound)
-          in-val (cond
-                   (vector? in-val) (subvec in-val 0 2)
-                   (set? in-val) (disj in-val :Unset))
-          in-val (cond-> in-val (= 1 (count in-val)) (first))]
-      (if (or (set? in-val) (vector? in-val))
-        {:$in in-val}
-        in-val))
-    atom-bound))
-
-(s/defn ^:private spec-bound* :- SpecBound
-  [senv :- (s/protocol halite-envs/SpecEnv)
-   spec-id :- halite-types/NamespacedKeyword
-   unflattened-bounds :- UnflattenedChocoBounds]
-  (let [{:keys [spec-vars]} (halite-envs/lookup-spec senv spec-id)
-        witness-bounds (:? unflattened-bounds)]
-    (if (false? witness-bounds)
-      :Unset
-      (->
-       (reduce
-        (fn [bound [var-kw vtype]]
-          (let [htype (halite-envs/halite-type-from-var-type senv vtype)
-                unflattened-bound (unflattened-bounds var-kw)]
-            (assoc bound var-kw
-                   (cond
-                     (and (nil? unflattened-bound) (halite-types/spec-type? htype)) {:$type (halite-types/spec-id htype)}
-                     (primitive-maybe-type? htype) (cond-> (atom-bound unflattened-bound) (not (halite-types/maybe-type? htype)) (remove-unset))
-                     (spec-maybe-type? htype) (spec-bound* senv
-                                                           (halite-types/spec-id
-                                                            (cond-> htype (halite-types/maybe-type? htype) (second)))
-                                                           unflattened-bound)
-                     :else (throw (ex-info "BUG! Cannot reconstitute spec bound"
-                                           {:spec-id spec-id :unflattened-bound unflattened-bound
-                                            :var-kw var-kw :halite-type htype}))))))
-        {:$type (if (or (nil? witness-bounds) (true? witness-bounds)) spec-id [:Maybe spec-id])}
-        spec-vars)
-       (cond-> (seq (:$refines-to unflattened-bounds))
-         (assoc :$refines-to (into {}
-                                   (map (fn [[spec-id bound-map]]
-                                          [spec-id (dissoc (spec-bound* senv spec-id bound-map)
-                                                           :$type)]))
-                                   (:$refines-to unflattened-bounds))))))))
+(s/defn ^:private to-atom-bound :- AtomBound
+  [choco-bounds :- choco-clj/VarBounds
+   var-type :- halite-envs/VarType
+   [var-kw _] :- FlattenedVar]
+  (let [bound (-> var-kw symbol choco-bounds)]
+    (if-not (coll? bound)
+      bound ;; simple value
+      {:$in
+       (if (halite-types/maybe-type? var-type)
+         bound ;; leave any :Unset in the bounds
+         (cond ;; remove any :Unset in the bounds
+           (vector? bound) (subvec bound 0 2)
+           (set? bound) (disj bound :Unset)))})))
 
 (s/defn ^:private to-spec-bound :- SpecBound
-  [senv :- (s/protocol halite-envs/SpecEnv), spec-id :- halite-types/NamespacedKeyword, choco-bounds :- choco-clj/VarBounds]
-  (-> choco-bounds
-      (update-keys decompose-var-name)
-      (unflatten-choco-bounds)
-      (->> (spec-bound* senv spec-id))))
+  [choco-bounds :- choco-clj/VarBounds
+   senv :- (s/protocol halite-envs/SpecEnv)
+   flattened-vars  :- FlattenedVars]
+  (let [spec-id (::spec-id flattened-vars)
+        spec-vars (:spec-vars (halite-envs/lookup-spec senv spec-id))
+        spec-type (case (some-> flattened-vars :$witness first symbol choco-bounds)
+                    false :Unset
+                    (nil true) spec-id
+                    [:Maybe spec-id])
+        refine-to-pairs (seq (::refines-to flattened-vars))]
+    (if (= :Unset spec-type)
+      :Unset
+      (-> {:$type spec-type}
+          (into (->> (dissoc flattened-vars ::mandatory :$witness ::spec-id ::refines-to)
+                     (map (fn [[k v]]
+                            (let [htype (halite-envs/halite-type-from-var-type
+                                         senv (get spec-vars k))]
+                              [k (if (spec-maybe-type? htype)
+                                   (to-spec-bound choco-bounds senv v)
+                                   (to-atom-bound choco-bounds htype v))])))))
+          (cond-> refine-to-pairs
+            (assoc :$refines-to
+                   (->> refine-to-pairs
+                        (map (fn [[spec-id flattened-vars]]
+                               [spec-id
+                                (-> (to-spec-bound choco-bounds
+                                                   senv
+                                                   (assoc flattened-vars
+                                                          ::spec-id spec-id))
+                                    (dissoc :$type))]))
+                        (into {}))))))))
 
 ;;;;;;;;;;;; Main API ;;;;;;;;;;;;;;;;
 
@@ -512,4 +470,4 @@
            (ssa/spec-from-ssa)
            (->> (to-choco-spec senv))
            (choco-clj/propagate lowered-bounds)
-           (->> (to-spec-bound senv (:$type initial-bound))))))))
+           (to-spec-bound senv flattened-vars))))))
