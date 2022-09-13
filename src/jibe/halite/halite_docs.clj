@@ -37,6 +37,36 @@
                                              :x 100} :spec/B))]
     (.-h-result r)))
 
+(def how-tos [{:label "Spec Variables"
+               :id "spec-variables"
+               :desc "How to model data fields in specifications."
+               :basic-ref ['instance 'vector]
+               :contents ["It is possible to define a spec that does not have any fields."
+                          {:spec-map {:spec/Dog$v1 {}}}
+                          "Instances of this spec could be created as:"
+                          {:code {:$type :spec/Dog$v1}}
+                          "It is more interesting to define data fields on specs that define the structure of instances of the spec"
+                          {:spec-map {:spec/Dog$v2 {:spec-vars {:age "Integer"}}}}
+                          "This spec can be instantiated as:"
+                          {:code {:$type :spec/Dog$v2, :age 3}}
+                          "A spec can have multiple fields"
+                          {:spec-map {:spec/Dog$v3 {:spec-vars {:name "String"
+                                                                :age "Integer"}}}}
+                          "Now instances are created with multiple fields"
+                          {:code {:$type :spec/Dog$v3, :name "Rex", :age 3}}
+                          "Specs can include collections"
+                          {:spec-map {:spec/Dog$v4 {:spec-vars {:name "String"
+                                                                :age "Integer"
+                                                                :colors ["String"]}}}}
+                          {:code {:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}
+                          "Specs can reference other specs via composition"
+                          {:spec-map {:spec/Owner {:spec-vars {:owner_name "String"}}
+                                      :spec/Dog$v5 {:spec-vars {:name "String"
+                                                                :age "Integer"
+                                                                :colors ["String"]
+                                                                :owner :spec/Owner}}}}
+                          {:code {:$type :spec/Dog$v5, :name "Rex", :age 3, :colors ["brown" "white"], :owner {:$type :spec/Owner :owner_name "Sam"}}}]}])
+
 (defn expand-example [[op m]]
   [op (if (:examples m)
         (assoc m :examples (mapv (fn [example]
@@ -1740,6 +1770,10 @@
             []
             texts)))
 
+(defn spec-map-str [lang spec-map]
+  ({:halite (with-out-str (pprint/pprint spec-map))
+    :jadeite (json/encode spec-map {:pretty true})} lang))
+
 (defn example-text [lang e]
   (let [{:keys [spec-map doc]} e
         expr (if (= :halite lang)
@@ -1758,8 +1792,7 @@
            (str ({:halite  ";-- context --;\n"
                   :jadeite "### context ###\n"}
                  lang)
-                ({:halite (with-out-str (pprint/pprint spec-map))
-                  :jadeite (json/encode spec-map {:pretty true})} lang)
+                (spec-map-str lang spec-map)
                 ({:halite  "\n;--\n\n"
                   :jadeite "\n###\n\n"}
                  lang)))
@@ -2084,6 +2117,62 @@
               "\n\n")
          (spit (str "doc/" (tag-md-filename lang tag-name))))))
 
+(defn code-snippet [lang code]
+  (str "```"
+       ({:halite "clojure", :jadeite "java"} lang) "\n"
+       code
+       "\n```\n\n"))
+
+(defn how-to-md [lang how-to]
+  (->> [(:label how-to) "\n\n"
+        (:desc how-to) "\n\n"
+        (loop [[c & more-c] (:contents how-to)
+               spec-map nil
+               results []]
+          (if c
+            (cond
+              (string? c) (recur more-c spec-map (conj results (str c "\n\n")))
+
+              (and (map c) (:spec-map c)) (recur more-c (:spec-map c) (conj results (code-snippet lang (spec-map-str lang (:spec-map c)))))
+              (and (map c) (:code c)) (let [h-expr (:code c)
+                                            ^HCInfo i (halite-guide/hc-body
+                                                       spec-map
+                                                       h-expr)
+                                            {:keys [h-result j-result j-expr]} {:h-result (.-h-result i)
+                                                                                :j-result (.-j-result i)
+                                                                                :j-expr (jadeite/to-jadeite h-expr)}]
+                                        (when (and (vector? h-result)
+                                                   (= :throws (first h-result)))
+                                          (throw (ex-info "failed" {:h-expr h-expr
+                                                                    :h-result h-result})))
+                                        (recur more-c spec-map
+                                               (conj results (code-snippet lang (str ({:halite h-expr
+                                                                                       :jadeite j-expr} lang) "/n/n"
+                                                                                     (when false
+                                                                                       ({:halite h-result
+                                                                                         :jadeite j-result} lang))))))))
+            results))
+        (when-let [basic-refs (some-> (if (= :halite lang)
+                                        (:basic-ref how-to)
+                                        (or (:basic-ref-j how-to)
+                                            (:basic-ref how-to)))
+                                      sort)]
+          ["#### Basic elements:\n\n"
+           (string/join ", "
+                        (for [basic-ref basic-refs]
+                          (str "[`" basic-ref "`]"
+                               "("
+                               (if (= :halite lang)
+                                 "halite-basic-syntax-reference.md"
+                                 "jadeite-basic-syntax-reference.md")
+                               "#" basic-ref
+                               ")")))
+           "\n\n"])]
+       flatten
+       (apply str)
+       (spit (str "doc/how-to/"
+                  (str (:id how-to) (when (= :jadeite lang) "-j") ".md")))))
+
 ;;
 
 (defn query-ops
@@ -2117,4 +2206,11 @@
 
     (produce-basic-md)
     (produce-full-md)
-    (produce-err-md)))
+    (produce-err-md)
+
+    (->> how-tos
+         (map (partial how-to-md :halite))
+         dorun)
+    (->> how-tos
+         (map (partial how-to-md :jadeite))
+         dorun)))
