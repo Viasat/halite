@@ -722,7 +722,7 @@
                        :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
                 :my/C {:spec-vars {:cb :my/B}}})]
 
-    (testing "Refiment bounds can be given and will influence resulting bound"
+    (testing "Refinement bounds can be given and will influence resulting bound"
       (is (= {:$type :my/C,
               :cb {:$type :my/B,
                    :b1 -5
@@ -731,14 +731,14 @@
                                  :cb {:$type :my/B
                                       :$refines-to {:my/A {:a1 5}}}}))))
 
-    (testing "Refinment bounds are generated even when not given."
+    (testing "Refinement bounds are generated even when not given."
       (is (= {:$type :my/C,
               :cb {:$type :my/B
                    :b1 {:$in [-9 990]}
                    :$refines-to {:my/A {:a1 {:$in [1 1000]}}}}}
              (hp/propagate senv {:$type :my/C}))))
 
-    (testing "Refinment bounds at top level of composition"
+    (testing "Refinement bounds at top level of composition"
       (is (= {:$type :my/B
               :b1 -7
               :$refines-to {:my/A {:a1 3}}}
