@@ -422,7 +422,6 @@ false
 ```clojure
 ;-- context --
 #:my{:Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
-
 ;--
 
 (= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})
@@ -436,7 +435,6 @@ false
 ```clojure
 ;-- context --
 #:my{:Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
-
 ;--
 
 (= {:$type :my/Spec$v1 :x 1 :y 0} {:$type :my/Spec$v1 :x 1 :y 0})
@@ -1413,7 +1411,6 @@ The $type value of an instance is not considered a field that can be extracted w
 ```clojure
 ;-- context --
 #:my{:Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
-
 ;--
 
 (get {:$type :my/Spec$v1, :x -3, :y 2} :x)
@@ -1467,7 +1464,6 @@ The first path element in the path is looked up in the initial target. If there 
 ;-- context --
 #:my{:Spec$v1 {:spec-vars {:x :my/SubSpec$v1, :y "Integer"}},
      :SubSpec$v1 {:spec-vars {:a "Integer", :b "Integer"}}}
-
 ;--
 
 (get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a 20, :b 10}, :y 2} [:x :a])
@@ -1482,7 +1478,6 @@ The first path element in the path is looked up in the initial target. If there 
 ;-- context --
 #:my{:Spec$v1 {:spec-vars {:x :my/SubSpec$v1, :y "Integer"}},
      :SubSpec$v1 {:spec-vars {:a ["Integer"], :b "Integer"}}}
-
 ;--
 
 (get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])
@@ -2057,7 +2052,6 @@ true
 ```clojure
 ;-- context --
 #:my{:Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
-
 ;--
 
 (not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})
@@ -2244,7 +2238,6 @@ Attempt to refine the given instance into an instance of type, spec-id.
  {:refines-to
   #:an{:Other$v1 {:name "r", :expr {:$type :an/Other$v1}}}},
  :an/Other$v1 {}}
-
 ;--
 
 (refine-to {:$type :my/Spec$v1} :an/Other$v1)
@@ -2265,7 +2258,6 @@ Attempt to refine the given instance into an instance of type, spec-id.
        {:name "r",
         :expr {:$type :an/Other$v1, :x (inc p), :y (dec n)}}}},
  :an/Other$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
-
 ;--
 
 (refine-to {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
@@ -2280,7 +2272,6 @@ Attempt to refine the given instance into an instance of type, spec-id.
 ;-- An example where the refinement being invoked does not exist.
 ;-- context --
 {:my/Spec$v1 {}, :an/Other$v1 {}}
-
 ;--
 
 (refine-to {:$type :my/Spec$v1} :an/Other$v1)
@@ -2326,7 +2317,6 @@ Determine whether it is possible to refine the given instance into an instance o
  {:refines-to
   #:an{:Other$v1 {:name "r", :expr {:$type :an/Other$v1}}}},
  :an/Other$v1 {}}
-
 ;--
 
 (refines-to? {:$type :my/Spec$v1} :an/Other$v1)
@@ -2347,7 +2337,6 @@ true
        {:name "r",
         :expr {:$type :an/Other$v1, :x (inc p), :y (dec n)}}}},
  :an/Other$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
-
 ;--
 
 (refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
@@ -2362,7 +2351,6 @@ true
 ;-- An example where the refinement being invoked does not exist.
 ;-- context --
 {:my/Spec$v1 {}, :an/Other$v1 {}}
-
 ;--
 
 (refines-to? {:$type :my/Spec$v1} :an/Other$v1)
@@ -2747,7 +2735,6 @@ This operation can be thought of as producing an instance if it is valid. This c
 #:my{:Spec$v1
      {:spec-vars {:p "Integer", :n "Integer"},
       :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
-
 ;--
 
 (valid {:$type :my/Spec$v1, :p 1, :n -1})
@@ -2764,7 +2751,6 @@ This operation can be thought of as producing an instance if it is valid. This c
 #:my{:Spec$v1
      {:spec-vars {:p "Integer", :n "Integer"},
       :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
-
 ;--
 
 (valid {:$type :my/Spec$v1, :p 1, :n 1})
@@ -2804,7 +2790,6 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 #:my{:Spec$v1
      {:spec-vars {:p "Integer", :n "Integer"},
       :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
-
 ;--
 
 (valid? {:$type :my/Spec$v1, :p 1, :n -1})
@@ -2821,7 +2806,6 @@ true
 #:my{:Spec$v1
      {:spec-vars {:p "Integer", :n "Integer"},
       :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
-
 ;--
 
 (valid? {:$type :my/Spec$v1, :p 1, :n 0})

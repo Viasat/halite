@@ -16,7 +16,8 @@ An expression can convert an instance of one type to the instance of another typ
       "y" : "Integer"
     }
   }
-}```
+}
+```
 
 The following expression converts an instance of the first spec into an instance of the second.
 
@@ -51,7 +52,8 @@ This work, but the language has a built-in idea of 'refinements' that allow such
       "y" : "Integer"
     }
   }
-}```
+}
+```
 
 The refinement can be invoked as follows:
 
@@ -100,7 +102,8 @@ The refinements are automatically, transitively applied to produce an instance o
       "y" : "Integer"
     }
   }
-}```
+}
+```
 
 The chain of refinements is invoked by simply refining the instance to the final target spec.
 

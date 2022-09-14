@@ -1810,7 +1810,7 @@
 
 (defn spec-map-str [lang spec-map]
   ({:halite (with-out-str (pprint/pprint spec-map))
-    :jadeite (json/encode spec-map {:pretty true})} lang))
+    :jadeite (str (json/encode spec-map {:pretty true}) "\n")} lang))
 
 (defn example-text [lang e]
   (let [{:keys [spec-map doc]} e
@@ -1831,8 +1831,8 @@
                   :jadeite "//-- context --\n"}
                  lang)
                 (spec-map-str lang spec-map)
-                ({:halite  "\n;--\n\n"
-                  :jadeite "\n//\n\n"}
+                ({:halite  ";--\n\n"
+                  :jadeite "//\n\n"}
                  lang)))
          expr
          (when result ({:halite  "\n\n;-- result --\n"

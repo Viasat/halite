@@ -7,7 +7,8 @@ It is possible to define a spec that does not have any fields.
 ```java
 {
   "spec/Dog$v1" : { }
-}```
+}
+```
 
 Instances of this spec could be created as:
 
@@ -24,7 +25,8 @@ It is more interesting to define data fields on specs that define the structure 
       "age" : "Integer"
     }
   }
-}```
+}
+```
 
 This spec can be instantiated as:
 
@@ -42,7 +44,8 @@ A spec can have multiple fields
       "age" : "Integer"
     }
   }
-}```
+}
+```
 
 Now instances are created with multiple fields
 
@@ -61,7 +64,8 @@ Specs can include collections
       "colors" : [ "String" ]
     }
   }
-}```
+}
+```
 
 ```java
 {$type: spec/Dog$v4, age: 3, colors: ["brown", "white"], name: "Rex"}
@@ -84,7 +88,8 @@ Specs can reference other specs via composition
       "owner" : "spec/Owner"
     }
   }
-}```
+}
+```
 
 ```java
 {$type: spec/Dog$v5, age: 3, colors: ["brown", "white"], name: "Rex", owner: {$type: spec/Owner, 'owner_name': "Sam"}}
