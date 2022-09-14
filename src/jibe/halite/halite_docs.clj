@@ -100,7 +100,48 @@
                           "The chain of refinements is invoked by simply refining the instance to the final target spec."
                           {:code '(let [a {:$type :spec/A$v3 :b 1}]
                                     (refine-to a :spec/X$v3))
-                           :result :auto}]}])
+                           :result :auto}
+
+                          "The refinements expressions are arbitrary expressions over the fields of the instance or constant values."
+                          {:spec-map {:spec/A$v4 {:spec-vars {:b "Integer"
+                                                              :c "Integer"
+                                                              :d "String"}
+                                                  :refines-to {:spec/X$v4 {:name "refine_to_X"
+                                                                           :expr '{:$type :spec/X$v4
+                                                                                   :x (+ b c)
+                                                                                   :y 12
+                                                                                   :z (if (= "medium" d) 5 10)}}}}
+                                      :spec/X$v4 {:spec-vars {:x "Integer"
+                                                              :y "Integer"
+                                                              :z "Integer"}}}}
+                          {:code '(let [a {:$type :spec/A$v4 :b 1 :c 2 :d "large"}]
+                                    (refine-to a :spec/X$v4))
+                           :result :auto}]}
+              {:label "Defining Constraints on Instance Values"
+               :id "constrain-instances"
+               :desc "How to constrain the possible values for instance fields"
+               :basic-ref ['instance]
+               :contents ["As a starting point specs specify the fields that make up instances."
+                          {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}}}}
+                          "This indicates that 'b' must be an integer, but it doesn't indicate what valid values are. The following spec includes a constraint that requires b to be greater than 100."
+                          {:spec-map {:spec/A$v2 {:spec-vars {:b "Integer"}
+                                                  :constraints [["constrain_b" '(> b 100)]]}}}
+
+                          "An attempt to make an instance that satisfies this constraint is successful"
+                          {:code '{:$type :spec/A$v2 :b 200}
+                           :result :auto}
+                          "However, an attempt to make an instance that violates this constraint fails."
+                          {:code '{:$type :spec/A$v2 :b 50}
+                           :throws :auto}
+                          "Constraints can be arbitrary expressions that refer to multiple fields."
+                          {:spec-map {:spec/A$v3 {:spec-vars {:b "Integer"
+                                                              :c "Integer"}
+                                                  :constraints [["constrain_b_c" '(< (+ b c) 10)]]}}}
+                          "In this example, the sum of 'a' and 'b' must be less than 10"
+                          {:code '{:$type :spec/A$v3 :b 2 :c 3}
+                           :result :auto}
+                          {:code '{:$type :spec/A$v3 :b 6 :c 7}
+                           :throws :auto}]}])
 
 (defn expand-example [[op m]]
   [op (if (:examples m)
@@ -2179,14 +2220,16 @@
                                             {:keys [h-result j-result j-expr]} {:h-result (.-h-result i)
                                                                                 :j-result (.-j-result i)
                                                                                 :j-expr (jadeite/to-jadeite h-expr)}]
-                                        (when (and (vector? h-result)
+                                        (when (and (not (:throws c))
+                                                   (vector? h-result)
                                                    (= :throws (first h-result)))
                                           (throw (ex-info "failed" {:h-expr h-expr
                                                                     :h-result h-result})))
                                         (recur more-c spec-map
                                                (conj results (code-snippet lang (str ({:halite h-expr
                                                                                        :jadeite j-expr} lang)
-                                                                                     (when (:result c)
+                                                                                     (when (or (:result c)
+                                                                                               (:throws c))
                                                                                        (str "\n"
                                                                                             ({:halite  "\n\n;-- result --\n"
                                                                                               :jadeite "\n\n//-- result --\n"}
