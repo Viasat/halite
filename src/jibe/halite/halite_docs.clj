@@ -189,6 +189,14 @@
                           {:code '{:$type :spec/A$v2 :b 105}
                            :result :auto}
                           {:code '{:$type :spec/A$v2 :b 120}
+                           :throws :auto}
+                          "In general, constraint extpressions can be combined with a logical 'and'. This has the same meaning because all constraints are effectively 'anded' together to produce a single logical predicate to assess whether an instance is valid. So, decomposing constraints into separate constraints is largely a matter of organizing and naming the checks to suit the modelling exercise."
+                          {:spec-map {:spec/A$v3 {:spec-vars {:b "Integer"}
+                                                  :constraints [["constrain_b" '(and (> b 100)
+                                                                                     (< b 110))]]}}}
+                          {:code '{:$type :spec/A$v3 :b 105}
+                           :result :auto}
+                          {:code '{:$type :spec/A$v3 :b 120}
                            :throws :auto}]}])
 
 (defn expand-example [[op m]]
