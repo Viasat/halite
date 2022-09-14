@@ -117,6 +117,28 @@
                           {:code '(let [a {:$type :spec/A$v4 :b 1 :c 2 :d "large"}]
                                     (refine-to a :spec/X$v4))
                            :result :auto}]}
+              {:label "Optionally Converting Instances Between Specs"
+               :id "optionally-convert-instances"
+               :desc "Refinement expressions can include logic to optionally convert an instance."
+               :basic-ref ['instance]
+               :contents ["In the following example, the refinement expression determines whether to convert an instance based on the value of 'b'."
+                          {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}
+                                                  :refines-to {:spec/X$v1 {:name "refine_to_X"
+                                                                           :expr '(when (> b 10)
+                                                                                    {:$type :spec/X$v1
+                                                                                     :y b})}}}
+                                      :spec/X$v1 {:spec-vars {:y "Integer"}}}}
+                          "In this example, the refinement applies."
+                          {:code '(refine-to {:$type :spec/A$v1 :b 20} :spec/X$v1)
+                           :result :auto}
+                          "In this example, the refinement does not apply"
+                          {:code '(refine-to {:$type :spec/A$v1 :b 5} :spec/X$v1)
+                           :throws :auto}
+                          "A refinement path can be probed to determine if it exists and if it applies to a given instance."
+                          {:code '(refines-to? {:$type :spec/A$v1 :b 20} :spec/X$v1)
+                           :result :auto}
+                          {:code '(refines-to? {:$type :spec/A$v1 :b 5} :spec/X$v1)
+                           :result :auto}]}
               {:label "Defining Constraints on Instance Values"
                :id "constrain-instances"
                :desc "How to constrain the possible values for instance fields"
@@ -141,6 +163,32 @@
                           {:code '{:$type :spec/A$v3 :b 2 :c 3}
                            :result :auto}
                           {:code '{:$type :spec/A$v3 :b 6 :c 7}
+                           :throws :auto}]}
+              {:label "Defining Multiple Constraints on Instance Values"
+               :id "multi-constrain-instances"
+               :desc "How to define multiple constraints in a spec"
+               :basic-ref ['instance]
+               :contents ["Multiple constraints can be defined on a spec. Each constraint must have a unique name within the context of a spec."
+                          {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"
+                                                              :c "Integer"}
+                                                  :constraints [["constrain_b" '(> b 100)]
+                                                                ["constrain_c" '(< c 20)]]}}}
+                          "An instance must satisfy all of the constraints to be valid"
+                          {:code '{:$type :spec/A$v1 :b 101 :c 19}
+                           :result :auto}
+
+                          "Violating any of the constraints makes the instance invalid"
+                          {:code '{:$type :spec/A$v1 :b 100 :c 19}
+                           :throws :auto}
+                          {:code '{:$type :spec/A$v1 :b 101 :c 20}
+                           :throws :auto}
+                          "Mutliple constraints can refer to the same variables."
+                          {:spec-map {:spec/A$v2 {:spec-vars {:b "Integer"}
+                                                  :constraints [["constrain_b" '(> b 100)]
+                                                                ["constrain_b2" '(< b 110)]]}}}
+                          {:code '{:$type :spec/A$v2 :b 105}
+                           :result :auto}
+                          {:code '{:$type :spec/A$v2 :b 120}
                            :throws :auto}]}])
 
 (defn expand-example [[op m]]
