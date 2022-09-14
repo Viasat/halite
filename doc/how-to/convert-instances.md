@@ -1,4 +1,4 @@
-Converting Instances Between Specs
+## Converting Instances Between Specs
 
 How to convert an instance from one spec type to another.
 

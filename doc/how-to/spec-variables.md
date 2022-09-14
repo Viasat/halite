@@ -1,4 +1,4 @@
-Spec Variables
+## Spec Variables
 
 How to model data fields in specifications.
 

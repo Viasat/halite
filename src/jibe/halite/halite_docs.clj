@@ -2162,7 +2162,7 @@
        "```\n\n"))
 
 (defn how-to-md [lang how-to]
-  (->> [(:label how-to) "\n\n"
+  (->> ["## " (:label how-to) "\n\n"
         (:desc how-to) "\n\n"
         (loop [[c & more-c] (:contents how-to)
                spec-map nil
