@@ -2124,7 +2124,7 @@
   (str "```"
        ({:halite "clojure", :jadeite "java"} lang) "\n"
        code
-       "\n```\n\n"))
+       "```\n\n"))
 
 (defn how-to-md [lang how-to]
   (->> [(:label how-to) "\n\n"
@@ -2150,10 +2150,12 @@
                                                                     :h-result h-result})))
                                         (recur more-c spec-map
                                                (conj results (code-snippet lang (str ({:halite h-expr
-                                                                                       :jadeite j-expr} lang) "/n/n"
+                                                                                       :jadeite j-expr} lang)
                                                                                      (when false
-                                                                                       ({:halite h-result
-                                                                                         :jadeite j-result} lang))))))))
+                                                                                       (str "\n"
+                                                                                            ({:halite h-result
+                                                                                              :jadeite j-result} lang)))
+                                                                                     "\n"))))))
             results))
         (when-let [basic-refs (some-> (if (= :halite lang)
                                         (:basic-ref how-to)

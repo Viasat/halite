@@ -7,13 +7,12 @@ It is possible to define a spec that does not have any fields.
 ```java
 {
   "spec/Dog$v1" : { }
-}
-```
+}```
 
 Instances of this spec could be created as:
 
 ```java
-{$type: spec/Dog$v1}/n/n
+{$type: spec/Dog$v1}
 ```
 
 It is more interesting to define data fields on specs that define the structure of instances of the spec
@@ -25,13 +24,12 @@ It is more interesting to define data fields on specs that define the structure 
       "age" : "Integer"
     }
   }
-}
-```
+}```
 
 This spec can be instantiated as:
 
 ```java
-{$type: spec/Dog$v2, age: 3}/n/n
+{$type: spec/Dog$v2, age: 3}
 ```
 
 A spec can have multiple fields
@@ -44,13 +42,12 @@ A spec can have multiple fields
       "age" : "Integer"
     }
   }
-}
-```
+}```
 
 Now instances are created with multiple fields
 
 ```java
-{$type: spec/Dog$v3, age: 3, name: "Rex"}/n/n
+{$type: spec/Dog$v3, age: 3, name: "Rex"}
 ```
 
 Specs can include collections
@@ -64,11 +61,10 @@ Specs can include collections
       "colors" : [ "String" ]
     }
   }
-}
-```
+}```
 
 ```java
-{$type: spec/Dog$v4, age: 3, colors: ["brown", "white"], name: "Rex"}/n/n
+{$type: spec/Dog$v4, age: 3, colors: ["brown", "white"], name: "Rex"}
 ```
 
 Specs can reference other specs via composition
@@ -88,11 +84,10 @@ Specs can reference other specs via composition
       "owner" : "spec/Owner"
     }
   }
-}
-```
+}```
 
 ```java
-{$type: spec/Dog$v5, age: 3, colors: ["brown", "white"], name: "Rex", owner: {$type: spec/Owner, 'owner_name': "Sam"}}/n/n
+{$type: spec/Dog$v5, age: 3, colors: ["brown", "white"], name: "Rex", owner: {$type: spec/Owner, 'owner_name': "Sam"}}
 ```
 
 #### Basic elements:
