@@ -1,4 +1,4 @@
-## Converting Instances Between Specs Transitively
+## Converting instances between specs transitively
 
 How to convert an instance from one spec type to another through an intermediate spec.
 
@@ -59,5 +59,10 @@ The chain of refinements is invoked by simply refining the instance to the final
 #### Operator reference:
 
 * [`refineTo`](../jadeite-full-reference.md#refineTo)
+
+
+#### See also:
+
+* [convert-instances](convert-instances.md)
 
 

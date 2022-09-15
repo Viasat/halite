@@ -1,4 +1,4 @@
-## Defining Constraints on Instance Values
+## Defining constraints on instance values
 
 How to constrain the possible values for instance fields
 
@@ -65,4 +65,9 @@ In this example, the sum of 'a' and 'b' must be less than 10
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)
+
+#### See also:
+
+* [multi-constrain-instances](multi-constrain-instances.md)
+
 

@@ -1,4 +1,4 @@
-## Spec Variables
+## Spec variables
 
 How to model data fields in specifications.
 
@@ -55,4 +55,9 @@ A spec can have multiple fields
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance), [`vector`](../jadeite-basic-syntax-reference.md#vector)
+
+#### See also:
+
+* [compose-instances](compose-instances.md)
+
 

@@ -1,4 +1,4 @@
-## Compose Instances
+## Compose instances
 
 How to make specs which are the composition of other specs and how to make instances of those specs.
 
@@ -28,4 +28,9 @@ Composite instances are created by nesting the instances at construction time.
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)
+
+#### See also:
+
+* [spec-variables](spec-variables.md)
+
 

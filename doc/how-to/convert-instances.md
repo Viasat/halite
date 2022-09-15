@@ -1,4 +1,4 @@
-## Converting Instances Between Specs
+## Converting instances between specs
 
 How to convert an instance from one spec type to another.
 
@@ -48,5 +48,12 @@ The refinement can be invoked as follows:
 #### Operator reference:
 
 * [`refine-to`](../halite-full-reference.md#refine-to)
+
+
+#### See also:
+
+* [arbitrary-expression-refinements](arbitrary-expression-refinements.md)
+* [convert-instances-transitively](convert-instances-transitively.md)
+* [optionally-convert-instances](optionally-convert-instances.md)
 
 

@@ -37,8 +37,138 @@
                                              :x 100} :spec/B))]
     (.-h-result r)))
 
-(def how-tos {:instance/spec-variables
-              {:label "Spec Variables"
+(def how-tos {:collections/transform
+              {:label "Transform a collection"
+               :desc "Consider that you have a collection of values and need to produce a collection of new values derived from the first."
+               :basic-ref ['vector 'set]
+               :op-ref ['map '*]
+               :contents ["A collection of values can be transformed into a new collection of values. For example, the following transforms a vector of integers into a new vector of integers."
+                          {:code '(let [v [1 2 3]]
+                                    (map [x v] (* x 10)))
+                           :result :auto}
+                          "The same works with sets."
+                          {:code '(let [s #{1 2 3}]
+                                    (map [x s] (* x 10)))
+                           :result :auto}]
+               :see-also [:collections/reduce]}
+
+              :collections/reduce
+              {:label "Transform a vector into a single value"
+               :desc "Consider that you have a vector of values and you need to produce a single value that takes into account all of the values in the vector."
+               :basic-ref ['vector]
+               :op-ref ['reduce '*]
+               :contents ["A vector of values can be transformed into a single value. For example, the following transforms a vector of integers into a single value, which is their product."
+                          {:code '(let [v [1 2 3]]
+                                    (reduce [a 1] [x v] (* a x)))
+                           :result :auto}
+                          "The values from the vector are combined with the accumulator, one-by-one in order and then the final value of the accumulator is produced."]
+               :see-also [:collections/transform]}
+
+              :collections/vector-containment
+              {:label "Determine if an item is in a vector"
+               :desc "Consider that you have a vector and you need to know whether it contains a specific value."
+               :basic-ref ['vector '=]
+               :contents ["The following code correctly determines that a target value is in a vector."
+                          {:code '(let [v [10 20 30]
+                                        t 20]
+                                    (any? [x v] (= x t)))
+                           :result :auto}
+                          "The following code correctly determines that a target value is not in a vector."
+                          {:code '(let [v [10 20 30]
+                                        t 50]
+                                    (any? [x v] (= x t)))
+                           :result :auto}]
+               :see-also [:collections/set-containment
+                          :collections/any]}
+
+              :collections/set-containment
+              {:label "Determine if an item is in a set"
+               :desc "How to determine if a given item is contained in a set?"
+               :basic-ref ['set 'any? '=]
+               :contents ["There is a built-in function to determine whether a value is a member of a set."
+                          {:code '(contains? #{10 20 30} 20)
+                           :result :auto}
+                          "The following code correctly determines that a value is not in a set"
+                          {:code '(contains? #{10 20 30} 50)
+                           :result :auto}
+                          "It is more verbose, but an alternate solutions is the same as what would be done to determine if an item is in a vector."
+                          {:code '(let [s #{10 20 30}
+                                        t 20]
+                                    (any? [x s] (= x t)))
+                           :result :auto}]
+               :see-also [:collections/vector-containment
+                          :collections/any]}
+
+              :collections/any
+              {:label "Determine if any item in a collection satisfies some criteria"
+               :desc "How to determine if any item in a collection satisifies some criteria?"
+               :basic-ref ['vector 'set 'any?]
+               :contents ["The following code correctly determines that there is at least one value in the vector which makes the test expression true."
+                          {:code '(let [v [10 20 30]]
+                                    (any? [x v] (> x 15)))
+                           :result :auto}
+                          "In this example, no values make the expression true."
+                          {:code '(let [v [10 20 30]]
+                                    (any? [x v] (> x 100)))
+                           :result :auto}
+                          "Sets can be tested in the same way."
+                          {:code '(let [s #{10 20 30}]
+                                    (any? [x s] (> x 15)))
+                           :result :auto}]
+               :see-also [:collections/vector-containment
+                          :collections/set-containment]}
+
+              :collections/combine
+              {:label "Combine collections together"
+               :desc "Consider you have two sets or vectors and need to combine them."
+               :basic-ref ['vector 'set]
+               :contents ["Considering vectors first. One vector can be simply added to the end of another."
+                          {:code '(let [v1 [10 20 30]
+                                        v2 [40 50]]
+                                    (concat v1 v2))
+                           :result :auto}
+                          "The same can be done with sets. In this case the sets are simply combined because sets have no instrinsic order to the elements."
+                          {:code '(let [s1 #{10 20 30}
+                                        s2 #{40 50}]
+                                    (concat s1 s2))
+                           :result :auto}
+                          "There is a special set operator that is equivalent to 'concat' for sets."
+                          {:code '(let [s1 #{10 20 30}
+                                        s2 #{40 50}]
+                                    (union s1 s2))
+                           :result :auto}
+                          "However, 'union' only works when all of the arguments are sets. The 'concat' operation can be used to add elements from a vector into a set."
+                          {:code '(let [s #{10 20 30}
+                                        v [40 50]]
+                                    (concat s v))
+                           :result :auto}
+                          "It is not possible to use concat to add a set into a vector."
+                          {:code '(let [v [10 20 30]
+                                        s #{40 50}]
+                                    (concat v s))
+                           :throws :auto}
+                          "This is not supported because a vector is ordered and generally speaking, there is not a deterministic way to add the unordered items from the set into the vector."]
+               :see-also [:collections/combine-set-to-vector]}
+
+              :collections/combine-set-to-vector
+              {:label "Add contents of a set to a vector"
+               :desc "A set must be sorted into a vector before it can be appended onto another vector."
+               :basic-ref ['vector 'set]
+               :contents ["This example shows how to combine a set of sortable items into a vector."
+                          {:code '(let [v [10 20 30]
+                                        s #{40 50}]
+                                    (concat v (sort s)))
+                           :result :auto}
+                          "The same can be done with a set of values that is not intrinsically sortable, but in this case an explicit sort function must be defined."
+                          {:code '(let [v [[10 20 30]]
+                                        s #{[40 50] [60] [70 80 90]}]
+                                    (concat v (sort-by [e s] (count e))))
+                           :result :auto}
+                          "Notice that the items in the set were first sorted based on the number of items in the element, then in that sort order the items were appended to the vector, 'v'."]
+               :see-also [:collections/combine]}
+
+              :instance/spec-variables
+              {:label "Spec variables"
                :desc "How to model data fields in specifications."
                :basic-ref ['instance 'vector]
                :contents ["It is possible to define a spec that does not have any fields."
@@ -53,13 +183,14 @@
                           {:spec-map {:spec/Dog$v4 {:spec-vars {:name "String"
                                                                 :age "Integer"
                                                                 :colors ["String"]}}}}
-                          {:code '{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}]}
+                          {:code '{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}]
+               :see-also [:instance/compose-instances]}
 
               :refinement/convert-instances
-              {:label "Converting Instances Between Specs"
+              {:label "Converting instances between specs"
                :desc "How to convert an instance from one spec type to another."
                :basic-ref ['instance]
-               :see-also ['refine-to]
+               :op-ref ['refine-to]
                :contents ["An expression can convert an instance of one type to the instance of another type. Assume there are these two specs."
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}}
                                       :spec/X$v1 {:spec-vars {:y "Integer"}}}}
@@ -76,13 +207,16 @@
                           "The refinement can be invoked as follows:"
                           {:code '(let [a {:$type :spec/A$v2 :b 1}]
                                     (refine-to a :spec/X$v2))
-                           :result :auto}]}
+                           :result :auto}]
+               :see-also [:refinement/convert-instances-transitively
+                          :refinement/arbitrary-expression-refinements
+                          :refinement/optionally-convert-instances]}
 
               :refinement/convert-instances-transitively
-              {:label "Converting Instances Between Specs Transitively"
+              {:label "Converting instances between specs transitively"
                :desc "How to convert an instance from one spec type to another through an intermediate spec."
                :basic-ref ['instance]
-               :see-also ['refine-to]
+               :op-ref ['refine-to]
                :contents ["Refinements are automatically, transitively applied to produce an instance of the target spec."
                           {:spec-map {:spec/A$v3 {:spec-vars {:b "Integer"}
                                                   :refines-to {:spec/P$v3 {:name "refine_to_P"
@@ -96,13 +230,14 @@
                           "The chain of refinements is invoked by simply refining the instance to the final target spec."
                           {:code '(let [a {:$type :spec/A$v3 :b 1}]
                                     (refine-to a :spec/X$v3))
-                           :result :auto}]}
+                           :result :auto}]
+               :see-also [:refinement/convert-instances]}
 
               :refinement/arbitrary-expression-refinements
-              {:label "Arbitrary Expression in Refinements"
+              {:label "Arbitrary expression in refinements"
                :desc "How to write arbitrary expressions to convert instances."
                :basic-ref ['instance]
-               :see-also ['refine-to]
+               :op-ref ['refine-to]
                :contents ["Refinement expressions can be arbitrary expressions over the fields of the instance or constant values."
                           {:spec-map {:spec/A$v4 {:spec-vars {:b "Integer"
                                                               :c "Integer"
@@ -117,13 +252,14 @@
                                                               :z "Integer"}}}}
                           {:code '(let [a {:$type :spec/A$v4 :b 1 :c 2 :d "large"}]
                                     (refine-to a :spec/X$v4))
-                           :result :auto}]}
+                           :result :auto}]
+               :see-also [:refinement/convert-instances]}
 
               :refinement/optionally-convert-instances
-              {:label "Optionally Converting Instances Between Specs"
-               :desc "Refinement expressions can include logic to optionally convert an instance."
+              {:label "Optionally converting instances between specs"
+               :desc "Consider there are some cases where an instance can be converted to another spec, but other cases where it cannot be. Refinement expressions can include logic to optionally convert an instance."
                :basic-ref ['instance]
-               :see-also ['refine-to 'refines-to?]
+               :op-ref ['refine-to 'refines-to?]
                :contents ["In the following example, the refinement expression determines whether to convert an instance based on the value of 'b'."
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}
                                                   :refines-to {:spec/X$v1 {:name "refine_to_X"
@@ -141,10 +277,11 @@
                           {:code '(refines-to? {:$type :spec/A$v1 :b 20} :spec/X$v1)
                            :result :auto}
                           {:code '(refines-to? {:$type :spec/A$v1 :b 5} :spec/X$v1)
-                           :result :auto}]}
+                           :result :auto}]
+               :see-also [:refinement/convert-instances]}
 
               :instance/constrain-instances
-              {:label "Defining Constraints on Instance Values"
+              {:label "Defining constraints on instance values"
                :desc "How to constrain the possible values for instance fields"
                :basic-ref ['instance]
                :contents ["As a starting point specs specify the fields that make up instances."
@@ -167,10 +304,11 @@
                           {:code '{:$type :spec/A$v3 :b 2 :c 3}
                            :result :auto}
                           {:code '{:$type :spec/A$v3 :b 6 :c 7}
-                           :throws :auto}]}
+                           :throws :auto}]
+               :see-also [:instance/multi-constrain-instances]}
 
               :instance/multi-constrain-instances
-              {:label "Defining Multiple Constraints on Instance Values"
+              {:label "Defining multiple constraints on instance values"
                :desc "How to define multiple constraints in a spec"
                :basic-ref ['instance]
                :contents ["Multiple constraints can be defined on a spec. Each constraint must have a unique name within the context of a spec."
@@ -202,17 +340,19 @@
                           {:code '{:$type :spec/A$v3 :b 105}
                            :result :auto}
                           {:code '{:$type :spec/A$v3 :b 120}
-                           :throws :auto}]}
+                           :throws :auto}]
+               :see-also [:instance/constrain-instances]}
 
               :instance/compose-instances
-              {:label "Compose Instances"
+              {:label "Compose instances"
                :desc "How to make specs which are the composition of other specs and how to make instances of those specs."
                :basic-ref ['instance]
                :contents ["A spec variable can be of the type of another spec"
                           {:spec-map {:spec/A$v1 {:spec-vars {:b :spec/B$v1}}
                                       :spec/B$v1 {:spec-vars {:c "Integer"}}}}
                           "Composite instances are created by nesting the instances at construction time."
-                          {:code '{:$type :spec/A$v1 :b {:$type :spec/B$v1 :c 1}}}]}})
+                          {:code '{:$type :spec/A$v1 :b {:$type :spec/B$v1 :c 1}}}]
+               :see-also [:instance/spec-variables]}})
 
 (defn expand-example [[op m]]
   [op (if (:examples m)
@@ -2372,15 +2512,20 @@
                                ")")))
            "\n\n"])
 
-        (when-let [alsos (some->> (:see-also how-to)
-                                  (map ({:halite identity
-                                         :jadeite translate-op-name-to-jadeite} lang)))]
+        (when-let [op-refs (some->> (:op-ref how-to)
+                                    (map ({:halite identity
+                                           :jadeite translate-op-name-to-jadeite} lang)))]
           ["#### Operator reference:\n\n"
-           (for [a (sort alsos)]
+           (for [a (sort op-refs)]
              (str "* " "[`" a "`](" (if (= :halite lang)
                                       "../halite-full-reference.md"
                                       "../jadeite-full-reference.md")
                   "#" (safe-op-anchor a) ")" "\n"))
+           "\n\n"])
+        (when-let [see-alsos (:see-also how-to)]
+          ["#### See also:\n\n"
+           (for [a (sort see-alsos)]
+             (str "* " "[" (name a) "](" (name a) ".md" ")" "\n"))
            "\n\n"])]
        flatten
        (apply str)

@@ -1,4 +1,4 @@
-## Defining Multiple Constraints on Instance Values
+## Defining multiple constraints on instance values
 
 How to define multiple constraints in a spec
 
@@ -105,4 +105,9 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)
+
+#### See also:
+
+* [constrain-instances](constrain-instances.md)
+
 

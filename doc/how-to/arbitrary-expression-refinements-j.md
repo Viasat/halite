@@ -1,4 +1,4 @@
-## Arbitrary Expression in Refinements
+## Arbitrary expression in refinements
 
 How to write arbitrary expressions to convert instances.
 
@@ -49,5 +49,10 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 #### Operator reference:
 
 * [`refineTo`](../jadeite-full-reference.md#refineTo)
+
+
+#### See also:
+
+* [convert-instances](convert-instances.md)
 
 

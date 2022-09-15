@@ -1,6 +1,6 @@
-## Optionally Converting Instances Between Specs
+## Optionally converting instances between specs
 
-Refinement expressions can include logic to optionally convert an instance.
+Consider there are some cases where an instance can be converted to another spec, but other cases where it cannot be. Refinement expressions can include logic to optionally convert an instance.
 
 In the following example, the refinement expression determines whether to convert an instance based on the value of 'b'.
 
@@ -74,5 +74,10 @@ false
 
 * [`refineTo`](../jadeite-full-reference.md#refineTo)
 * [`refinesTo?`](../jadeite-full-reference.md#refinesTo_Q)
+
+
+#### See also:
+
+* [convert-instances](convert-instances.md)
 
 

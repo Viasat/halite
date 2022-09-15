@@ -1,4 +1,4 @@
-## Spec Variables
+## Spec variables
 
 How to model data fields in specifications.
 
@@ -41,4 +41,9 @@ A spec can have multiple fields
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance), [`vector`](../halite-basic-syntax-reference.md#vector)
+
+#### See also:
+
+* [compose-instances](compose-instances.md)
+
 
