@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Add contents of a set to a vector
 
 A set must be sorted into a vector before it can be appended onto another vector.

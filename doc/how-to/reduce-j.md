@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Transform a vector into a single value
 
 Consider that you have a vector of values and you need to produce a single value that takes into account all of the values in the vector.

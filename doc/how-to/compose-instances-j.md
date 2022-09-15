@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Compose instances
 
 How to make specs which are the composition of other specs and how to make instances of those specs.

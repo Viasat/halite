@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Arbitrary expression in refinements
 
 How to write arbitrary expressions to convert instances.

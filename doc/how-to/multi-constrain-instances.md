@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Defining multiple constraints on instance values
 
 How to define multiple constraints in a spec

@@ -60,8 +60,12 @@
             "---\n"]
            flatten (apply str)))))
 
-(defn produce-basic-core-md [info basic-bnf]
-  (str (->> basic-bnf
+(defn produce-basic-core-md [{:keys [lang] :as info} basic-bnf]
+  (str utils/generated-msg
+       "# "
+       (utils/lang-str lang)
+       " basic syntax reference\n\n"
+       (->> basic-bnf
             (partition 2)
             (map (partial apply basic-md info))
             (apply str))

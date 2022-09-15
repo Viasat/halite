@@ -231,22 +231,18 @@
   (let [info {:tag-def-map tag-def-map
               :tag-md-filename tag-md-filename}]
     (->> (md-basic/produce-basic-core-md (assoc info :lang :halite) basic-bnf)
-         (str utils/generated-msg "# Halite basic syntax reference\n\n")
          (utils/spit-dir "doc/halite-basic-syntax-reference.md"))
     (->> (md-basic/produce-basic-core-md (assoc info :lang :jadeite) basic-bnf)
-         (str utils/generated-msg "# Jadeite basic syntax reference\n\n")
          (utils/spit-dir "doc/jadeite-basic-syntax-reference.md"))))
 
 (defn produce-err-md []
   (->> err-maps
        sort
-       (map (partial apply md-err/err-md :halite))
-       (apply str utils/generated-msg "# Halite err-id reference\n\n")
+       (md-err/err-md-all :halite)
        (utils/spit-dir "doc/halite-err-id-reference.md"))
   (->> err-maps
        sort
-       (map (partial apply md-err/err-md :jadeite))
-       (apply str utils/generated-msg "# Jadeite err-id reference\n\n")
+       (md-err/err-md-all :jadeite)
        (utils/spit-dir "doc/jadeite-err-id-reference.md")))
 
 (defn produce-tag-md [lang [tag-name tag]]

@@ -124,3 +124,7 @@
                         :jadeite "\n\n//-- result --\n"}
                        lang))
          (when result result))))
+
+(defn lang-str [lang]
+  ({:halite "Halite"
+    :jadeite "Jadeite"} lang))

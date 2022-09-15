@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Determine if an item is in a vector
 
 Consider that you have a vector and you need to know whether it contains a specific value.

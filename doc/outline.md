@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 # Halite resource specifications
 
 All features are available in both Halite (s-expression) syntax and Jadeite (C-like) syntax.

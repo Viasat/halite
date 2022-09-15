@@ -78,8 +78,7 @@
 (defn full-md-all [{:keys [lang tag-md-filename tag-def-map] :as info} op-maps]
   (->> [utils/generated-msg
         "# "
-        ({:halite "Halite"
-          :jadeite "Jadeite"} lang)
+        (utils/lang-str lang)
         " operator reference (all operators)\n\n"
         (full-intro lang)
         (->> op-maps

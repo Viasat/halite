@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Defining constraints on instance values
 
 How to constrain the possible values for instance fields

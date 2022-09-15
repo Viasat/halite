@@ -34,5 +34,14 @@
            (for [a (sort alsos)]
              [" [`" a "`](#" (utils/safe-op-anchor a) ")"])
            "\n\n"])
-        "---\n"]
-       flatten (apply str)))
+        "---\n"]))
+
+(defn err-md-all [lang err-maps]
+  (->> [utils/generated-msg
+        "# "
+        (utils/lang-str lang)
+        " err-id reference\n\n"
+        (->> err-maps
+             (map (partial apply err-md lang)))]
+       flatten
+       (apply str)))

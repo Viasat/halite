@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Determine if any item in a collection satisfies some criteria
 
 How to determine if any item in a collection satisifies some criteria?

@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Transform a collection
 
 Consider that you have a collection of values and need to produce a collection of new values derived from the first.

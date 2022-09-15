@@ -1,11 +1,13 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.doc.md-outline)
+(ns jibe.halite.doc.md-outline
+  (:require [jibe.halite.doc.utils :as utils]))
 
 (defn produce-outline [{:keys [how-tos tag-def-map how-to-filename tag-md-filename]}]
   (->>
-   ["# Halite resource specifications\n
+   [utils/generated-msg
+    "# Halite resource specifications\n
 All features are available in both Halite (s-expression) syntax and Jadeite (C-like) syntax.\n\n"
 
     "## Tutorials\n\nTBD\n\n"

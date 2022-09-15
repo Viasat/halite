@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Combine collections together
 
 Consider you have two sets or vectors and need to combine them.

@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 ## Converting instances between specs transitively
 
 How to convert an instance from one spec type to another through an intermediate spec.

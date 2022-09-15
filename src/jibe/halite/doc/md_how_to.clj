@@ -9,7 +9,8 @@
   (:import [jibe.halite_guide HCInfo]))
 
 (defn how-to-md [lang [id how-to]]
-  (->> ["## " (:label how-to) "\n\n"
+  (->> [utils/generated-msg
+        "## " (:label how-to) "\n\n"
         (:desc how-to) "\n\n"
         (loop [[c & more-c] (:contents how-to)
                spec-map nil
