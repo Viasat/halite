@@ -29,18 +29,6 @@ This spec can be instantiated as:
 A spec can have multiple fields
 
 ```clojure
-#:spec{:Dog$v3 {:spec-vars {:name "String", :age "Integer"}}}
-```
-
-Now instances are created with multiple fields
-
-```clojure
-{:$type :spec/Dog$v3, :name "Rex", :age 3}
-```
-
-Specs can include collections
-
-```clojure
 #:spec{:Dog$v4
        {:spec-vars
         {:name "String", :age "Integer", :colors ["String"]}}}
@@ -48,22 +36,6 @@ Specs can include collections
 
 ```clojure
 {:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}
-```
-
-Specs can reference other specs via composition
-
-```clojure
-#:spec{:Owner {:spec-vars {:owner_name "String"}},
-       :Dog$v5
-       {:spec-vars
-        {:name "String",
-         :age "Integer",
-         :colors ["String"],
-         :owner :spec/Owner}}}
-```
-
-```clojure
-{:$type :spec/Dog$v5, :name "Rex", :age 3, :colors ["brown" "white"], :owner {:$type :spec/Owner, :owner_name "Sam"}}
 ```
 
 #### Basic elements:
