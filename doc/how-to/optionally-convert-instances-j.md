@@ -70,3 +70,9 @@ false
 
 [`instance`](jadeite-basic-syntax-reference.md#instance)
 
+#### Operator reference:
+
+* [`refineTo`](../jadeite-full-reference.md#refineTo)
+* [`refinesTo?`](../jadeite-full-reference.md#refinesTo_Q)
+
+

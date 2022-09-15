@@ -39,84 +39,86 @@
 
 (def how-tos {:spec-variables
               {:label "Spec Variables"
-                               :desc "How to model data fields in specifications."
-                               :basic-ref ['instance 'vector]
-                               :contents ["It is possible to define a spec that does not have any fields."
-                                          {:spec-map {:spec/Dog$v1 {}}}
-                                          "Instances of this spec could be created as:"
-                                          {:code '{:$type :spec/Dog$v1}}
-                                          "It is more interesting to define data fields on specs that define the structure of instances of the spec"
-                                          {:spec-map {:spec/Dog$v2 {:spec-vars {:age "Integer"}}}}
-                                          "This spec can be instantiated as:"
-                                          {:code '{:$type :spec/Dog$v2, :age 3}}
-                                          "A spec can have multiple fields"
-                                          {:spec-map {:spec/Dog$v4 {:spec-vars {:name "String"
-                                                                                :age "Integer"
-                                                                                :colors ["String"]}}}}
-                                          {:code '{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}]}
+               :desc "How to model data fields in specifications."
+               :basic-ref ['instance 'vector]
+               :contents ["It is possible to define a spec that does not have any fields."
+                          {:spec-map {:spec/Dog$v1 {}}}
+                          "Instances of this spec could be created as:"
+                          {:code '{:$type :spec/Dog$v1}}
+                          "It is more interesting to define data fields on specs that define the structure of instances of the spec"
+                          {:spec-map {:spec/Dog$v2 {:spec-vars {:age "Integer"}}}}
+                          "This spec can be instantiated as:"
+                          {:code '{:$type :spec/Dog$v2, :age 3}}
+                          "A spec can have multiple fields"
+                          {:spec-map {:spec/Dog$v4 {:spec-vars {:name "String"
+                                                                :age "Integer"
+                                                                :colors ["String"]}}}}
+                          {:code '{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}]}
 
               :convert-instances
               {:label "Converting Instances Between Specs"
-                                  :desc "How to convert an instance from one spec type to another."
-                                  :basic-ref ['instance]
-                                  :contents ["An expression can convert an instance of one type to the instance of another type. Assume there are these two specs."
-                                             {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}}
-                                                         :spec/X$v1 {:spec-vars {:y "Integer"}}}}
-                                             "The following expression converts an instance of the first spec into an instance of the second."
-                                             {:code '(let [a {:$type :spec/A$v1 :b 1}]
-                                                       {:$type :spec/X$v1 :y (get a :b)})
-                                              :result :auto}
-                                             "This work, but the language has a built-in idea of 'refinements' that allow such conversion functions to be expressed in a way that the system understands."
-                                             {:spec-map {:spec/A$v2 {:spec-vars {:b "Integer"}
-                                                                     :refines-to {:spec/X$v2 {:name "refine_to_X"
-                                                                                              :expr '{:$type :spec/X$v2
-                                                                                                      :y b}}}}
-                                                         :spec/X$v2 {:spec-vars {:y "Integer"}}}}
-                                             "The refinement can be invoked as follows:"
-                                             {:code '(let [a {:$type :spec/A$v2 :b 1}]
-                                                       (refine-to a :spec/X$v2))
-                                              {:label "Converting Instances Between Specs Transitively"
-                                               :id "convert-instances-transitively"
-                                               :desc "How to convert an instance from one spec type to another through an intermediate spec."
-                                               :basic-ref ['instance]
-                                               :contents ["Refinements are automatically, transitively applied to produce an instance of the target spec."
-                                                          {:spec-map {:spec/A$v3 {:spec-vars {:b "Integer"}
-                                                                                  :refines-to {:spec/P$v3 {:name "refine_to_P"
-                                                                                                           :expr '{:$type :spec/P$v3
-                                                                                                                   :q b}}}}
-                                                                      :spec/P$v3 {:spec-vars {:q "Integer"}
-                                                                                  :refines-to {:spec/X$v3 {:name "refine_to_X"
-                                                                                                           :expr '{:$type :spec/X$v3
-                                                                                                                   :y q}}}}
-                                                                      :spec/X$v3 {:spec-vars {:y "Integer"}}}}
-                                                          "The chain of refinements is invoked by simply refining the instance to the final target spec."
-                                                          {:code '(let [a {:$type :spec/A$v3 :b 1}]
-                                                                    (refine-to a :spec/X$v3))
-                                                           :result :auto}]}
-                                              {:label "Arbitrary Expression in Refinements"
-                                               :id "arbitrary-expression-refinements"
-                                               :desc "How to write arbitrary expressions to convert instances."
-                                               :basic-ref ['instance]
-                                               :contents ["Refinement expressions can be arbitrary expressions over the fields of the instance or constant values."
-                                                          {:spec-map {:spec/A$v4 {:spec-vars {:b "Integer"
-                                                                                              :c "Integer"
-                                                                                              :d "String"}
-                                                                                  :refines-to {:spec/X$v4 {:name "refine_to_X"
-                                                                                                           :expr '{:$type :spec/X$v4
-                                                                                                                   :x (+ b c)
-                                                                                                                   :y 12
-                                                                                                                   :z (if (= "medium" d) 5 10)}}}}
-                                                                      :spec/X$v4 {:spec-vars {:x "Integer"
-                                                                                              :y "Integer"
-                                                                                              :z "Integer"}}}}
-                                                          {:code '(let [a {:$type :spec/A$v4 :b 1 :c 2 :d "large"}]
-                                                                    (refine-to a :spec/X$v4))
-                                                           :result :auto}]}:result :auto}]}
+               :desc "How to convert an instance from one spec type to another."
+               :basic-ref ['instance]
+               :see-also ['refine-to]
+               :contents ["An expression can convert an instance of one type to the instance of another type. Assume there are these two specs."
+                          {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}}
+                                      :spec/X$v1 {:spec-vars {:y "Integer"}}}}
+                          "The following expression converts an instance of the first spec into an instance of the second."
+                          {:code '(let [a {:$type :spec/A$v1 :b 1}]
+                                    {:$type :spec/X$v1 :y (get a :b)})
+                           :result :auto}
+                          "This work, but the language has a built-in idea of 'refinements' that allow such conversion functions to be expressed in a way that the system understands."
+                          {:spec-map {:spec/A$v2 {:spec-vars {:b "Integer"}
+                                                  :refines-to {:spec/X$v2 {:name "refine_to_X"
+                                                                           :expr '{:$type :spec/X$v2
+                                                                                   :y b}}}}
+                                      :spec/X$v2 {:spec-vars {:y "Integer"}}}}
+                          "The refinement can be invoked as follows:"
+                          {:code '(let [a {:$type :spec/A$v2 :b 1}]
+                                    (refine-to a :spec/X$v2))
+                           {:label "Converting Instances Between Specs Transitively"
+                            :id "convert-instances-transitively"
+                            :desc "How to convert an instance from one spec type to another through an intermediate spec."
+                            :basic-ref ['instance]
+                            :contents ["Refinements are automatically, transitively applied to produce an instance of the target spec."
+                                       {:spec-map {:spec/A$v3 {:spec-vars {:b "Integer"}
+                                                               :refines-to {:spec/P$v3 {:name "refine_to_P"
+                                                                                        :expr '{:$type :spec/P$v3
+                                                                                                :q b}}}}
+                                                   :spec/P$v3 {:spec-vars {:q "Integer"}
+                                                               :refines-to {:spec/X$v3 {:name "refine_to_X"
+                                                                                        :expr '{:$type :spec/X$v3
+                                                                                                :y q}}}}
+                                                   :spec/X$v3 {:spec-vars {:y "Integer"}}}}
+                                       "The chain of refinements is invoked by simply refining the instance to the final target spec."
+                                       {:code '(let [a {:$type :spec/A$v3 :b 1}]
+                                                 (refine-to a :spec/X$v3))
+                                        :result :auto}]}
+                           {:label "Arbitrary Expression in Refinements"
+                            :id "arbitrary-expression-refinements"
+                            :desc "How to write arbitrary expressions to convert instances."
+                            :basic-ref ['instance]
+                            :contents ["Refinement expressions can be arbitrary expressions over the fields of the instance or constant values."
+                                       {:spec-map {:spec/A$v4 {:spec-vars {:b "Integer"
+                                                                           :c "Integer"
+                                                                           :d "String"}
+                                                               :refines-to {:spec/X$v4 {:name "refine_to_X"
+                                                                                        :expr '{:$type :spec/X$v4
+                                                                                                :x (+ b c)
+                                                                                                :y 12
+                                                                                                :z (if (= "medium" d) 5 10)}}}}
+                                                   :spec/X$v4 {:spec-vars {:x "Integer"
+                                                                           :y "Integer"
+                                                                           :z "Integer"}}}}
+                                       {:code '(let [a {:$type :spec/A$v4 :b 1 :c 2 :d "large"}]
+                                                 (refine-to a :spec/X$v4))
+                                        :result :auto}]} :result :auto}]}
 
               :optionally-convert-instances
               {:label "Optionally Converting Instances Between Specs"
                :desc "Refinement expressions can include logic to optionally convert an instance."
                :basic-ref ['instance]
+               :see-also ['refine-to 'refines-to?]
                :contents ["In the following example, the refinement expression determines whether to convert an instance based on the value of 'b'."
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}
                                                   :refines-to {:spec/X$v1 {:name "refine_to_X"
@@ -2317,6 +2319,17 @@
                                  "jadeite-basic-syntax-reference.md")
                                "#" basic-ref
                                ")")))
+           "\n\n"])
+
+        (when-let [alsos (some->> (:see-also how-to)
+                                  (map ({:halite identity
+                                         :jadeite translate-op-name-to-jadeite} lang)))]
+          ["#### Operator reference:\n\n"
+           (for [a (sort alsos)]
+             (str "* " "[`" a "`](" (if (= :halite lang)
+                                      "../halite-full-reference.md"
+                                      "../jadeite-full-reference.md")
+                  "#" (safe-op-anchor a) ")" "\n"))
            "\n\n"])]
        flatten
        (apply str)

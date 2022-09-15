@@ -56,3 +56,9 @@ false
 
 [`instance`](halite-basic-syntax-reference.md#instance)
 
+#### Operator reference:
+
+* [`refine-to`](../halite-full-reference.md#refine-to)
+* [`refines-to?`](../halite-full-reference.md#refines-to_Q)
+
+

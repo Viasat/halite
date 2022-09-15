@@ -45,3 +45,8 @@ The refinement can be invoked as follows:
 
 [`instance`](halite-basic-syntax-reference.md#instance)
 
+#### Operator reference:
+
+* [`refine-to`](../halite-full-reference.md#refine-to)
+
+
