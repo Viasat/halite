@@ -37,23 +37,88 @@ TBD
 
 #### Operators grouped by tag:
 
-* Boolean operations [(Halite)](halite-boolean-op-reference.md) [(Jadeite)](halite-boolean-op-reference-j.md)
 * Control flow [(Halite)](halite-control-flow-reference.md) [(Jadeite)](halite-control-flow-reference-j.md)
-* Fixed-decimal operations [(Halite)](halite-fixed-decimal-op-reference.md) [(Jadeite)](halite-fixed-decimal-op-reference-j.md)
-* Instance field operations [(Halite)](halite-instance-field-op-reference.md) [(Jadeite)](halite-instance-field-op-reference-j.md)
-* Instance operations [(Halite)](halite-instance-op-reference.md) [(Jadeite)](halite-instance-op-reference-j.md)
-* Integer operations [(Halite)](halite-integer-op-reference.md) [(Jadeite)](halite-integer-op-reference-j.md)
-* Optional operations [(Halite)](halite-optional-op-reference.md) [(Jadeite)](halite-optional-op-reference-j.md)
-* Optionally produce values [(Halite)](halite-optional-out-reference.md) [(Jadeite)](halite-optional-out-reference-j.md)
-* Produce booleans [(Halite)](halite-boolean-out-reference.md) [(Jadeite)](halite-boolean-out-reference-j.md)
-* Produce fixed-decimals [(Halite)](halite-fixed-decimal-out-reference.md) [(Jadeite)](halite-fixed-decimal-out-reference-j.md)
-* Produce instances [(Halite)](halite-instance-out-reference.md) [(Jadeite)](halite-instance-out-reference-j.md)
-* Produce integer [(Halite)](halite-integer-out-reference.md) [(Jadeite)](halite-integer-out-reference-j.md)
-* Produce nothing [(Halite)](halite-nothing-out-reference.md) [(Jadeite)](halite-nothing-out-reference-j.md)
-* Produce sets [(Halite)](halite-set-out-reference.md) [(Jadeite)](halite-set-out-reference-j.md)
-* Produce vectors [(Halite)](halite-vector-out-reference.md) [(Jadeite)](halite-vector-out-reference-j.md)
-* Set operations [(Halite)](halite-set-op-reference.md) [(Jadeite)](halite-set-op-reference-j.md)
-* Spec-id operations [(Halite)](halite-spec-id-op-reference.md) [(Jadeite)](halite-spec-id-op-reference-j.md)
 * Special forms [(Halite)](halite-special-form-reference.md) [(Jadeite)](halite-special-form-reference-j.md)
-* String operations [(Halite)](halite-string-op-reference.md) [(Jadeite)](halite-string-op-reference-j.md)
-* Vector operations [(Halite)](halite-vector-op-reference.md) [(Jadeite)](halite-vector-op-reference-j.md)
+<table><tr><th></th><th>field-op</th>
+<th>op</th>
+<th>out</th>
+</tr><tr><th>boolean</th><td>
+
+</td><td>
+
+ [H](halite-boolean-op-reference.md) [J](halite-boolean-op-reference-j.md)
+</td><td>
+
+ [H](halite-boolean-out-reference.md) [J](halite-boolean-out-reference-j.md)
+</td></tr><tr><th>fixed-decimal</th><td>
+
+</td><td>
+
+ [H](halite-fixed-decimal-op-reference.md) [J](halite-fixed-decimal-op-reference-j.md)
+</td><td>
+
+ [H](halite-fixed-decimal-out-reference.md) [J](halite-fixed-decimal-out-reference-j.md)
+</td></tr><tr><th>instance</th><td>
+
+ [H](halite-instance-field-op-reference.md) [J](halite-instance-field-op-reference-j.md)
+</td><td>
+
+ [H](halite-instance-op-reference.md) [J](halite-instance-op-reference-j.md)
+</td><td>
+
+ [H](halite-instance-out-reference.md) [J](halite-instance-out-reference-j.md)
+</td></tr><tr><th>integer</th><td>
+
+</td><td>
+
+ [H](halite-integer-op-reference.md) [J](halite-integer-op-reference-j.md)
+</td><td>
+
+ [H](halite-integer-out-reference.md) [J](halite-integer-out-reference-j.md)
+</td></tr><tr><th>nothing</th><td>
+
+</td><td>
+
+</td><td>
+
+ [H](halite-nothing-out-reference.md) [J](halite-nothing-out-reference-j.md)
+</td></tr><tr><th>optional</th><td>
+
+</td><td>
+
+ [H](halite-optional-op-reference.md) [J](halite-optional-op-reference-j.md)
+</td><td>
+
+ [H](halite-optional-out-reference.md) [J](halite-optional-out-reference-j.md)
+</td></tr><tr><th>set</th><td>
+
+</td><td>
+
+ [H](halite-set-op-reference.md) [J](halite-set-op-reference-j.md)
+</td><td>
+
+ [H](halite-set-out-reference.md) [J](halite-set-out-reference-j.md)
+</td></tr><tr><th>spec-id</th><td>
+
+</td><td>
+
+ [H](halite-spec-id-op-reference.md) [J](halite-spec-id-op-reference-j.md)
+</td><td>
+
+</td></tr><tr><th>string</th><td>
+
+</td><td>
+
+ [H](halite-string-op-reference.md) [J](halite-string-op-reference-j.md)
+</td><td>
+
+</td></tr><tr><th>vector</th><td>
+
+</td><td>
+
+ [H](halite-vector-op-reference.md) [J](halite-vector-op-reference-j.md)
+</td><td>
+
+ [H](halite-vector-out-reference.md) [J](halite-vector-out-reference-j.md)
+</td></tr></table>
+
