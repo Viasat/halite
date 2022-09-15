@@ -37,7 +37,7 @@
                                              :x 100} :spec/B))]
     (.-h-result r)))
 
-(def how-tos {:spec-variables
+(def how-tos {:instance/spec-variables
               {:label "Spec Variables"
                :desc "How to model data fields in specifications."
                :basic-ref ['instance 'vector]
@@ -55,7 +55,7 @@
                                                                 :colors ["String"]}}}}
                           {:code '{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}]}
 
-              :convert-instances
+              :refinement/convert-instances
               {:label "Converting Instances Between Specs"
                :desc "How to convert an instance from one spec type to another."
                :basic-ref ['instance]
@@ -78,7 +78,7 @@
                                     (refine-to a :spec/X$v2))
                            :result :auto}]}
 
-              :convert-instances-transitively
+              :refinement/convert-instances-transitively
               {:label "Converting Instances Between Specs Transitively"
                :desc "How to convert an instance from one spec type to another through an intermediate spec."
                :basic-ref ['instance]
@@ -98,7 +98,7 @@
                                     (refine-to a :spec/X$v3))
                            :result :auto}]}
 
-              :arbitrary-expression-refinements
+              :refinement/arbitrary-expression-refinements
               {:label "Arbitrary Expression in Refinements"
                :desc "How to write arbitrary expressions to convert instances."
                :basic-ref ['instance]
@@ -119,7 +119,7 @@
                                     (refine-to a :spec/X$v4))
                            :result :auto}]}
 
-              :optionally-convert-instances
+              :refinement/optionally-convert-instances
               {:label "Optionally Converting Instances Between Specs"
                :desc "Refinement expressions can include logic to optionally convert an instance."
                :basic-ref ['instance]
@@ -143,7 +143,7 @@
                           {:code '(refines-to? {:$type :spec/A$v1 :b 5} :spec/X$v1)
                            :result :auto}]}
 
-              :constrain-instances
+              :instance/constrain-instances
               {:label "Defining Constraints on Instance Values"
                :desc "How to constrain the possible values for instance fields"
                :basic-ref ['instance]
@@ -169,7 +169,7 @@
                           {:code '{:$type :spec/A$v3 :b 6 :c 7}
                            :throws :auto}]}
 
-              :multi-constrain-instances
+              :instance/multi-constrain-instances
               {:label "Defining Multiple Constraints on Instance Values"
                :desc "How to define multiple constraints in a spec"
                :basic-ref ['instance]
@@ -204,7 +204,7 @@
                           {:code '{:$type :spec/A$v3 :b 120}
                            :throws :auto}]}
 
-              :compose-instances
+              :instance/compose-instances
               {:label "Compose Instances"
                :desc "How to make specs which are the composition of other specs and how to make instances of those specs."
                :basic-ref ['instance]
