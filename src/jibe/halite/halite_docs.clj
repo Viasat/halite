@@ -2111,6 +2111,15 @@
                      (full-intro :jadeite)))
        (spit "doc/jadeite-full-reference.md")))
 
+(defn tags-md-block
+  "Return markdown string with links to all the tags given as keywords"
+  [lang tags]
+  (string/join ", "
+               (for [a (sort tags)]
+                 (str " [" (:label (tag-def-map a)) "]("
+                      (tag-md-filename lang (name a))
+                      ")"))))
+
 (defn basic-md [lang op-name op]
   (let [bnf (if (= :halite lang)
               (:bnf op)
@@ -2150,20 +2159,10 @@
                         "jadeite-err-id-reference.md")
                       "#" (safe-op-anchor msg) ")" "\n"))
                "\n"])
-            (when-let [tags (let [t (if (= :halite lang)
-                                      (:tags op)
-                                      (or (:tags-j op)
-                                          (:tags op)))]
-                              (when (seq t)
-                                t))]
-              ["#### Tags:" "\n\n"
-               (string/join ", "
-                            (for [a (sort tags)]
-                              (let [a (name a)]
-                                (str " [" (:label (tag-def-map (keyword a))) "]("
-                                     (tag-md-filename lang a)
-                                     ")"))))
-               "\n\n"])
+            (when-let [tags (seq (or (when (= :jadeite lang)
+                                       (:tags-j op))
+                                     (:tags op)))]
+              ["#### Tags:\n\n" (tags-md-block lang (map keyword tags)) "\n\n"])
             "---\n"]
            flatten (apply str)))))
 
@@ -2273,6 +2272,9 @@
        code
        "```\n\n"))
 
+(defn how-to-filename [lang id]
+  (str "how-to/" (str (name id) (when (= :jadeite lang) "-j") ".md")))
+
 (defn how-to-md [lang [id how-to]]
   (->> ["## " (:label how-to) "\n\n"
         (:desc how-to) "\n\n"
@@ -2338,8 +2340,40 @@
            "\n\n"])]
        flatten
        (apply str)
-       (spit (str "doc/how-to/"
-                  (str (name id) (when (= :jadeite lang) "-j") ".md")))))
+       (spit (str "doc/" (how-to-filename lang id)))))
+
+(defn produce-outline []
+  (->>
+   ["# Halite resource specifications\n
+All features are available in both Halite (s-expression) syntax and Jadeite (C-like) syntax.\n\n"
+
+    "## Tutorials\n\nTBD\n\n"
+
+    "## How-To Guides\n\n"
+    (->> how-tos
+         (sort-by (comp :label val))
+         (map (fn [[id h]] ["* " (:label h)
+                            " [(Halite)](" (how-to-filename :halite id) ")"
+                            " [(Jadeite)](" (how-to-filename :jadeite id) ")\n"
+                            "  * " (:desc h) "\n"])))
+
+    "## Explanation\n\nTBD\n\n"
+
+    "## Reference\n
+
+* Basic Syntax [(Halite)](halite-basic-syntax-reference.md)         [(Jadeite)](jadeite-basic-syntax-reference.md)
+* All Operators (alphabetical) [(Halite)](halite-full-reference.md) [(Jadeite)](jadeite-full-reference.md)
+* Error ID Reference [(Halite)](halite-err-id-reference.md)         [(Jadeite)](jadeite-err-id-reference.md)
+
+#### Operators grouped by tag:\n\n"
+    (->> tag-def-map
+         (sort-by (comp :label val))
+         (map (fn [[k a]] ["* " (:label a)
+                           " [(Halite)]("  (tag-md-filename :halite  (name k)) ")"
+                           " [(Jadeite)](" (tag-md-filename :jadeite (name k)) ")\n"])))]
+   flatten
+   (apply str)
+   (spit (str "doc/outline.md"))))
 
 ;;
 
@@ -2357,6 +2391,16 @@
    (str (name tag) "-j" ".svg")))
 
 (comment
+  (def po
+    (future
+      (while true
+        (let [f produce-outline]
+          (Thread/sleep 500)
+          (when-not (= f produce-outline)
+            (println "Generating md" (java.util.Date.))
+            (produce-outline))))))
+  (future-cancel po)
+
   (do
     (produce-basic-bnf-diagrams "basic-all.svg" "basic-all-j.svg" basic-bnf)
 
