@@ -64,5 +64,5 @@ In this example, the sum of 'a' and 'b' must be less than 10
 
 #### Basic elements:
 
-[`instance`](halite-basic-syntax-reference.md#instance)
+[`instance`](../halite-basic-syntax-reference.md#instance)
 

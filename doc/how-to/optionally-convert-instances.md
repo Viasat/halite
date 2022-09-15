@@ -54,7 +54,7 @@ false
 
 #### Basic elements:
 
-[`instance`](halite-basic-syntax-reference.md#instance)
+[`instance`](../halite-basic-syntax-reference.md#instance)
 
 #### Operator reference:
 

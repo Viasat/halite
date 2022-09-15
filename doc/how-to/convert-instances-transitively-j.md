@@ -54,5 +54,10 @@ The chain of refinements is invoked by simply refining the instance to the final
 
 #### Basic elements:
 
-[`instance`](jadeite-basic-syntax-reference.md#instance)
+[`instance`](../jadeite-basic-syntax-reference.md#instance)
+
+#### Operator reference:
+
+* [`refineTo`](../jadeite-full-reference.md#refineTo)
+
 

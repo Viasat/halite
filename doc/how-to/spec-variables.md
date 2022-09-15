@@ -40,5 +40,5 @@ A spec can have multiple fields
 
 #### Basic elements:
 
-[`instance`](halite-basic-syntax-reference.md#instance), [`vector`](halite-basic-syntax-reference.md#vector)
+[`instance`](../halite-basic-syntax-reference.md#instance), [`vector`](../halite-basic-syntax-reference.md#vector)
 

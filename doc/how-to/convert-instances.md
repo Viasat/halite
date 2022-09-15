@@ -43,7 +43,7 @@ The refinement can be invoked as follows:
 
 #### Basic elements:
 
-[`instance`](halite-basic-syntax-reference.md#instance)
+[`instance`](../halite-basic-syntax-reference.md#instance)
 
 #### Operator reference:
 

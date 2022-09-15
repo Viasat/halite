@@ -67,7 +67,7 @@ The refinement can be invoked as follows:
 
 #### Basic elements:
 
-[`instance`](jadeite-basic-syntax-reference.md#instance)
+[`instance`](../jadeite-basic-syntax-reference.md#instance)
 
 #### Operator reference:
 

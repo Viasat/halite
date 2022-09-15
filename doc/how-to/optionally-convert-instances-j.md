@@ -68,7 +68,7 @@ false
 
 #### Basic elements:
 
-[`instance`](jadeite-basic-syntax-reference.md#instance)
+[`instance`](../jadeite-basic-syntax-reference.md#instance)
 
 #### Operator reference:
 

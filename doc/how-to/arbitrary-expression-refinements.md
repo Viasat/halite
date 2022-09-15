@@ -28,5 +28,10 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 
 #### Basic elements:
 
-[`instance`](halite-basic-syntax-reference.md#instance)
+[`instance`](../halite-basic-syntax-reference.md#instance)
+
+#### Operator reference:
+
+* [`refine-to`](../halite-full-reference.md#refine-to)
+
 

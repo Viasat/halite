@@ -32,5 +32,10 @@ The chain of refinements is invoked by simply refining the instance to the final
 
 #### Basic elements:
 
-[`instance`](halite-basic-syntax-reference.md#instance)
+[`instance`](../halite-basic-syntax-reference.md#instance)
+
+#### Operator reference:
+
+* [`refine-to`](../halite-full-reference.md#refine-to)
+
 

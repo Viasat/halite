@@ -44,5 +44,10 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 
 #### Basic elements:
 
-[`instance`](jadeite-basic-syntax-reference.md#instance)
+[`instance`](../jadeite-basic-syntax-reference.md#instance)
+
+#### Operator reference:
+
+* [`refineTo`](../jadeite-full-reference.md#refineTo)
+
 

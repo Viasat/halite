@@ -27,5 +27,5 @@ Composite instances are created by nesting the instances at construction time.
 
 #### Basic elements:
 
-[`instance`](jadeite-basic-syntax-reference.md#instance)
+[`instance`](../jadeite-basic-syntax-reference.md#instance)
 

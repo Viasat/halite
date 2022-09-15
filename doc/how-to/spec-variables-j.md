@@ -54,5 +54,5 @@ A spec can have multiple fields
 
 #### Basic elements:
 
-[`instance`](jadeite-basic-syntax-reference.md#instance), [`vector`](jadeite-basic-syntax-reference.md#vector)
+[`instance`](../jadeite-basic-syntax-reference.md#instance), [`vector`](../jadeite-basic-syntax-reference.md#vector)
 

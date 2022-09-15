@@ -90,5 +90,5 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 
 #### Basic elements:
 
-[`instance`](halite-basic-syntax-reference.md#instance)
+[`instance`](../halite-basic-syntax-reference.md#instance)
 
