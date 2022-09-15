@@ -2639,4 +2639,6 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
          dorun)
     (->> how-tos
          (map (partial how-to-md :jadeite))
-         dorun)))
+         dorun)
+
+    (produce-outline)))
