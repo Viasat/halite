@@ -2,7 +2,9 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.doc.utils
-  (:require [clojure.java.io :as io]))
+  (:require [cheshire.core :as json]
+            [clojure.java.io :as io]
+            [clojure.pprint :as pprint]))
 
 (defn spit-dir [filename txt]
   (io/make-parents filename)
@@ -45,3 +47,33 @@
   (if-let [op-names-j (get jadeite-operator-map op-name)]
     op-names-j
     [op-name]))
+
+(defn code-snippet [lang code]
+  (str "```"
+       ({:halite "clojure", :jadeite "java"} lang) "\n"
+       code
+       "```\n\n"))
+
+(defn spec-map-str [lang spec-map]
+  ({:halite (with-out-str (pprint/pprint spec-map))
+    :jadeite (str (json/encode spec-map {:pretty true}) "\n")} lang))
+
+(def safe-char-map
+  (let [weird "*!$?=<>_+."
+        norml "SBDQELGUAP"]
+    (zipmap weird (map #(str "_" %) norml))))
+
+(defn safe-op-anchor
+  "To avoid github markdown behavior of stripping out special characters and
+  then avoiding collisions with an auto-incrementing number, use this function
+  to generate anchors and links that github will leave unmolested."
+  [s]
+  (apply str (map #(safe-char-map % %) (str s))))
+
+(defn url-encode [s]
+  (java.net.URLEncoder/encode (str s)))
+
+(def generated-msg
+  "<!---
+  This markdown file was generated. Do not edit.
+  -->\n\n")
