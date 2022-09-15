@@ -12,6 +12,9 @@
             [jibe.halite.doc.basic-bnf :refer [basic-bnf-vector]]
             [jibe.halite.doc.err-maps :as err-maps]
             [jibe.halite.doc.how-tos :refer [how-tos]]
+            [jibe.halite.doc.md-basic :as md-basic]
+            [jibe.halite.doc.md-err :as md-err]
+            [jibe.halite.doc.md-full :as md-full]
             [jibe.halite.doc.md-how-to :as md-how-to]
             [jibe.halite.doc.md-outline :refer [produce-outline]]
             [jibe.halite.doc.md-tag :as md-tag]
@@ -202,53 +205,6 @@
                     (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                     (apply merge-with into)))
 
-(defn text-width [s]
-  (apply max 0 (map count (re-seq #".*" s))))
-
-(defn text-tile-rows [texts]
-  (let [chars-per-col 20
-        cols-per-row 5]
-    (reduce (fn [rows text]
-              (let [cols (inc (quot (dec (text-width text)) chars-per-col))
-                    tile {:text text, :cols cols}
-                    last-row (peek rows)]
-                (if (or (empty? rows)
-                        (< cols-per-row (+ cols (:cols last-row))))
-                  (conj rows {:cols cols :tiles [tile]})
-                  (conj (pop rows) (-> last-row
-                                       (update :cols + cols)
-                                       (update :tiles conj tile))))))
-            []
-            texts)))
-
-(defn example-text [lang e]
-  (let [{:keys [spec-map doc]} e
-        expr (if (= :halite lang)
-               (:expr-str e)
-               (or (:expr-str-j e)
-                   (:expr-str e)))
-        result (or (:result e)
-                   (:err-result e))]
-    (str (when doc
-           (str ({:halite  ";-- "
-                  :jadeite "//-- "}
-                 lang)
-                doc
-                "\n"))
-         (when spec-map
-           (str ({:halite  ";-- context --\n"
-                  :jadeite "//-- context --\n"}
-                 lang)
-                (utils/spec-map-str lang spec-map)
-                ({:halite  ";--\n\n"
-                  :jadeite "//\n\n"}
-                 lang)))
-         expr
-         (when result ({:halite  "\n\n;-- result --\n"
-                        :jadeite "\n\n//-- result --\n"}
-                       lang))
-         (when result result))))
-
 (defn tag-md-filename [lang tag]
   (str "halite-" tag "-reference" (when (= :jadeite lang) "-j") ".md"))
 
@@ -257,208 +213,39 @@
                         (mapcat :tags (vals op-maps)))))
         "Mismatch between defined tags and used tags.")
 
-(defn full-md [lang op-name op]
-  (->> ["### "
-        "<a name=\"" (utils/safe-op-anchor op-name) "\"></a>"
-        op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
-        (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
-        (map-indexed
-         (fn [i sig]
-           ["![" (pr-str sig) "](./halite-bnf-diagrams/op/"
-            (utils/url-encode (utils/safe-op-name op-name)) "-" i (when (= :jadeite lang) "-j") ".svg)\n\n"])
-         (op ({:halite :sigs, :jadeite :sigs-j} lang)))
-        (when-let [basic-refs (some-> (if (= :halite lang)
-                                        (:basic-ref op)
-                                        (or (:basic-ref-j op)
-                                            (:basic-ref op)))
-                                      sort)]
-          ["#### Basic elements:\n\n"
-           (string/join ", "
-                        (for [basic-ref basic-refs]
-                          (str "[`" basic-ref "`]"
-                               "("
-                               (if (= :halite lang)
-                                 "halite-basic-syntax-reference.md"
-                                 "jadeite-basic-syntax-reference.md")
-                               "#" basic-ref
-                               ")")))
-           "\n\n"])
-        (when-let [c (:comment op)] [c "\n\n"])
-        (when-let [es (:examples op)]
-          ["#### Examples:\n\n"
-           "<table>"
-           (for [row (text-tile-rows (map (partial example-text lang) es))]
-             ["<tr>"
-              (for [tile (:tiles row)]
-                ["<td colspan=\"" (:cols tile) "\">\n\n"
-                 "```" ({:halite "clojure", :jadeite "java"} lang) "\n"
-                 (:text tile)
-                 "\n```\n\n</td>"])
-              "</tr>"])
-           "</table>\n\n"])
-        (when-let [t (:throws op)]
-          ["#### Possible errors:\n\n"
-           (for [msg (sort t)]
-             (str "* " "[`" msg "`]("
-                  (if (= :halite lang)
-                    "halite-err-id-reference.md"
-                    "jadeite-err-id-reference.md")
-                  "#" (utils/safe-op-anchor msg) ")" "\n"))
-           "\n"])
-        (when-let [alsos (:see-also op)]
-          ["See also:"
-           (for [a (sort (remove #(= op-name %) alsos))]
-             [" [`" a "`](#" (utils/safe-op-anchor a) ")"])
-           "\n\n"])
-        (when-let [tags (:tags op)]
-          ["#### Tags:" "\n\n"
-           (string/join ", "
-                        (for [a (sort tags)]
-                          (let [a (name a)]
-                            (str " [" (:label (tag-def-map (keyword a))) "]("
-                                 (tag-md-filename lang a)
-                                 ")"))))
-           "\n\n"])
-        "---\n"]
-       flatten (apply str)))
-
-(defn full-intro [lang]
-  ["## All Operators\n\n"
-   "The syntax for all of the operators is summarized in the following \n\n"
-   "![" "all operators" "](./halite-bnf-diagrams/" (if (= :halite lang) "halite" "jadeite") ".svg)\n\n"
-   "## Operators\n\n"])
-
 (defn produce-full-md []
-  (->> op-maps
-       sort
-       (map (partial apply full-md :halite))
-       (apply str utils/generated-msg
-              (apply str "# Halite operator reference (all operators)\n\n"
-                     (full-intro :halite)))
-       (utils/spit-dir "doc/halite-full-reference.md"))
-  (->> op-maps-j
-       sort
-       (remove (fn [[k _]]
-                 (jadeite-ommitted-ops k)))
-       (map (partial apply full-md :jadeite))
-       (apply str utils/generated-msg
-              (apply str "# Jadeite operator reference (all operators)\n\n"
-                     (full-intro :jadeite)))
-       (utils/spit-dir "doc/jadeite-full-reference.md")))
-
-(defn tags-md-block
-  "Return markdown string with links to all the tags given as keywords"
-  [lang tags]
-  (string/join ", "
-               (for [a (sort tags)]
-                 (str " [" (:label (tag-def-map a)) "]("
-                      (tag-md-filename lang (name a))
-                      ")"))))
-
-(defn basic-md [lang op-name op]
-  (let [bnf (if (= :halite lang)
-              (:bnf op)
-              (if (contains? (set (keys op)) :bnf-j)
-                (:bnf-j op)
-                (or (:bnf-j op)
-                    (:bnf op))))]
-    (when bnf
-      (->> ["### "
-            "<a name=\"" (utils/safe-op-anchor op-name) "\"></a>"
-            op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
-            (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
-            ["![" (pr-str bnf) "](./halite-bnf-diagrams/basic-syntax/"
-             (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"]
-
-            (let [c-1 (if (= :halite lang) (:comment op) (or (:comment-j op) (:comment op)))
-                  c-2 (if (= :halite lang) (:comment-2 op) (or (:comment-2-j op) (:comment-2 op)))
-                  c-3 (if (= :halite lang) (:comment-3 op) (or (:comment-3-j op) (:comment-3 op)))]
-              (when (or c-1 c-2 c-3) [(string/join " " [c-1 c-2 c-3]) "\n\n"]))
-            (when-let [es (:examples op)]
-              ["<table>"
-               (for [row (text-tile-rows (map (partial example-text lang) es))]
-                 ["<tr>"
-                  (for [tile (:tiles row)]
-                    ["<td colspan=\"" (:cols tile) "\">\n\n"
-                     "```" ({:halite "clojure", :jadeite "java"} lang) "\n"
-                     (:text tile)
-                     "\n```\n\n</td>"])
-                  "</tr>"])
-               "</table>\n\n"])
-            (when-let [t (:throws op)]
-              ["#### Possible errors:\n\n"
-               (for [msg (sort t)]
-                 (str "* " "[`" msg "`]("
-                      (if (= :halite lang)
-                        "halite-err-id-reference.md"
-                        "jadeite-err-id-reference.md")
-                      "#" (utils/safe-op-anchor msg) ")" "\n"))
-               "\n"])
-            (when-let [tags (seq (or (when (= :jadeite lang)
-                                       (:tags-j op))
-                                     (:tags op)))]
-              ["#### Tags:\n\n" (tags-md-block lang (map keyword tags)) "\n\n"])
-            "---\n"]
-           flatten (apply str)))))
-
-(defn produce-basic-core-md [lang]
-  (str (->> basic-bnf
-            (partition 2)
-            (map (partial apply basic-md lang))
-            (apply str))
-       "### Type Graph"
-       "![" "type graph" "](./types.dot.png)\n\n"))
+  (let [info {:tag-def-map tag-def-map
+              :tag-md-filename tag-md-filename}]
+    (->> op-maps
+         sort
+         (md-full/full-md-all (assoc info :lang :halite))
+         (utils/spit-dir "doc/halite-full-reference.md"))
+    (->> op-maps-j
+         sort
+         (remove (fn [[k _]]
+                   (jadeite-ommitted-ops k)))
+         (md-full/full-md-all (assoc info :lang :jadeite))
+         (utils/spit-dir "doc/jadeite-full-reference.md"))))
 
 (defn produce-basic-md []
-  (->> (produce-basic-core-md :halite)
-       (str utils/generated-msg "# Halite basic syntax reference\n\n")
-       (utils/spit-dir "doc/halite-basic-syntax-reference.md"))
-  (->> (produce-basic-core-md :jadeite)
-       (str utils/generated-msg "# Jadeite basic syntax reference\n\n")
-       (utils/spit-dir "doc/jadeite-basic-syntax-reference.md")))
-
-(defn err-md [lang err-id err]
-  (->> ["### "
-        "<a name=\"" (utils/safe-op-anchor err-id) "\"></a>"
-        err-id "\n\n" (:doc err) "\n\n"
-        "#### Error message template:" "\n\n"
-        "> " (:message err)
-        "\n\n"
-        (when-let [thrown-bys (:thrown-by-basic err)]
-          ["#### Produced by elements:\n\n"
-           (for [a (sort thrown-bys)]
-             (str "* " "[`" a "`](" (if (= :halite lang)
-                                      "halite-basic-syntax-reference.md"
-                                      "jadeite-basic-syntax-reference.md")
-                  "#" (utils/safe-op-anchor a) ")" "\n"))
-           "\n"])
-        (when-let [thrown-bys (if (= :halite lang)
-                                (:thrown-by err)
-                                (:thrown-by-j err))]
-          ["#### Produced by operators:\n\n"
-           (for [a (sort thrown-bys)]
-             (str "* " "[`" a "`](" (if (= :halite lang)
-                                      "halite-full-reference.md"
-                                      "jadeite-full-reference.md")
-                  "#" (utils/safe-op-anchor a) ")" "\n"))
-           "\n"])
-        (when-let [alsos (:see-also err)]
-          ["See also:"
-           (for [a (sort alsos)]
-             [" [`" a "`](#" (utils/safe-op-anchor a) ")"])
-           "\n\n"])
-        "---\n"]
-       flatten (apply str)))
+  (let [info {:tag-def-map tag-def-map
+              :tag-md-filename tag-md-filename}]
+    (->> (md-basic/produce-basic-core-md (assoc info :lang :halite) basic-bnf)
+         (str utils/generated-msg "# Halite basic syntax reference\n\n")
+         (utils/spit-dir "doc/halite-basic-syntax-reference.md"))
+    (->> (md-basic/produce-basic-core-md (assoc info :lang :jadeite) basic-bnf)
+         (str utils/generated-msg "# Jadeite basic syntax reference\n\n")
+         (utils/spit-dir "doc/jadeite-basic-syntax-reference.md"))))
 
 (defn produce-err-md []
   (->> err-maps
        sort
-       (map (partial apply err-md :halite))
+       (map (partial apply md-err/err-md :halite))
        (apply str utils/generated-msg "# Halite err-id reference\n\n")
        (utils/spit-dir "doc/halite-err-id-reference.md"))
   (->> err-maps
        sort
-       (map (partial apply err-md :jadeite))
+       (map (partial apply md-err/err-md :jadeite))
        (apply str utils/generated-msg "# Jadeite err-id reference\n\n")
        (utils/spit-dir "doc/jadeite-err-id-reference.md")))
 

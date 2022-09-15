@@ -77,3 +77,50 @@
   "<!---
   This markdown file was generated. Do not edit.
   -->\n\n")
+
+(defn text-width [s]
+  (apply max 0 (map count (re-seq #".*" s))))
+
+(defn text-tile-rows [texts]
+  (let [chars-per-col 20
+        cols-per-row 5]
+    (reduce (fn [rows text]
+              (let [cols (inc (quot (dec (text-width text)) chars-per-col))
+                    tile {:text text, :cols cols}
+                    last-row (peek rows)]
+                (if (or (empty? rows)
+                        (< cols-per-row (+ cols (:cols last-row))))
+                  (conj rows {:cols cols :tiles [tile]})
+                  (conj (pop rows) (-> last-row
+                                       (update :cols + cols)
+                                       (update :tiles conj tile))))))
+            []
+            texts)))
+
+(defn example-text [lang e]
+  (let [{:keys [spec-map doc]} e
+        expr (if (= :halite lang)
+               (:expr-str e)
+               (or (:expr-str-j e)
+                   (:expr-str e)))
+        result (or (:result e)
+                   (:err-result e))]
+    (str (when doc
+           (str ({:halite  ";-- "
+                  :jadeite "//-- "}
+                 lang)
+                doc
+                "\n"))
+         (when spec-map
+           (str ({:halite  ";-- context --\n"
+                  :jadeite "//-- context --\n"}
+                 lang)
+                (spec-map-str lang spec-map)
+                ({:halite  ";--\n\n"
+                  :jadeite "//\n\n"}
+                 lang)))
+         expr
+         (when result ({:halite  "\n\n;-- result --\n"
+                        :jadeite "\n\n//-- result --\n"}
+                       lang))
+         (when result result))))
