@@ -8,36 +8,45 @@ TBD
 
 ## How-To Guides
 
-* Add contents of a set to a vector [(Halite)](how-to/combine-set-to-vector.md) [(Jadeite)](how-to/combine-set-to-vector-j.md)
-  * A set must be sorted into a vector before it can be appended onto another vector.
+### refinement
+
 * Arbitrary expression in refinements [(Halite)](how-to/arbitrary-expression-refinements.md) [(Jadeite)](how-to/arbitrary-expression-refinements-j.md)
   * How to write arbitrary expressions to convert instances.
-* Combine collections together [(Halite)](how-to/combine.md) [(Jadeite)](how-to/combine-j.md)
-  * Consider you have two sets or vectors and need to combine them.
-* Compose instances [(Halite)](how-to/compose-instances.md) [(Jadeite)](how-to/compose-instances-j.md)
-  * How to make specs which are the composition of other specs and how to make instances of those specs.
 * Converting instances between specs [(Halite)](how-to/convert-instances.md) [(Jadeite)](how-to/convert-instances-j.md)
   * How to convert an instance from one spec type to another.
 * Converting instances between specs transitively [(Halite)](how-to/convert-instances-transitively.md) [(Jadeite)](how-to/convert-instances-transitively-j.md)
   * How to convert an instance from one spec type to another through an intermediate spec.
-* Defining constraints on instance values [(Halite)](how-to/constrain-instances.md) [(Jadeite)](how-to/constrain-instances-j.md)
-  * How to constrain the possible values for instance fields
-* Defining multiple constraints on instance values [(Halite)](how-to/multi-constrain-instances.md) [(Jadeite)](how-to/multi-constrain-instances-j.md)
-  * How to define multiple constraints in a spec
+* Optionally converting instances between specs [(Halite)](how-to/optionally-convert-instances.md) [(Jadeite)](how-to/optionally-convert-instances-j.md)
+  * Consider there are some cases where an instance can be converted to another spec, but other cases where it cannot be. Refinement expressions can include logic to optionally convert an instance.
+
+### collections
+
+* Add contents of a set to a vector [(Halite)](how-to/combine-set-to-vector.md) [(Jadeite)](how-to/combine-set-to-vector-j.md)
+  * A set must be sorted into a vector before it can be appended onto another vector.
+* Combine collections together [(Halite)](how-to/combine.md) [(Jadeite)](how-to/combine-j.md)
+  * Consider you have two sets or vectors and need to combine them.
 * Determine if an item is in a set [(Halite)](how-to/set-containment.md) [(Jadeite)](how-to/set-containment-j.md)
   * How to determine if a given item is contained in a set?
 * Determine if an item is in a vector [(Halite)](how-to/vector-containment.md) [(Jadeite)](how-to/vector-containment-j.md)
   * Consider that you have a vector and you need to know whether it contains a specific value.
 * Determine if any item in a collection satisfies some criteria [(Halite)](how-to/any.md) [(Jadeite)](how-to/any-j.md)
   * How to determine if any item in a collection satisifies some criteria?
-* Optionally converting instances between specs [(Halite)](how-to/optionally-convert-instances.md) [(Jadeite)](how-to/optionally-convert-instances-j.md)
-  * Consider there are some cases where an instance can be converted to another spec, but other cases where it cannot be. Refinement expressions can include logic to optionally convert an instance.
-* Spec variables [(Halite)](how-to/spec-variables.md) [(Jadeite)](how-to/spec-variables-j.md)
-  * How to model data fields in specifications.
 * Transform a collection [(Halite)](how-to/transform.md) [(Jadeite)](how-to/transform-j.md)
   * Consider that you have a collection of values and need to produce a collection of new values derived from the first.
 * Transform a vector into a single value [(Halite)](how-to/reduce.md) [(Jadeite)](how-to/reduce-j.md)
   * Consider that you have a vector of values and you need to produce a single value that takes into account all of the values in the vector.
+
+### instance
+
+* Compose instances [(Halite)](how-to/compose-instances.md) [(Jadeite)](how-to/compose-instances-j.md)
+  * How to make specs which are the composition of other specs and how to make instances of those specs.
+* Defining constraints on instance values [(Halite)](how-to/constrain-instances.md) [(Jadeite)](how-to/constrain-instances-j.md)
+  * How to constrain the possible values for instance fields
+* Defining multiple constraints on instance values [(Halite)](how-to/multi-constrain-instances.md) [(Jadeite)](how-to/multi-constrain-instances-j.md)
+  * How to define multiple constraints in a spec
+* Spec variables [(Halite)](how-to/spec-variables.md) [(Jadeite)](how-to/spec-variables-j.md)
+  * How to model data fields in specifications.
+
 ## Explanation
 
 TBD

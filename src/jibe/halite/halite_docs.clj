@@ -2540,11 +2540,17 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
     "## How-To Guides\n\n"
     (->> how-tos
-         (sort-by (comp :label val))
-         (map (fn [[id h]] ["* " (:label h)
-                            " [(Halite)](" (how-to-filename :halite id) ")"
-                            " [(Jadeite)](" (how-to-filename :jadeite id) ")\n"
-                            "  * " (:desc h) "\n"])))
+         (group-by (comp namespace key))
+         (mapcat (fn [[namespace how-tos]]
+                   (str "### " namespace "\n\n"
+                        (->> how-tos
+                             (sort-by (comp :label val))
+                             (mapcat (fn [[id h]] ["* " (:label h)
+                                                   " [(Halite)](" (how-to-filename :halite id) ")"
+                                                   " [(Jadeite)](" (how-to-filename :jadeite id) ")\n"
+                                                   "  * " (:desc h) "\n"]))
+                             (apply str))
+                        "\n"))))
 
     "## Explanation\n\nTBD\n\n"
 
