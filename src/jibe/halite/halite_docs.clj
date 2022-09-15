@@ -8,17 +8,17 @@
             [clojure.string :as string]
             [clojure.java.io :as io]
             [jibe.halite-guide :as halite-guide]
+            [jibe.halite.doc.bnf-diagrams :as bnf-diagrams]
             [jibe.halite.doc.basic-bnf :refer [basic-bnf-vector]]
             [jibe.halite.doc.err-maps :as err-maps]
             [jibe.halite.doc.how-tos :refer [how-tos]]
             [jibe.halite.doc.op-maps :as op-maps]
             [jibe.halite.doc.tag-def-map :refer [tag-def-map]]
+            [jibe.halite.doc.utils :as utils]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.lib.format-errors :as format-errors]
             [jibe.logic.jadeite :as jadeite])
-  (:import [jibe.halite_guide HCInfo]
-           [net.nextencia.rrdiagram.grammar.model GrammarToRRDiagram BNFToGrammar]
-           [net.nextencia.rrdiagram.grammar.rrdiagram RRDiagramToSVG]))
+  (:import [jibe.halite_guide HCInfo]))
 
 (set! *warn-on-reflection* true)
 
@@ -40,10 +40,6 @@
                                 '(refine-to {:$type :spec/A
                                              :x 100} :spec/B))]
     (.-h-result r)))
-
-(defn spit-dir [filename txt]
-  (io/make-parents filename)
-  (spit filename txt))
 
 (defn expand-example [[op m]]
   [op (if (:examples m)
@@ -136,23 +132,6 @@
 
 (def jadeite-ommitted-ops #{'dec 'inc})
 
-(def jadeite-operator-map {'= ['equalTo '==]
-                           'sort-by ['sortBy]
-                           'and ['&&]
-                           'div ['/]
-                           'get ['ACCESSOR]
-                           'get-in ['ACCESSOR-CHAIN]
-                           'when-value ['whenValue]
-                           'when-value-let ['whenValueLet]
-                           'if-value ['ifValue]
-                           'if-value-let ['ifValueLet]
-                           'mod ['%]
-                           'not ['!]
-                           'not= ['notEqualTo '!=]
-                           'or ['||]
-                           'refine-to ['refineTo]
-                           'refines-to? ['refinesTo?]})
-
 (def thrown-by-map (->> (-> op-maps
                             (update-vals :throws))
                         (remove (comp nil? second))
@@ -167,23 +146,13 @@
                               (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                               (apply merge-with into)))
 
-(defn translate-op-name-to-jadeite [op-name]
-  (if-let [op-names-j (get jadeite-operator-map op-name)]
-    (first op-names-j)
-    op-name))
-
-(defn translate-op-name-to-jadeite-plural [op-name]
-  (if-let [op-names-j (get jadeite-operator-map op-name)]
-    op-names-j
-    [op-name]))
-
 (def err-maps
   (apply hash-map
          (mapcat (fn [[err-id err]]
                    [err-id (let [err (if-let [thrown-by (thrown-by-map err-id)]
                                        (assoc err
                                               :thrown-by (vec thrown-by)
-                                              :thrown-by-j (vec (mapcat translate-op-name-to-jadeite-plural
+                                              :thrown-by-j (vec (mapcat utils/translate-op-name-to-jadeite-plural
                                                                         (remove jadeite-ommitted-ops thrown-by))))
                                        err)
                                  err (if-let [thrown-by (thrown-by-basic-map err-id)]
@@ -202,13 +171,13 @@
                     (update-vals (fn [op]
                                    (if (:see-also op)
                                      (update-in op [:see-also] #(->> %
-                                                                     (mapcat translate-op-name-to-jadeite-plural)
+                                                                     (mapcat utils/translate-op-name-to-jadeite-plural)
                                                                      sort
                                                                      vec))
                                      op))))]
     (->> op-maps
          (mapcat (fn [[k v]]
-                   (->> (translate-op-name-to-jadeite-plural k)
+                   (->> (utils/translate-op-name-to-jadeite-plural k)
                         (mapcat (fn [k']
                                   [k' (cond
                                         (#{'== '!=} k') (update-in v [:sigs-j] (comp vector second))
@@ -229,165 +198,6 @@
                     (remove (comp nil? second))
                     (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
                     (apply merge-with into)))
-
-(defn adjust-connector-style
-  "RRDiagramToSVG provides an interface for setting on connector path strokes
-  only their color, nothing else. So to adjust width, we have to apply unstable
-  private knowledge."
-  [svg-str]
-  (let [desired-style "fill: none; stroke: #888888; stroke-width: 2px;"]
-    (-> svg-str
-        (string/replace #"(<style.*?>.*[.]c[{]).*?([}].*</style>)"
-                        (str "$1" desired-style "$2"))
-        (string/replace #"(d=\"M0 )(\d+)"
-                        (fn [[_ prefix y-offset-str]]
-                          (str prefix (+ -4 (Long/parseLong y-offset-str))))))))
-
-(defn produce-diagram [out-file-name ^String rule-str]
-  (let [gtrd (GrammarToRRDiagram.)
-        rts (RRDiagramToSVG.)
-        rule-svg (->> rule-str
-                      (.convert (BNFToGrammar.))
-                      .getRules
-                      (into [])
-                      (map #(.convert gtrd %))
-                      (map #(.convert rts %))
-                      first
-                      adjust-connector-style)]
-    (spit-dir out-file-name rule-svg)))
-
-(defn- rule-from-partitioned-bnf [partitioned-bnf k-f]
-  (str "RULE = "
-       "("
-       (->> partitioned-bnf
-            (map (fn [[n m]]
-                   (let [bnf (k-f m)]
-                     (when bnf
-                       (str "("
-                            "'" n ":' " "(" bnf ")"
-                            ")")))))
-            (remove nil?)
-            (string/join " |\n"))
-       ")"
-       ";"))
-
-(defn produce-basic-bnf-diagrams [all-file-name all-file-name-j basic-bnf]
-  (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" all-file-name)
-                   (rule-from-partitioned-bnf (partition 2 basic-bnf) :bnf))
-  (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" all-file-name-j)
-                   (rule-from-partitioned-bnf (partition 2 basic-bnf) (fn [bnf-map] (get bnf-map :bnf-j (:bnf bnf-map)))))
-
-  (->> (partition 2 basic-bnf)
-       (map (fn [[n {:keys [bnf]}]]
-              (when bnf
-                (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" n ".svg")
-                                 (str "RULE = " "(" bnf ")" ";")))))
-       dorun)
-
-  (->> (partition 2 basic-bnf)
-       (map (fn [[n bnf-map]]
-              (let [bnf-j (get bnf-map :bnf-j (:bnf bnf-map))]
-                (when bnf-j
-                  (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (translate-op-name-to-jadeite n) "-j" ".svg")
-                                   (str "RULE = " "(" bnf-j ")" ";"))))))
-       dorun))
-
-#_(defn produce-basic-bnf-diagrams-for-tag [basic-bnf tag]
-    (let [filtered-partitioned-bnf (->> (partition 2 basic-bnf)
-                                        (filter (fn [[k v]]
-                                                  (let [{:keys [tags]} v]
-                                                    (when tags
-                                                      (tags tag))))))]
-      (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (name tag) ".svg")
-                       (rule-from-partitioned-bnf filtered-partitioned-bnf :bnf))
-      (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (str (name tag) "-j" ".svg"))
-                       (rule-from-partitioned-bnf filtered-partitioned-bnf (fn [bnf-map] (get bnf-map :bnf-j (:bnf bnf-map)))))))
-
-(defn safe-op-name [s]
-  (get {'+ 'plus
-        '- 'minus
-        '% 'mod
-        '&& 'and
-        '|| 'or
-        '! 'not
-        '/ 'div
-        '== 'doublequal
-        '!= 'notequal} s s))
-
-(defn produce-bnf-diagrams [op-maps op-maps-j all-filename all-filename-j]
-  (let [op-keys (keys op-maps)
-        rules-strs (->> op-maps
-                        (mapcat (fn [[op {:keys [sigs]}]]
-                                  (->> sigs
-                                       (map (fn [i [args-bnf result-bnf]]
-                                              {:op-name op
-                                               :sig-index i
-                                               :rule-str (str (string/replace op "=" "equal") i " = "
-                                                              (when-not (string/starts-with? op "$") "'('")
-                                                              "'" op "' " args-bnf
-                                                              (when-not (string/starts-with? op "$") "')'")
-                                                              " '»' " result-bnf ";")})
-                                            (range))))))
-        rules-strs-j (->> op-maps-j
-                          (mapcat (fn [[op {:keys [sigs-j]}]]
-                                    (->> sigs-j
-                                         (map (fn [i [args-bnf result-bnf]]
-                                                {:op-name op
-                                                 :sig-index i
-                                                 :rule-str (str (string/replace op "=" "equal") i " = "
-                                                                (str "( " args-bnf
-                                                                     " '»' " result-bnf " )"))})
-                                              (range))))))
-        single-rules-strs (->> op-maps
-                               (map (fn [[op {:keys [sigs]}]]
-                                      (str "("
-                                           (when-not (string/starts-with? op "$") "'('")
-                                           "'" op "' "
-                                           " ( "
-                                           (->> sigs
-                                                (map (fn [[args-bnf result-bnf]]
-                                                       (str "( " args-bnf
-                                                            (when-not (string/starts-with? op "$") "')'")
-                                                            " '»' " result-bnf " )")))
-                                                (string/join " |\n"))
-                                           " ) "
-
-                                           ")"))))
-        single-rules-strs-j (->> op-maps-j
-                                 (map (fn [[op {:keys [sigs-j]}]]
-                                        [op (str " ( "
-                                                 (->> sigs-j
-                                                      (map (fn [[args-bnf result-bnf]]
-                                                             (str "( " args-bnf
-                                                                  " '»' " result-bnf " )")))
-                                                      (string/join " |\n"))
-                                                 " ) ")]))
-                                 (remove nil?))]
-    (let [rule-str (str "RULE = "
-                        "("
-                        (->> single-rules-strs
-                             sort
-                             (string/join " |\n"))
-                        ")"
-                        ";")]
-      (produce-diagram (str "doc/halite-bnf-diagrams/" all-filename) rule-str))
-    (let [rule-str (str "RULE = "
-                        "("
-                        (->> single-rules-strs-j
-                             (sort-by first)
-                             (map second)
-                             (string/join " |\n"))
-                        ")"
-                        ";")]
-      (produce-diagram (str "doc/halite-bnf-diagrams/" all-filename-j) rule-str))
-    (->> rules-strs
-         (map (fn [{:keys [op-name sig-index ^String rule-str]}]
-                (produce-diagram (str "doc/halite-bnf-diagrams/op/" (str (safe-op-name op-name) "-" sig-index ".svg")) rule-str)))
-         dorun)
-    (->> rules-strs-j
-         (map (fn [{:keys [op-name sig-index ^String rule-str]}]
-                (produce-diagram (str "doc/halite-bnf-diagrams/op/" (str (safe-op-name op-name) "-" sig-index "-j" ".svg")) rule-str)))
-         dorun)))
 
 (def safe-char-map
   (let [weird "*!$?=<>_+."
@@ -467,7 +277,7 @@
         (map-indexed
          (fn [i sig]
            ["![" (pr-str sig) "](./halite-bnf-diagrams/op/"
-            (url-encode (safe-op-name op-name)) "-" i (when (= :jadeite lang) "-j") ".svg)\n\n"])
+            (url-encode (utils/safe-op-name op-name)) "-" i (when (= :jadeite lang) "-j") ".svg)\n\n"])
          (op ({:halite :sigs, :jadeite :sigs-j} lang)))
         (when-let [basic-refs (some-> (if (= :halite lang)
                                         (:basic-ref op)
@@ -542,7 +352,7 @@
        (apply str generated-msg
               (apply str "# Halite operator reference (all operators)\n\n"
                      (full-intro :halite)))
-       (spit-dir "doc/halite-full-reference.md"))
+       (utils/spit-dir "doc/halite-full-reference.md"))
   (->> op-maps-j
        sort
        (remove (fn [[k _]]
@@ -551,7 +361,7 @@
        (apply str generated-msg
               (apply str "# Jadeite operator reference (all operators)\n\n"
                      (full-intro :jadeite)))
-       (spit-dir "doc/jadeite-full-reference.md")))
+       (utils/spit-dir "doc/jadeite-full-reference.md")))
 
 (defn tags-md-block
   "Return markdown string with links to all the tags given as keywords"
@@ -575,7 +385,7 @@
             op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
             (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
             ["![" (pr-str bnf) "](./halite-bnf-diagrams/basic-syntax/"
-             (url-encode (safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"]
+             (url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"]
 
             (let [c-1 (if (= :halite lang) (:comment op) (or (:comment-j op) (:comment op)))
                   c-2 (if (= :halite lang) (:comment-2 op) (or (:comment-2-j op) (:comment-2 op)))
@@ -619,10 +429,10 @@
 (defn produce-basic-md []
   (->> (produce-basic-core-md :halite)
        (str generated-msg "# Halite basic syntax reference\n\n")
-       (spit-dir "doc/halite-basic-syntax-reference.md"))
+       (utils/spit-dir "doc/halite-basic-syntax-reference.md"))
   (->> (produce-basic-core-md :jadeite)
        (str generated-msg "# Jadeite basic syntax reference\n\n")
-       (spit-dir "doc/jadeite-basic-syntax-reference.md")))
+       (utils/spit-dir "doc/jadeite-basic-syntax-reference.md")))
 
 (defn err-md [lang err-id err]
   (->> ["### "
@@ -662,12 +472,12 @@
        sort
        (map (partial apply err-md :halite))
        (apply str generated-msg "# Halite err-id reference\n\n")
-       (spit-dir "doc/halite-err-id-reference.md"))
+       (utils/spit-dir "doc/halite-err-id-reference.md"))
   (->> err-maps
        sort
        (map (partial apply err-md :jadeite))
        (apply str generated-msg "# Jadeite err-id reference\n\n")
-       (spit-dir "doc/jadeite-err-id-reference.md")))
+       (utils/spit-dir "doc/jadeite-err-id-reference.md")))
 
 (defn tag-md [lang tag-name tag]
   (->> [(:doc tag) "\n\n"
@@ -706,7 +516,7 @@
               " reference: "
               (:label tag)
               "\n\n")
-         (spit-dir (str "doc/" (tag-md-filename lang tag-name))))))
+         (utils/spit-dir (str "doc/" (tag-md-filename lang tag-name))))))
 
 (defn code-snippet [lang code]
   (str "```"
@@ -772,7 +582,7 @@
 
         (when-let [op-refs (some->> (:op-ref how-to)
                                     (map ({:halite identity
-                                           :jadeite translate-op-name-to-jadeite} lang)))]
+                                           :jadeite utils/translate-op-name-to-jadeite} lang)))]
           ["#### Operator reference:\n\n"
            (for [a (sort op-refs)]
              (str "* " "[`" a "`](" (if (= :halite lang)
@@ -787,7 +597,7 @@
            "\n\n"])]
        flatten
        (apply str)
-       (spit-dir (str "doc/" (how-to-filename lang id)))))
+       (utils/spit-dir (str "doc/" (how-to-filename lang id)))))
 
 (defn produce-outline []
   (->>
@@ -851,18 +661,19 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
        "</table>\n\n"])]
    flatten
    (apply str)
-   (spit-dir (str "doc/outline.md"))))
+   (utils/spit-dir (str "doc/outline.md"))))
 
 ;;
 
 (defn query-ops
+  "Returns a subset of op-maps that include the given tag"
   [tag]
   (apply sorted-map (mapcat identity (filter (fn [[op m]]
                                                (get (:tags m) tag))
                                              op-maps))))
 
 (defn produce-bnf-diagram-for-tag [tag]
-  (produce-bnf-diagrams
+  (bnf-diagrams/produce-bnf-diagrams
    (query-ops tag)
    (translate-op-maps-to-jadeite (query-ops tag))
    (str (name tag) ".svg")
@@ -880,9 +691,9 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
   (future-cancel po)
 
   (do
-    (produce-basic-bnf-diagrams "basic-all.svg" "basic-all-j.svg" basic-bnf)
+    (bnf-diagrams/produce-basic-bnf-diagrams "basic-all.svg" "basic-all-j.svg" basic-bnf)
 
-    (produce-bnf-diagrams op-maps op-maps-j "halite.svg" "jadeite.svg")
+    (bnf-diagrams/produce-bnf-diagrams op-maps op-maps-j "halite.svg" "jadeite.svg")
 
     (->> (keys tag-def-map)
          (map produce-bnf-diagram-for-tag)
