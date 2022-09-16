@@ -19,12 +19,7 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
     "refines-to" : {
       "spec/X$v4" : {
         "name" : "refine_to_X",
-        "expr" : {
-          "$type" : "spec/X$v4",
-          "x" : [ "+", "b", "c" ],
-          "y" : 12,
-          "z" : [ "if", [ "=", "medium", "d" ], 5, 10 ]
-        }
+        "expr" : "{$type: spec/X$v4, x: (b + c), y: 12, z: (if((\"medium\" == d)) {5} else {10})}"
       }
     }
   },

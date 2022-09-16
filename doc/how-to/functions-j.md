@@ -18,10 +18,7 @@ It is a bit convoluted, but consider the following specs.
     "refines-to" : {
       "spec/IntegerResult" : {
         "name" : "refine_to_result",
-        "expr" : {
-          "$type" : "spec/IntegerResult",
-          "result" : [ "+", "x", "y" ]
-        }
+        "expr" : "{$type: spec/IntegerResult, result: (x + y)}"
       }
     }
   },

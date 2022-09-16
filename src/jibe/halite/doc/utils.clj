@@ -76,14 +76,24 @@
 
 (defn spec-map-str [lang spec-map]
   ({:halite (pprint-halite spec-map)
-    :jadeite (str (json/encode (update-vals spec-map
+    :jadeite (str (json/encode (update-vals (update-vals spec-map
+                                                         (fn [spec]
+                                                           (if-let [constraints (:constraints spec)]
+                                                             (assoc spec
+                                                                    :constraints (->> constraints
+                                                                                      (mapv (fn [[name expr]]
+                                                                                              [name (jadeite/to-jadeite expr)]))))
+                                                             spec)))
                                             (fn [spec]
-                                              (if-let [constraints (:constraints spec)]
+                                              (if-let [refines-to (:refines-to spec)]
                                                 (assoc spec
-                                                       :constraints (->> constraints
-                                                                         (mapv (fn [[name expr]]
-                                                                                 [name (jadeite/to-jadeite expr)]))))
-                                                spec))) {:pretty true}) "\n")} lang))
+                                                       :refines-to (->> refines-to
+                                                                        (mapcat (fn [[name refinement]]
+                                                                                  [name (assoc refinement
+                                                                                               :expr (jadeite/to-jadeite (:expr refinement)))]))
+                                                                        (apply hash-map)))
+                                                spec)))
+                               {:pretty true}) "\n")} lang))
 
 ;; (zprint/zprint nil :explain)
 

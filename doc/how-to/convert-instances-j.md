@@ -44,10 +44,7 @@ This work, but the language has a built-in idea of 'refinements' that allow such
     "refines-to" : {
       "spec/X$v2" : {
         "name" : "refine_to_X",
-        "expr" : {
-          "$type" : "spec/X$v2",
-          "y" : "b"
-        }
+        "expr" : "{$type: spec/X$v2, y: b}"
       }
     }
   },

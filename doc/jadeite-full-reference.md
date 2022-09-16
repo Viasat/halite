@@ -2457,9 +2457,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
     "refines-to" : {
       "an/Other$v1" : {
         "name" : "r",
-        "expr" : {
-          "$type" : "an/Other$v1"
-        }
+        "expr" : "{$type: an/Other$v1}"
       }
     }
   },
@@ -2473,7 +2471,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 {:$type :an/Other$v1}
 ```
 
-</td></tr><tr><td colspan="3">
+</td></tr><tr><td colspan="4">
 
 ```java
 //-- An example of a refinement that transforms data values.
@@ -2487,11 +2485,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
     "refines-to" : {
       "an/Other$v1" : {
         "name" : "r",
-        "expr" : {
-          "$type" : "an/Other$v1",
-          "x" : [ "inc", "p" ],
-          "y" : [ "dec", "n" ]
-        }
+        "expr" : "{$type: an/Other$v1, x: (p + 1), y: (n - 1)}"
       }
     }
   },
@@ -2565,9 +2559,7 @@ Determine whether it is possible to refine the given instance into an instance o
     "refines-to" : {
       "an/Other$v1" : {
         "name" : "r",
-        "expr" : {
-          "$type" : "an/Other$v1"
-        }
+        "expr" : "{$type: an/Other$v1}"
       }
     }
   },
@@ -2581,7 +2573,7 @@ Determine whether it is possible to refine the given instance into an instance o
 true
 ```
 
-</td></tr><tr><td colspan="3">
+</td></tr><tr><td colspan="4">
 
 ```java
 //-- An example of a refinement that transforms data values.
@@ -2595,11 +2587,7 @@ true
     "refines-to" : {
       "an/Other$v1" : {
         "name" : "r",
-        "expr" : {
-          "$type" : "an/Other$v1",
-          "x" : [ "inc", "p" ],
-          "y" : [ "dec", "n" ]
-        }
+        "expr" : "{$type: an/Other$v1, x: (p + 1), y: (n - 1)}"
       }
     }
   },
