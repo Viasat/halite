@@ -32,6 +32,11 @@ Notice that the items in the set were first sorted based on the number of items 
 
 [`set`](../jadeite-basic-syntax-reference.md#set), [`vector`](../jadeite-basic-syntax-reference.md#vector)
 
+#### Operator reference:
+
+* [`concat`](../jadeite-full-reference.md#concat)
+
+
 #### See also:
 
 * [combine](combine.md)

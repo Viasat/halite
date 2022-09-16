@@ -47,12 +47,18 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
   * A set must be sorted into a vector before it can be appended onto another vector.
 * Combine collections together [(Halite)](how-to/combine.md) [(Jadeite)](how-to/combine-j.md)
   * Consider you have two sets or vectors and need to combine them.
+* Convert a set into a vector [(Halite)](how-to/convert-set-to-vector.md) [(Jadeite)](how-to/convert-set-to-vector-j.md)
+  * A set can be converted into a vector by sorting it.
+* Convert a vector into a set [(Halite)](how-to/convert-vector-to-set.md) [(Jadeite)](how-to/convert-vector-to-set-j.md)
+  * A vector can be converted into a set via 'concat'.
 * Determine if an item is in a set [(Halite)](how-to/set-containment.md) [(Jadeite)](how-to/set-containment-j.md)
   * How to determine if a given item is contained in a set?
 * Determine if an item is in a vector [(Halite)](how-to/vector-containment.md) [(Jadeite)](how-to/vector-containment-j.md)
   * Consider that you have a vector and you need to know whether it contains a specific value.
 * Determine if any item in a collection satisfies some criteria [(Halite)](how-to/any.md) [(Jadeite)](how-to/any-j.md)
   * How to determine if any item in a collection satisifies some criteria?
+* Remove duplicate values from a vector. [(Halite)](how-to/remove-duplicates-from-vector.md) [(Jadeite)](how-to/remove-duplicates-from-vector-j.md)
+  * A vector can be converted to a set and back to a vector to remove duplicates.
 * Transform a collection [(Halite)](how-to/transform.md) [(Jadeite)](how-to/transform-j.md)
   * Consider that you have a collection of values and need to produce a collection of new values derived from the first.
 * Transform a vector into a single value [(Halite)](how-to/reduce.md) [(Jadeite)](how-to/reduce-j.md)

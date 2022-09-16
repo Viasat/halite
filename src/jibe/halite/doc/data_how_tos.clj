@@ -120,6 +120,7 @@
               {:label "Add contents of a set to a vector"
                :desc "A set must be sorted into a vector before it can be appended onto another vector."
                :basic-ref ['vector 'set]
+               :op-ref ['concat]
                :contents ["This example shows how to combine a set of sortable items into a vector."
                           {:code '(let [v [10 20 30]
                                         s #{40 50}]
@@ -132,6 +133,56 @@
                            :result :auto}
                           "Notice that the items in the set were first sorted based on the number of items in the element, then in that sort order the items were appended to the vector, 'v'."]
                :see-also [:collections/combine]}
+
+              :collections/convert-vector-to-set
+              {:label "Convert a vector into a set"
+               :desc "A vector can be converted into a set via 'concat'."
+               :basic-ref ['vector 'set]
+               :op-ref ['concat]
+               :contents ["Combine a vector into an empty set to effectively convert the vector into a set which contains the same elements."
+                          {:code '(let [v [10 20 30]]
+                                    (concat #{} v))
+                           :result :auto}
+
+                          "Note that duplicate elements are removed in the process."
+                          {:code '(let [v [10 10 20 30]]
+                                    (concat #{} v))
+                           :result :auto}]
+               :see-also [:collections/convert-set-to-vector
+                          :collections/remove-duplicates-from-vector]}
+
+              :collections/convert-set-to-vector
+              {:label "Convert a set into a vector"
+               :desc "A set can be converted into a vector by sorting it."
+               :basic-ref ['vector 'set]
+               :op-ref ['sort]
+               :contents ["Combine a vector into an empty set to effectively convert the vector into a set which contains the same elements."
+                          {:code '(let [s #{10 20 30}]
+                                    (sort s))
+                           :result :auto}
+                          "This only works if the items in the set are intrinsically sortable."
+                          {:code '(let [s #{[10 20] [30]}]
+                                    (sort s))
+                           :throws :auto}
+                          "If the elements of the set are not sortable then use sort-by to convert the set into a vector."
+                          {:code '(let [s #{[10 20] [30]}]
+                                    (sort-by [e s] (count e)))
+                           :result :auto}]
+               :see-also [:collections/convert-vector-to-set
+                          :collections/remove-duplicates-from-vector]}
+
+              :collections/remove-duplicates-from-vector
+              {:label "Remove duplicate values from a vector."
+               :desc "A vector can be converted to a set and back to a vector to remove duplicates."
+               :basic-ref ['vector 'set]
+               :op-ref ['sort 'concat]
+               :contents ["Starting with a vector that has duplicate values, it can be converted to a set and then back to a vector. In the process, the duplicates will be removed."
+                          {:code '(let [v [40 10 10 20 30]]
+                                    (sort (concat #{} v)))
+                           :result :auto}
+                          "Note that this only works if the elements of the vector are sortable. Also note that this causes the items in the vector to be sorted into their natural sort order."]
+               :see-also [:collections/convert-vector-to-set
+                          :collections/convert-set-to-vector]}
 
               :instance/spec-variables
               {:label "Spec variables"

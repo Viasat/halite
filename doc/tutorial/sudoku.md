@@ -199,10 +199,57 @@ Let's make sure that our valid solution works.
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 ```
 
+Let's combine the quadrant checks into one.
+
+```clojure
+{:spec/Sudoku$v6
+   {:spec-vars {:solution [["Integer"]]},
+    :constraints [["rows" (every? [r solution] (= (concat #{} r) #{1 4 3 2}))]
+                  ["columns"
+                   (every? [i [0 1 2 3]]
+                           (= #{(get-in solution [3 i]) (get-in solution [1 i])
+                                (get-in solution [2 i]) (get-in solution [0 i])}
+                              #{1 4 3 2}))]
+                  ["quadrants"
+                   (every? [base [[0 0] [0 2] [2 0] [2 2]]]
+                           (let [base-x (get base 0)
+                                 base-y (get base 1)]
+                             (= #{(get-in solution [base-x base-y])
+                                  (get-in solution [(inc base-x) (inc base-y)])
+                                  (get-in solution [(inc base-x) base-y])
+                                  (get-in solution [base-x (inc base-y)])}
+                                #{1 4 3 2})))]]}}
+```
+
+Valid solution still works.
+
+```clojure
+{:$type :spec/Sudoku$v6,
+ :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
+
+
+;-- result --
+{:$type :spec/Sudoku$v6,
+ :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
+```
+
+Invalid solution fails.
+
+```clojure
+{:$type :spec/Sudoku$v6,
+ :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]}
+
+
+;-- result --
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v6', violates constraints quadrants"
+ :h-err/invalid-instance]
+```
+
 Finally, rather than having invalid solutions throw errors, we can instead produce a boolean value indicating whether the solution is valid.
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v5,
+(valid? {:$type :spec/Sudoku$v6,
          :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]})
 
 
@@ -211,7 +258,7 @@ true
 ```
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v5,
+(valid? {:$type :spec/Sudoku$v6,
          :solution [[1 2 3 4] [3 4 1 2] [4 3 2 2] [2 1 4 3]]})
 
 
@@ -220,7 +267,7 @@ false
 ```
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v5,
+(valid? {:$type :spec/Sudoku$v6,
          :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]})
 
 

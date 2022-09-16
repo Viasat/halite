@@ -7,7 +7,7 @@
                 {:label "Model a sudokuo puzzle"
                  :desc "Consider how to use specs to model a sudoku game."
                  :basic-ref ['integer 'vector 'instance 'set 'boolean]
-                 :op-ref ['valid? 'get 'concat 'get-in]
+                 :op-ref ['valid? 'get 'concat 'get-in 'every?]
                  :contents ["Say we want to represent a sudoku solution as a two dimensional vector of integers"
                             {:code '[[1 2 3 4]
                                      [3 4 1 2]
@@ -141,20 +141,53 @@
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}
                              :result :auto}
+                            "Let's combine the quadrant checks into one."
+                            {:spec-map {:spec/Sudoku$v6 {:spec-vars {:solution [["Integer"]]}
+                                                         :constraints [["rows" '(every? [r solution]
+                                                                                        (= (concat #{} r)
+                                                                                           #{1 2 3 4}))]
+                                                                       ["columns" '(every? [i [0 1 2 3]]
+                                                                                           (= #{(get-in solution [0 i])
+                                                                                                (get-in solution [1 i])
+                                                                                                (get-in solution [2 i])
+                                                                                                (get-in solution [3 i])}
+                                                                                              #{1 2 3 4}))]
+                                                                       ["quadrants" '(every? [base [[0 0] [0 2] [2 0] [2 2]]]
+                                                                                             (let [base-x (get base 0)
+                                                                                                   base-y (get base 1)]
+                                                                                               (= #{(get-in solution [base-x base-y])
+                                                                                                    (get-in solution [base-x (inc base-y)])
+                                                                                                    (get-in solution [(inc base-x) base-y])
+                                                                                                    (get-in solution [(inc base-x) (inc base-y)])}
+                                                                                                  #{1 2 3 4})))]]}}}
+                            "Valid solution still works."
+                            {:code '{:$type :spec/Sudoku$v6
+                                     :solution [[1 2 3 4]
+                                                [3 4 1 2]
+                                                [4 3 2 1]
+                                                [2 1 4 3]]}
+                             :result :auto}
+                            "Invalid solution fails."
+                            {:code '{:$type :spec/Sudoku$v6
+                                     :solution [[1 2 3 4]
+                                                [4 1 2 3]
+                                                [3 4 1 2]
+                                                [2 3 4 1]]}
+                             :throws :auto}
                             "Finally, rather than having invalid solutions throw errors, we can instead produce a boolean value indicating whether the solution is valid."
-                            {:code '(valid? {:$type :spec/Sudoku$v5
+                            {:code '(valid? {:$type :spec/Sudoku$v6
                                              :solution [[1 2 3 4]
                                                         [3 4 1 2]
                                                         [4 3 2 1]
                                                         [2 1 4 3]]})
                              :result :auto}
-                            {:code '(valid? {:$type :spec/Sudoku$v5
+                            {:code '(valid? {:$type :spec/Sudoku$v6
                                              :solution [[1 2 3 4]
                                                         [3 4 1 2]
                                                         [4 3 2 2]
                                                         [2 1 4 3]]})
                              :result :auto}
-                            {:code '(valid? {:$type :spec/Sudoku$v5
+                            {:code '(valid? {:$type :spec/Sudoku$v6
                                              :solution [[1 2 3 4]
                                                         [4 1 2 3]
                                                         [3 4 1 2]

@@ -36,6 +36,11 @@ Notice that the items in the set were first sorted based on the number of items 
 
 [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)
 
+#### Operator reference:
+
+* [`concat`](../halite-full-reference.md#concat)
+
+
 #### See also:
 
 * [combine](combine.md)

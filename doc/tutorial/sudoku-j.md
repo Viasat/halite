@@ -172,10 +172,43 @@ Let's make sure that our valid solution works.
 {$type: spec/Sudoku$v5, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]}
 ```
 
+Let's combine the quadrant checks into one.
+
+```java
+{
+  "spec/Sudoku$v6" : {
+    "spec-vars" : {
+      "solution" : [ [ "Integer" ] ]
+    },
+    "constraints" : [ [ "rows", "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})" ], [ "columns", "every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})" ], [ "quadrants", "every?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} == #{1, 2, 3, 4}) })" ] ]
+  }
+}
+```
+
+Valid solution still works.
+
+```java
+{$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]}
+
+
+//-- result --
+{$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]}
+```
+
+Invalid solution fails.
+
+```java
+{$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [4, 1, 2, 3], [3, 4, 1, 2], [2, 3, 4, 1]]}
+
+
+//-- result --
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v6', violates constraints quadrants"]
+```
+
 Finally, rather than having invalid solutions throw errors, we can instead produce a boolean value indicating whether the solution is valid.
 
 ```java
-(valid? {$type: spec/Sudoku$v5, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]})
+(valid? {$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]})
 
 
 //-- result --
@@ -183,7 +216,7 @@ true
 ```
 
 ```java
-(valid? {$type: spec/Sudoku$v5, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 2], [2, 1, 4, 3]]})
+(valid? {$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 2], [2, 1, 4, 3]]})
 
 
 //-- result --
@@ -191,7 +224,7 @@ false
 ```
 
 ```java
-(valid? {$type: spec/Sudoku$v5, solution: [[1, 2, 3, 4], [4, 1, 2, 3], [3, 4, 1, 2], [2, 3, 4, 1]]})
+(valid? {$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [4, 1, 2, 3], [3, 4, 1, 2], [2, 3, 4, 1]]})
 
 
 //-- result --
