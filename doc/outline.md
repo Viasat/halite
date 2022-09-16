@@ -57,6 +57,8 @@ TBD
 
 * Add an integer value to a decimal value [(Halite)](how-to/add-integer-to-decimal.md) [(Jadeite)](how-to/add-integer-to-decimal-j.md)
   * Consider you have an integer and a decimal value and you need to add them together.
+* Divide an integer to produce a decimal result [(Halite)](how-to/perform-non-integer-division.md) [(Jadeite)](how-to/perform-non-integer-division-j.md)
+  * Consider you have an integer value and you want to divide it by another integer to produce a decimal result.
 
 ## Explanation
 

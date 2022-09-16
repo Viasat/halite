@@ -182,12 +182,6 @@ true
 true
 ```
 
-</td><td colspan="1">
-
-```java
-
-```
-
 </td></tr></table>
 
 #### Possible errors:
@@ -2338,12 +2332,6 @@ true
 
 //-- result --
 true
-```
-
-</td><td colspan="1">
-
-```java
-
 ```
 
 </td></tr></table>

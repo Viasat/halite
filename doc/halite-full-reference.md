@@ -2068,12 +2068,6 @@ true
 true
 ```
 
-</td><td colspan="1">
-
-```clojure
-
-```
-
 </td></tr></table>
 
 #### Possible errors:
