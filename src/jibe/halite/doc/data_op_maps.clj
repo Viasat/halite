@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.doc.op-maps
+(ns jibe.halite.doc.data-op-maps
   (:require
    [clojure.string :as string]
    [jibe.logic.expression :as expression]

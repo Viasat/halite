@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.doc.tag-def-map)
+(ns jibe.halite.doc.data-tag-def-map)
 
 (def tag-def-map {:boolean-op {:label "Boolean operations"
                                :doc "Operations that operate on boolean values."

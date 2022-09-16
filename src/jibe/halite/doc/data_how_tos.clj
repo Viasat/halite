@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.doc.how-tos)
+(ns jibe.halite.doc.data-how-tos)
 
 (def how-tos {:collections/transform
               {:label "Transform a collection"
