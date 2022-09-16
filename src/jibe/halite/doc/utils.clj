@@ -3,8 +3,10 @@
 
 (ns jibe.halite.doc.utils
   (:require [cheshire.core :as json]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
+            [jibe.lib.fixed-decimal :as fixed-decimal]
             [zprint.core :as zprint]))
 
 (defn spit-dir [filename txt]
@@ -55,20 +57,31 @@
        code
        "```\n\n"))
 
-(defn pprint-halite [code]
-  (let [s (zprint/zprint-str code 80 {:fn-force-nl #{:binding}
-                                      :map {:force-nl? true
-                                            :key-order [:spec-vars :constraints :refines-to
-                                                        :name :expr]}})]
-    (if (= \newline s)
-      s
-      (str s "\n"))))
+(defn pprint-halite
+  ([code]
+   (pprint-halite code true))
+  ([code trailing-newline?]
+   (let [s (zprint/zprint-str code 80 {:fn-force-nl #{:binding}
+                                       :map {:force-nl? true
+                                             :key-order [:spec-vars :constraints :refines-to
+                                                         :name :expr]}})]
+     (if trailing-newline?
+       (if (= \newline s)
+         s
+         (str s "\n"))
+       (if (= \newline s)
+         (subs s 0 (dec (count s)))
+         s)))))
 
 (defn spec-map-str [lang spec-map]
   ({:halite (pprint-halite spec-map)
     :jadeite (str (json/encode spec-map {:pretty true}) "\n")} lang))
 
 ;; (zprint/zprint nil :explain)
+
+(defn read-edn [s]
+  (edn/read-string {:readers {'d fixed-decimal/fixed-decimal-reader}}
+                   s))
 
 (def safe-char-map
   (let [weird "*!$?=<>_+."
@@ -131,7 +144,7 @@
                 ({:halite  ";--\n\n"
                   :jadeite "//\n\n"}
                  lang)))
-         expr
+         expr ;; this is a string that, in the case of halite, has been custom formatted by hand in the example
          (when result ({:halite  "\n\n;-- result --\n"
                         :jadeite "\n\n//-- result --\n"}
                        lang))

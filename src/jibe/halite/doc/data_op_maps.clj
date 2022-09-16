@@ -752,8 +752,7 @@
                                                           :y "Integer"}}}
                       :expr-str "(not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
                       :expr-str-j :auto
-                      :result :auto}
-                     {}]
+                      :result :auto}]
           :see-also ['= 'not=]}
    'or {:sigs [["boolean boolean {boolean}" "boolean"]]
         :sigs-j [["boolean '||' boolean" "boolean"]]
