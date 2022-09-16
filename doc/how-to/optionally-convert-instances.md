@@ -25,9 +25,9 @@ In this example, the refinement applies.
            :spec/X$v1)
 
 
-
 ;-- result --
-{:$type :spec/X$v1, :y 20}
+{:$type :spec/X$v1,
+ :y 20}
 ```
 
 In this example, the refinement does not apply
@@ -38,9 +38,10 @@ In this example, the refinement does not apply
            :spec/X$v1)
 
 
-
 ;-- result --
-[:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/X$v1'" :h-err/no-refinement-path]
+[:throws
+ "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/X$v1'"
+ :h-err/no-refinement-path]
 ```
 
 A refinement path can be probed to determine if it exists and if it applies to a given instance.
@@ -51,7 +52,6 @@ A refinement path can be probed to determine if it exists and if it applies to a
              :spec/X$v1)
 
 
-
 ;-- result --
 true
 ```
@@ -60,7 +60,6 @@ true
 (refines-to? {:$type :spec/A$v1,
               :b 5}
              :spec/X$v1)
-
 
 
 ;-- result --

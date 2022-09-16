@@ -55,7 +55,6 @@
        code
        "```\n\n"))
 
-
 (defn pprint-halite [code]
   (let [s (zprint/zprint-str code 80 {:fn-force-nl #{:binding}
                                       :map {:force-nl? true

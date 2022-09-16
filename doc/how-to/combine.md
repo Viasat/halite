@@ -14,7 +14,6 @@ Considering vectors first. One vector can be simply added to the end of another.
   (concat v1 v2))
 
 
-
 ;-- result --
 [10 20 30 40 50]
 ```
@@ -27,9 +26,8 @@ The same can be done with sets. In this case the sets are simply combined becaus
   (concat s1 s2))
 
 
-
 ;-- result --
-#{20 50 40 30 10}
+#{10 20 30 40 50}
 ```
 
 There is a special set operator that is equivalent to 'concat' for sets.
@@ -40,9 +38,8 @@ There is a special set operator that is equivalent to 'concat' for sets.
   (union s1 s2))
 
 
-
 ;-- result --
-#{20 50 40 30 10}
+#{10 20 30 40 50}
 ```
 
 However, 'union' only works when all of the arguments are sets. The 'concat' operation can be used to add elements from a vector into a set.
@@ -53,9 +50,8 @@ However, 'union' only works when all of the arguments are sets. The 'concat' ope
   (concat s v))
 
 
-
 ;-- result --
-#{20 50 40 30 10}
+#{10 20 30 40 50}
 ```
 
 It is not possible to use concat to add a set into a vector.
@@ -66,9 +62,10 @@ It is not possible to use concat to add a set into a vector.
   (concat v s))
 
 
-
 ;-- result --
-[:throws "h-err/not-both-vectors 0-0 : When first argument to 'concat' is a vector, second argument must also be a vector" :h-err/not-both-vectors]
+[:throws
+ "h-err/not-both-vectors 0-0 : When first argument to 'concat' is a vector, second argument must also be a vector"
+ :h-err/not-both-vectors]
 ```
 
 This is not supported because a vector is ordered and generally speaking, there is not a deterministic way to add the unordered items from the set into the vector.

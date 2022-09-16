@@ -26,9 +26,9 @@ An attempt to make an instance that satisfies this constraint is successful
  :b 200}
 
 
-
 ;-- result --
-{:$type :spec/A$v2, :b 200}
+{:$type :spec/A$v2,
+ :b 200}
 ```
 
 However, an attempt to make an instance that violates this constraint fails.
@@ -38,9 +38,10 @@ However, an attempt to make an instance that violates this constraint fails.
  :b 50}
 
 
-
 ;-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints constrain_b" :h-err/invalid-instance]
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints constrain_b"
+ :h-err/invalid-instance]
 ```
 
 Constraints can be arbitrary expressions that refer to multiple fields.
@@ -59,9 +60,10 @@ In this example, the sum of 'a' and 'b' must be less than 10
  :c 3}
 
 
-
 ;-- result --
-{:$type :spec/A$v3, :b 2, :c 3}
+{:$type :spec/A$v3,
+ :b 2,
+ :c 3}
 ```
 
 ```clojure
@@ -70,9 +72,10 @@ In this example, the sum of 'a' and 'b' must be less than 10
  :c 7}
 
 
-
 ;-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints constrain_b_c" :h-err/invalid-instance]
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints constrain_b_c"
+ :h-err/invalid-instance]
 ```
 
 #### Basic elements:

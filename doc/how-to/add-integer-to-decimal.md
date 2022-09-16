@@ -14,9 +14,9 @@ Since the integer and decimal values are of different types they cannot be direc
   (+ y x))
 
 
-
 ;-- result --
-[:throws "h-err/no-matching-signature 0-0 : No matching signature for '+'" :h-err/no-matching-signature]
+[:throws "h-err/no-matching-signature 0-0 : No matching signature for '+'"
+ :h-err/no-matching-signature]
 ```
 
 It is first necessary to convert them to the same type of value. In this case the integer is converted into a decimal value by multiplying it by one in the target decimal type.
@@ -24,7 +24,6 @@ It is first necessary to convert them to the same type of value. In this case th
 ```clojure
 (let [x 3]
   (* #d "1.0" x))
-
 
 
 ;-- result --
@@ -37,7 +36,6 @@ Now the numbers can be added together.
 (let [x 3
       y #d "2.2"]
   (+ y (* #d "1.0" x)))
-
 
 
 ;-- result --

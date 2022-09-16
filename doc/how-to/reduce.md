@@ -13,7 +13,6 @@ A vector of values can be transformed into a single value. For example, the foll
   (reduce [a 1] [x v] (* a x)))
 
 
-
 ;-- result --
 6
 ```

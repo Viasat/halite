@@ -22,9 +22,10 @@ An instance must satisfy all of the constraints to be valid
  :c 19}
 
 
-
 ;-- result --
-{:$type :spec/A$v1, :b 101, :c 19}
+{:$type :spec/A$v1,
+ :b 101,
+ :c 19}
 ```
 
 Violating any of the constraints makes the instance invalid
@@ -35,9 +36,10 @@ Violating any of the constraints makes the instance invalid
  :c 19}
 
 
-
 ;-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints constrain_b" :h-err/invalid-instance]
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints constrain_b"
+ :h-err/invalid-instance]
 ```
 
 ```clojure
@@ -46,9 +48,10 @@ Violating any of the constraints makes the instance invalid
  :c 20}
 
 
-
 ;-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints constrain_c" :h-err/invalid-instance]
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints constrain_c"
+ :h-err/invalid-instance]
 ```
 
 Mutliple constraints can refer to the same variables.
@@ -64,9 +67,9 @@ Mutliple constraints can refer to the same variables.
  :b 105}
 
 
-
 ;-- result --
-{:$type :spec/A$v2, :b 105}
+{:$type :spec/A$v2,
+ :b 105}
 ```
 
 ```clojure
@@ -74,9 +77,10 @@ Mutliple constraints can refer to the same variables.
  :b 120}
 
 
-
 ;-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints constrain_b2" :h-err/invalid-instance]
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints constrain_b2"
+ :h-err/invalid-instance]
 ```
 
 In general, constraint extpressions can be combined with a logical 'and'. This has the same meaning because all constraints are effectively 'anded' together to produce a single logical predicate to assess whether an instance is valid. So, decomposing constraints into separate constraints is largely a matter of organizing and naming the checks to suit the modelling exercise.
@@ -91,9 +95,9 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
  :b 105}
 
 
-
 ;-- result --
-{:$type :spec/A$v3, :b 105}
+{:$type :spec/A$v3,
+ :b 105}
 ```
 
 ```clojure
@@ -101,9 +105,10 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
  :b 120}
 
 
-
 ;-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints constrain_b" :h-err/invalid-instance]
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints constrain_b"
+ :h-err/invalid-instance]
 ```
 
 #### Basic elements:

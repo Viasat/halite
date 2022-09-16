@@ -14,7 +14,6 @@ The following code correctly determines that a target value is in a vector.
   (any? [x v] (= x t)))
 
 
-
 ;-- result --
 true
 ```
@@ -25,7 +24,6 @@ The following code correctly determines that a target value is not in a vector.
 (let [v [10 20 30]
       t 50]
   (any? [x v] (= x t)))
-
 
 
 ;-- result --

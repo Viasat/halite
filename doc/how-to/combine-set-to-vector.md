@@ -14,7 +14,6 @@ This example shows how to combine a set of sortable items into a vector.
   (concat v (sort s)))
 
 
-
 ;-- result --
 [10 20 30 40 50]
 ```
@@ -25,7 +24,6 @@ The same can be done with a set of values that is not intrinsically sortable, bu
 (let [v [[10 20 30]]
       s #{[60] [40 50] [70 80 90]}]
   (concat v (sort-by [e s] (count e))))
-
 
 
 ;-- result --

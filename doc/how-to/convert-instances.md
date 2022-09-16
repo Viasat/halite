@@ -22,9 +22,9 @@ The following expression converts an instance of the first spec into an instance
    :y (get a :b)})
 
 
-
 ;-- result --
-{:$type :spec/X$v1, :y 1}
+{:$type :spec/X$v1,
+ :y 1}
 ```
 
 This work, but the language has a built-in idea of 'refinements' that allow such conversion functions to be expressed in a way that the system understands.
@@ -45,9 +45,9 @@ The refinement can be invoked as follows:
   (refine-to a :spec/X$v2))
 
 
-
 ;-- result --
-{:$type :spec/X$v2, :y 1}
+{:$type :spec/X$v2,
+ :y 1}
 ```
 
 #### Basic elements:

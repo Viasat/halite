@@ -28,9 +28,9 @@ The chain of refinements is invoked by simply refining the instance to the final
   (refine-to a :spec/X$v3))
 
 
-
 ;-- result --
-{:$type :spec/X$v3, :y 1}
+{:$type :spec/X$v3,
+ :y 1}
 ```
 
 #### Basic elements:

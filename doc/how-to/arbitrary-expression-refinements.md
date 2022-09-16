@@ -30,9 +30,11 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
   (refine-to a :spec/X$v4))
 
 
-
 ;-- result --
-{:$type :spec/X$v4, :x 3, :y 12, :z 10}
+{:$type :spec/X$v4,
+ :x 3,
+ :y 12,
+ :z 10}
 ```
 
 #### Basic elements:

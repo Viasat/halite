@@ -34,16 +34,14 @@
                                                                     :h-result h-result})))
                                         (recur more-c spec-map
                                                (conj results (utils/code-snippet lang (str ({:halite (utils/pprint-halite h-expr)
-                                                                                             :jadeite j-expr} lang)
+                                                                                             :jadeite (str j-expr "\n")} lang)
                                                                                            (when (or (:result c)
                                                                                                      (:throws c))
-                                                                                             (str "\n"
-                                                                                                  ({:halite  "\n\n;-- result --\n"
+                                                                                             (str ({:halite  "\n\n;-- result --\n"
                                                                                                     :jadeite "\n\n//-- result --\n"}
                                                                                                    lang)
-                                                                                                  ({:halite (pr-str h-result)
-                                                                                                    :jadeite j-result} lang)))
-                                                                                           "\n"))))))
+                                                                                                  ({:halite (utils/pprint-halite h-result)
+                                                                                                    :jadeite (str j-result "\n")} lang)))))))))
             results))
         (when-let [basic-refs (some-> (if (= :halite lang)
                                         (:basic-ref how-to)

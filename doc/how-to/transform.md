@@ -13,7 +13,6 @@ A collection of values can be transformed into a new collection of values. For e
   (map [x v] (* x 10)))
 
 
-
 ;-- result --
 [10 20 30]
 ```
@@ -25,9 +24,8 @@ The same works with sets.
   (map [x s] (* x 10)))
 
 
-
 ;-- result --
-#{20 30 10}
+#{10 20 30}
 ```
 
 #### Basic elements:

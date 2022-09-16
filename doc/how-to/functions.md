@@ -30,7 +30,6 @@ This makes a spec which when instantiated is allows a refinement expression to b
   result)
 
 
-
 ;-- result --
 5
 ```

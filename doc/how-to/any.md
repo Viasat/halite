@@ -13,7 +13,6 @@ The following code correctly determines that there is at least one value in the 
   (any? [x v] (> x 15)))
 
 
-
 ;-- result --
 true
 ```
@@ -25,7 +24,6 @@ In this example, no values make the expression true.
   (any? [x v] (> x 100)))
 
 
-
 ;-- result --
 false
 ```
@@ -35,7 +33,6 @@ Sets can be tested in the same way.
 ```clojure
 (let [s #{20 30 10}]
   (any? [x s] (> x 15)))
-
 
 
 ;-- result --
