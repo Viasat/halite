@@ -318,4 +318,22 @@
                                       :spec/B$v1 {:spec-vars {:c "Integer"}}}}
                           "Composite instances are created by nesting the instances at construction time."
                           {:code '{:$type :spec/A$v1 :b {:$type :spec/B$v1 :c 1}}}]
-               :see-also [:instance/spec-variables]}})
+               :see-also [:instance/spec-variables]}
+
+              :instance/functions
+              {:label "Use an instance as a function"
+               :desc "Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be rused?"
+               :basic-ref ['instance]
+               :contents ["It is a bit convoluted, but consider the following specs."
+                          {:spec-map {:spec/Add {:spec-vars {:x "Integer"
+                                                             :y "Integer"}
+                                                 :refines-to {:spec/IntegerResult {:name "refine_to_result"
+                                                                                   :expr '{:$type :spec/IntegerResult
+                                                                                           :result (+ x y)}}}}
+                                      :spec/IntegerResult {:spec-vars {:result "Integer"}}}}
+                          "This makes a spec which when instantiated is allows a refinement expression to be invoked as a sort of function call."
+                          {:code '(let [x 2
+                                        y 3
+                                        result (get (refine-to {:$type :spec/Add :x x :y y} :spec/IntegerResult) :result)]
+                                    result)
+                           :result :auto}]}})
