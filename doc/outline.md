@@ -12,6 +12,21 @@ TBD
 
 ## How-To Guides
 
+### instance
+
+* Compose instances [(Halite)](how-to/compose-instances.md) [(Jadeite)](how-to/compose-instances-j.md)
+  * How to make specs which are the composition of other specs and how to make instances of those specs.
+* Defining constraints on instance values [(Halite)](how-to/constrain-instances.md) [(Jadeite)](how-to/constrain-instances-j.md)
+  * How to constrain the possible values for instance fields
+* Defining multiple constraints on instance values [(Halite)](how-to/multi-constrain-instances.md) [(Jadeite)](how-to/multi-constrain-instances-j.md)
+  * How to define multiple constraints in a spec
+* Spec variables [(Halite)](how-to/spec-variables.md) [(Jadeite)](how-to/spec-variables-j.md)
+  * How to model data fields in specifications.
+* Use an instance as a function to compute a value [(Halite)](how-to/functions.md) [(Jadeite)](how-to/functions-j.md)
+  * Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?
+* Use an instance as a predicate [(Halite)](how-to/predicate.md) [(Jadeite)](how-to/predicate-j.md)
+  * Consider you need to evaluate an expression as a predicate, to determine if some values relate to each other properly.
+
 ### refinement
 
 * Arbitrary expression in refinements [(Halite)](how-to/arbitrary-expression-refinements.md) [(Jadeite)](how-to/arbitrary-expression-refinements-j.md)
@@ -39,19 +54,6 @@ TBD
   * Consider that you have a collection of values and need to produce a collection of new values derived from the first.
 * Transform a vector into a single value [(Halite)](how-to/reduce.md) [(Jadeite)](how-to/reduce-j.md)
   * Consider that you have a vector of values and you need to produce a single value that takes into account all of the values in the vector.
-
-### instance
-
-* Compose instances [(Halite)](how-to/compose-instances.md) [(Jadeite)](how-to/compose-instances-j.md)
-  * How to make specs which are the composition of other specs and how to make instances of those specs.
-* Defining constraints on instance values [(Halite)](how-to/constrain-instances.md) [(Jadeite)](how-to/constrain-instances-j.md)
-  * How to constrain the possible values for instance fields
-* Defining multiple constraints on instance values [(Halite)](how-to/multi-constrain-instances.md) [(Jadeite)](how-to/multi-constrain-instances-j.md)
-  * How to define multiple constraints in a spec
-* Spec variables [(Halite)](how-to/spec-variables.md) [(Jadeite)](how-to/spec-variables-j.md)
-  * How to model data fields in specifications.
-* Use an instance as a function [(Halite)](how-to/functions.md) [(Jadeite)](how-to/functions-j.md)
-  * Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?
 
 ### number
 

@@ -321,7 +321,7 @@
                :see-also [:instance/spec-variables]}
 
               :instance/functions
-              {:label "Use an instance as a function"
+              {:label "Use an instance as a function to compute a value"
                :desc "Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?"
                :basic-ref ['instance]
                :op-ref ['refine-to]
@@ -339,6 +339,26 @@
                                     result)
                            :result :auto}
                           "This is not necessarily recommended, but it is possible."]}
+
+              :instance/predicate
+              {:label "Use an instance as a predicate"
+               :desc "Consider you need to evaluate an expression as a predicate, to determine if some values relate to each other properly."
+               :basic-ref ['instance]
+               :op-ref ['valid?]
+               :contents ["The following specification uses a constraint to capture a predicate that checks whether a value is equal to the sum of two other values."
+                          {:spec-map {:spec/Sum {:spec-vars {:x "Integer"
+                                                             :y "Integer"
+                                                             :sum "Integer"}
+                                                 :constraints [["constrain_sum" '(= sum (+ x y))]]}}}
+                          "The following will attempt to instantiate an instance of the spec and indicate whether the instance satisfied the constraint. In this case it does."
+                          {:code '(valid? {:$type :spec/Sum :x 2 :y 3 :sum 5})
+                           :result :auto}
+                          "Here is another example, in which the constraint is not met."
+                          {:code '(valid? {:$type :spec/Sum :x 2 :y 3 :sum 6})
+                           :result :auto}
+                          "Note, for the case where the constraint is not met, a naked attempt to instantiate the instance will produce a runtime error."
+                          {:code '{:$type :spec/Sum :x 2 :y 3 :sum 6}
+                           :throws :auto}]}
 
               :number/add-integer-to-decimal
               {:label "Add an integer value to a decimal value"

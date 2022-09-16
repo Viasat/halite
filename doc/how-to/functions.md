@@ -2,7 +2,7 @@
   This markdown file was generated. Do not edit.
   -->
 
-## Use an instance as a function
+## Use an instance as a function to compute a value
 
 Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?
 
