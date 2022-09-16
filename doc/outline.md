@@ -75,7 +75,10 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ## Explanation
 
-TBD
+### spec
+
+* Specs are about modeling things [(Halite)](explanation/big-picture.md) [(Jadeite)](explanation/big-picture-j.md)
+  * Specs are a general mechanism for modelling whatever is of interest.
 
 ## Reference
 
