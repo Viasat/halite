@@ -205,10 +205,43 @@ Invalid solution fails.
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v6', violates constraints quadrants"]
 ```
 
+As an exercise, we can convert the logic of the constraints. Instead of checking that each row, column, and quadrant has the expected elements, we can write the constraints to ensure there are not any rows, columns, or quadrants that do not have the expected elements. The double negative logic is confusing, but this shows other available logical operations.
+
+```java
+{
+  "spec/Sudoku$v7" : {
+    "spec-vars" : {
+      "solution" : [ [ "Integer" ] ]
+    },
+    "constraints" : [ [ "rows", "!any?(r in solution)(#{}.concat(r) != #{1, 2, 3, 4})" ], [ "columns", "!any?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} != #{1, 2, 3, 4})" ], [ "quadrants", "!any?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} != #{1, 2, 3, 4}) })" ] ]
+  }
+}
+```
+
+Valid solution still works.
+
+```java
+{$type: spec/Sudoku$v7, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]}
+
+
+//-- result --
+{$type: spec/Sudoku$v7, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]}
+```
+
+Invalid solution fails.
+
+```java
+{$type: spec/Sudoku$v7, solution: [[1, 2, 3, 4], [4, 1, 2, 3], [3, 4, 1, 2], [2, 3, 4, 1]]}
+
+
+//-- result --
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v7', violates constraints quadrants"]
+```
+
 Finally, rather than having invalid solutions throw errors, we can instead produce a boolean value indicating whether the solution is valid.
 
 ```java
-(valid? {$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]})
+(valid? {$type: spec/Sudoku$v7, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]})
 
 
 //-- result --
@@ -216,7 +249,7 @@ true
 ```
 
 ```java
-(valid? {$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 2], [2, 1, 4, 3]]})
+(valid? {$type: spec/Sudoku$v7, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 2], [2, 1, 4, 3]]})
 
 
 //-- result --
@@ -224,7 +257,7 @@ false
 ```
 
 ```java
-(valid? {$type: spec/Sudoku$v6, solution: [[1, 2, 3, 4], [4, 1, 2, 3], [3, 4, 1, 2], [2, 3, 4, 1]]})
+(valid? {$type: spec/Sudoku$v7, solution: [[1, 2, 3, 4], [4, 1, 2, 3], [3, 4, 1, 2], [2, 3, 4, 1]]})
 
 
 //-- result --
@@ -237,9 +270,12 @@ false
 
 #### Operator reference:
 
+* [`!`](../jadeite-full-reference.md#_B)
 * [`ACCESSOR`](../jadeite-full-reference.md#ACCESSOR)
 * [`ACCESSOR-CHAIN`](../jadeite-full-reference.md#ACCESSOR-CHAIN)
+* [`any?`](../jadeite-full-reference.md#any_Q)
 * [`concat`](../jadeite-full-reference.md#concat)
+* [`every?`](../jadeite-full-reference.md#every_Q)
 * [`valid?`](../jadeite-full-reference.md#valid_Q)
 
 

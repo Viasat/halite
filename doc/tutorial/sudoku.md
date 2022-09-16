@@ -246,10 +246,58 @@ Invalid solution fails.
  :h-err/invalid-instance]
 ```
 
+As an exercise, we can convert the logic of the constraints. Instead of checking that each row, column, and quadrant has the expected elements, we can write the constraints to ensure there are not any rows, columns, or quadrants that do not have the expected elements. The double negative logic is confusing, but this shows other available logical operations.
+
+```clojure
+{:spec/Sudoku$v7
+   {:spec-vars {:solution [["Integer"]]},
+    :constraints
+      [["rows" (not (any? [r solution] (not= (concat #{} r) #{1 4 3 2})))]
+       ["columns"
+        (not (any? [i [0 1 2 3]]
+                   (not= #{(get-in solution [3 i]) (get-in solution [1 i])
+                           (get-in solution [2 i]) (get-in solution [0 i])}
+                         #{1 4 3 2})))]
+       ["quadrants"
+        (not (any? [base [[0 0] [0 2] [2 0] [2 2]]]
+                   (let [base-x (get base 0)
+                         base-y (get base 1)]
+                     (not= #{(get-in solution [base-x base-y])
+                             (get-in solution [(inc base-x) (inc base-y)])
+                             (get-in solution [(inc base-x) base-y])
+                             (get-in solution [base-x (inc base-y)])}
+                           #{1 4 3 2}))))]]}}
+```
+
+Valid solution still works.
+
+```clojure
+{:$type :spec/Sudoku$v7,
+ :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
+
+
+;-- result --
+{:$type :spec/Sudoku$v7,
+ :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
+```
+
+Invalid solution fails.
+
+```clojure
+{:$type :spec/Sudoku$v7,
+ :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]}
+
+
+;-- result --
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v7', violates constraints quadrants"
+ :h-err/invalid-instance]
+```
+
 Finally, rather than having invalid solutions throw errors, we can instead produce a boolean value indicating whether the solution is valid.
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v6,
+(valid? {:$type :spec/Sudoku$v7,
          :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]})
 
 
@@ -258,7 +306,7 @@ true
 ```
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v6,
+(valid? {:$type :spec/Sudoku$v7,
          :solution [[1 2 3 4] [3 4 1 2] [4 3 2 2] [2 1 4 3]]})
 
 
@@ -267,7 +315,7 @@ false
 ```
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v6,
+(valid? {:$type :spec/Sudoku$v7,
          :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]})
 
 
@@ -281,9 +329,12 @@ false
 
 #### Operator reference:
 
+* [`any?`](../halite-full-reference.md#any_Q)
 * [`concat`](../halite-full-reference.md#concat)
+* [`every?`](../halite-full-reference.md#every_Q)
 * [`get`](../halite-full-reference.md#get)
 * [`get-in`](../halite-full-reference.md#get-in)
+* [`not`](../halite-full-reference.md#not)
 * [`valid?`](../halite-full-reference.md#valid_Q)
 
 
