@@ -4,13 +4,25 @@
 (ns jibe.halite.doc.md-outline
   (:require [jibe.halite.doc.utils :as utils]))
 
-(defn produce-outline [{:keys [how-tos tag-def-map how-to-filename tag-md-filename]}]
+(defn produce-outline [{:keys [tutorials how-tos tag-def-map tutorial-filename how-to-filename tag-md-filename]}]
   (->>
    [utils/generated-msg
     "# Halite resource specifications\n
 All features are available in both Halite (s-expression) syntax and Jadeite (C-like) syntax.\n\n"
 
     "## Tutorials\n\nTBD\n\n"
+    (->> tutorials
+         (group-by (comp namespace key))
+         (mapcat (fn [[namespace tutorials]]
+                   (str "### " namespace "\n\n"
+                        (->> tutorials
+                             (sort-by (comp :label val))
+                             (mapcat (fn [[id h]] ["* " (:label h)
+                                                   " [(Halite)](" (tutorial-filename :halite id) ")"
+                                                   " [(Jadeite)](" (tutorial-filename :jadeite id) ")\n"
+                                                   "  * " (:desc h) "\n"]))
+                             (apply str))
+                        "\n"))))
 
     "## How-To Guides\n\n"
     (->> how-tos

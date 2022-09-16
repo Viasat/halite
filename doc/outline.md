@@ -10,6 +10,11 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 TBD
 
+### spec
+
+* Model a sudokuo puzzle [(Halite)](tutorial/sudoku.md) [(Jadeite)](tutorial/sudoku-j.md)
+  * Consider how to use specs to model a sudoku game.
+
 ## How-To Guides
 
 ### instance
