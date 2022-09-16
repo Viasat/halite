@@ -8,8 +8,6 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ## Tutorials
 
-TBD
-
 ### spec
 
 * Model a sudokuo puzzle [(Halite)](tutorial/sudoku.md) [(Jadeite)](tutorial/sudoku-j.md)
