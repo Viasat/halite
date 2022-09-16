@@ -4,7 +4,8 @@
 (ns jibe.halite.doc.utils
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
-            [clojure.pprint :as pprint]))
+            [clojure.pprint :as pprint]
+            [fipp.edn :refer [pprint] :rename {pprint fipp}]))
 
 (defn spit-dir [filename txt]
   (io/make-parents filename)
@@ -55,7 +56,7 @@
        "```\n\n"))
 
 (defn spec-map-str [lang spec-map]
-  ({:halite (with-out-str (pprint/pprint spec-map))
+  ({:halite (with-out-str (fipp spec-map))
     :jadeite (str (json/encode spec-map {:pretty true}) "\n")} lang))
 
 (def safe-char-map

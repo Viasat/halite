@@ -9,13 +9,11 @@ Consider there is some logic that needs to be reused in multiple contexts. How t
 It is a bit convoluted, but consider the following specs.
 
 ```clojure
-#:spec{:Add
-       {:spec-vars {:x "Integer", :y "Integer"},
-        :refines-to
-        #:spec{:IntegerResult
-               {:name "refine_to_result",
-                :expr {:$type :spec/IntegerResult, :result (+ x y)}}}},
-       :IntegerResult {:spec-vars {:result "Integer"}}}
+{:spec/Add {:spec-vars {:x "Integer", :y "Integer"},
+            :refines-to {:spec/IntegerResult {:name "refine_to_result",
+                                              :expr {:$type :spec/IntegerResult,
+                                                     :result (+ x y)}}}},
+ :spec/IntegerResult {:spec-vars {:result "Integer"}}}
 ```
 
 This makes a spec which when instantiated is allows a refinement expression to be invoked as a sort of function call.
