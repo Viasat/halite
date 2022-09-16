@@ -16,7 +16,10 @@ A spec variable can be of the type of another spec
 Composite instances are created by nesting the instances at construction time.
 
 ```clojure
-{:$type :spec/A$v1, :b {:$type :spec/B$v1, :c 1}}
+{:$type :spec/A$v1,
+ :b {:$type :spec/B$v1,
+     :c 1}}
+
 ```
 
 #### Basic elements:

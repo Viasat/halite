@@ -421,7 +421,8 @@ false
 
 ```clojure
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
+{:my/Spec$v1 {:spec-vars {:x "Integer",
+                          :y "Integer"}}}
 ;--
 
 (= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})
@@ -434,7 +435,8 @@ false
 
 ```clojure
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
+{:my/Spec$v1 {:spec-vars {:x "Integer",
+                          :y "Integer"}}}
 ;--
 
 (= {:$type :my/Spec$v1 :x 1 :y 0} {:$type :my/Spec$v1 :x 1 :y 0})
@@ -1410,7 +1412,8 @@ The $type value of an instance is not considered a field that can be extracted w
 
 ```clojure
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
+{:my/Spec$v1 {:spec-vars {:x "Integer",
+                          :y "Integer"}}}
 ;--
 
 (get {:$type :my/Spec$v1, :x -3, :y 2} :x)
@@ -1462,8 +1465,10 @@ The first path element in the path is looked up in the initial target. If there 
 
 ```clojure
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1, :y "Integer"}},
- :my/SubSpec$v1 {:spec-vars {:a "Integer", :b "Integer"}}}
+{:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1,
+                          :y "Integer"}},
+ :my/SubSpec$v1 {:spec-vars {:a "Integer",
+                             :b "Integer"}}}
 ;--
 
 (get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a 20, :b 10}, :y 2} [:x :a])
@@ -1476,8 +1481,10 @@ The first path element in the path is looked up in the initial target. If there 
 
 ```clojure
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1, :y "Integer"}},
- :my/SubSpec$v1 {:spec-vars {:a ["Integer"], :b "Integer"}}}
+{:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1,
+                          :y "Integer"}},
+ :my/SubSpec$v1 {:spec-vars {:a ["Integer"],
+                             :b "Integer"}}}
 ;--
 
 (get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])
@@ -2051,7 +2058,8 @@ true
 
 ```clojure
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
+{:my/Spec$v1 {:spec-vars {:x "Integer",
+                          :y "Integer"}}}
 ;--
 
 (not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})
@@ -2234,9 +2242,9 @@ Attempt to refine the given instance into an instance of type, spec-id.
 ```clojure
 ;-- A basic refinement.
 ;-- context --
-{:my/Spec$v1 {:refines-to {:an/Other$v1 {:name "r",
-                                         :expr {:$type :an/Other$v1}}}},
- :an/Other$v1 {}}
+{:an/Other$v1 {},
+ :my/Spec$v1 {:refines-to {:an/Other$v1 {:name "r",
+                                         :expr {:$type :an/Other$v1}}}}}
 ;--
 
 (refine-to {:$type :my/Spec$v1} :an/Other$v1)
@@ -2250,12 +2258,14 @@ Attempt to refine the given instance into an instance of type, spec-id.
 ```clojure
 ;-- An example of a refinement that transforms data values.
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:p "Integer", :n "Integer"},
+{:an/Other$v1 {:spec-vars {:x "Integer",
+                           :y "Integer"}},
+ :my/Spec$v1 {:spec-vars {:n "Integer",
+                          :p "Integer"},
               :refines-to {:an/Other$v1 {:name "r",
                                          :expr {:$type :an/Other$v1,
                                                 :x (inc p),
-                                                :y (dec n)}}}},
- :an/Other$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
+                                                :y (dec n)}}}}}
 ;--
 
 (refine-to {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
@@ -2269,7 +2279,8 @@ Attempt to refine the given instance into an instance of type, spec-id.
 ```clojure
 ;-- An example where the refinement being invoked does not exist.
 ;-- context --
-{:my/Spec$v1 {}, :an/Other$v1 {}}
+{:an/Other$v1 {},
+ :my/Spec$v1 {}}
 ;--
 
 (refine-to {:$type :my/Spec$v1} :an/Other$v1)
@@ -2311,9 +2322,9 @@ Determine whether it is possible to refine the given instance into an instance o
 ```clojure
 ;-- A basic refinement.
 ;-- context --
-{:my/Spec$v1 {:refines-to {:an/Other$v1 {:name "r",
-                                         :expr {:$type :an/Other$v1}}}},
- :an/Other$v1 {}}
+{:an/Other$v1 {},
+ :my/Spec$v1 {:refines-to {:an/Other$v1 {:name "r",
+                                         :expr {:$type :an/Other$v1}}}}}
 ;--
 
 (refines-to? {:$type :my/Spec$v1} :an/Other$v1)
@@ -2327,12 +2338,14 @@ true
 ```clojure
 ;-- An example of a refinement that transforms data values.
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:p "Integer", :n "Integer"},
+{:an/Other$v1 {:spec-vars {:x "Integer",
+                           :y "Integer"}},
+ :my/Spec$v1 {:spec-vars {:n "Integer",
+                          :p "Integer"},
               :refines-to {:an/Other$v1 {:name "r",
                                          :expr {:$type :an/Other$v1,
                                                 :x (inc p),
-                                                :y (dec n)}}}},
- :an/Other$v1 {:spec-vars {:x "Integer", :y "Integer"}}}
+                                                :y (dec n)}}}}}
 ;--
 
 (refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
@@ -2346,7 +2359,8 @@ true
 ```clojure
 ;-- An example where the refinement being invoked does not exist.
 ;-- context --
-{:my/Spec$v1 {}, :an/Other$v1 {}}
+{:an/Other$v1 {},
+ :my/Spec$v1 {}}
 ;--
 
 (refines-to? {:$type :my/Spec$v1} :an/Other$v1)
@@ -2728,7 +2742,8 @@ This operation can be thought of as producing an instance if it is valid. This c
 ```clojure
 ;-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:p "Integer", :n "Integer"},
+{:my/Spec$v1 {:spec-vars {:n "Integer",
+                          :p "Integer"},
               :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
 ;--
 
@@ -2743,7 +2758,8 @@ This operation can be thought of as producing an instance if it is valid. This c
 ```clojure
 ;-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:p "Integer", :n "Integer"},
+{:my/Spec$v1 {:spec-vars {:n "Integer",
+                          :p "Integer"},
               :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
 ;--
 
@@ -2781,7 +2797,8 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 ```clojure
 ;-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:p "Integer", :n "Integer"},
+{:my/Spec$v1 {:spec-vars {:n "Integer",
+                          :p "Integer"},
               :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
 ;--
 
@@ -2796,7 +2813,8 @@ true
 ```clojure
 ;-- When the spec has constraints that the field, p, must be positive and the field, n, must be negative.
 ;-- context --
-{:my/Spec$v1 {:spec-vars {:p "Integer", :n "Integer"},
+{:my/Spec$v1 {:spec-vars {:n "Integer",
+                          :p "Integer"},
               :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
 ;--
 

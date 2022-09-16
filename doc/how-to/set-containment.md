@@ -12,6 +12,7 @@ There is a built-in function to determine whether a value is a member of a set.
 (contains? #{20 30 10} 20)
 
 
+
 ;-- result --
 true
 ```
@@ -22,6 +23,7 @@ The following code correctly determines that a value is not in a set
 (contains? #{20 30 10} 50)
 
 
+
 ;-- result --
 false
 ```
@@ -29,7 +31,10 @@ false
 It is more verbose, but an alternate solutions is the same as what would be done to determine if an item is in a vector.
 
 ```clojure
-(let [s #{20 30 10} t 20] (any? [x s] (= x t)))
+(let [s #{20 30 10}
+      t 20]
+  (any? [x s] (= x t)))
+
 
 
 ;-- result --

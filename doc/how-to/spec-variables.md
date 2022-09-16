@@ -16,6 +16,7 @@ Instances of this spec could be created as:
 
 ```clojure
 {:$type :spec/Dog$v1}
+
 ```
 
 It is more interesting to define data fields on specs that define the structure of instances of the spec
@@ -27,7 +28,9 @@ It is more interesting to define data fields on specs that define the structure 
 This spec can be instantiated as:
 
 ```clojure
-{:$type :spec/Dog$v2, :age 3}
+{:$type :spec/Dog$v2,
+ :age 3}
+
 ```
 
 A spec can have multiple fields
@@ -39,7 +42,11 @@ A spec can have multiple fields
 ```
 
 ```clojure
-{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}
+{:name "Rex",
+ :$type :spec/Dog$v4,
+ :age 3,
+ :colors ["brown" "white"]}
+
 ```
 
 #### Basic elements:

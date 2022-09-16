@@ -9,7 +9,10 @@ Consider you have two sets or vectors and need to combine them.
 Considering vectors first. One vector can be simply added to the end of another.
 
 ```clojure
-(let [v1 [10 20 30] v2 [40 50]] (concat v1 v2))
+(let [v1 [10 20 30]
+      v2 [40 50]]
+  (concat v1 v2))
+
 
 
 ;-- result --
@@ -19,7 +22,10 @@ Considering vectors first. One vector can be simply added to the end of another.
 The same can be done with sets. In this case the sets are simply combined because sets have no instrinsic order to the elements.
 
 ```clojure
-(let [s1 #{20 30 10} s2 #{50 40}] (concat s1 s2))
+(let [s1 #{20 30 10}
+      s2 #{50 40}]
+  (concat s1 s2))
+
 
 
 ;-- result --
@@ -29,7 +35,10 @@ The same can be done with sets. In this case the sets are simply combined becaus
 There is a special set operator that is equivalent to 'concat' for sets.
 
 ```clojure
-(let [s1 #{20 30 10} s2 #{50 40}] (union s1 s2))
+(let [s1 #{20 30 10}
+      s2 #{50 40}]
+  (union s1 s2))
+
 
 
 ;-- result --
@@ -39,7 +48,10 @@ There is a special set operator that is equivalent to 'concat' for sets.
 However, 'union' only works when all of the arguments are sets. The 'concat' operation can be used to add elements from a vector into a set.
 
 ```clojure
-(let [s #{20 30 10} v [40 50]] (concat s v))
+(let [s #{20 30 10}
+      v [40 50]]
+  (concat s v))
+
 
 
 ;-- result --
@@ -49,7 +61,10 @@ However, 'union' only works when all of the arguments are sets. The 'concat' ope
 It is not possible to use concat to add a set into a vector.
 
 ```clojure
-(let [v [10 20 30] s #{50 40}] (concat v s))
+(let [v [10 20 30]
+      s #{50 40}]
+  (concat v s))
+
 
 
 ;-- result --

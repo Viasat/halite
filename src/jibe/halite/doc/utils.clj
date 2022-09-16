@@ -5,7 +5,7 @@
   (:require [cheshire.core :as json]
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
-            [fipp.edn :refer [pprint] :rename {pprint fipp}]))
+            [zprint.core :as zprint]))
 
 (defn spit-dir [filename txt]
   (io/make-parents filename)
@@ -55,9 +55,21 @@
        code
        "```\n\n"))
 
+
+(defn pprint-halite [code]
+  (let [s (zprint/zprint-str code 80 {:fn-force-nl #{:binding}
+                                      :map {:force-nl? true
+                                            :key-order [:spec-vars :constraints :refines-to
+                                                        :name :expr]}})]
+    (if (= \newline s)
+      s
+      (str s "\n"))))
+
 (defn spec-map-str [lang spec-map]
-  ({:halite (with-out-str (fipp spec-map))
+  ({:halite (pprint-halite spec-map)
     :jadeite (str (json/encode spec-map {:pretty true}) "\n")} lang))
+
+;; (zprint/zprint nil :explain)
 
 (def safe-char-map
   (let [weird "*!$?=<>_+."

@@ -11,16 +11,19 @@ In the following example, the refinement expression determines whether to conver
 ```clojure
 {:spec/A$v1 {:spec-vars {:b "Integer"},
              :refines-to {:spec/X$v1 {:name "refine_to_X",
-                                      :expr (when
-                                             (> b 10)
-                                             {:$type :spec/X$v1, :y b})}}},
+                                      :expr (when (> b 10)
+                                              {:$type :spec/X$v1,
+                                               :y b})}}},
  :spec/X$v1 {:spec-vars {:y "Integer"}}}
 ```
 
 In this example, the refinement applies.
 
 ```clojure
-(refine-to {:$type :spec/A$v1, :b 20} :spec/X$v1)
+(refine-to {:$type :spec/A$v1,
+            :b 20}
+           :spec/X$v1)
+
 
 
 ;-- result --
@@ -30,7 +33,10 @@ In this example, the refinement applies.
 In this example, the refinement does not apply
 
 ```clojure
-(refine-to {:$type :spec/A$v1, :b 5} :spec/X$v1)
+(refine-to {:$type :spec/A$v1,
+            :b 5}
+           :spec/X$v1)
+
 
 
 ;-- result --
@@ -40,7 +46,10 @@ In this example, the refinement does not apply
 A refinement path can be probed to determine if it exists and if it applies to a given instance.
 
 ```clojure
-(refines-to? {:$type :spec/A$v1, :b 20} :spec/X$v1)
+(refines-to? {:$type :spec/A$v1,
+              :b 20}
+             :spec/X$v1)
+
 
 
 ;-- result --
@@ -48,7 +57,10 @@ true
 ```
 
 ```clojure
-(refines-to? {:$type :spec/A$v1, :b 5} :spec/X$v1)
+(refines-to? {:$type :spec/A$v1,
+              :b 5}
+             :spec/X$v1)
+
 
 
 ;-- result --

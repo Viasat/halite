@@ -9,7 +9,9 @@ Consider that you have a vector of values and you need to produce a single value
 A vector of values can be transformed into a single value. For example, the following transforms a vector of integers into a single value, which is their product.
 
 ```clojure
-(let [v [1 2 3]] (reduce [a 1] [x v] (* a x)))
+(let [v [1 2 3]]
+  (reduce [a 1] [x v] (* a x)))
+
 
 
 ;-- result --

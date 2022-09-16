@@ -16,7 +16,11 @@ An expression can convert an instance of one type to the instance of another typ
 The following expression converts an instance of the first spec into an instance of the second.
 
 ```clojure
-(let [a {:$type :spec/A$v1, :b 1}] {:$type :spec/X$v1, :y (get a :b)})
+(let [a {:$type :spec/A$v1,
+         :b 1}]
+  {:$type :spec/X$v1,
+   :y (get a :b)})
+
 
 
 ;-- result --
@@ -28,14 +32,18 @@ This work, but the language has a built-in idea of 'refinements' that allow such
 ```clojure
 {:spec/A$v2 {:spec-vars {:b "Integer"},
              :refines-to {:spec/X$v2 {:name "refine_to_X",
-                                      :expr {:$type :spec/X$v2, :y b}}}},
+                                      :expr {:$type :spec/X$v2,
+                                             :y b}}}},
  :spec/X$v2 {:spec-vars {:y "Integer"}}}
 ```
 
 The refinement can be invoked as follows:
 
 ```clojure
-(let [a {:$type :spec/A$v2, :b 1}] (refine-to a :spec/X$v2))
+(let [a {:$type :spec/A$v2,
+         :b 1}]
+  (refine-to a :spec/X$v2))
+
 
 
 ;-- result --

@@ -33,7 +33,7 @@
                                           (throw (ex-info "failed" {:h-expr h-expr
                                                                     :h-result h-result})))
                                         (recur more-c spec-map
-                                               (conj results (utils/code-snippet lang (str ({:halite h-expr
+                                               (conj results (utils/code-snippet lang (str ({:halite (utils/pprint-halite h-expr)
                                                                                              :jadeite j-expr} lang)
                                                                                            (when (or (:result c)
                                                                                                      (:throws c))

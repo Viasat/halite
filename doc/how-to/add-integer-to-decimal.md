@@ -9,7 +9,10 @@ Consider you have an integer and a decimal value and you need to add them togeth
 Since the integer and decimal values are of different types they cannot be directly added together.
 
 ```clojure
-(let [x 3 y #d "2.2"] (+ y x))
+(let [x 3
+      y #d "2.2"]
+  (+ y x))
+
 
 
 ;-- result --
@@ -19,7 +22,9 @@ Since the integer and decimal values are of different types they cannot be direc
 It is first necessary to convert them to the same type of value. In this case the integer is converted into a decimal value by multiplying it by one in the target decimal type.
 
 ```clojure
-(let [x 3] (* #d "1.0" x))
+(let [x 3]
+  (* #d "1.0" x))
+
 
 
 ;-- result --
@@ -29,7 +34,10 @@ It is first necessary to convert them to the same type of value. In this case th
 Now the numbers can be added together.
 
 ```clojure
-(let [x 3 y #d "2.2"] (+ y (* #d "1.0" x)))
+(let [x 3
+      y #d "2.2"]
+  (+ y (* #d "1.0" x)))
+
 
 
 ;-- result --

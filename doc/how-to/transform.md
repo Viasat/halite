@@ -9,7 +9,9 @@ Consider that you have a collection of values and need to produce a collection o
 A collection of values can be transformed into a new collection of values. For example, the following transforms a vector of integers into a new vector of integers.
 
 ```clojure
-(let [v [1 2 3]] (map [x v] (* x 10)))
+(let [v [1 2 3]]
+  (map [x v] (* x 10)))
+
 
 
 ;-- result --
@@ -19,7 +21,9 @@ A collection of values can be transformed into a new collection of values. For e
 The same works with sets.
 
 ```clojure
-(let [s #{1 3 2}] (map [x s] (* x 10)))
+(let [s #{1 3 2}]
+  (map [x s] (* x 10)))
+
 
 
 ;-- result --

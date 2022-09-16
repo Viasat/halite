@@ -22,7 +22,9 @@ This indicates that 'b' must be an integer, but it doesn't indicate what valid v
 An attempt to make an instance that satisfies this constraint is successful
 
 ```clojure
-{:$type :spec/A$v2, :b 200}
+{:$type :spec/A$v2,
+ :b 200}
+
 
 
 ;-- result --
@@ -32,7 +34,9 @@ An attempt to make an instance that satisfies this constraint is successful
 However, an attempt to make an instance that violates this constraint fails.
 
 ```clojure
-{:$type :spec/A$v2, :b 50}
+{:$type :spec/A$v2,
+ :b 50}
+
 
 
 ;-- result --
@@ -42,14 +46,18 @@ However, an attempt to make an instance that violates this constraint fails.
 Constraints can be arbitrary expressions that refer to multiple fields.
 
 ```clojure
-{:spec/A$v3 {:spec-vars {:b "Integer", :c "Integer"},
+{:spec/A$v3 {:spec-vars {:b "Integer",
+                         :c "Integer"},
              :constraints [["constrain_b_c" (< (+ b c) 10)]]}}
 ```
 
 In this example, the sum of 'a' and 'b' must be less than 10
 
 ```clojure
-{:$type :spec/A$v3, :b 2, :c 3}
+{:$type :spec/A$v3,
+ :b 2,
+ :c 3}
+
 
 
 ;-- result --
@@ -57,7 +65,10 @@ In this example, the sum of 'a' and 'b' must be less than 10
 ```
 
 ```clojure
-{:$type :spec/A$v3, :b 6, :c 7}
+{:$type :spec/A$v3,
+ :b 6,
+ :c 7}
+
 
 
 ;-- result --

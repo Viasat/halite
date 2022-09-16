@@ -9,7 +9,8 @@ Consider there is some logic that needs to be reused in multiple contexts. How t
 It is a bit convoluted, but consider the following specs.
 
 ```clojure
-{:spec/Add {:spec-vars {:x "Integer", :y "Integer"},
+{:spec/Add {:spec-vars {:x "Integer",
+                        :y "Integer"},
             :refines-to {:spec/IntegerResult {:name "refine_to_result",
                                               :expr {:$type :spec/IntegerResult,
                                                      :result (+ x y)}}}},
@@ -19,7 +20,15 @@ It is a bit convoluted, but consider the following specs.
 This makes a spec which when instantiated is allows a refinement expression to be invoked as a sort of function call.
 
 ```clojure
-(let [x 2 y 3 result (get (refine-to {:$type :spec/Add, :x x, :y y} :spec/IntegerResult) :result)] result)
+(let [x 2
+      y 3
+      result (get (refine-to {:$type :spec/Add,
+                              :x x,
+                              :y y}
+                             :spec/IntegerResult)
+                  :result)]
+  result)
+
 
 
 ;-- result --

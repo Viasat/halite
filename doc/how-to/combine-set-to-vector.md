@@ -9,7 +9,10 @@ A set must be sorted into a vector before it can be appended onto another vector
 This example shows how to combine a set of sortable items into a vector.
 
 ```clojure
-(let [v [10 20 30] s #{50 40}] (concat v (sort s)))
+(let [v [10 20 30]
+      s #{50 40}]
+  (concat v (sort s)))
+
 
 
 ;-- result --
@@ -19,7 +22,10 @@ This example shows how to combine a set of sortable items into a vector.
 The same can be done with a set of values that is not intrinsically sortable, but in this case an explicit sort function must be defined.
 
 ```clojure
-(let [v [[10 20 30]] s #{[60] [40 50] [70 80 90]}] (concat v (sort-by [e s] (count e))))
+(let [v [[10 20 30]]
+      s #{[60] [40 50] [70 80 90]}]
+  (concat v (sort-by [e s] (count e))))
+
 
 
 ;-- result --
