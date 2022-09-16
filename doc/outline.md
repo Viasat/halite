@@ -51,7 +51,12 @@ TBD
 * Spec variables [(Halite)](how-to/spec-variables.md) [(Jadeite)](how-to/spec-variables-j.md)
   * How to model data fields in specifications.
 * Use an instance as a function [(Halite)](how-to/functions.md) [(Jadeite)](how-to/functions-j.md)
-  * Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be rused?
+  * Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?
+
+### number
+
+* Add an integer value to a decimal value [(Halite)](how-to/add-integer-to-decimal.md) [(Jadeite)](how-to/add-integer-to-decimal-j.md)
+  * Consider you have an integer and a decimal value and you need to add them together.
 
 ## Explanation
 

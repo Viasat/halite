@@ -4,7 +4,7 @@
 
 ## Use an instance as a function
 
-Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be rused?
+Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?
 
 It is a bit convoluted, but consider the following specs.
 
@@ -43,7 +43,14 @@ This makes a spec which when instantiated is allows a refinement expression to b
 5
 ```
 
+This is not necessarily recommended, but it is possible.
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)
+
+#### Operator reference:
+
+* [`refineTo`](../jadeite-full-reference.md#refineTo)
+
 

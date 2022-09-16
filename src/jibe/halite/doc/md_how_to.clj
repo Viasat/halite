@@ -41,7 +41,7 @@
                                                                                                   ({:halite  "\n\n;-- result --\n"
                                                                                                     :jadeite "\n\n//-- result --\n"}
                                                                                                    lang)
-                                                                                                  ({:halite h-result
+                                                                                                  ({:halite (pr-str h-result)
                                                                                                     :jadeite j-result} lang)))
                                                                                            "\n"))))))
             results))

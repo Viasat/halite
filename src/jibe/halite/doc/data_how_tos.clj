@@ -322,8 +322,9 @@
 
               :instance/functions
               {:label "Use an instance as a function"
-               :desc "Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be rused?"
+               :desc "Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?"
                :basic-ref ['instance]
+               :op-ref ['refine-to]
                :contents ["It is a bit convoluted, but consider the following specs."
                           {:spec-map {:spec/Add {:spec-vars {:x "Integer"
                                                              :y "Integer"}
@@ -336,4 +337,25 @@
                                         y 3
                                         result (get (refine-to {:$type :spec/Add :x x :y y} :spec/IntegerResult) :result)]
                                     result)
+                           :result :auto}
+                          "This is not necessarily recommended, but it is possible."]}
+
+              :number/add-integer-to-decimal
+              {:label "Add an integer value to a decimal value"
+               :desc "Consider you have an integer and a decimal value and you need to add them together." 
+               :basic-ref ['integer 'fixed-decimal]
+               :op-ref ['+]
+               :contents ["Since the integer and decimal values are of different types they cannot be directly added together."
+                          {:code '(let [x 3
+                                        y #d "2.2"]
+                                    (+ y x))
+                           :throws :auto}
+                          "It is first necessary to convert them to the same type of value. In this case the integer is converted into a decimal value by multiplying it by one in the target decimal type."
+                          {:code '(let [x 3]
+                                    (* #d "1.0" x))
+                           :result :auto}
+                           "Now the numbers can be added together."
+                          {:code '(let [x 3
+                                        y #d "2.2"]
+                                    (+ y (* #d "1.0" x)))
                            :result :auto}]}})
