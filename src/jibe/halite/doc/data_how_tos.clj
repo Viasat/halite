@@ -201,7 +201,28 @@
                                                                 :age "Integer"
                                                                 :colors ["String"]}}}}
                           {:code '{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}]
-               :see-also [:instance/compose-instances]}
+               :see-also [:instance/compose-instances
+                          :instance/string-enum]}
+
+              :instance/string-enum
+              {:label "String as enumeration"
+               :desc "How to model an enumeration as a string"
+               :basic-ref ['instance]
+               :contents ["Say we want to model a shirt size and the valid values are \"small\", \"medium\", and \"large\". We can start by modeling the size as a string."
+                          {:spec-map {:spec/Shirt$v1 {:spec-vars {:size "String"}}}}
+                          "This is a start, but it allows invalid size values."
+                          {:code '{:$type :spec/Shirt$v1 :size "XL"}
+                           :result :auto}
+                          "So we can add a constraint to limit the values to what we expect."
+                          {:spec-map {:spec/Shirt$v2 {:spec-vars {:size "String"}
+                                                      :constraints [["size_constraint" '(contains? #{"small" "medium" "large"} size)]]}}}
+                          "Now the shirt with the invalid size cannot be constructed."
+                          {:code '{:$type :spec/Shirt$v2 :size "XL"}
+                           :throws :auto}
+                          "But a shirt with a valid size can be constructed."
+                          {:code '{:$type :spec/Shirt$v2 :size "medium"}
+                           :result :auto}]
+               :see-also [:instance/spec-variables]}
 
               :refinement/convert-instances
               {:label "Converting instances between specs"

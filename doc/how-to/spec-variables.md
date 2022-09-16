@@ -53,5 +53,6 @@ A spec can have multiple fields
 #### See also:
 
 * [compose-instances](compose-instances.md)
+* [string-enum](string-enum.md)
 
 
