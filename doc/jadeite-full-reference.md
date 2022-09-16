@@ -3014,7 +3014,7 @@ This operation can be thought of as producing an instance if it is valid. This c
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
+    "constraints" : [ [ "cp", "(p > 0)" ], [ "cn", "(n < 0)" ] ]
   }
 }
 //
@@ -3036,7 +3036,7 @@ This operation can be thought of as producing an instance if it is valid. This c
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
+    "constraints" : [ [ "cp", "(p > 0)" ], [ "cn", "(n < 0)" ] ]
   }
 }
 //
@@ -3081,7 +3081,7 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
+    "constraints" : [ [ "cp", "(p > 0)" ], [ "cn", "(n < 0)" ] ]
   }
 }
 //
@@ -3103,7 +3103,7 @@ true
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : [ [ "cp", [ ">", "p", 0 ] ], [ "cn", [ "<", "n", 0 ] ] ]
+    "constraints" : [ [ "cp", "(p > 0)" ], [ "cn", "(n < 0)" ] ]
   }
 }
 //

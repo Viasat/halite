@@ -38,7 +38,7 @@ In order to be a valid solution, certain properties must be met: each row, colum
     "spec-vars" : {
       "solution" : [ [ "Integer" ] ]
     },
-    "constraints" : [ [ "row_1", [ "=", [ "concat", [ ], [ "get", "solution", 0 ] ], [ 1, 4, 3, 2 ] ] ], [ "row_2", [ "=", [ "concat", [ ], [ "get", "solution", 1 ] ], [ 1, 4, 3, 2 ] ] ], [ "row_3", [ "=", [ "concat", [ ], [ "get", "solution", 2 ] ], [ 1, 4, 3, 2 ] ] ], [ "row_4", [ "=", [ "concat", [ ], [ "get", "solution", 3 ] ], [ 1, 4, 3, 2 ] ] ] ]
+    "constraints" : [ [ "row_1", "(#{}.concat(solution[0]) == #{1, 2, 3, 4})" ], [ "row_2", "(#{}.concat(solution[1]) == #{1, 2, 3, 4})" ], [ "row_3", "(#{}.concat(solution[2]) == #{1, 2, 3, 4})" ], [ "row_4", "(#{}.concat(solution[3]) == #{1, 2, 3, 4})" ] ]
   }
 }
 ```
@@ -71,7 +71,7 @@ Rather than expressing each row constraint separately, they can be captured in a
     "spec-vars" : {
       "solution" : [ [ "Integer" ] ]
     },
-    "constraints" : [ [ "rows", [ "every?", [ "r", "solution" ], [ "=", [ "concat", [ ], "r" ], [ 1, 4, 3, 2 ] ] ] ] ]
+    "constraints" : [ [ "rows", "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})" ] ]
   }
 }
 ```
@@ -104,7 +104,7 @@ But, we are only checking rows, let's also check columns.
     "spec-vars" : {
       "solution" : [ [ "Integer" ] ]
     },
-    "constraints" : [ [ "rows", [ "every?", [ "r", "solution" ], [ "=", [ "concat", [ ], "r" ], [ 1, 4, 3, 2 ] ] ] ], [ "columns", [ "every?", [ "i", [ 0, 1, 2, 3 ] ], [ "=", [ [ "get-in", "solution", [ 3, "i" ] ], [ "get-in", "solution", [ 1, "i" ] ], [ "get-in", "solution", [ 2, "i" ] ], [ "get-in", "solution", [ 0, "i" ] ] ], [ 1, 4, 3, 2 ] ] ] ] ]
+    "constraints" : [ [ "rows", "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})" ], [ "columns", "every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})" ] ]
   }
 }
 ```
@@ -147,7 +147,7 @@ Let's add the quadrant checks.
     "spec-vars" : {
       "solution" : [ [ "Integer" ] ]
     },
-    "constraints" : [ [ "rows", [ "every?", [ "r", "solution" ], [ "=", [ "concat", [ ], "r" ], [ 1, 4, 3, 2 ] ] ] ], [ "columns", [ "every?", [ "i", [ 0, 1, 2, 3 ] ], [ "=", [ [ "get-in", "solution", [ 3, "i" ] ], [ "get-in", "solution", [ 1, "i" ] ], [ "get-in", "solution", [ 2, "i" ] ], [ "get-in", "solution", [ 0, "i" ] ] ], [ 1, 4, 3, 2 ] ] ] ], [ "quadrant_1", [ "=", [ [ "get-in", "solution", [ 0, 0 ] ], [ "get-in", "solution", [ 1, 1 ] ], [ "get-in", "solution", [ 1, 0 ] ], [ "get-in", "solution", [ 0, 1 ] ] ], [ 1, 4, 3, 2 ] ] ], [ "quadrant_2", [ "=", [ [ "get-in", "solution", [ 0, 2 ] ], [ "get-in", "solution", [ 1, 2 ] ], [ "get-in", "solution", [ 0, 3 ] ], [ "get-in", "solution", [ 1, 3 ] ] ], [ 1, 4, 3, 2 ] ] ], [ "quadrant_3", [ "=", [ [ "get-in", "solution", [ 2, 1 ] ], [ "get-in", "solution", [ 3, 0 ] ], [ "get-in", "solution", [ 3, 1 ] ], [ "get-in", "solution", [ 2, 0 ] ] ], [ 1, 4, 3, 2 ] ] ], [ "quadrant_4", [ "=", [ [ "get-in", "solution", [ 3, 2 ] ], [ "get-in", "solution", [ 2, 3 ] ], [ "get-in", "solution", [ 2, 2 ] ], [ "get-in", "solution", [ 3, 3 ] ] ], [ 1, 4, 3, 2 ] ] ] ]
+    "constraints" : [ [ "rows", "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})" ], [ "columns", "every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})" ], [ "quadrant_1", "(#{solution[0][0], solution[0][1], solution[1][0], solution[1][1]} == #{1, 2, 3, 4})" ], [ "quadrant_2", "(#{solution[0][2], solution[0][3], solution[1][2], solution[1][3]} == #{1, 2, 3, 4})" ], [ "quadrant_3", "(#{solution[2][0], solution[2][1], solution[3][0], solution[3][1]} == #{1, 2, 3, 4})" ], [ "quadrant_4", "(#{solution[2][2], solution[2][3], solution[3][2], solution[3][3]} == #{1, 2, 3, 4})" ] ]
   }
 }
 ```

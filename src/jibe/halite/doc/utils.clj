@@ -7,6 +7,7 @@
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
             [jibe.lib.fixed-decimal :as fixed-decimal]
+            [jibe.logic.jadeite :as jadeite]
             [zprint.core :as zprint]))
 
 (defn spit-dir [filename txt]
@@ -75,7 +76,14 @@
 
 (defn spec-map-str [lang spec-map]
   ({:halite (pprint-halite spec-map)
-    :jadeite (str (json/encode spec-map {:pretty true}) "\n")} lang))
+    :jadeite (str (json/encode (update-vals spec-map
+                                            (fn [spec]
+                                              (if-let [constraints (:constraints spec)]
+                                                (assoc spec
+                                                       :constraints (->> constraints
+                                                                         (mapv (fn [[name expr]]
+                                                                                 [name (jadeite/to-jadeite expr)]))))
+                                                spec))) {:pretty true}) "\n")} lang))
 
 ;; (zprint/zprint nil :explain)
 

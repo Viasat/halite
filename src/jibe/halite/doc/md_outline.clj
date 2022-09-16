@@ -10,7 +10,7 @@
     "# Halite resource specifications\n
 All features are available in both Halite (s-expression) syntax and Jadeite (C-like) syntax.\n\n"
 
-    "## Tutorials\n\nTBD\n\n"
+    "## Tutorials\n\n"
     (->> tutorials
          (group-by (comp namespace key))
          (mapcat (fn [[namespace tutorials]]

@@ -26,7 +26,7 @@ This indicates that 'b' must be an integer, but it doesn't indicate what valid v
     "spec-vars" : {
       "b" : "Integer"
     },
-    "constraints" : [ [ "constrain_b", [ ">", "b", 100 ] ] ]
+    "constraints" : [ [ "constrain_b", "(b > 100)" ] ]
   }
 }
 ```
@@ -60,7 +60,7 @@ Constraints can be arbitrary expressions that refer to multiple fields.
       "b" : "Integer",
       "c" : "Integer"
     },
-    "constraints" : [ [ "constrain_b_c", [ "<", [ "+", "b", "c" ], 10 ] ] ]
+    "constraints" : [ [ "constrain_b_c", "((b + c) < 10)" ] ]
   }
 }
 ```
