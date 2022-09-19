@@ -57,8 +57,6 @@ All of the fields must be of the correct type. This is a conjunct: the field x m
  :y 100}
 ```
 
-All of the fields must be of the correct type. This is a conjunct: the field x must be a string and the field y must be an integer
-
 Violating either conditions causes the overall value to produce an error.
 
 ```clojure

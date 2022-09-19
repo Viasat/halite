@@ -90,6 +90,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
   * Specs are a general mechanism for modelling whatever is of interest.
 * What constraints are implied by refinement? [(Halite)](explanation/refinement-implications.md) [(Jadeite)](explanation/refinement-implications-j.md)
   * Specs can be defined as refining other specs. When this is done what constraints are implied by the refinement?
+* What is an abstract spec? [(Halite)](explanation/abstract-spec.md) [(Jadeite)](explanation/abstract-spec-j.md)
+  * An abstract spec defines instances which cannot be used in the construction of other instances.
 
 ### language
 

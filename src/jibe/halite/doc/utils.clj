@@ -64,8 +64,8 @@
   ([code trailing-newline?]
    (let [s (zprint/zprint-str code 80 {:fn-force-nl #{:binding}
                                        :map {:force-nl? true
-                                             :key-order [:spec-vars :constraints :refines-to
-                                                         :name :expr]}})]
+                                             :key-order [:abstract? :spec-vars :constraints :refines-to
+                                                         :name :expr :inverted?]}})]
      (if trailing-newline?
        (if (= \newline s)
          s

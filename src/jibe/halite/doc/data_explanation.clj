@@ -38,6 +38,76 @@
                                "A refinement defines a many-to-one mapping from one set of values to another set of values. In this example, it is a mapping from the values in the set 'spec/Ball' to the values in the set 'spec/Round'. Specifically, in this example, all 'spec/Ball' instances map to the same 'spec/Round' instance, but that is just the detail of this refinement definition."
                                "Note, a refinement is not the same as a sub-type relationship. This is not saying that 'spec/Ball' is a sub-type of 'spec/Ball'. In fact this is formally seen by the fact that the two sets are disjoint. An instance of 'spec/Ball' is never itself an instance of 'spec/Round'. Rather the refinement establishes a relationship between values from the two sets."]}
 
+                   :spec/abstract-spec
+                   {:label "What is an abstract spec?"
+                    :desc "An abstract spec defines instances which cannot be used in the construction of other instances."
+                    :contents ["Say we have an abstract concept of squareness."
+                               {:spec-map {:spec/Square {:abstract? true
+                                                         :spec-vars {:width "Integer"
+                                                                     :height "Integer"}}}}
+                               "The spec can be instantiated in a standalone fashion."
+                               {:code '{:$type :spec/Square :width 5 :height 5}}
+                               "However, this spec cannot be instantiated in the context of another instance. So consider the following two specs, where a concrete spec uses an abstract spec in composition."
+                               {:spec-map {:spec/Square {:abstract? true
+                                                         :spec-vars {:width "Integer"
+                                                                     :height "Integer"}}
+                                           :spec/Painting {:spec-vars {:square :spec/Square
+                                                                       :painter "String"}}}}
+                               "The instance of the abstract spec cannot be used in the construction of the painting instance."
+                               {:code '{:$type :spec/Painting
+                                        :square {:$type :spec/Square :width 5 :height 5}
+                                        :painter "van Gogh"}
+                                :throws :auto}
+                               "To create an instance of the composite painting spec, we need to define an additional spec which refines to the abstract spec, square."
+                               {:spec-map {:spec/Square {:abstract? true
+                                                         :spec-vars {:width "Integer"
+                                                                     :height "Integer"}}
+                                           :spec/Painting {:spec-vars {:square :spec/Square
+                                                                       :painter "String"}}
+                                           :spec/Canvas {:spec-vars {:size "String"}
+                                                         :refines-to {:spec/Square {:name "refine_to_square"
+                                                                                    :expr '(if (= "small" size)
+                                                                                             {:$type :spec/Square
+                                                                                              :width 5
+                                                                                              :height 5}
+                                                                                             {:$type :spec/Square
+                                                                                              :width 10
+                                                                                              :height 10})}}}}}
+                               "Now we can instantiate a painting using an instance of the concrete canvas spec."
+                               {:code '{:$type :spec/Painting
+                                        :square {:$type :spec/Canvas :size "large"}
+                                        :painter "van Gogh"}
+                                :result :auto}
+                               "We can determine the size of the square."
+                               {:code '(let [painting {:$type :spec/Painting
+                                                       :square {:$type :spec/Canvas :size "large"}
+                                                       :painter "van Gogh"}]
+                                         (get (refine-to (get painting :square) :spec/Square) :width))
+                                :result :auto}
+                               "An abstract spec is a spec that can be used to define some constraints on the value in a composite spec without indicating precisely what type of instance is used in the composition. In this example, the painting spec is defined to include a square without any reference to the canvas."
+                               "Consider another spec context, where an alternate spec is defined that refines to square."
+                               {:spec-map {:spec/Square {:abstract? true
+                                                         :spec-vars {:width "Integer"
+                                                                     :height "Integer"}}
+                                           :spec/Painting {:spec-vars {:square :spec/Square
+                                                                       :painter "String"}}
+                                           :spec/Wall {:refines-to {:spec/Square {:name "refine_to_square"
+                                                                                  :expr '{:$type :spec/Square
+                                                                                          :width 100
+                                                                                          :height 100}}}}}}
+                               "In this example, the exact same painting spec is used, but now a new spec is used to provide the square abstraction."
+                               {:code '{:$type :spec/Painting
+                                        :square {:$type :spec/Wall}
+                                        :painter "van Gogh"}
+                                :result :auto}
+                               "Once again, we can use the same code as before to retrieve the size of the square for this painting."
+                               {:code '(let [painting {:$type :spec/Painting
+                                                       :square {:$type :spec/Wall}
+                                                       :painter "van Gogh"}]
+                                         (get (refine-to (get painting :square) :spec/Square) :width))
+                                :result :auto}
+                               "So the abstract spec allows us to write code that composes and uses instances without knowing the specific type of the instances at the time that we write the code."]}
+
                    :spec/refinement-implications
                    {:label "What constraints are implied by refinement?"
                     :desc "Specs can be defined as refining other specs. When this is done what constraints are implied by the refinement?"
@@ -131,7 +201,6 @@
                                "All of the fields must be of the correct type. This is a conjunct: the field x must be a string and the field y must be an integer"
                                {:code '{:$type :spec/X$v2 :x "hi" :y 100}
                                 :result :auto}
-                               "All of the fields must be of the correct type. This is a conjunct: the field x must be a string and the field y must be an integer"
                                "Violating either conditions causes the overall value to produce an error."
                                {:code '{:$type :spec/X$v2 :x "hi" :y "bye"}
                                 :throws :auto}
