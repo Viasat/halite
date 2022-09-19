@@ -489,7 +489,7 @@
                                        (div (* #d "1.0" (mod x y)) y)))
                            :result :auto}]}
 
-              :other/loop
+              :flow-control/loop
               {:label "How to write a loop"
                :desc "There is no explicit language construct to write a loop. So how to write one?"
                :contents ["Most languages will have some sort of 'for' loop or 'do while' look construct. In many cases the need for looping is subsumed by the collection operators that are present. For example, rather than writing a loop to extract values from a collection, 'filter' can be used."
@@ -500,6 +500,14 @@
                           {:code '(let [x [5 17 23 35]]
                                     (map [e x] (inc e)))
                            :result :auto}
+                          "If we need to test whether a predicate holds for items in a collection, rather than writing a loop we can use 'every?' and 'any?'."
+                          {:code '(let [x [5 17 23 35]]
+                                    (every? [e x] (> e 0)))
+                           :result :auto}
+                          {:code '(let [x [5 17 23 35]]
+                                    (any? [e x] (> e 20)))
+                           :result :auto}
+
                           "Finally if we need to create a single value from a collection, rather than writing a loop, we can use 'reduce'."
                           {:code '(let [x [5 17 23 35]]
                                     (reduce [a 0] [e x] (+ a e)))
@@ -516,4 +524,105 @@
                            :result :auto}
                           "Of course this example is contrived, because the 'mod' operator is available."]
                :basic-ref ['vector 'integer]
-               :op-ref ['reduce 'map 'filter 'range 'div]}})
+               :op-ref ['reduce 'map 'filter 'range 'div]}
+
+              :flow-control/short-circuiting
+              {:label "How to use short-circuiting to avoid runtime errors."
+               :desc "Several operations can throw runtime errors. This includes mathematical overflow, division by 0, index out of bounds, invoking non-existent refinement paths, and construction of invalid instances. The question is: how to write code to avoid such runtime errors?"
+               :contents ["The typical pattern to avoid such runtime errors is to first test to see if some condition is met to make the operation 'safe'. Only if that condition is met is the operator invoked. For example, to guard dividing by zero."
+                          {:code '(let [x 0]
+                                    (div 100 x))
+                           :throws :auto}
+                          {:code '(let [x 0]
+                                    (if (not= x 0)
+                                      (div 100 x)
+                                      0))
+                           :result :auto}
+
+                          "To guard index out of bounds."
+                          {:code '(let [x []]
+                                    (get x 0))
+                           :throws :auto}
+                          {:code '(let [x []]
+                                    (if (> (count x) 0)
+                                      (get x 0)
+                                      0))
+                           :result :auto}
+                          {:code '(let [x [10]]
+                                    (if (> (count x) 0)
+                                      (get x 0)
+                                      0))
+                           :result :auto}
+
+                          "To guard instance construction."
+                          {:spec-map {:spec/Q {:spec-vars {:a "Integer"}
+                                               :constraints [["c" '(> a 0)]]}}}
+                          {:code '(let [x 0]
+                                    {:$type :spec/Q :a x})
+                           :throws :auto}
+                          {:code '(let [x 0]
+                                    (if (valid? {:$type :spec/Q :a x})
+                                      {:$type :spec/Q :a x}
+                                      {:$type :spec/Q :a 1}))
+                           :result :auto}
+                          {:code '(let [x 10]
+                                    (if (valid? {:$type :spec/Q :a x})
+                                      {:$type :spec/Q :a x}
+                                      {:$type :spec/Q :a 1}))
+                           :result :auto}
+                          "This example can be refined slightly to avoid duplicating the construction."
+                          {:code '(let [x 0]
+                                    (if-value-let [i (valid {:$type :spec/Q :a x})]
+                                                  i
+                                                  {:$type :spec/Q :a 1}))
+                           :result :auto}
+                          {:code '(let [x 10]
+                                    (if-value-let [i (valid {:$type :spec/Q :a x})]
+                                                  i
+                                                  {:$type :spec/Q :a 1}))
+                           :result :auto}
+
+                          "To guard refinements."
+                          {:spec-map {:spec/Q {:spec-vars {:q "Integer"}}
+                                      :spec/P {:spec-vars {:p "Integer"}
+                                               :refines-to {:spec/Q {:name "refine_to_Q"
+                                                                     :expr '(when (> p 0)
+                                                                              {:$type :spec/Q :q p})}}}}}
+                          {:code '(let [x {:$type :spec/P :p 0}]
+                                    (refine-to x :spec/Q))
+                           :throws :auto}
+                          {:code '(let [x {:$type :spec/P :p 0}]
+                                    (if (refines-to? x :spec/Q)
+                                      (refine-to x :spec/Q)
+                                      {:$type :spec/Q :q 1}))
+                           :result :auto}
+                          {:code '(let [x {:$type :spec/P :p 10}]
+                                    (if (refines-to? x :spec/Q)
+                                      (refine-to x :spec/Q)
+                                      {:$type :spec/Q :q 1}))
+                           :result :auto}
+                          "So, 'if' and variants of 'if' such as 'when', 'if-value-let', and 'when-value-let' are the main tools for avoiding runtime errors. They each are special forms which do not eagerly evaluate their bodies at invocation time."
+                          "Some languages have short-circuiting logical operators 'and' and 'or'. However, they are not short-circuiting in this language."
+                          {:code '(let [x 0]
+                                    (and (> x 0) (> (div 100 x) 0)))
+                           :throws :auto}
+                          "The same applies to 'or':"
+                          {:code '(let [x 0]
+                                    (or (= x 0) (> (div 100 x) 0)))
+                           :throws :auto}
+                          "Similarly, the sequence operators of 'every?', 'any?', 'map', 'filter', and 'reduce' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements."
+                          "This raises an error even though logically, the result could be 'true' if just the first element is considered."
+                          {:code '(let [x [200 100 0]]
+                                    (any? [e x] (> (div 100 e) 0)))
+                           :throws :auto}
+                          "This raises an error even though logically, the result could be 'true' if just the first element is considered."
+                          {:code '(let [x [2 1 0]]
+                                    (every? [e x] (> (div 100 e) 0)))
+                           :throws :auto}
+                          "This raises an error even though, the result could be 2 if just the first element is actually accessed."
+                          {:code '(let [x [200 100 0]]
+                                    (get (map [e x] (div 100 e)) 0))
+                           :throws :auto}
+                          "This means that the logical operators cannot be used to guard against runtime errors. Instead the control flow statements must be used."]
+               :basic-ref ['vector 'integer]
+               :op-ref ['any? 'every? 'get 'div 'refine-to 'refines-to? 'if 'if-value-let 'when 'when-value-let 'valid 'valid?]}})

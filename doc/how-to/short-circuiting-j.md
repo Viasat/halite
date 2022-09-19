@@ -1,0 +1,230 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
+## How to use short-circuiting to avoid runtime errors.
+
+Several operations can throw runtime errors. This includes mathematical overflow, division by 0, index out of bounds, invoking non-existent refinement paths, and construction of invalid instances. The question is: how to write code to avoid such runtime errors?
+
+The typical pattern to avoid such runtime errors is to first test to see if some condition is met to make the operation 'safe'. Only if that condition is met is the operator invoked. For example, to guard dividing by zero.
+
+```java
+({ x = 0; (100 / x) })
+
+
+//-- result --
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+```
+
+```java
+({ x = 0; (if((x != 0)) {(100 / x)} else {0}) })
+
+
+//-- result --
+0
+```
+
+To guard index out of bounds.
+
+```java
+({ x = []; x[0] })
+
+
+//-- result --
+[:throws "h-err/index-out-of-bounds 0-0 : Index out of bounds, 0, for vector of length 0"]
+```
+
+```java
+({ x = []; (if((x.count() > 0)) {x[0]} else {0}) })
+
+
+//-- result --
+0
+```
+
+```java
+({ x = [10]; (if((x.count() > 0)) {x[0]} else {0}) })
+
+
+//-- result --
+10
+```
+
+To guard instance construction.
+
+```java
+{
+  "spec/Q" : {
+    "spec-vars" : {
+      "a" : "Integer"
+    },
+    "constraints" : [ [ "c", "(a > 0)" ] ]
+  }
+}
+```
+
+```java
+({ x = 0; {$type: spec/Q, a: x} })
+
+
+//-- result --
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Q', violates constraints c"]
+```
+
+```java
+({ x = 0; (if((valid? {$type: spec/Q, a: x})) {{$type: spec/Q, a: x}} else {{$type: spec/Q, a: 1}}) })
+
+
+//-- result --
+{$type: spec/Q, a: 1}
+```
+
+```java
+({ x = 10; (if((valid? {$type: spec/Q, a: x})) {{$type: spec/Q, a: x}} else {{$type: spec/Q, a: 1}}) })
+
+
+//-- result --
+{$type: spec/Q, a: 10}
+```
+
+This example can be refined slightly to avoid duplicating the construction.
+
+```java
+({ x = 0; (ifValueLet ( i = (valid {$type: spec/Q, a: x}) ) {i} else {{$type: spec/Q, a: 1}}) })
+
+
+//-- result --
+{$type: spec/Q, a: 1}
+```
+
+```java
+({ x = 10; (ifValueLet ( i = (valid {$type: spec/Q, a: x}) ) {i} else {{$type: spec/Q, a: 1}}) })
+
+
+//-- result --
+{$type: spec/Q, a: 10}
+```
+
+To guard refinements.
+
+```java
+{
+  "spec/Q" : {
+    "spec-vars" : {
+      "q" : "Integer"
+    }
+  },
+  "spec/P" : {
+    "spec-vars" : {
+      "p" : "Integer"
+    },
+    "refines-to" : {
+      "spec/Q" : {
+        "name" : "refine_to_Q",
+        "expr" : "(when((p > 0)) {{$type: spec/Q, q: p}})"
+      }
+    }
+  }
+}
+```
+
+```java
+({ x = {$type: spec/P, p: 0}; x.refineTo( spec/Q ) })
+
+
+//-- result --
+[:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/P' to 'spec/Q'"]
+```
+
+```java
+({ x = {$type: spec/P, p: 0}; (if(x.refinesTo?( spec/Q )) {x.refineTo( spec/Q )} else {{$type: spec/Q, q: 1}}) })
+
+
+//-- result --
+{$type: spec/Q, q: 1}
+```
+
+```java
+({ x = {$type: spec/P, p: 10}; (if(x.refinesTo?( spec/Q )) {x.refineTo( spec/Q )} else {{$type: spec/Q, q: 1}}) })
+
+
+//-- result --
+{$type: spec/Q, q: 10}
+```
+
+So, 'if' and variants of 'if' such as 'when', 'if-value-let', and 'when-value-let' are the main tools for avoiding runtime errors. They each are special forms which do not eagerly evaluate their bodies at invocation time.
+
+Some languages have short-circuiting logical operators 'and' and 'or'. However, they are not short-circuiting in this language.
+
+```java
+({ x = 0; ((x > 0) && ((100 / x) > 0)) })
+
+
+//-- result --
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+```
+
+The same applies to 'or':
+
+```java
+({ x = 0; ((x == 0) || ((100 / x) > 0)) })
+
+
+//-- result --
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+```
+
+Similarly, the sequence operators of 'every?', 'any?', 'map', 'filter', and 'reduce' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements.
+
+This raises an error even though logically, the result could be 'true' if just the first element is considered.
+
+```java
+({ x = [200, 100, 0]; any?(e in x)((100 / e) > 0) })
+
+
+//-- result --
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+```
+
+This raises an error even though logically, the result could be 'true' if just the first element is considered.
+
+```java
+({ x = [2, 1, 0]; every?(e in x)((100 / e) > 0) })
+
+
+//-- result --
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+```
+
+This raises an error even though, the result could be 2 if just the first element is actually accessed.
+
+```java
+({ x = [200, 100, 0]; map(e in x)(100 / e)[0] })
+
+
+//-- result --
+[:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
+```
+
+This means that the logical operators cannot be used to guard against runtime errors. Instead the control flow statements must be used.
+
+#### Basic elements:
+
+[`integer`](../jadeite-basic-syntax-reference.md#integer), [`vector`](../jadeite-basic-syntax-reference.md#vector)
+
+#### Operator reference:
+
+* [`/`](../jadeite-full-reference.md#/)
+* [`ACCESSOR`](../jadeite-full-reference.md#ACCESSOR)
+* [`any?`](../jadeite-full-reference.md#any_Q)
+* [`every?`](../jadeite-full-reference.md#every_Q)
+* [`if`](../jadeite-full-reference.md#if)
+* [`ifValueLet`](../jadeite-full-reference.md#ifValueLet)
+* [`refineTo`](../jadeite-full-reference.md#refineTo)
+* [`refinesTo?`](../jadeite-full-reference.md#refinesTo_Q)
+* [`valid`](../jadeite-full-reference.md#valid)
+* [`valid?`](../jadeite-full-reference.md#valid_Q)
+* [`when`](../jadeite-full-reference.md#when)
+* [`whenValueLet`](../jadeite-full-reference.md#whenValueLet)
+
+

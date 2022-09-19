@@ -28,6 +28,26 @@ Similarly if we need to make a new collection derived from a collection, rather 
 [6 18 24 36]
 ```
 
+If we need to test whether a predicate holds for items in a collection, rather than writing a loop we can use 'every?' and 'any?'.
+
+```clojure
+(let [x [5 17 23 35]]
+  (every? [e x] (> e 0)))
+
+
+;-- result --
+true
+```
+
+```clojure
+(let [x [5 17 23 35]]
+  (any? [e x] (> e 20)))
+
+
+;-- result --
+true
+```
+
 Finally if we need to create a single value from a collection, rather than writing a loop, we can use 'reduce'.
 
 ```clojure

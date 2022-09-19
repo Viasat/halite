@@ -66,17 +66,19 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 * Transform a vector into a single value [(Halite)](how-to/reduce.md) [(Jadeite)](how-to/reduce-j.md)
   * Consider that you have a vector of values and you need to produce a single value that takes into account all of the values in the vector.
 
+### flow-control
+
+* How to use short-circuiting to avoid runtime errors. [(Halite)](how-to/short-circuiting.md) [(Jadeite)](how-to/short-circuiting-j.md)
+  * Several operations can throw runtime errors. This includes mathematical overflow, division by 0, index out of bounds, invoking non-existent refinement paths, and construction of invalid instances. The question is: how to write code to avoid such runtime errors?
+* How to write a loop [(Halite)](how-to/loop.md) [(Jadeite)](how-to/loop-j.md)
+  * There is no explicit language construct to write a loop. So how to write one?
+
 ### number
 
 * Add an integer value to a decimal value [(Halite)](how-to/add-integer-to-decimal.md) [(Jadeite)](how-to/add-integer-to-decimal-j.md)
   * Consider you have an integer and a decimal value and you need to add them together.
 * Divide an integer to produce a decimal result [(Halite)](how-to/perform-non-integer-division.md) [(Jadeite)](how-to/perform-non-integer-division-j.md)
   * Consider you have an integer value and you want to divide it by another integer to produce a decimal result.
-
-### other
-
-* How to write a loop [(Halite)](how-to/loop.md) [(Jadeite)](how-to/loop-j.md)
-  * There is no explicit language construct to write a loop. So how to write one?
 
 ## Explanation
 
