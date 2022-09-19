@@ -84,6 +84,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ### spec
 
+* Considering a spec as a predicate [(Halite)](explanation/specs-as-predicates.md) [(Jadeite)](explanation/specs-as-predicates-j.md)
+  * A spec can be considered a giant predicate which when applied to a value returns 'true' if the value is a valid instance and 'false' or a runtime error otherwise.
 * Specs are about modeling things [(Halite)](explanation/big-picture.md) [(Jadeite)](explanation/big-picture-j.md)
   * Specs are a general mechanism for modelling whatever is of interest.
 * What constraints are implied by refinement? [(Halite)](explanation/refinement-implications.md) [(Jadeite)](explanation/refinement-implications-j.md)

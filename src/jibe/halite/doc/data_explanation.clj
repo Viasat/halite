@@ -114,6 +114,97 @@
                     :basic-ref ['instance]
                     :op-ref ['refine-to 'valid? 'refines-to?]}
 
+                   :spec/specs-as-predicates
+                   {:label "Considering a spec as a predicate"
+                    :desc "A spec can be considered a giant predicate which when applied to a value returns 'true' if the value is a valid instance and 'false' or a runtime error otherwise."
+                    :contents ["The type indications of spec variables can be considered as predicates."
+                               {:spec-map {:spec/X$v1 {:spec-vars {:x "String"}}}}
+                               "If an instance is made with the correct type for a field value, then the predicate produces 'true'."
+                               {:code '{:$type :spec/X$v1 :x "hi"}
+                                :result :auto}
+                               "If an instance is made without the correct type for a field value, then the predicate produces an error."
+                               {:code '{:$type :spec/X$v1 :x 25}
+                                :throws :auto}
+                               "If a specification defines multiple spec vars then the result is a logical conjunct."
+                               {:spec-map {:spec/X$v2 {:spec-vars {:x "String"
+                                                                   :y "Integer"}}}}
+                               "All of the fields must be of the correct type. This is a conjunct: the field x must be a string and the field y must be an integer"
+                               {:code '{:$type :spec/X$v2 :x "hi" :y 100}
+                                :result :auto}
+                               "All of the fields must be of the correct type. This is a conjunct: the field x must be a string and the field y must be an integer"
+                               "Violating either conditions causes the overall value to produce an error."
+                               {:code '{:$type :spec/X$v2 :x "hi" :y "bye"}
+                                :throws :auto}
+                               "Violating either conditions causes the overall value to produce an error."
+                               {:code '{:$type :spec/X$v2 :x 5 :y 100}
+                                :throws :auto}
+                               "Similarly, each constraint by itself is a predicate and is combined in a conjunction with all of the spec variable type checks."
+                               {:spec-map {:spec/X$v3 {:spec-vars {:x "String"
+                                                                   :y "Integer"}
+                                                       :constraints [["valid_y" '(> y 0)]]}}}
+                               {:code '{:$type :spec/X$v3 :x "hi" :y 100}
+                                :result :auto}
+                               "So if any of the types are wrong or if the constraint is violated then an error is produced."
+                               {:code '{:$type :spec/X$v3 :x "hi" :y -1}
+                                :throws :auto}
+                               "If there are multiple constraints, they are all logically combined into a single conjunction for the spec."
+                               {:spec-map {:spec/X$v5 {:spec-vars {:x "String"
+                                                                   :y "Integer"}
+                                                       :constraints [["valid_x" '(contains? #{"hi" "bye"} x)]
+                                                                     ["valid_y" '(> y 0)]]}}}
+                               {:code '{:$type :spec/X$v5 :x "hi" :y 100}
+                                :result :auto}
+                               "Again, violating any one constraint causes an error to be produced."
+                               {:code '{:$type :spec/X$v5 :x "hello" :y 100}
+                                :throws :auto}
+                               "Finally, the refinements can also bring in additional constraints which are combined into the overall conjunction for the spec."
+                               {:spec-map {:spec/A {:spec-vars {:b "Integer"}
+                                                    :constraints [["valid_b" '(< b 10)]]}
+                                           :spec/X$v6 {:spec-vars {:x "String"
+                                                                   :y "Integer"}
+                                                       :constraints [["valid_x" '(contains? #{"hi" "bye"} x)]
+                                                                     ["valid_y" '(> y 0)]]
+                                                       :refines-to {:spec/A {:name "refine_to_A"
+                                                                             :expr '{:$type :spec/A
+                                                                                     :b y}}}}}}
+                               {:code '{:$type :spec/X$v6 :x "hi" :y 9}
+                                :result :auto}
+                               "If one of the constraints implied by a refinement is violated, then an error is produced."
+                               {:code '{:$type :spec/X$v6 :x "hi" :y 12}
+                                :throws :auto}
+                               "Implications of each additional refinement are combined into the single conujunction for this spec."
+                               {:spec-map {:spec/A {:spec-vars {:b "Integer"}
+                                                    :constraints [["valid_b" '(< b 10)]]}
+                                           :spec/P {:spec-vars {:q "String"}
+                                                    :constraints [["valid_q" '(= q "hi")]]}
+                                           :spec/X$v7 {:spec-vars {:x "String"
+                                                                   :y "Integer"}
+                                                       :constraints [["valid_x" '(contains? #{"hi" "bye"} x)]
+                                                                     ["valid_y" '(> y 0)]]
+                                                       :refines-to {:spec/A {:name "refine_to_A"
+                                                                             :expr '{:$type :spec/A
+                                                                                     :b y}}
+                                                                    :spec/P {:name "refine_to_P"
+                                                                             :expr '{:$type :spec/P
+                                                                                     :q x}}}}}}
+                               {:code '{:$type :spec/X$v7 :x "hi" :y 9}
+                                :result :auto}
+                               "Violate one of the implied refinement constraints."
+                               {:code '{:$type :spec/X$v7 :x "bye" :y 9}
+                                :throws :auto}
+                               "Violation of constraints can be detected by using the 'valid?' operator. This works for constraints in the spec explicitly as well as constraints implied via refinements."
+                               {:code '(valid? {:$type :spec/X$v7 :x "hi" :y 9})
+                                :result :auto}
+                               {:code '(valid? {:$type :spec/X$v7 :x "hola" :y 9})
+                                :result :auto}
+                               {:code '(valid? {:$type :spec/X$v7 :x "bye" :y 9})
+                                :result :auto}
+                               "However, the 'valid?' operator cannot be used to handle cases that would violate the required types of specs variables."
+                               {:code '(valid? {:$type :spec/X$v7 :x 1 :y 9})
+                                :throws :auto}]
+                    :basic-ref ['instance]
+                    :op-ref ['refine-to 'valid? 'refines-to?]}
+
                    :language/functional
                    {:label "Language is functional"
                     :desc "Both Halite, and its alternate representation, Jadeite, are purely functional languages."
