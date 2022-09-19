@@ -73,6 +73,11 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 * Divide an integer to produce a decimal result [(Halite)](how-to/perform-non-integer-division.md) [(Jadeite)](how-to/perform-non-integer-division-j.md)
   * Consider you have an integer value and you want to divide it by another integer to produce a decimal result.
 
+### other
+
+* How to write a loop [(Halite)](how-to/loop.md) [(Jadeite)](how-to/loop-j.md)
+  * There is no explicit language construct to write a loop. So how to write one?
+
 ## Explanation
 
 ### spec
