@@ -79,6 +79,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 * Specs are about modeling things [(Halite)](explanation/big-picture.md) [(Jadeite)](explanation/big-picture-j.md)
   * Specs are a general mechanism for modelling whatever is of interest.
+* What constraints are implied by refinement? [(Halite)](explanation/refinement-implications.md) [(Jadeite)](explanation/refinement-implications-j.md)
+  * Specs can be defined as refining other specs. When this is done what constraints are implied by the refinement?
 
 ### language
 
