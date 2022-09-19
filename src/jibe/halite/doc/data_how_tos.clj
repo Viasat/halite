@@ -606,23 +606,45 @@
                           {:code '(let [x 0]
                                     (and (> x 0) (> (div 100 x) 0)))
                            :throws :auto}
+                          {:code '(let [x 0]
+                                    (and (> x 0)))
+                           :result :auto}
                           "The same applies to 'or':"
                           {:code '(let [x 0]
                                     (or (= x 0) (> (div 100 x) 0)))
                            :throws :auto}
-                          "Similarly, the sequence operators of 'every?', 'any?', 'map', 'filter', and 'reduce' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements."
-                          "This raises an error even though logically, the result could be 'true' if just the first element is considered."
-                          {:code '(let [x [200 100 0]]
-                                    (any? [e x] (> (div 100 e) 0)))
-                           :throws :auto}
+                          {:code '(let [x 0]
+                                    (or (= x 0)))
+                           :result :auto}
+                          "Similarly, the sequence operators of 'every?', 'any?', 'map', and 'filter' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements."
                           "This raises an error even though logically, the result could be 'true' if just the first element is considered."
                           {:code '(let [x [2 1 0]]
+                                    (any? [e x] (> (div 100 e) 0)))
+                           :throws :auto}
+                          {:code '(let [x [2 1]]
+                                    (any? [e x] (> (div 100 e) 0)))
+                           :result :auto}
+                          "This raises an error even though logically, the result could be 'false' if just the first element is considered."
+                          {:code '(let [x [200 100 0]]
                                     (every? [e x] (> (div 100 e) 0)))
                            :throws :auto}
-                          "This raises an error even though, the result could be 2 if just the first element is actually accessed."
-                          {:code '(let [x [200 100 0]]
+                          {:code '(let [x [200 100]]
+                                    (every? [e x] (> (div 100 e) 0)))
+                           :result :auto}
+                          "This raises an error even though, the result could be 50 if just the first element is actually accessed."
+                          {:code '(let [x [2 1 0]]
                                     (get (map [e x] (div 100 e)) 0))
                            :throws :auto}
+                          {:code '(let [x [2 1]]
+                                    (get (map [e x] (div 100 e)) 0))
+                           :result :auto}
+                          "This raises an error even though, the result could be 2 if just the first element is actually accessed."
+                          {:code '(let [x [2 1 0]]
+                                    (get (filter [e x] (> (div 100 e) 0)) 0))
+                           :throws :auto}
+                          {:code '(let [x [2 1]]
+                                    (get (filter [e x] (> (div 100 e) 0)) 0))
+                           :result :auto}
                           "This means that the logical operators cannot be used to guard against runtime errors. Instead the control flow statements must be used."]
                :basic-ref ['vector 'integer]
                :op-ref ['any? 'every? 'get 'div 'refine-to 'refines-to? 'if 'if-value-let 'when 'when-value-let 'valid 'valid?]}})

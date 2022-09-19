@@ -204,6 +204,15 @@ Some languages have short-circuiting logical operators 'and' and 'or'. However, 
  :h-err/divide-by-zero]
 ```
 
+```clojure
+(let [x 0]
+  (and (> x 0)))
+
+
+;-- result --
+false
+```
+
 The same applies to 'or':
 
 ```clojure
@@ -216,12 +225,21 @@ The same applies to 'or':
  :h-err/divide-by-zero]
 ```
 
-Similarly, the sequence operators of 'every?', 'any?', 'map', 'filter', and 'reduce' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements.
+```clojure
+(let [x 0]
+  (or (= x 0)))
+
+
+;-- result --
+true
+```
+
+Similarly, the sequence operators of 'every?', 'any?', 'map', and 'filter' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements.
 
 This raises an error even though logically, the result could be 'true' if just the first element is considered.
 
 ```clojure
-(let [x [200 100 0]]
+(let [x [2 1 0]]
   (any? [e x] (> (div 100 e) 0)))
 
 
@@ -230,10 +248,19 @@ This raises an error even though logically, the result could be 'true' if just t
  :h-err/divide-by-zero]
 ```
 
-This raises an error even though logically, the result could be 'true' if just the first element is considered.
+```clojure
+(let [x [2 1]]
+  (any? [e x] (> (div 100 e) 0)))
+
+
+;-- result --
+true
+```
+
+This raises an error even though logically, the result could be 'false' if just the first element is considered.
 
 ```clojure
-(let [x [2 1 0]]
+(let [x [200 100 0]]
   (every? [e x] (> (div 100 e) 0)))
 
 
@@ -242,16 +269,55 @@ This raises an error even though logically, the result could be 'true' if just t
  :h-err/divide-by-zero]
 ```
 
-This raises an error even though, the result could be 2 if just the first element is actually accessed.
+```clojure
+(let [x [200 100]]
+  (every? [e x] (> (div 100 e) 0)))
+
+
+;-- result --
+false
+```
+
+This raises an error even though, the result could be 50 if just the first element is actually accessed.
 
 ```clojure
-(let [x [200 100 0]]
+(let [x [2 1 0]]
   (get (map [e x] (div 100 e)) 0))
 
 
 ;-- result --
 [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"
  :h-err/divide-by-zero]
+```
+
+```clojure
+(let [x [2 1]]
+  (get (map [e x] (div 100 e)) 0))
+
+
+;-- result --
+50
+```
+
+This raises an error even though, the result could be 2 if just the first element is actually accessed.
+
+```clojure
+(let [x [2 1 0]]
+  (get (filter [e x] (> (div 100 e) 0)) 0))
+
+
+;-- result --
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"
+ :h-err/divide-by-zero]
+```
+
+```clojure
+(let [x [2 1]]
+  (get (filter [e x] (> (div 100 e) 0)) 0))
+
+
+;-- result --
+2
 ```
 
 This means that the logical operators cannot be used to guard against runtime errors. Instead the control flow statements must be used.

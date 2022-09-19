@@ -164,6 +164,14 @@ Some languages have short-circuiting logical operators 'and' and 'or'. However, 
 [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
+```java
+({ x = 0; ((x > 0)) })
+
+
+//-- result --
+false
+```
+
 The same applies to 'or':
 
 ```java
@@ -174,32 +182,82 @@ The same applies to 'or':
 [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
-Similarly, the sequence operators of 'every?', 'any?', 'map', 'filter', and 'reduce' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements.
+```java
+({ x = 0; ((x == 0)) })
+
+
+//-- result --
+true
+```
+
+Similarly, the sequence operators of 'every?', 'any?', 'map', and 'filter' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements.
 
 This raises an error even though logically, the result could be 'true' if just the first element is considered.
 
 ```java
-({ x = [200, 100, 0]; any?(e in x)((100 / e) > 0) })
+({ x = [2, 1, 0]; any?(e in x)((100 / e) > 0) })
 
 
 //-- result --
 [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
-This raises an error even though logically, the result could be 'true' if just the first element is considered.
+```java
+({ x = [2, 1]; any?(e in x)((100 / e) > 0) })
+
+
+//-- result --
+true
+```
+
+This raises an error even though logically, the result could be 'false' if just the first element is considered.
 
 ```java
-({ x = [2, 1, 0]; every?(e in x)((100 / e) > 0) })
+({ x = [200, 100, 0]; every?(e in x)((100 / e) > 0) })
 
 
 //-- result --
 [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+```
+
+```java
+({ x = [200, 100]; every?(e in x)((100 / e) > 0) })
+
+
+//-- result --
+false
+```
+
+This raises an error even though, the result could be 50 if just the first element is actually accessed.
+
+```java
+({ x = [2, 1, 0]; map(e in x)(100 / e)[0] })
+
+
+//-- result --
+[:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
+```
+
+```java
+({ x = [2, 1]; map(e in x)(100 / e)[0] })
+
+
+//-- result --
+[:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
 ```
 
 This raises an error even though, the result could be 2 if just the first element is actually accessed.
 
 ```java
-({ x = [200, 100, 0]; map(e in x)(100 / e)[0] })
+({ x = [2, 1, 0]; filter(e in x)((100 / e) > 0)[0] })
+
+
+//-- result --
+[:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
+```
+
+```java
+({ x = [2, 1]; filter(e in x)((100 / e) > 0)[0] })
 
 
 //-- result --
