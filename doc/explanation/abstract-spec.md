@@ -52,13 +52,13 @@ To create an instance of the composite painting spec, we need to define an addit
 ```clojure
 {:spec/Canvas {:spec-vars {:size "String"},
                :refines-to {:spec/Square {:name "refine_to_square",
-                                          :expr (if (= "small" size)
-                                                  {:$type :spec/Square,
-                                                   :width 5,
-                                                   :height 5}
-                                                  {:$type :spec/Square,
-                                                   :width 10,
-                                                   :height 10})}}},
+                                          :expr '(if (= "small" size)
+                                                   {:$type :spec/Square,
+                                                    :width 5,
+                                                    :height 5}
+                                                   {:$type :spec/Square,
+                                                    :width 10,
+                                                    :height 10})}}},
  :spec/Painting {:spec-vars {:painter "String",
                              :square :spec/Square}},
  :spec/Square {:abstract? true,
@@ -107,9 +107,9 @@ Consider another spec context, where an alternate spec is defined that refines t
                :spec-vars {:height "Integer",
                            :width "Integer"}},
  :spec/Wall {:refines-to {:spec/Square {:name "refine_to_square",
-                                        :expr {:$type :spec/Square,
-                                               :height 100,
-                                               :width 100}}}}}
+                                        :expr '{:$type :spec/Square,
+                                                :width 100,
+                                                :height 100}}}}}
 ```
 
 In this example, the exact same painting spec is used, but now a new spec is used to provide the square abstraction.

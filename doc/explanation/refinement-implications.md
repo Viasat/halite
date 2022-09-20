@@ -11,7 +11,7 @@ One spec can be defined to be a refinement of another spec. First consider a squ
 ```clojure
 {:spec/Square {:spec-vars {:height "Integer",
                            :width "Integer"},
-               :constraints [["square" (= width height)]]}}
+               :constraints [["square" '(= width height)]]}}
 ```
 
 So the following is a valid spec/Square
@@ -42,12 +42,12 @@ Now consider a new spec, 'spec/Box', and we define that it refines to 'spec/Squa
 {:spec/Box$v1 {:spec-vars {:length "Integer",
                            :width "Integer"},
                :refines-to {:spec/Square {:name "refine_to_square",
-                                          :expr {:$type :spec/Square,
-                                                 :height length,
-                                                 :width width}}}},
+                                          :expr '{:$type :spec/Square,
+                                                  :width width,
+                                                  :height length}}}},
  :spec/Square {:spec-vars {:height "Integer",
                            :width "Integer"},
-               :constraints [["square" (= width height)]]}}
+               :constraints [["square" '(= width height)]]}}
 ```
 
 The refinement allows a 'spec/Square' instance to be computed from a 'spec/Box'
@@ -87,13 +87,13 @@ If this was not the intent, and rather the intent was to indicate that some inst
 {:spec/Box$v2 {:spec-vars {:length "Integer",
                            :width "Integer"},
                :refines-to {:spec/Square {:name "refine_to_square",
-                                          :expr (when (= width length)
-                                                  {:$type :spec/Square,
-                                                   :width width,
-                                                   :height length})}}},
+                                          :expr '(when (= width length)
+                                                   {:$type :spec/Square,
+                                                    :width width,
+                                                    :height length})}}},
  :spec/Square {:spec-vars {:height "Integer",
                            :width "Integer"},
-               :constraints [["square" (= width height)]]}}
+               :constraints [["square" '(= width height)]]}}
 ```
 
 Now it is possible to construct a box that is not a square.
@@ -144,13 +144,13 @@ Another way of defining the refinement is to declare it to be 'inverted?'. What 
 {:spec/Box$v3 {:spec-vars {:length "Integer",
                            :width "Integer"},
                :refines-to {:spec/Square {:name "refine_to_square",
-                                          :expr {:$type :spec/Square,
-                                                 :height length,
-                                                 :width width},
+                                          :expr '{:$type :spec/Square,
+                                                  :width width,
+                                                  :height length},
                                           :inverted? true}}},
  :spec/Square {:spec-vars {:height "Integer",
                            :width "Integer"},
-               :constraints [["square" (= width height)]]}}
+               :constraints [["square" '(= width height)]]}}
 ```
 
 Note that in this version of the refinement the guard clause in the refinement expression has been removed, which means the refinement applies to all instances of box. However, the refinement has been declared to be 'inverted?'. This means that even if the resulting square instance would violate the constraints of spec/Square, the spec/Box instance is still valid.

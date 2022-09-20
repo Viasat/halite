@@ -30,10 +30,10 @@ In order to be a valid solution, certain properties must be met: each row, colum
 ```clojure
 {:spec/Sudoku$v2 {:spec-vars {:solution [["Integer"]]},
                   :constraints
-                    [["row_1" (= (concat #{} (get solution 0)) #{1 4 3 2})]
-                     ["row_2" (= (concat #{} (get solution 1)) #{1 4 3 2})]
-                     ["row_3" (= (concat #{} (get solution 2)) #{1 4 3 2})]
-                     ["row_4" (= (concat #{} (get solution 3)) #{1 4 3 2})]]}}
+                    [["row_1" '(= (concat #{} (get solution 0)) #{1 4 3 2})]
+                     ["row_2" '(= (concat #{} (get solution 1)) #{1 4 3 2})]
+                     ["row_3" '(= (concat #{} (get solution 2)) #{1 4 3 2})]
+                     ["row_4" '(= (concat #{} (get solution 3)) #{1 4 3 2})]]}}
 ```
 
 Now when we create an instance it must meet these constraints. As this instance does.
@@ -66,8 +66,8 @@ Rather than expressing each row constraint separately, they can be captured in a
 ```clojure
 {:spec/Sudoku$v3 {:spec-vars {:solution [["Integer"]]},
                   :constraints [["rows"
-                                 (every? [r solution]
-                                         (= (concat #{} r) #{1 4 3 2}))]]}}
+                                 '(every? [r solution]
+                                          (= (concat #{} r) #{1 4 3 2}))]]}}
 ```
 
 Again, valid solutions can be constructed.
@@ -100,12 +100,13 @@ But, we are only checking rows, let's also check columns.
 ```clojure
 {:spec/Sudoku$v4
    {:spec-vars {:solution [["Integer"]]},
-    :constraints [["rows" (every? [r solution] (= (concat #{} r) #{1 4 3 2}))]
+    :constraints [["rows" '(every? [r solution] (= (concat #{} r) #{1 4 3 2}))]
                   ["columns"
-                   (every? [i [0 1 2 3]]
-                           (= #{(get-in solution [3 i]) (get-in solution [1 i])
-                                (get-in solution [2 i]) (get-in solution [0 i])}
-                              #{1 4 3 2}))]]}}
+                   '(every? [i [0 1 2 3]]
+                            (= #{(get-in solution [3 i]) (get-in solution [1 i])
+                                 (get-in solution [2 i])
+                                 (get-in solution [0 i])}
+                               #{1 4 3 2}))]]}}
 ```
 
 First, check if a valid solution works.
@@ -150,28 +151,29 @@ Let's add the quadrant checks.
 ```clojure
 {:spec/Sudoku$v5
    {:spec-vars {:solution [["Integer"]]},
-    :constraints [["rows" (every? [r solution] (= (concat #{} r) #{1 4 3 2}))]
+    :constraints [["rows" '(every? [r solution] (= (concat #{} r) #{1 4 3 2}))]
                   ["columns"
-                   (every? [i [0 1 2 3]]
-                           (= #{(get-in solution [3 i]) (get-in solution [1 i])
-                                (get-in solution [2 i]) (get-in solution [0 i])}
-                              #{1 4 3 2}))]
+                   '(every? [i [0 1 2 3]]
+                            (= #{(get-in solution [3 i]) (get-in solution [1 i])
+                                 (get-in solution [2 i])
+                                 (get-in solution [0 i])}
+                               #{1 4 3 2}))]
                   ["quadrant_1"
-                   (= #{(get-in solution [0 0]) (get-in solution [1 1])
-                        (get-in solution [1 0]) (get-in solution [0 1])}
-                      #{1 4 3 2})]
+                   '(= #{(get-in solution [0 0]) (get-in solution [1 1])
+                         (get-in solution [1 0]) (get-in solution [0 1])}
+                       #{1 4 3 2})]
                   ["quadrant_2"
-                   (= #{(get-in solution [0 2]) (get-in solution [1 2])
-                        (get-in solution [0 3]) (get-in solution [1 3])}
-                      #{1 4 3 2})]
+                   '(= #{(get-in solution [0 2]) (get-in solution [1 2])
+                         (get-in solution [0 3]) (get-in solution [1 3])}
+                       #{1 4 3 2})]
                   ["quadrant_3"
-                   (= #{(get-in solution [2 1]) (get-in solution [3 0])
-                        (get-in solution [3 1]) (get-in solution [2 0])}
-                      #{1 4 3 2})]
+                   '(= #{(get-in solution [2 1]) (get-in solution [3 0])
+                         (get-in solution [3 1]) (get-in solution [2 0])}
+                       #{1 4 3 2})]
                   ["quadrant_4"
-                   (= #{(get-in solution [3 2]) (get-in solution [2 3])
-                        (get-in solution [2 2]) (get-in solution [3 3])}
-                      #{1 4 3 2})]]}}
+                   '(= #{(get-in solution [3 2]) (get-in solution [2 3])
+                         (get-in solution [2 2]) (get-in solution [3 3])}
+                       #{1 4 3 2})]]}}
 ```
 
 Now the attempted solution, which has valid columns and rows, but not quadrants is detected as invalid. Notice the error indicates that all four quadrants were violated.
@@ -204,21 +206,22 @@ Let's combine the quadrant checks into one.
 ```clojure
 {:spec/Sudoku$v6
    {:spec-vars {:solution [["Integer"]]},
-    :constraints [["rows" (every? [r solution] (= (concat #{} r) #{1 4 3 2}))]
+    :constraints [["rows" '(every? [r solution] (= (concat #{} r) #{1 4 3 2}))]
                   ["columns"
-                   (every? [i [0 1 2 3]]
-                           (= #{(get-in solution [3 i]) (get-in solution [1 i])
-                                (get-in solution [2 i]) (get-in solution [0 i])}
-                              #{1 4 3 2}))]
+                   '(every? [i [0 1 2 3]]
+                            (= #{(get-in solution [3 i]) (get-in solution [1 i])
+                                 (get-in solution [2 i])
+                                 (get-in solution [0 i])}
+                               #{1 4 3 2}))]
                   ["quadrants"
-                   (every? [base [[0 0] [0 2] [2 0] [2 2]]]
-                           (let [base-x (get base 0)
-                                 base-y (get base 1)]
-                             (= #{(get-in solution [base-x base-y])
-                                  (get-in solution [(inc base-x) (inc base-y)])
-                                  (get-in solution [(inc base-x) base-y])
-                                  (get-in solution [base-x (inc base-y)])}
-                                #{1 4 3 2})))]]}}
+                   '(every? [base [[0 0] [0 2] [2 0] [2 2]]]
+                            (let [base-x (get base 0)
+                                  base-y (get base 1)]
+                              (= #{(get-in solution [base-x base-y])
+                                   (get-in solution [(inc base-x) (inc base-y)])
+                                   (get-in solution [(inc base-x) base-y])
+                                   (get-in solution [base-x (inc base-y)])}
+                                 #{1 4 3 2})))]]}}
 ```
 
 Valid solution still works.
@@ -252,21 +255,21 @@ As an exercise, we can convert the logic of the constraints. Instead of checking
 {:spec/Sudoku$v7
    {:spec-vars {:solution [["Integer"]]},
     :constraints
-      [["rows" (not (any? [r solution] (not= (concat #{} r) #{1 4 3 2})))]
+      [["rows" '(not (any? [r solution] (not= (concat #{} r) #{1 4 3 2})))]
        ["columns"
-        (not (any? [i [0 1 2 3]]
-                   (not= #{(get-in solution [3 i]) (get-in solution [1 i])
-                           (get-in solution [2 i]) (get-in solution [0 i])}
-                         #{1 4 3 2})))]
+        '(not (any? [i [0 1 2 3]]
+                    (not= #{(get-in solution [3 i]) (get-in solution [1 i])
+                            (get-in solution [2 i]) (get-in solution [0 i])}
+                          #{1 4 3 2})))]
        ["quadrants"
-        (not (any? [base [[0 0] [0 2] [2 0] [2 2]]]
-                   (let [base-x (get base 0)
-                         base-y (get base 1)]
-                     (not= #{(get-in solution [base-x base-y])
-                             (get-in solution [(inc base-x) (inc base-y)])
-                             (get-in solution [(inc base-x) base-y])
-                             (get-in solution [base-x (inc base-y)])}
-                           #{1 4 3 2}))))]]}}
+        '(not (any? [base [[0 0] [0 2] [2 0] [2 2]]]
+                    (let [base-x (get base 0)
+                          base-y (get base 1)]
+                      (not= #{(get-in solution [base-x base-y])
+                              (get-in solution [(inc base-x) (inc base-y)])
+                              (get-in solution [(inc base-x) base-y])
+                              (get-in solution [base-x (inc base-y)])}
+                            #{1 4 3 2}))))]]}}
 ```
 
 Valid solution still works.

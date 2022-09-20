@@ -12,8 +12,9 @@ It is a bit convoluted, but consider the following specs.
 {:spec/Add {:spec-vars {:x "Integer",
                         :y "Integer"},
             :refines-to {:spec/IntegerResult {:name "refine_to_result",
-                                              :expr {:$type :spec/IntegerResult,
-                                                     :result (+ x y)}}}},
+                                              :expr '{:$type
+                                                        :spec/IntegerResult,
+                                                      :result (+ x y)}}}},
  :spec/IntegerResult {:spec-vars {:result "Integer"}}}
 ```
 

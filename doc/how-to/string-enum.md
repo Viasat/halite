@@ -29,7 +29,8 @@ So we can add a constraint to limit the values to what we expect.
 ```clojure
 {:spec/Shirt$v2 {:spec-vars {:size "String"},
                  :constraints [["size_constraint"
-                                (contains? #{"small" "medium" "large"} size)]]}}
+                                '(contains? #{"small" "medium" "large"}
+                                            size)]]}}
 ```
 
 Now the shirt with the invalid size cannot be constructed.

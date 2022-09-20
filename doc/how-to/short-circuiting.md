@@ -62,7 +62,7 @@ To guard instance construction.
 
 ```clojure
 {:spec/Q {:spec-vars {:a "Integer"},
-          :constraints [["c" (> a 0)]]}}
+          :constraints [["c" '(> a 0)]]}}
 ```
 
 ```clojure
@@ -144,9 +144,9 @@ To guard refinements.
 ```clojure
 {:spec/P {:spec-vars {:p "Integer"},
           :refines-to {:spec/Q {:name "refine_to_Q",
-                                :expr (when (> p 0)
-                                        {:$type :spec/Q,
-                                         :q p})}}},
+                                :expr '(when (> p 0)
+                                         {:$type :spec/Q,
+                                          :q p})}}},
  :spec/Q {:spec-vars {:q "Integer"}}}
 ```
 

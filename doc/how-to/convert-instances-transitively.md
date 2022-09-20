@@ -11,12 +11,12 @@ Refinements are automatically, transitively applied to produce an instance of th
 ```clojure
 {:spec/A$v3 {:spec-vars {:b "Integer"},
              :refines-to {:spec/P$v3 {:name "refine_to_P",
-                                      :expr {:$type :spec/P$v3,
-                                             :q b}}}},
+                                      :expr '{:$type :spec/P$v3,
+                                              :q b}}}},
  :spec/P$v3 {:spec-vars {:q "Integer"},
              :refines-to {:spec/X$v3 {:name "refine_to_X",
-                                      :expr {:$type :spec/X$v3,
-                                             :y q}}}},
+                                      :expr '{:$type :spec/X$v3,
+                                              :y q}}}},
  :spec/X$v3 {:spec-vars {:y "Integer"}}}
 ```
 

@@ -13,17 +13,17 @@ The way to use an abstract field value as the result value in a refinement is to
                :spec-vars {:species "String"}},
  :spec/Cat {:spec-vars {:lives "Integer"},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
-                                       :expr {:$type :spec/Animal,
-                                              :species "Feline"}}}},
+                                       :expr '{:$type :spec/Animal,
+                                               :species "Feline"}}}},
  :spec/Dog {:spec-vars {:breed "String"},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
-                                       :expr {:$type :spec/Animal,
-                                              :species "Canine"}}}},
+                                       :expr '{:$type :spec/Animal,
+                                               :species "Canine"}}}},
  :spec/Pet$v1 {:spec-vars {:name "String",
                            :animal :spec/Animal},
                :refines-to {:spec/Animal {:name "refine_to_Animal",
-                                          :expr (refine-to animal
-                                                           :spec/Animal)}}}}
+                                          :expr '(refine-to animal
+                                                            :spec/Animal)}}}}
 ```
 
 ```clojure
@@ -59,12 +59,12 @@ Even if we happen to know the concrete type of an abstract field is of the right
                :spec-vars {:species "String"}},
  :spec/Dog {:spec-vars {:breed "String"},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
-                                       :expr {:$type :spec/Animal,
-                                              :species "Canine"}}}},
+                                       :expr '{:$type :spec/Animal,
+                                               :species "Canine"}}}},
  :spec/Pet$v2 {:spec-vars {:name "String",
                            :animal :spec/Animal},
                :refines-to {:spec/Dog {:name "refine_to_Dog",
-                                       :expr animal}}}}
+                                       :expr 'animal}}}}
 ```
 
 In this example, even though we know the value in the animal field is a dog, the attempted refinement cannot be executed.
@@ -90,16 +90,16 @@ If instead, we attempt to define the refinement of type animal, but still try to
                :spec-vars {:species "String"}},
  :spec/Cat {:spec-vars {:lives "Integer"},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
-                                       :expr {:$type :spec/Animal,
-                                              :species "Feline"}}}},
+                                       :expr '{:$type :spec/Animal,
+                                               :species "Feline"}}}},
  :spec/Dog {:spec-vars {:breed "String"},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
-                                       :expr {:$type :spec/Animal,
-                                              :species "Canine"}}}},
+                                       :expr '{:$type :spec/Animal,
+                                               :species "Canine"}}}},
  :spec/Pet$v3 {:spec-vars {:name "String",
                            :animal :spec/Animal},
                :refines-to {:spec/Animal {:name "refine_to_Animal",
-                                          :expr animal}}}}
+                                          :expr 'animal}}}}
 ```
 
 The refinement fails in this example, because the value being produced by the refinement expression is a dog, when it must be an animal to match the declared type of the refinement.

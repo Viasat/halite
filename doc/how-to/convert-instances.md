@@ -32,8 +32,8 @@ This work, but the language has a built-in idea of 'refinements' that allow such
 ```clojure
 {:spec/A$v2 {:spec-vars {:b "Integer"},
              :refines-to {:spec/X$v2 {:name "refine_to_X",
-                                      :expr {:$type :spec/X$v2,
-                                             :y b}}}},
+                                      :expr '{:$type :spec/X$v2,
+                                              :y b}}}},
  :spec/X$v2 {:spec-vars {:y "Integer"}}}
 ```
 

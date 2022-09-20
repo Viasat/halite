@@ -5,7 +5,6 @@
   (:require [cheshire.core :as json]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.pprint :as pprint]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.logic.jadeite :as jadeite]
             [zprint.core :as zprint]))
@@ -63,6 +62,7 @@
    (pprint-halite code true))
   ([code trailing-newline?]
    (let [s (zprint/zprint-str code 80 {:fn-force-nl #{:binding}
+                                       :style :backtranslate
                                        :map {:force-nl? true
                                              :key-order [:abstract? :spec-vars :constraints :refines-to
                                                          :name :expr :inverted?]}})]
@@ -74,25 +74,24 @@
          (subs s 0 (dec (count s)))
          s)))))
 
+(defn update-spec-map-exprs
+  "Given a map of specs, update the halite code expressions (constraints and
+  refinement expressions) using f."
+  [spec-map f]
+  (-> spec-map
+      (update-vals (fn [spec]
+                     (cond-> spec
+                       (:constraints spec)
+                       (update :constraints #(->> %
+                                                  (mapv (fn [[name expr]]
+                                                          [name (f expr)]))))
+                       (:refines-to spec)
+                       (update :refines-to update-vals (fn [refinement]
+                                                         (update refinement :expr f))))))))
+
 (defn spec-map-str [lang spec-map]
-  ({:halite (pprint-halite spec-map)
-    :jadeite (str (json/encode (update-vals (update-vals spec-map
-                                                         (fn [spec]
-                                                           (if-let [constraints (:constraints spec)]
-                                                             (assoc spec
-                                                                    :constraints (->> constraints
-                                                                                      (mapv (fn [[name expr]]
-                                                                                              [name (jadeite/to-jadeite expr)]))))
-                                                             spec)))
-                                            (fn [spec]
-                                              (if-let [refines-to (:refines-to spec)]
-                                                (assoc spec
-                                                       :refines-to (->> refines-to
-                                                                        (mapcat (fn [[name refinement]]
-                                                                                  [name (assoc refinement
-                                                                                               :expr (jadeite/to-jadeite (:expr refinement)))]))
-                                                                        (apply hash-map)))
-                                                spec)))
+  ({:halite (pprint-halite (update-spec-map-exprs spec-map #(list 'quote %)))
+    :jadeite (str (json/encode (update-spec-map-exprs spec-map jadeite/to-jadeite)
                                {:pretty true}) "\n")} lang))
 
 ;; (zprint/zprint nil :explain)

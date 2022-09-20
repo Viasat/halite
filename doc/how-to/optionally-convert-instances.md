@@ -11,9 +11,9 @@ In the following example, the refinement expression determines whether to conver
 ```clojure
 {:spec/A$v1 {:spec-vars {:b "Integer"},
              :refines-to {:spec/X$v1 {:name "refine_to_X",
-                                      :expr (when (> b 10)
-                                              {:$type :spec/X$v1,
-                                               :y b})}}},
+                                      :expr '(when (> b 10)
+                                               {:$type :spec/X$v1,
+                                                :y b})}}},
  :spec/X$v1 {:spec-vars {:y "Integer"}}}
 ```
 

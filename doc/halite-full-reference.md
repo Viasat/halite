@@ -2238,7 +2238,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 ;-- context --
 {:an/Other$v1 {},
  :my/Spec$v1 {:refines-to {:an/Other$v1 {:name "r",
-                                         :expr {:$type :an/Other$v1}}}}}
+                                         :expr '{:$type :an/Other$v1}}}}}
 ;--
 
 (refine-to {:$type :my/Spec$v1} :an/Other$v1)
@@ -2257,9 +2257,9 @@ Attempt to refine the given instance into an instance of type, spec-id.
  :my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
               :refines-to {:an/Other$v1 {:name "r",
-                                         :expr {:$type :an/Other$v1,
-                                                :x (inc p),
-                                                :y (dec n)}}}}}
+                                         :expr '{:$type :an/Other$v1,
+                                                 :x (inc p),
+                                                 :y (dec n)}}}}}
 ;--
 
 (refine-to {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
@@ -2318,7 +2318,7 @@ Determine whether it is possible to refine the given instance into an instance o
 ;-- context --
 {:an/Other$v1 {},
  :my/Spec$v1 {:refines-to {:an/Other$v1 {:name "r",
-                                         :expr {:$type :an/Other$v1}}}}}
+                                         :expr '{:$type :an/Other$v1}}}}}
 ;--
 
 (refines-to? {:$type :my/Spec$v1} :an/Other$v1)
@@ -2337,9 +2337,9 @@ true
  :my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
               :refines-to {:an/Other$v1 {:name "r",
-                                         :expr {:$type :an/Other$v1,
-                                                :x (inc p),
-                                                :y (dec n)}}}}}
+                                         :expr '{:$type :an/Other$v1,
+                                                 :x (inc p),
+                                                 :y (dec n)}}}}}
 ;--
 
 (refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)
@@ -2738,7 +2738,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
-              :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
+              :constraints [["cp" '(> p 0)] ["cn" '(< n 0)]]}}
 ;--
 
 (valid {:$type :my/Spec$v1, :p 1, :n -1})
@@ -2754,7 +2754,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
-              :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
+              :constraints [["cp" '(> p 0)] ["cn" '(< n 0)]]}}
 ;--
 
 (valid {:$type :my/Spec$v1, :p 1, :n 1})
@@ -2793,7 +2793,7 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
-              :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
+              :constraints [["cp" '(> p 0)] ["cn" '(< n 0)]]}}
 ;--
 
 (valid? {:$type :my/Spec$v1, :p 1, :n -1})
@@ -2809,7 +2809,7 @@ true
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
-              :constraints [["cp" (> p 0)] ["cn" (< n 0)]]}}
+              :constraints [["cp" '(> p 0)] ["cn" '(< n 0)]]}}
 ;--
 
 (valid? {:$type :my/Spec$v1, :p 1, :n 0})
