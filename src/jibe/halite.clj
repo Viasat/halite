@@ -8,14 +8,18 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [jibe.h-err :as h-err]
+            [jibe.halite-base :as halite-base]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
+            [jibe.halite-syntax-check :as halite-syntax-check]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.lib.format-errors :as format-errors :refer [throw-err with-exception-data text]]
             [schema.core :as s])
   (:import [clojure.lang BigInt ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
+
+;;
 
 (def reserved-words
   "Symbols beginning with $ that are currently defined by halite."
@@ -38,13 +42,6 @@
 (s/defschema ^:private EvalContext {:senv (s/protocol halite-envs/SpecEnv) :env (s/protocol halite-envs/Env)})
 
 (def ^:private ^:dynamic *refinements*)
-
-(defn integer-or-long? [value]
-  (or (instance? Long value)
-      (instance? Integer value)))
-
-(defn fixed-decimal? [value]
-  (fixed-decimal/fixed-decimal? value))
 
 (s/defn ^:private eval-predicate :- Boolean
   [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
@@ -79,7 +76,7 @@
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
   [senv :- (s/protocol halite-envs/SpecEnv), v]
   (cond
-    (or (integer-or-long? v) (fixed-decimal? v) (boolean? v) (string? v)) true
+    (or (halite-base/integer-or-long? v) (halite-base/fixed-decimal? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
                    spec-info (or (halite-envs/lookup-spec senv spec-id)
                                  (h-err/resource-spec-not-found {:spec-id (symbol spec-id)}))]
@@ -223,8 +220,8 @@
   [ctx :- TypeContext, value]
   (cond
     (boolean? value) :Boolean
-    (integer-or-long? value) :Integer
-    (fixed-decimal? value) (type-check-fixed-decimal value)
+    (halite-base/integer-or-long? value) :Integer
+    (halite-base/fixed-decimal? value) (type-check-fixed-decimal value)
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
@@ -265,38 +262,9 @@
   {:impl impl
    :signatures (make-signatures signatures)})
 
-(def ^:dynamic *limits* {:string-literal-length nil
-                         :string-runtime-length nil
-                         :vector-literal-count nil
-                         :vector-runtime-count nil
-                         :set-literal-count nil
-                         :set-runtime-count nil
-                         :list-literal-count nil
-                         :expression-nesting-depth nil})
-
-(s/defn check-count [object-type count-limit c context]
-  (when (> (count c) count-limit)
-    (throw-err (h-err/size-exceeded (merge context {:object-type object-type
-                                                    :actual-count (count c)
-                                                    :count-limit count-limit
-                                                    :value c}))))
-  c)
-
-(s/defn check-limit [limit-key v]
-  (when-let [limit (get *limits* limit-key)]
-    (condp = limit-key
-      :string-literal-length (check-count 'String limit v {})
-      :string-runtime-length (check-count 'String limit v {})
-      :vector-literal-count (check-count 'Vector limit v {})
-      :vector-runtime-count (check-count 'Vector limit v {})
-      :set-literal-count (check-count 'Set limit v {})
-      :set-runtime-count (check-count 'Set limit v {})
-      :list-literal-count (check-count 'List limit v {})))
-  v)
-
 (defmacro math-f [integer-f fixed-decimal-f]
   `(fn [& args#]
-     (apply (if (fixed-decimal? (first args#)) ~fixed-decimal-f ~integer-f) args#)))
+     (apply (if (halite-base/fixed-decimal? (first args#)) ~fixed-decimal-f ~integer-f) args#)))
 
 (def ^:private hstr  (math-f str  fixed-decimal/string-representation))
 (def ^:private hneg? (math-f neg? fixed-decimal/fneg?))
@@ -390,11 +358,11 @@
                            result))
                        [:Integer :Integer] :Integer)
      'abs (apply mk-builtin habs (into [[:Integer] :Integer] decimal-sigs-unary))
-     'str (mk-builtin (comp (partial check-limit :string-runtime-length) str) [& :String] :String)
+     'str (mk-builtin (comp (partial halite-base/check-limit :string-runtime-length) str) [& :String] :String)
      'subset? (mk-builtin set/subset? [(halite-types/set-type :Value) (halite-types/set-type :Value)] :Boolean)
      'sort (apply mk-builtin (fn [expr]
                                ((if (and (pos? (count expr))
-                                         (fixed-decimal? (first expr)))
+                                         (halite-base/fixed-decimal? (first expr)))
                                   (comp vec (partial sort-by fixed-decimal/sort-key))
                                   (comp vec sort)) expr))
                   (into [[halite-types/empty-set] halite-types/empty-vector
@@ -402,7 +370,7 @@
                          [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
                          [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer)]
                         decimal-sigs-collections))
-     'range (mk-builtin (comp (partial check-limit :vector-runtime-count) vec range)
+     'range (mk-builtin (comp (partial halite-base/check-limit :vector-runtime-count) vec range)
                         [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer] (halite-types/vector-type :Integer))
@@ -416,107 +384,7 @@
                                       :value v
                                       :limit n}))))
 
-;; for syntax checks
-
-(def max-symbol-length 256)
-
-(def symbol-regex
-  ;; from chouser, started with edn symbol description https://github.com/edn-format/edn#symbols
-  #"(?x) # allow comments and whitespace in regex
-        (?: # prefix (namespace) part
-          (?: # first character of prefix
-              [A-Za-z*!$?=<>_.]      # begin with non-numeric
-              | [+-] (?=[^0-9]))     # for +/-, second character must be non-numeric
-          [0-9A-Za-z*!$?=<>_+.-]*    # subsequent characters of prefix
-          /                          # prefix / name separator
-        )?                           # prefix is optional
-        (?: # name (suffix) part
-          (?!true$) (?!false$) (?!nil$) # these are not to be read as symbols
-          (?: # first character of name
-              [A-Za-z*!$?=<>_.]      # begin with non-numeric
-              | [+-] (?=[^0-9]|$))   # for +/-, second character must be non-numeric
-          [0-9A-Za-z*!$?=<>_+.-]*)   # subsequent characters of name
-        ")
-
-(defn- check-symbol-string [expr]
-  (let [s (if (symbol? expr)
-            (str expr)
-            (subs (str expr) 1))]
-    (when-not (re-matches symbol-regex s)
-      (throw-err ((if (symbol? expr)
-                    h-err/invalid-symbol-char
-                    h-err/invalid-keyword-char) {:form expr})))
-    (when-not (<= (count s) max-symbol-length)
-      (throw-err ((if (symbol? expr)
-                    h-err/invalid-symbol-length
-                    h-err/invalid-keyword-length) {:form expr
-                                                   :length (count s)
-                                                   :limit max-symbol-length})))))
-
-(s/defn syntax-check
-  ([expr]
-   (syntax-check 0 expr))
-  ([depth expr]
-   (check-n "expression nesting" (get *limits* :expression-nesting-depth) depth {})
-   (cond
-     (boolean? expr) true
-     (integer-or-long? expr) true
-     (fixed-decimal? expr) true
-     (string? expr) (do (check-limit :string-literal-length expr) true)
-     (symbol? expr) (do (check-symbol-string expr) true)
-     (keyword? expr) (do (check-symbol-string expr) true)
-
-     (map? expr) (and (or (:$type expr)
-                          (throw-err (h-err/missing-type-field {:expr expr})))
-                      (->> expr
-                           (mapcat identity)
-                           (map (partial syntax-check (inc depth)))
-                           dorun))
-     (seq? expr) (do
-                   (or (#{'=
-                          'rescale
-                          'any?
-                          'concat
-                          'conj
-                          'difference
-                          'every?
-                          'filter
-                          'first
-                          'get
-                          'get-in
-                          'if
-                          'if-value
-                          'if-value-let
-                          'intersection
-                          'let
-                          'map
-                          'not=
-                          'reduce
-                          'refine-to
-                          'refines-to?
-                          'rest
-                          'sort-by
-                          'union
-                          'valid
-                          'valid?
-                          'when
-                          'when-value
-                          'when-value-let} (first expr))
-                       (get builtins (first expr))
-                       (throw-err (h-err/unknown-function-or-operator {:op (first expr)
-                                                                       :expr expr})))
-                   (check-limit :list-literal-count expr)
-                   (->> (rest expr)
-                        (map (partial syntax-check (inc depth)))
-                        dorun)
-                   true)
-     (or (vector? expr)
-         (set? expr)) (do (check-limit (cond
-                                         (vector? expr) :vector-literal-count
-                                         (set? expr) :set-literal-count)
-                                       expr)
-                          (->> (map (partial syntax-check (inc depth)) expr) dorun))
-     :else (throw-err (h-err/syntax-error {:form expr :form-class (class expr)})))))
+;; 
 
 (s/defn matches-signature?
   [sig :- FnSignature, actual-types :- [halite-types/HaliteType]]
@@ -635,7 +503,7 @@
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'rescale :expected-type-description (text "a fixed point decimal") :expr expr}))))
     (when-not (= :Integer (second arg-types))
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'rescale :expected-type-description (text "an integer") :expr expr}))))
-    (when-not (integer-or-long? scale)
+    (when-not (halite-base/integer-or-long? scale)
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'rescale :expected-type-description (text "an integer literal") :expr expr}))))
     (when-not (and (>= scale 0)
                    (< scale (inc fixed-decimal/max-scale)))
@@ -905,8 +773,8 @@
   [ctx :- TypeContext, expr]
   (cond
     (boolean? expr) :Boolean
-    (integer-or-long? expr) :Integer
-    (fixed-decimal? expr) (type-check-fixed-decimal expr)
+    (halite-base/integer-or-long? expr) :Integer
+    (halite-base/fixed-decimal? expr) (type-check-fixed-decimal expr)
     (string? expr) :String
     (symbol? expr) (type-check-symbol ctx expr)
     (map? expr) (check-instance type-check* :form ctx expr)
@@ -1058,19 +926,19 @@
       :else result)))
 
 (defn ^:private check-collection-runtime-count [x]
-  (check-limit (if (set? x)
-                 :set-runtime-count
-                 :vector-runtime-count)
-               x))
+  (halite-base/check-limit (if (set? x)
+                             :set-runtime-count
+                             :vector-runtime-count)
+                           x))
 
 (s/defn ^:private eval-expr* :- s/Any
   [ctx :- EvalContext, expr]
   (let [eval-in-env (partial eval-expr* ctx)]
     (cond
       (or (boolean? expr)
-          (integer-or-long? expr)
+          (halite-base/integer-or-long? expr)
           (string? expr)) expr
-      (fixed-decimal? expr) expr
+      (halite-base/fixed-decimal? expr) expr
       (symbol? expr) (if (= '$no-value expr)
                        :Unset
                        (let [b (halite-envs/bindings (:env ctx))]
@@ -1134,7 +1002,7 @@
                                  (throw-err (h-err/sort-value-collision {:form expr
                                                                          :coll coll})))
                                (mapv #(nth % 1) (if (and (pos? (count indexes))
-                                                         (fixed-decimal/fixed-decimal? (first indexes)))
+                                                         (halite-base/fixed-decimal? (first indexes)))
                                                   (sort-by
                                                    (comp fixed-decimal/sort-key first)
                                                    (map vector indexes coll))
@@ -1175,3 +1043,11 @@
         (when-not (halite-types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))
     (eval-expr* {:env env :senv senv} expr)))
+
+(def syntax-check halite-syntax-check/syntax-check)
+
+(def integer-or-long? halite-base/integer-or-long?)
+
+(def fixed-decimal? halite-base/fixed-decimal?)
+
+(def check-count halite-base/check-count)

@@ -8,6 +8,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [jibe.halite :as halite]
+            [jibe.halite-syntax-check :as halite-syntax-check]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-lint :as halite-lint]
             [jibe.lib.format-errors :as format-errors]
@@ -17,15 +18,15 @@
 (clojure.test/use-fixtures :once validate-schemas)
 
 (deftest test-halite-symbol-examples
-  (are [string] (re-matches halite/symbol-regex string)
+  (are [string] (re-matches halite-syntax-check/symbol-regex string)
     "foo" "$foo" "!20<90" "-->*/*<--" "+" "</>" "a.b/c.d" "a.b" "True" "nilable" "nil/foo")
-  (are [string] (not (re-matches halite/symbol-regex string))
+  (are [string] (not (re-matches halite-syntax-check/symbol-regex string))
     "72" "+8" "-9" "//" "/z" "foo/9" "-/1" "/" "foo//" "$//" "true" "false" "nil" "a/nil" ""))
 
 (defn halite-symbol-differs-from-clj-symbol [string]
   (let [obj (try (edn/read-string string) (catch Exception ex nil))
         clj-sym? (and (symbol? obj) (= (str obj) string))]
-    (if (re-matches halite/symbol-regex string)
+    (if (re-matches halite-syntax-check/symbol-regex string)
       clj-sym?
       (or (not clj-sym?)
           ;; halite symbols disallow these chars that are legal in Clojure symbols:

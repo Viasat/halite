@@ -4,6 +4,7 @@
 (ns jibe.halite-analysis
   (:require [clojure.set :as set]
             [jibe.halite :as halite]
+            [jibe.halite-base :as halite-base]
             [jibe.halite.halite-types :as halite-types]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as schema]
@@ -17,8 +18,8 @@
   (second (rest s)))
 
 (def NumericValue (schema/conditional
-                   halite/integer-or-long? Number
-                   halite/fixed-decimal? FixedDecimal))
+                   halite-base/integer-or-long? Number
+                   halite-base/fixed-decimal? FixedDecimal))
 
 (def MinRange {:min NumericValue
                :min-inclusive Boolean
@@ -145,8 +146,8 @@
   ([var-map context expr]
    (cond
      (boolean? expr) expr
-     (halite/integer-or-long? expr) expr
-     (halite/fixed-decimal? expr) expr
+     (halite-base/integer-or-long? expr) expr
+     (halite-base/fixed-decimal? expr) expr
      (string? expr) expr
      (symbol? expr) (if (context expr)
                       expr
@@ -197,8 +198,8 @@
   ([context expr]
    (cond
      (boolean? expr) #{}
-     (halite/integer-or-long? expr) #{}
-     (halite/fixed-decimal? expr) #{}
+     (halite-base/integer-or-long? expr) #{}
+     (halite-base/fixed-decimal? expr) #{}
      (string? expr) #{}
      (symbol? expr) (if (or (context expr)
                             (= \$ (first (name expr))) ;; halite reserved symbols start with \$
@@ -250,8 +251,8 @@
   [expr]
   (cond
     (boolean? expr) #{}
-    (halite/integer-or-long? expr) #{}
-    (halite/fixed-decimal? expr) #{}
+    (halite-base/integer-or-long? expr) #{}
+    (halite-base/fixed-decimal? expr) #{}
     (string? expr) #{}
     (symbol? expr) #{}
     (keyword? expr) (if (halite-types/namespaced-keyword? expr)
@@ -270,8 +271,8 @@
 (defn- simple-value-or-symbol? [expr]
   (or
    (boolean? expr)
-   (halite/integer-or-long? expr)
-   (halite/fixed-decimal? expr)
+   (halite-base/integer-or-long? expr)
+   (halite-base/fixed-decimal? expr)
    (string? expr)
    (symbol? expr)
    (map? expr)
@@ -798,16 +799,16 @@
     (fixed-decimal/shift-scale f scale)))
 
 (s/defn- range-size* [min max]
-  (if (halite/integer-or-long? min)
+  (if (halite-base/integer-or-long? min)
     (- max min)
     (fixed-decimal-to-long (fixed-decimal/f- max min))))
 
 (s/defn- range-size [r :- Range]
   (let [{:keys [min max min-inclusive max-inclusive]} r]
-    (when (or (and (halite/integer-or-long? min)
-                   (halite/integer-or-long? max))
-              (and (halite/fixed-decimal? min)
-                   (halite/fixed-decimal? max)
+    (when (or (and (halite-base/integer-or-long? min)
+                   (halite-base/integer-or-long? max))
+              (and (halite-base/fixed-decimal? min)
+                   (halite-base/fixed-decimal? max)
                    (= (fixed-decimal/get-scale min)
                       (fixed-decimal/get-scale max))))
       (clojure.core/max (let [{:keys [min max min-inclusive max-inclusive]} r]
@@ -828,7 +829,7 @@
 
 (s/defn- enumerate-range [r :- Range]
   (let [{:keys [min max min-inclusive max-inclusive]} r]
-    (if (halite/integer-or-long? min)
+    (if (halite-base/integer-or-long? min)
       (range (if min-inclusive
                min
                (inc min))
@@ -904,8 +905,8 @@
   [encoder-atom expr]
   (cond
     (boolean? expr) expr
-    (halite/integer-or-long? expr) expr
-    (halite/fixed-decimal? expr) expr
+    (halite-base/integer-or-long? expr) expr
+    (halite-base/fixed-decimal? expr) expr
     (string? expr) (if-let [looked-up ((@encoder-atom :encoder-map) expr)]
                      looked-up
                      (dec (:counter (swap! encoder-atom (fn [{:keys [encoder-map counter]}]
@@ -959,8 +960,8 @@
   [expr]
   (cond
     (boolean? expr) expr
-    (halite/integer-or-long? expr) expr
-    (halite/fixed-decimal? expr) (fixed-decimal-to-long expr)
+    (halite-base/integer-or-long? expr) expr
+    (halite-base/fixed-decimal? expr) (fixed-decimal-to-long expr)
     (string? expr) expr
     (symbol? expr) expr
     (keyword? expr) expr
@@ -1062,8 +1063,8 @@
   ([context expr]
    (cond
      (boolean? expr) #{}
-     (halite/integer-or-long? expr) #{}
-     (halite/fixed-decimal? expr) #{}
+     (halite-base/integer-or-long? expr) #{}
+     (halite-base/fixed-decimal? expr) #{}
      (string? expr) #{}
      (symbol? expr) (get context expr)
      (keyword? expr) (if (halite-types/namespaced-keyword? expr)

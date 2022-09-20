@@ -5,10 +5,11 @@
   "Analyize halite expressions to find patterns of usage unnecessary and
   undesireable for users, though legal and supported by the language."
   (:require [jibe.h-err :as h-err]
-            [jibe.halite.l-err :as l-err]
             [jibe.halite :as halite]
+            [jibe.halite-base :as halite-base]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
+            [jibe.halite.l-err :as l-err]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.lib.format-errors :as format-errors :refer [throw-err with-exception-data text]]
             [clojure.string :as string]
@@ -276,8 +277,8 @@
   [ctx :- TypeContext, expr]
   (cond
     (boolean? expr) :Boolean
-    (halite/integer-or-long? expr) :Integer
-    (halite/fixed-decimal? expr) (halite/type-check-fixed-decimal expr)
+    (halite-base/integer-or-long? expr) :Integer
+    (halite-base/fixed-decimal? expr) (halite/type-check-fixed-decimal expr)
     (string? expr) :String
     (symbol? expr) (type-check-symbol ctx expr)
     (map? expr) (halite/check-instance type-check* :form ctx expr)

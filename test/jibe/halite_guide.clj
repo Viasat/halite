@@ -5,6 +5,7 @@
   (:require [clojure.string :as string]
             [jibe.data.model :as model]
             [jibe.halite :as halite]
+            [jibe.halite-base :as halite-base]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-lint :as halite-lint]
@@ -71,7 +72,7 @@
   ([expr]
    (h* expr false))
   ([expr separate-err-id?]
-   (binding [halite/*limits* halite-limits
+   (binding [halite-base/*limits* halite-limits
              format-errors/*squash-throw-site* true]
      (let [senv (halite-envs/spec-env {})
            tenv (halite-envs/type-env {})
@@ -143,7 +144,7 @@
 (defn hf
   [expr & args]
   (let [[expected-t result-expected j-expr-expected j-result-expected] args]
-    (binding [halite/*limits* halite-limits
+    (binding [halite-base/*limits* halite-limits
               format-errors/*squash-throw-site* true]
       (let [senv (halite-envs/spec-env {})
             tenv (halite-envs/type-env {})
