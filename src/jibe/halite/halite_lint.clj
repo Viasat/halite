@@ -7,6 +7,7 @@
   (:require [jibe.h-err :as h-err]
             [jibe.halite :as halite]
             [jibe.halite-base :as halite-base]
+            [jibe.halite-eval :as halite-eval]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.l-err :as l-err]
@@ -22,15 +23,15 @@
 
 (s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
 
-(def lint-builtins-signatures {'and (halite/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
-                               'or (halite/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
-                               'str (halite/make-signatures [[:String :String :& :String] :String])})
+(def lint-builtins-signatures {'and (halite-base/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
+                               'or (halite-base/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
+                               'str (halite-base/make-signatures [[:String :String :& :String] :String])})
 
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
-        {:keys [signatures impl deprecated?] :as builtin} (get halite/builtins op)
+        {:keys [signatures impl deprecated?] :as builtin} (get halite-eval/builtins op)
         actual-types (map (partial type-check* ctx) args)]
     (doseq [[arg t] (map vector args actual-types)]
       (when (halite-types/nothing-like? t)
@@ -321,8 +322,8 @@
   [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
   (some (fn [[sym t]]
           (when (and (re-find #"^[$]" (name sym))
-                     (not (contains? halite/reserved-words sym))
-                     (not (contains? halite/external-reserved-words sym)))
+                     (not (contains? halite-base/reserved-words sym))
+                     (not (contains? halite-base/external-reserved-words sym)))
             (throw (ex-info (str "Bug: type environment contains disallowed symbol: " sym)
                             {:sym sym :type t}))))
         (halite-envs/scope tenv))

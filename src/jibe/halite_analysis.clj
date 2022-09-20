@@ -5,6 +5,7 @@
   (:require [clojure.set :as set]
             [jibe.halite :as halite]
             [jibe.halite-base :as halite-base]
+            [jibe.halite-eval :as halite-eval]
             [jibe.halite.halite-types :as halite-types]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as schema]
@@ -347,16 +348,16 @@
 
 (defn- combine-mins [a b]
   (cond
-    (halite/h< (:min a) (:min b)) (merge a b)
-    (halite/h> (:min a) (:min b)) (merge b a)
+    (halite-eval/h< (:min a) (:min b)) (merge a b)
+    (halite-eval/h> (:min a) (:min b)) (merge b a)
     (= (:min a) (:min b)) (assoc (merge a b)
                                  :min-inclusive (and (:min-inclusive a)
                                                      (:min-inclusive b)))))
 
 (defn- combine-maxs [a b]
   (cond
-    (halite/h< (:max a) (:max b)) (merge b a)
-    (halite/h> (:max a) (:max b)) (merge a b)
+    (halite-eval/h< (:max a) (:max b)) (merge b a)
+    (halite-eval/h> (:max a) (:max b)) (merge a b)
     (= (:max a) (:max b)) (assoc (merge a b)
                                  :max-inclusive (and (:max-inclusive a)
                                                      (:max-inclusive b)))))
@@ -371,16 +372,16 @@
 
 (defn- combine-mins-or [a b]
   (cond
-    (halite/h< (get-min a) (get-min b)) (merge b a)
-    (halite/h> (get-min a) (get-min b)) (merge a b)
+    (halite-eval/h< (get-min a) (get-min b)) (merge b a)
+    (halite-eval/h> (get-min a) (get-min b)) (merge a b)
     (= (get-min a) (get-min b)) (assoc (merge a b)
                                        :min-inclusive (or (:min-inclusive a)
                                                           (:min-inclusive b)))))
 
 (defn- combine-maxs-or [a b]
   (cond
-    (halite/h< (get-max a) (get-max b)) (merge a b)
-    (halite/h> (get-max a) (get-max b)) (merge b a)
+    (halite-eval/h< (get-max a) (get-max b)) (merge a b)
+    (halite-eval/h> (get-max a) (get-max b)) (merge b a)
     (= (get-max a) (get-max b)) (assoc (merge a b)
                                        :max-inclusive (or (:max-inclusive a)
                                                           (:max-inclusive b)))))
@@ -484,12 +485,12 @@
   (let [{:keys [max max-inclusive min min-inclusive]} r]
     (fn [x]
       (and (cond
-             (and max max-inclusive) (halite/h<= x max)
-             max (halite/h< x max)
+             (and max max-inclusive) (halite-eval/h<= x max)
+             max (halite-eval/h< x max)
              :default true)
            (cond
-             (and min min-inclusive) (halite/h>= x min)
-             min (halite/h> x min)
+             (and min min-inclusive) (halite-eval/h>= x min)
+             min (halite-eval/h> x min)
              :default true)))))
 
 (defn- apply-ranges-to-enum
@@ -623,10 +624,10 @@
                   Long/MAX_VALUE)
         max-b (or (:max b)
                   Long/MAX_VALUE)]
-    (or (halite/h< min-a min-b max-a)
-        (halite/h< min-a max-b max-a)
-        (halite/h< min-b min-a max-b)
-        (halite/h< min-b max-a max-b))))
+    (or (halite-eval/h< min-a min-b max-a)
+        (halite-eval/h< min-a max-b max-a)
+        (halite-eval/h< min-b min-a max-b)
+        (halite-eval/h< min-b max-a max-b))))
 
 (defn- touch-min [a b]
   (= (:min a) (:min b)))

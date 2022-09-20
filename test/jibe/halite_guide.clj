@@ -9192,27 +9192,27 @@
      "A runtime error in a spec expression results in a runtime error to the user"
      [{:$type :spec/Ratio$v1, :x 6, :y 0, :r 8}
       [:Instance :spec/Ratio$v1]
-      [:throws "invalid constraint 'main' of spec 'spec/Ratio$v1'"]
+      [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
       "{$type: spec/Ratio$v1, r: 8, x: 6, y: 0}"
-      [:throws "invalid constraint 'main' of spec 'spec/Ratio$v1'"]])
+      [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
     (hc
      ws
      :spec
      "`valid?` does not handle these exceptions"
      [(valid? {:$type :spec/Ratio$v1, :x 6, :y 0, :r 8})
       :Boolean
-      [:throws "invalid constraint 'main' of spec 'spec/Ratio$v1'"]
+      [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
       "(valid? {$type: spec/Ratio$v1, r: 8, x: 6, y: 0})"
-      [:throws "invalid constraint 'main' of spec 'spec/Ratio$v1'"]])
+      [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
     (hc
      ws
      :spec
      "nor does `valid`"
      [(valid {:$type :spec/Ratio$v1, :x 6, :y 0, :r 8})
       [:Maybe [:Instance :spec/Ratio$v1]]
-      [:throws "invalid constraint 'main' of spec 'spec/Ratio$v1'"]
+      [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
       "(valid {$type: spec/Ratio$v1, r: 8, x: 6, y: 0})"
-      [:throws "invalid constraint 'main' of spec 'spec/Ratio$v1'"]]))
+      [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]]))
   (let
    [ws
     [(workspace

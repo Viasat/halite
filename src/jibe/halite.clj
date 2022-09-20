@@ -4,156 +4,52 @@
 (ns jibe.halite
   "Expression language for resource spec constraints and refinements that is almost, but
   not quite, a drop-in replacement for salt."
-  (:require [clojure.math.numeric-tower :refer [expt]]
-            [clojure.set :as set]
-            [clojure.string :as str]
+  (:require [clojure.set :as set]
             [jibe.h-err :as h-err]
             [jibe.halite-base :as halite-base]
+            [jibe.halite-eval :as halite-eval]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite-syntax-check :as halite-syntax-check]
             [jibe.lib.fixed-decimal :as fixed-decimal]
-            [jibe.lib.format-errors :as format-errors :refer [throw-err with-exception-data text]]
-            [schema.core :as s])
-  (:import [clojure.lang BigInt ExceptionInfo]))
+            [jibe.lib.format-errors :refer [throw-err with-exception-data text]]
+            [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
 ;;
 
-(def reserved-words
-  "Symbols beginning with $ that are currently defined by halite."
-  '#{$no-value})
-
-(def external-reserved-words
-  "Any symbol beginning with $ may be defined in any future version of halite,
-  except for symbols in this list, which halite itself promises not to use so
-  that they can be safely added to environments by projects (such as jibe) that
-  _use_ halite."
-  '#{$this})
-
-(declare eval-expr)
-(declare eval-expr*)
-
 (declare type-check*)
 
-(s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
-
-(s/defschema ^:private EvalContext {:senv (s/protocol halite-envs/SpecEnv) :env (s/protocol halite-envs/Env)})
-
-(def ^:private ^:dynamic *refinements*)
-
 (s/defn ^:private eval-predicate :- Boolean
-  [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
+  [ctx :- halite-eval/EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
   ;; TODO: currently this with-exception-data form causes err-msg to be thrown without an error code
   (with-exception-data err-msg {:form bool-expr}
     (let [t (type-check* {:senv (:senv ctx) :tenv tenv} bool-expr)]
       (when (not= :Boolean t)
-        (throw-err (h-err/not-boolean-constraint {:type t}))))
-    (true? (eval-expr* ctx bool-expr))))
+        (throw-err (h-err/not-boolean-constraint {:type t})))))
+  (halite-eval/eval-expr* ctx bool-expr))
 
 (s/defn ^:private eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
-  [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv),  spec-id :- halite-types/NamespacedKeyword, expr]
-  (if (contains? *refinements* spec-id)
-    (*refinements* spec-id) ;; cache hit
+  [ctx :- halite-eval/EvalContext, tenv :- (s/protocol halite-envs/TypeEnv),  spec-id :- halite-types/NamespacedKeyword, expr]
+  (if (contains? halite-eval/*refinements* spec-id)
+    (halite-eval/*refinements* spec-id) ;; cache hit
     (let [expected-type (halite-types/maybe-type (halite-types/concrete-spec-type spec-id))
           t (type-check* {:senv (:senv ctx) :tenv tenv} expr)]
       (when-not (halite-types/subtype? t expected-type)
         (throw-err (h-err/invalid-refinement-expression {:form expr
                                                          :declared-type expected-type
                                                          :actual-type t})))
-      (eval-expr* ctx expr))))
+      (halite-eval/eval-expr* ctx expr))))
 
-(s/defn ^:private refines-to? :- Boolean
-  [inst spec-type :- halite-types/HaliteType]
-  (let [spec-id (halite-types/spec-id spec-type)]
-    (or (= spec-id (:$type inst))
-        (boolean (get (:refinements (meta inst)) spec-id)))))
+(defmacro with-eval-bindings [form]
+  `(binding [halite-eval/*eval-predicate-fn* eval-predicate
+             halite-eval/*eval-refinement-fn* eval-refinement]
+     ~form))
 
-(s/defn ^:private concrete? :- Boolean
-  "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
-  [senv :- (s/protocol halite-envs/SpecEnv), v]
-  (cond
-    (or (halite-base/integer-or-long? v) (halite-base/fixed-decimal? v) (boolean? v) (string? v)) true
-    (map? v) (let [spec-id (:$type v)
-                   spec-info (or (halite-envs/lookup-spec senv spec-id)
-                                 (h-err/resource-spec-not-found {:spec-id (symbol spec-id)}))]
-               (and (not (:abstract? spec-info))
-                    (every? (partial concrete? senv) (vals (dissoc v :$type)))))
-    (coll? v) (every? (partial concrete? senv) v)
-    :else (throw (ex-info (format "BUG! Not a value: %s" (pr-str v)) {:value v}))))
-
-(s/defn ^:private check-against-declared-type
-  "Runtime check that v conforms to the given type, which is the type of v as declared in a resource spec.
-  This function supports the semantics of abstract specs. A declared type of :foo/Bar is replaced by :Instance
-  during type checking when the spec foo/Bar is abstract. The type system ensures that v is some instance,
-  but at runtime, we need to confirm that v actually refines to the expected type. This function does,
-  and recursively deals with collection types."
-  [declared-type :- halite-types/HaliteType, v]
-  (let [declared-type (halite-types/no-maybe declared-type)]
-    (cond
-      (halite-types/spec-id declared-type) (when-not (refines-to? v declared-type)
-                                             (throw-err (h-err/no-refinement-path
-                                                         {:type (symbol (:$type v))
-                                                          :value v
-                                                          :target-type (symbol (halite-types/spec-id declared-type))})))
-      :else (if-let [elem-type (halite-types/elem-type declared-type)]
-              (dorun (map (partial check-against-declared-type elem-type) v))
-              nil))))
-
-(s/defn ^:private validate-instance :- s/Any
-  "Check that an instance satisfies all applicable constraints.
-  Return the instance if so, throw an exception if not.
-  Assumes that the instance has been type-checked successfully against the given type environment."
-  [senv :- (s/protocol halite-envs/SpecEnv), inst :- s/Any]
-  (let [spec-id (:$type inst)
-        {:keys [spec-vars refines-to] :as spec-info} (halite-envs/lookup-spec senv spec-id)
-        spec-tenv (halite-envs/type-env-from-spec senv spec-info)
-        env (halite-envs/env-from-inst spec-info inst)
-        ctx {:senv senv, :env env}
-        satisfied? (fn [[cname expr]]
-                     (eval-predicate ctx spec-tenv (format "invalid constraint '%s' of spec '%s'" cname (symbol spec-id)) expr))]
-
-    ;; check that all variables have values that are concrete and that conform to the
-    ;; types declared in the parent resource spec
-    (doseq [[kw v] (dissoc inst :$type)
-            :let [declared-type (->> kw spec-vars (halite-envs/halite-type-from-var-type senv))]]
-      ;; TODO: consider letting instances of abstract spec contain abstract values
-      (when-not (concrete? senv v)
-        (throw-err (h-err/no-abstract {:value v})))
-      (check-against-declared-type declared-type v))
-
-    ;; check all constraints
-    (let [violated-constraints (->> spec-info :constraints (remove satisfied?) vec)]
-      (when (seq violated-constraints)
-        (throw-err (h-err/invalid-instance {:spec-id (symbol spec-id)
-                                            :violated-constraints (mapv (comp symbol first) violated-constraints)
-                                            :value inst
-                                            :halite-error :constraint-violation}))))
-
-    ;; fully explore all active refinement paths, and store the results
-    (with-meta
-      inst
-      {:refinements
-       (->> refines-to
-            (sort-by first)
-            (reduce
-             (fn [transitive-refinements [spec-id {:keys [expr inverted? name]}]]
-               (binding [*refinements* transitive-refinements]
-                 (let [inst (try
-                              (with-exception-data {:refinement name}
-                                (eval-refinement ctx spec-tenv spec-id expr))
-                              (catch ExceptionInfo ex
-                                (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
-                                  ex
-                                  (throw ex))))]
-                   (cond-> transitive-refinements
-                     (not= :Unset inst) (->
-                                         (merge (:refinements (meta inst)))
-                                         (assoc spec-id inst))))))
-             {}))})))
+(s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
 
 (s/defn check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
@@ -225,7 +121,8 @@
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
-                   (validate-instance (:senv ctx) value)
+                   (with-eval-bindings
+                     (halite-eval/validate-instance (:senv ctx) value))
                    t)
     (coll? value) (check-coll type-of* :value ctx value)
     :else (throw-err (h-err/invalid-value {:value value}))))
@@ -235,147 +132,6 @@
   For instances, this function checks all applicable constraints. Any constraint violations result in a thrown exception."
   [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), value :- s/Any]
   (type-of* {:senv senv :tenv tenv} value))
-
-(s/defschema FnSignature
-  {:arg-types [halite-types/HaliteType]
-   (s/optional-key :variadic-tail) halite-types/HaliteType
-   :return-type halite-types/HaliteType})
-
-(s/defschema Builtin
-  {:signatures (s/constrained [FnSignature] seq)
-   :impl clojure.lang.IFn})
-
-(def & :&)
-
-(defn make-signatures [signatures]
-  (vec (for [[arg-types return-type] (partition 2 signatures)
-             :let [n (count arg-types)
-                   variadic? (and (< 1 n) (= :& (nth arg-types (- n 2))))]]
-         (cond-> {:arg-types (cond-> arg-types variadic? (subvec 0 (- n 2)))
-                  :return-type return-type}
-           variadic? (assoc :variadic-tail (last arg-types))))))
-
-(s/defn ^:private mk-builtin :- Builtin
-  [impl & signatures]
-  (when (not= 0 (mod (count signatures) 2))
-    (throw (ex-info "argument count must be a multiple of 2" {})))
-  {:impl impl
-   :signatures (make-signatures signatures)})
-
-(defmacro math-f [integer-f fixed-decimal-f]
-  `(fn [& args#]
-     (apply (if (halite-base/fixed-decimal? (first args#)) ~fixed-decimal-f ~integer-f) args#)))
-
-(def ^:private hstr  (math-f str  fixed-decimal/string-representation))
-(def ^:private hneg? (math-f neg? fixed-decimal/fneg?))
-(def           h+    (math-f +    fixed-decimal/f+))
-(def           h-    (math-f -    fixed-decimal/f-))
-(def ^:private h*    (math-f *    fixed-decimal/f*))
-(def ^:private hquot (math-f quot fixed-decimal/fquot))
-(def ^:private habs  (comp #(if (hneg? %)
-                              (throw-err (h-err/abs-failure {:value %}))
-                              %)
-                           (math-f abs #(try (fixed-decimal/fabs %)
-                                             (catch NumberFormatException ex
-                                               (throw-err (h-err/abs-failure {:value %})))))))
-(def           h<=   (math-f <=   fixed-decimal/f<=))
-(def           h>=   (math-f >=   fixed-decimal/f>=))
-(def           h<    (math-f <    fixed-decimal/f<))
-(def           h>    (math-f >    fixed-decimal/f>))
-
-(def ^:private decimal-sigs (mapcat (fn [s]
-                                      [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
-                                       (halite-types/decimal-type s)])
-                                    (range 1 (inc fixed-decimal/max-scale))))
-
-(def ^:private decimal-sigs-single (mapcat (fn [s]
-                                             [[(halite-types/decimal-type s) :Integer & :Integer]
-                                              (halite-types/decimal-type s)])
-                                           (range 1 (inc fixed-decimal/max-scale))))
-
-(def ^:private decimal-sigs-unary (mapcat (fn [s]
-                                            [[(halite-types/decimal-type s)]
-                                             (halite-types/decimal-type s)])
-                                          (range 1 (inc fixed-decimal/max-scale))))
-
-(def ^:private decimal-sigs-binary (mapcat (fn [s]
-                                             [[(halite-types/decimal-type s) :Integer]
-                                              (halite-types/decimal-type s)])
-                                           (range 1 (inc fixed-decimal/max-scale))))
-
-(def ^:private decimal-sigs-boolean (mapcat (fn [s]
-                                              [[(halite-types/decimal-type s) (halite-types/decimal-type s)]
-                                               :Boolean])
-                                            (range 1 (inc fixed-decimal/max-scale))))
-
-(def ^:private decimal-sigs-collections (mapcat (fn [s]
-                                                  [[(halite-types/set-type (halite-types/decimal-type s))]
-                                                   (halite-types/vector-type (halite-types/decimal-type s))
-                                                   [(halite-types/vector-type (halite-types/decimal-type s))]
-                                                   (halite-types/vector-type (halite-types/decimal-type s))])
-                                                (range 1 (inc fixed-decimal/max-scale))))
-
-(defn handle-overflow [f]
-  (fn [& args]
-    (try (apply f args)
-         (catch ArithmeticException _
-           (throw-err (h-err/overflow {}))))))
-
-(def builtins
-  (s/with-fn-validation
-    {'+ (apply mk-builtin (handle-overflow h+) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
-     '- (apply mk-builtin (handle-overflow h-) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
-     '* (apply mk-builtin (handle-overflow h*) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
-     '< (apply mk-builtin h< (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '<= (apply mk-builtin h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '> (apply mk-builtin h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '>= (apply mk-builtin h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     'count (mk-builtin count [(halite-types/coll-type :Value)] :Integer)
-     'and (mk-builtin (fn [& args] (every? true? args))
-                      [:Boolean & :Boolean] :Boolean)
-     'or (mk-builtin (fn [& args] (true? (some true? args)))
-                     [:Boolean & :Boolean] :Boolean)
-     'not (mk-builtin not [:Boolean] :Boolean)
-     '=> (mk-builtin (fn [a b] (if a b true))
-                     [:Boolean :Boolean] :Boolean)
-     'contains? (mk-builtin contains? [(halite-types/set-type :Value) :Value] :Boolean)
-     'inc (mk-builtin (handle-overflow inc) [:Integer] :Integer)
-     'dec (mk-builtin (handle-overflow dec)  [:Integer] :Integer)
-     'div (apply mk-builtin (fn [num divisor]
-                              (when (= 0 divisor)
-                                (throw-err (h-err/divide-by-zero {:num num})))
-                              (hquot num divisor)) (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
-     'mod (mk-builtin (fn [num divisor]
-                        (when (= 0 divisor)
-                          (throw-err (h-err/divide-by-zero {:num num})))
-                        (mod num divisor)) [:Integer :Integer] :Integer)
-     'expt (mk-builtin (fn [x p]
-                         (when (neg? p)
-                           (throw-err (h-err/invalid-exponent {:exponent p})))
-                         (let [result (expt x p)]
-                           (when (instance? BigInt result)
-                             (throw-err (h-err/overflow {})))
-                           result))
-                       [:Integer :Integer] :Integer)
-     'abs (apply mk-builtin habs (into [[:Integer] :Integer] decimal-sigs-unary))
-     'str (mk-builtin (comp (partial halite-base/check-limit :string-runtime-length) str) [& :String] :String)
-     'subset? (mk-builtin set/subset? [(halite-types/set-type :Value) (halite-types/set-type :Value)] :Boolean)
-     'sort (apply mk-builtin (fn [expr]
-                               ((if (and (pos? (count expr))
-                                         (halite-base/fixed-decimal? (first expr)))
-                                  (comp vec (partial sort-by fixed-decimal/sort-key))
-                                  (comp vec sort)) expr))
-                  (into [[halite-types/empty-set] halite-types/empty-vector
-                         [halite-types/empty-vector] halite-types/empty-vector
-                         [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
-                         [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer)]
-                        decimal-sigs-collections))
-     'range (mk-builtin (comp (partial halite-base/check-limit :vector-runtime-count) vec range)
-                        [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
-                        [:Integer :Integer] (halite-types/vector-type :Integer)
-                        [:Integer] (halite-types/vector-type :Integer))
-     'error (mk-builtin #(throw-err (h-err/spec-threw {:spec-error-str %}))
-                        [:String] :Nothing)}))
 
 (defn check-n [object-type n v error-context]
   (when (and n
@@ -387,7 +143,7 @@
 ;; 
 
 (s/defn matches-signature?
-  [sig :- FnSignature, actual-types :- [halite-types/HaliteType]]
+  [sig :- halite-base/FnSignature, actual-types :- [halite-types/HaliteType]]
   (let [{:keys [arg-types variadic-tail]} sig]
     (and
      (<= (count arg-types) (count actual-types))
@@ -401,7 +157,7 @@
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
-        {:keys [signatures impl] :as builtin} (get builtins op)
+        {:keys [signatures impl] :as builtin} (get halite-eval/builtins op)
         actual-types (map (partial type-check* ctx) args)]
     (when (nil? builtin)
       (throw-err (h-err/unknown-function-or-operator {:op op
@@ -541,7 +297,7 @@
       (fn [ctx [sym body]]
         (when-not (and (symbol? sym) (halite-types/bare? sym))
           (throw-err (h-err/let-needs-bare-symbol {:form expr})))
-        (when (reserved-words sym)
+        (when (halite-base/reserved-words sym)
           (throw-err (h-err/cannot-bind-reserved-word {:sym sym
                                                        :form expr})))
         (update ctx :tenv halite-envs/extend-scope sym (type-check* ctx body)))
@@ -826,196 +582,25 @@
       (when (not= :Boolean (type-check senv tenv cexpr))
         (throw-err (h-err/not-boolean-constraint {:expr cexpr}))))))
 
-(declare eval-expr*)
+(def syntax-check halite-syntax-check/syntax-check)
 
-(defn- get-from-vector [ctx expr target index-expr]
-  (let [index (eval-expr* ctx index-expr)]
-    (when-not (< -1 index (count target))
-      (throw-err (h-err/index-out-of-bounds {:form expr
-                                             :index index
-                                             :length (count target)})))
-    (nth target index)))
+(def integer-or-long? halite-base/integer-or-long?)
 
-(s/defn ^:private eval-get :- s/Any
-  [ctx :- EvalContext, expr]
-  (let [[_ target-expr index-expr] expr
-        target (eval-expr* ctx target-expr)]
-    (if (vector? target)
-      (get-from-vector ctx expr target index-expr)
-      (get target index-expr :Unset))))
+(def fixed-decimal? halite-base/fixed-decimal?)
 
-(s/defn ^:private eval-get-in :- s/Any
-  [ctx :- EvalContext, expr]
-  (let [[_ target-expr indexes] expr]
-    (reduce (fn [target index-expr]
-              (if (vector? target)
-                (get-from-vector ctx expr target index-expr)
-                (get target index-expr :Unset)))
-            (eval-expr* ctx target-expr)
-            indexes)))
+(def check-count halite-base/check-count)
 
-(s/defn ^:private eval-let :- s/Any
-  [ctx :- EvalContext, bindings body]
-  (eval-expr*
-   (reduce
-    (fn [ctx [sym body]]
-      (when (reserved-words sym)
-        (throw-err (h-err/cannot-bind-reserved-word {:sym sym
-                                                     :bindings bindings
-                                                     :body body})))
-      (update ctx :env halite-envs/bind sym (eval-expr* ctx body)))
-    ctx
-    (partition 2 bindings))
-   body))
+(def h< halite-eval/h<)
 
-(s/defn ^:private eval-if-value :- s/Any
-  "handles if-value and when-value"
-  [ctx :- EvalContext, expr]
-  (let [[sym then else] (rest expr)]
-    (if (not= :Unset (eval-expr* ctx sym))
-      (eval-expr* ctx then)
-      (if (= 4 (count expr))
-        (eval-expr* ctx else)
-        :Unset))))
+(def h> halite-eval/h>)
 
-(s/defn ^:private eval-if-value-let :- s/Any
-  [ctx :- EvalContext, expr]
-  (let [[[sym maybe] then else] (rest expr)
-        maybe-val (eval-expr* ctx maybe)]
-    (if (not= :Unset maybe-val)
-      (eval-expr* (update ctx :env halite-envs/bind sym maybe-val) then)
-      (if (= 4 (count expr))
-        (eval-expr* ctx else)
-        :Unset))))
+(def h<= halite-eval/h<=)
 
-(s/defn ^:private eval-quantifier-bools :- [Boolean]
-  [ctx :- EvalContext,
-   [[sym coll] pred]]
-  (mapv #(eval-expr* (update ctx :env halite-envs/bind sym %) pred)
-        (eval-expr* ctx coll)))
+(def h>= halite-eval/h>=)
 
-(s/defn ^:private eval-comprehend :- [s/Any]
-  [ctx :- EvalContext,
-   [[sym coll] expr]]
-  (let [coll-val (eval-expr* ctx coll)]
-    [coll-val
-     (map #(eval-expr* (update ctx :env halite-envs/bind sym %) expr) coll-val)]))
+(def h+ halite-eval/h+)
 
-(s/defn ^:private eval-reduce :- s/Any
-  [ctx :- EvalContext,
-   [op [acc init] [elem coll] body]]
-  (reduce (fn [a b]
-            (eval-expr* (update ctx :env
-                                #(-> % (halite-envs/bind acc a) (halite-envs/bind elem b)))
-                        body))
-          (eval-expr* ctx init)
-          (eval-expr* ctx coll)))
-
-(s/defn ^:private eval-refine-to :- s/Any
-  [ctx :- EvalContext, expr]
-  (let [[subexp t] (rest expr)
-        inst (eval-expr* ctx subexp)
-        result (cond-> inst
-                 (not= t (:$type inst)) (-> meta :refinements t))]
-    (cond
-      (instance? Exception result) (throw-err (h-err/refinement-error {:type (symbol (:$type inst))
-                                                                       :instance inst
-                                                                       :underlying-error-message (.getMessage ^Exception result)
-                                                                       :form expr}))
-      (nil? result) (throw-err (h-err/no-refinement-path {:type (symbol (:$type inst)), :value inst, :target-type (symbol t), :form expr}))
-      :else result)))
-
-(defn ^:private check-collection-runtime-count [x]
-  (halite-base/check-limit (if (set? x)
-                             :set-runtime-count
-                             :vector-runtime-count)
-                           x))
-
-(s/defn ^:private eval-expr* :- s/Any
-  [ctx :- EvalContext, expr]
-  (let [eval-in-env (partial eval-expr* ctx)]
-    (cond
-      (or (boolean? expr)
-          (halite-base/integer-or-long? expr)
-          (string? expr)) expr
-      (halite-base/fixed-decimal? expr) expr
-      (symbol? expr) (if (= '$no-value expr)
-                       :Unset
-                       (let [b (halite-envs/bindings (:env ctx))]
-                         (if (contains? b expr)
-                           (get b expr)
-                           (throw-err (h-err/symbol-undefined {:form expr})))))
-      (map? expr) (->> (dissoc expr :$type)
-                       (map (fn [[k v]] [k (eval-in-env v)]))
-                       (remove (fn [[k v]] (= :Unset v)))
-                       (into (select-keys expr [:$type]))
-                       (validate-instance (:senv ctx)))
-      (seq? expr) (condp = (first expr)
-                    'get (eval-get ctx expr)
-                    'get-in (eval-get-in ctx expr)
-                    '= (apply = (mapv eval-in-env (rest expr)))
-                    'not= (apply not= (mapv eval-in-env (rest expr)))
-                    'rescale (let [[_ f s] expr]
-                               (fixed-decimal/set-scale (eval-in-env f) s))
-                    'if (let [[pred then else] (rest expr)]
-                          (eval-in-env (if (eval-in-env pred) then else)))
-                    'when (let [[pred body] (rest expr)]
-                            (if (eval-in-env pred)
-                              (eval-in-env body)
-                              :Unset))
-                    'let (apply eval-let ctx (rest expr))
-                    'if-value (eval-if-value ctx expr)
-                    'when-value (eval-if-value ctx expr) ; eval-if-value handles when-value
-                    'if-value-let (eval-if-value-let ctx expr)
-                    'when-value-let (eval-if-value-let ctx expr) ; eval-if-value-let handles when-value-let
-                    'union (reduce set/union (map eval-in-env (rest expr)))
-                    'intersection (reduce set/intersection (map eval-in-env (rest expr)))
-                    'difference (apply set/difference (map eval-in-env (rest expr)))
-                    'first (or (first (eval-in-env (second expr)))
-                               (throw-err (h-err/argument-empty {:form expr})))
-                    'rest (let [arg (eval-in-env (second expr))]
-                            (if (empty? arg) [] (subvec arg 1)))
-                    'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))
-                    'concat (check-collection-runtime-count (apply into (map eval-in-env (rest expr))))
-                    'refine-to (eval-refine-to ctx expr)
-                    'refines-to? (let [[subexpr kw] (rest expr)
-                                       inst (eval-in-env subexpr)]
-                                   (refines-to? inst (halite-types/concrete-spec-type kw)))
-                    'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
-                    'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
-                    'map (let [[coll result] (eval-comprehend ctx (rest expr))]
-                           (when (some #(= :Unset %) result)
-                             (throw-err (h-err/must-produce-value {:form expr})))
-                           (into (empty coll) result))
-                    'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
-                              (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))
-                    'valid (try
-                             (eval-in-env (second expr))
-                             (catch ExceptionInfo ex
-                               (if (= :constraint-violation (:halite-error (ex-data ex)))
-                                 :Unset
-                                 (throw ex))))
-                    'valid? (not= :Unset (eval-in-env (list 'valid (second expr))))
-                    'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
-                               (when-not (= (count (set indexes))
-                                            (count indexes))
-                                 (throw-err (h-err/sort-value-collision {:form expr
-                                                                         :coll coll})))
-                               (mapv #(nth % 1) (if (and (pos? (count indexes))
-                                                         (halite-base/fixed-decimal? (first indexes)))
-                                                  (sort-by
-                                                   (comp fixed-decimal/sort-key first)
-                                                   (map vector indexes coll))
-                                                  (sort (map vector indexes coll)))))
-                    'reduce (eval-reduce ctx expr)
-                    (with-exception-data {:form expr}
-                      (apply (or (:impl (get builtins (first expr)))
-                                 (throw-err (h-err/unknown-function-or-operator {:op (first expr), :form expr})))
-                             (mapv eval-in-env (rest expr)))))
-      (vector? expr) (mapv eval-in-env expr)
-      (set? expr) (set (map eval-in-env expr))
-      (= :Unset expr) :Unset
-      :else (throw-err (h-err/invalid-expression {:form expr})))))
+(def h- halite-eval/h-)
 
 (s/defn eval-expr :- s/Any
   "Type check a halite expression against the given type environment,
@@ -1031,23 +616,18 @@
         ;; to initialize refinements for all instances.
         env (reduce
              (fn [env [k v]]
-               (halite-envs/bind env k (eval-expr* {:env empty-env :senv senv} v)))
+               (halite-envs/bind env k (with-eval-bindings
+                                         (halite-eval/eval-expr* {:env empty-env :senv senv} v))))
              empty-env
              (halite-envs/bindings env))]
     (when (seq unbound-symbols)
       (throw-err (h-err/symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
     (doseq [sym declared-symbols]
       (let [declared-type (get (halite-envs/scope tenv) sym)
-            value (eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym))
+            value (with-eval-bindings
+                    (halite-eval/eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym)))
             actual-type (type-of senv tenv value)]
         (when-not (halite-types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))
-    (eval-expr* {:env env :senv senv} expr)))
-
-(def syntax-check halite-syntax-check/syntax-check)
-
-(def integer-or-long? halite-base/integer-or-long?)
-
-(def fixed-decimal? halite-base/fixed-decimal?)
-
-(def check-count halite-base/check-count)
+    (with-eval-bindings
+      (halite-eval/eval-expr* {:env env :senv senv} expr))))
