@@ -204,6 +204,134 @@
                :see-also [:instance/compose-instances
                           :instance/string-enum]}
 
+              :instance/abstract-variables
+              {:label "Variables with abstract types"
+               :desc "How to use variables which are defined to be the type of abstract specs."
+               :basic-ref ['instance]
+               :op-ref ['refine-to 'get-in 'get]
+               :contents ["Consider the following specs, where a pet is composed of an animal object and a name. The animal field is declared to have a type of the abstract spec, 'spec/Animal'."
+                          {:spec-map {:spec/Animal {:abstract? true
+                                                    :spec-vars {:species "String"}}
+                                      :spec/Pet {:spec-vars {:animal :spec/Animal
+                                                             :name "String"}}
+                                      :spec/Dog {:spec-vars {:breed "String"}
+                                                 :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                            :expr '{:$type :spec/Animal
+                                                                                    :species "Canine"}}}}
+                                      :spec/Cat {:spec-vars {:lives "Integer"}
+                                                 :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                            :expr '{:$type :spec/Animal
+                                                                                    :species "Feline"}}}}}}
+                          "The animal spec cannot be directly used to make a pet instance."
+                          {:code '{:$type :spec/Pet
+                                   :animal {:$type :spec/Animal :species "Equine"}
+                                   :name "Silver"}
+                           :throws :auto}
+                          "Instead, to construct a pet instance, a dog or cat instance must be used for the animal field."
+                          {:code '{:$type :spec/Pet
+                                   :animal {:$type :spec/Dog :breed "Golden Retriever"}
+                                   :name "Rex"}}
+                          {:code '{:$type :spec/Pet
+                                   :animal {:$type :spec/Cat :lives 9}
+                                   :name "Tom"}}
+                          "In order to access the value in the animal field as an animal object, the value must be refined to its abstract type."
+                          {:code '(let [pet {:$type :spec/Pet
+                                             :animal {:$type :spec/Dog :breed "Golden Retriever"}
+                                             :name "Rex"}]
+                                    (get (refine-to (get pet :animal) :spec/Animal) :species))
+                           :result :auto}
+                          {:code '(let [pet {:$type :spec/Pet
+                                             :animal {:$type :spec/Cat :lives 9}
+                                             :name "Tom"}]
+                                    (get (refine-to (get pet :animal) :spec/Animal) :species))
+                           :result :auto}
+                          "Even if we know the concrete type of the field value we cannot access it as that type. Instead the field must be refined to its abstract type before being accessed."
+                          {:code '(let [pet {:$type :spec/Pet
+                                             :animal {:$type :spec/Dog :breed "Golden Retriever"}
+                                             :name "Rex"}]
+                                    (get-in pet [:animal :breed]))
+                           :throws :auto}]
+               :see-also [:instance/compose-instances
+                          :instance/string-enum]}
+
+              :instance/abstract-variables-refinements
+              {:label "Variables with abstract types used in refinements"
+               :desc "How to use variables which are defined to be the type of abstract specs in refinements."
+               :basic-ref ['instance]
+               :op-ref ['refine-to]
+               :contents ["The way to use an abstract field value as the result value in a refinement is to refine it to its abstract type. This is necessary because the type of a refinement expression must exactly match the declared type of the refinement."
+                          {:spec-map {:spec/Animal {:abstract? true
+                                                    :spec-vars {:species "String"}}
+                                      :spec/Pet$v1 {:spec-vars {:animal :spec/Animal
+                                                                :name "String"}
+                                                    :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                               :expr '(refine-to animal :spec/Animal)}}}
+                                      :spec/Dog {:spec-vars {:breed "String"}
+                                                 :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                            :expr '{:$type :spec/Animal
+                                                                                    :species "Canine"}}}}
+                                      :spec/Cat {:spec-vars {:lives "Integer"}
+                                                 :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                            :expr '{:$type :spec/Animal
+                                                                                    :species "Feline"}}}}}}
+                          {:code '(let [pet {:$type :spec/Pet$v1
+                                             :animal {:$type :spec/Dog :breed "Golden Retriever"}
+                                             :name "Rex"}]
+                                    (refine-to pet :spec/Animal))
+                           :result :auto}
+                          {:code '(let [pet {:$type :spec/Pet$v1
+                                             :animal {:$type :spec/Cat :lives 9}
+                                             :name "Tom"}]
+                                    (refine-to pet :spec/Animal))
+                           :result :auto}
+
+                          "Even if we happen to know the concrete type of an abstract field is of the right type for a refinement it cannot be used."
+                          {:spec-map {:spec/Animal {:abstract? true
+                                                    :spec-vars {:species "String"}}
+                                      :spec/Pet$v2 {:spec-vars {:animal :spec/Animal
+                                                                :name "String"}
+                                                    :refines-to {:spec/Dog {:name "refine_to_Dog"
+                                                                            :expr 'animal}}}
+                                      :spec/Dog {:spec-vars {:breed "String"}
+                                                 :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                            :expr '{:$type :spec/Animal
+                                                                                    :species "Canine"}}}}}}
+                          "In this example, even though we know the value in the animal field is a dog, the attempted refinement cannot be executed."
+                          {:code '(let [pet {:$type :spec/Pet$v2
+                                             :animal {:$type :spec/Dog :breed "Golden Retriever"}
+                                             :name "Rex"}]
+                                    (refine-to pet :spec/Dog))
+                           :throws :auto}
+                          "If instead, we attempt to define the refinement of type animal, but still try to use the un-refined field value as the result of the refinement, it still fails."
+                          {:spec-map {:spec/Animal {:abstract? true
+                                                    :spec-vars {:species "String"}}
+                                      :spec/Pet$v3 {:spec-vars {:animal :spec/Animal
+                                                                :name "String"}
+                                                    :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                               :expr 'animal}}}
+                                      :spec/Dog {:spec-vars {:breed "String"}
+                                                 :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                            :expr '{:$type :spec/Animal
+                                                                                    :species "Canine"}}}}
+                                      :spec/Cat {:spec-vars {:lives "Integer"}
+                                                 :refines-to {:spec/Animal {:name "refine_to_Animal"
+                                                                            :expr '{:$type :spec/Animal
+                                                                                    :species "Feline"}}}}}}
+                          "The refinement fails in this example, because the value being produced by the refinement expression is a dog, when it must be an animal to match the declared type of the refinement."
+                          {:code '(let [pet {:$type :spec/Pet$v3
+                                             :animal {:$type :spec/Dog :breed "Golden Retriever"}
+                                             :name "Rex"}]
+                                    (refine-to pet :spec/Animal))
+                           :throws :auto}
+                          "In fact, there is no way to make this refinement work because the animal field cannot be constructed with an abstract instance."
+                          {:code '(let [pet {:$type :spec/Pet$v3
+                                             :animal {:$type :spec/Animal :species "Equine"}
+                                             :name "Rex"}]
+                                    (refine-to pet :spec/Animal))
+                           :throws :auto}]
+               :see-also [:instance/compose-instances
+                          :instance/string-enum]}
+
               :instance/string-enum
               {:label "String as enumeration"
                :desc "How to model an enumeration as a string"

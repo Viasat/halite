@@ -9,9 +9,9 @@ An abstract spec defines instances which cannot be used in the construction of o
 Say we have an abstract concept of squareness.
 
 ```clojure
-{:spec/Square {:spec-vars {:height "Integer",
-                           :width "Integer"},
-               :abstract? true}}
+{:spec/Square {:abstract? true,
+               :spec-vars {:height "Integer",
+                           :width "Integer"}}}
 ```
 
 The spec can be instantiated in a standalone fashion.
@@ -27,9 +27,9 @@ However, this spec cannot be instantiated in the context of another instance. So
 ```clojure
 {:spec/Painting {:spec-vars {:painter "String",
                              :square :spec/Square}},
- :spec/Square {:spec-vars {:height "Integer",
-                           :width "Integer"},
-               :abstract? true}}
+ :spec/Square {:abstract? true,
+               :spec-vars {:height "Integer",
+                           :width "Integer"}}}
 ```
 
 The instance of the abstract spec cannot be used in the construction of the painting instance.
@@ -61,9 +61,9 @@ To create an instance of the composite painting spec, we need to define an addit
                                                    :height 10})}}},
  :spec/Painting {:spec-vars {:painter "String",
                              :square :spec/Square}},
- :spec/Square {:spec-vars {:height "Integer",
-                           :width "Integer"},
-               :abstract? true}}
+ :spec/Square {:abstract? true,
+               :spec-vars {:height "Integer",
+                           :width "Integer"}}}
 ```
 
 Now we can instantiate a painting using an instance of the concrete canvas spec.
@@ -103,9 +103,9 @@ Consider another spec context, where an alternate spec is defined that refines t
 ```clojure
 {:spec/Painting {:spec-vars {:painter "String",
                              :square :spec/Square}},
- :spec/Square {:spec-vars {:height "Integer",
-                           :width "Integer"},
-               :abstract? true},
+ :spec/Square {:abstract? true,
+               :spec-vars {:height "Integer",
+                           :width "Integer"}},
  :spec/Wall {:refines-to {:spec/Square {:name "refine_to_square",
                                         :expr {:$type :spec/Square,
                                                :height 100,

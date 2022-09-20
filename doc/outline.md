@@ -31,6 +31,10 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
   * Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?
 * Use an instance as a predicate [(Halite)](how-to/predicate.md) [(Jadeite)](how-to/predicate-j.md)
   * Consider you need to evaluate an expression as a predicate, to determine if some values relate to each other properly.
+* Variables with abstract types [(Halite)](how-to/abstract-variables.md) [(Jadeite)](how-to/abstract-variables-j.md)
+  * How to use variables which are defined to be the type of abstract specs.
+* Variables with abstract types used in refinements [(Halite)](how-to/abstract-variables-refinements.md) [(Jadeite)](how-to/abstract-variables-refinements-j.md)
+  * How to use variables which are defined to be the type of abstract specs in refinements.
 
 ### refinement
 
