@@ -24,14 +24,26 @@
                                             ^HCInfo i (halite-guide/hc-body
                                                        spec-map
                                                        h-expr)
-                                            {:keys [h-result j-result j-expr]} {:h-result (.-h-result i)
-                                                                                :j-result (.-j-result i)
-                                                                                :j-expr (jadeite/to-jadeite h-expr)}]
+                                            {:keys [t h-result j-result j-expr]} {:t (.-t i)
+                                                                                  :h-result (.-h-result i)
+                                                                                  :j-result (.-j-result i)
+                                                                                  :j-expr (jadeite/to-jadeite h-expr)}
+                                            skip-lint? (get c :skip-lint? false)
+                                            [h-result j-result] (if (and (not skip-lint?)
+                                                                         (vector? t)
+                                                                         (= :throws (first t)))
+                                                                  [t t]
+                                                                  [h-result j-result])]
                                         (when (and (not (:throws c))
                                                    (vector? h-result)
                                                    (= :throws (first h-result)))
                                           (throw (ex-info "failed" {:h-expr h-expr
                                                                     :h-result h-result})))
+                                        (when (and (:throws c)
+                                                   (not (and (vector? h-result)
+                                                             (= :throws (first h-result)))))
+                                          (throw (ex-info "expected to fail" {:h-expr h-expr
+                                                                              :h-result h-result})))
                                         (recur more-c spec-map
                                                (conj results (utils/code-snippet lang (str ({:halite (utils/pprint-halite h-expr)
                                                                                              :jadeite (str j-expr "\n")} lang)

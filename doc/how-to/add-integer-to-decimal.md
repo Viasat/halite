@@ -15,8 +15,7 @@ Since the integer and decimal values are of different types they cannot be direc
 
 
 ;-- result --
-[:throws "h-err/no-matching-signature 0-0 : No matching signature for '+'"
- :h-err/no-matching-signature]
+[:throws "h-err/no-matching-signature 0-0 : No matching signature for '+'"]
 ```
 
 It is first necessary to convert them to the same type of value. In this case the integer is converted into a decimal value by multiplying it by one in the target decimal type.

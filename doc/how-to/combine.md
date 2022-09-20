@@ -64,8 +64,7 @@ It is not possible to use concat to add a set into a vector.
 
 ;-- result --
 [:throws
- "h-err/not-both-vectors 0-0 : When first argument to 'concat' is a vector, second argument must also be a vector"
- :h-err/not-both-vectors]
+ "h-err/not-both-vectors 0-0 : When first argument to 'concat' is a vector, second argument must also be a vector"]
 ```
 
 This is not supported because a vector is ordered and generally speaking, there is not a deterministic way to add the unordered items from the set into the vector.

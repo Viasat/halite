@@ -101,6 +101,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 * Language is functional [(Halite)](explanation/functional.md) [(Jadeite)](explanation/functional-j.md)
   * Both Halite, and its alternate representation, Jadeite, are purely functional languages.
+* The pseduo-value 'unset' is handled specially [(Halite)](explanation/unset.md) [(Jadeite)](explanation/unset-j.md)
+  * The 'unset' value cannot be used in general and there are specific facilities for dealing with them when they are produced by an expression.
 
 ## Reference
 

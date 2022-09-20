@@ -165,7 +165,7 @@ Some languages have short-circuiting logical operators 'and' and 'or'. However, 
 ```
 
 ```java
-({ x = 0; ((x > 0)) })
+({ x = 0; (x > 0) })
 
 
 //-- result --
@@ -183,7 +183,7 @@ The same applies to 'or':
 ```
 
 ```java
-({ x = 0; ((x == 0)) })
+({ x = 0; (x == 0) })
 
 
 //-- result --

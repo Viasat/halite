@@ -675,6 +675,7 @@
                                     (if (> (count x) 0)
                                       (get x 0)
                                       0))
+                           :skip-lint? true
                            :result :auto}
                           {:code '(let [x [10]]
                                     (if (> (count x) 0)
@@ -735,14 +736,14 @@
                                     (and (> x 0) (> (div 100 x) 0)))
                            :throws :auto}
                           {:code '(let [x 0]
-                                    (and (> x 0)))
+                                    (> x 0))
                            :result :auto}
                           "The same applies to 'or':"
                           {:code '(let [x 0]
                                     (or (= x 0) (> (div 100 x) 0)))
                            :throws :auto}
                           {:code '(let [x 0]
-                                    (or (= x 0)))
+                                    (= x 0))
                            :result :auto}
                           "Similarly, the sequence operators of 'every?', 'any?', 'map', and 'filter' are all eager and fully evaluate for all elements of the collection regardless of what happens with the evaluation of prior elements."
                           "This raises an error even though logically, the result could be 'true' if just the first element is considered."

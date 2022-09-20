@@ -32,8 +32,7 @@ If an instance is made without the correct type for a field value, then the pred
 
 
 ;-- result --
-[:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'x' has wrong type"
- :h-err/field-value-of-wrong-type]
+[:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'x' has wrong type"]
 ```
 
 If a specification defines multiple spec vars then the result is a logical conjunct.
@@ -66,8 +65,7 @@ Violating either conditions causes the overall value to produce an error.
 
 
 ;-- result --
-[:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'y' has wrong type"
- :h-err/field-value-of-wrong-type]
+[:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'y' has wrong type"]
 ```
 
 Violating either conditions causes the overall value to produce an error.
@@ -79,8 +77,7 @@ Violating either conditions causes the overall value to produce an error.
 
 
 ;-- result --
-[:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'x' has wrong type"
- :h-err/field-value-of-wrong-type]
+[:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'x' has wrong type"]
 ```
 
 Similarly, each constraint by itself is a predicate and is combined in a conjunction with all of the spec variable type checks.
@@ -278,8 +275,7 @@ However, the 'valid?' operator cannot be used to handle cases that would violate
 
 
 ;-- result --
-[:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'x' has wrong type"
- :h-err/field-value-of-wrong-type]
+[:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'x' has wrong type"]
 ```
 
 #### Basic elements:

@@ -23,7 +23,7 @@
                                {:code '(valid? {:$type :spec/Ball :color "red"})
                                 :result :auto}
                                {:code '(valid? {:$type :spec/Ball :color "yellow"})
-                                :throws :auto}
+                                :result :auto}
                                "A spec context defines all of the specs that are in play when evaluating expressions. By definition, these specs define disjoint sets of valid instance values. There is never any overlap in the instances that are valid for any two different specs."
                                "However, it is possible to convert an instance of one spec into an instance of another spec. This is referred to as 'refinement'. Specs can include refinement expressions indicating how to convert them."
                                {:spec-map {:spec/Round {:spec-vars {:radius "Integer"}}
@@ -288,4 +288,83 @@
                                "It does not allow functions to be used as values."
                                "It does not support higher-ordered functions, i.e. functions are not assigned to variables, passed to operators or returned from operators. Instead the language relies on comprehensions for processing sequences of values."
                                "It does not allow for user-defined functions. Of course, specs themselves are a kind of 'user-defined function'."
-                               "Considered from the perspective of errors as side-effects, the 'let' binding expressions can be viewed as statements which have the effect of producing errors."]}})
+                               "Considered from the perspective of errors as side-effects, the 'let' binding expressions can be viewed as statements which have the effect of producing errors."]}
+
+                   :language/unset
+                   {:label "The pseduo-value 'unset' is handled specially"
+                    :desc "The 'unset' value cannot be used in general and there are specific facilities for dealing with them when they are produced by an expression."
+                    :basic-ref ['instance 'integer]
+                    :op-ref ['if-value 'when-value 'if-value-let 'when-value-let 'when 'refine-to]
+                    :contents ["Some languages have the notion of 'null' that appears throughout. The idea of 'null', is referred to as 'unset' in this language. The language attempts to keep contain the 'unset' value and prevent it from infecting code that should not need to deal with it. If it does need to be referred to, it is as '$no-value'."
+                               {:code '$no-value
+                                :result :auto}
+                               "But, ideally users will not use '$no-value' explicitly."
+                               "An 'unset' value is expected to come into play via an optional field."
+                               {:spec-map {:spec/A {:spec-vars {:b [:Maybe "Integer"]}}}}
+                               {:code '(get {:$type :spec/A} :b)
+                                :result :auto}
+                               "The 'unset' value cannot be used in most operations."
+                               {:code '(+ (get {:$type :spec/A} :b) 2)
+                                :throws :auto}
+                               "The typical pattern is that when an 'unset' value might be produced, the first thing to do is to branch based on whether an actual value resulted."
+                               {:code '(if-value-let [x (get {:$type :spec/A :b 1} :b)] x 0)
+                                :result :auto}
+                               {:code '(if-value-let [x (get {:$type :spec/A} :b)] x 0)
+                                :result :auto}
+                               "The operators 'if-value', 'if-value-let', 'when-value', and 'when-value-let' are specifically for dealing with expressions that maybe produce 'unset'."
+                               "There is very little that can be done with a value that is possibly 'unset'. One of the few things that can be done with them is equality checks can be performed, although this is discouraged in favor of using one of the built in 'if-value' or 'when-value' operators."
+                               {:code '(= 1 (get {:$type :spec/A} :b))
+                                :result :auto}
+                               {:code '(= $no-value (get {:$type :spec/A} :b))
+                                :result :auto}
+                               "The main use for 'unset' values is when constructing an instance literal."
+                               "If a field in an instance literal is never to be provided then it can simply be omitted."
+                               {:code '{:$type :spec/A}
+                                :result :auto}
+                               "However, if an optional field needs to be populated sometimes then a value that may be 'unset' can be useful."
+                               {:code '{:$type :spec/A
+                                        :b (get {:$type :spec/A :b 1} :b)}
+                                :result :auto}
+                               {:code '{:$type :spec/A
+                                        :b (get {:$type :spec/A} :b)}
+                                :result :auto}
+                               "If a potentially 'unset' value needs to be fabricated then the 'when' operators can be used."
+                               {:code '(let [x 11]
+                                         {:$type :spec/A
+                                          :b (when (> x 10)
+                                               x)})
+                                :result :auto}
+                               {:code '(let [x 1]
+                                         {:$type :spec/A
+                                          :b (when (> x 10)
+                                               x)})
+                                :result :auto}
+                               {:code '(let [a {:$type :spec/A :b 1}]
+                                         {:$type :spec/A
+                                          :b (when-value-let [x (get a :b)]
+                                                             (inc x))})
+                                :result :auto}
+                               {:code '(let [a {:$type :spec/A}]
+                                         {:$type :spec/A
+                                          :b (when-value-let [x (get a :b)]
+                                                             (inc x))})
+                                :result :auto}
+                               "The 'when-value' and 'if-value' operators are useful from within the context of a spec."
+                               {:spec-map {:spec/X {:spec-vars {:y [:Maybe "Integer"]
+                                                                :z [:Maybe "Integer"]}
+                                                    :refines-to {:spec/P {:name "refine_to_P"
+                                                                          :expr '{:$type :spec/P
+                                                                                  :q (when-value y
+                                                                                                 (inc y))
+                                                                                  :r (if-value z
+                                                                                               z
+                                                                                               0)}}}}
+                                           :spec/P {:spec-vars {:q [:Maybe "Integer"]
+                                                                :r "Integer"}}}}
+                               {:code '(refine-to {:$type :spec/X :y 10 :z 20} :spec/P)
+                                :result :auto}
+                               {:code '(refine-to {:$type :spec/X} :spec/P)
+                                :result :auto}
+                               "The operators that branch on 'unset' values cannot be used with expressions that cannot be 'unset'."
+                               {:code '(if-value-let [x 1] x 2)
+                                :throws :auto}]}})

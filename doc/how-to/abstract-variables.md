@@ -91,8 +91,7 @@ Even if we know the concrete type of the field value we cannot access it as that
 
 ;-- result --
 [:throws
- "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"
- :h-err/invalid-lookup-target]
+ "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
 ```
 
 #### Basic elements:

@@ -36,8 +36,7 @@ To guard index out of bounds.
 
 ;-- result --
 [:throws
- "h-err/index-out-of-bounds 0-0 : Index out of bounds, 0, for vector of length 0"
- :h-err/index-out-of-bounds]
+ "h-err/index-out-of-bounds 0-0 : Index out of bounds, 0, for vector of length 0"]
 ```
 
 ```clojure
@@ -206,7 +205,7 @@ Some languages have short-circuiting logical operators 'and' and 'or'. However, 
 
 ```clojure
 (let [x 0]
-  (and (> x 0)))
+  (> x 0))
 
 
 ;-- result --
@@ -227,7 +226,7 @@ The same applies to 'or':
 
 ```clojure
 (let [x 0]
-  (or (= x 0)))
+  (= x 0))
 
 
 ;-- result --

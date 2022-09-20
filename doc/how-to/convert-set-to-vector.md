@@ -25,8 +25,7 @@ This only works if the items in the set are intrinsically sortable.
 
 
 ;-- result --
-[:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"
- :h-err/no-matching-signature]
+[:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"]
 ```
 
 If the elements of the set are not sortable then use sort-by to convert the set into a vector.
