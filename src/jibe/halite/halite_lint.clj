@@ -8,6 +8,7 @@
             [jibe.halite :as halite]
             [jibe.halite-base :as halite-base]
             [jibe.halite-eval :as halite-eval]
+            [jibe.halite-type-check :as halite-type-check]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.l-err :as l-err]
@@ -39,14 +40,14 @@
                                               :nothing-arg arg}))))
     ;; linter has tighter signature requirements on some builtin functions
     (when-let [lint-signatures (get lint-builtins-signatures op)]
-      (when-not (some #(halite/matches-signature? % actual-types) lint-signatures)
+      (when-not (some #(halite-type-check/matches-signature? % actual-types) lint-signatures)
         (throw-err (h-err/no-matching-signature {:form form
                                                  :op (name op)
                                                  :actual-types actual-types
                                                  :signatures lint-signatures}))))
     (loop [[sig & more] signatures]
       (cond
-        (halite/matches-signature? sig actual-types) (:return-type sig)
+        (halite-type-check/matches-signature? sig actual-types) (:return-type sig)
         :else (recur more)))))
 
 (s/defn ^:private type-check-symbol :- halite-types/HaliteType
@@ -213,13 +214,13 @@
 (s/defn ^:private type-check-union :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
-    (halite/check-all-sets expr arg-types)
+    (halite-type-check/check-all-sets expr arg-types)
     (reduce halite-types/meet halite-types/empty-set arg-types)))
 
 (s/defn ^:private type-check-intersection :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
-    (halite/check-all-sets expr arg-types)
+    (halite-type-check/check-all-sets expr arg-types)
     (if (empty? arg-types)
       halite-types/empty-set
       (reduce halite-types/join arg-types))))
@@ -227,7 +228,7 @@
 (s/defn ^:private type-check-difference :- halite-types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
-    (halite/check-all-sets expr arg-types)
+    (halite-type-check/check-all-sets expr arg-types)
     (first arg-types)))
 
 (s/defn ^:private type-check-first :- halite-types/HaliteType
@@ -279,10 +280,10 @@
   (cond
     (boolean? expr) :Boolean
     (halite-base/integer-or-long? expr) :Integer
-    (halite-base/fixed-decimal? expr) (halite/type-check-fixed-decimal expr)
+    (halite-base/fixed-decimal? expr) (halite-type-check/type-check-fixed-decimal expr)
     (string? expr) :String
     (symbol? expr) (type-check-symbol ctx expr)
-    (map? expr) (halite/check-instance type-check* :form ctx expr)
+    (map? expr) (halite-type-check/check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
                   'get-in (type-check-get-in ctx expr)
@@ -314,7 +315,7 @@
                   'sort-by (type-check-sort-by ctx expr)
                   'reduce (type-check-reduce ctx expr)
                   (type-check-fn-application ctx expr))
-    (coll? expr) (halite/check-coll type-check* :form ctx expr)))
+    (coll? expr) (halite-type-check/check-coll type-check* :form ctx expr)))
 
 (s/defn lint!
   "Assumes type-checked halite. Return nil if no violations found, or throw the
