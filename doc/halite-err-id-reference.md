@@ -389,7 +389,7 @@ A refinement expression must produce an instance whose :$type matches the type t
 
 #### Error message template:
 
-> Invalid refinement expression: :form
+> Refinement expression, ':form', is not of the expected type
 
 #### Produced by operators:
 

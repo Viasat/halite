@@ -168,7 +168,7 @@
         {:message "Symbol ':form' is undefined"})
 
 (deferr invalid-refinement-expression [data]
-        {:message "Invalid refinement expression: :form"})
+        {:message "Refinement expression, ':form', is not of the expected type"})
 
 (deferr must-produce-value [data]
         {:message "Expression provided to 'map' must produce a value: :form"})

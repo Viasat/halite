@@ -64,7 +64,9 @@
     (let [expected-type (halite-types/maybe-type (halite-types/concrete-spec-type spec-id))
           t (type-check* {:senv (:senv ctx) :tenv tenv} expr)]
       (when-not (halite-types/subtype? t expected-type)
-        (throw-err (h-err/invalid-refinement-expression {:form expr})))
+        (throw-err (h-err/invalid-refinement-expression {:form expr
+                                                         :declared-type expected-type
+                                                         :actual-type t})))
       (eval-expr* ctx expr))))
 
 (s/defn ^:private refines-to? :- Boolean
