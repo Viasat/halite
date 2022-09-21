@@ -59,26 +59,33 @@
        ~form)
      ~form))
 
-(s/defn ^:private eval-expr-general :- s/Any
+(s/defn ^:private load-env
+  "Evaluate the contents of the env to get instances loaded with refinements."
   [type-check? :- Boolean
-   senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), env :- (s/protocol halite-envs/Env), expr]
-  (when type-check?
-    (with-eval-bindings
-      (halite-type-check/type-check senv tenv expr)))
+   senv :- (s/protocol halite-envs/SpecEnv)
+   env :- (s/protocol halite-envs/Env)]
+  (let [empty-env (halite-envs/env {})]
+           ;; All runtime values are homoiconic. We eval them in an empty environment
+        ;; to initialize refinements for all instances.
+    (reduce
+     (fn [env [k v]]
+       (halite-envs/bind env k
+                         (optionally-with-eval-bindings
+                          type-check?
+                          (halite-eval/eval-expr* {:env empty-env :senv senv} v))))
+     empty-env
+     (halite-envs/bindings env))))
+
+(s/defn ^:private type-check-env
+  "Type check the contents of the type environment."
+  [type-check? :- Boolean
+   senv :- (s/protocol halite-envs/SpecEnv)
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   env :- (s/protocol halite-envs/Env)]
   (let [declared-symbols (set (keys (halite-envs/scope tenv)))
         bound-symbols (set (keys (halite-envs/bindings env)))
         unbound-symbols (set/difference declared-symbols bound-symbols)
-        empty-env (halite-envs/env {})
-        ;; All runtime values are homoiconic. We eval them in an empty environment
-        ;; to initialize refinements for all instances.
-        env (reduce
-             (fn [env [k v]]
-               (halite-envs/bind env k
-                                 (optionally-with-eval-bindings
-                                  type-check?
-                                  (halite-eval/eval-expr* {:env empty-env :senv senv} v))))
-             empty-env
-             (halite-envs/bindings env))]
+        empty-env (halite-envs/env {})]
     (when (seq unbound-symbols)
       (throw-err (h-err/symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
     (doseq [sym declared-symbols]
@@ -91,10 +98,22 @@
                          type-check?
                          (halite-type-of/type-of senv tenv value))]
         (when-not (halite-types/subtype? actual-type declared-type)
-          (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))
+          (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))))
+
+(s/defn ^:private eval-expr-general :- s/Any
+  [type-check? :- Boolean
+   senv :- (s/protocol halite-envs/SpecEnv)
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   env :- (s/protocol halite-envs/Env)
+   expr]
+  (when type-check?
+    (with-eval-bindings
+      (halite-type-check/type-check senv tenv expr)))
+  (let [loaded-env (load-env type-check? senv env)]
+    (type-check-env type-check? senv tenv loaded-env)
     (optionally-with-eval-bindings
      type-check?
-     (halite-eval/eval-expr* {:env env :senv senv} expr))))
+     (halite-eval/eval-expr* {:env loaded-env :senv senv} expr))))
 
 (s/defn eval-expr :- s/Any
   "Type check a halite expression against the given type environment,
