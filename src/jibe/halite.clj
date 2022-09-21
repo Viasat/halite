@@ -84,7 +84,8 @@
             value (optionally-with-eval-bindings type-check?
                                                  (halite-eval/eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym)))
 
-            actual-type (halite-type-check/type-of senv tenv value)]
+            actual-type (optionally-with-eval-bindings type-check?
+                                                       (halite-type-check/type-of senv tenv value))]
         (when-not (halite-types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))
     (optionally-with-eval-bindings type-check?
