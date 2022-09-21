@@ -10,6 +10,7 @@
             [jibe.halite :as halite]
             [jibe.halite-syntax-check :as halite-syntax-check]
             [jibe.halite-type-check :as halite-type-check]
+            [jibe.halite-type-of :as halite-type-of]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-lint :as halite-lint]
             [jibe.lib.format-errors :as format-errors]
@@ -676,7 +677,7 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg
                            (halite/with-eval-bindings
-                             (halite-type-check/type-of senv tenv expr)))
+                             (halite-type-of/type-of senv tenv expr)))
 
       {:$type :ws/E$v1, :y true} #"Invalid instance"
       {:$type :ws/Invalid$v1} #"No matching signature")

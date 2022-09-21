@@ -15,9 +15,7 @@
 
 (set! *warn-on-reflection* true)
 
-;;
-
-(s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
+(s/defschema TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
 
 (s/defn check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
@@ -79,26 +77,6 @@
 
 (defn type-check-fixed-decimal [value]
   (halite-types/decimal-type (fixed-decimal/get-scale value)))
-
-(s/defn ^:private type-of* :- halite-types/HaliteType
-  [ctx :- TypeContext, value]
-  (cond
-    (boolean? value) :Boolean
-    (halite-base/integer-or-long? value) :Integer
-    (halite-base/fixed-decimal? value) (type-check-fixed-decimal value)
-    (string? value) :String
-    (= :Unset value) :Unset
-    (map? value) (let [t (check-instance type-of* :value ctx value)]
-                   (halite-eval/validate-instance (:senv ctx) value)
-                   t)
-    (coll? value) (check-coll type-of* :value ctx value)
-    :else (throw-err (h-err/invalid-value {:value value}))))
-
-(s/defn type-of :- halite-types/HaliteType
-  "Return the type of the given runtime value, or throw an error if the value is invalid and cannot be typed.
-  For instances, this function checks all applicable constraints. Any constraint violations result in a thrown exception."
-  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), value :- s/Any]
-  (type-of* {:senv senv :tenv tenv} value))
 
 ;;
 
