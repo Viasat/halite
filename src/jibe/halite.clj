@@ -27,7 +27,10 @@
 (s/defn eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
-  [ctx :- halite-eval/EvalContext, tenv :- (s/protocol halite-envs/TypeEnv),  spec-id :- halite-types/NamespacedKeyword, expr]
+  [ctx :- halite-eval/EvalContext
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   spec-id :- halite-types/NamespacedKeyword
+   expr]
   (if (contains? halite-eval/*refinements* spec-id)
     (halite-eval/*refinements* spec-id) ;; cache hit
     (do
@@ -95,6 +98,8 @@
 
 (def type-check-spec halite-type-check/type-check-spec)
 
+(def type-check-refinement-expr halite-type-check/type-check-refinement-expr)
+
 (def syntax-check halite-syntax-check/syntax-check)
 
 (def check-n halite-syntax-check/check-n)
@@ -116,6 +121,3 @@
 (def h+ halite-eval/h+)
 
 (def h- halite-eval/h-)
-
-
-

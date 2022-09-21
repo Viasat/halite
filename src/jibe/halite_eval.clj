@@ -159,7 +159,10 @@
 (s/defn ^:private eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
-  [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv),  spec-id :- halite-types/NamespacedKeyword, expr]
+  [ctx :- EvalContext
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   spec-id :- halite-types/NamespacedKeyword
+   expr]
   (eval-expr* ctx expr))
 
 (def ^:dynamic *eval-predicate-fn* eval-predicate) ;; short-term, until we remove the dependency from evaluator to type checker

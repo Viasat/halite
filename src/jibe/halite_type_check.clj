@@ -548,14 +548,15 @@
         t (type-check* {:senv senv :tenv tenv} expr)]
     (when-not (halite-types/subtype? t expected-type)
       (throw-err (h-err/invalid-refinement-expression {:form expr
-                                                       :declared-type expected-type
+                                                       :expected-type spec-id
                                                        :actual-type t})))))
 
 (s/defn type-check-spec
-  [senv :- (s/protocol halite-envs/SpecEnv), spec-info :- halite-envs/SpecInfo]
+  [senv :- (s/protocol halite-envs/SpecEnv)
+   spec-info :- halite-envs/SpecInfo]
   (let [{:keys [constraints refines-to]} spec-info
         tenv (halite-envs/type-env-from-spec senv spec-info)]
     (doseq [[cname cexpr] constraints]
       (type-check-constraint-expr senv tenv cexpr))
-    (doseq [[spec-id {:keys [expr]}] refines-to]
+    (doseq [[spec-id {:keys [expr name]}] refines-to]
       (type-check-refinement-expr senv tenv spec-id expr))))
