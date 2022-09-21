@@ -150,13 +150,14 @@
 
 (s/defschema EvalContext {:senv (s/protocol halite-envs/SpecEnv) :env (s/protocol halite-envs/Env)})
 
-(s/defn ^:private eval-predicate :- Boolean
-  [ctx :- EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
-  ;; TODO: currently this with-exception-data form causes err-msg to be thrown without an error code
-  (with-exception-data err-msg {:form bool-expr}
+(s/defn eval-predicate :- Boolean
+  [ctx :- EvalContext
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   bool-expr]
+  (with-exception-data {:form bool-expr}
     (true? (eval-expr* ctx bool-expr))))
 
-(s/defn ^:private eval-refinement :- (s/maybe s/Any)
+(s/defn eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
   [ctx :- EvalContext
@@ -213,7 +214,7 @@
         env (halite-envs/env-from-inst spec-info inst)
         ctx {:senv senv, :env env}
         satisfied? (fn [[cname expr]]
-                     (*eval-predicate-fn* ctx spec-tenv (format "invalid constraint '%s' of spec '%s'" cname (symbol spec-id)) expr))]
+                     (*eval-predicate-fn* ctx spec-tenv expr))]
 
     ;; check that all variables have values that are concrete and that conform to the
     ;; types declared in the parent resource spec

@@ -679,7 +679,7 @@
                              (halite-type-check/type-of senv tenv expr)))
 
       {:$type :ws/E$v1, :y true} #"Invalid instance"
-      {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")
+      {:$type :ws/Invalid$v1} #"No matching signature")
 
     ;; eval-expr also must check constraints
     (are [expr v]
@@ -690,7 +690,7 @@
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv empty-env expr))
 
       {:$type :ws/E$v1, :y true} #"Invalid instance"
-      {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")))
+      {:$type :ws/Invalid$v1} #"No matching signature")))
 
 (deftest test-refinement-validation
   (let [senv (->TestSpecEnv
@@ -957,7 +957,7 @@
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
 
-      {:$type :ws/Invalid :a {:$type :ws/A1} :z {:$type :ws/Z1}} #"invalid constraint")
+      {:$type :ws/Invalid :a {:$type :ws/A1} :z {:$type :ws/Z1}} #"Lookup target must be")
 
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))

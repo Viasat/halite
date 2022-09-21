@@ -19,11 +19,12 @@
 (set! *warn-on-reflection* true)
 
 (s/defn eval-predicate :- Boolean
-  [ctx :- halite-eval/EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
-  ;; TODO: currently this with-exception-data form causes err-msg to be thrown without an error code
-  (with-exception-data err-msg {:form bool-expr}
+  [ctx :- halite-eval/EvalContext
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   bool-expr]
+  (with-exception-data {:form bool-expr}
     (halite-type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
-  (halite-eval/eval-expr* ctx bool-expr))
+  (halite-eval/eval-predicate ctx tenv bool-expr))
 
 (s/defn eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
@@ -36,7 +37,7 @@
     (halite-eval/*refinements* spec-id) ;; cache hit
     (do
       (halite-type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr)
-      (halite-eval/eval-expr* ctx expr))))
+      (halite-eval/eval-refinement ctx tenv spec-id expr))))
 
 (defmacro with-eval-bindings [form]
   `(binding [halite-eval/*eval-predicate-fn* eval-predicate
