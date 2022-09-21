@@ -10,63 +10,10 @@
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.lib.fixed-decimal :as fixed-decimal]
-            [jibe.lib.format-errors :refer [with-exception-data throw-err text]]
+            [jibe.lib.format-errors :refer [throw-err text]]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
-
-;;
-
-(declare type-check*)
-
-(s/defn eval-predicate :- Boolean
-  [ctx :- halite-eval/EvalContext, tenv :- (s/protocol halite-envs/TypeEnv), err-msg :- String, bool-expr]
-  ;; TODO: currently this with-exception-data form causes err-msg to be thrown without an error code
-  (with-exception-data err-msg {:form bool-expr}
-    (let [t (type-check* {:senv (:senv ctx) :tenv tenv} bool-expr)]
-      (when (not= :Boolean t)
-        (throw-err (h-err/not-boolean-constraint {:type t})))))
-  (halite-eval/eval-expr* ctx bool-expr))
-
-(s/defn eval-refinement :- (s/maybe s/Any)
-  "Returns an instance of type spec-id, projected from the instance vars in ctx,
-  or nil if the guards prevent this projection."
-  [ctx :- halite-eval/EvalContext, tenv :- (s/protocol halite-envs/TypeEnv),  spec-id :- halite-types/NamespacedKeyword, expr]
-  (if (contains? halite-eval/*refinements* spec-id)
-    (halite-eval/*refinements* spec-id) ;; cache hit
-    (let [expected-type (halite-types/maybe-type (halite-types/concrete-spec-type spec-id))
-          t (type-check* {:senv (:senv ctx) :tenv tenv} expr)]
-      (when-not (halite-types/subtype? t expected-type)
-        (throw-err (h-err/invalid-refinement-expression {:form expr
-                                                         :declared-type expected-type
-                                                         :actual-type t})))
-      (halite-eval/eval-expr* ctx expr))))
-
-(s/defn type-check :- halite-types/HaliteType
-  "Return the type of the expression, or throw an error if the form is syntactically invalid,
-  or not well typed in the given typ environment."
-  [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
-  (type-check* {:senv senv :tenv tenv} expr))
-
-(s/defn type-check-spec
-  [senv :- (s/protocol halite-envs/SpecEnv), spec-info :- halite-envs/SpecInfo]
-  (let [{:keys [constraints refines-to]} spec-info
-        tenv (halite-envs/type-env-from-spec senv spec-info)]
-    (doseq [[cname cexpr] constraints]
-      (when (not= :Boolean (type-check senv tenv cexpr))
-        (throw-err (h-err/not-boolean-constraint {:expr cexpr}))))
-    (doseq [[spec-id {:keys [expr]}] refines-to]
-      (let [expected-type (halite-types/maybe-type (halite-types/concrete-spec-type spec-id))
-            t (type-check* {:senv senv :tenv tenv} expr)]
-        (when-not (halite-types/subtype? t expected-type)
-          (throw-err (h-err/invalid-refinement-expression {:form expr
-                                                           :declared-type expected-type
-                                                           :actual-type t})))))))
-
-(defmacro with-eval-bindings [form]
-  `(binding [halite-eval/*eval-predicate-fn* eval-predicate
-             halite-eval/*eval-refinement-fn* eval-refinement]
-     ~form))
 
 ;;
 
@@ -142,8 +89,7 @@
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (check-instance type-of* :value ctx value)]
-                   (with-eval-bindings
-                     (halite-eval/validate-instance (:senv ctx) value))
+                   (halite-eval/validate-instance (:senv ctx) value)
                    t)
     (coll? value) (check-coll type-of* :value ctx value)
     :else (throw-err (h-err/invalid-value {:value value}))))
@@ -156,7 +102,7 @@
 
 ;;
 
-;; 
+(declare type-check*)
 
 (s/defn matches-signature?
   [sig :- halite-base/FnSignature, actual-types :- [halite-types/HaliteType]]
@@ -583,3 +529,33 @@
                   (type-check-fn-application ctx expr))
     (coll? expr) (check-coll type-check* :form ctx expr)
     :else (throw-err (h-err/syntax-error {:form expr, :form-class (class expr)}))))
+
+(s/defn type-check :- halite-types/HaliteType
+  "Return the type of the expression, or throw an error if the form is syntactically invalid,
+  or not well typed in the given typ environment."
+  [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
+  (type-check* {:senv senv :tenv tenv} expr))
+
+(s/defn type-check-constraint-expr
+  [senv tenv bool-expr]
+  (let [t (type-check* {:senv senv :tenv tenv} bool-expr)]
+    (when (not= :Boolean t)
+      (throw-err (h-err/not-boolean-constraint {:type t})))))
+
+(s/defn type-check-refinement-expr
+  [senv tenv spec-id expr]
+  (let [expected-type (halite-types/maybe-type (halite-types/concrete-spec-type spec-id))
+        t (type-check* {:senv senv :tenv tenv} expr)]
+    (when-not (halite-types/subtype? t expected-type)
+      (throw-err (h-err/invalid-refinement-expression {:form expr
+                                                       :declared-type expected-type
+                                                       :actual-type t})))))
+
+(s/defn type-check-spec
+  [senv :- (s/protocol halite-envs/SpecEnv), spec-info :- halite-envs/SpecInfo]
+  (let [{:keys [constraints refines-to]} spec-info
+        tenv (halite-envs/type-env-from-spec senv spec-info)]
+    (doseq [[cname cexpr] constraints]
+      (type-check-constraint-expr senv tenv cexpr))
+    (doseq [[spec-id {:keys [expr]}] refines-to]
+      (type-check-refinement-expr senv tenv spec-id expr))))

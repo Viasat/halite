@@ -674,7 +674,9 @@
 
     ;; type-of, on the other hand, only works with values, and *does* check constraints
     (are [expr err-msg]
-         (thrown-with-msg? ExceptionInfo err-msg (halite-type-check/type-of senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg
+                           (halite/with-eval-bindings
+                             (halite-type-check/type-of senv tenv expr)))
 
       {:$type :ws/E$v1, :y true} #"Invalid instance"
       {:$type :ws/Invalid$v1} #"invalid constraint 'broken' of spec 'ws/Invalid\$v1'")
