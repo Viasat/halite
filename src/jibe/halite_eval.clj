@@ -142,6 +142,8 @@
      'error (mk-builtin #(throw-err (h-err/spec-threw {:spec-error-str %}))
                         [:String] :Nothing)}))
 
+(assert (= halite-base/builtin-symbols (set (keys builtins))))
+
 ;;
 
 (declare eval-expr*)
