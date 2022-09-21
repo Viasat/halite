@@ -19,19 +19,9 @@
 
 ;;
 
-(s/defn type-check :- halite-types/HaliteType
-  "Return the type of the expression, or throw an error if the form is syntactically invalid,
-  or not well typed in the given typ environment."
-  [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
-  (halite-type-check/type-check* {:senv senv :tenv tenv} expr))
+(def type-check halite-type-check/type-check)
 
-(s/defn type-check-spec
-  [senv :- (s/protocol halite-envs/SpecEnv), spec-info :- halite-envs/SpecInfo]
-  (let [{:keys [constraints refines-to]} spec-info
-        tenv (halite-envs/type-env-from-spec senv spec-info)]
-    (doseq [[cname cexpr] constraints]
-      (when (not= :Boolean (type-check senv tenv cexpr))
-        (throw-err (h-err/not-boolean-constraint {:expr cexpr}))))))
+(def type-check-spec halite-type-check/type-check-spec)
 
 (def syntax-check halite-syntax-check/syntax-check)
 
