@@ -43,6 +43,12 @@
              halite-eval/*eval-refinement-fn* eval-refinement]
      ~form))
 
+(defmacro optionally-with-eval-bindings [flag form]
+  `(if ~flag
+     (with-eval-bindings
+       ~form)
+     ~form))
+
 (s/defn ^:private eval-expr-general :- s/Any
   [type-check? :- Boolean
    senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), env :- (s/protocol halite-envs/Env), expr]
@@ -58,27 +64,22 @@
         env (reduce
              (fn [env [k v]]
                (halite-envs/bind env k
-                                 (if type-check?
-                                   (with-eval-bindings
-                                     (halite-eval/eval-expr* {:env empty-env :senv senv} v))
-                                   (halite-eval/eval-expr* {:env empty-env :senv senv} v))))
+                                 (optionally-with-eval-bindings type-check?
+                                                                (halite-eval/eval-expr* {:env empty-env :senv senv} v))))
              empty-env
              (halite-envs/bindings env))]
     (when (seq unbound-symbols)
       (throw-err (h-err/symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
     (doseq [sym declared-symbols]
       (let [declared-type (get (halite-envs/scope tenv) sym)
-            value (if type-check?
-                    (with-eval-bindings
-                      (halite-eval/eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym)))
-                    (halite-eval/eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym)))
+            value (optionally-with-eval-bindings type-check?
+                                                 (halite-eval/eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym)))
+
             actual-type (halite-type-check/type-of senv tenv value)]
         (when-not (halite-types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))
-    (if type-check?
-      (with-eval-bindings
-        (halite-eval/eval-expr* {:env env :senv senv} expr))
-      (halite-eval/eval-expr* {:env env :senv senv} expr))))
+    (optionally-with-eval-bindings type-check?
+                                   (halite-eval/eval-expr* {:env env :senv senv} expr))))
 
 (s/defn eval-expr :- s/Any
   "Type check a halite expression against the given type environment,
