@@ -153,8 +153,10 @@
 (s/defn eval-predicate :- Boolean
   [ctx :- EvalContext
    tenv :- (s/protocol halite-envs/TypeEnv)
-   bool-expr]
-  (with-exception-data {:form bool-expr}
+   bool-expr
+   constraint-name :- (s/maybe String)]
+  (with-exception-data {:form bool-expr
+                        :constraint-name constraint-name}
     (true? (eval-expr* ctx bool-expr))))
 
 (s/defn eval-refinement :- (s/maybe s/Any)
@@ -163,7 +165,8 @@
   [ctx :- EvalContext
    tenv :- (s/protocol halite-envs/TypeEnv)
    spec-id :- halite-types/NamespacedKeyword
-   expr]
+   expr
+   refinement-name :- (s/maybe String)]
   (eval-expr* ctx expr))
 
 (def ^:dynamic *eval-predicate-fn* eval-predicate) ;; short-term, until we remove the dependency from evaluator to type checker
@@ -207,14 +210,15 @@
   "Check that an instance satisfies all applicable constraints.
   Return the instance if so, throw an exception if not.
   Assumes that the instance has been type-checked successfully against the given type environment."
-  [senv :- (s/protocol halite-envs/SpecEnv), inst :- s/Any]
+  [senv :- (s/protocol halite-envs/SpecEnv)
+   inst :- s/Any]
   (let [spec-id (:$type inst)
         {:keys [spec-vars refines-to] :as spec-info} (halite-envs/lookup-spec senv spec-id)
         spec-tenv (halite-envs/type-env-from-spec senv spec-info)
         env (halite-envs/env-from-inst spec-info inst)
         ctx {:senv senv, :env env}
         satisfied? (fn [[cname expr]]
-                     (*eval-predicate-fn* ctx spec-tenv expr))]
+                     (*eval-predicate-fn* ctx spec-tenv expr cname))]
 
     ;; check that all variables have values that are concrete and that conform to the
     ;; types declared in the parent resource spec
@@ -244,7 +248,7 @@
                (binding [*refinements* transitive-refinements]
                  (let [inst (try
                               (with-exception-data {:refinement name}
-                                (*eval-refinement-fn* ctx spec-tenv spec-id expr))
+                                (*eval-refinement-fn* ctx spec-tenv spec-id expr name))
                               (catch ExceptionInfo ex
                                 (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
                                   ex

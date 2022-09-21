@@ -21,10 +21,12 @@
 (s/defn eval-predicate :- Boolean
   [ctx :- halite-eval/EvalContext
    tenv :- (s/protocol halite-envs/TypeEnv)
-   bool-expr]
-  (with-exception-data {:form bool-expr}
+   bool-expr
+   constraint-name :- (s/maybe String)]
+  (with-exception-data {:form bool-expr
+                        :constraint-name constraint-name}
     (halite-type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
-  (halite-eval/eval-predicate ctx tenv bool-expr))
+  (halite-eval/eval-predicate ctx tenv bool-expr constraint-name))
 
 (s/defn eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
@@ -32,12 +34,13 @@
   [ctx :- halite-eval/EvalContext
    tenv :- (s/protocol halite-envs/TypeEnv)
    spec-id :- halite-types/NamespacedKeyword
-   expr]
+   expr
+   refinement-name :- (s/maybe String)]
   (if (contains? halite-eval/*refinements* spec-id)
     (halite-eval/*refinements* spec-id) ;; cache hit
     (do
       (halite-type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr)
-      (halite-eval/eval-refinement ctx tenv spec-id expr))))
+      (halite-eval/eval-refinement ctx tenv spec-id expr refinement-name))))
 
 (defmacro with-eval-bindings [form]
   `(binding [halite-eval/*eval-predicate-fn* eval-predicate
