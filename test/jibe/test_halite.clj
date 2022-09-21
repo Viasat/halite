@@ -676,8 +676,9 @@
     ;; type-of, on the other hand, only works with values, and *does* check constraints
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg
-                           (halite/with-eval-bindings
-                             (halite-type-of/type-of senv tenv expr)))
+                           (halite/optionally-with-eval-bindings
+                            true
+                            (halite-type-of/type-of senv tenv expr)))
 
       {:$type :ws/E$v1, :y true} #"Invalid instance"
       {:$type :ws/Invalid$v1} #"No matching signature")
@@ -1057,4 +1058,4 @@
       (is (thrown-with-msg? ExceptionInfo #"disallowed symbol.*[$]foo"
                             (halite-lint/type-check senv tenv '(+ $foo 25)))))))
 
-;; (clojure.test/run-tests)
+;; (time (clojure.test/run-tests))

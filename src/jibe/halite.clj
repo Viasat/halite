@@ -48,38 +48,22 @@
         (halite-type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr))
       (halite-eval/eval-refinement ctx tenv spec-id expr refinement-name))))
 
-(defmacro with-eval-bindings [form]
-  `(binding [halite-eval/*eval-predicate-fn* eval-predicate
-             halite-eval/*eval-refinement-fn* eval-refinement]
-     ~form))
-
-(defmacro optionally-with-eval-bindings [flag form]
-  `(if ~flag
-     (with-eval-bindings
-       ~form)
-     ~form))
-
 (s/defn ^:private load-env
   "Evaluate the contents of the env to get instances loaded with refinements."
-  [type-check? :- Boolean
-   senv :- (s/protocol halite-envs/SpecEnv)
+  [senv :- (s/protocol halite-envs/SpecEnv)
    env :- (s/protocol halite-envs/Env)]
   (let [empty-env (halite-envs/env {})]
-           ;; All runtime values are homoiconic. We eval them in an empty environment
-        ;; to initialize refinements for all instances.
+    ;; All runtime values are homoiconic. We eval them in an empty environment
+    ;; to initialize refinements for all instances.
     (reduce
      (fn [env [k v]]
-       (halite-envs/bind env k
-                         (optionally-with-eval-bindings
-                          type-check?
-                          (halite-eval/eval-expr* {:env empty-env :senv senv} v))))
+       (halite-envs/bind env k (halite-eval/eval-expr* {:env empty-env :senv senv} v)))
      empty-env
      (halite-envs/bindings env))))
 
 (s/defn ^:private type-check-env
   "Type check the contents of the type environment."
-  [type-check? :- Boolean
-   senv :- (s/protocol halite-envs/SpecEnv)
+  [senv :- (s/protocol halite-envs/SpecEnv)
    tenv :- (s/protocol halite-envs/TypeEnv)
    env :- (s/protocol halite-envs/Env)]
   (let [declared-symbols (set (keys (halite-envs/scope tenv)))
@@ -90,43 +74,54 @@
       (throw-err (h-err/symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
     (doseq [sym declared-symbols]
       (let [declared-type (get (halite-envs/scope tenv) sym)
-            value (optionally-with-eval-bindings
-                   type-check?
-                   (halite-eval/eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym)))
-
-            actual-type (optionally-with-eval-bindings
-                         type-check?
-                         (halite-type-of/type-of senv tenv value))]
+            ;; it is not necessary to setup the eval bindings for the following because the
+            ;; instances have already been processed by load-env at this point
+            value (halite-eval/eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym))
+            actual-type (halite-type-of/type-of senv tenv value)]
         (when-not (halite-types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))))
 
-(s/defn ^:private eval-expr-general :- s/Any
-  [type-check? :- Boolean
-   senv :- (s/protocol halite-envs/SpecEnv)
-   tenv :- (s/protocol halite-envs/TypeEnv)
-   env :- (s/protocol halite-envs/Env)
-   expr]
-  (when type-check?
-    (with-eval-bindings
-      (halite-type-check/type-check senv tenv expr)))
-  (let [loaded-env (load-env type-check? senv env)]
-    (type-check-env type-check? senv tenv loaded-env)
-    (optionally-with-eval-bindings
-     type-check?
-     (halite-eval/eval-expr* {:env loaded-env :senv senv} expr))))
+(defmacro optionally-with-eval-bindings [flag form]
+  `(if ~flag
+     (binding [halite-eval/*eval-predicate-fn* eval-predicate
+               halite-eval/*eval-refinement-fn* eval-refinement]
+       ~form)
+     ~form))
 
 (s/defn eval-expr :- s/Any
-  "Type check a halite expression against the given type environment,
-  evaluate it in the given environment, and return the result. The bindings
-  in the environment are checked against the type environment before evaluation."
-  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), env :- (s/protocol halite-envs/Env), expr]
-  (eval-expr-general true senv tenv env expr))
+  "Evaluate a halite expression against the given type environment, and return the result. Optionally check the
+  bindings in the environment are checked against the type environment before evaluation. Optionally
+  type check the expression before evaluating it. Optionally type check any refinements or
+  constraints involved with instance literals in the expr and env. By default all checks are
+  performed."
 
-(s/defn eval-only-expr :- s/Any
-  "Evaluate a halite expression against the given type environment, and return the result. The
-  bindings in the environment are checked against the type environment before evaluation."
-  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), env :- (s/protocol halite-envs/Env), expr]
-  (eval-expr-general false senv tenv env expr))
+  ([senv :- (s/protocol halite-envs/SpecEnv)
+    tenv :- (s/protocol halite-envs/TypeEnv)
+    env :- (s/protocol halite-envs/Env)
+    expr]
+   (eval-expr true true true senv tenv env expr))
+
+  ([type-check-expr? :- Boolean
+    type-check-env? :- Boolean
+    type-check-spec-refinements-and-constraints? :- Boolean
+
+    senv :- (s/protocol halite-envs/SpecEnv)
+    tenv :- (s/protocol halite-envs/TypeEnv)
+    env :- (s/protocol halite-envs/Env)
+    expr]
+   (when type-check-expr?
+     ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
+     ;; evaluator
+     (halite-type-check/type-check senv tenv expr))
+   (let [loaded-env (optionally-with-eval-bindings
+                     type-check-spec-refinements-and-constraints?
+                     (load-env senv env))]
+     (when type-check-env?
+       ;; it is not necessary to setup the eval bindings here because env values were checked by load-env
+       (type-check-env senv tenv loaded-env))
+     (optionally-with-eval-bindings
+      type-check-spec-refinements-and-constraints?
+      (halite-eval/eval-expr* {:env loaded-env :senv senv} expr)))))
 
 ;;
 
