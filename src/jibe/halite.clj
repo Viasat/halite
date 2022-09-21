@@ -13,6 +13,7 @@
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite-syntax-check :as halite-syntax-check]
             [jibe.lib.format-errors :refer [throw-err with-exception-data]]
+            [potemkin]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -94,30 +95,18 @@
 
 ;;
 
-(def type-check halite-type-check/type-check)
+(potemkin/import-vars
+ [halite-type-check
+  type-check type-check-spec type-check-refinement-expr])
 
-(def type-check-spec halite-type-check/type-check-spec)
+(potemkin/import-vars
+ [halite-syntax-check
+  syntax-check check-n])
 
-(def type-check-refinement-expr halite-type-check/type-check-refinement-expr)
+(potemkin/import-vars
+ [halite-base
+  integer-or-long? fixed-decimal? check-count])
 
-(def syntax-check halite-syntax-check/syntax-check)
-
-(def check-n halite-syntax-check/check-n)
-
-(def integer-or-long? halite-base/integer-or-long?)
-
-(def fixed-decimal? halite-base/fixed-decimal?)
-
-(def check-count halite-base/check-count)
-
-(def h< halite-eval/h<)
-
-(def h> halite-eval/h>)
-
-(def h<= halite-eval/h<=)
-
-(def h>= halite-eval/h>=)
-
-(def h+ halite-eval/h+)
-
-(def h- halite-eval/h-)
+(potemkin/import-vars
+ [halite-eval
+  h< h> h<= h>= h+ h-])
