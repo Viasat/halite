@@ -154,9 +154,11 @@
   [ctx :- EvalContext
    tenv :- (s/protocol halite-envs/TypeEnv)
    bool-expr
+   spec-id
    constraint-name :- (s/maybe String)]
   (with-exception-data {:form bool-expr
-                        :constraint-name constraint-name}
+                        :constraint-name constraint-name
+                        :spec-id spec-id}
     (true? (eval-expr* ctx bool-expr))))
 
 (s/defn eval-refinement :- (s/maybe s/Any)
@@ -218,7 +220,7 @@
         env (halite-envs/env-from-inst spec-info inst)
         ctx {:senv senv, :env env}
         satisfied? (fn [[cname expr]]
-                     (*eval-predicate-fn* ctx spec-tenv expr cname))]
+                     (*eval-predicate-fn* ctx spec-tenv expr spec-id cname))]
 
     ;; check that all variables have values that are concrete and that conform to the
     ;; types declared in the parent resource spec

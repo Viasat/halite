@@ -959,6 +959,14 @@
 
       {:$type :ws/Invalid :a {:$type :ws/A1} :z {:$type :ws/Z1}} #"Lookup target must be")
 
+    (try
+      (halite/eval-expr senv tenv2 env2
+                        {:$type :ws/Invalid :a {:$type :ws/A1} :z {:$type :ws/Z1}})
+      (catch ExceptionInfo ex
+        (is (= {:constraint-name "notFive"
+                :spec-id :ws/Invalid}
+               (select-keys (ex-data ex) [:constraint-name :spec-id])))))
+
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/eval-expr senv tenv2 env2 expr))
 

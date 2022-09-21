@@ -22,11 +22,13 @@
   [ctx :- halite-eval/EvalContext
    tenv :- (s/protocol halite-envs/TypeEnv)
    bool-expr
+   spec-id
    constraint-name :- (s/maybe String)]
   (with-exception-data {:form bool-expr
+                        :spec-id spec-id
                         :constraint-name constraint-name}
     (halite-type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
-  (halite-eval/eval-predicate ctx tenv bool-expr constraint-name))
+  (halite-eval/eval-predicate ctx tenv bool-expr spec-id constraint-name))
 
 (s/defn eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
