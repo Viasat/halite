@@ -154,7 +154,7 @@
   [ctx :- EvalContext
    tenv :- (s/protocol halite-envs/TypeEnv)
    bool-expr
-   spec-id
+   spec-id :- halite-types/NamespacedKeyword
    constraint-name :- (s/maybe String)]
   (with-exception-data {:form bool-expr
                         :constraint-name constraint-name
@@ -169,7 +169,10 @@
    spec-id :- halite-types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
-  (eval-expr* ctx expr))
+  (with-exception-data {:form expr
+                        :spec-id spec-id
+                        :refinement refinement-name}
+    (eval-expr* ctx expr)))
 
 (def ^:dynamic *eval-predicate-fn* eval-predicate) ;; short-term, until we remove the dependency from evaluator to type checker
 
@@ -249,8 +252,7 @@
              (fn [transitive-refinements [spec-id {:keys [expr inverted? name]}]]
                (binding [*refinements* transitive-refinements]
                  (let [inst (try
-                              (with-exception-data {:refinement name}
-                                (*eval-refinement-fn* ctx spec-tenv spec-id expr name))
+                              (*eval-refinement-fn* ctx spec-tenv spec-id expr name)
                               (catch ExceptionInfo ex
                                 (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
                                   ex

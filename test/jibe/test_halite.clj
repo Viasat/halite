@@ -962,6 +962,7 @@
     (try
       (halite/eval-expr senv tenv2 env2
                         {:$type :ws/Invalid :a {:$type :ws/A1} :z {:$type :ws/Z1}})
+      (is false)
       (catch ExceptionInfo ex
         (is (= {:constraint-name "notFive"
                 :spec-id :ws/Invalid}

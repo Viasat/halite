@@ -22,7 +22,7 @@
   [ctx :- halite-eval/EvalContext
    tenv :- (s/protocol halite-envs/TypeEnv)
    bool-expr
-   spec-id
+   spec-id :- halite-types/NamespacedKeyword
    constraint-name :- (s/maybe String)]
   (with-exception-data {:form bool-expr
                         :spec-id spec-id
@@ -41,7 +41,10 @@
   (if (contains? halite-eval/*refinements* spec-id)
     (halite-eval/*refinements* spec-id) ;; cache hit
     (do
-      (halite-type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr)
+      (with-exception-data {:form expr
+                            :spec-id spec-id
+                            :refinement-name refinement-name}
+        (halite-type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr))
       (halite-eval/eval-refinement ctx tenv spec-id expr refinement-name))))
 
 (defmacro with-eval-bindings [form]
