@@ -25,9 +25,16 @@
                :sigs-j [["'$no-value'" "unset"]]
                :tags #{:optional-out}
                :doc "Constant that produces the special 'unset' value which represents the lack of a value."
-               :comment "Expected use is in an instance expression to indicate that a field in the instance does not have a value. However, it is suggested that alternatives include simply omitting the field name from the instance or using a variant of a 'when' expression to optionally produce a value for the field."
+               :comment "Expected use is in an instance expression to indicate that a field in the instance does not have a value. Alternatives include simply omitting the field name from the instance or using a variant of a `when` expression to optionally produce a value for the field."
                :basic-ref ['unset]
-               :see-also ['when 'when-value 'when-value-let]}
+               :see-also ['when 'when-value 'when-value-let 'if-value 'if-value-let]
+               :examples [{:expr-str "(if-value $no-value 7 13)"
+                           :expr-str-j :auto
+                           :result :auto}
+                          {:spec-map {:my/Spec$v1 {:spec-vars {:x [:Maybe "Integer"]}}}
+                           :expr-str "{:$type :my/Spec$v1,\n :x $no-value}"
+                           :expr-str-j :auto
+                           :result :auto}]}
    '$this {:sigs [["" "value"]]
            :sigs-j [["<$this>" "unset"]]
            :doc "Context dependent reference to the containing object."}

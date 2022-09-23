@@ -205,9 +205,41 @@ Constant that produces the special 'unset' value which represents the lack of a 
 
 [`unset`](jadeite-basic-syntax-reference.md#unset)
 
-Expected use is in an instance expression to indicate that a field in the instance does not have a value. However, it is suggested that alternatives include simply omitting the field name from the instance or using a variant of a 'when' expression to optionally produce a value for the field.
+Expected use is in an instance expression to indicate that a field in the instance does not have a value. Alternatives include simply omitting the field name from the instance or using a variant of a `when` expression to optionally produce a value for the field.
 
-See also: [`when`](#when) [`whenValue`](#whenValue) [`whenValueLet`](#whenValueLet)
+#### Examples:
+
+<table><tr><td colspan="2">
+
+```java
+(ifValue('$no-value') {7} else {13})
+
+//-- result --
+13
+```
+
+</td><td colspan="2">
+
+```java
+//-- context --
+{
+  "my/Spec$v1" : {
+    "spec-vars" : {
+      "x" : [ "Maybe", "Integer" ]
+    }
+  }
+}
+//
+
+{$type: my/Spec$v1, x: '$no-value'}
+
+//-- result --
+{:$type :my/Spec$v1}
+```
+
+</td></tr></table>
+
+See also: [`ifValue`](#ifValue) [`ifValueLet`](#ifValueLet) [`when`](#when) [`whenValue`](#whenValue) [`whenValueLet`](#whenValueLet)
 
 #### Tags:
 

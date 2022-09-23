@@ -7,7 +7,7 @@
   ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"}
    'plus-minus-character {:bnf "'+' | '-'"}
    'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"}
-   'bare-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"}
+   'bare-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [symbol-character])"}
    'symbol {:bnf "bare-symbol [ '/' bare-symbol]"
             :bnf-j "(bare-symbol [ '/' bare-symbol]) | ('’' bare-symbol [ '/' bare-symbol] '’')"
             :doc "Symbols are identifiers that allow values and operations to be named. The following are reserved and cannot be used as user defined symbols: true, false, nil."
@@ -65,7 +65,7 @@
             :tags #{'string-op}
             :throws ['h-err/size-exceeded]}
    'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
-             :doc "Signed, eight byte numeric integer values. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here. The largest positive integer is 9223372036854775807. The most negative integer is -9223372036854775808."
+             :doc "Signed, eight byte numeric integer values. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here. The largest positive integer is 9223372036854775807. The most negative integer is -9223372036854775808.\n\nSome language targets (eg. bounds-propagation) may use 4 instead of 8 bytes. On overflow, math operations never wrap; instead the evaluator will throw a runtime error."
              :examples [{:expr-str "0"
                          :expr-str-j :auto}
                         {:expr-str "1"

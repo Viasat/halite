@@ -64,7 +64,7 @@
   (str utils/generated-msg
        "# "
        (utils/lang-str lang)
-       " basic syntax reference\n\n"
+       " basic syntax and types reference\n\n"
        (->> basic-bnf
             (partition 2)
             (map (partial apply basic-md info))

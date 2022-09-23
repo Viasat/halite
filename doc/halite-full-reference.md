@@ -22,9 +22,36 @@ Constant that produces the special 'unset' value which represents the lack of a 
 
 [`unset`](halite-basic-syntax-reference.md#unset)
 
-Expected use is in an instance expression to indicate that a field in the instance does not have a value. However, it is suggested that alternatives include simply omitting the field name from the instance or using a variant of a 'when' expression to optionally produce a value for the field.
+Expected use is in an instance expression to indicate that a field in the instance does not have a value. Alternatives include simply omitting the field name from the instance or using a variant of a `when` expression to optionally produce a value for the field.
 
-See also: [`when`](#when) [`when-value`](#when-value) [`when-value-let`](#when-value-let)
+#### Examples:
+
+<table><tr><td colspan="2">
+
+```clojure
+(if-value $no-value 7 13)
+
+;-- result --
+13
+```
+
+</td><td colspan="3">
+
+```clojure
+;-- context --
+{:my/Spec$v1 {:spec-vars {:x [:Maybe "Integer"]}}}
+;--
+
+{:$type :my/Spec$v1,
+ :x $no-value}
+
+;-- result --
+{:$type :my/Spec$v1}
+```
+
+</td></tr></table>
+
+See also: [`if-value`](#if-value) [`if-value-let`](#if-value-let) [`when`](#when) [`when-value`](#when-value) [`when-value-let`](#when-value-let)
 
 #### Tags:
 

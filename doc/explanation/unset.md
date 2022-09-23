@@ -173,9 +173,9 @@ The 'when-value' and 'if-value' operators are useful from within the context of 
  :spec/X {:spec-vars {:y [:Maybe "Integer"],
                       :z [:Maybe "Integer"]},
           :refines-to {:spec/P {:name "refine_to_P",
-                                :expr {:$type :spec/P,
-                                       :q (when-value y (inc y)),
-                                       :r (if-value z z 0)}}}}}
+                                :expr '{:$type :spec/P,
+                                        :q (when-value y (inc y)),
+                                        :r (if-value z z 0)}}}}}
 ```
 
 ```clojure

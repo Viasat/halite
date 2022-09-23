@@ -2,7 +2,7 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Jadeite basic syntax reference
+# Jadeite basic syntax and types reference
 
 ### <a name="non-numeric-character"></a>non-numeric-character
 
@@ -29,7 +29,7 @@
 
 
 
-!["plus-minus-character | ((non-numeric-character | plus-minus-character) [{symbol-character}])"](./halite-bnf-diagrams/basic-syntax/bare-symbol-j.svg)
+!["plus-minus-character | ((non-numeric-character | plus-minus-character) [symbol-character])"](./halite-bnf-diagrams/basic-syntax/bare-symbol-j.svg)
 
 ---
 ### <a name="symbol"></a>symbol
@@ -158,6 +158,8 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 ### <a name="integer"></a>integer
 
 Signed, eight byte numeric integer values. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here. The largest positive integer is 9223372036854775807. The most negative integer is -9223372036854775808.
+
+Some language targets (eg. bounds-propagation) may use 4 instead of 8 bytes. On overflow, math operations never wrap; instead the evaluator will throw a runtime error.
 
 !["[plus-minus-character] '0-9' {'0-9'}"](./halite-bnf-diagrams/basic-syntax/integer-j.svg)
 
