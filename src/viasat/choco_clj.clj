@@ -142,16 +142,20 @@
   The problem comes from org.chocosolver.util.tools.MathUtils.pow, which uses bitshifting
   in the special case where the base is 2, even when the exponent is negative.
 
-  Ported from org.chocosolver.solver.expression.discrete.arithmetic.BiArExpression/intVar."
+  Ported from org.chocosolver.solver.expression.discrete.arithmetic.BiArExpression/intVar.
+
+  Secondly, the Choco .pow function implements a sort of 'integer' exponentiation:
+  a^b = 0 for all b < 0. Our expt function will instead be undefined for negative exponents."
   [^Model m ^ArExpression a ^ArExpression b]
   (let [avar (.intVar a), bvar (.intVar b)
         [lb ub] (bounds-for-pow avar bvar)
         rvar (.intVar m (.generateName m "pow_exp_") (int lb) (int ub))
         tuples (Tuples. true)]
     (doseq [^int val1 avar, val2 bvar]
-      (let [r (int (Math/pow val1 val2))]
-        (when (.contains rvar r)
-          (.add tuples (int-array [val1 val2 r])))))
+      (when (<= 0 val2)
+        (let [r (int (Math/pow val1 val2))]
+          (when (.contains rvar r)
+            (.add tuples (int-array [val1 val2 r]))))))
     (.post (.table m (int-vars avar bvar rvar) tuples))
     rvar))
 

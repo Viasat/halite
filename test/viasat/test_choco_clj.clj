@@ -207,3 +207,10 @@
         '{}        '{x [-10 10], p #{true false}}
         '{p true}  '{x [0 10] p true}
         '{x -3}    '{x -3, p false}))))
+
+(deftest test-expt-excludes-negative-exponents
+  (is (= {'n [0 10]}
+         (choco-clj/propagate
+          '{:vars {n :Int}
+            :constraints #{(<= 0 (expt 2 n))}}
+          {'n [-10 10]}))))
