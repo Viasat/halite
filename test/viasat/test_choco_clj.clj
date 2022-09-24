@@ -214,3 +214,24 @@
           '{:vars {n :Int}
             :constraints #{(<= 0 (expt 2 n))}}
           {'n [-10 10]}))))
+
+(deftest test-unused-let-binding-still-constrains-domains
+  (is (= {'n #{-2 -1 1 2}}
+         (choco-clj/propagate
+          '{:vars {n :Int}
+            :constraints #{(let [m (div 10 n)]
+                             (and (< -3 n) (< n 3)))}}
+          {'n (set (range -10 11))})))
+
+  (is (= {'n #{-2 -1 1 2}}
+         (choco-clj/propagate
+          '{:vars {n :Int}
+            :constraints #{(let [m (mod 10 n)]
+                             (and (< -3 n) (< n 3)))}}
+          {'n (set (range -10 11))})))
+
+  (is (= {'n (set (range 0 6))}
+         (choco-clj/propagate
+          '{:vars {n :Int}
+            :constraints #{(let [m (expt 2 n)] (< -5 n))}}
+          {'n (set (range -5 6))}))))
