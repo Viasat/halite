@@ -223,15 +223,67 @@
                              (and (< -3 n) (< n 3)))}}
           {'n (set (range -10 11))})))
 
-  (is (= {'n #{-2 -1 1 2}}
+  ;; Note that because of our current work-around for 'mod',
+  ;; zero will only be excluded from the domain when n is known
+  ;; to be non-negative.
+  (is (= {'n #{1 2}}
          (choco-clj/propagate
           '{:vars {n :Int}
             :constraints #{(let [m (mod 10 n)]
                              (and (< -3 n) (< n 3)))}}
-          {'n (set (range -10 11))})))
+          {'n (set (range 0 11))})))
 
   (is (= {'n (set (range 0 6))}
          (choco-clj/propagate
           '{:vars {n :Int}
             :constraints #{(let [m (expt 2 n)] (< -5 n))}}
           {'n (set (range -5 6))}))))
+
+(deftest test-short-circuiting-if
+  ;; A "short-circuiting if" is only significant
+  ;; for partially defined functions.
+
+  ;; div excludes zero from the domain of the divisor
+  (let [spec '{:vars {n :Int p :Bool}
+               :constraints #{(if p (< 0 (abs (div 10 n))) true)}}]
+    (are [in out]
+         (= out (choco-clj/propagate spec in))
+
+      {'n (set (range -5 6))}
+      {'p #{true false}, 'n (set (range -5 6))}
+
+      {'n (set (range -5 6)) 'p true}
+      {'p true, 'n (disj (set (range -5 6)) 0)}
+
+      {'n 0}
+      {'p false, 'n 0}))
+
+  ;; likewise mod
+  (let [spec '{:vars {n :Int p :Bool}
+               :constraints #{(if p (not= 10 (mod 10 n)) true)}}]
+    (are [in out]
+         (= out (choco-clj/propagate spec in))
+
+      {'n (set (range -5 6))}
+      {'n (set (range -5 6)) 'p #{true false}}
+
+      {'n (set (range -5 6)) 'p true}
+      {'p true, 'n (disj (set (range -5 6)) 0)}
+
+      {'n 0}
+      {'p false, 'n 0}))
+
+  ;; expt constrains the domain of the exponent to be non-negative
+  (let [spec '{:vars {n :Int p :Bool}
+               :constraints #{(if p (< 0 (expt 2 n)) true)}}]
+    (are [in out]
+         (= out (choco-clj/propagate spec in))
+
+      {'n (set (range -5 6))}
+      {'p #{true false}, 'n (set (range -5 6))}
+
+      {'n (set (range -5 6)) 'p true}
+      {'n (set (range 0 6)) 'p true}
+
+      {'n [-5 -1]}
+      {'n [-5 -1] 'p false})))

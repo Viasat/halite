@@ -95,6 +95,12 @@
   [& ivars]
   (into-array IntVar ivars))
 
+(defn- post-guarded
+  "Reify c, and post the constraint 'guard implies c'"
+  [^ReExpression guard ^Constraint c]
+  (let [c? (.reify c)]
+    (.post (.imp guard c?))))
+
 (defn- mod-workaround
   "We've got problems with the mod operator.
 
@@ -108,14 +114,20 @@
 
   To avoid incorrect bound computations, we only constrain the result of the operation when
   both operands are known to be non-negative (in which case Clojure mod and Java % have the same behavior)."
-  [^Model m vars ^ArExpression a ^ArExpression n]
+  [^Model m ^ReExpression guard ^ArExpression a ^ArExpression n]
   (let [[lb ub] *default-int-bounds*
-        r (.intVar m (int lb) (int ub))
-        c (.mod m (.intVar a) (.intVar n) r)]
-    (.post (.imp
-            (.and (.ge a (.intVar m (int 0)))
-                  (relational [(.ge n (.intVar m (int 0)))]))
-            (.reify c)))
+        r (.intVar m (int lb) (int ub))]
+    (if (.isInstantiatedTo (.intVar n) 0)
+      (.post (.not guard))
+      (let [c (.mod m (.intVar a) (.intVar n) r)]
+        (post-guarded guard (.decompose (.ne n (.intVar m (int 0)))))
+        (post-guarded
+         guard
+         (.decompose
+          (.imp
+           (.and (.ge a (.intVar m (int 0)))
+                 (relational [(.ge n (.intVar m (int 0)))]))
+           (.reify c))))))
     r))
 
 (defn- bounds-for-pow
@@ -147,17 +159,21 @@
 
   Secondly, the Choco .pow function implements a sort of 'integer' exponentiation:
   a^b = 0 for all b < 0. Our expt function will instead be undefined for negative exponents."
-  [^Model m ^ArExpression a ^ArExpression b]
+  [^Model m ^ReExpression guard ^ArExpression a ^ArExpression b]
   (let [avar (.intVar a), bvar (.intVar b)
         [lb ub] (bounds-for-pow avar bvar)
         rvar (.intVar m (.generateName m "pow_exp_") (int lb) (int ub))
         tuples (Tuples. true)]
+    ;; guard implies b >= 0
+    (post-guarded guard (.decompose (.ge b (.intVar m (int 0)))))
+    ;; build table of solutions to r = a ^ b
     (doseq [^int val1 avar, val2 bvar]
       (when (<= 0 val2)
         (let [r (int (Math/pow val1 val2))]
           (when (.contains rvar r)
             (.add tuples (int-array [val1 val2 r]))))))
-    (.post (.table m (int-vars avar bvar rvar) tuples))
+    ;; guard implies a^b = r
+    (post-guarded guard (.table m (int-vars avar bvar rvar) tuples))
     rvar))
 
 (defn- force-initialization
@@ -167,7 +183,18 @@
     (instance? ReExpression var-or-expr) (.boolVar ^ReExpression var-or-expr))
   var-or-expr)
 
-(defn- make-expr [^Model m vars form]
+(defn- make-expr
+  "Add a Choco variable to the model m whose value represents the value of the given form,
+  and return a ReExpression or ArExpression (often, but not always, just the variable itself)
+  representing it.
+
+  The vars argument defines the current lexical scope as a map of symbols to ArExpressions.
+
+  The guard argument is a ReExpression that 'guards' the evaluation of form: if the guard is true,
+  then form is evaluated. The guard is used to embue 'if' with \"short-circuiting\" behavior.
+  Partial functions (e.g. div) should be turned into constraints that are implied when guard is true, such
+  that they do not unconditionally constraint their arguments."
+  [^Model m vars ^ReExpression guard form]
   (force-initialization
    (cond
      (true? form) (.boolVar m true)
@@ -178,22 +205,32 @@
                     (cond
                       ;; (- x y z) => (- (- x y) z)
                       (and (= op '-) (< 3 (count form)))
-                      (make-expr m vars (apply list '- (apply list (take 3 form)) (drop 3 form)))
+                      (make-expr m vars guard (apply list '- (apply list (take 3 form)) (drop 3 form)))
 
-                      (= op 'dec) (make-expr m vars (list '- (second form) 1))
-                      (= op 'inc) (make-expr m vars (list '+ (second form) 1))
+                      (= op 'dec) (make-expr m vars guard (list '- (second form) 1))
+                      (= op 'inc) (make-expr m vars guard (list '+ (second form) 1))
 
-                      (= op 'not=) (make-expr m vars (list 'not (apply list '= (rest form))))
+                      (= op 'not=) (make-expr m vars guard (list 'not (apply list '= (rest form))))
 
                       (= op 'let)
                       (let [[bindings body] (rest form)]
                         (if (empty? bindings)
-                          (make-expr m vars body)
+                          (make-expr m vars guard body)
                           (let [[var expr & bindings] bindings]
-                            (make-expr m (assoc vars var (make-expr m vars expr)) (list 'let bindings body)))))
+                            (make-expr m (assoc vars var (make-expr m vars guard expr)) guard (list 'let bindings body)))))
 
+                      (= op 'if)
+                      (let [[pred-form then-form else-form] (rest form)
+                            ^ReExpression pred (make-expr m vars guard pred-form)
+                            not-pred (.not pred)
+                            then (make-expr m vars (.and guard (relational [pred])) then-form)
+                            else (make-expr m vars (.and guard (relational [not-pred])) else-form)]
+                        (if (instance? ReExpression then)
+                          (.and (.imp ^ReExpression pred ^ReExpression then)
+                                (relational [(.imp not-pred ^ReExpression else)]))
+                          (.ift ^ReExpression pred ^ArExpression then ^ArExpression else)))
                       :else
-                      (let [[arg1 & other-args] (mapv (partial make-expr m vars) (rest form))]
+                      (let [[arg1 & other-args] (mapv (partial make-expr m vars guard) (rest form))]
                         (condp = op
                           '+ (.add ^ArExpression arg1 (arithmetic other-args))
                           '- (.sub ^ArExpression arg1 ^ArExpression (first other-args))
@@ -207,18 +244,17 @@
                           'or (.or ^ReExpression arg1 (relational other-args))
                           'not (.not ^ReExpression arg1)
                           '=> (.imp ^ReExpression arg1 ^ReExpression (first other-args))
-                          'div (.div ^ArExpression arg1 ^ArExpression (first other-args))
+                          'div (let [avar (.intVar ^ArExpression arg1), bvar (.intVar ^ArExpression (first other-args))
+                                     [lb ub] (VariableUtils/boundsForDivision avar bvar)
+                                     rvar (.intVar m (.generateName m (str form)) (int lb) (int ub))]
+                                 (post-guarded guard (.div m avar bvar rvar))
+                                 rvar)
                           ;; TODO: Implement our own mod propagators?
                           ;;'mod (.mod (.abs ^ArExpression arg1) ^ArExpression (first other-args))
-                          'mod (mod-workaround m vars arg1 (first other-args))
-                          'expt (pow-workaround m arg1 (first other-args))
+                          'mod (mod-workaround m guard arg1 (first other-args))
+                          'expt (pow-workaround m guard arg1 (first other-args))
                           ;;'expt (.pow ^ArExpression arg1 ^ArExpression (first other-args))
                           'abs (.abs ^ArExpression arg1)
-                          'if (let [[then else] other-args]
-                                (if (instance? ReExpression then)
-                                  (.and (.imp ^ReExpression arg1 ^ReExpression then)
-                                        (relational [(.imp (.not ^ReExpression arg1) ^ReExpression else)]))
-                                  (.ift ^ReExpression arg1 ^ArExpression then ^ArExpression else)))
                           (throw (ex-info (format "Unsupported operator '%s'" (pr-str op)) {:form form}))))))
      :else (throw (ex-info (format "Unsupported constraint: '%s'" (pr-str form)) {:form form})))))
 
@@ -229,7 +265,7 @@
     expr))
 
 (defn- make-constraint [^Model m vars form]
-  (let [^ReExpression expr (bool-var-as-expr (make-expr m vars form))
+  (let [^ReExpression expr (bool-var-as-expr (make-expr m vars (.boolVar m true) form))
         constraint (.decompose expr)]
     (.post constraint)
     {:form expr :constraint constraint}))
