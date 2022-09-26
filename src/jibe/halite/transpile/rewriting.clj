@@ -119,20 +119,21 @@
             rule-ms (/ (- rule-nanos start-nanos) 1000000.0)
             graph-ms (/ (- end-nanos rule-nanos) 1000000.0)
             total-ms (/ (- end-nanos start-nanos) 1000000.0)]
-        (trace!
-         sctx
-         {:op :rewrite
-          :rule rule-name
-          :id id
-          :id' id'
-          :result form
-          :spec-id spec-id
-          :spec-info spec-info
-          :spec-info' spec-info'
-          :total-ms total-ms
-          :rule-ms rule-ms
-          :graph-ms graph-ms})
-        [spec-info' (ssa/deref-id ssa-graph' id')]))))
+        (when (not= spec-info spec-info')
+          (trace!
+           sctx
+           {:op :rewrite
+            :rule rule-name
+            :id id
+            :id' id'
+            :result form
+            :spec-id spec-id
+            :spec-info spec-info
+            :spec-info' spec-info'
+            :total-ms total-ms
+            :rule-ms rule-ms
+            :graph-ms graph-ms})
+          [spec-info' (ssa/deref-id ssa-graph' id')])))))
 
 (s/defn apply-to-reachable :- (s/maybe SpecInfo)
   [sctx ctx scope spec-id spec-info
