@@ -112,6 +112,8 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
  :h-err/invalid-instance]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

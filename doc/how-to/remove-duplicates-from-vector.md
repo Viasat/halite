@@ -19,6 +19,8 @@ Starting with a vector that has duplicate values, it can be converted to a set a
 
 Note that this only works if the elements of the vector are sortable. Also note that this causes the items in the vector to be sorted into their natural sort order.
 
+### Reference
+
 #### Basic elements:
 
 [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)

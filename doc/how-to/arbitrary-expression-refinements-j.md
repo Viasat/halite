@@ -41,6 +41,8 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 {$type: spec/X$v4, x: 3, y: 12, z: 10}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

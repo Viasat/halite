@@ -32,6 +32,8 @@ The same can be done with a set of values that is not intrinsically sortable, bu
 
 Notice that the items in the set were first sorted based on the number of items in the element, then in that sort order the items were appended to the vector, 'v'.
 
+### Reference
+
 #### Basic elements:
 
 [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)

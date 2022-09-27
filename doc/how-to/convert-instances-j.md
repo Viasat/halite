@@ -66,6 +66,8 @@ The refinement can be invoked as follows:
 {$type: spec/X$v2, y: 1}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

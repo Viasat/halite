@@ -56,6 +56,8 @@ A spec can have multiple fields
 {$type: spec/Dog$v4, age: 3, colors: ["brown", "white"], name: "Rex"}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance), [`vector`](../jadeite-basic-syntax-reference.md#vector)

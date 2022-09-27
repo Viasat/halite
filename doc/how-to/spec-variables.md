@@ -46,6 +46,8 @@ A spec can have multiple fields
  :colors ["brown" "white"]}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance), [`vector`](../halite-basic-syntax-reference.md#vector)

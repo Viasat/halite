@@ -38,6 +38,8 @@ It is more verbose, but an alternate solutions is the same as what would be done
 true
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`=`](../halite-basic-syntax-reference.md#=), [`any?`](../halite-basic-syntax-reference.md#any?), [`set`](../halite-basic-syntax-reference.md#set)

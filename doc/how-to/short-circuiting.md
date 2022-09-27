@@ -321,6 +321,8 @@ This raises an error even though, the result could be 2 if just the first elemen
 
 This means that the logical operators cannot be used to guard against runtime errors. Instead the control flow statements must be used.
 
+### Reference
+
 #### Basic elements:
 
 [`integer`](../halite-basic-syntax-reference.md#integer), [`vector`](../halite-basic-syntax-reference.md#vector)

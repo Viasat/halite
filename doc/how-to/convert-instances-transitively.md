@@ -33,6 +33,8 @@ The chain of refinements is invoked by simply refining the instance to the final
  :y 1}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

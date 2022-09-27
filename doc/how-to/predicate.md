@@ -56,6 +56,8 @@ Note, for the case where the constraint is not met, a naked attempt to instantia
  :h-err/invalid-instance]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

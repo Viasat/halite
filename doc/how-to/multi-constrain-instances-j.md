@@ -106,6 +106,8 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints constrain_b"]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

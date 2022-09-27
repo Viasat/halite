@@ -39,6 +39,8 @@ Sets can be tested in the same way.
 true
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`any?`](../halite-basic-syntax-reference.md#any?), [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)

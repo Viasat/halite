@@ -51,6 +51,8 @@ Note, for the case where the constraint is not met, a naked attempt to instantia
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sum', violates constraints constrain_sum"]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

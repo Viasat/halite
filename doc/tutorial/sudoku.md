@@ -326,6 +326,8 @@ false
 false
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`boolean`](../halite-basic-syntax-reference.md#boolean), [`instance`](../halite-basic-syntax-reference.md#instance), [`integer`](../halite-basic-syntax-reference.md#integer), [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)

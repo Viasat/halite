@@ -83,6 +83,8 @@ That leaves the case of an infinite loop, or a loop that continues until some ar
 
 Of course this example is contrived, because the 'mod' operator is available.
 
+### Reference
+
 #### Basic elements:
 
 [`integer`](../halite-basic-syntax-reference.md#integer), [`vector`](../halite-basic-syntax-reference.md#vector)

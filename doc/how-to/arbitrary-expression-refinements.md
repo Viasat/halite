@@ -37,6 +37,8 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
  :z 10}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

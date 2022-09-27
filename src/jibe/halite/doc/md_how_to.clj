@@ -55,47 +55,54 @@
                                                                                                   ({:halite (utils/pprint-halite h-result)
                                                                                                     :jadeite (str j-result "\n")} lang)))))))))
             results))
-        (when-let [basic-refs (some-> (if (= :halite lang)
-                                        (:basic-ref how-to)
-                                        (or (:basic-ref-j how-to)
-                                            (:basic-ref how-to)))
-                                      sort)]
-          ["#### Basic elements:\n\n"
-           (string/join ", "
-                        (for [basic-ref basic-refs]
-                          (str "[`" basic-ref "`]"
-                               "("
-                               (if (= :halite lang)
-                                 "../halite-basic-syntax-reference.md"
-                                 "../jadeite-basic-syntax-reference.md")
-                               "#" basic-ref
-                               ")")))
-           "\n\n"])
+        (let [basic-refs (some-> (if (= :halite lang)
+                                   (:basic-ref how-to)
+                                   (or (:basic-ref-j how-to)
+                                       (:basic-ref how-to)))
+                                 sort)
+              op-refs (some->> (:op-ref how-to)
+                               (map ({:halite identity
+                                      :jadeite utils/translate-op-name-to-jadeite} lang)))
+              how-to-refs (:how-to-ref how-to)
+              tutorial-refs (:tutorial-ref how-to)
+              explanation-refs (:explanation-ref how-to)]
+          [(when (or basic-refs op-refs how-to-refs tutorial-refs explanation-refs)
+             "### Reference\n\n")
+           (when basic-refs
+             ["#### Basic elements:\n\n"
+              (string/join ", "
+                           (for [basic-ref basic-refs]
+                             (str "[`" basic-ref "`]"
+                                  "("
+                                  (if (= :halite lang)
+                                    "../halite-basic-syntax-reference.md"
+                                    "../jadeite-basic-syntax-reference.md")
+                                  "#" basic-ref
+                                  ")")))
+              "\n\n"])
 
-        (when-let [op-refs (some->> (:op-ref how-to)
-                                    (map ({:halite identity
-                                           :jadeite utils/translate-op-name-to-jadeite} lang)))]
-          ["#### Operator reference:\n\n"
-           (for [a (sort op-refs)]
-             (str "* " "[`" a "`](" (if (= :halite lang)
-                                      "../halite-full-reference.md"
-                                      "../jadeite-full-reference.md")
-                  "#" (utils/safe-op-anchor a) ")" "\n"))
-           "\n\n"])
-        (when-let [how-to-refs (:how-to-ref how-to)]
-          ["#### How tos:\n\n"
-           (for [a (sort how-to-refs)]
-             (str "* " "[" (name a) "](" "../how-to/" (name a) ".md" ")" "\n"))
-           "\n\n"])
-        (when-let [tutorial-refs (:tutorial-ref how-to)]
-          ["#### Tutorials:\n\n"
-           (for [a (sort tutorial-refs)]
-             (str "* " "[" (name a) "](" "../tutorial/" (name a) ".md" ")" "\n"))
-           "\n\n"])
-        (when-let [explanation-refs (:explanation-ref how-to)]
-          ["#### Explanations:\n\n"
-           (for [a (sort explanation-refs)]
-             (str "* " "[" (name a) "](" "../explanation/" (name a) ".md" ")" "\n"))
-           "\n\n"])]
+           (when op-refs
+             ["#### Operator reference:\n\n"
+              (for [a (sort op-refs)]
+                (str "* " "[`" a "`](" (if (= :halite lang)
+                                         "../halite-full-reference.md"
+                                         "../jadeite-full-reference.md")
+                     "#" (utils/safe-op-anchor a) ")" "\n"))
+              "\n\n"])
+           (when how-to-refs
+             ["#### How tos:\n\n"
+              (for [a (sort how-to-refs)]
+                (str "* " "[" (name a) "](" "../how-to/" (name a) ".md" ")" "\n"))
+              "\n\n"])
+           (when tutorial-refs
+             ["#### Tutorials:\n\n"
+              (for [a (sort tutorial-refs)]
+                (str "* " "[" (name a) "](" "../tutorial/" (name a) ".md" ")" "\n"))
+              "\n\n"])
+           (when explanation-refs
+             ["#### Explanations:\n\n"
+              (for [a (sort explanation-refs)]
+                (str "* " "[" (name a) "](" "../explanation/" (name a) ".md" ")" "\n"))
+              "\n\n"])])]
        flatten
        (apply str)))

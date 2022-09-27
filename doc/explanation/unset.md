@@ -211,6 +211,8 @@ The operators that branch on 'unset' values cannot be used with expressions that
  "l-err/binding-expression-not-optional 0-0 : Binding expression in 'if-value-let' must have an optional type"]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance), [`integer`](../halite-basic-syntax-reference.md#integer)

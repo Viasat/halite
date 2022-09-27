@@ -42,6 +42,8 @@ This makes a spec which when instantiated is allows a refinement expression to b
 
 This is not necessarily recommended, but it is possible.
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

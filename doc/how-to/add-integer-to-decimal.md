@@ -41,6 +41,8 @@ Now the numbers can be added together.
 #d "5.2"
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`fixed-decimal`](../halite-basic-syntax-reference.md#fixed-decimal), [`integer`](../halite-basic-syntax-reference.md#integer)

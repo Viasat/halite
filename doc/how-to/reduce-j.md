@@ -18,6 +18,8 @@ A vector of values can be transformed into a single value. For example, the foll
 
 The values from the vector are combined with the accumulator, one-by-one in order and then the final value of the accumulator is produced.
 
+### Reference
+
 #### Basic elements:
 
 [`vector`](../jadeite-basic-syntax-reference.md#vector)

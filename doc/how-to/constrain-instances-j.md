@@ -83,6 +83,8 @@ In this example, the sum of 'a' and 'b' must be less than 10
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints constrain_b_c"]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

@@ -209,6 +209,8 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints square\""]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

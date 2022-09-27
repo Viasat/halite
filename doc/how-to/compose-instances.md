@@ -21,6 +21,8 @@ Composite instances are created by nesting the instances at construction time.
      :c 1}}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

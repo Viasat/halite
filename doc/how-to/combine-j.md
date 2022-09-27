@@ -58,6 +58,8 @@ It is not possible to use concat to add a set into a vector.
 
 This is not supported because a vector is ordered and generally speaking, there is not a deterministic way to add the unordered items from the set into the vector.
 
+### Reference
+
 #### Basic elements:
 
 [`set`](../jadeite-basic-syntax-reference.md#set), [`vector`](../jadeite-basic-syntax-reference.md#vector)

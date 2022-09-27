@@ -29,6 +29,8 @@ Composite instances are created by nesting the instances at construction time.
 {$type: spec/A$v1, b: {$type: spec/B$v1, c: 1}}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

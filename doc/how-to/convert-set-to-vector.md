@@ -39,6 +39,8 @@ If the elements of the set are not sortable then use sort-by to convert the set 
 [[30] [10 20]]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)

@@ -94,6 +94,8 @@ Even if we know the concrete type of the field value we cannot access it as that
  "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

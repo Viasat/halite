@@ -133,6 +133,8 @@ In fact, there is no way to make this refinement work because the animal field c
  :h-err/no-abstract]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

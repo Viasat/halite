@@ -30,6 +30,8 @@ The following code correctly determines that a target value is not in a vector.
 false
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`=`](../halite-basic-syntax-reference.md#=), [`vector`](../halite-basic-syntax-reference.md#vector)

@@ -58,6 +58,8 @@ But a shirt with a valid size can be constructed.
  :size "medium"}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

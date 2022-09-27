@@ -66,6 +66,8 @@ Putting it all together gives the result of the division truncated to one decima
 #d "4.6"
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`fixed-decimal`](../jadeite-basic-syntax-reference.md#fixed-decimal), [`integer`](../jadeite-basic-syntax-reference.md#integer)

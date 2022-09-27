@@ -50,6 +50,8 @@ The chain of refinements is invoked by simply refining the instance to the final
 {$type: spec/X$v3, y: 1}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

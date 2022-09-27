@@ -214,6 +214,8 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
  :h-err/refinement-error]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

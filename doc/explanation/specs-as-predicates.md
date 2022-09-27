@@ -278,6 +278,8 @@ However, the 'valid?' operator cannot be used to handle cases that would violate
 [:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'x' has wrong type"]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

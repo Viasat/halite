@@ -50,6 +50,8 @@ The refinement can be invoked as follows:
  :y 1}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)

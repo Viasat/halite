@@ -28,6 +28,8 @@ Note that duplicate elements are removed in the process.
 #{10 20 30}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)

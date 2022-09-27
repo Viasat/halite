@@ -26,6 +26,8 @@ Note that duplicate elements are removed in the process.
 #{10, 20, 30}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`set`](../jadeite-basic-syntax-reference.md#set), [`vector`](../jadeite-basic-syntax-reference.md#vector)

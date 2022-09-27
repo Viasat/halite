@@ -182,6 +182,8 @@ In fact, there is no way to make this refinement work because the animal field c
 [:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

@@ -61,6 +61,8 @@ But a shirt with a valid size can be constructed.
 {$type: spec/Shirt$v2, size: "medium"}
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)

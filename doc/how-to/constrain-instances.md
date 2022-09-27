@@ -78,6 +78,8 @@ In this example, the sum of 'a' and 'b' must be less than 10
  :h-err/invalid-instance]
 ```
 
+### Reference
+
 #### Basic elements:
 
 [`instance`](../halite-basic-syntax-reference.md#instance)
