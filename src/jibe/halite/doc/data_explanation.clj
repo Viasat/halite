@@ -108,6 +108,35 @@
                                 :result :auto}
                                "So the abstract spec allows us to write code that composes and uses instances without knowing the specific type of the instances at the time that we write the code."]}
 
+                   :spec/abstract-field
+                   {:label "What is an abstract field?"
+                    :desc "If a field in a spec has a type of an abstract spec, then the field can hold values that refine to that abstract spec."
+                    :contents ["Say we have an abstract car."
+                               {:spec-map {:spec/Car {:abstract? true
+                                                      :spec-vars {:make "String"
+                                                                  :year "Integer"}}
+                                           :spec/Ford {:abstract? false
+                                                       :spec-vars {:year "Integer"}
+                                                       :refines-to {:spec/Car {:name "as_car"
+                                                                               :expr '{:$type :spec/Car
+                                                                                       :make "Ford"
+                                                                                       :year year}}}}
+                                           :spec/Chevy {:abstract? false
+                                                        :spec-vars {:year "Integer"}
+                                                        :refines-to {:spec/Car {:name "as_car"
+                                                                                :expr '{:$type :spec/Car
+                                                                                        :make "Chevy"
+                                                                                        :year year}}}}
+                                           :spec/Garage {:abstract? false
+                                                         :spec-vars {:car :spec/Car}}}}
+                               "Since the garage has a field of an abstract type, it can hold an instance of either Ford or Chevy."
+                               {:code '{:$type :spec/Garage :car {:$type :spec/Ford :year 2020}}}
+                               {:code '{:$type :spec/Garage :car {:$type :spec/Chevy :year 2021}}}
+                               "However, it cannot hold a direct instance of car, because an abstract instance cannot be used in the construction of an instance."
+                               {:code '{:$type :spec/Garage :car {:$type :spec/Car :make "Honda" :year 2022}}
+                                :throws :auto}
+                               "In an interesting way, declaring a field to be of the type of an abstract instance, means it can hold any instance except for an instance of that type."]}
+
                    :spec/refinement-implications
                    {:label "What constraints are implied by refinement?"
                     :desc "Specs can be defined as refining other specs. When this is done what constraints are implied by the refinement?"
