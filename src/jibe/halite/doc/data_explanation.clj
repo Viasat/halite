@@ -41,6 +41,7 @@
                    :spec/abstract-spec
                    {:label "What is an abstract spec?"
                     :desc "An abstract spec defines instances which cannot be used in the construction of other instances."
+                    :explanation-ref [:spec/refinement-terminology]
                     :contents ["Say we have an abstract concept of squareness."
                                {:spec-map {:spec/Square {:abstract? true
                                                          :spec-vars {:width "Integer"
@@ -141,6 +142,7 @@
                    {:label "What constraints are implied by refinement?"
                     :desc "Specs can be defined as refining other specs. When this is done what constraints are implied by the refinement?"
                     :how-to-ref [:refinement/arbitrary-expression-refinements]
+                    :explanation-ref [:spec/abstract-spec :spec/refinement-terminology]
                     :contents ["One spec can be defined to be a refinement of another spec. First consider a square which has a width and height. The constraint, which makes it a square, requires these two values to be equal."
                                {:spec-map {:spec/Square {:spec-vars {:width "Integer"
                                                                      :height "Integer"}
@@ -303,6 +305,48 @@
                                 :throws :auto}]
                     :basic-ref ['instance]
                     :op-ref ['refine-to 'valid? 'refines-to?]}
+
+                   :spec/refinement-terminology
+                   {:label "Clarify terminology around refinements"
+                    :desc "The primary intent of a refinement is to be a mechanism to translate instances of more concrete specifications into more abstract specifications."
+                    :contents ["The refinement has a direction in terms of converting X to Y."
+                               {:spec-map {:spec/Y$v1 {}
+                                           :spec/X$v1 {:refines-to {:spec/Y$v1 {:name "refine_to_Y"
+                                                                                :expr '{:$type :spec/Y$v1}}}}}}
+                               {:code '(refine-to {:$type :spec/X$v1} :spec/Y$v1)
+                                :result :auto}
+
+                               "This direction of the spec is the same, regardless of whether the refinement is inverted."
+                               {:spec-map {:spec/Y$v2 {}
+                                           :spec/X$v2 {:refines-to {:spec/Y$v2 {:name "refine_to_Y"
+                                                                                :expr '{:$type :spec/Y$v2}
+                                                                                :inverted? true}}}}}
+                               "The inverted flag determines whether the constraints of Y are applied to all instances of X, but it does not affect the basic 'direction' of the refinement. i.e. the refinement still converts instances of X into instances of Y."
+                               {:code '(refine-to {:$type :spec/X$v2} :spec/Y$v2)
+                                :result :auto}
+                               "The use of the word 'to' in 'refine-to' and 'refines-to?' refers to this direction of the refinement mapping. So 'refine-to' means to 'execute a refinement', specifically a refinement that converts instances 'to' instances of the indicated spec."]
+                    :basic-ref ['instance]
+                    :op-ref ['refine-to 'refines-to?]
+                    :how-to-ref [:refinement/convert-instances]
+                    :explanation-ref [:spec/abstract-spec :spec/refinement-implications :spec/refinements-as-functions]}
+
+                   :spec/refinements-as-functions
+                   {:label "Refinements as general purpose functions"
+                    :desc "Refinements can be used as general purpose instance conversion functions."
+                    :contents ["A refinement can be defined that does not convert from a concrete instance to a more abstract instance, but in fact converts in the opposite direction."
+                               {:spec-map {:spec/Car {:refines-to {:spec/Ford {:name "refine_to_ford"
+                                                                               :expr '{:$type :spec/Ford
+                                                                                       :model "Mustang"
+                                                                                       :year 2000}}}}
+                                           :spec/Ford {:spec-vars {:model "String"
+                                                                   :year "Integer"}}}}
+                               "In this example a highly abstract instance, just called a car, is converted into a concrete instance that has more detailed information."
+                               {:code '(refine-to {:$type :spec/Car} :spec/Ford)
+                                :result :auto}]
+                    :basic-ref ['instance]
+                    :op-ref ['refine-to]
+                    :how-to-ref [:refinement/convert-instances]
+                    :explanation-ref [:spec/abstract-spec :spec/refinement-implications :spec/refinement-terminology]}
 
                    :language/functional
                    {:label "Language is functional"

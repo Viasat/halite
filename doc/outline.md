@@ -88,8 +88,12 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ### spec
 
+* Clarify terminology around refinements [(Halite)](explanation/refinement-terminology.md) [(Jadeite)](explanation/refinement-terminology-j.md)
+  * The primary intent of a refinement is to be a mechanism to translate instances of more concrete specifications into more abstract specifications.
 * Considering a spec as a predicate [(Halite)](explanation/specs-as-predicates.md) [(Jadeite)](explanation/specs-as-predicates-j.md)
   * A spec can be considered a giant predicate which when applied to a value returns 'true' if the value is a valid instance and 'false' or a runtime error otherwise.
+* Refinements as general purpose functions [(Halite)](explanation/refinements-as-functions.md) [(Jadeite)](explanation/refinements-as-functions-j.md)
+  * Refinements can be used as general purpose instance conversion functions.
 * Specs are about modeling things [(Halite)](explanation/big-picture.md) [(Jadeite)](explanation/big-picture-j.md)
   * Specs are a general mechanism for modelling whatever is of interest.
 * What constraints are implied by refinement? [(Halite)](explanation/refinement-implications.md) [(Jadeite)](explanation/refinement-implications-j.md)

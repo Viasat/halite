@@ -159,3 +159,10 @@ Once again, we can use the same code as before to retrieve the size of the squar
 
 So the abstract spec allows us to write code that composes and uses instances without knowing the specific type of the instances at the time that we write the code.
 
+### Reference
+
+#### Explanations:
+
+* [refinement-terminology](../explanation/refinement-terminology.md)
+
+

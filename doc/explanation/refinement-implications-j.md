@@ -227,3 +227,9 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 * [arbitrary-expression-refinements](../how-to/arbitrary-expression-refinements.md)
 
 
+#### Explanations:
+
+* [abstract-spec](../explanation/abstract-spec.md)
+* [refinement-terminology](../explanation/refinement-terminology.md)
+
+
