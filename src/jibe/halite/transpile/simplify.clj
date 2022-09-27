@@ -95,7 +95,7 @@
             (and (false? then) (true? else) (not if-value?)) (ssa/negated ssa-graph pred-id)
             (= then else) then-id))))))
 
-(s/defn ^:private simplify-do
+(s/defn simplify-do
   [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [side-effects (->> form (rest) (butlast)

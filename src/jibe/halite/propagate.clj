@@ -9,7 +9,7 @@
             [jibe.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
-            [jibe.halite.transpile.simplify :refer [simplify simplify-redundant-value! simplify-statically-known-value?]]
+            [jibe.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
             [jibe.halite.transpile.rewriting :as rewriting]
             [schema.core :as s]
             [viasat.choco-clj-opt :as choco-clj]))
@@ -450,13 +450,16 @@
            (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound))
            (lowering/lower-refine-to)
            (lowering/lower-refinement-constraints)
+           ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
+           ;; Conseqeuntly, no rewrite rules should introduce new when forms!
            (lowering/lower-when)
            (lowering/eliminate-runtime-constraint-violations)
            (lowering/lower-valid?)
            (drop-constraints-except-for-Bounds)
            (lowering/eliminate-error-forms)
            (rewriting/rewrite-reachable-sctx
-            [(rewriting/rule lowering/bubble-up-do-expr)
+            [(rewriting/rule simplify/simplify-do)
+             (rewriting/rule lowering/bubble-up-do-expr)
              (rewriting/rule lowering/flatten-do-expr)
              (rewriting/rule simplify-redundant-value!)
              (rewriting/rule simplify-statically-known-value?)
@@ -470,7 +473,7 @@
              (rewriting/rule lowering/push-comparison-into-maybe-if-in-expr)
              (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
              (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)])
-           simplify
+           simplify/simplify
            :$propagate/Bounds
            (ssa/spec-from-ssa)
            (->> (to-choco-spec senv))
