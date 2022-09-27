@@ -29,7 +29,7 @@
                                       "jadeite-full-reference.md")
                   "#" (utils/safe-op-anchor a) ")" "\n"))
            "\n"])
-        (when-let [alsos (:see-also err)]
+        (when-let [alsos (:err-ref err)]
           ["See also:"
            (for [a (sort alsos)]
              [" [`" a "`](#" (utils/safe-op-anchor a) ")"])

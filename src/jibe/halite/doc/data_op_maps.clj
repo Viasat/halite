@@ -27,7 +27,7 @@
                :doc "Constant that produces the special 'unset' value which represents the lack of a value."
                :comment "Expected use is in an instance expression to indicate that a field in the instance does not have a value. Alternatives include simply omitting the field name from the instance or using a variant of a `when` expression to optionally produce a value for the field."
                :basic-ref ['unset]
-               :see-also ['when 'when-value 'when-value-let 'if-value 'if-value-let]
+               :op-ref ['when 'when-value 'when-value-let 'if-value 'if-value-let]
                :examples [{:expr-str "(if-value $no-value 7 13)"
                            :expr-str-j :auto
                            :result :auto}
@@ -131,7 +131,7 @@
        :basic-ref ['value 'boolean]
        :doc "Determine if values are equivalent. For vectors and sets this performs a comparison of their contents."
        :throws ['l-err/result-always-known]
-       :see-also ['= 'not=]
+       :op-ref ['= 'not=]
        :examples [{:expr-str "(= 2 2)"
                    :expr-str-j :auto
                    :result :auto}
@@ -191,7 +191,7 @@
                    {:expr-str "(=> (> 1 2) false)"
                     :expr-str-j :auto
                     :result :auto}]
-        :see-also ['and 'every? 'not 'or]}
+        :op-ref ['and 'every? 'not 'or]}
    '> {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
        :sigs-j [["((integer '>'  integer) | (fixed-decimal '>' fixed-decimal))" "boolean"]]
        :tags #{:integer-op :fixed-decimal-op :boolean-out}
@@ -244,7 +244,7 @@
          :basic-ref ['boolean]
          :doc "Perform a logical 'and' operation on the input values."
          :comment "The operation does not short-circuit. Even if the first argument evaluates to false the other arguments are still evaluated."
-         :see-also ['=> 'every? 'not 'or]
+         :op-ref ['=> 'every? 'not 'or]
          :examples [{:expr-str "(and true false)"
                      :expr-str-j :auto
                      :result :auto}
@@ -271,7 +271,7 @@
                    'l-err/binding-target-invalid-symbol
                    'h-err/binding-target-must-be-bare-symbol
                    'h-err/not-boolean-body]
-          :see-also ['every? 'or]}
+          :op-ref ['every? 'or]}
    'concat {:sigs [["vector vector" "vector"]
                    ["(set (set | vector))" "set"]]
             :sigs-j [["vector '.' 'concat' '('  vector ')'" "vector"]
@@ -349,7 +349,7 @@
          :basic-ref ['integer]
          :doc "Decrement a numeric value."
          :throws ['h-err/overflow]
-         :see-also ['inc]
+         :op-ref ['inc]
          :examples [{:expr-str "(dec 10)"
                      :result :auto}
                     {:expr-str "(dec 0)"
@@ -360,7 +360,7 @@
                 :basic-ref ['set]
                 :doc "Compute the set difference of two sets."
                 :comment "This produces a set which contains all of the elements from the first set which do not appear in the second set."
-                :see-also ['intersection 'union 'subset?]
+                :op-ref ['intersection 'union 'subset?]
                 :throws ['h-err/arguments-not-sets]
                 :examples [{:expr-str "(difference #{1 2 3} #{1 2})"
                             :expr-str-j :auto
@@ -398,7 +398,7 @@
                     {:expr-str "(div 1 0)"
                      :expr-str-j :auto
                      :result :auto}]
-         :see-also ['mod]}
+         :op-ref ['mod]}
    'error {:sigs [["string" "nothing"]]
            :sigs-j [["'error' '(' string ')'" "nothing"]]
            :tags #{:nothing-out}
@@ -426,7 +426,7 @@
                      'l-err/binding-target-invalid-symbol
                      'h-err/binding-target-must-be-bare-symbol
                      'h-err/not-boolean-body]
-            :see-also ['any? 'and]}
+            :op-ref ['any? 'and]}
    'expt {:sigs [["integer integer" "integer"]]
           :sigs-j [["'expt' '(' integer ',' integer ')'" "integer"]]
           :tags #{:integer-op :integer-out}
@@ -464,7 +464,7 @@
                      'l-err/binding-target-invalid-symbol
                      'h-err/binding-target-must-be-bare-symbol
                      'h-err/not-boolean-body]
-            :see-also ['map]}
+            :op-ref ['map]}
    'first {:sigs [["vector" "value"]]
            :sigs-j [["vector '.' 'first()'" "value"]]
            :tags #{:vector-op}
@@ -479,7 +479,7 @@
                       {:expr-str "(first [])"
                        :expr-str-j :auto
                        :result :auto}]
-           :see-also ['count 'rest]}
+           :op-ref ['count 'rest]}
    'get {:sigs [["(instance keyword:instance-field)" "any"]
                 ["(vector integer)" "value"]]
          :sigs-j [["(instance '.' symbol:instance-field)" "any"]
@@ -501,7 +501,7 @@
                      :expr-str "(get {:$type :my/Spec$v1, :x -3, :y 2} :x)"
                      :expr-str-j :auto
                      :result :auto}]
-         :see-also ['get-in]}
+         :op-ref ['get-in]}
    'get-in {:sigs [["(instance:target | vector:target) '[' (integer | keyword:instance-field) {(integer | keyword:instance-field)} ']'" "any"]]
             :notes ["if the last element of the lookup path is an integer, then the result is a value"
                     "if the last element of the lookup path is an instance field name, then the result is an 'any'; specifically of that last field is the name of an optional field"
@@ -539,7 +539,7 @@
                         :expr-str "(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])"
                         :expr-str-j :auto
                         :result :auto}]
-            :see-also ['get]}
+            :op-ref ['get]}
    'if {:sigs [["boolean any-expression any-expression" "any"]]
         :sigs-j [["'if' '(' boolean ')' any-expression 'else' any-expression" "any"]]
         :tags #{:boolean-op :control-flow :special-form}
@@ -551,7 +551,7 @@
                    {:expr-str "(if (> 2 1) 10 (error \"fail\"))"
                     :expr-str-j :auto
                     :result :auto}]
-        :see-also ['when]}
+        :op-ref ['when]}
    'if-value {:sigs [["symbol any-expression any-expression" "any"]]
               :sigs-j [["'ifValue' '(' symbol ')' any-expression 'else' any-expression" "any"]]
               :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then evaluate the third argument."
@@ -560,7 +560,7 @@
               :basic-ref ['symbol 'any]
               :throws ['h-err/if-value-must-be-bare-symbol
                        'l-err/first-argument-not-optional]
-              :see-also ['if-value-let 'when-value]}
+              :op-ref ['if-value-let 'when-value]}
    'if-value-let {:sigs [["'[' symbol any:binding ']' any-expression any-expression" "any"]]
                   :sigs-j [["'ifValueLet' '(' symbol '=' any:binding ')'  any-expression 'else' any-expression" "any"]]
                   :basic-ref ['symbol 'any]
@@ -605,7 +605,7 @@
                               :result :auto}]
                   :throws ['h-err/binding-target-must-be-bare-symbol
                            'l-err/binding-expression-not-optional]
-                  :see-also ['if-value 'when-value-let]}
+                  :op-ref ['if-value 'when-value-let]}
    'inc {:sigs [["integer" "integer"]]
          :sigs-j [["integer '+' '1'" "integer"]]
          :tags #{:integer-op :integer-out}
@@ -616,7 +616,7 @@
                     {:expr-str "(inc 0)"
                      :result :auto}]
          :throws ['h-err/overflow]
-         :see-also ['dec]}
+         :op-ref ['dec]}
    'intersection {:sigs [["set set {set}" "set"]]
                   :sigs-j [["set '.' 'intersection' '(' set {',' set} ')'" "set"]]
                   :tags #{:set-op :set-out}
@@ -630,7 +630,7 @@
                               :expr-str-j :auto
                               :result :auto}]
                   :throws ['h-err/arguments-not-sets]
-                  :see-also ['difference 'union 'subset?]}
+                  :op-ref ['difference 'union 'subset?]}
    'let {:sigs [["'[' symbol value {symbol value} ']' any-expression" "any"]]
          :sigs-j [["'{' symbol '=' value ';' {symbol '=' value ';'} any-expression '}'" "any"]]
          :tags #{:special-form}
@@ -674,7 +674,7 @@
                   'l-err/binding-target-invalid-symbol
                   'h-err/binding-target-must-be-bare-symbol
                   'h-err/must-produce-value]
-         :see-also ['reduce 'filter]}
+         :op-ref ['reduce 'filter]}
    'mod {:sigs [["integer integer" "integer"]]
          :sigs-j [["integer '%' integer" "integer"]]
          :tags #{:integer-op :integer-out}
@@ -713,7 +713,7 @@
                     {:expr-str "(not false)"
                      :expr-str-j :auto
                      :result :auto}]
-         :see-also ['=> 'and 'or]}
+         :op-ref ['=> 'and 'or]}
    'not= {:sigs [["value value {value}" "boolean"]]
           :sigs-j [["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]
                    ["value '!=' value" "boolean"]]
@@ -760,7 +760,7 @@
                       :expr-str "(not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
                       :expr-str-j :auto
                       :result :auto}]
-          :see-also ['= 'not=]}
+          :op-ref ['= 'not=]}
    'or {:sigs [["boolean boolean {boolean}" "boolean"]]
         :sigs-j [["boolean '||' boolean" "boolean"]]
         :tags #{:boolean-op :boolean-out}
@@ -776,7 +776,7 @@
                    {:expr-str "(or (> 1 2) (> 2 3) (> 4 3))"
                     :expr-str-j :auto
                     :result :auto}]
-        :see-also ['=> 'and 'any? 'not]}
+        :op-ref ['=> 'and 'any? 'not]}
    'range {:sigs [["[integer:start] integer:end [integer:increment]" "vector"]]
            :sigs-j [["'range' '(' [integer:start ','] integer:end [',' integer:increment] ')'" "vector"]]
            :basic-ref ['integer 'vector]
@@ -805,7 +805,7 @@
                      'h-err/element-accumulator-same-symbol
                      'h-err/accumulator-target-must-be-bare-symbol
                      'h-err/reduce-not-vector]
-            :see-also ['map 'filter]
+            :op-ref ['map 'filter]
             :notes ["'normally' a reduce will produce a value, but the body could produce a 'maybe' value or even always produce 'unset', in which case the reduce may not produce a value"]}
    'refine-to {:sigs [["instance keyword:spec-id" "instance"]]
                :sigs-j [["instance '.' 'refineTo' '(' symbol:spec-id ')'" "instance"]]
@@ -842,14 +842,14 @@
                            :expr-str-j :auto
                            :result :auto
                            :doc "An example where the refinement being invoked does not exist."}]
-               :see-also ['refines-to?]}
+               :op-ref ['refines-to?]}
    'refines-to? {:sigs [["instance keyword:spec-id" "boolean"]]
                  :sigs-j [["instance '.' 'refinesTo?' '(' symbol:spec-id ')'" "boolean"]]
                  :tags #{:instance-op :boolean-out :spec-id-op}
                  :basic-ref ['instance 'keyword 'boolean]
                  :basic-ref-j ['instance 'symbol 'boolean]
                  :doc "Determine whether it is possible to refine the given instance into an instance of type, spec-id."
-                 :see-also ['refine-to]
+                 :op-ref ['refine-to]
                  :examples [{:spec-map {:my/Spec$v1 {:refines-to {:an/Other$v1 {:name "r"
                                                                                 :expr '{:$type :an/Other$v1}}}}
                                         :an/Other$v1 {}}
@@ -899,7 +899,7 @@
                         {:expr-str "(rescale #d \"1.23\" 0)"
                          :expr-str-j :auto
                          :result :auto}]
-             :see-also ['*]}
+             :op-ref ['*]}
    'rest {:sigs [["vector" "vector"]]
           :sigs-j [["vector '.' 'rest()'" "vector"]]
           :basic-ref ['vector]
@@ -929,7 +929,7 @@
                      {:expr-str "(sort [#d \"3.3\" #d \"1.1\" #d \"2.2\"])"
                       :expr-str-j :auto
                       :result :auto}]
-          :see-also ['sort-by]}
+          :op-ref ['sort-by]}
    'sort-by {:sigs [["'[' symbol:element (set | vector) ']' (integer-expression | fixed-decimal-expression)" "vector"]]
              :sigs-j [["'sortBy' '(' symbol:element 'in' (set | vector) ')' (integer-expression | fixed-decimal-expression)" "vector"]]
              :tags #{:set-op :vector-op :vector-out :special-form}
@@ -942,7 +942,7 @@
              :examples [{:expr-str "(sort-by [x [[10 20] [30] [1 2 3]]] (first x))"
                          :expr-str-j :auto
                          :result :auto}]
-             :see-also ['sort]}
+             :op-ref ['sort]}
    'str {:sigs [["string string {string}" "string"]]
          :sigs-j [["'str' '(' string ',' string {',' string} ')'" "string"]]
          :basic-ref ['string]
@@ -970,7 +970,7 @@
                         {:expr-str "(subset? #{1 2} #{1 2})"
                          :expr-str-j :auto
                          :result :auto}]
-             :see-also ['difference 'intersection 'union]}
+             :op-ref ['difference 'intersection 'union]}
    'union {:sigs [["set set {set}" "set"]]
            :sigs-j [["set '.' 'union' '(' set {',' set} ')'" "set"]]
            :tags #{:set-op :set-out}
@@ -987,7 +987,7 @@
            :doc "Compute the union of all the sets."
            :comment "This produces a set which contains all of the values that appear in any of the arguments."
            :throws ['h-err/arguments-not-sets]
-           :see-also ['difference 'intersection 'subset?]}
+           :op-ref ['difference 'intersection 'subset?]}
    'valid {:sigs [["instance-expression" "any"]]
            :sigs-j [["'valid' instance-expression" "any"]]
            :tags #{:instance-op :optional-out :special-form}
@@ -1011,7 +1011,7 @@
                        :expr-str-j "valid {$type: my/Spec$v1, p: 1, n: 1}"
                        :result :auto
                        :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}]
-           :see-also ['valid?]}
+           :op-ref ['valid?]}
    'valid? {:sigs [["instance-expression" "boolean"]]
             :sigs-j [["'valid?' instance-expression" "boolean"]]
             :basic-ref ['instance 'boolean]
@@ -1034,7 +1034,7 @@
                         :result :auto
                         :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}]
             :tags #{:instance-op :boolean-out :special-form}
-            :see-also ['valid]}
+            :op-ref ['valid]}
    'when {:sigs [["boolean any-expression" "any"]]
           :sigs-j [["'when' '(' boolean ')' any-expression" "any"]]
           :tags #{:boolean-op :optional-out :control-flow :special-form}
@@ -1080,7 +1080,7 @@
                             :expr-str-j "whenValue(x) {x + 2}"
                             :doc "In the context of an instance with an optional field, x, when the field is unset."
                             :result :auto}]
-                :see-also ['if-value 'when 'when-value-let]}
+                :op-ref ['if-value 'when 'when-value-let]}
    'when-value-let {:sigs [["'[' symbol any:binding']' any-expression" "any"]]
                     :sigs-j [["'whenValueLet' '(' symbol '=' any:binding ')' any-expression" "any"]]
                     :tags #{:optional-op :optional-out :control-flow :special-form}
@@ -1114,4 +1114,4 @@
                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
                                 :doc "In the context of an instance with an optional field, y, when the field is unset."
                                 :result :auto}]
-                    :see-also ['if-value-let 'when 'when-value]}})
+                    :op-ref ['if-value-let 'when 'when-value]}})

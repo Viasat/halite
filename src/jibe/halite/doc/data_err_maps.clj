@@ -6,7 +6,7 @@
 (def err-maps
   {'h-err/abs-failure {:doc "The way the number space is divided the value of zero comes out of the positive number space. This means there is one more negative number than there are positive numbers. So there is one negative number whose absolute value cannot be represented. That negative number is the most negative value."}
    'h-err/accumulator-target-must-be-bare-symbol {:doc "In 'reduce', it is necesary to define a symbol to reference the accumulated value of the reduction. This symbol must not include a namespace."
-                                                  :see-also ['h-err/element-binding-target-must-be-bare-symbol]}
+                                                  :err-ref ['h-err/element-binding-target-must-be-bare-symbol]}
    'h-err/arg-type-mismatch {:doc "A relatively generic exception that indicates the operator being invoked cannot operate on the type of value provided."}
    'h-err/not-both-vectors {:doc "When the first argument to 'concat' is a vector, the second must also be a vector. A vector can be concated onto a set, but a set cannot be concated onto a vector."}
    'h-err/argument-empty {:doc "The 'first' operation cannot be invoked on an empty collection."}
@@ -21,7 +21,7 @@
    'h-err/divide-by-zero {:doc "Division by zero, whether directly or indirectly via modulus cannot be performed."}
    'h-err/element-accumulator-same-symbol {:doc "The 'reduce' operation requires distinct symbols for referring to the accumulator and the collection element."}
    'h-err/element-binding-target-must-be-bare-symbol {:doc "In 'reduce', it is necesary to define a symbol without a namepsace which is used to hold each element of the collection."
-                                                      :see-also ['h-err/accumulator-target-must-be-bare-symbol]}
+                                                      :err-ref ['h-err/accumulator-target-must-be-bare-symbol]}
    'h-err/get-in-path-must-be-vector-literal {:doc "The path to navigate in 'get-in' must be a literal, i.e. it cannot be an expression to compute a vector."}
    'h-err/if-value-must-be-bare-symbol {:doc "The 'if-value' operator can only be applied to a bare symbol that is already bound to an optional value."}
    'h-err/index-out-of-bounds {:doc "The index falls outside of the bounds of the vector. A way to avoid this is to first test the length of the vector."}

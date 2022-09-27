@@ -59,7 +59,7 @@
                     "jadeite-err-id-reference.md")
                   "#" (utils/safe-op-anchor msg) ")" "\n"))
            "\n"])
-        (when-let [alsos (:see-also op)]
+        (when-let [alsos (:op-ref op)]
           ["See also:"
            (for [a (sort (remove #(= op-name %) alsos))]
              [" [`" a "`](#" (utils/safe-op-anchor a) ")"])
