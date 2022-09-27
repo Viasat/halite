@@ -307,12 +307,12 @@ The contents of the instance are specified in pair-wise fashion with alternating
 
 #### How tos:
 
-* [spec-variables](../how-to/spec-variables.md)
+* [spec-variables](how-to/spec-variables.md)
 
 
 #### Tutorials:
 
-* [sudoku](../tutorial/sudoku.md)
+* [sudoku](tutorial/sudoku.md)
 
 
 ---
@@ -405,7 +405,7 @@ A pseudo-value that represents the lack of a value.
 
 #### Explanations:
 
-* [unset](../explanation/unset.md)
+* [unset](explanation/unset.md)
 
 
 ---

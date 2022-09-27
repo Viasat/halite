@@ -775,7 +775,7 @@ See also: [`every?`](#every_Q) [`or`](#or)
 
 #### How tos:
 
-* [vector-containment](../how-to/vector-containment.md)
+* [vector-containment](how-to/vector-containment.md)
 
 
 #### Tags:
@@ -1604,7 +1604,7 @@ See also: [`if-value-let`](#if-value-let) [`when-value`](#when-value)
 
 #### Explanations:
 
-* [unset](../explanation/unset.md)
+* [unset](explanation/unset.md)
 
 
 #### Tags:
@@ -2861,7 +2861,7 @@ See also: [`valid`](#valid)
 
 #### Tutorials:
 
-* [sudoku](../tutorial/sudoku.md)
+* [sudoku](tutorial/sudoku.md)
 
 
 #### Tags:

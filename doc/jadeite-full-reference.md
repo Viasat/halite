@@ -1290,7 +1290,7 @@ See also: [`every?`](#every_Q) [`||`](#||)
 
 #### How tos:
 
-* [vector-containment](../how-to/vector-containment.md)
+* [vector-containment](how-to/vector-containment.md)
 
 
 #### Tags:
@@ -2037,7 +2037,7 @@ See also: [`ifValueLet`](#ifValueLet) [`whenValue`](#whenValue)
 
 #### Explanations:
 
-* [unset](../explanation/unset.md)
+* [unset](explanation/unset.md)
 
 
 #### Tags:
@@ -3150,7 +3150,7 @@ See also: [`valid`](#valid)
 
 #### Tutorials:
 
-* [sudoku](../tutorial/sudoku.md)
+* [sudoku](tutorial/sudoku.md)
 
 
 #### Tags:
