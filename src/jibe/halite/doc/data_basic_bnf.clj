@@ -120,6 +120,8 @@
                        'h-err/invalid-type-value
                        'h-err/not-boolean-constraint ;; is this right?
                        ]
+              :how-to-ref [:instance/spec-variables]
+              :tutorial-ref [:spec/sudoku]
               :tags #{'instance-out 'instance-op 'instance-field-op}}
    'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"
             :bnf-j "'[' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} [whitespace]']'"
@@ -149,7 +151,8 @@
    'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"
            :doc "Expressions and many literals produce values."}
    'unset {:bnf "unset"
-           :doc "A pseudo-value that represents the lack of a value."}
+           :doc "A pseudo-value that represents the lack of a value."
+           :explanation-ref [:language/unset]}
    'nothing {:bnf "nothing"
              :doc "The absence of a value."}
    'any {:bnf "value | unset"

@@ -57,6 +57,22 @@
                                        (:tags-j op))
                                      (:tags op)))]
               ["#### Tags:\n\n" (tags-md-block info (map keyword tags)) "\n\n"])
+            (when-let [how-to-refs (:how-to-ref op)]
+              ["#### How tos:\n\n"
+               (for [a (sort how-to-refs)]
+                 (str "* " "[" (name a) "](" "../how-to/" (name a) ".md" ")" "\n"))
+               "\n\n"])
+            (when-let [tutorial-refs (:tutorial-ref op)]
+              ["#### Tutorials:\n\n"
+               (for [a (sort tutorial-refs)]
+                 (str "* " "[" (name a) "](" "../tutorial/" (name a) ".md" ")" "\n"))
+               "\n\n"])
+            (when-let [explanation-refs (:explanation-ref op)]
+              ["#### Explanations:\n\n"
+               (for [a (sort explanation-refs)]
+                 (str "* " "[" (name a) "](" "../explanation/" (name a) ".md" ")" "\n"))
+               "\n\n"])
+
             "---\n"]
            flatten (apply str)))))
 

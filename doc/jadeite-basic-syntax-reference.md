@@ -305,6 +305,16 @@ The contents of the instance are specified in pair-wise fashion with alternating
 
  [Instance field operations](halite-instance-field-op-reference-j.md),  [Instance operations](halite-instance-op-reference-j.md),  [Produce instances](halite-instance-out-reference-j.md)
 
+#### How tos:
+
+* [spec-variables](../how-to/spec-variables.md)
+
+
+#### Tutorials:
+
+* [sudoku](../tutorial/sudoku.md)
+
+
 ---
 ### <a name="vector"></a>vector
 
@@ -392,6 +402,11 @@ Expressions and many literals produce values.
 A pseudo-value that represents the lack of a value.
 
 !["unset"](./halite-bnf-diagrams/basic-syntax/unset-j.svg)
+
+#### Explanations:
+
+* [unset](../explanation/unset.md)
+
 
 ---
 ### <a name="nothing"></a>nothing
