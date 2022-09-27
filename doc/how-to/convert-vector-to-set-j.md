@@ -37,7 +37,7 @@ Note that duplicate elements are removed in the process.
 
 #### How tos:
 
-* [convert-set-to-vector](convert-set-to-vector.md)
-* [remove-duplicates-from-vector](remove-duplicates-from-vector.md)
+* [convert-set-to-vector](../how-to/convert-set-to-vector.md)
+* [remove-duplicates-from-vector](../how-to/remove-duplicates-from-vector.md)
 
 

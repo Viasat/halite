@@ -27,6 +27,6 @@ Composite instances are created by nesting the instances at construction time.
 
 #### How tos:
 
-* [spec-variables](spec-variables.md)
+* [spec-variables](../how-to/spec-variables.md)
 
 

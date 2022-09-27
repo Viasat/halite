@@ -50,7 +50,7 @@ If the elements of the set are not sortable then use sort-by to convert the set 
 
 #### How tos:
 
-* [convert-vector-to-set](convert-vector-to-set.md)
-* [remove-duplicates-from-vector](remove-duplicates-from-vector.md)
+* [convert-vector-to-set](../how-to/convert-vector-to-set.md)
+* [remove-duplicates-from-vector](../how-to/remove-duplicates-from-vector.md)
 
 

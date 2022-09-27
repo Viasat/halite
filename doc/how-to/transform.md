@@ -40,6 +40,6 @@ The same works with sets.
 
 #### How tos:
 
-* [reduce](reduce.md)
+* [reduce](../how-to/reduce.md)
 
 

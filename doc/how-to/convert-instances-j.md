@@ -77,8 +77,8 @@ The refinement can be invoked as follows:
 
 #### How tos:
 
-* [arbitrary-expression-refinements](arbitrary-expression-refinements.md)
-* [convert-instances-transitively](convert-instances-transitively.md)
-* [optionally-convert-instances](optionally-convert-instances.md)
+* [arbitrary-expression-refinements](../how-to/arbitrary-expression-refinements.md)
+* [convert-instances-transitively](../how-to/convert-instances-transitively.md)
+* [optionally-convert-instances](../how-to/optionally-convert-instances.md)
 
 

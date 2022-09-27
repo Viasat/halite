@@ -31,7 +31,7 @@ Note that this only works if the elements of the vector are sortable. Also note 
 
 #### How tos:
 
-* [convert-set-to-vector](convert-set-to-vector.md)
-* [convert-vector-to-set](convert-vector-to-set.md)
+* [convert-set-to-vector](../how-to/convert-set-to-vector.md)
+* [convert-vector-to-set](../how-to/convert-vector-to-set.md)
 
 

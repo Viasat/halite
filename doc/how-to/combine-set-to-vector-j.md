@@ -39,6 +39,6 @@ Notice that the items in the set were first sorted based on the number of items 
 
 #### How tos:
 
-* [combine](combine.md)
+* [combine](../how-to/combine.md)
 
 

@@ -61,6 +61,6 @@ The chain of refinements is invoked by simply refining the instance to the final
 
 #### How tos:
 
-* [convert-instances](convert-instances.md)
+* [convert-instances](../how-to/convert-instances.md)
 
 

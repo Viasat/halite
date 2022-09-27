@@ -48,11 +48,11 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 
 #### How tos:
 
-* [convert-instances](convert-instances.md)
+* [convert-instances](../how-to/convert-instances.md)
 
 
 #### Explanations:
 
-* [refinement-implications](refinement-implications.md)
+* [refinement-implications](../explanation/refinement-implications.md)
 
 

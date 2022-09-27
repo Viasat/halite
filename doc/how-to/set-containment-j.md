@@ -42,7 +42,7 @@ true
 
 #### How tos:
 
-* [any](any.md)
-* [vector-containment](vector-containment.md)
+* [any](../how-to/any.md)
+* [vector-containment](../how-to/vector-containment.md)
 
 

@@ -31,6 +31,6 @@ The values from the vector are combined with the accumulator, one-by-one in orde
 
 #### How tos:
 
-* [transform](transform.md)
+* [transform](../how-to/transform.md)
 
 

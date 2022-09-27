@@ -343,6 +343,6 @@ false
 
 #### How tos:
 
-* [constrain-instances](constrain-instances.md)
+* [constrain-instances](../how-to/constrain-instances.md)
 
 

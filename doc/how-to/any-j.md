@@ -42,7 +42,7 @@ true
 
 #### How tos:
 
-* [set-containment](set-containment.md)
-* [vector-containment](vector-containment.md)
+* [set-containment](../how-to/set-containment.md)
+* [vector-containment](../how-to/vector-containment.md)
 
 

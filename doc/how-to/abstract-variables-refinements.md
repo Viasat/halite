@@ -144,7 +144,7 @@ In fact, there is no way to make this refinement work because the animal field c
 
 #### How tos:
 
-* [compose-instances](compose-instances.md)
-* [string-enum](string-enum.md)
+* [compose-instances](../how-to/compose-instances.md)
+* [string-enum](../how-to/string-enum.md)
 
 

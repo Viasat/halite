@@ -32,7 +32,7 @@ false
 
 #### How tos:
 
-* [any](any.md)
-* [set-containment](set-containment.md)
+* [any](../how-to/any.md)
+* [set-containment](../how-to/set-containment.md)
 
 

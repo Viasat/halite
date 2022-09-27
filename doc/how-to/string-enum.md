@@ -64,6 +64,6 @@ But a shirt with a valid size can be constructed.
 
 #### How tos:
 
-* [spec-variables](spec-variables.md)
+* [spec-variables](../how-to/spec-variables.md)
 
 

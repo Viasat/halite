@@ -84,11 +84,11 @@ In this example, the sum of 'a' and 'b' must be less than 10
 
 #### How tos:
 
-* [multi-constrain-instances](multi-constrain-instances.md)
+* [multi-constrain-instances](../how-to/multi-constrain-instances.md)
 
 
 #### Tutorials:
 
-* [sudoku](sudoku.md)
+* [sudoku](../tutorial/sudoku.md)
 
 

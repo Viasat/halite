@@ -118,6 +118,6 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 
 #### How tos:
 
-* [constrain-instances](constrain-instances.md)
+* [constrain-instances](../how-to/constrain-instances.md)
 
 

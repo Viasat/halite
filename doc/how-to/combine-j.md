@@ -64,6 +64,6 @@ This is not supported because a vector is ordered and generally speaking, there 
 
 #### How tos:
 
-* [combine-set-to-vector](combine-set-to-vector.md)
+* [combine-set-to-vector](../how-to/combine-set-to-vector.md)
 
 

@@ -107,7 +107,7 @@ Even if we know the concrete type of the field value we cannot access it as that
 
 #### How tos:
 
-* [compose-instances](compose-instances.md)
-* [string-enum](string-enum.md)
+* [compose-instances](../how-to/compose-instances.md)
+* [string-enum](../how-to/string-enum.md)
 
 

@@ -227,6 +227,6 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 
 #### How tos:
 
-* [arbitrary-expression-refinements](arbitrary-expression-refinements.md)
+* [arbitrary-expression-refinements](../how-to/arbitrary-expression-refinements.md)
 
 

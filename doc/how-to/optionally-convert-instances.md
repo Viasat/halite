@@ -78,6 +78,6 @@ false
 
 #### How tos:
 
-* [convert-instances](convert-instances.md)
+* [convert-instances](../how-to/convert-instances.md)
 
 

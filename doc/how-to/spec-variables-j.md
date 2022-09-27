@@ -62,7 +62,7 @@ A spec can have multiple fields
 
 #### How tos:
 
-* [compose-instances](compose-instances.md)
-* [string-enum](string-enum.md)
+* [compose-instances](../how-to/compose-instances.md)
+* [string-enum](../how-to/string-enum.md)
 
 
