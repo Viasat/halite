@@ -38,7 +38,7 @@ The same works with sets.
 * [`map`](../halite-full-reference.md#map)
 
 
-#### See also:
+#### How tos:
 
 * [reduce](reduce.md)
 

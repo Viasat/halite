@@ -41,7 +41,7 @@ Notice that the items in the set were first sorted based on the number of items 
 * [`concat`](../halite-full-reference.md#concat)
 
 
-#### See also:
+#### How tos:
 
 * [combine](combine.md)
 

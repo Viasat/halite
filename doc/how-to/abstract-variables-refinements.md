@@ -142,7 +142,7 @@ In fact, there is no way to make this refinement work because the animal field c
 * [`refine-to`](../halite-full-reference.md#refine-to)
 
 
-#### See also:
+#### How tos:
 
 * [compose-instances](compose-instances.md)
 * [string-enum](string-enum.md)

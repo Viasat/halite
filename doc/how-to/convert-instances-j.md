@@ -75,7 +75,7 @@ The refinement can be invoked as follows:
 * [`refineTo`](../jadeite-full-reference.md#refineTo)
 
 
-#### See also:
+#### How tos:
 
 * [arbitrary-expression-refinements](arbitrary-expression-refinements.md)
 * [convert-instances-transitively](convert-instances-transitively.md)

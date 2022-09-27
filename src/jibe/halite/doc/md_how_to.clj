@@ -82,9 +82,9 @@
                                       "../jadeite-full-reference.md")
                   "#" (utils/safe-op-anchor a) ")" "\n"))
            "\n\n"])
-        (when-let [see-alsos (:see-also how-to)]
-          ["#### See also:\n\n"
-           (for [a (sort see-alsos)]
+        (when-let [how-to-refs (:how-to-ref how-to)]
+          ["#### How tos:\n\n"
+           (for [a (sort how-to-refs)]
              (str "* " "[" (name a) "](" (name a) ".md" ")" "\n"))
            "\n\n"])]
        flatten

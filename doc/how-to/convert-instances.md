@@ -59,7 +59,7 @@ The refinement can be invoked as follows:
 * [`refine-to`](../halite-full-reference.md#refine-to)
 
 
-#### See also:
+#### How tos:
 
 * [arbitrary-expression-refinements](arbitrary-expression-refinements.md)
 * [convert-instances-transitively](convert-instances-transitively.md)

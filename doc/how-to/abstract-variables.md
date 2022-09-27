@@ -105,7 +105,7 @@ Even if we know the concrete type of the field value we cannot access it as that
 * [`refine-to`](../halite-full-reference.md#refine-to)
 
 
-#### See also:
+#### How tos:
 
 * [compose-instances](compose-instances.md)
 * [string-enum](string-enum.md)

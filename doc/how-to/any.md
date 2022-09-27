@@ -43,7 +43,7 @@ true
 
 [`any?`](../halite-basic-syntax-reference.md#any?), [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)
 
-#### See also:
+#### How tos:
 
 * [set-containment](set-containment.md)
 * [vector-containment](vector-containment.md)

@@ -77,7 +77,7 @@ false
 * [`refinesTo?`](../jadeite-full-reference.md#refinesTo_Q)
 
 
-#### See also:
+#### How tos:
 
 * [convert-instances](convert-instances.md)
 

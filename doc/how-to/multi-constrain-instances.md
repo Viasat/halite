@@ -116,7 +116,7 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 
 [`instance`](../halite-basic-syntax-reference.md#instance)
 
-#### See also:
+#### How tos:
 
 * [constrain-instances](constrain-instances.md)
 

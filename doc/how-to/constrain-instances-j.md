@@ -87,7 +87,7 @@ In this example, the sum of 'a' and 'b' must be less than 10
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance)
 
-#### See also:
+#### How tos:
 
 * [multi-constrain-instances](multi-constrain-instances.md)
 

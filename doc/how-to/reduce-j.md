@@ -28,7 +28,7 @@ The values from the vector are combined with the accumulator, one-by-one in orde
 * [`reduce`](../jadeite-full-reference.md#reduce)
 
 
-#### See also:
+#### How tos:
 
 * [transform](transform.md)
 

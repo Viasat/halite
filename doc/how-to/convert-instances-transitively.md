@@ -42,7 +42,7 @@ The chain of refinements is invoked by simply refining the instance to the final
 * [`refine-to`](../halite-full-reference.md#refine-to)
 
 
-#### See also:
+#### How tos:
 
 * [convert-instances](convert-instances.md)
 

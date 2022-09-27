@@ -36,7 +36,7 @@ The same works with sets.
 * [`map`](../jadeite-full-reference.md#map)
 
 
-#### See also:
+#### How tos:
 
 * [reduce](reduce.md)
 

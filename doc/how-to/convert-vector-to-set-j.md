@@ -35,7 +35,7 @@ Note that duplicate elements are removed in the process.
 * [`concat`](../jadeite-full-reference.md#concat)
 
 
-#### See also:
+#### How tos:
 
 * [convert-set-to-vector](convert-set-to-vector.md)
 * [remove-duplicates-from-vector](remove-duplicates-from-vector.md)

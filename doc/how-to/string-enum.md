@@ -62,7 +62,7 @@ But a shirt with a valid size can be constructed.
 
 [`instance`](../halite-basic-syntax-reference.md#instance)
 
-#### See also:
+#### How tos:
 
 * [spec-variables](spec-variables.md)
 

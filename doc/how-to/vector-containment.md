@@ -34,7 +34,7 @@ false
 
 [`=`](../halite-basic-syntax-reference.md#=), [`vector`](../halite-basic-syntax-reference.md#vector)
 
-#### See also:
+#### How tos:
 
 * [any](any.md)
 * [set-containment](set-containment.md)

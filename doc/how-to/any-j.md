@@ -40,7 +40,7 @@ true
 
 [`any?`](../jadeite-basic-syntax-reference.md#any?), [`set`](../jadeite-basic-syntax-reference.md#set), [`vector`](../jadeite-basic-syntax-reference.md#vector)
 
-#### See also:
+#### How tos:
 
 * [set-containment](set-containment.md)
 * [vector-containment](vector-containment.md)

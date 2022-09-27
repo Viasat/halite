@@ -106,7 +106,7 @@ Even if we know the concrete type of the field value we cannot access it as that
 * [`refineTo`](../jadeite-full-reference.md#refineTo)
 
 
-#### See also:
+#### How tos:
 
 * [compose-instances](compose-instances.md)
 * [string-enum](string-enum.md)

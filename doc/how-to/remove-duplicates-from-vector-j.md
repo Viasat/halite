@@ -28,7 +28,7 @@ Note that this only works if the elements of the vector are sortable. Also note 
 * [`sort`](../jadeite-full-reference.md#sort)
 
 
-#### See also:
+#### How tos:
 
 * [convert-set-to-vector](convert-set-to-vector.md)
 * [convert-vector-to-set](convert-vector-to-set.md)

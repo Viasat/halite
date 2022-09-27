@@ -30,7 +30,7 @@ false
 
 [`=`](../jadeite-basic-syntax-reference.md#=), [`vector`](../jadeite-basic-syntax-reference.md#vector)
 
-#### See also:
+#### How tos:
 
 * [any](any.md)
 * [set-containment](set-containment.md)

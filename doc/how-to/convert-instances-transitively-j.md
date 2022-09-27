@@ -59,7 +59,7 @@ The chain of refinements is invoked by simply refining the instance to the final
 * [`refineTo`](../jadeite-full-reference.md#refineTo)
 
 
-#### See also:
+#### How tos:
 
 * [convert-instances](convert-instances.md)
 

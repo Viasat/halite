@@ -60,7 +60,7 @@ A spec can have multiple fields
 
 [`instance`](../jadeite-basic-syntax-reference.md#instance), [`vector`](../jadeite-basic-syntax-reference.md#vector)
 
-#### See also:
+#### How tos:
 
 * [compose-instances](compose-instances.md)
 * [string-enum](string-enum.md)

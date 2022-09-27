@@ -46,7 +46,7 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 * [`refine-to`](../halite-full-reference.md#refine-to)
 
 
-#### See also:
+#### How tos:
 
 * [convert-instances](convert-instances.md)
 

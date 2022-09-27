@@ -48,7 +48,7 @@ If the elements of the set are not sortable then use sort-by to convert the set 
 * [`sort`](../halite-full-reference.md#sort)
 
 
-#### See also:
+#### How tos:
 
 * [convert-vector-to-set](convert-vector-to-set.md)
 * [remove-duplicates-from-vector](remove-duplicates-from-vector.md)

@@ -73,7 +73,7 @@ This is not supported because a vector is ordered and generally speaking, there 
 
 [`set`](../halite-basic-syntax-reference.md#set), [`vector`](../halite-basic-syntax-reference.md#vector)
 
-#### See also:
+#### How tos:
 
 * [combine-set-to-vector](combine-set-to-vector.md)
 

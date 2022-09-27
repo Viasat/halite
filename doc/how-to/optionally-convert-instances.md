@@ -76,7 +76,7 @@ false
 * [`refines-to?`](../halite-full-reference.md#refines-to_Q)
 
 
-#### See also:
+#### How tos:
 
 * [convert-instances](convert-instances.md)
 

@@ -191,7 +191,7 @@ In fact, there is no way to make this refinement work because the animal field c
 * [`refineTo`](../jadeite-full-reference.md#refineTo)
 
 
-#### See also:
+#### How tos:
 
 * [compose-instances](compose-instances.md)
 * [string-enum](string-enum.md)

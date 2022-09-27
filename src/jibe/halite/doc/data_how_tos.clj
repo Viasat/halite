@@ -16,7 +16,7 @@
                           {:code '(let [s #{1 2 3}]
                                     (map [x s] (* x 10)))
                            :result :auto}]
-               :see-also [:collections/reduce]}
+               :how-to-ref [:collections/reduce]}
 
               :collections/reduce
               {:label "Transform a vector into a single value"
@@ -28,7 +28,7 @@
                                     (reduce [a 1] [x v] (* a x)))
                            :result :auto}
                           "The values from the vector are combined with the accumulator, one-by-one in order and then the final value of the accumulator is produced."]
-               :see-also [:collections/transform]}
+               :how-to-ref [:collections/transform]}
 
               :collections/vector-containment
               {:label "Determine if an item is in a vector"
@@ -44,8 +44,8 @@
                                         t 50]
                                     (any? [x v] (= x t)))
                            :result :auto}]
-               :see-also [:collections/set-containment
-                          :collections/any]}
+               :how-to-ref [:collections/set-containment
+                            :collections/any]}
 
               :collections/set-containment
               {:label "Determine if an item is in a set"
@@ -62,8 +62,8 @@
                                         t 20]
                                     (any? [x s] (= x t)))
                            :result :auto}]
-               :see-also [:collections/vector-containment
-                          :collections/any]}
+               :how-to-ref [:collections/vector-containment
+                            :collections/any]}
 
               :collections/any
               {:label "Determine if any item in a collection satisfies some criteria"
@@ -81,8 +81,8 @@
                           {:code '(let [s #{10 20 30}]
                                     (any? [x s] (> x 15)))
                            :result :auto}]
-               :see-also [:collections/vector-containment
-                          :collections/set-containment]}
+               :how-to-ref [:collections/vector-containment
+                            :collections/set-containment]}
 
               :collections/combine
               {:label "Combine collections together"
@@ -114,7 +114,7 @@
                                     (concat v s))
                            :throws :auto}
                           "This is not supported because a vector is ordered and generally speaking, there is not a deterministic way to add the unordered items from the set into the vector."]
-               :see-also [:collections/combine-set-to-vector]}
+               :how-to-ref [:collections/combine-set-to-vector]}
 
               :collections/combine-set-to-vector
               {:label "Add contents of a set to a vector"
@@ -132,7 +132,7 @@
                                     (concat v (sort-by [e s] (count e))))
                            :result :auto}
                           "Notice that the items in the set were first sorted based on the number of items in the element, then in that sort order the items were appended to the vector, 'v'."]
-               :see-also [:collections/combine]}
+               :how-to-ref [:collections/combine]}
 
               :collections/convert-vector-to-set
               {:label "Convert a vector into a set"
@@ -148,8 +148,8 @@
                           {:code '(let [v [10 10 20 30]]
                                     (concat #{} v))
                            :result :auto}]
-               :see-also [:collections/convert-set-to-vector
-                          :collections/remove-duplicates-from-vector]}
+               :how-to-ref [:collections/convert-set-to-vector
+                            :collections/remove-duplicates-from-vector]}
 
               :collections/convert-set-to-vector
               {:label "Convert a set into a vector"
@@ -168,8 +168,8 @@
                           {:code '(let [s #{[10 20] [30]}]
                                     (sort-by [e s] (count e)))
                            :result :auto}]
-               :see-also [:collections/convert-vector-to-set
-                          :collections/remove-duplicates-from-vector]}
+               :how-to-ref [:collections/convert-vector-to-set
+                            :collections/remove-duplicates-from-vector]}
 
               :collections/remove-duplicates-from-vector
               {:label "Remove duplicate values from a vector."
@@ -181,8 +181,8 @@
                                     (sort (concat #{} v)))
                            :result :auto}
                           "Note that this only works if the elements of the vector are sortable. Also note that this causes the items in the vector to be sorted into their natural sort order."]
-               :see-also [:collections/convert-vector-to-set
-                          :collections/convert-set-to-vector]}
+               :how-to-ref [:collections/convert-vector-to-set
+                            :collections/convert-set-to-vector]}
 
               :instance/spec-variables
               {:label "Spec variables"
@@ -201,8 +201,8 @@
                                                                 :age "Integer"
                                                                 :colors ["String"]}}}}
                           {:code '{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}]
-               :see-also [:instance/compose-instances
-                          :instance/string-enum]}
+               :how-to-ref [:instance/compose-instances
+                            :instance/string-enum]}
 
               :instance/abstract-variables
               {:label "Variables with abstract types"
@@ -251,8 +251,8 @@
                                              :name "Rex"}]
                                     (get-in pet [:animal :breed]))
                            :throws :auto}]
-               :see-also [:instance/compose-instances
-                          :instance/string-enum]}
+               :how-to-ref [:instance/compose-instances
+                            :instance/string-enum]}
 
               :instance/abstract-variables-refinements
               {:label "Variables with abstract types used in refinements"
@@ -329,8 +329,8 @@
                                              :name "Rex"}]
                                     (refine-to pet :spec/Animal))
                            :throws :auto}]
-               :see-also [:instance/compose-instances
-                          :instance/string-enum]}
+               :how-to-ref [:instance/compose-instances
+                            :instance/string-enum]}
 
               :instance/string-enum
               {:label "String as enumeration"
@@ -350,7 +350,7 @@
                           "But a shirt with a valid size can be constructed."
                           {:code '{:$type :spec/Shirt$v2 :size "medium"}
                            :result :auto}]
-               :see-also [:instance/spec-variables]}
+               :how-to-ref [:instance/spec-variables]}
 
               :refinement/convert-instances
               {:label "Converting instances between specs"
@@ -374,9 +374,9 @@
                           {:code '(let [a {:$type :spec/A$v2 :b 1}]
                                     (refine-to a :spec/X$v2))
                            :result :auto}]
-               :see-also [:refinement/convert-instances-transitively
-                          :refinement/arbitrary-expression-refinements
-                          :refinement/optionally-convert-instances]}
+               :how-to-ref [:refinement/convert-instances-transitively
+                            :refinement/arbitrary-expression-refinements
+                            :refinement/optionally-convert-instances]}
 
               :refinement/convert-instances-transitively
               {:label "Converting instances between specs transitively"
@@ -397,7 +397,7 @@
                           {:code '(let [a {:$type :spec/A$v3 :b 1}]
                                     (refine-to a :spec/X$v3))
                            :result :auto}]
-               :see-also [:refinement/convert-instances]}
+               :how-to-ref [:refinement/convert-instances]}
 
               :refinement/arbitrary-expression-refinements
               {:label "Arbitrary expression in refinements"
@@ -419,7 +419,7 @@
                           {:code '(let [a {:$type :spec/A$v4 :b 1 :c 2 :d "large"}]
                                     (refine-to a :spec/X$v4))
                            :result :auto}]
-               :see-also [:refinement/convert-instances]}
+               :how-to-ref [:refinement/convert-instances]}
 
               :refinement/optionally-convert-instances
               {:label "Optionally converting instances between specs"
@@ -444,7 +444,7 @@
                            :result :auto}
                           {:code '(refines-to? {:$type :spec/A$v1 :b 5} :spec/X$v1)
                            :result :auto}]
-               :see-also [:refinement/convert-instances]}
+               :how-to-ref [:refinement/convert-instances]}
 
               :instance/constrain-instances
               {:label "Defining constraints on instance values"
@@ -471,7 +471,7 @@
                            :result :auto}
                           {:code '{:$type :spec/A$v3 :b 6 :c 7}
                            :throws :auto}]
-               :see-also [:instance/multi-constrain-instances]}
+               :how-to-ref [:instance/multi-constrain-instances]}
 
               :instance/multi-constrain-instances
               {:label "Defining multiple constraints on instance values"
@@ -507,7 +507,7 @@
                            :result :auto}
                           {:code '{:$type :spec/A$v3 :b 120}
                            :throws :auto}]
-               :see-also [:instance/constrain-instances]}
+               :how-to-ref [:instance/constrain-instances]}
 
               :instance/compose-instances
               {:label "Compose instances"
@@ -518,7 +518,7 @@
                                       :spec/B$v1 {:spec-vars {:c "Integer"}}}}
                           "Composite instances are created by nesting the instances at construction time."
                           {:code '{:$type :spec/A$v1 :b {:$type :spec/B$v1 :c 1}}}]
-               :see-also [:instance/spec-variables]}
+               :how-to-ref [:instance/spec-variables]}
 
               :instance/functions
               {:label "Use an instance as a function to compute a value"

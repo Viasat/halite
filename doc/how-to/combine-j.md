@@ -62,7 +62,7 @@ This is not supported because a vector is ordered and generally speaking, there 
 
 [`set`](../jadeite-basic-syntax-reference.md#set), [`vector`](../jadeite-basic-syntax-reference.md#vector)
 
-#### See also:
+#### How tos:
 
 * [combine-set-to-vector](combine-set-to-vector.md)
 

@@ -42,7 +42,7 @@ true
 
 [`=`](../halite-basic-syntax-reference.md#=), [`any?`](../halite-basic-syntax-reference.md#any?), [`set`](../halite-basic-syntax-reference.md#set)
 
-#### See also:
+#### How tos:
 
 * [any](any.md)
 * [vector-containment](vector-containment.md)
