@@ -461,6 +461,7 @@
              (rewriting/rule simplify-redundant-value!)
              (rewriting/rule simplify-statically-known-value?)
              (rewriting/rule lowering/cancel-get-of-instance-literal-expr)
+             (rewriting/rule lowering/lower-comparison-exprs-with-incompatible-types)
              (rewriting/rule lowering/lower-instance-comparison-expr)
              (rewriting/rule lowering/push-if-value-into-if-in-expr)
              (rewriting/rule lowering/lower-no-value-comparison-expr)

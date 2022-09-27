@@ -108,6 +108,29 @@
                         (= an 45)))]]
            (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints)))))
 
+(deftest test-lower-comparisons-with-incompatible-types
+  (let [senv '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}
+               :ws/B {:spec-vars {:bn "Integer"} :constraints [] :refines-to {}}
+               :ws/C {:spec-vars {:a :ws/A :b :ws/B :ma [:Maybe :ws/A] :mb [:Maybe :ws/B]}
+                      :constraints [] :refines-to {}}}]
+    (are [in out]
+         (= out (-> senv
+                    (update-in [:ws/C :constraints] conj ["c1" in])
+                    halite-envs/spec-env
+                    (ssa/build-spec-ctx :ws/C)
+                    (rewriting/rewrite-sctx lowering/lower-comparison-exprs-with-incompatible-types)
+                    :ws/C
+                    ssa/spec-from-ssa
+                    :constraints first second))
+
+      '(= 1 true) false
+      '(not= 1 true) true
+      '(= a ma) '(= a ma)
+      '(= a b) false
+      '(= ma mb) false
+      '(= a mb) false
+      '(not= 1 "foo") true)))
+
 (deftest test-lower-instance-comparisons-for-composition
   (let [senv (halite-envs/spec-env
               '{:ws/A

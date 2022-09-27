@@ -87,6 +87,22 @@
     (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
       (concat (take i form) (rest nested-do-form) (drop (inc i) form)))))
 
+;;;;;;;;; Comparisons known to be true/false, by argument type ;;;;;;;
+
+(s/defn lower-comparison-exprs-with-incompatible-types
+  [{{:keys [ssa-graph]} :ctx} :- halite-rewriting/RewriteFnCtx, id [form htype]]
+  (when (and (seq? form) (#{'= 'not=} (first form)))
+    (let [comparison-op (first form)
+          arg-ids (rest form)
+          arg-types (set (map (comp second (partial ssa/deref-id ssa-graph)) arg-ids))
+          compatible? (->> (rest arg-types)
+                           (interleave (butlast arg-types))
+                           (partition 2)
+                           (every? #(or (halite-types/subtype? (first %) (second %))
+                                        (halite-types/subtype? (second %) (first %)))))]
+      (when-not compatible?
+        (= comparison-op 'not=)))))
+
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
 (s/defn lower-instance-comparison-expr
