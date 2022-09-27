@@ -430,5 +430,7 @@ Comments that are not evaluated as part of the expression.
 !["'//' comment"](./halite-bnf-diagrams/basic-syntax/comment-j.svg)
 
 ---
-# Type Graph![type graph](./types.dot.png)
+# Type Graph
+
+![type graph](./types.dot.png)
 

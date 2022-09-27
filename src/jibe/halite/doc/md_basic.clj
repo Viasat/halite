@@ -85,5 +85,5 @@
             (partition 2)
             (map (partial apply basic-md info))
             (apply str))
-       "# Type Graph"
+       "# Type Graph\n\n"
        "![" "type graph" "](./types.dot.png)\n\n"))
