@@ -271,7 +271,8 @@
                    'l-err/binding-target-invalid-symbol
                    'h-err/binding-target-must-be-bare-symbol
                    'h-err/not-boolean-body]
-          :op-ref ['every? 'or]}
+          :op-ref ['every? 'or]
+          :how-to-ref [:collections/vector-containment]}
    'concat {:sigs [["vector vector" "vector"]
                    ["(set (set | vector))" "set"]]
             :sigs-j [["vector '.' 'concat' '('  vector ')'" "vector"]
@@ -560,7 +561,8 @@
               :basic-ref ['symbol 'any]
               :throws ['h-err/if-value-must-be-bare-symbol
                        'l-err/first-argument-not-optional]
-              :op-ref ['if-value-let 'when-value]}
+              :op-ref ['if-value-let 'when-value]
+              :explanation-ref [:language/unset]}
    'if-value-let {:sigs [["'[' symbol any:binding ']' any-expression any-expression" "any"]]
                   :sigs-j [["'ifValueLet' '(' symbol '=' any:binding ')'  any-expression 'else' any-expression" "any"]]
                   :basic-ref ['symbol 'any]
@@ -1015,6 +1017,7 @@
    'valid? {:sigs [["instance-expression" "boolean"]]
             :sigs-j [["'valid?' instance-expression" "boolean"]]
             :basic-ref ['instance 'boolean]
+            :tutorial-ref [:spec/sudoku]
             :doc "Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true."
             :comment "Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value."
             :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"

@@ -1288,6 +1288,11 @@ false
 
 See also: [`every?`](#every_Q) [`||`](#||)
 
+#### How tos:
+
+* [vector-containment](../how-to/vector-containment.md)
+
+
 #### Tags:
 
  [Produce booleans](halite-boolean-out-reference-j.md),  [Set operations](halite-set-op-reference-j.md),  [Special forms](halite-special-form-reference-j.md),  [Vector operations](halite-vector-op-reference-j.md)
@@ -2029,6 +2034,11 @@ When an optional instance field needs to be referenced, it is generally necessar
 * [`l-err/first-argument-not-optional`](jadeite-err-id-reference.md#l-err/first-argument-not-optional)
 
 See also: [`ifValueLet`](#ifValueLet) [`whenValue`](#whenValue)
+
+#### Explanations:
+
+* [unset](../explanation/unset.md)
+
 
 #### Tags:
 
@@ -3137,6 +3147,11 @@ false
 </td></tr></table>
 
 See also: [`valid`](#valid)
+
+#### Tutorials:
+
+* [sudoku](../tutorial/sudoku.md)
+
 
 #### Tags:
 
