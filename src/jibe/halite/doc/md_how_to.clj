@@ -86,6 +86,16 @@
           ["#### How tos:\n\n"
            (for [a (sort how-to-refs)]
              (str "* " "[" (name a) "](" (name a) ".md" ")" "\n"))
+           "\n\n"])
+        (when-let [tutorial-refs (:tutorial-ref how-to)]
+          ["#### Tutorials:\n\n"
+           (for [a (sort tutorial-refs)]
+             (str "* " "[" (name a) "](" (name a) ".md" ")" "\n"))
+           "\n\n"])
+        (when-let [explanation-refs (:explanation-ref how-to)]
+          ["#### Explanations:\n\n"
+           (for [a (sort explanation-refs)]
+             (str "* " "[" (name a) "](" (name a) ".md" ")" "\n"))
            "\n\n"])]
        flatten
        (apply str)))

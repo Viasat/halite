@@ -111,6 +111,7 @@
                    :spec/refinement-implications
                    {:label "What constraints are implied by refinement?"
                     :desc "Specs can be defined as refining other specs. When this is done what constraints are implied by the refinement?"
+                    :how-to-ref [:refinement/arbitrary-expression-refinements]
                     :contents ["One spec can be defined to be a refinement of another spec. First consider a square which has a width and height. The constraint, which makes it a square, requires these two values to be equal."
                                {:spec-map {:spec/Square {:spec-vars {:width "Integer"
                                                                      :height "Integer"}

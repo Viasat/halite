@@ -220,3 +220,8 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 * [`valid?`](../jadeite-full-reference.md#valid_Q)
 
 
+#### How tos:
+
+* [arbitrary-expression-refinements](arbitrary-expression-refinements.md)
+
+

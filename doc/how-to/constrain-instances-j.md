@@ -92,3 +92,8 @@ In this example, the sum of 'a' and 'b' must be less than 10
 * [multi-constrain-instances](multi-constrain-instances.md)
 
 
+#### Tutorials:
+
+* [sudoku](sudoku.md)
+
+

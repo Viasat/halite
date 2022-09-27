@@ -341,3 +341,8 @@ false
 * [`valid?`](../halite-full-reference.md#valid_Q)
 
 
+#### How tos:
+
+* [constrain-instances](constrain-instances.md)
+
+

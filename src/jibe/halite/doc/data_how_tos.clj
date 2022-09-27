@@ -419,7 +419,8 @@
                           {:code '(let [a {:$type :spec/A$v4 :b 1 :c 2 :d "large"}]
                                     (refine-to a :spec/X$v4))
                            :result :auto}]
-               :how-to-ref [:refinement/convert-instances]}
+               :how-to-ref [:refinement/convert-instances]
+               :explanation-ref [:spec/refinement-implications]}
 
               :refinement/optionally-convert-instances
               {:label "Optionally converting instances between specs"
@@ -471,7 +472,8 @@
                            :result :auto}
                           {:code '{:$type :spec/A$v3 :b 6 :c 7}
                            :throws :auto}]
-               :how-to-ref [:instance/multi-constrain-instances]}
+               :how-to-ref [:instance/multi-constrain-instances]
+               :tutorial-ref [:spec/sudoku]}
 
               :instance/multi-constrain-instances
               {:label "Defining multiple constraints on instance values"

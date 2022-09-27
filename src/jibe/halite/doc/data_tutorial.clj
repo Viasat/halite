@@ -8,6 +8,7 @@
                  :desc "Consider how to use specs to model a sudoku game."
                  :basic-ref ['integer 'vector 'instance 'set 'boolean]
                  :op-ref ['valid? 'get 'concat 'get-in 'every? 'any? 'not]
+                 :how-to-ref [:instance/constrain-instances]
                  :contents ["Say we want to represent a sudoku solution as a two dimensional vector of integers"
                             {:code '[[1 2 3 4]
                                      [3 4 1 2]
