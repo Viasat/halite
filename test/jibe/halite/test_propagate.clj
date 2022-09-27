@@ -930,6 +930,32 @@
             :ap false}
            (hp/propagate senv {:$type :ws/A :an 0})))))
 
+(deftest test-instance-if-comparison
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}
+                :ws/B {:spec-vars {:a :ws/A :bn "Integer" :p "Boolean"} :refines-to {}
+                       :constraints [["b1" (= a (if p {:$type :ws/A :an bn} {:$type :ws/A :an (+ bn 1)}))]]}})]
+    (is (= '{:$type :ws/B
+             :a {:$type :ws/A :an 3}
+             :p {:$in #{true false}}
+             :bn {:$in [-10 10]}}
+           (hp/propagate senv {:$type :ws/B
+                               :a {:$type :ws/A :an 3}
+                               :bn {:$in [-10 10]}})))))
+
+(deftest test-abstract-type-instance-comparisons
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}
+                :ws/B {:spec-vars {:bn "Integer"} :constraints [] :refines-to {}}
+                :ws/C {:spec-vars {:cn "Integer"} :constarints [] :refines-to {}}
+                :ws/D {:spec-vars {:a :ws/A :b :ws/B :p "Boolean"}
+                       :refines-to {}
+                       :constraints [["d1" (= a (if p a b))]]}})]
+    (is (= '{:$type :ws/D :p true
+             :a {:$type :ws/A :an {:$in [-1000 1000]}}
+             :b {:$type :ws/B :bn {:$in [-1000 1000]}}}
+           (hp/propagate senv {:$type :ws/D})))))
+
 #_(deftest example-abstract-propagation
     (s/with-fn-validation
       (let [senv (halite-envs/spec-env

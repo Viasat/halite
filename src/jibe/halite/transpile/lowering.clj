@@ -471,25 +471,21 @@
   [sctx :- SpecCtx]
   (rewrite-sctx sctx lower-maybe-comparison-expr))
 
-(s/defn push-comparison-into-maybe-if-in-expr
+(s/defn push-comparison-into-nonprimitive-if-in-expr
   [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
-  (let [maybe-if? (fn [[form htype]]
-                    (and (seq? form)
-                         (= 'if (first form))
-                         (halite-types/maybe-type? htype)))]
+  (let [nonprimitive-if? (fn [[form htype]]
+                           (and (seq? form)
+                                (= 'if (first form))
+                                (not (contains? #{:Boolean :Integer :String} htype))))]
     (when (and (seq? form) (contains? #{'= 'not=} (first form)))
       (let [[op & arg-ids] form
             args (mapv (partial ssa/deref-id ssa-graph) arg-ids)]
-        (when-let [[i [[_if pred-id then-id else-id]]] (first (filter (comp maybe-if? second) (map-indexed vector args)))]
+        (when-let [[i [[_if pred-id then-id else-id]]] (first (filter (comp nonprimitive-if? second) (map-indexed vector args)))]
           (let [result
                 (list 'if pred-id
                       (apply list op (assoc (vec arg-ids) i then-id))
                       (apply list op (assoc (vec arg-ids) i else-id)))]
             result))))))
-
-(s/defn push-comparisons-into-maybe-ifs :- SpecCtx
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx push-comparison-into-maybe-if-in-expr))
 
 (s/defn push-if-value-into-if-in-expr
   [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
@@ -550,7 +546,7 @@
         (halite-rewriting/rule push-gets-into-ifs-expr)
         (halite-rewriting/rule lower-maybe-comparison-expr)
         (halite-rewriting/rule lower-no-value-comparison-expr)
-        (halite-rewriting/rule push-comparison-into-maybe-if-in-expr)
+        (halite-rewriting/rule push-comparison-into-nonprimitive-if-in-expr)
         (halite-rewriting/rule push-if-value-into-if-in-expr)])
       (simplify)))
 

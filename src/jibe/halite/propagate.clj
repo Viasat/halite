@@ -470,7 +470,7 @@
              (rewriting/rule lowering/lower-no-value-comparison-expr)
              (rewriting/rule lowering/lower-maybe-comparison-expr)
              (rewriting/rule lowering/push-gets-into-ifs-expr)
-             (rewriting/rule lowering/push-comparison-into-maybe-if-in-expr)
+             (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
              (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
              (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)])
            simplify/simplify

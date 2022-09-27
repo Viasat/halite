@@ -592,9 +592,7 @@
     ;; TODO: Add tests of semantics preservation!
     ))
 
-(def push-comparisons-into-maybe-ifs #'lowering/push-comparisons-into-maybe-ifs)
-
-(deftest test-push-comparisons-into-maybe-ifs
+(deftest test-push-comparisons-into-nonprimitive-ifs
   (binding [ssa/*hide-non-halite-ops* false]
     (let [senv '{:ws/A
                  {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :p "Boolean"}
@@ -606,7 +604,7 @@
                   (update-in [:ws/A :constraints] conj ["c" expr])
                   (halite-envs/spec-env)
                   (ssa/build-spec-ctx :ws/A)
-                  (push-comparisons-into-maybe-ifs)
+                  (rewriting/rewrite-sctx lowering/push-comparison-into-nonprimitive-if-in-expr)
                   :ws/A
                   (ssa/spec-from-ssa)
                   :constraints first second))
@@ -626,7 +624,10 @@
                     w)]
            (if p
              (= v v1)
-             (= w v1))))
+             (= w v1)))
+
+        '(= 1 (if p x true))
+        '(if p (= 1 x) (= 1 true)))
 
       (let [expr '(= (if p v w) (if-value v (+ 1 v) w))]
         (is (= '(if p
@@ -640,7 +641,7 @@
                    (update-in [:ws/A :constraints] conj ["c" expr])
                    (halite-envs/spec-env)
                    (ssa/build-spec-ctx :ws/A)
-                   (->> (fixpoint push-comparisons-into-maybe-ifs))
+                   (->> (fixpoint #(rewriting/rewrite-sctx % lowering/push-comparison-into-nonprimitive-if-in-expr)))
                    :ws/A
                    (ssa/spec-from-ssa)
                    :constraints first second)))))))
