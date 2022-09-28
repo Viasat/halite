@@ -170,3 +170,22 @@
 (defn lang-str [lang]
   ({:halite "Halite"
     :jadeite "Jadeite"} lang))
+
+(defn basic-ref-links
+  "Returns a list of markdown links based on the :basic-ref or :basic-ref-j
+  entries in the given data map."
+  [lang data doc-dir]
+  (let [v (if (= :halite lang)
+            (:basic-ref data)
+            (or (:basic-ref-j data)
+                (:basic-ref data)))]
+    (when-let [basic-refs (if (symbol? v) [v] v)]
+      (for [basic-ref (sort basic-refs)]
+        ["[`" basic-ref "`]"
+         "("
+         doc-dir
+         (if (= :halite lang)
+           "halite-basic-syntax-reference.md"
+           "jadeite-basic-syntax-reference.md")
+         "#" basic-ref
+         ")"]))))

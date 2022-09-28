@@ -55,32 +55,18 @@
                                                                                                   ({:halite (utils/pprint-halite h-result)
                                                                                                     :jadeite (str j-result "\n")} lang)))))))))
             results))
-        (let [basic-refs (some-> (if (= :halite lang)
-                                   (:basic-ref how-to)
-                                   (or (:basic-ref-j how-to)
-                                       (:basic-ref how-to)))
-                                 sort)
+        (let [basic-ref-links (utils/basic-ref-links lang how-to "../")
               op-refs (some->> (:op-ref how-to)
                                (map ({:halite identity
                                       :jadeite utils/translate-op-name-to-jadeite} lang)))
               how-to-refs (:how-to-ref how-to)
               tutorial-refs (:tutorial-ref how-to)
               explanation-refs (:explanation-ref how-to)]
-          [(when (or basic-refs op-refs how-to-refs tutorial-refs explanation-refs)
+          [(when (or basic-ref-links op-refs how-to-refs tutorial-refs explanation-refs)
              "### Reference\n\n")
-           (when basic-refs
+           (when basic-ref-links
              ["#### Basic elements:\n\n"
-              (string/join ", "
-                           (for [basic-ref basic-refs]
-                             (str "[`" basic-ref "`]"
-                                  "("
-                                  (if (= :halite lang)
-                                    "../halite-basic-syntax-reference.md"
-                                    "../jadeite-basic-syntax-reference.md")
-                                  "#" basic-ref
-                                  ")")))
-              "\n\n"])
-
+              (interpose ", " basic-ref-links) "\n\n"])
            (when op-refs
              ["#### Operator reference:\n\n"
               (for [a (sort op-refs)]

@@ -6,16 +6,8 @@
 
 (defn tag-md [{:keys [lang op-maps op-maps-j tag-map tag-map-j]} tag-name tag]
   (->> [(:doc tag) "\n\n"
-        (when-let [basic-ref (if (= :halite lang)
-                               (:basic-ref tag)
-                               (or (:basic-ref-j tag)
-                                   (:basic-ref tag)))]
-          ["For basic syntax of this data type see: [`" basic-ref "`]" "("
-           (if (= :halite lang)
-             "halite-basic-syntax-reference.md"
-             "jadeite-basic-syntax-reference.md")
-           "#" basic-ref
-           ")" "\n\n"])
+        (when-let [[link-md] (utils/basic-ref-links lang tag "")]
+          ["For basic syntax of this data type see: " link-md "\n\n"])
         ["![" (pr-str tag-name) "](./halite-bnf-diagrams/"
          (utils/url-encode tag-name) (when (= :jadeite lang) "-j") ".svg)\n\n"]
         [(when-let [op-names ((if (= :halite lang) tag-map tag-map-j) (keyword tag-name))]

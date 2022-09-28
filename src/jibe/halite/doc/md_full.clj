@@ -21,22 +21,8 @@
            ["![" (pr-str sig) "](./halite-bnf-diagrams/op/"
             (utils/url-encode (utils/safe-op-name op-name)) "-" i (when (= :jadeite lang) "-j") ".svg)\n\n"])
          (op ({:halite :sigs, :jadeite :sigs-j} lang)))
-        (when-let [basic-refs (some-> (if (= :halite lang)
-                                        (:basic-ref op)
-                                        (or (:basic-ref-j op)
-                                            (:basic-ref op)))
-                                      sort)]
-          ["#### Basic elements:\n\n"
-           (string/join ", "
-                        (for [basic-ref basic-refs]
-                          (str "[`" basic-ref "`]"
-                               "("
-                               (if (= :halite lang)
-                                 "halite-basic-syntax-reference.md"
-                                 "jadeite-basic-syntax-reference.md")
-                               "#" basic-ref
-                               ")")))
-           "\n\n"])
+        (when-let [md-links (utils/basic-ref-links lang op "")]
+          ["#### Basic elements:\n\n" (interpose ", " md-links) "\n\n"])
         (when-let [c (:comment op)] [c "\n\n"])
         (when-let [es (:examples op)]
           ["#### Examples:\n\n"
