@@ -14,14 +14,14 @@
             [schema.core :as s]
             [viasat.choco-clj-opt :as choco-clj]))
 
-(declare Bound)
+(declare ConcreteBound)
 
-(s/defschema SpecBound
+(s/defschema ConcreteSpecBound
   {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one halite-types/NamespacedKeyword :type)]
                       halite-types/NamespacedKeyword)
    (s/optional-key :$refines-to) {halite-types/NamespacedKeyword
-                                  {halite-types/BareKeyword (s/recursive #'Bound)}}
-   halite-types/BareKeyword (s/recursive #'Bound)})
+                                  {halite-types/BareKeyword (s/recursive #'ConcreteBound)}}
+   halite-types/BareKeyword (s/recursive #'ConcreteBound)})
 
 (s/defschema AtomBound
   (s/cond-pre
@@ -32,9 +32,9 @@
           #{(s/cond-pre s/Int s/Bool (s/enum :Unset))}
           [(s/one s/Int :lower) (s/one s/Int :upper) (s/optional (s/enum :Unset) :Unset)])}))
 
-(s/defschema Bound
+(s/defschema ConcreteBound
   (s/conditional
-   :$type (s/cond-pre SpecBound (s/enum :Unset))
+   :$type (s/cond-pre ConcreteSpecBound (s/enum :Unset))
    :else AtomBound))
 
 ;;;;;;;;; Bound Spec-ification ;;;;;;;;;;;;;;;;
@@ -48,11 +48,11 @@
 
 (declare FlattenedRefinementMap)
 
-;; A FlattenedVar represents a mapping from a SpecBound with vars that are
+;; A FlattenedVar represents a mapping from a ConcerteSpecBound with vars that are
 ;; unique within that individual spec instance to choco var names that are
 ;; unique in the whole composed choco spec, to the depth of composition implied
-;; by the given SpecBound. FVs form a tree of the same shape as a SpecBound,
-;; with each SpecBound's :$type the same as its corresponding FV's ::spec-id,
+;; by the given ConcreteSpecBound. FVs form a tree of the same shape as a ConcreteSpecBound,
+;; with each ConcreteSpecBound's :$type the same as its corresponding FV's ::spec-id,
 ;; and every var of that Spec appearing as a key in the FV.
 (s/defschema ^:private FlattenedVars
   {::mandatory #{halite-types/BareKeyword}
@@ -89,13 +89,13 @@
   (str prefix ">" (namespace spec-id) "$" (name spec-id) "|"))
 
 (s/defn ^:private flatten-vars :- FlattenedVars
-  ([spec-map :- halite-envs/SpecMap, spec-bound :- SpecBound]
+  ([spec-map :- halite-envs/SpecMap, spec-bound :- ConcreteSpecBound]
    (flatten-vars spec-map [] "" false spec-bound))
   ([spec-map :- halite-envs/SpecMap
     parent-spec-ids :- [halite-types/NamespacedKeyword]
     prefix :- s/Str
     already-optional? :- s/Bool
-    spec-bound :- SpecBound]
+    spec-bound :- ConcreteSpecBound]
    (let [spec-id (->> spec-bound :$type unwrap-maybe)
          spec-refinements #(-> % spec-map :refines-to)]
      (->
@@ -170,9 +170,9 @@
                choco-bound)))
 
 (s/defn ^:private lower-spec-bound :- choco-clj/VarBounds
-  ([vars :- FlattenedVars, spec-bound :- SpecBound]
+  ([vars :- FlattenedVars, spec-bound :- ConcreteSpecBound]
    (lower-spec-bound vars false spec-bound))
-  ([vars :- FlattenedVars, optional-context? :- s/Bool, spec-bound :- SpecBound]
+  ([vars :- FlattenedVars, optional-context? :- s/Bool, spec-bound :- ConcreteSpecBound]
    (reduce
     (fn [choco-bounds [var-kw bound]]
       (if (= :$refines-to var-kw)
@@ -353,7 +353,7 @@
   can be translated into a valid instance of the bound.
   However, the expressed bound is generally not 'tight': there will usually be valid instances of the bound
   that do not correspond to any valid instance of the bounded spec."
-  [specs :- halite-envs/SpecMap, spec-bound :- SpecBound]
+  [specs :- halite-envs/SpecMap, spec-bound :- ConcreteSpecBound]
   ;; First, flatten out the variables we'll need.
   (let [flattened-vars (flatten-vars specs spec-bound)]
     (->>
@@ -412,7 +412,7 @@
            (vector? bound) (subvec bound 0 2)
            (set? bound) (disj bound :Unset)))})))
 
-(s/defn ^:private to-spec-bound :- SpecBound
+(s/defn ^:private to-spec-bound :- ConcreteSpecBound
   [choco-bounds :- choco-clj/VarBounds
    senv :- (s/protocol halite-envs/SpecEnv)
    flattened-vars  :- FlattenedVars]
@@ -466,10 +466,10 @@
    {}
    sctx))
 
-(s/defn propagate :- SpecBound
-  ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- SpecBound]
+(s/defn propagate :- ConcreteSpecBound
+  ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- ConcreteSpecBound]
    (propagate senv default-options initial-bound))
-  ([senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, initial-bound :- SpecBound]
+  ([senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, initial-bound :- ConcreteSpecBound]
    (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
      (let [specs (halite-envs/build-spec-map senv (:$type initial-bound))
            flattened-vars (flatten-vars specs initial-bound)
