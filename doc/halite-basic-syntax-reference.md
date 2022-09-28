@@ -29,7 +29,7 @@
 
 
 
-!["plus-minus-character | ((non-numeric-character | plus-minus-character) [symbol-character])"](./halite-bnf-diagrams/basic-syntax/bare-symbol.svg)
+!["plus-minus-character | ((non-numeric-character | plus-minus-character) {symbol-character})"](./halite-bnf-diagrams/basic-syntax/bare-symbol.svg)
 
 ---
 ## <a name="symbol"></a>symbol
@@ -235,6 +235,10 @@ Some language targets (eg. bounds-propagation) may use 4 instead of 8 bytes. On 
 
 </td></tr></table>
 
+### Possible errors:
+
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
+
 ### Tags:
 
  [Integer operations](halite-integer-op-reference.md),  [Produce integer](halite-integer-out-reference.md)
@@ -295,6 +299,10 @@ Signed numeric values with decimal places. The scale (i.e. the number of digits 
 ```
 
 </td></tr></table>
+
+### Possible errors:
+
+* [`h-err/overflow`](halite-err-id-reference.md#h-err/overflow)
 
 ### Tags:
 

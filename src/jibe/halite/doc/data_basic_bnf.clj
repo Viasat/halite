@@ -7,7 +7,7 @@
   ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"}
    'plus-minus-character {:bnf "'+' | '-'"}
    'symbol-character {:bnf "non-numeric-character | plus-minus-character | '0-9'"}
-   'bare-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) [symbol-character])"}
+   'bare-symbol {:bnf "plus-minus-character | ((non-numeric-character | plus-minus-character) {symbol-character})"}
    'symbol {:bnf "bare-symbol [ '/' bare-symbol]"
             :bnf-j "(bare-symbol [ '/' bare-symbol]) | ('’' bare-symbol [ '/' bare-symbol] '’')"
             :doc "Symbols are identifiers that allow values and operations to be named. The following are reserved and cannot be used as user defined symbols: true, false, nil."
@@ -66,6 +66,7 @@
             :throws ['h-err/size-exceeded]}
    'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
              :doc "Signed, eight byte numeric integer values. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here. The largest positive integer is 9223372036854775807. The most negative integer is -9223372036854775808.\n\nSome language targets (eg. bounds-propagation) may use 4 instead of 8 bytes. On overflow, math operations never wrap; instead the evaluator will throw a runtime error."
+             :throws ['h-err/overflow]
              :examples [{:expr-str "0"
                          :expr-str-j :auto}
                         {:expr-str "1"
@@ -84,6 +85,7 @@
 
    'fixed-decimal {:bnf "'#' 'd' [whitespace] '\"' ['-'] ('0' | ('1-9' {'0-9'})) '.' '0-9' {'0-9'} '\"'"
                    :doc "Signed numeric values with decimal places. The scale (i.e. the number of digits to the right of the decimal place), must be between one and 18. Conceptually, the entire numeric value must fit into the same number of bytes as an 'integer'. So the largest fixed-decimal value with a scale of one is: #d \"922337203685477580.7\", and the most negative value with a scale of one is: #d \"-922337203685477580.8\". Similarly, the largest fixed-decimal value with a scale of 18 is: #d \"9.223372036854775807\" and the most negative value with a scale of 18 is: #d \"-9.223372036854775808\". The scale of the fixed-decimal value can be set to what is needed, but as more precision is added to the right of the decimal place, fewer digits are available to the left of the decimal place."
+                   :throws ['h-err/overflow]
                    :examples [{:expr-str "#d \"1.1\""
                                :expr-str-j :auto}
                               {:expr-str "#d \"-1.1\""

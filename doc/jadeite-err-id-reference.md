@@ -644,6 +644,11 @@ The mathematical operation resulted in a number that is too large to fit in the 
 
 > Numeric value overflow
 
+#### Produced by elements:
+
+* [`fixed-decimal`](jadeite-basic-syntax-reference.md#fixed-decimal)
+* [`integer`](jadeite-basic-syntax-reference.md#integer)
+
 #### Produced by operators:
 
 * [`*`](jadeite-full-reference.md#_S)

@@ -6,7 +6,7 @@
 
 The 'unset' value cannot be used in general and there are specific facilities for dealing with them when they are produced by an expression.
 
-Some languages have the notion of 'null' that appears throughout. The idea of 'null', is referred to as 'unset' in this language. The language attempts to keep contain the 'unset' value and prevent it from infecting code that should not need to deal with it. If it does need to be referred to, it is as '$no-value'.
+Some languages have a notion of 'null' that appears throughout; this language uses 'unset' instead. Potentially 'unset' values generally need to be addressed using a special "if value" kind of operator to help prevent the 'unset' value from getting passed very far. The idea is that most code should therefore not need to deal with it. If an 'unset' value does need to be created, do so with `$no-value` or a 'when' operation.
 
 ```clojure
 $no-value

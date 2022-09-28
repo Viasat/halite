@@ -49,7 +49,7 @@
    'h-err/literal-must-evaluate-to-value {:doc "All of the expressions that appear as elements in a collection literal, must be guaranteed to evaluate to values, i.e. they must never evaluate to 'unset'."}
    'h-err/missing-required-vars {:doc "An attempt was made to construct an instance of a spec, without all of its mandatory fields being assigned values."}
    'h-err/missing-type-field {:doc "An attempt was made to construct an instance without providing a value for the :$type field."
-                              :doc-j "An atftempt was made to construct an instance without providing a value for the $type field."}
+                              :doc-j "An attempt was made to construct an instance without providing a value for the $type field."}
    'h-err/must-produce-value {:doc "When using 'map', the expression being evaluated on each element, must produce an actual value, i.e. it must be never produce 'unset'."}
    'h-err/no-abstract {:doc "An attempt was made to construct a concrete instance with a field whose value is an instance of an abstract spec. Any instances used to compose a concrete instance, must themselves be concrete."}
    'h-err/no-refinement-path {:doc "There was no refinement path found to convert a specific instance to a target spec type. There may have been a conditional refinement that did not match the instance, or perhaps there is no refinement path at all."}

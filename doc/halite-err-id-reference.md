@@ -644,6 +644,11 @@ The mathematical operation resulted in a number that is too large to fit in the 
 
 > Numeric value overflow
 
+#### Produced by elements:
+
+* [`fixed-decimal`](halite-basic-syntax-reference.md#fixed-decimal)
+* [`integer`](halite-basic-syntax-reference.md#integer)
+
 #### Produced by operators:
 
 * [`*`](halite-full-reference.md#_S)
