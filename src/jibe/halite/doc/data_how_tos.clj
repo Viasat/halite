@@ -376,7 +376,8 @@
                            :result :auto}]
                :how-to-ref [:refinement/convert-instances-transitively
                             :refinement/arbitrary-expression-refinements
-                            :refinement/optionally-convert-instances]}
+                            :refinement/optionally-convert-instances]
+               :tutorial-ref [:spec/grocery]}
 
               :refinement/convert-instances-transitively
               {:label "Converting instances between specs transitively"

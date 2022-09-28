@@ -1850,6 +1850,11 @@ Produce a new collection from a collection by evaluating the expression with the
 
 See also: [`filter`](#filter) [`reduce`](#reduce)
 
+#### Tutorials:
+
+* [grocery](tutorial/grocery.md)
+
+
 #### Tags:
 
  [Set operations](halite-set-op-reference.md),  [Produce sets](halite-set-out-reference.md),  [Special forms](halite-special-form-reference.md),  [Vector operations](halite-vector-op-reference.md),  [Produce vectors](halite-vector-out-reference.md)
@@ -2251,6 +2256,11 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 See also: [`filter`](#filter) [`map`](#map)
 
+#### Tutorials:
+
+* [grocery](tutorial/grocery.md)
+
+
 #### Tags:
 
  [Special forms](halite-special-form-reference.md),  [Vector operations](halite-vector-op-reference.md)
@@ -2330,6 +2340,11 @@ h-err/no-refinement-path
 * [`h-err/resource-spec-not-found`](halite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refines-to?`](#refines-to_Q)
+
+#### Tutorials:
+
+* [grocery](tutorial/grocery.md)
+
 
 #### Tags:
 

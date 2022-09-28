@@ -346,6 +346,7 @@
                     :basic-ref ['instance]
                     :op-ref ['refine-to]
                     :how-to-ref [:refinement/convert-instances]
+                    :tutorial-ref [:spec/grocery]
                     :explanation-ref [:spec/abstract-spec :spec/refinement-implications :spec/refinement-terminology]}
 
                    :language/functional

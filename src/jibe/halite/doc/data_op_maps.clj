@@ -664,6 +664,7 @@
                   ["'map' '(' symbol:element 'in' vector ')' value-expression" "vector"]]
          :tags #{:set-op :vector-op :set-out :vector-out :special-form}
          :basic-ref ['symbol 'value 'set 'vector]
+         :tutorial-ref [:spec/grocery]
          :doc "Produce a new collection from a collection by evaluating the expression with the symbol bound to each element of the original collection, one-by-one. The results of evaluating the expression will be in the resulting collection. When operating on a vector, the order of the output vector will correspond to the order of the items in the original vector."
          :examples [{:expr-str "(map [x [10 11 12]] (inc x))"
                      :expr-str-j :auto
@@ -798,6 +799,7 @@
             :sigs-j [["'reduce' '(' symbol:accumulator '=' value:accumulator-init ';' symbol:element 'in' vector ')' any-expression" "any"]]
             :tags #{:vector-op :special-form}
             :basic-ref ['symbol 'vector 'any]
+            :tutorial-ref [:spec/grocery]
             :doc "Evalue the expression repeatedly for each element in the vector. The accumulator value will have a value of accumulator-init on the first evaluation of the expression. Subsequent evaluations of the expression will chain the prior result in as the value of the accumulator. The result of the final evaluation of the expression will be produced as the result of the reduce operation. The elements are processed in order."
             :examples [{:expr-str "(reduce [a 10] [x [1 2 3]] (+ a x))"
                         :expr-str-j :auto
@@ -814,6 +816,7 @@
                :tags #{:instance-op :instance-out :spec-id-op}
                :basic-ref ['instance 'keyword]
                :basic-ref-j ['instance 'symbol]
+               :tutorial-ref [:spec/grocery]
                :doc "Attempt to refine the given instance into an instance of type, spec-id."
                :throws ['h-err/no-refinement-path
                         'h-err/resource-spec-not-found

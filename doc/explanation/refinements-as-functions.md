@@ -45,6 +45,11 @@ In this example a highly abstract instance, just called a car, is converted into
 * [convert-instances](../how-to/convert-instances.md)
 
 
+#### Tutorials:
+
+* [grocery](../tutorial/grocery.md)
+
+
 #### Explanations:
 
 * [abstract-spec](../explanation/abstract-spec.md)

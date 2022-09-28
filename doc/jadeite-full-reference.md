@@ -2240,6 +2240,11 @@ map(x in #{10, 12})(x * 2)
 
 See also: [`filter`](#filter) [`reduce`](#reduce)
 
+#### Tutorials:
+
+* [grocery](tutorial/grocery.md)
+
+
 #### Tags:
 
  [Set operations](halite-set-op-reference-j.md),  [Produce sets](halite-set-out-reference-j.md),  [Special forms](halite-special-form-reference-j.md),  [Vector operations](halite-vector-op-reference-j.md),  [Produce vectors](halite-vector-out-reference-j.md)
@@ -2472,6 +2477,11 @@ Evalue the expression repeatedly for each element in the vector. The accumulator
 
 See also: [`filter`](#filter) [`map`](#map)
 
+#### Tutorials:
+
+* [grocery](tutorial/grocery.md)
+
+
 #### Tags:
 
  [Special forms](halite-special-form-reference-j.md),  [Vector operations](halite-vector-op-reference-j.md)
@@ -2573,6 +2583,11 @@ h-err/no-refinement-path
 * [`h-err/resource-spec-not-found`](jadeite-err-id-reference.md#h-err/resource-spec-not-found)
 
 See also: [`refinesTo?`](#refinesTo_Q)
+
+#### Tutorials:
+
+* [grocery](tutorial/grocery.md)
+
 
 #### Tags:
 
