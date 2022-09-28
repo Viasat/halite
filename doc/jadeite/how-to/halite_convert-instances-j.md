@@ -84,8 +84,8 @@ The refinement can be invoked as follows:
 * [optionally-convert-instances](../how-to/halite_optionally-convert-instances-j.md)
 
 
-#### How Tos:
+#### Tutorials:
 
-* [grocery](../tutorial/grocery.md)
+* [grocery](../how-to/halite_grocery-j.md)
 
 

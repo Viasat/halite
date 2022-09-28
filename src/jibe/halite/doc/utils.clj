@@ -182,21 +182,21 @@
                                             :subdir "/jadeite"
                                             :summary "Jadeite operator reference (all operators)"}}
                         :md_basic {:halite {:title "Halite Basic Syntax Reference"
-                                           :link "halite-basic-syntax-reference.html"
-                                           :subdir "/halite"
-                                           :summary "Halite basic syntax reference"}
-                                  :jadeite {:title "Jadeite Basic Syntax Reference"
-                                            :link "jadeite-basic-syntax-reference.html"
-                                            :subdir "/jadeite"
-                                            :summary "Jadeite basic syntax reference"}}
-                        :md_err {:halite {:title "Halite Error ID Reference"
-                                            :link "halite-err-id-reference.html"
+                                            :link "halite-basic-syntax-reference.html"
                                             :subdir "/halite"
-                                            :summary "Halite err-id reference"}
-                                   :jadeite {:title "Jadeite Error ID Reference"
-                                             :link "jadeite-err-id-reference.html"
+                                            :summary "Halite basic syntax reference"}
+                                   :jadeite {:title "Jadeite Basic Syntax Reference"
+                                             :link "jadeite-basic-syntax-reference.html"
                                              :subdir "/jadeite"
-                                             :summary "Jadeite err-id reference"}}})
+                                             :summary "Jadeite basic syntax reference"}}
+                        :md_err {:halite {:title "Halite Error ID Reference"
+                                          :link "halite-err-id-reference.html"
+                                          :subdir "/halite"
+                                          :summary "Halite err-id reference"}
+                                 :jadeite {:title "Jadeite Error ID Reference"
+                                           :link "jadeite-err-id-reference.html"
+                                           :subdir "/jadeite"
+                                           :summary "Jadeite err-id reference"}}})
 
 ;; user-guide requires this header
 (s/defn generate-user-guide-hdr [title link subdir summary]
@@ -217,8 +217,8 @@
   (str "<object type=\"image/svg+xml\" data=\"images/" svg "\"></object>\n\n"))
 
 (defn get-reference
-  [lang 
-   mode 
+  [lang
+   mode
    prefix
    filename]
   (str prefix filename (when (= :jadeite lang) "-j") (if (= :user-guide mode)
@@ -267,7 +267,7 @@
     (spit file-path (str "        - title: " title "\n"
                          "          url: /" filename "\n"
                          "          output: web\n\n")
-           :append true)
+          :append true)
     (spit file-path (str "    - title: " title "\n"
                          "      url: /" filename "\n"
                          "      output: web\n\n")

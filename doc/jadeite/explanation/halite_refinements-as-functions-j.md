@@ -53,6 +53,11 @@ In this example a highly abstract instance, just called a car, is converted into
 * [convert-instances](../how-to/halite_convert-instances-j.md)
 
 
+#### Tutorials:
+
+* [grocery](../how-to/halite_grocery-j.md)
+
+
 #### Explanations:
 
 * [abstract-spec](../how-to/halite_abstract-spec-j.md)

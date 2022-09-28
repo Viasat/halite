@@ -66,13 +66,10 @@ The refinement can be invoked as follows:
 * [arbitrary-expression-refinements](../how-to/halite_arbitrary-expression-refinements.md)
 * [convert-instances-transitively](../how-to/halite_convert-instances-transitively.md)
 * [optionally-convert-instances](../how-to/halite_optionally-convert-instances.md)
-<<<<<<< Updated upstream:doc/halite/how-to/halite_convert-instances.md
 
 
 #### Tutorials:
 
-* [grocery](../tutorial/grocery.md)
-=======
->>>>>>> Stashed changes:doc/how-to/convert-instances.md
+* [grocery](../how-to/halite_grocery.md)
 
 

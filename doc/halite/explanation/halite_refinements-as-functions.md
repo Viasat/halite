@@ -43,14 +43,11 @@ In this example a highly abstract instance, just called a car, is converted into
 #### How Tos:
 
 * [convert-instances](../how-to/halite_convert-instances.md)
-<<<<<<< Updated upstream:doc/halite/explanation/halite_refinements-as-functions.md
 
 
 #### Tutorials:
 
-* [grocery](../tutorial/grocery.md)
-=======
->>>>>>> Stashed changes:doc/explanation/refinements-as-functions.md
+* [grocery](../how-to/halite_grocery.md)
 
 
 #### Explanations:

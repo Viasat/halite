@@ -15,15 +15,15 @@
 
 ;; user-guide requires this header
 (defn generate-how-to-user-guide-hdr [lang prefix id how-to]
-   (str "---\n"
-         "title: " (:label how-to) "\n"
-         "tags: \n"
-         "keywords: \n"
-         "sidebar:  jibe_sidebar\n"
-         "permalink: " (how-to-reference lang :user-guide prefix id) "\n"
-         "folder: jibe/halite/" (name lang) "\n"
-         "summary: " (:desc how-to) "\n"
-         "---\n\n"))
+  (str "---\n"
+       "title: " (:label how-to) "\n"
+       "tags: \n"
+       "keywords: \n"
+       "sidebar:  jibe_sidebar\n"
+       "permalink: " (how-to-reference lang :user-guide prefix id) "\n"
+       "folder: jibe/halite/" (name lang) "\n"
+       "summary: " (:desc how-to) "\n"
+       "---\n\n"))
 
 (defn how-to-md [lang {:keys [mode prefix sidebar-file]} [id how-to]]
   (when (= :user-guide mode)
@@ -100,7 +100,7 @@
            (when how-to-refs
              ["#### How Tos:\n\n"
               (for [a (sort how-to-refs)]
-                
+
                 (str "* " "[" (name a) "](" (when (= :local mode) "../how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
               "\n\n"])
            (when tutorial-refs

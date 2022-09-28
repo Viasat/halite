@@ -2242,7 +2242,7 @@ See also: [`filter`](#filter) [`reduce`](#reduce)
 
 #### Tutorials:
 
-* [grocery](tutorial/grocery.md)
+* [grocery](tutorial/halite_grocery-j.md)
 
 
 #### Tags:
@@ -2479,7 +2479,7 @@ See also: [`filter`](#filter) [`map`](#map)
 
 #### Tutorials:
 
-* [grocery](tutorial/grocery.md)
+* [grocery](tutorial/halite_grocery-j.md)
 
 
 #### Tags:
@@ -2586,7 +2586,7 @@ See also: [`refinesTo?`](#refinesTo_Q)
 
 #### Tutorials:
 
-* [grocery](tutorial/grocery.md)
+* [grocery](tutorial/halite_grocery-j.md)
 
 
 #### Tags:

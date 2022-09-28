@@ -9,7 +9,7 @@
                        {:keys [mode prefix]}]
   (->>
    [(when (= :user-guide mode)
-      (utils/generate-user-guide-hdr "Halite Outline" "halite_outline" nil "Outline of Halite expression lanuage documentation."))utils/generated-msg
+      (utils/generate-user-guide-hdr "Halite Outline" "halite_outline" nil "Outline of Halite expression lanuage documentation.")) utils/generated-msg
     "# Halite resource specifications\n
 All features are available in both Halite (s-expression) syntax and Jadeite (C-like) syntax.\n\n"
 
@@ -35,8 +35,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                         (->> how-tos
                              (sort-by (comp :label val))
                              (mapcat (fn [[id h]] ["* " (:label h)
-                                                   " [(Halite)](" (how-to-filename :halite mode id)")"
-                                                   " [(Jadeite)](" (how-to-filename :jadeite mode id)")\n"
+                                                   " [(Halite)](" (how-to-filename :halite mode id) ")"
+                                                   " [(Jadeite)](" (how-to-filename :jadeite mode id) ")\n"
                                                    "  * " (:desc h) "\n"]))
                              (apply str))
                         "\n"))))
@@ -49,8 +49,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                         (->> explanations
                              (sort-by (comp :label val))
                              (mapcat (fn [[id h]] ["* " (:label h)
-                                                   " [(Halite)](" (explanation-filename :halite mode id)")"
-                                                   " [(Jadeite)](" (explanation-filename :jadeite mode id)")\n"
+                                                   " [(Halite)](" (explanation-filename :halite mode id) ")"
+                                                   " [(Jadeite)](" (explanation-filename :jadeite mode id) ")\n"
                                                    "  * " (:desc h) "\n"]))
                              (apply str))
                         "\n"))))
@@ -59,7 +59,7 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
     "* Basic Syntax and Types [(Halite)](" (utils/get-tag-reference :halite mode prefix "basic-syntax") "), [(Jadeite)](" (utils/get-tag-reference :jadeite mode prefix "basic-syntax") ")\n"
     "* All Operators (alphabetical) [(Halite)](" (utils/get-tag-reference :halite mode prefix "full") "), [(Jadeite)](" (utils/get-tag-reference :jadeite mode prefix "full") ")\n"
     "* Error ID Reference [(Halite)](" (utils/get-tag-reference :halite mode prefix "err-id") "), [(Jadeite)](" (utils/get-tag-reference :jadeite mode prefix "err-id") ")\n\n"
-    
+
     "#### Operators grouped by tag:\n\n"
 
     (let [separate-tags ['control-flow 'special-form]
