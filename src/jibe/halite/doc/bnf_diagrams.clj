@@ -81,6 +81,10 @@
       (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (str (name tag) "-j" ".svg"))
                        (rule-from-partitioned-bnf filtered-partitioned-bnf (fn [bnf-map] (get bnf-map :bnf-j (:bnf bnf-map)))))))
 
+(defn produce-spec-bnf-diagram [{:keys [image-dir]} file-name bnf-vector]
+  (produce-diagram (str image-dir "/halite-bnf-diagrams/spec-syntax/" file-name)
+                   (rule-from-partitioned-bnf (partition 2 bnf-vector) :bnf)))
+
 (defn produce-bnf-diagrams [{:keys [image-dir]} op-maps op-maps-j all-filename all-filename-j]
   (let [dir-path (str image-dir "/halite-bnf-diagrams/")
         op-keys (keys op-maps)
