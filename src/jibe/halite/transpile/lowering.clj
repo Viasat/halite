@@ -390,8 +390,7 @@
                  :rule "lower-refinement-to-constraint"
                  :spec-id spec-id
                  :id' id
-                 :form expr
-                 :form' (ssa/form-from-ssa scope ssa-graph id)
+                 :result expr
                  :spec-info spec-info
                  :spec-info' result})
                result))
@@ -632,7 +631,6 @@
   [sctx :- SpecCtx {:keys [ssa-graph constraints] :as spec-info} :- SpecInfo]
   (let [guards (ssa/compute-guards ssa-graph (set (map second constraints)))
         ctx (ssa/make-ssa-ctx sctx spec-info)]
-    ;; TODO: Trace these added constraints!
     (->> (find-error-ids ssa-graph)
          (reduce
           (fn [{:keys [ssa-graph] :as spec-info} error-id]
@@ -642,10 +640,20 @@
                   [message] (ssa/deref-id ssa-graph subexpr-id)
                   guard (guards error-id)
                   guard-form (->> guard (map (comp (partial mk-junct 'and) seq)) (mk-junct 'or))
-                  [ssa-graph guard-id] (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph) guard-form)]
-              (-> spec-info
-                  (assoc :ssa-graph ssa-graph)
-                  (update :constraints conj [message (ssa/negated ssa-graph guard-id)]))))
+                  [ssa-graph' guard-id] (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph) guard-form)
+                  cid (ssa/negated ssa-graph' guard-id)
+                  spec-info' (-> spec-info
+                                 (assoc :ssa-graph ssa-graph')
+                                 (update :constraints conj [message cid]))]
+              (halite-rewriting/trace!
+               sctx
+               {:op :add-constraint
+                :rule "add-error-guards-as-constraints"
+                :id' cid
+                :result (list 'not guard-form)
+                :spec-info spec-info
+                :spec-info' spec-info'})
+              spec-info'))
           spec-info))))
 
 (s/defn ^:private drop-branches-containing-unguarded-errors-rewrite-fn

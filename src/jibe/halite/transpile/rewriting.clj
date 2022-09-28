@@ -24,7 +24,7 @@
 
 (defn print-trace-item [{:keys [rule op pruned-ids id id' spec-info spec-info' total-ms]}]
   (binding [ssa/*hide-non-halite-ops* false, ssa/*elide-top-level-bindings* true]
-    (let [form (ssa/form-from-ssa spec-info id)
+    (let [form (some->> id (ssa/form-from-ssa spec-info))
           form' (ssa/form-from-ssa spec-info' id')
           time-str (str total-ms "ms")]
       (println (format "%s:  %s\n %s|->%s%s"
