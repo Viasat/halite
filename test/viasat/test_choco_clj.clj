@@ -287,3 +287,16 @@
 
       {'n [-5 -1]}
       {'n [-5 -1] 'p false})))
+
+(deftest test-unsatisfiable
+  (let [spec '{:vars {n :Int}
+               :constraints #{(if (< n 0)
+                                (unsatisfiable)
+                                (< n 10))}}]
+    (is (= '{n [0 9]} (choco-clj/propagate spec {}))))
+
+  (is (= '{n [-20 9] p true}
+         (choco-clj/propagate
+          '{:vars {n :Int p :Bool}
+            :constraints #{(< n (if p 10 (unsatisfiable)))}}
+          '{n [-20 20]}))))

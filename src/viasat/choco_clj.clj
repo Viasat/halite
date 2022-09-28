@@ -6,7 +6,7 @@
             [schema.core :as s])
   (:import [org.chocosolver.solver Model Solver]
            [org.chocosolver.solver.variables Variable BoolVar IntVar]
-           [org.chocosolver.solver.constraints Constraint]
+           [org.chocosolver.solver.constraints Propagator Constraint]
            [org.chocosolver.solver.constraints.extension Tuples]
            [org.chocosolver.solver.expression.discrete.arithmetic ArExpression ArExpression$IntPrimitive]
            [org.chocosolver.solver.expression.discrete.relational ReExpression]
@@ -94,6 +94,10 @@
 (defn- int-vars ^"[Lorg.chocosolver.solver.variables.IntVar;"
   [& ivars]
   (into-array IntVar ivars))
+
+(defn- bool-vars ^"[Lorg.chocosolver.solver.variables.BoolVar;"
+  [bvars]
+  (into-array BoolVar bvars))
 
 (defn- post-guarded
   "Reify c, and post the constraint 'guard implies c'"
@@ -183,6 +187,16 @@
     (instance? ReExpression var-or-expr) (.boolVar ^ReExpression var-or-expr))
   var-or-expr)
 
+(defn- unsatisfiable
+  [^Model m guard]
+  (let [bvar (.boolVar m)
+        unsat-prop (proxy [Propagator] [(bool-vars [bvar])]
+                     (propagate [evtmask])
+                     (isEntailed [] ESat/FALSE))
+        ^"[Lorg.chocosolver.solver.constraints.Propagator;" props (into-array [unsat-prop])]
+    (post-guarded guard (Constraint. "UNSAT" props))
+    bvar))
+
 (defn- make-expr
   "Add a Choco variable to the model m whose value represents the value of the given form,
   and return a ReExpression or ArExpression (often, but not always, just the variable itself)
@@ -225,10 +239,14 @@
                             not-pred (.not pred)
                             then (make-expr m vars (.and guard (relational [pred])) then-form)
                             else (make-expr m vars (.and guard (relational [not-pred])) else-form)]
-                        (if (instance? ReExpression then)
+                        (if (and (instance? ReExpression else) (instance? ReExpression then))
                           (.and (.imp ^ReExpression pred ^ReExpression then)
                                 (relational [(.imp not-pred ^ReExpression else)]))
                           (.ift ^ReExpression pred ^ArExpression then ^ArExpression else)))
+
+                      (= op 'unsatisfiable)
+                      (unsatisfiable m guard)
+
                       :else
                       (let [[arg1 & other-args] (mapv (partial make-expr m vars guard) (rest form))]
                         (condp = op
