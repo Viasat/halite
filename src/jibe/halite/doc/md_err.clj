@@ -4,7 +4,7 @@
 (ns jibe.halite.doc.md-err
   (:require [jibe.halite.doc.utils :as utils]))
 
-(defn err-md [lang err-id err]
+(defn err-md [lang {:keys [mode prefix]} err-id err]
   (->> ["### "
         "<a name=\"" (utils/safe-op-anchor err-id) "\"></a>"
         err-id "\n\n" (:doc err) "\n\n"
@@ -14,9 +14,7 @@
         (when-let [thrown-bys (:thrown-by-basic err)]
           ["#### Produced by elements:\n\n"
            (for [a (sort thrown-bys)]
-             (str "* " "[`" a "`](" (if (= :halite lang)
-                                      "halite-basic-syntax-reference.md"
-                                      "jadeite-basic-syntax-reference.md")
+             (str "* " "[`" a "`](" (utils/get-reference lang mode prefix "basic-syntax-reference")
                   "#" (utils/safe-op-anchor a) ")" "\n"))
            "\n"])
         (when-let [thrown-bys (if (= :halite lang)
@@ -24,9 +22,7 @@
                                 (:thrown-by-j err))]
           ["#### Produced by operators:\n\n"
            (for [a (sort thrown-bys)]
-             (str "* " "[`" a "`](" (if (= :halite lang)
-                                      "halite-full-reference.md"
-                                      "jadeite-full-reference.md")
+             (str "* " "[`" a "`](" (utils/get-reference lang mode prefix "full-reference")
                   "#" (utils/safe-op-anchor a) ")" "\n"))
            "\n"])
         (when-let [alsos (:err-ref err)]
@@ -36,12 +32,15 @@
            "\n\n"])
         "---\n"]))
 
-(defn err-md-all [lang err-maps]
-  (->> [utils/generated-msg
+(defn err-md-all [lang {:keys [mode sidebar-file] :as config} err-maps]
+  (->> [(when (= :user-guide mode)
+          (utils/append-user-guide-sidebar sidebar-file (get-in utils/user-guide-values [:md_err lang :title]) (get-in utils/user-guide-values [:md_err lang :link]) false)
+          (utils/generate-user-guide-hdr "Halite Error ID Reference" "halite-err-id-reference" "/halite" "Halite err-id reference"))
+        utils/generated-msg
         "# "
         (utils/lang-str lang)
         " err-id reference\n\n"
         (->> err-maps
-             (map (partial apply err-md lang)))]
+             (map (partial apply err-md lang config)))]
        flatten
        (apply str)))

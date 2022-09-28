@@ -8,8 +8,30 @@
             [clojure.string :as string])
   (:import [jibe.halite_guide HCInfo]))
 
-(defn how-to-md [lang [id how-to]]
-  (->> [utils/generated-msg
+(defn how-to-reference [lang mode prefix id]
+  (str prefix (name id) (when (= :jadeite lang) "-j") (if (= :user-guide mode)
+                                                        ".html"
+                                                        ".md")))
+
+;; user-guide requires this header
+(defn generate-how-to-user-guide-hdr [lang prefix id how-to]
+   (str "---\n"
+         "title: " (:label how-to) "\n"
+         "tags: \n"
+         "keywords: \n"
+         "sidebar:  jibe_sidebar\n"
+         "permalink: " (how-to-reference lang :user-guide prefix id) "\n"
+         "folder: jibe/halite/" (name lang) "\n"
+         "summary: " (:desc how-to) "\n"
+         "---\n\n"))
+
+(defn how-to-md [lang {:keys [mode prefix sidebar-file]} [id how-to]]
+  (when (= :user-guide mode)
+    (utils/append-user-guide-sidebar sidebar-file (:label how-to) (how-to-reference lang :user-guide prefix id) true))
+
+  (->> [(when (= :user-guide mode)
+          (generate-how-to-user-guide-hdr lang prefix id how-to))
+        utils/generated-msg
         "## " (:label how-to) "\n\n"
         (:desc how-to) "\n\n"
         (loop [[c & more-c] (:contents how-to)
@@ -55,7 +77,9 @@
                                                                                                   ({:halite (utils/pprint-halite h-result)
                                                                                                     :jadeite (str j-result "\n")} lang)))))))))
             results))
-        (let [basic-ref-links (utils/basic-ref-links lang how-to "../")
+        (let [basic-ref-links (utils/basic-ref-links lang mode prefix how-to (if (= :user-guide mode)
+                                                                               nil
+                                                                               "../"))
               op-refs (some->> (:op-ref how-to)
                                (map ({:halite identity
                                       :jadeite utils/translate-op-name-to-jadeite} lang)))
@@ -70,25 +94,24 @@
            (when op-refs
              ["#### Operator reference:\n\n"
               (for [a (sort op-refs)]
-                (str "* " "[`" a "`](" (if (= :halite lang)
-                                         "../halite-full-reference.md"
-                                         "../jadeite-full-reference.md")
+                (str "* " "[`" a "`](" (utils/get-tag-reference lang mode prefix "full")
                      "#" (utils/safe-op-anchor a) ")" "\n"))
               "\n\n"])
            (when how-to-refs
-             ["#### How tos:\n\n"
+             ["#### How Tos:\n\n"
               (for [a (sort how-to-refs)]
-                (str "* " "[" (name a) "](" "../how-to/" (name a) ".md" ")" "\n"))
+                
+                (str "* " "[" (name a) "](" (when (= :local mode) "../how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
               "\n\n"])
            (when tutorial-refs
              ["#### Tutorials:\n\n"
               (for [a (sort tutorial-refs)]
-                (str "* " "[" (name a) "](" "../tutorial/" (name a) ".md" ")" "\n"))
+                (str "* " "[" (name a) "](" (when (= :local mode) "../how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
               "\n\n"])
            (when explanation-refs
              ["#### Explanations:\n\n"
               (for [a (sort explanation-refs)]
-                (str "* " "[" (name a) "](" "../explanation/" (name a) ".md" ")" "\n"))
+                (str "* " "[" (name a) "](" (when (= :local mode) "../how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
               "\n\n"])])]
        flatten
        (apply str)))

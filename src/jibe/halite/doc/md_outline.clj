@@ -5,9 +5,11 @@
   (:require [jibe.halite.doc.utils :as utils]))
 
 (defn produce-outline [{:keys [tutorials how-tos explanations tag-def-map
-                               tutorial-filename how-to-filename explanation-filename tag-md-filename]}]
+                               tutorial-filename how-to-filename explanation-filename tag-reference]}
+                       {:keys [mode prefix]}]
   (->>
-   [utils/generated-msg
+   [(when (= :user-guide mode)
+      (utils/generate-user-guide-hdr "Halite Outline" "halite_outline" nil "Outline of Halite expression lanuage documentation."))utils/generated-msg
     "# Halite resource specifications\n
 All features are available in both Halite (s-expression) syntax and Jadeite (C-like) syntax.\n\n"
 
@@ -19,8 +21,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                         (->> tutorials
                              (sort-by (comp :label val))
                              (mapcat (fn [[id h]] ["* " (:label h)
-                                                   " [(Halite)](" (tutorial-filename :halite id) ")"
-                                                   " [(Jadeite)](" (tutorial-filename :jadeite id) ")\n"
+                                                   " [(Halite)](" (tutorial-filename :halite mode id) ")"
+                                                   " [(Jadeite)](" (tutorial-filename :jadeite mode id) ")\n"
                                                    "  * " (:desc h) "\n"]))
                              (apply str))
                         "\n"))))
@@ -33,8 +35,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                         (->> how-tos
                              (sort-by (comp :label val))
                              (mapcat (fn [[id h]] ["* " (:label h)
-                                                   " [(Halite)](" (how-to-filename :halite id) ")"
-                                                   " [(Jadeite)](" (how-to-filename :jadeite id) ")\n"
+                                                   " [(Halite)](" (how-to-filename :halite mode id)")"
+                                                   " [(Jadeite)](" (how-to-filename :jadeite mode id)")\n"
                                                    "  * " (:desc h) "\n"]))
                              (apply str))
                         "\n"))))
@@ -47,19 +49,18 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                         (->> explanations
                              (sort-by (comp :label val))
                              (mapcat (fn [[id h]] ["* " (:label h)
-                                                   " [(Halite)](" (explanation-filename :halite id) ")"
-                                                   " [(Jadeite)](" (explanation-filename :jadeite id) ")\n"
+                                                   " [(Halite)](" (explanation-filename :halite mode id)")"
+                                                   " [(Jadeite)](" (explanation-filename :jadeite mode id)")\n"
                                                    "  * " (:desc h) "\n"]))
                              (apply str))
                         "\n"))))
 
-    "## Reference\n
-
-* Basic Syntax and Types [(Halite)](halite-basic-syntax-reference.md)         [(Jadeite)](jadeite-basic-syntax-reference.md)
-* All Operators (alphabetical) [(Halite)](halite-full-reference.md) [(Jadeite)](jadeite-full-reference.md)
-* Error ID Reference [(Halite)](halite-err-id-reference.md)         [(Jadeite)](jadeite-err-id-reference.md)
-
-#### Operators grouped by tag:\n\n"
+    "## Reference\n"
+    "* Basic Syntax and Types [(Halite)](" (utils/get-tag-reference :halite mode prefix "basic-syntax") "), [(Jadeite)](" (utils/get-tag-reference :jadeite mode prefix "basic-syntax") ")\n"
+    "* All Operators (alphabetical) [(Halite)](" (utils/get-tag-reference :halite mode prefix "full") "), [(Jadeite)](" (utils/get-tag-reference :jadeite mode prefix "full") ")\n"
+    "* Error ID Reference [(Halite)](" (utils/get-tag-reference :halite mode prefix "err-id") "), [(Jadeite)](" (utils/get-tag-reference :jadeite mode prefix "err-id") ")\n\n"
+    
+    "#### Operators grouped by tag:\n\n"
 
     (let [separate-tags ['control-flow 'special-form]
           cols (->> tag-def-map vals (map :type-mode) set sort
@@ -67,8 +68,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
       [(->> separate-tags
             (map (fn [tag]
                    ["* " (get-in tag-def-map [(keyword tag) :label])
-                    " [(Halite)]("  (tag-md-filename :halite  tag) ")"
-                    " [(Jadeite)](" (tag-md-filename :jadeite tag) ")\n"])))
+                    " [(Halite)]("  (tag-reference :halite  mode prefix tag) ")"
+                    " [(Jadeite)](" (tag-reference :jadeite mode prefix tag) ")\n"])))
        "<table>"
        "<tr><th></th>"
        (->> cols (map (fn [tm] ["<th>" tm "</th>\n"])))
@@ -85,8 +86,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                                       (filter #(= tm (:type-mode (val %))))
                                       (filter #(= t (:type (val %))))
                                       (map (fn [[k v]]
-                                             [" [H](" (tag-md-filename :halite  (name k)) ")"
-                                              " [J](" (tag-md-filename :jadeite (name k)) ")\n"])))
+                                             [" [H](" (tag-reference :halite  mode prefix (name k)) ")"
+                                              " [J](" (tag-reference :jadeite mode prefix (name k)) ")\n"])))
                                  "</td>"])))
                     "</tr>"])))
        "</table>\n\n"])]

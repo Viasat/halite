@@ -48,26 +48,27 @@
        ")"
        ";"))
 
-(defn produce-basic-bnf-diagrams [all-file-name all-file-name-j basic-bnf]
-  (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" all-file-name)
-                   (rule-from-partitioned-bnf (partition 2 basic-bnf) :bnf))
-  (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" all-file-name-j)
-                   (rule-from-partitioned-bnf (partition 2 basic-bnf) (fn [bnf-map] (get bnf-map :bnf-j (:bnf bnf-map)))))
+(defn produce-basic-bnf-diagrams [{:keys [image-dir]} all-file-name all-file-name-j basic-bnf]
+  (let [dir-path (str image-dir "/halite-bnf-diagrams/basic-syntax/")]
+    (produce-diagram (str dir-path all-file-name)
+                     (rule-from-partitioned-bnf (partition 2 basic-bnf) :bnf))
+    (produce-diagram (str dir-path all-file-name-j)
+                     (rule-from-partitioned-bnf (partition 2 basic-bnf) (fn [bnf-map] (get bnf-map :bnf-j (:bnf bnf-map)))))
 
-  (->> (partition 2 basic-bnf)
-       (map (fn [[n {:keys [bnf]}]]
-              (when bnf
-                (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" n ".svg")
-                                 (str "RULE = " "(" bnf ")" ";")))))
-       dorun)
+    (->> (partition 2 basic-bnf)
+         (map (fn [[n {:keys [bnf]}]]
+                (when bnf
+                  (produce-diagram (str dir-path n ".svg")
+                                   (str "RULE = " "(" bnf ")" ";")))))
+         dorun)
 
-  (->> (partition 2 basic-bnf)
-       (map (fn [[n bnf-map]]
-              (let [bnf-j (get bnf-map :bnf-j (:bnf bnf-map))]
-                (when bnf-j
-                  (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (utils/translate-op-name-to-jadeite n) "-j" ".svg")
-                                   (str "RULE = " "(" bnf-j ")" ";"))))))
-       dorun))
+    (->> (partition 2 basic-bnf)
+         (map (fn [[n bnf-map]]
+                (let [bnf-j (get bnf-map :bnf-j (:bnf bnf-map))]
+                  (when bnf-j
+                    (produce-diagram (str dir-path (utils/translate-op-name-to-jadeite n) "-j" ".svg")
+                                     (str "RULE = " "(" bnf-j ")" ";"))))))
+         dorun)))
 
 #_(defn produce-basic-bnf-diagrams-for-tag [basic-bnf tag]
     (let [filtered-partitioned-bnf (->> (partition 2 basic-bnf)
@@ -80,8 +81,9 @@
       (produce-diagram (str "doc/halite-bnf-diagrams/basic-syntax/" (str (name tag) "-j" ".svg"))
                        (rule-from-partitioned-bnf filtered-partitioned-bnf (fn [bnf-map] (get bnf-map :bnf-j (:bnf bnf-map)))))))
 
-(defn produce-bnf-diagrams [op-maps op-maps-j all-filename all-filename-j]
-  (let [op-keys (keys op-maps)
+(defn produce-bnf-diagrams [{:keys [image-dir]} op-maps op-maps-j all-filename all-filename-j]
+  (let [dir-path (str image-dir "/halite-bnf-diagrams/")
+        op-keys (keys op-maps)
         rules-strs (->> op-maps
                         (mapcat (fn [[op {:keys [sigs]}]]
                                   (->> sigs
@@ -136,7 +138,7 @@
                              (string/join " |\n"))
                         ")"
                         ";")]
-      (produce-diagram (str "doc/halite-bnf-diagrams/" all-filename) rule-str))
+      (produce-diagram (str dir-path all-filename) rule-str))
     (let [rule-str (str "RULE = "
                         "("
                         (->> single-rules-strs-j
@@ -145,12 +147,12 @@
                              (string/join " |\n"))
                         ")"
                         ";")]
-      (produce-diagram (str "doc/halite-bnf-diagrams/" all-filename-j) rule-str))
+      (produce-diagram (str dir-path all-filename-j) rule-str))
     (->> rules-strs
          (map (fn [{:keys [op-name sig-index ^String rule-str]}]
-                (produce-diagram (str "doc/halite-bnf-diagrams/op/" (str (utils/safe-op-name op-name) "-" sig-index ".svg")) rule-str)))
+                (produce-diagram (str dir-path "op/" (str (utils/safe-op-name op-name) "-" sig-index ".svg")) rule-str)))
          dorun)
     (->> rules-strs-j
          (map (fn [{:keys [op-name sig-index ^String rule-str]}]
-                (produce-diagram (str "doc/halite-bnf-diagrams/op/" (str (utils/safe-op-name op-name) "-" sig-index "-j" ".svg")) rule-str)))
+                (produce-diagram (str dir-path "op/" (str (utils/safe-op-name op-name) "-" sig-index "-j" ".svg")) rule-str)))
          dorun)))

@@ -659,7 +659,7 @@
 
               :flow-control/short-circuiting
               {:label "How to use short-circuiting to avoid runtime errors."
-               :desc "Several operations can throw runtime errors. This includes mathematical overflow, division by 0, index out of bounds, invoking non-existent refinement paths, and construction of invalid instances. The question is: how to write code to avoid such runtime errors?"
+               :desc "Several operations can throw runtime errors. This includes mathematical overflow, division by 0, index out of bounds, invoking non-existent refinement paths, and construction of invalid instances. The question is, how to write code to avoid such runtime errors?"
                :contents ["The typical pattern to avoid such runtime errors is to first test to see if some condition is met to make the operation 'safe'. Only if that condition is met is the operator invoked. For example, to guard dividing by zero."
                           {:code '(let [x 0]
                                     (div 100 x))
