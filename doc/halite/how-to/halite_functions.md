@@ -45,6 +45,6 @@ This is not necessarily recommended, but it is possible.
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
+* [`refine-to`](../halite_full-reference.md#refine-to)
 
 

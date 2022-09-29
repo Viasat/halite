@@ -67,8 +67,8 @@ The use of the word 'to' in 'refine-to' and 'refines-to?' refers to this directi
 
 #### Operator reference:
 
-* [`refineTo`](halite_full-reference-j.md#refineTo)
-* [`refinesTo?`](halite_full-reference-j.md#refinesTo_Q)
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
+* [`refinesTo?`](../halite_full-reference-j.md#refinesTo_Q)
 
 
 #### How Tos:
@@ -78,8 +78,8 @@ The use of the word 'to' in 'refine-to' and 'refines-to?' refers to this directi
 
 #### Explanations:
 
-* [abstract-spec](../how-to/halite_abstract-spec-j.md)
-* [refinement-implications](../how-to/halite_refinement-implications-j.md)
-* [refinements-as-functions](../how-to/halite_refinements-as-functions-j.md)
+* [abstract-spec](../explanation/halite_abstract-spec-j.md)
+* [refinement-implications](../explanation/halite_refinement-implications-j.md)
+* [refinements-as-functions](../explanation/halite_refinements-as-functions-j.md)
 
 

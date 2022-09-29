@@ -170,14 +170,14 @@ This final object is now in a form that the grocery store understands.
 
 #### Operator reference:
 
-* [`&&`](halite_full-reference-j.md#&&)
-* [`<`](halite_full-reference-j.md#_L)
-* [`<=`](halite_full-reference-j.md#_L_E)
-* [`ACCESSOR`](halite_full-reference-j.md#ACCESSOR)
-* [`count`](halite_full-reference-j.md#count)
-* [`map`](halite_full-reference-j.md#map)
-* [`reduce`](halite_full-reference-j.md#reduce)
-* [`refineTo`](halite_full-reference-j.md#refineTo)
+* [`&&`](../halite_full-reference-j.md#&&)
+* [`<`](../halite_full-reference-j.md#_L)
+* [`<=`](../halite_full-reference-j.md#_L_E)
+* [`ACCESSOR`](../halite_full-reference-j.md#ACCESSOR)
+* [`count`](../halite_full-reference-j.md#count)
+* [`map`](../halite_full-reference-j.md#map)
+* [`reduce`](../halite_full-reference-j.md#reduce)
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
 
 
 #### How Tos:
@@ -187,7 +187,7 @@ This final object is now in a form that the grocery store understands.
 
 #### Explanations:
 
-* [refinements-as-functions](../how-to/halite_refinements-as-functions-j.md)
-* [specs-as-predicates](../how-to/halite_specs-as-predicates-j.md)
+* [refinements-as-functions](../explanation/halite_refinements-as-functions-j.md)
+* [specs-as-predicates](../explanation/halite_specs-as-predicates-j.md)
 
 

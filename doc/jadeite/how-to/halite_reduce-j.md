@@ -26,8 +26,8 @@ The values from the vector are combined with the accumulator, one-by-one in orde
 
 #### Operator reference:
 
-* [`*`](halite_full-reference-j.md#_S)
-* [`reduce`](halite_full-reference-j.md#reduce)
+* [`*`](../halite_full-reference-j.md#_S)
+* [`reduce`](../halite_full-reference-j.md#reduce)
 
 
 #### How Tos:

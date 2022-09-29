@@ -190,7 +190,7 @@ In fact, there is no way to make this refinement work because the animal field c
 
 #### Operator reference:
 
-* [`refineTo`](halite_full-reference-j.md#refineTo)
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
 
 
 #### How Tos:

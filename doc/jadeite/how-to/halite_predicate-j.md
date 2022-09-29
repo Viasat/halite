@@ -59,6 +59,6 @@ Note, for the case where the constraint is not met, a naked attempt to instantia
 
 #### Operator reference:
 
-* [`valid?`](halite_full-reference-j.md#valid_Q)
+* [`valid?`](../halite_full-reference-j.md#valid_Q)
 
 

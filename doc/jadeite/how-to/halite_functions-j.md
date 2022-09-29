@@ -50,6 +50,6 @@ This is not necessarily recommended, but it is possible.
 
 #### Operator reference:
 
-* [`refineTo`](halite_full-reference-j.md#refineTo)
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
 
 

@@ -94,7 +94,7 @@
            (when op-refs
              ["#### Operator reference:\n\n"
               (for [a (sort op-refs)]
-                (str "* " "[`" a "`](" (utils/get-tag-reference lang mode prefix "full")
+                (str "* " "[`" a "`](../" (utils/get-tag-reference lang mode prefix "full")
                      "#" (utils/safe-op-anchor a) ")" "\n"))
               "\n\n"])
            (when how-to-refs
@@ -106,12 +106,12 @@
            (when tutorial-refs
              ["#### Tutorials:\n\n"
               (for [a (sort tutorial-refs)]
-                (str "* " "[" (name a) "](" (when (= :local mode) "../how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
+                (str "* " "[" (name a) "](" (when (= :local mode) "../tutorial/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
               "\n\n"])
            (when explanation-refs
              ["#### Explanations:\n\n"
               (for [a (sort explanation-refs)]
-                (str "* " "[" (name a) "](" (when (= :local mode) "../how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
+                (str "* " "[" (name a) "](" (when (= :local mode) "../explanation/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
               "\n\n"])])]
        flatten
        (apply str)))

@@ -34,7 +34,7 @@ Note that duplicate elements are removed in the process.
 
 #### Operator reference:
 
-* [`concat`](halite_full-reference-j.md#concat)
+* [`concat`](../halite_full-reference-j.md#concat)
 
 
 #### How Tos:

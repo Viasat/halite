@@ -36,7 +36,7 @@ Note that duplicate elements are removed in the process.
 
 #### Operator reference:
 
-* [`concat`](halite_full-reference.md#concat)
+* [`concat`](../halite_full-reference.md#concat)
 
 
 #### How Tos:

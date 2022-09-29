@@ -222,9 +222,9 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
-* [`refines-to?`](halite_full-reference.md#refines-to_Q)
-* [`valid?`](halite_full-reference.md#valid_Q)
+* [`refine-to`](../halite_full-reference.md#refine-to)
+* [`refines-to?`](../halite_full-reference.md#refines-to_Q)
+* [`valid?`](../halite_full-reference.md#valid_Q)
 
 
 #### How Tos:
@@ -234,7 +234,7 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 
 #### Explanations:
 
-* [abstract-spec](../how-to/halite_abstract-spec.md)
-* [refinement-terminology](../how-to/halite_refinement-terminology.md)
+* [abstract-spec](../explanation/halite_abstract-spec.md)
+* [refinement-terminology](../explanation/halite_refinement-terminology.md)
 
 

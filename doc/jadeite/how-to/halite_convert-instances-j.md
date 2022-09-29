@@ -74,7 +74,7 @@ The refinement can be invoked as follows:
 
 #### Operator reference:
 
-* [`refineTo`](halite_full-reference-j.md#refineTo)
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
 
 
 #### How Tos:
@@ -86,6 +86,6 @@ The refinement can be invoked as follows:
 
 #### Tutorials:
 
-* [grocery](../how-to/halite_grocery-j.md)
+* [grocery](../tutorial/halite_grocery-j.md)
 
 

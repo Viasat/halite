@@ -272,13 +272,13 @@ false
 
 #### Operator reference:
 
-* [`!`](halite_full-reference-j.md#_B)
-* [`ACCESSOR`](halite_full-reference-j.md#ACCESSOR)
-* [`ACCESSOR-CHAIN`](halite_full-reference-j.md#ACCESSOR-CHAIN)
-* [`any?`](halite_full-reference-j.md#any_Q)
-* [`concat`](halite_full-reference-j.md#concat)
-* [`every?`](halite_full-reference-j.md#every_Q)
-* [`valid?`](halite_full-reference-j.md#valid_Q)
+* [`!`](../halite_full-reference-j.md#_B)
+* [`ACCESSOR`](../halite_full-reference-j.md#ACCESSOR)
+* [`ACCESSOR-CHAIN`](../halite_full-reference-j.md#ACCESSOR-CHAIN)
+* [`any?`](../halite_full-reference-j.md#any_Q)
+* [`concat`](../halite_full-reference-j.md#concat)
+* [`every?`](../halite_full-reference-j.md#every_Q)
+* [`valid?`](../halite_full-reference-j.md#valid_Q)
 
 
 #### How Tos:

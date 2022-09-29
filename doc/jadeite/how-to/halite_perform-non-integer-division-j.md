@@ -74,6 +74,6 @@ Putting it all together gives the result of the division truncated to one decima
 
 #### Operator reference:
 
-* [`/`](halite_full-reference-j.md#/)
+* [`/`](../halite_full-reference-j.md#/)
 
 

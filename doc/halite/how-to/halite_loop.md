@@ -91,10 +91,10 @@ Of course this example is contrived, because the 'mod' operator is available.
 
 #### Operator reference:
 
-* [`div`](halite_full-reference.md#div)
-* [`filter`](halite_full-reference.md#filter)
-* [`map`](halite_full-reference.md#map)
-* [`range`](halite_full-reference.md#range)
-* [`reduce`](halite_full-reference.md#reduce)
+* [`div`](../halite_full-reference.md#div)
+* [`filter`](../halite_full-reference.md#filter)
+* [`map`](../halite_full-reference.md#map)
+* [`range`](../halite_full-reference.md#range)
+* [`reduce`](../halite_full-reference.md#reduce)
 
 

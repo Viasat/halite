@@ -44,7 +44,7 @@ If the elements of the set are not sortable then use sort-by to convert the set 
 
 #### Operator reference:
 
-* [`sort`](halite_full-reference-j.md#sort)
+* [`sort`](../halite_full-reference-j.md#sort)
 
 
 #### How Tos:

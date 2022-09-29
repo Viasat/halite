@@ -91,6 +91,6 @@ In this example, the sum of 'a' and 'b' must be less than 10
 
 #### Tutorials:
 
-* [sudoku](../how-to/halite_sudoku.md)
+* [sudoku](../tutorial/halite_sudoku.md)
 
 

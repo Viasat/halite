@@ -34,8 +34,8 @@ The same works with sets.
 
 #### Operator reference:
 
-* [`*`](halite_full-reference-j.md#_S)
-* [`map`](halite_full-reference-j.md#map)
+* [`*`](../halite_full-reference-j.md#_S)
+* [`map`](../halite_full-reference-j.md#map)
 
 
 #### How Tos:

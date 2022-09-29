@@ -286,8 +286,8 @@ However, the 'valid?' operator cannot be used to handle cases that would violate
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
-* [`refines-to?`](halite_full-reference.md#refines-to_Q)
-* [`valid?`](halite_full-reference.md#valid_Q)
+* [`refine-to`](../halite_full-reference.md#refine-to)
+* [`refines-to?`](../halite_full-reference.md#refines-to_Q)
+* [`valid?`](../halite_full-reference.md#valid_Q)
 
 

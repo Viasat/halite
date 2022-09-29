@@ -44,6 +44,6 @@ Now the numbers can be added together.
 
 #### Operator reference:
 
-* [`+`](halite_full-reference-j.md#_A)
+* [`+`](../halite_full-reference-j.md#_A)
 
 

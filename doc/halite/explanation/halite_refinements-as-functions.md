@@ -37,7 +37,7 @@ In this example a highly abstract instance, just called a car, is converted into
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
+* [`refine-to`](../halite_full-reference.md#refine-to)
 
 
 #### How Tos:
@@ -47,13 +47,13 @@ In this example a highly abstract instance, just called a car, is converted into
 
 #### Tutorials:
 
-* [grocery](../how-to/halite_grocery.md)
+* [grocery](../tutorial/halite_grocery.md)
 
 
 #### Explanations:
 
-* [abstract-spec](../how-to/halite_abstract-spec.md)
-* [refinement-implications](../how-to/halite_refinement-implications.md)
-* [refinement-terminology](../how-to/halite_refinement-terminology.md)
+* [abstract-spec](../explanation/halite_abstract-spec.md)
+* [refinement-implications](../explanation/halite_refinement-implications.md)
+* [refinement-terminology](../explanation/halite_refinement-terminology.md)
 
 

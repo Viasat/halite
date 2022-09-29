@@ -74,8 +74,8 @@ false
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
-* [`refines-to?`](halite_full-reference.md#refines-to_Q)
+* [`refine-to`](../halite_full-reference.md#refine-to)
+* [`refines-to?`](../halite_full-reference.md#refines-to_Q)
 
 
 #### How Tos:

@@ -27,8 +27,8 @@ Note that this only works if the elements of the vector are sortable. Also note 
 
 #### Operator reference:
 
-* [`concat`](halite_full-reference.md#concat)
-* [`sort`](halite_full-reference.md#sort)
+* [`concat`](../halite_full-reference.md#concat)
+* [`sort`](../halite_full-reference.md#sort)
 
 
 #### How Tos:

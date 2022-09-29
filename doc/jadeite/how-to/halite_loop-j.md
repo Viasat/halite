@@ -84,10 +84,10 @@ Of course this example is contrived, because the 'mod' operator is available.
 
 #### Operator reference:
 
-* [`/`](halite_full-reference-j.md#/)
-* [`filter`](halite_full-reference-j.md#filter)
-* [`map`](halite_full-reference-j.md#map)
-* [`range`](halite_full-reference-j.md#range)
-* [`reduce`](halite_full-reference-j.md#reduce)
+* [`/`](../halite_full-reference-j.md#/)
+* [`filter`](../halite_full-reference-j.md#filter)
+* [`map`](../halite_full-reference-j.md#map)
+* [`range`](../halite_full-reference-j.md#range)
+* [`reduce`](../halite_full-reference-j.md#reduce)
 
 

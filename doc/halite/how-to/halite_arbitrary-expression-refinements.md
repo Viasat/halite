@@ -45,7 +45,7 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
+* [`refine-to`](../halite_full-reference.md#refine-to)
 
 
 #### How Tos:
@@ -55,6 +55,6 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 
 #### Explanations:
 
-* [refinement-implications](../how-to/halite_refinement-implications.md)
+* [refinement-implications](../explanation/halite_refinement-implications.md)
 
 

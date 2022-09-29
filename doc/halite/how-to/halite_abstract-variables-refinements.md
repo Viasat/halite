@@ -141,7 +141,7 @@ In fact, there is no way to make this refinement work because the animal field c
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
+* [`refine-to`](../halite_full-reference.md#refine-to)
 
 
 #### How Tos:

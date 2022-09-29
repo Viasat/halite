@@ -103,9 +103,9 @@ Even if we know the concrete type of the field value we cannot access it as that
 
 #### Operator reference:
 
-* [`ACCESSOR`](halite_full-reference-j.md#ACCESSOR)
-* [`ACCESSOR-CHAIN`](halite_full-reference-j.md#ACCESSOR-CHAIN)
-* [`refineTo`](halite_full-reference-j.md#refineTo)
+* [`ACCESSOR`](../halite_full-reference-j.md#ACCESSOR)
+* [`ACCESSOR-CHAIN`](../halite_full-reference-j.md#ACCESSOR-CHAIN)
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
 
 
 #### How Tos:

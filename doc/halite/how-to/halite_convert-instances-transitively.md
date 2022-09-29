@@ -41,7 +41,7 @@ The chain of refinements is invoked by simply refining the instance to the final
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
+* [`refine-to`](../halite_full-reference.md#refine-to)
 
 
 #### How Tos:

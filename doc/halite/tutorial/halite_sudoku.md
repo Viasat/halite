@@ -334,13 +334,13 @@ false
 
 #### Operator reference:
 
-* [`any?`](halite_full-reference.md#any_Q)
-* [`concat`](halite_full-reference.md#concat)
-* [`every?`](halite_full-reference.md#every_Q)
-* [`get`](halite_full-reference.md#get)
-* [`get-in`](halite_full-reference.md#get-in)
-* [`not`](halite_full-reference.md#not)
-* [`valid?`](halite_full-reference.md#valid_Q)
+* [`any?`](../halite_full-reference.md#any_Q)
+* [`concat`](../halite_full-reference.md#concat)
+* [`every?`](../halite_full-reference.md#every_Q)
+* [`get`](../halite_full-reference.md#get)
+* [`get-in`](../halite_full-reference.md#get-in)
+* [`not`](../halite_full-reference.md#not)
+* [`valid?`](../halite_full-reference.md#valid_Q)
 
 
 #### How Tos:

@@ -102,9 +102,9 @@ Even if we know the concrete type of the field value we cannot access it as that
 
 #### Operator reference:
 
-* [`get`](halite_full-reference.md#get)
-* [`get-in`](halite_full-reference.md#get-in)
-* [`refine-to`](halite_full-reference.md#refine-to)
+* [`get`](../halite_full-reference.md#get)
+* [`get-in`](../halite_full-reference.md#get-in)
+* [`refine-to`](../halite_full-reference.md#refine-to)
 
 
 #### How Tos:

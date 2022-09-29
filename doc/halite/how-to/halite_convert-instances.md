@@ -58,7 +58,7 @@ The refinement can be invoked as follows:
 
 #### Operator reference:
 
-* [`refine-to`](halite_full-reference.md#refine-to)
+* [`refine-to`](../halite_full-reference.md#refine-to)
 
 
 #### How Tos:
@@ -70,6 +70,6 @@ The refinement can be invoked as follows:
 
 #### Tutorials:
 
-* [grocery](../how-to/halite_grocery.md)
+* [grocery](../tutorial/halite_grocery.md)
 
 

@@ -86,6 +86,6 @@ Putting it all together gives the result of the division truncated to one decima
 
 #### Operator reference:
 
-* [`div`](halite_full-reference.md#div)
+* [`div`](../halite_full-reference.md#div)
 
 

@@ -329,17 +329,17 @@ This means that the logical operators cannot be used to guard against runtime er
 
 #### Operator reference:
 
-* [`any?`](halite_full-reference.md#any_Q)
-* [`div`](halite_full-reference.md#div)
-* [`every?`](halite_full-reference.md#every_Q)
-* [`get`](halite_full-reference.md#get)
-* [`if`](halite_full-reference.md#if)
-* [`if-value-let`](halite_full-reference.md#if-value-let)
-* [`refine-to`](halite_full-reference.md#refine-to)
-* [`refines-to?`](halite_full-reference.md#refines-to_Q)
-* [`valid`](halite_full-reference.md#valid)
-* [`valid?`](halite_full-reference.md#valid_Q)
-* [`when`](halite_full-reference.md#when)
-* [`when-value-let`](halite_full-reference.md#when-value-let)
+* [`any?`](../halite_full-reference.md#any_Q)
+* [`div`](../halite_full-reference.md#div)
+* [`every?`](../halite_full-reference.md#every_Q)
+* [`get`](../halite_full-reference.md#get)
+* [`if`](../halite_full-reference.md#if)
+* [`if-value-let`](../halite_full-reference.md#if-value-let)
+* [`refine-to`](../halite_full-reference.md#refine-to)
+* [`refines-to?`](../halite_full-reference.md#refines-to_Q)
+* [`valid`](../halite_full-reference.md#valid)
+* [`valid?`](../halite_full-reference.md#valid_Q)
+* [`when`](../halite_full-reference.md#when)
+* [`when-value-let`](../halite_full-reference.md#when-value-let)
 
 

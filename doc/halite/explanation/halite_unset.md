@@ -219,11 +219,11 @@ The operators that branch on 'unset' values cannot be used with expressions that
 
 #### Operator reference:
 
-* [`if-value`](halite_full-reference.md#if-value)
-* [`if-value-let`](halite_full-reference.md#if-value-let)
-* [`refine-to`](halite_full-reference.md#refine-to)
-* [`when`](halite_full-reference.md#when)
-* [`when-value`](halite_full-reference.md#when-value)
-* [`when-value-let`](halite_full-reference.md#when-value-let)
+* [`if-value`](../halite_full-reference.md#if-value)
+* [`if-value-let`](../halite_full-reference.md#if-value-let)
+* [`refine-to`](../halite_full-reference.md#refine-to)
+* [`when`](../halite_full-reference.md#when)
+* [`when-value`](../halite_full-reference.md#when-value)
+* [`when-value-let`](../halite_full-reference.md#when-value-let)
 
 

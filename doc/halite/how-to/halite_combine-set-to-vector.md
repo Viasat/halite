@@ -40,7 +40,7 @@ Notice that the items in the set were first sorted based on the number of items 
 
 #### Operator reference:
 
-* [`concat`](halite_full-reference.md#concat)
+* [`concat`](../halite_full-reference.md#concat)
 
 
 #### How Tos:

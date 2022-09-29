@@ -145,6 +145,6 @@ So the abstract spec allows us to write code that composes and uses instances wi
 
 #### Explanations:
 
-* [refinement-terminology](../how-to/halite_refinement-terminology.md)
+* [refinement-terminology](../explanation/halite_refinement-terminology.md)
 
 

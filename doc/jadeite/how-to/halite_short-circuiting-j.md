@@ -274,17 +274,17 @@ This means that the logical operators cannot be used to guard against runtime er
 
 #### Operator reference:
 
-* [`/`](halite_full-reference-j.md#/)
-* [`ACCESSOR`](halite_full-reference-j.md#ACCESSOR)
-* [`any?`](halite_full-reference-j.md#any_Q)
-* [`every?`](halite_full-reference-j.md#every_Q)
-* [`if`](halite_full-reference-j.md#if)
-* [`ifValueLet`](halite_full-reference-j.md#ifValueLet)
-* [`refineTo`](halite_full-reference-j.md#refineTo)
-* [`refinesTo?`](halite_full-reference-j.md#refinesTo_Q)
-* [`valid`](halite_full-reference-j.md#valid)
-* [`valid?`](halite_full-reference-j.md#valid_Q)
-* [`when`](halite_full-reference-j.md#when)
-* [`whenValueLet`](halite_full-reference-j.md#whenValueLet)
+* [`/`](../halite_full-reference-j.md#/)
+* [`ACCESSOR`](../halite_full-reference-j.md#ACCESSOR)
+* [`any?`](../halite_full-reference-j.md#any_Q)
+* [`every?`](../halite_full-reference-j.md#every_Q)
+* [`if`](../halite_full-reference-j.md#if)
+* [`ifValueLet`](../halite_full-reference-j.md#ifValueLet)
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
+* [`refinesTo?`](../halite_full-reference-j.md#refinesTo_Q)
+* [`valid`](../halite_full-reference-j.md#valid)
+* [`valid?`](../halite_full-reference-j.md#valid_Q)
+* [`when`](../halite_full-reference-j.md#when)
+* [`whenValueLet`](../halite_full-reference-j.md#whenValueLet)
 
 
