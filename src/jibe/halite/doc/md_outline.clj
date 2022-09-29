@@ -57,6 +57,9 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
     "## Reference\n"
     "* Basic Syntax and Types [(Halite)](" (when (= :local mode) "halite/") (utils/get-tag-reference :halite mode prefix "basic-syntax") "), [(Jadeite)](" (when (= :local mode) "jadeite/") (utils/get-tag-reference :jadeite mode prefix "basic-syntax") ")\n"
+    "* Specification Map Syntax [(Halite)](" "halite_spec-syntax-reference" (if (= mode :local)
+                                                                              ".md"
+                                                                              ".html") ")\n"
     "* All Operators (alphabetical) [(Halite)](" (when (= :local mode) "halite/") (utils/get-tag-reference :halite mode prefix "full") "), [(Jadeite)](" (when (= :local mode) "jadeite/") (utils/get-tag-reference :jadeite mode prefix "full") ")\n"
     "* Error ID Reference [(Halite)](" (when (= :local mode) "halite/") (utils/get-tag-reference :halite mode prefix "err-id") "), [(Jadeite)](" (when (= :local mode) "jadeite/") (utils/get-tag-reference :jadeite mode prefix "err-id") ")\n\n"
 

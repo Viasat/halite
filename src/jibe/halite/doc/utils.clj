@@ -211,7 +211,7 @@
        "summary: " summary "\n"
        "---\n\n"))
 
-;; generage html object block to display svg image
+;; generate html object block to display svg image
 (s/defn get-svg-link
   [svg]
   (str "<object type=\"image/svg+xml\" data=\"images/" svg "\"></object>\n\n"))

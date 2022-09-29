@@ -114,6 +114,7 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ## Reference
 * Basic Syntax and Types [(Halite)](halite/halite_basic-syntax-reference.md), [(Jadeite)](jadeite/halite_basic-syntax-reference-j.md)
+* Specification Map Syntax [(Halite)](halite_spec-syntax-reference.md)
 * All Operators (alphabetical) [(Halite)](halite/halite_full-reference.md), [(Jadeite)](jadeite/halite_full-reference-j.md)
 * Error ID Reference [(Halite)](halite/halite_err-id-reference.md), [(Jadeite)](jadeite/halite_err-id-reference-j.md)
 
