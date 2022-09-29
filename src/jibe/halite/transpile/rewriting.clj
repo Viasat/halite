@@ -107,33 +107,45 @@
                                rule-name rule)
                       {:ssa-graph ssa-graph :id id :form form})))
     (when (some? form)
-      (let [ssa-graph' (or (:ssa-graph (meta form)) ssa-graph)
-            ctx (assoc ctx :ssa-graph ssa-graph')
-            rule-nanos (System/nanoTime)
-            [ssa-graph' id'] (ssa/form-to-ssa ctx form)
-            spec-info' #_(-> (assoc spec-info :ssa-graph ssa-graph') (ssa/replace-node id id'))
-            (cond-> (assoc spec-info :ssa-graph ssa-graph')
-              (= :all nodes) (ssa/replace-node id id')
-              (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))
-            end-nanos (System/nanoTime)
-            rule-ms (/ (- rule-nanos start-nanos) 1000000.0)
-            graph-ms (/ (- end-nanos rule-nanos) 1000000.0)
-            total-ms (/ (- end-nanos start-nanos) 1000000.0)]
-        (when (not= spec-info spec-info')
+      (try
+        (let [ssa-graph' (or (:ssa-graph (meta form)) ssa-graph)
+              ctx (assoc ctx :ssa-graph ssa-graph')
+              rule-nanos (System/nanoTime)
+              [ssa-graph' id'] (ssa/form-to-ssa ctx form)
+              spec-info' #_(-> (assoc spec-info :ssa-graph ssa-graph') (ssa/replace-node id id'))
+              (cond-> (assoc spec-info :ssa-graph ssa-graph')
+                (= :all nodes) (ssa/replace-node id id')
+                (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))
+              end-nanos (System/nanoTime)
+              rule-ms (/ (- rule-nanos start-nanos) 1000000.0)
+              graph-ms (/ (- end-nanos rule-nanos) 1000000.0)
+              total-ms (/ (- end-nanos start-nanos) 1000000.0)]
+          (when (not= spec-info spec-info')
+            (trace!
+             sctx
+             {:op :rewrite
+              :rule rule-name
+              :id id
+              :id' id'
+              :result form
+              :spec-id spec-id
+              :spec-info spec-info
+              :spec-info' spec-info'
+              :total-ms total-ms
+              :rule-ms rule-ms
+              :graph-ms graph-ms})
+            [spec-info' (ssa/deref-id ssa-graph' id')]))
+        (catch Exception ex
           (trace!
            sctx
            {:op :rewrite
             :rule rule-name
             :id id
-            :id' id'
             :result form
             :spec-id spec-id
             :spec-info spec-info
-            :spec-info' spec-info'
-            :total-ms total-ms
-            :rule-ms rule-ms
-            :graph-ms graph-ms})
-          [spec-info' (ssa/deref-id ssa-graph' id')])))))
+            :error ex})
+          (throw ex))))))
 
 (s/defn apply-to-reachable :- (s/maybe SpecInfo)
   [sctx ctx scope spec-id spec-info
