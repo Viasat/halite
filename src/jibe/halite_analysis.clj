@@ -9,14 +9,22 @@
             [jibe.halite.halite-types :as halite-types]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as schema]
-            [internal :as coll]
-            [internal :as s])
+            [schema.core :as s])
   (:import [jibe.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
 (defn- third [s]
   (second (rest s)))
+
+(defn- remove-nil-vals [m]
+  (select-keys m (keep (fn [[k v]] (when (some? v) k)) m)))
+
+(defn- no-empty
+  "Convert empty collection to nil"
+  [coll]
+  (when (seq coll)
+    coll))
 
 (def NumericValue (schema/conditional
                    halite-base/integer-or-long? Number
@@ -330,13 +338,13 @@
         (if (some #(not (nil? (:enum %))) xs)
           (if (every? #(not (nil? (:enum %))) xs)
             (reduce (fn [a b]
-                      (coll/no-nil {:enum (set/union (:enum a) (:enum b))
-                                    :optional (when (and (or (:optional a)
-                                                             (= :unknown a))
-                                                         (:optional b))
-                                                true)}))
+                      (remove-nil-vals {:enum (set/union (:enum a) (:enum b))
+                                        :optional (when (and (or (:optional a)
+                                                                 (= :unknown a))
+                                                             (:optional b))
+                                                    true)}))
                     {:enum #{}
-                     :optional :unkown} xs)
+                     :optional :unknown} xs)
             nil)
           {:ranges (set (mapcat
                          #(or (:ranges %)
@@ -396,19 +404,19 @@
                                                    (and (:enum a) (:enum b)) (set/intersection (:enum a) (:enum b))
                                                    (:enum a) (:enum a)
                                                    (:enum b) (:enum b))}]
-                             (coll/no-nil (assoc combined
-                                                 :optional (when (and (not some?)
-                                                                      (or (and (:enum a) (:optional a) (= nil (:enum b)))
-                                                                          (and (:enum b) (:optional b) (= nil (:enum a)))
-                                                                          (and (:enum a) (:enum b) (:optional a) (:optional b))))
-                                                             true))))))
+                             (remove-nil-vals (assoc combined
+                                                     :optional (when (and (not some?)
+                                                                          (or (and (:enum a) (:optional a) (= nil (:enum b)))
+                                                                              (and (:enum b) (:optional b) (= nil (:enum a)))
+                                                                              (and (:enum a) (:enum b) (:optional a) (:optional b))))
+                                                                 true))))))
                        {}
                        xs)]
     (if (= :none result)
       result
       (-> result
-          coll/no-nil
-          coll/no-empty))))
+          remove-nil-vals
+          no-empty))))
 
 (defn- reduce-ranges [xs]
   (reduce (fn [a b]
@@ -451,7 +459,7 @@
                  (let [reduced-ranges0 (reduce-ranges xs)]
                    (if (= :none reduced-ranges0)
                      :none
-                     {:ranges (let [reduced-range (coll/no-empty (select-keys reduced-ranges0 [:min :min-inclusive :max :max-inclusive :optional]))]
+                     {:ranges (let [reduced-range (no-empty (select-keys reduced-ranges0 [:min :min-inclusive :max :max-inclusive :optional]))]
                                 (->> (let [range-sets (->> (filter :ranges xs)
                                                            (map :ranges)
                                                            (sort-by count))]
@@ -505,8 +513,8 @@
     (if (= :none aggregate-enum)
       :none
       (if (and aggregate-enum aggregate-ranges)
-        (coll/no-nil {:enum (apply-ranges-to-enum (:enum aggregate-enum) (:ranges aggregate-ranges))
-                      :optional (when (= true (:optional aggregate-enum)) true)})
+        (remove-nil-vals {:enum (apply-ranges-to-enum (:enum aggregate-enum) (:ranges aggregate-ranges))
+                          :optional (when (= true (:optional aggregate-enum)) true)})
         (or aggregate-enum aggregate-ranges)))))
 
 (defn- tlfc-data* [optional-vars expr]
@@ -529,12 +537,12 @@
                                   :default true)
                                 (if (some #(= '$no-value %) (rest expr))
                                   :none
-                                  (coll/no-nil {:enum (->> (rest expr)
-                                                           (remove symbol?)
-                                                           set)
-                                                :optional (when-let [v (first (filter symbol? (rest expr)))]
-                                                            (when (optional-vars v)
-                                                              true))})))
+                                  (remove-nil-vals {:enum (->> (rest expr)
+                                                               (remove symbol?)
+                                                               set)
+                                                    :optional (when-let [v (first (filter symbol? (rest expr)))]
+                                                                (when (optional-vars v)
+                                                                  true))})))
 
     (and (seq? expr)
          (= 'not= (first expr))) (if (some #(= '$no-value %) (rest expr))
@@ -565,8 +573,8 @@
                                                 s (if (symbol? (second expr))
                                                     (second expr)
                                                     (third expr))]
-                                            (coll/no-nil (assoc range :optional (when (optional-vars s)
-                                                                                  true))))
+                                            (remove-nil-vals (assoc range :optional (when (optional-vars s)
+                                                                                      true))))
 
     (and (seq? expr)
          (= 'and (first expr))) (->> (rest expr)
@@ -688,7 +696,7 @@
 (s/defn tlfc-data-map :- {schema/Symbol TopLevelFieldConstraint}
   [m]
   (->> (update-vals m tlfc-data)
-       coll/no-nil
+       remove-nil-vals
        ;; (remove #(= true (second %)))
        (into {})))
 
@@ -795,16 +803,16 @@
 
 ;;;;
 
-(s/defn- fixed-decimal-to-long [f]
+(s/defn ^:private fixed-decimal-to-long [f]
   (let [scale (fixed-decimal/get-scale f)]
     (fixed-decimal/shift-scale f scale)))
 
-(s/defn- range-size* [min max]
+(s/defn ^:private range-size* [min max]
   (if (halite-base/integer-or-long? min)
     (- max min)
     (fixed-decimal-to-long (fixed-decimal/f- max min))))
 
-(s/defn- range-size [r :- Range]
+(s/defn ^:private range-size [r :- Range]
   (let [{:keys [min max min-inclusive max-inclusive]} r]
     (when (or (and (halite-base/integer-or-long? min)
                    (halite-base/integer-or-long? max))
@@ -819,7 +827,7 @@
                                0)))
                         0))))
 
-(s/defn- range-set-size [rs :- #{Range}]
+(s/defn ^:private range-set-size [rs :- #{Range}]
   (let [sizes (map range-size rs)]
     (when (every? identity sizes)
       (apply + sizes))))
@@ -828,7 +836,7 @@
   (str (BigDecimal. (BigInteger. (str n))
                     ^int scale)))
 
-(s/defn- enumerate-range [r :- Range]
+(s/defn ^:private enumerate-range [r :- Range]
   (let [{:keys [min max min-inclusive max-inclusive]} r]
     (if (halite-base/integer-or-long? min)
       (range (if min-inclusive
@@ -847,14 +855,14 @@
              (map #(make-fixed-decimal-string % scale))
              (map fixed-decimal/fixed-decimal-reader))))))
 
-(s/defn- enumerate-range-set [rs :- #{Range}]
+(s/defn ^:private enumerate-range-set [rs :- #{Range}]
   (->> rs
        (mapcat enumerate-range)
        set))
 
 (def ^:dynamic *max-enum-size* 1000)
 
-(s/defn- small-ranges-to-enums [tlfc-map :- {schema/Symbol TopLevelFieldConstraint}]
+(s/defn ^:private small-ranges-to-enums [tlfc-map :- {schema/Symbol TopLevelFieldConstraint}]
   (-> tlfc-map
       (update-vals (fn [tlfc]
                      (if (and (:ranges tlfc)
@@ -864,7 +872,7 @@
                            (assoc :enum (enumerate-range-set (:ranges tlfc))
                                   :optional (when (some :optional (:ranges tlfc))
                                               true))
-                           coll/no-nil
+                           remove-nil-vals
                            (dissoc :ranges))
                        tlfc)))))
 
@@ -927,9 +935,8 @@
                         (update-in m [:encoder-map] merge {})))
   (let [expr' (process-strings encoder-atom expr-tree)]
     (swap! encoder-atom (fn [m]
-                          (assoc m :decoder-map (-> (m :encoder-map)
-                                                    coll/invert-map
-                                                    (update-vals first)))))
+                          (assoc m :decoder-map (zipmap (vals (m :encoder-map))
+                                                        (keys (m :encoder-map))))))
     expr'))
 
 ;;;;
