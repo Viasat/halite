@@ -304,15 +304,16 @@
 ;;;;;;;;;; Lower refine-to ;;;;;;;;;;;;;;;
 
 (s/defn ^:private lower-refine-to-expr
-  [rgraph, {{:keys [ssa-graph senv] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [rgraph, {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when-let [[_ expr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
     (let [[_ from-htype] (ssa/deref-id ssa-graph expr-id)
           from-spec-id (halite-types/spec-id from-htype)]
       (->> (loom.alg/shortest-path rgraph from-spec-id to-spec-id)
            (partition 2 1)
            (reduce (fn [out-form [from-spec-id to-spec-id]]
-                     (let [{:keys [spec-vars refines-to]} (halite-envs/lookup-spec senv from-spec-id)
-                           refine-expr (:expr (get refines-to to-spec-id))
+                     (let [{:keys [spec-vars refines-to] :as spec-info} (sctx from-spec-id)
+                           refine-expr-id (:expr (get refines-to to-spec-id))
+                           refine-expr (ssa/form-from-ssa spec-info refine-expr-id)
                            bindings (vec (mapcat (fn [var-kw] [(symbol var-kw)
                                                                (list 'get out-form var-kw)])
                                                  (keys spec-vars)))]

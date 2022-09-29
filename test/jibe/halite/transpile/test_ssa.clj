@@ -376,6 +376,52 @@
         $6 [(not $5) :Boolean $5]}
       '[$5])))
 
+(deftest test-spec-to-ssa-with-refinements
+  (let [senv '{:ws/A
+               {:spec-vars {:an "Integer"}
+                :constraints [["a1" (< 0 (+ 1 an))]]
+                :refines-to {:ws/B {:expr (when (< an 10)
+                                            {:$type :ws/B
+                                             :bn (+ 1 an)})}}}
+               :ws/B
+               {:spec-vars {:bn "Integer"}
+                :constraints []
+                :refines-to {}}}
+        spec (ssa/spec-to-ssa (halite-envs/spec-env senv) (:ws/A senv))]
+    (is (= '{:spec-vars {:an "Integer"}
+             :ssa-graph
+             {:dgraph
+              {$1 [0 :Integer]
+               $2 [1 :Integer]
+               $3 [an :Integer]
+               $4 [(+ $2 $3) :Integer]
+               $5 [(< $1 $4) :Boolean $6]
+               $6 [(<= $4 $1) :Boolean $5]
+               $7 [10 :Integer]
+               $8 [(< $3 $7) :Boolean $9]
+               $9 [(<= $7 $3) :Boolean $8]
+               $10 [{:$type :ws/B, :bn $4} [:Instance :ws/B]]
+               $11 [(when $8 $10) [:Maybe [:Instance :ws/B]]]}
+              :next-id 12
+              :form-ids
+              {0 $1,
+               1 $2,
+               10 $7,
+               an $3,
+               (<= $4 $1) $6,
+               (<= $7 $3) $9,
+               (when $8 $10) $11,
+               {:$type :ws/B, :bn $4} $10,
+               (+ $2 $3) $4,
+               (< $1 $4) $5,
+               (< $3 $7) $8}}
+             :constraints [["a1" $5]]
+             :refines-to {:ws/B {:expr $11}}}
+           spec))
+
+    (is (= (assoc-in (:ws/A senv) [:constraints 0 0] "$all")
+           (ssa/spec-from-ssa spec)))))
+
 (deftest test-form-to-ssa-correctly-handles-node-references-in-if-value
   (let [senv (halite-envs/spec-env
               '{:ws/A

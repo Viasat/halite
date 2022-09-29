@@ -790,7 +790,7 @@
                     true))]],
               :refines-to {:ws/B {:expr {:$type :ws/B,
                                          :bp false,
-                                         :bw (when (= 0 (mod dx 2)) (div dx 2)),
+                                         :bw (if (= 0 (mod dx 2)) (div dx 2) $no-value),
                                          :bx (+ dx 1),
                                          :c1 {:$type :ws/C, :cw dx, :cx dx},
                                          :c2 {:$type :ws/C, :cw 12, :cx dx}}}}}

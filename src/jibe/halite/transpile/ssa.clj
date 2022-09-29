@@ -100,7 +100,9 @@
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
   (assoc halite-envs/SpecInfo
          :ssa-graph SSAGraph
-         :constraints [[(s/one s/Str :cname) (s/one NodeId :node)]]))
+         :constraints [[(s/one s/Str :cname) (s/one NodeId :node)]]
+         :refines-to {halite-types/NamespacedKeyword
+                      (assoc halite-envs/Refinement :expr NodeId)}))
 
 (s/defn contains-id? :- s/Bool
   [ssa-graph :- SSAGraph id]
@@ -134,17 +136,24 @@
   {(s/optional-key :include-negations?) s/Bool
    (s/optional-key :conditionally?) s/Bool})
 
+(s/defn root-ids :- [NodeId]
+  "Return the SSA graph node ids of all entrypoints into the SSA graph: specifically,
+  all constraint and refinement expressions."
+  [{:keys [constraints refines-to]} :- SpecInfo]
+  (concat (map second constraints)
+          (map :expr (vals refines-to))))
+
 (s/defn reachable-nodes :- #{NodeId}
   "Return the set of nodes transitively reachable from the given id. For reachable boolean
   nodes, their negation nodes are included when include-negations? is true.
   When conditionally? is false, the reachability analysis stops at conditional
   forms (if, when). The conditional nodes themselves are included, but their branches are not."
-  ([{:keys [ssa-graph constraints] :as spec-info} :- SpecInfo]
+  ([{:keys [ssa-graph] :as spec-info} :- SpecInfo]
    (reduce
     (fn [reachable id]
       (reachable-nodes ssa-graph reachable id {:include-negations? false, :conditionally? true}))
     #{}
-    (map second constraints)))
+    (root-ids spec-info)))
   ([ssa-graph :- SSAGraph, id :- NodeId]
    (reachable-nodes ssa-graph id {}))
   ([ssa-graph :- SSAGraph, id :- NodeId, opts :- ReachableNodesOpts]
@@ -195,7 +204,7 @@
   "Prune nodes not reachable from the roots. When prune-negations? is true, negation nodes
   that are not actually used in the root expressions are also pruned; otherwise, they are not."
   ([spec-info :- SpecInfo, prune-negations? :- s/Bool]
-   (update spec-info :ssa-graph prune-ssa-graph (set (map second (:constraints spec-info))) prune-negations?))
+   (update spec-info :ssa-graph prune-ssa-graph (set (root-ids spec-info)) prune-negations?))
   ([{:keys [dgraph] :as ssa-graph} :- SSAGraph, roots :- #{NodeId}, prune-negations? :- s/Bool]
    (let [reachable (reduce
                     (fn [reachable id]
@@ -552,10 +561,18 @@
              (let [[ssa-graph constraint] (constraint-to-ssa senv tenv ssa-graph constraint)]
                [ssa-graph (conj constraints constraint)]))
            [empty-ssa-graph []]
-           (:constraints spec-info))]
+           (:constraints spec-info))
+        [ssa-graph refines-to]
+        ,,(reduce
+           (fn [[ssa-graph refines-to] [spec-id refn]]
+             (let [[ssa-graph id] (form-to-ssa {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph} (:expr refn))]
+               [ssa-graph (assoc refines-to spec-id (assoc refn :expr id))]))
+           [ssa-graph {}]
+           (:refines-to spec-info))]
     (assoc spec-info
            :ssa-graph ssa-graph
-           :constraints constraints)))
+           :constraints constraints
+           :refines-to refines-to)))
 
 (s/defschema SpecCtx
   "A map of spec ids to specs in SSA form."
@@ -923,7 +940,7 @@
 (s/defn spec-from-ssa :- halite-envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
   [spec-info :- SpecInfo]
-  (let [{:keys [ssa-graph constraints spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
+  (let [{:keys [ssa-graph constraints refines-to spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
         scope (->> spec-vars keys (map symbol) set)
         constraint (mk-junct 'and constraints)
         ssa-ctx {:senv (halite-envs/spec-env {})
@@ -933,7 +950,8 @@
         [ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
     (-> spec-info
         (dissoc :ssa-graph)
-        (assoc :constraints [["$all" (form-from-ssa scope ssa-graph id)]]))))
+        (assoc :constraints [["$all" (form-from-ssa scope ssa-graph id)]])
+        (assoc :refines-to (update-vals refines-to #(update % :expr (partial form-from-ssa scope ssa-graph)))))))
 
 (s/defn make-ssa-ctx :- SSACtx
   [sctx :- SpecCtx, {:keys [ssa-graph] :as spec-info} :- SpecInfo]
