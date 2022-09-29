@@ -187,7 +187,7 @@
               :instance/spec-variables
               {:label "Spec variables"
                :desc "How to model data fields in specifications."
-               :basic-ref ['instance 'vector]
+               :basic-ref ['instance 'vector 'spec-map]
                :contents ["It is possible to define a spec that does not have any fields."
                           {:spec-map {:spec/Dog$v1 {}}}
                           "Instances of this spec could be created as:"
