@@ -4,8 +4,8 @@
 (ns jibe.halite.doc.md-spec
   (:require [clojure.string :as string]))
 
-(defn- embed-bnf [{:keys [image-dir]} label]
-  ["![" label "](" image-dir "/halite-bnf-diagrams/spec-syntax/" label ".svg" "\n\n"])
+(defn- embed-bnf [{:keys [mode image-dir]} label]
+  ["![" label "](" (when (= :user-guide mode) (str image-dir "/")) "halite-bnf-diagrams/spec-syntax/" label ".svg" ")\n\n"])
 
 (defn spec-md [run-config]
   (->> ["A spec-map is a data structure used to define specs that are in context for evaluating some expressions.\n\n"
