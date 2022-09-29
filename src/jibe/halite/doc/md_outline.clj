@@ -56,9 +56,9 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                         "\n"))))
 
     "## Reference\n"
-    "* Basic Syntax and Types [(Halite)](" (when (= :local mode) "../") (utils/get-tag-reference :halite mode prefix "basic-syntax") "), [(Jadeite)](" (when (= :local mode) "../") (utils/get-tag-reference :jadeite mode prefix "basic-syntax") ")\n"
-    "* All Operators (alphabetical) [(Halite)](" (when (= :local mode) "../") (utils/get-tag-reference :halite mode prefix "full") "), [(Jadeite)](" (when (= :local mode) "../") (utils/get-tag-reference :jadeite mode prefix "full") ")\n"
-    "* Error ID Reference [(Halite)](" (when (= :local mode) "../") (utils/get-tag-reference :halite mode prefix "err-id") "), [(Jadeite)](" (when (= :local mode) "../") (utils/get-tag-reference :jadeite mode prefix "err-id") ")\n\n"
+    "* Basic Syntax and Types [(Halite)](" (when (= :local mode) "halite/") (utils/get-tag-reference :halite mode prefix "basic-syntax") "), [(Jadeite)](" (when (= :local mode) "jadeite/") (utils/get-tag-reference :jadeite mode prefix "basic-syntax") ")\n"
+    "* All Operators (alphabetical) [(Halite)](" (when (= :local mode) "halite/") (utils/get-tag-reference :halite mode prefix "full") "), [(Jadeite)](" (when (= :local mode) "jadeite/") (utils/get-tag-reference :jadeite mode prefix "full") ")\n"
+    "* Error ID Reference [(Halite)](" (when (= :local mode) "halite/") (utils/get-tag-reference :halite mode prefix "err-id") "), [(Jadeite)](" (when (= :local mode) "jadeite/") (utils/get-tag-reference :jadeite mode prefix "err-id") ")\n\n"
 
     "#### Operators grouped by tag:\n\n"
 
@@ -68,8 +68,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
       [(->> separate-tags
             (map (fn [tag]
                    ["* " (get-in tag-def-map [(keyword tag) :label])
-                    " [(Halite)]("  (when (= :local mode) "../") (tag-reference :halite  mode prefix tag) ")"
-                    " [(Jadeite)](" (when (= :local mode) "../") (tag-reference :jadeite mode prefix tag) ")\n"])))
+                    " [(Halite)]("  (when (= :local mode) "halite/") (tag-reference :halite  mode prefix tag) ")"
+                    " [(Jadeite)](" (when (= :local mode) "jadeite/") (tag-reference :jadeite mode prefix tag) ")\n"])))
        "<table>"
        "<tr><th></th>"
        (->> cols (map (fn [tm] ["<th>" tm "</th>\n"])))
@@ -86,8 +86,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                                       (filter #(= tm (:type-mode (val %))))
                                       (filter #(= t (:type (val %))))
                                       (map (fn [[k v]]
-                                             [" [H](" (when (= :local mode) "../") (tag-reference :halite  mode prefix (name k)) ")"
-                                              " [J](" (when (= :local mode) "../") (tag-reference :jadeite mode prefix (name k)) ")\n"])))
+                                             [" [H](" (when (= :local mode) "halite/") (tag-reference :halite  mode prefix (name k)) ")"
+                                              " [J](" (when (= :local mode) "jadeite/") (tag-reference :jadeite mode prefix (name k)) ")\n"])))
                                  "</td>"])))
                     "</tr>"])))
        "</table>\n\n"])]
