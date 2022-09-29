@@ -3,7 +3,8 @@
 
 (ns jibe.halite.doc.bnf-diagrams
   (:require [clojure.string :as string]
-            [jibe.halite.doc.utils :as utils])
+            [jibe.halite.doc.utils :as utils]
+            [clojure.java.io :as io])
   (:import [net.nextencia.rrdiagram.grammar.model GrammarToRRDiagram BNFToGrammar]
            [net.nextencia.rrdiagram.grammar.rrdiagram RRDiagramToSVG]))
 
@@ -20,18 +21,30 @@
                         (fn [[_ prefix y-offset-str]]
                           (str prefix (+ -4 (Long/parseLong y-offset-str))))))))
 
+(defn insert-source-id [rule-str svg]
+  (str "<!--\n" rule-str "\n-->\n" svg))
+
+(defn get-source-id [filename]
+  (with-open [r (io/reader filename)]
+    (->> (line-seq r)
+         next
+         (take-while #(not= "-->" %))
+         (string/join "\n"))))
+
 (defn produce-diagram [out-file-name ^String rule-str]
-  (let [gtrd (GrammarToRRDiagram.)
-        rts (RRDiagramToSVG.)
-        rule-svg (->> rule-str
-                      (.convert (BNFToGrammar.))
-                      .getRules
-                      (into [])
-                      (map #(.convert gtrd %))
-                      (map #(.convert rts %))
-                      first
-                      adjust-connector-style)]
-    (utils/spit-dir out-file-name rule-svg)))
+  (when (not= rule-str (get-source-id out-file-name))
+    (let [gtrd (GrammarToRRDiagram.)
+          rts (RRDiagramToSVG.)
+          rule-svg (->> rule-str
+                        (.convert (BNFToGrammar.))
+                        .getRules
+                        (into [])
+                        (map #(.convert gtrd %))
+                        (map #(.convert rts %))
+                        first
+                        adjust-connector-style
+                        (insert-source-id rule-str))]
+      (utils/spit-dir out-file-name rule-svg))))
 
 (defn- rule-from-partitioned-bnf [partitioned-bnf k-f]
   (str "RULE = "
