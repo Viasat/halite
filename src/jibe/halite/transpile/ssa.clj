@@ -490,7 +490,7 @@
     (if-let [new-id (replacements id)]
       [ssa-graph new-id]
       (cond
-        (or (int? form) (boolean? form)) [ssa-graph id]
+        (or (int? form) (boolean? form) (string? form)) [ssa-graph id]
         (= :Unset form) [ssa-graph id]
         (symbol? form) (if-let [replacement (replacements form)]
                          (ensure-node ssa-graph replacement htype)
