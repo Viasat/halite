@@ -339,6 +339,19 @@
            (->> sctx (fixpoint push-gets-into-ifs)
                 :ws/A ssa/spec-from-ssa :constraints)))))
 
+(deftest test-push-gets-into-ifs-ignores-nothing-branches
+  (let [senv (halite-envs/spec-env
+              '{:ws/A {:spec-vars {:b :ws/B :ap "Boolean"} :refines-to {}
+                       :constraints [["a1" (get (if ap b (error "nope")) :bp)]]}
+                :ws/B {:spec-vars {:bp "Boolean"} :constraints [] :refines-to {}}})]
+    (is (= '(if ap (get b :bp) (error "nope"))
+           (-> senv
+               (ssa/build-spec-ctx :ws/A)
+               push-gets-into-ifs
+               :ws/A
+               ssa/spec-from-ssa
+               :constraints first second)))))
+
 (def cancel-get-of-instance-literal #'lowering/cancel-get-of-instance-literal)
 
 (deftest test-cancel-get-of-instance-literal

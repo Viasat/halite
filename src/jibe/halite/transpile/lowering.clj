@@ -150,8 +150,16 @@
     (let [[_get arg-id var-kw] form
           [subform htype] (ssa/deref-id ssa-graph (second form))]
       (when (and (seq? subform) (= 'if (first subform)) (halite-types/spec-type? htype))
-        (let [[_if pred-id then-id else-id] subform]
-          (list 'if pred-id (list 'get then-id var-kw) (list 'get else-id var-kw)))))))
+        (let [[_if pred-id then-id else-id] subform
+              then-node (ssa/deref-id ssa-graph then-id), then-type (ssa/node-type then-node)
+              else-node (ssa/deref-id ssa-graph else-id), else-type (ssa/node-type else-node)]
+          (list 'if pred-id
+                (if (= :Nothing then-type)
+                  then-id
+                  (list 'get then-id var-kw))
+                (if (= :Nothing else-type)
+                  else-id
+                  (list 'get else-id var-kw))))))))
 
 (s/defn push-gets-into-ifs :- SpecCtx
   [sctx :- SpecCtx]
@@ -496,11 +504,15 @@
       (let [[op & arg-ids] form
             args (mapv (partial ssa/deref-id ssa-graph) arg-ids)]
         (when-let [[i [[_if pred-id then-id else-id]]] (first (filter (comp nonprimitive-if? second) (map-indexed vector args)))]
-          (let [result
-                (list 'if pred-id
-                      (apply list op (assoc (vec arg-ids) i then-id))
-                      (apply list op (assoc (vec arg-ids) i else-id)))]
-            result))))))
+          (let [then-node (ssa/deref-id ssa-graph then-id), then-type (ssa/node-type then-node)
+                else-node (ssa/deref-id ssa-graph else-id), else-type (ssa/node-type else-node)]
+            (list 'if pred-id
+                  (if (= :Nothing then-type)
+                    then-id
+                    (apply list op (assoc (vec arg-ids) i then-id)))
+                  (if (= :Nothing else-type)
+                    else-id
+                    (apply list op (assoc (vec arg-ids) i else-id))))))))))
 
 (s/defn push-if-value-into-if-in-expr
   [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
