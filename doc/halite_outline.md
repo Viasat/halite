@@ -113,14 +113,14 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
   * The 'unset' value cannot be used in general and there are specific facilities for dealing with them when they are produced by an expression.
 
 ## Reference
-* Basic Syntax and Types [(Halite)](../halite_basic-syntax-reference.md), [(Jadeite)](../halite_basic-syntax-reference-j.md)
-* All Operators (alphabetical) [(Halite)](../halite_full-reference.md), [(Jadeite)](../halite_full-reference-j.md)
-* Error ID Reference [(Halite)](../halite_err-id-reference.md), [(Jadeite)](../halite_err-id-reference-j.md)
+* Basic Syntax and Types [(Halite)](halite/halite_basic-syntax-reference.md), [(Jadeite)](jadeite/halite_basic-syntax-reference-j.md)
+* All Operators (alphabetical) [(Halite)](halite/halite_full-reference.md), [(Jadeite)](jadeite/halite_full-reference-j.md)
+* Error ID Reference [(Halite)](halite/halite_err-id-reference.md), [(Jadeite)](jadeite/halite_err-id-reference-j.md)
 
 #### Operators grouped by tag:
 
-* Control flow [(Halite)](../halite_control-flow-reference.md) [(Jadeite)](../halite_control-flow-reference-j.md)
-* Special forms [(Halite)](../halite_special-form-reference.md) [(Jadeite)](../halite_special-form-reference-j.md)
+* Control flow [(Halite)](halite/halite_control-flow-reference.md) [(Jadeite)](jadeite/halite_control-flow-reference-j.md)
+* Special forms [(Halite)](halite/halite_special-form-reference.md) [(Jadeite)](jadeite/halite_special-form-reference-j.md)
 <table><tr><th></th><th>field-op</th>
 <th>op</th>
 <th>out</th>
@@ -128,79 +128,79 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 </td><td>
 
- [H](../halite_boolean-op-reference.md) [J](../halite_boolean-op-reference-j.md)
+ [H](halite/halite_boolean-op-reference.md) [J](jadeite/halite_boolean-op-reference-j.md)
 </td><td>
 
- [H](../halite_boolean-out-reference.md) [J](../halite_boolean-out-reference-j.md)
+ [H](halite/halite_boolean-out-reference.md) [J](jadeite/halite_boolean-out-reference-j.md)
 </td></tr><tr><th>fixed-decimal</th><td>
 
 </td><td>
 
- [H](../halite_fixed-decimal-op-reference.md) [J](../halite_fixed-decimal-op-reference-j.md)
+ [H](halite/halite_fixed-decimal-op-reference.md) [J](jadeite/halite_fixed-decimal-op-reference-j.md)
 </td><td>
 
- [H](../halite_fixed-decimal-out-reference.md) [J](../halite_fixed-decimal-out-reference-j.md)
+ [H](halite/halite_fixed-decimal-out-reference.md) [J](jadeite/halite_fixed-decimal-out-reference-j.md)
 </td></tr><tr><th>instance</th><td>
 
- [H](../halite_instance-field-op-reference.md) [J](../halite_instance-field-op-reference-j.md)
+ [H](halite/halite_instance-field-op-reference.md) [J](jadeite/halite_instance-field-op-reference-j.md)
 </td><td>
 
- [H](../halite_instance-op-reference.md) [J](../halite_instance-op-reference-j.md)
+ [H](halite/halite_instance-op-reference.md) [J](jadeite/halite_instance-op-reference-j.md)
 </td><td>
 
- [H](../halite_instance-out-reference.md) [J](../halite_instance-out-reference-j.md)
+ [H](halite/halite_instance-out-reference.md) [J](jadeite/halite_instance-out-reference-j.md)
 </td></tr><tr><th>integer</th><td>
 
 </td><td>
 
- [H](../halite_integer-op-reference.md) [J](../halite_integer-op-reference-j.md)
+ [H](halite/halite_integer-op-reference.md) [J](jadeite/halite_integer-op-reference-j.md)
 </td><td>
 
- [H](../halite_integer-out-reference.md) [J](../halite_integer-out-reference-j.md)
+ [H](halite/halite_integer-out-reference.md) [J](jadeite/halite_integer-out-reference-j.md)
 </td></tr><tr><th>nothing</th><td>
 
 </td><td>
 
 </td><td>
 
- [H](../halite_nothing-out-reference.md) [J](../halite_nothing-out-reference-j.md)
+ [H](halite/halite_nothing-out-reference.md) [J](jadeite/halite_nothing-out-reference-j.md)
 </td></tr><tr><th>optional</th><td>
 
 </td><td>
 
- [H](../halite_optional-op-reference.md) [J](../halite_optional-op-reference-j.md)
+ [H](halite/halite_optional-op-reference.md) [J](jadeite/halite_optional-op-reference-j.md)
 </td><td>
 
- [H](../halite_optional-out-reference.md) [J](../halite_optional-out-reference-j.md)
+ [H](halite/halite_optional-out-reference.md) [J](jadeite/halite_optional-out-reference-j.md)
 </td></tr><tr><th>set</th><td>
 
 </td><td>
 
- [H](../halite_set-op-reference.md) [J](../halite_set-op-reference-j.md)
+ [H](halite/halite_set-op-reference.md) [J](jadeite/halite_set-op-reference-j.md)
 </td><td>
 
- [H](../halite_set-out-reference.md) [J](../halite_set-out-reference-j.md)
+ [H](halite/halite_set-out-reference.md) [J](jadeite/halite_set-out-reference-j.md)
 </td></tr><tr><th>spec-id</th><td>
 
 </td><td>
 
- [H](../halite_spec-id-op-reference.md) [J](../halite_spec-id-op-reference-j.md)
+ [H](halite/halite_spec-id-op-reference.md) [J](jadeite/halite_spec-id-op-reference-j.md)
 </td><td>
 
 </td></tr><tr><th>string</th><td>
 
 </td><td>
 
- [H](../halite_string-op-reference.md) [J](../halite_string-op-reference-j.md)
+ [H](halite/halite_string-op-reference.md) [J](jadeite/halite_string-op-reference-j.md)
 </td><td>
 
 </td></tr><tr><th>vector</th><td>
 
 </td><td>
 
- [H](../halite_vector-op-reference.md) [J](../halite_vector-op-reference-j.md)
+ [H](halite/halite_vector-op-reference.md) [J](jadeite/halite_vector-op-reference-j.md)
 </td><td>
 
- [H](../halite_vector-out-reference.md) [J](../halite_vector-out-reference-j.md)
+ [H](halite/halite_vector-out-reference.md) [J](jadeite/halite_vector-out-reference-j.md)
 </td></tr></table>
 
