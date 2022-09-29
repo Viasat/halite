@@ -8,7 +8,7 @@ Operations that produce sets.
 
 For basic syntax of this data type see: [`set`](halite_basic-syntax-reference-j.md#set)
 
-!["set-out"](./halite-bnf-diagrams/set-out-j.svg)
+!["set-out"](../halite-bnf-diagrams/set-out-j.svg)
 
 #### [`concat`](halite_full-reference-j.md#concat)
 

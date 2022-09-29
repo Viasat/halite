@@ -6,7 +6,7 @@
 
 Operations that produce 'nothing'.
 
-!["nothing-out"](./halite-bnf-diagrams/nothing-out-j.svg)
+!["nothing-out"](../halite-bnf-diagrams/nothing-out-j.svg)
 
 #### [`error`](halite_full-reference-j.md#error)
 

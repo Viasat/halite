@@ -6,7 +6,7 @@
 
 Operations that produce optional values.
 
-!["optional-out"](./halite-bnf-diagrams/optional-out-j.svg)
+!["optional-out"](../halite-bnf-diagrams/optional-out-j.svg)
 
 #### [`$no-value`](halite_full-reference-j.md#_Dno-value)
 

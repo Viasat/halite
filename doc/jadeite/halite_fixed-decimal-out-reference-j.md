@@ -8,7 +8,7 @@ Operations that produce fixed-decimal output values.
 
 For basic syntax of this data type see: [`fixed-decimal`](halite_basic-syntax-reference-j.md#fixed-decimal)
 
-!["fixed-decimal-out"](./halite-bnf-diagrams/fixed-decimal-out-j.svg)
+!["fixed-decimal-out"](../halite-bnf-diagrams/fixed-decimal-out-j.svg)
 
 #### [`*`](halite_full-reference-j.md#_S)
 

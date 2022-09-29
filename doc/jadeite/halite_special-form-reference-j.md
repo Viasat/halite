@@ -6,7 +6,7 @@
 
 Operators that do not evaluate their arguments in the 'normal' way.
 
-!["special-form"](./halite-bnf-diagrams/special-form-j.svg)
+!["special-form"](../halite-bnf-diagrams/special-form-j.svg)
 
 #### [`ACCESSOR`](halite_full-reference-j.md#ACCESSOR)
 

@@ -8,7 +8,7 @@ Operations that operate on vectors.
 
 For basic syntax of this data type see: [`vector`](halite_basic-syntax-reference-j.md#vector)
 
-!["vector-op"](./halite-bnf-diagrams/vector-op-j.svg)
+!["vector-op"](../halite-bnf-diagrams/vector-op-j.svg)
 
 #### [`!=`](halite_full-reference-j.md#_B_E)
 

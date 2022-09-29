@@ -8,7 +8,7 @@ Operations that operate on fields of spec-instances.
 
 For basic syntax of this data type see: [`instance`](halite_basic-syntax-reference-j.md#instance)
 
-!["instance-field-op"](./halite-bnf-diagrams/instance-field-op-j.svg)
+!["instance-field-op"](../halite-bnf-diagrams/instance-field-op-j.svg)
 
 #### [`ACCESSOR`](halite_full-reference-j.md#ACCESSOR)
 

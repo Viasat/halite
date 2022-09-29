@@ -6,7 +6,7 @@
 
 Operators that control the flow of execution of the code.
 
-!["control-flow"](./halite-bnf-diagrams/control-flow-j.svg)
+!["control-flow"](../halite-bnf-diagrams/control-flow-j.svg)
 
 #### [`if`](halite_full-reference-j.md#if)
 

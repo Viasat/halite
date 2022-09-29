@@ -8,7 +8,7 @@ Operations that operate on sets.
 
 For basic syntax of this data type see: [`set`](halite_basic-syntax-reference-j.md#set)
 
-!["set-op"](./halite-bnf-diagrams/set-op-j.svg)
+!["set-op"](../halite-bnf-diagrams/set-op-j.svg)
 
 #### [`!=`](halite_full-reference-j.md#_B_E)
 

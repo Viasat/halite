@@ -8,7 +8,7 @@ Operations that produce integer output values.
 
 For basic syntax of this data type see: [`integer`](halite_basic-syntax-reference-j.md#integer)
 
-!["integer-out"](./halite-bnf-diagrams/integer-out-j.svg)
+!["integer-out"](../halite-bnf-diagrams/integer-out-j.svg)
 
 #### [`%`](halite_full-reference-j.md#%)
 

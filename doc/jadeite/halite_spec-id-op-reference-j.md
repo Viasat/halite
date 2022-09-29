@@ -8,7 +8,7 @@ Operations that operate on spec identifiers.
 
 For basic syntax of this data type see: [`symbol`](halite_basic-syntax-reference-j.md#symbol)
 
-!["spec-id-op"](./halite-bnf-diagrams/spec-id-op-j.svg)
+!["spec-id-op"](../halite-bnf-diagrams/spec-id-op-j.svg)
 
 #### [`refineTo`](halite_full-reference-j.md#refineTo)
 

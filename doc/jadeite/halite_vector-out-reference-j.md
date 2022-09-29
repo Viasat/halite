@@ -8,7 +8,7 @@ Operations that produce vectors.
 
 For basic syntax of this data type see: [`vector`](halite_basic-syntax-reference-j.md#vector)
 
-!["vector-out"](./halite-bnf-diagrams/vector-out-j.svg)
+!["vector-out"](../halite-bnf-diagrams/vector-out-j.svg)
 
 #### [`concat`](halite_full-reference-j.md#concat)
 

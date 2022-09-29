@@ -6,7 +6,7 @@
 
 Operations that operate on optional fields and optional values in general.
 
-!["optional-op"](./halite-bnf-diagrams/optional-op.svg)
+!["optional-op"](../halite-bnf-diagrams/optional-op.svg)
 
 #### [`if-value`](halite_full-reference.md#if-value)
 
