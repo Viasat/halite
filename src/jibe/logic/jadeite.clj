@@ -8,8 +8,7 @@
             [clojure.string :as string]
             [instaparse.core :as insta]
             [jibe.halite :as halite]
-            [jibe.lib.fixed-decimal :as fixed-decimal]
-            [jibe.logic.expression :as expression]))
+            [jibe.lib.fixed-decimal :as fixed-decimal]))
 
 (set! *warn-on-reflection* true)
 
@@ -274,17 +273,3 @@
 (def to-jadeite
   "Translate halite form into jadeite string"
   toj)
-
-;; Implement jibe expression multimethods
-
-(defmethod expression/parse-text* :jadeite
-  [_ text]
-  (to-halite text))
-
-(defmethod expression/format-text* :jadeite
-  [_ tree]
-  (to-jadeite tree))
-
-(defn init
-  "This is here to have a hook to call to get the multimethods loaded"
-  [])
