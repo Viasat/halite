@@ -32,7 +32,7 @@
              ;; user-guide format
               [(utils/get-svg-link (str "halite-bnf-diagrams/basic-syntax/"
                                         (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg"))]
-              ["![" (pr-str bnf) "](./halite-bnf-diagrams/basic-syntax/"
+              ["![" (pr-str bnf) "](../halite-bnf-diagrams/basic-syntax/"
                (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"])
 
             (let [c-1 (if (= :halite lang) (:comment op) (or (:comment-j op) (:comment op)))
@@ -104,4 +104,6 @@
         (map (partial apply basic-md info config))
         (apply str))
    "# Type Graph"
-   "![" "type graph" "](./types.dot.png)\n\n"))
+   (if (= :user-guide mode)
+    (str "![" "type graph" "](images/types.dot.png)\n\n") 
+    (str "![" "type graph" "](../types.dot.png)\n\n"))))

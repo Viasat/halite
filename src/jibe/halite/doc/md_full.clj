@@ -14,7 +14,7 @@
    "The syntax for all of the operators is summarized in the following \n\n"
    (if (= mode :user-guide)
      (utils/get-svg-link (str "halite-bnf-diagrams/" (if (= :halite lang) "halite" "jadeite") ".svg"))
-     (str "![" "all operators" "](./halite-bnf-diagrams/" (if (= :halite lang) "halite" "jadeite") ".svg)\n\n"))
+     (str "![" "all operators" "](../halite-bnf-diagrams/" (if (= :halite lang) "halite" "jadeite") ".svg)\n\n"))
    "## Operators\n\n"])
 
 (s/defn full-md
@@ -30,7 +30,7 @@
              [(utils/get-svg-link (str "halite-bnf-diagrams/op/"
                                        (utils/url-encode (utils/safe-op-name op-name)) "-" i (when (= :jadeite lang) "-j") ".svg"))]
              ;; local doc format
-             ["![" (pr-str sig) "](./halite-bnf-diagrams/op/"
+             ["![" (pr-str sig) "](../halite-bnf-diagrams/op/"
               (utils/url-encode (utils/safe-op-name op-name)) "-" i (when (= :jadeite lang) "-j") ".svg)\n\n"]))
          (op ({:halite :sigs, :jadeite :sigs-j} lang)))
         (when-let [md-links (utils/basic-ref-links lang mode prefix op "")]
