@@ -8,7 +8,6 @@
             [jibe.halite-eval :as halite-eval]
             [jibe.halite.halite-types :as halite-types]
             [jibe.lib.fixed-decimal :as fixed-decimal]
-            [schema.core :as schema]
             [schema.core :as s])
   (:import [jibe.lib.fixed_decimal FixedDecimal]))
 
@@ -26,7 +25,7 @@
   (when (seq coll)
     coll))
 
-(def NumericValue (schema/conditional
+(def NumericValue (s/conditional
                    halite-base/integer-or-long? Number
                    halite-base/fixed-decimal? FixedDecimal))
 
@@ -44,7 +43,7 @@
                   :max-inclusive Boolean
                   (s/optional-key :optional)  (s/eq true)})
 
-(def Range (schema/conditional
+(def Range (s/conditional
             #(and (:min %) (:max %)) MinMaxRange
             #(:min %) MinRange
             #(:max %) MaxRange))
@@ -54,16 +53,16 @@
 (def EnumConstraint {:enum #{s/Any}
                      (s/optional-key :optional) (s/eq true)})
 
-(def Natural (schema/constrained Number #(and (integer? %)
-                                              (>= % 0))))
+(def Natural (s/constrained Number #(and (integer? %)
+                                         (>= % 0))))
 
 (declare TopLevelFieldConstraint)
 
 (def CollectionConstraint {(s/optional-key :coll-size) Natural
-                           (s/optional-key :coll-elements) (schema/recursive #'TopLevelFieldConstraint)
+                           (s/optional-key :coll-elements) (s/recursive #'TopLevelFieldConstraint)
                            (s/optional-key :enum) #{s/Any}})
 
-(def TopLevelFieldConstraint (schema/conditional
+(def TopLevelFieldConstraint (s/conditional
                               :coll-size CollectionConstraint
                               :coll-elements CollectionConstraint
                               :enum EnumConstraint
@@ -693,7 +692,7 @@
        combine-single-leg-ranges
        remove-overlapping))
 
-(s/defn tlfc-data-map :- {schema/Symbol TopLevelFieldConstraint}
+(s/defn tlfc-data-map :- {s/Symbol TopLevelFieldConstraint}
   [m]
   (->> (update-vals m tlfc-data)
        remove-nil-vals
@@ -862,7 +861,7 @@
 
 (def ^:dynamic *max-enum-size* 1000)
 
-(s/defn ^:private small-ranges-to-enums [tlfc-map :- {schema/Symbol TopLevelFieldConstraint}]
+(s/defn ^:private small-ranges-to-enums [tlfc-map :- {s/Symbol TopLevelFieldConstraint}]
   (-> tlfc-map
       (update-vals (fn [tlfc]
                      (if (and (:ranges tlfc)
