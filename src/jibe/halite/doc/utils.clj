@@ -243,9 +243,9 @@
         ["[`" basic-ref "`]"
          "("
          (if (= 'spec-map basic-ref)
-           (str "halite_spec-syntax-reference" (if (= mode :local)
-                                                 ".md"
-                                                 ".html"))
+           (str "../../halite_spec-syntax-reference" (if (= mode :local)
+                                                       ".md"
+                                                       ".html"))
            (str doc-dir
                 (get-tag-reference lang mode prefix "basic-syntax")
                 "#" basic-ref))
