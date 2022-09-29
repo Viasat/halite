@@ -3,8 +3,8 @@
 
 (ns jibe.test-halite-analysis
   (:require [jibe.halite-analysis :as halite-analysis]
-            [internal :as s]
-            [internal :refer :all]))
+            [schema.core :as s]
+            [clojure.test :refer :all]))
 
 (set! *warn-on-reflection* true)
 

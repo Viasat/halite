@@ -7,9 +7,8 @@
             [clojure.java.io :as io]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.logic.jadeite :as jadeite]
-            [jibe.data.model :as model]
             [zprint.core :as zprint]
-            [internal :as s]))
+            [schema.core :as s]))
 
 (defn spit-dir [filename txt]
   (io/make-parents filename)
@@ -169,9 +168,10 @@
                        lang))
          (when result result))))
 
-(s/defn lang-str [lang :- model/DocGenLang]
-  ({:halite "Halite"
-    :jadeite "Jadeite"} lang))
+(s/defn lang-str [lang]
+  (or ({:halite "Halite"
+        :jadeite "Jadeite"} lang)
+      (throw (ex-info (str "Unsupported lang " lang) {:lang lang}))))
 
 (def user-guide-values {:md_full {:halite {:title "Halite Full Reference"
                                            :link "halite_full_reference.html"

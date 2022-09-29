@@ -5,7 +5,7 @@
   (:require [clojure.string :as string]
             [jibe.data.model :as model]
             [jibe.halite.doc.utils :as utils]
-            [internal :as s]))
+            [schema.core :as s]))
 
 (defn tags-md-block
   "Return markdown string with links to all the tags given as keywords"

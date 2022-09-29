@@ -3,9 +3,8 @@
 
 (ns jibe.halite.doc.md-full
   (:require [clojure.string :as string]
-            [jibe.data.model :as model]
             [jibe.halite.doc.utils :as utils]
-            [internal :as s]))
+            [schema.core :as s]))
 
 (s/defn full-intro
   [lang

@@ -3,7 +3,7 @@
 
 (ns jibe.lib.test-fixed-decimal
   (:require [jibe.lib.fixed-decimal :as fixed-decimal]
-            [internal :refer :all])
+            [clojure.test :refer :all])
   (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
