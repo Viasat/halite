@@ -90,26 +90,26 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ### spec
 
-* Clarify terminology around refinements [(Halite)](halite/explanation/halite_refinement-terminology.md) [(Jadeite)](jadite/explanation/halite_refinement-terminology-j.md)
+* Clarify terminology around refinements [(Halite)](halite/explanation/halite_refinement-terminology.md) [(Jadeite)](jadeite/explanation/halite_refinement-terminology-j.md)
   * The primary intent of a refinement is to be a mechanism to translate instances of more concrete specifications into more abstract specifications.
-* Considering a spec as a predicate [(Halite)](halite/explanation/halite_specs-as-predicates.md) [(Jadeite)](jadite/explanation/halite_specs-as-predicates-j.md)
+* Considering a spec as a predicate [(Halite)](halite/explanation/halite_specs-as-predicates.md) [(Jadeite)](jadeite/explanation/halite_specs-as-predicates-j.md)
   * A spec can be considered a giant predicate which when applied to a value returns 'true' if the value is a valid instance and 'false' or a runtime error otherwise.
-* Refinements as general purpose functions [(Halite)](halite/explanation/halite_refinements-as-functions.md) [(Jadeite)](jadite/explanation/halite_refinements-as-functions-j.md)
+* Refinements as general purpose functions [(Halite)](halite/explanation/halite_refinements-as-functions.md) [(Jadeite)](jadeite/explanation/halite_refinements-as-functions-j.md)
   * Refinements can be used as general purpose instance conversion functions.
-* Specs are about modeling things [(Halite)](halite/explanation/halite_big-picture.md) [(Jadeite)](jadite/explanation/halite_big-picture-j.md)
+* Specs are about modeling things [(Halite)](halite/explanation/halite_big-picture.md) [(Jadeite)](jadeite/explanation/halite_big-picture-j.md)
   * Specs are a general mechanism for modelling whatever is of interest.
-* What constraints are implied by refinement? [(Halite)](halite/explanation/halite_refinement-implications.md) [(Jadeite)](jadite/explanation/halite_refinement-implications-j.md)
+* What constraints are implied by refinement? [(Halite)](halite/explanation/halite_refinement-implications.md) [(Jadeite)](jadeite/explanation/halite_refinement-implications-j.md)
   * Specs can be defined as refining other specs. When this is done what constraints are implied by the refinement?
-* What is an abstract field? [(Halite)](halite/explanation/halite_abstract-field.md) [(Jadeite)](jadite/explanation/halite_abstract-field-j.md)
+* What is an abstract field? [(Halite)](halite/explanation/halite_abstract-field.md) [(Jadeite)](jadeite/explanation/halite_abstract-field-j.md)
   * If a field in a spec has a type of an abstract spec, then the field can hold values that refine to that abstract spec.
-* What is an abstract spec? [(Halite)](halite/explanation/halite_abstract-spec.md) [(Jadeite)](jadite/explanation/halite_abstract-spec-j.md)
+* What is an abstract spec? [(Halite)](halite/explanation/halite_abstract-spec.md) [(Jadeite)](jadeite/explanation/halite_abstract-spec-j.md)
   * An abstract spec defines instances which cannot be used in the construction of other instances.
 
 ### language
 
-* Language is functional [(Halite)](halite/explanation/halite_functional.md) [(Jadeite)](jadite/explanation/halite_functional-j.md)
+* Language is functional [(Halite)](halite/explanation/halite_functional.md) [(Jadeite)](jadeite/explanation/halite_functional-j.md)
   * Both Halite, and its alternate representation, Jadeite, are purely functional languages.
-* The pseduo-value 'unset' is handled specially [(Halite)](halite/explanation/halite_unset.md) [(Jadeite)](jadite/explanation/halite_unset-j.md)
+* The pseduo-value 'unset' is handled specially [(Halite)](halite/explanation/halite_unset.md) [(Jadeite)](jadeite/explanation/halite_unset-j.md)
   * The 'unset' value cannot be used in general and there are specific facilities for dealing with them when they are produced by an expression.
 
 ## Reference
