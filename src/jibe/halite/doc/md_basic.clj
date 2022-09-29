@@ -29,12 +29,9 @@
             op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
             (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
             (if (= :user-guide mode)
-             ;; user-guide format
-              [(utils/get-svg-link (str "halite-bnf-diagrams/basic-syntax/"
-                                        (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg"))]
-              ["![" (pr-str bnf) "](../halite-bnf-diagrams/basic-syntax/"
-               (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"])
-
+              ;; user-guide format
+              [(utils/get-svg-link (str "halite-bnf-diagrams/basic-syntax/" (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg"))]
+              ["![" (pr-str bnf) "](../halite-bnf-diagrams/basic-syntax/" (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"])
             (let [c-1 (if (= :halite lang) (:comment op) (or (:comment-j op) (:comment op)))
                   c-2 (if (= :halite lang) (:comment-2 op) (or (:comment-2-j op) (:comment-2 op)))
                   c-3 (if (= :halite lang) (:comment-3 op) (or (:comment-3-j op) (:comment-3 op)))]
@@ -105,5 +102,5 @@
         (apply str))
    "# Type Graph"
    (if (= :user-guide mode)
-    (str "![" "type graph" "](images/types.dot.png)\n\n") 
-    (str "![" "type graph" "](../types.dot.png)\n\n"))))
+     (str "![" "type graph" "](images/types.dot.png)\n\n")
+     (str "![" "type graph" "](../types.dot.png)\n\n"))))
