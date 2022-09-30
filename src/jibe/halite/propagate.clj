@@ -12,6 +12,8 @@
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
             [jibe.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
             [jibe.halite.transpile.rewriting :as rewriting]
+            [loom.graph :as loom-graph]
+            [loom.derived :as loom-derived]
             [schema.core :as s]
             [viasat.choco-clj-opt :as choco-clj]))
 
@@ -35,7 +37,7 @@
 
 (s/defschema ConcreteBound
   (s/conditional
-   :$type (s/cond-pre ConcreteSpecBound (s/enum :Unset))
+   :$type ConcreteSpecBound
    :else AtomBound))
 
 ;;;;;;;;; Bound Spec-ification ;;;;;;;;;;;;;;;;
@@ -344,6 +346,15 @@
    spec-info :- halite-envs/SpecInfo]
   (update spec-info :constraints into (refinement-equality-constraints "" flattened-vars)))
 
+(defn- spec-ify-bound*
+  [flattened-vars specs spec-bound]
+  (->>
+   {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
+    :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]
+    :refines-to {}}
+   (optionality-constraints specs flattened-vars)
+   (add-refinement-equality-constraints flattened-vars)))
+
 (s/defn spec-ify-bound :- halite-envs/SpecInfo
   "Compile the spec-bound into a self-contained halite spec that explicitly states the constraints
   implied by the bound. The resulting spec is self-contained in the sense that:
@@ -356,13 +367,7 @@
   that do not correspond to any valid instance of the bounded spec."
   [specs :- halite-envs/SpecMap, spec-bound :- ConcreteSpecBound]
   ;; First, flatten out the variables we'll need.
-  (let [flattened-vars (flatten-vars specs spec-bound)]
-    (->>
-     {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
-      :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]
-      :refines-to {}}
-     (optionality-constraints specs flattened-vars)
-     (add-refinement-equality-constraints flattened-vars))))
+  (spec-ify-bound* (flatten-vars specs spec-bound) specs spec-bound))
 
 ;;;;;;;;;;; Conversion to Choco ;;;;;;;;;
 
@@ -399,19 +404,29 @@
 
 ;;;;;;;;;; Convert choco bounds to spec bounds ;;;;;;;;;
 
+(s/defn ^:private simplify-atom-bound :- AtomBound
+  [bound :- AtomBound]
+  (if-let [in (:$in bound)]
+    (cond
+      (and (set? in) (= 1 (count in))) (first in)
+      (and (vector? in) (= (first in) (second in))) (first in)
+      :else bound)
+    bound))
+
 (s/defn ^:private to-atom-bound :- AtomBound
   [choco-bounds :- choco-clj/VarBounds
    var-type :- halite-types/HaliteType
    [var-kw _] :- FlattenedVar]
   (let [bound (-> var-kw symbol choco-bounds)]
-    (if-not (coll? bound)
-      bound ;; simple value
-      {:$in
-       (if (halite-types/maybe-type? var-type)
-         bound ;; leave any :Unset in the bounds
-         (cond ;; remove any :Unset in the bounds
-           (vector? bound) (subvec bound 0 2)
-           (set? bound) (disj bound :Unset)))})))
+    (simplify-atom-bound
+     (if-not (coll? bound)
+       bound ;; simple value
+       {:$in
+        (if (halite-types/maybe-type? var-type)
+          bound ;; leave any :Unset in the bounds
+          (cond ;; remove any :Unset in the bounds
+            (vector? bound) (subvec bound 0 2)
+            (set? bound) (disj bound :Unset)))}))))
 
 (s/defn ^:private to-spec-bound :- ConcreteSpecBound
   [choco-bounds :- choco-clj/VarBounds
@@ -480,62 +495,59 @@
                         {:sctx sctx})))))
   sctx)
 
-(s/defn propagate :- ConcreteSpecBound
-  ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- ConcreteSpecBound]
-   (propagate senv default-options initial-bound))
-  ([senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, initial-bound :- ConcreteSpecBound]
-   (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
-     (let [specs (halite-envs/build-spec-map senv (:$type initial-bound))
-           flattened-vars (flatten-vars specs initial-bound)
-           lowered-bounds (lower-spec-bound flattened-vars initial-bound)
-           spec-ified-bound (spec-ify-bound specs initial-bound)
-           initial-sctx (-> senv
-                            (ssa/build-spec-ctx (:$type initial-bound))
-                            (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound)))
-           refinement-graph (loom.graph/digraph (update-vals initial-sctx (comp keys :refines-to)))]
-       (-> initial-sctx
-           (disallow-optional-refinements)
-           (lowering/lower-refinement-constraints)
-           ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
-           ;; Conseqeuntly, no rewrite rules should introduce new when forms!
-           (lowering/lower-when)
-           (lowering/eliminate-runtime-constraint-violations)
-           (lowering/lower-valid?)
-           (drop-constraints-except-for-Bounds)
+(s/defn ^:private propagate-concrete :- ConcreteSpecBound
+  [spec-map :- halite-envs/SpecMap, opts :- Opts, initial-bound :- ConcreteSpecBound]
+  (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
+    (let [refinement-graph (loom-graph/digraph (update-vals spec-map (comp keys :refines-to)))
+          flattened-vars (flatten-vars spec-map initial-bound)
+          lowered-bounds (lower-spec-bound flattened-vars initial-bound)
+          spec-ified-bound (spec-ify-bound* flattened-vars spec-map initial-bound)
+          initial-sctx (-> spec-map
+                           (assoc :$propagate/Bounds spec-ified-bound)
+                           (ssa/spec-map-to-ssa))]
+      (-> initial-sctx
+          (disallow-optional-refinements)
+          (lowering/lower-refinement-constraints)
+          ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
+          ;; Conseqeuntly, no rewrite rules should introduce new when forms!
+          (lowering/lower-when)
+          (lowering/eliminate-runtime-constraint-violations)
+          (lowering/lower-valid?)
+          (drop-constraints-except-for-Bounds)
 
-           ;; We may wish to re-enable a weaker version of this rule that
-           ;; eliminates error forms in if, but not if-value (which we can't eliminate).
-           ;; Experimentation shows that whenever we can eliminate a conditional, we are likely
-           ;; to obtain better propagation bounds.
-           ;;(lowering/eliminate-error-forms)
+          ;; We may wish to re-enable a weaker version of this rule that
+          ;; eliminates error forms in if, but not if-value (which we can't eliminate).
+          ;; Experimentation shows that whenever we can eliminate a conditional, we are likely
+          ;; to obtain better propagation bounds.
+          ;;(lowering/eliminate-error-forms)
 
-           (rewriting/rewrite-reachable-sctx
-            [(rewriting/rule simplify/simplify-do)
-             (rewriting/rule lowering/bubble-up-do-expr)
-             (rewriting/rule lowering/flatten-do-expr)
-             (rewriting/rule simplify-redundant-value!)
-             (rewriting/rule simplify-statically-known-value?)
-             (rewriting/rule lowering/cancel-get-of-instance-literal-expr)
-             (rewriting/rule lowering/lower-comparison-exprs-with-incompatible-types)
-             (rewriting/rule lowering/lower-instance-comparison-expr)
-             (rewriting/rule lowering/push-if-value-into-if-in-expr)
-             (rewriting/rule lowering/lower-no-value-comparison-expr)
-             (rewriting/rule lowering/lower-maybe-comparison-expr)
-             (rewriting/rule lowering/push-gets-into-ifs-expr)
-             (rewriting/rule lowering/push-refine-to-into-if)
-             (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
-             (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
-             (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)
-             ;; This rule needs access to the refinement graph, so we don't use the rule macro.
-             {:rule-name "lower-refine-to"
-              :rewrite-fn (partial lowering/lower-refine-to-expr refinement-graph)
-              :nodes :all}])
-           simplify/simplify
-           :$propagate/Bounds
-           (ssa/spec-from-ssa)
-           (->> (to-choco-spec senv))
-           (choco-clj/propagate lowered-bounds)
-           (to-spec-bound senv flattened-vars))))))
+          (rewriting/rewrite-reachable-sctx
+           [(rewriting/rule simplify/simplify-do)
+            (rewriting/rule lowering/bubble-up-do-expr)
+            (rewriting/rule lowering/flatten-do-expr)
+            (rewriting/rule simplify-redundant-value!)
+            (rewriting/rule simplify-statically-known-value?)
+            (rewriting/rule lowering/cancel-get-of-instance-literal-expr)
+            (rewriting/rule lowering/lower-comparison-exprs-with-incompatible-types)
+            (rewriting/rule lowering/lower-instance-comparison-expr)
+            (rewriting/rule lowering/push-if-value-into-if-in-expr)
+            (rewriting/rule lowering/lower-no-value-comparison-expr)
+            (rewriting/rule lowering/lower-maybe-comparison-expr)
+            (rewriting/rule lowering/push-gets-into-ifs-expr)
+            (rewriting/rule lowering/push-refine-to-into-if)
+            (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
+            (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
+            (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)
+            ;; This rule needs access to the refinement graph, so we don't use the rule macro.
+            {:rule-name "lower-refine-to"
+             :rewrite-fn (partial lowering/lower-refine-to-expr refinement-graph)
+             :nodes :all}])
+          simplify/simplify
+          :$propagate/Bounds
+          (ssa/spec-from-ssa)
+          (->> (to-choco-spec spec-map))
+          (choco-clj/propagate lowered-bounds)
+          (to-spec-bound spec-map flattened-vars)))))
 
 (defn- int-bound? [bound]
   (or (int? bound)
@@ -666,3 +678,260 @@
          (bool-bound? a) (union-bool-bounds a b)
          :else (union-spec-bounds a b))
         unset? add-unset))))
+
+;;;;;;;;;;;; Abstractness ;;;;;;;;;;;;
+
+;; We handle abstractness by transforming specs and input bounds to eliminate it,
+;; and then reversing the transformation on the resulting output bound.
+;;
+;; For every abstract spec A, let C_0...C_n be a total ordering of all concrete specs
+;; that refine to A directly or indirectly.
+;;
+;; We transform a spec S with variable a of type A into a spec S' with variables:
+;;   a$type of type Integer
+;;   a$0 of type [:Maybe C_0]
+;;   ...
+;;   a$n of type [:Maybe C_n]
+;;
+;; We transform the existing constraint and refinement expressions of S, replacing each
+;; occurrence of a with:
+;;   (if-value a$0 a$0 (if-value a$1 .... (error "unreachable")))
+;;
+;; 
+
+(declare Bound)
+
+(s/defschema SpecIdToBound
+  {halite-types/NamespacedKeyword
+   {halite-types/BareKeyword (s/recursive #'Bound)}})
+
+(s/defschema SpecIdToBoundWithRefinesTo
+  {halite-types/NamespacedKeyword
+   {(s/optional-key :$refines-to) SpecIdToBound
+    halite-types/BareKeyword (s/recursive #'Bound)}
+   (s/optional-key :Unset) s/Bool})
+
+(s/defschema AbstractSpecBound
+  (s/constrained
+   {(s/optional-key :$in) SpecIdToBoundWithRefinesTo
+    (s/optional-key :$if) SpecIdToBoundWithRefinesTo
+    (s/optional-key :$refines-to) SpecIdToBound}
+   #(< (count (select-keys % [:$in :$if])) 2)
+   "$in-and-$if-mutually-exclusive"))
+
+(s/defschema ConcreteSpecBound2
+  {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one halite-types/NamespacedKeyword :type)]
+                      halite-types/NamespacedKeyword)
+   (s/optional-key :$refines-to) SpecIdToBound
+   halite-types/BareKeyword (s/recursive #'Bound)})
+
+(s/defschema SpecBound
+  (s/conditional
+   :$type ConcreteSpecBound2
+   :else AbstractSpecBound))
+
+(s/defschema Bound
+  (s/conditional
+   :$type ConcreteBound
+   #(or (not (map? %))
+        (and (contains? % :$in)
+             (not (map? (:$in %))))) AtomBound
+   :else AbstractSpecBound))
+
+(defn- discriminator-var-name [var-kw] (str (name var-kw) "$type"))
+(defn- discriminator-var-kw [var-kw] (keyword (discriminator-var-name var-kw)))
+(defn- discriminator-var-sym [var-kw] (symbol (discriminator-var-name var-kw)))
+
+(defn- var-entry->spec-id [specs [var-kw var-type]]
+  (->> var-type (halite-envs/halite-type-from-var-type specs) halite-types/no-maybe halite-types/spec-id))
+
+(defn- abstract-var?
+  [specs var-entry]
+  (if-let [spec-id (var-entry->spec-id specs var-entry)]
+    (true? (:abstract? (specs spec-id)))
+    false))
+
+(defn- lower-abstract-vars
+  [specs alternatives {:keys [spec-vars] :as spec-info}]
+  (reduce-kv
+   (fn [{:keys [spec-vars constraints refines-to] :as spec-info} var-kw var-type]
+     (let [alts (alternatives (var-entry->spec-id specs [var-kw var-type]))
+           optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
+           lowered-expr (reduce
+                         (fn [expr i]
+                           (let [alt-var (symbol (str (name var-kw) "$" i))]
+                             (list 'if-value alt-var alt-var expr)))
+                         (if optional-var? '$no-value '(error "unreachable"))
+                         (reverse (sort (vals alts))))]
+       ;; TODO: Should this just produce an unsatisfiable spec, instead?
+       (when (empty? alts)
+         (throw (ex-info (format "No values for variable %s: No concrete specs refine to %s" var-kw var-type)
+                         {:spec-info spec-info :alternatives alternatives})))
+       (assoc
+        spec-info
+
+        :spec-vars
+        (reduce-kv
+         (fn [spec-vars alt-spec-id i]
+           (assoc spec-vars (keyword (str (name var-kw) "$" i)) [:Maybe alt-spec-id]))
+         (-> spec-vars
+             (dissoc var-kw)
+             (assoc (discriminator-var-kw var-kw) (cond->> "Integer" optional-var? (vector :Maybe))))
+         alts)
+
+        :constraints
+        (vec
+         (concat
+          (map
+           (fn [[cname cexpr]]
+             [cname (list 'let [(symbol var-kw) lowered-expr] cexpr)])
+           constraints)
+          (map (fn [i] [(str (name var-kw) "$" i)
+                        (list '=
+                              (list '= (discriminator-var-sym var-kw) i)
+                              (list 'if-value (symbol (str (name var-kw) "$" i)) true false))])
+               (sort (vals alts)))))
+        :refines-to
+        (reduce-kv
+         (fn [acc target-spec-id {:keys [expr] :as refn}]
+           (assoc acc target-spec-id
+                  (assoc refn :expr (list 'let [(symbol var-kw) lowered-expr] expr))))
+         {}
+         refines-to))))
+   spec-info
+   (filter (partial abstract-var? specs) spec-vars)))
+
+(defn- invert-adj [adj-lists]
+  (reduce-kv
+   (fn [acc from to-list]
+     (reduce
+      (fn [acc to]
+        (if (contains? acc to)
+          (update acc to conj from)
+          (assoc acc to [from])))
+      acc
+      to-list))
+   {}
+   adj-lists))
+
+(declare lower-abstract-bounds)
+
+(defn- lower-abstract-var-bound
+  [specs alternatives var-kw optional-var? alts-for-spec {:keys [$if $in $type $refines-to] :as abstract-bound} parent-bound]
+  (cond
+    $if (let [b {:$in (merge (zipmap (keys alts-for-spec) (repeat {})) $if)}
+              b (cond-> b $refines-to (assoc :$refines-to $refines-to))
+              b (cond-> b (and optional-var? (not (false? (:Unset $if)))) (assoc-in [:$in :Unset] true))]
+          (recur specs alternatives var-kw optional-var? alts-for-spec b parent-bound))
+    $type (let [b {:$in {$type (dissoc abstract-bound :$type)}}]
+            (recur specs alternatives var-kw optional-var? alts-for-spec b parent-bound))
+    $in (let [unset? (true? (:Unset $in))
+              alt-ids (->> (dissoc $in :Unset) keys (map alts-for-spec) set)]
+          (reduce-kv
+           (fn [parent-bound spec-id spec-bound]
+             (let [i (alts-for-spec spec-id)]
+               (assoc parent-bound (keyword (str (name var-kw) "$" i))
+                      (lower-abstract-bounds
+                       (cond-> (assoc spec-bound :$type [:Maybe spec-id])
+                         $refines-to (assoc :$refines-to $refines-to))
+                       specs alternatives))))
+           ;; restrict the discriminator
+           (assoc parent-bound (discriminator-var-kw var-kw) {:$in (cond-> alt-ids unset? (conj :Unset))})
+           (dissoc $in :Unset)))
+    :else (throw (ex-info "Invalid abstract bound" {:bound abstract-bound}))))
+
+(s/defn ^:private lower-abstract-bounds :- ConcreteSpecBound2
+  [spec-bound :- SpecBound, specs :- halite-envs/SpecMap, alternatives]
+  (let [spec-id (:$type spec-bound)
+        spec-id (cond-> spec-id (vector? spec-id) second) ; unwrap [:Maybe ..]
+        {:keys [spec-vars] :as spec} (specs spec-id)]
+    (->>
+     spec-vars
+     (filter #(abstract-var? specs %))
+     (reduce
+      (fn [spec-bound [var-kw var-type :as var-entry]]
+        (let [var-spec-id (var-entry->spec-id specs var-entry)
+              optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
+              alts (alternatives var-spec-id)
+              var-bound (or (var-kw spec-bound) {:$if {}})]
+          (if (= :Unset var-bound)
+            (-> spec-bound (dissoc var-kw) (assoc (discriminator-var-kw var-kw) :Unset))
+            (let [var-bound (cond-> var-bound
+                              ;; TODO: intersect $refines-to bounds when present at both levels
+                              (= [:$refines-to] (keys var-bound)) (assoc :$if {}))]
+              (-> spec-bound
+                  ;; remove the abstract bound, if any
+                  (dissoc var-kw)
+                  ;; add in a bound for the discriminator
+                  (assoc (discriminator-var-kw var-kw) {:$in (cond-> (set (range (count alts))) optional-var? (conj :Unset))})
+                  ;; if an abstract bound was provided, lower it
+                  (cond->> var-bound (lower-abstract-var-bound specs alternatives var-kw optional-var? alts var-bound)))))))
+      spec-bound))))
+
+(declare raise-abstract-bounds)
+
+(defn- raise-abstract-var-bound
+  [specs alternatives var-kw alts parent-bound]
+  (let [discrim-kw (discriminator-var-kw var-kw)
+        parent-bound (reduce
+                      (fn [parent-bound [spec-id i]]
+                        (let [alt-var-kw (keyword (str (name var-kw) "$" i))
+                              alt-bound (parent-bound alt-var-kw)]
+                          (cond-> (dissoc parent-bound alt-var-kw)
+                            (not= :Unset alt-bound)
+                            (-> (assoc-in [var-kw :$in spec-id] (-> alt-bound (raise-abstract-bounds specs alternatives) (dissoc :$type)))
+                                (update-in [var-kw :$refines-to] union-refines-to-bounds (:$refines-to alt-bound))))))
+                      (-> parent-bound
+                          (assoc var-kw (if (= :Unset (discrim-kw parent-bound))
+                                          :Unset
+                                          {:$in (cond-> {} (some-> parent-bound discrim-kw :$in :Unset) (assoc :Unset true))}))
+                          (dissoc discrim-kw))
+                      alts)
+        alt-bounds (get-in parent-bound [var-kw :$in])]
+    (if (= 1 (count alt-bounds))
+      (let [[spec-id bound] (first alt-bounds)]
+        (assoc parent-bound var-kw (assoc bound :$type spec-id)))
+      parent-bound)))
+
+(s/defn ^:private raise-abstract-bounds :- SpecBound
+  [spec-bound :- ConcreteSpecBound2, specs :- halite-envs/SpecMap, alternatives]
+  (let [spec-id (:$type spec-bound)
+        spec-id (cond-> spec-id (vector? spec-id) second)
+        {:keys [spec-vars] :as spec} (specs spec-id)]
+    (->>
+     spec-vars
+     (filter #(abstract-var? specs %))
+     (reduce
+      (fn [spec-bound [var-kw var-type :as var-entry]]
+        (let [var-spec-id (var-entry->spec-id specs var-entry)
+              alts (alternatives var-spec-id)]
+          (raise-abstract-var-bound specs alternatives var-kw alts spec-bound)))
+      spec-bound))))
+
+(s/defn propagate :- SpecBound
+  ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- SpecBound]
+   (propagate senv default-options initial-bound))
+  ([senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, initial-bound :- SpecBound]
+   (let [specs (cond-> senv
+                 (or (instance? jibe.halite.halite_envs.SpecEnvImpl senv)
+                     (not (map? senv))) (halite-envs/build-spec-map (:$type initial-bound)))
+         abstract? #(-> % specs :abstract? true?)
+         refns (invert-adj (update-vals specs (comp keys :refines-to)))
+         refn-graph (if (empty? refns)
+                      (loom-graph/digraph)
+                      (loom-graph/digraph refns))
+         alternatives (reduce
+                       (fn [alts spec-id]
+                         (->> spec-id
+                              (loom-derived/subgraph-reachable-from refn-graph)
+                              loom-graph/nodes
+                              (filter (complement abstract?))
+                              sort
+                              (#(zipmap % (range)))
+                              (assoc alts spec-id)))
+                       {}
+                       (filter abstract? (keys specs)))]
+     (-> specs
+         (update-vals #(lower-abstract-vars specs alternatives %))
+         (propagate-concrete opts (lower-abstract-bounds initial-bound specs alternatives))
+         (raise-abstract-bounds specs alternatives)))))

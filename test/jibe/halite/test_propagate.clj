@@ -875,7 +875,7 @@
            (hp/spec-ify-bound env-map {:$type :my/A})))
 
     (is (= {:$type :my/A,
-            :ab {:$type [:Maybe :my/B], :$refines-to #:my{:C {:cn {:$in #{5}}}}}}
+            :ab {:$type [:Maybe :my/B], :$refines-to #:my{:C {:cn 5}}}}
            (hp/propagate env-map {:$type :my/A})))))
 
 (deftest test-refines-to-bounds-errors
@@ -970,60 +970,6 @@
              :b {:$type :ws/B :bn {:$in [-1000 1000]}}}
            (hp/propagate senv {:$type :ws/D})))))
 
-#_(deftest example-abstract-propagation
-    (s/with-fn-validation
-      (let [senv (halite-envs/spec-env
-                  '{:ws/W ; 0
-                    {:abstract? true
-                     :spec-vars {:wn "Integer"}
-                     :constraints [["wn_range" (and (< 2 wn) (< wn 8))]]
-                     :refines-to {}}
-                    :ws/A ; 1
-                    {:spec-vars {:a "Integer"}
-                     :constraints [["ca" (< a 6)]]
-                     :refines-to
-                     {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
-                    :ws/B ; 2
-                    {:spec-vars {:b "Integer"}
-                     :constraints [["cb" (< 5 b)]]
-                     :refines-to
-                     {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
-                    :ws/C ; 3
-                    {:spec-vars {:w :ws/W}
-                     :constraints []
-                     :refines-to {}}})
-          ;; Hand-written choco spec for bound {:$type :ws/C}
-            choco-spec '{:vars {w<-? #{1 2}
-                                w<-ws$A|a :Int
-                                w<-ws$B|b :Int}
-                         :optionals #{w<-ws$A|a w<-ws$B|b}
-                         :constraints
-                         #{(if (= 1 w<-?) ; ws/A
-                             (if-value w<-ws$A|a
-                                       (and
-                                        (< w<-ws$A|a 6)
-                                        (< 2 (+ w<-ws$A|a 1))
-                                        (< (+ w<-ws$A|a 1) 8))
-                                       false)
-                             (if (= 2 w<-?) ; ws/B
-                               (if-value w<-ws$B|b
-                                         (and
-                                          (< 5 w<-ws$B|b)
-                                          (< 2 (- w<-ws$B|b 2))
-                                          (< (- w<-ws$B|b 2) 8))
-                                         false)
-                               false))}}
-          ;; Other possible bounds: {:$type :ws/C :w {:$type :ws/A}}
-          ;;                        {:$type :ws/C :w {:$in {:ws/A {}, :ws/B {}}}}
-          ;;                        {:$type :ws/C :w {:$refines-to {:ws/W {:w 7}}}}
-            ]
-        (are [in out]
-             (= out (choco-clj/propagate choco-spec in))
-
-          {} '{w<-? #{1 2}, w<-ws$A|a [-1000 1000 :Unset], w<-ws$B|b [-1000 1000 :Unset]}
-          '{w<-? 1} nil
-          '{w<-? 2} nil))))
-
 (deftest test-union-concrete-bounds
   (are [a b result]
        (= result (#'hp/union-concrete-bounds a b))
@@ -1077,6 +1023,460 @@
     {:$type [:Maybe :ws/A]} {:$type :ws/A} {:$type [:Maybe :ws/A]}
     :Unset {:$type :ws/A} {:$type [:Maybe :ws/A]}))
 
+(def simplest-abstract-var-example
+  '{:ws/W
+    {:abstract? true
+     :spec-vars {:wn "Integer"}
+     :constraints [["wn_range" (and (< 2 wn) (< wn 8))]]
+     :refines-to {}}
+    :ws/A
+    {:spec-vars {:a "Integer"}
+     :constraints [["ca" (< a 6)]]
+     :refines-to
+     {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
+    :ws/B
+    {:spec-vars {:b "Integer"}
+     :constraints [["cb" (< 5 b)]]
+     :refines-to
+     {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
+    :ws/C
+    {:spec-vars {:w :ws/W :cn "Integer"}
+     :constraints [["c1" (< cn (get (refine-to w :ws/W) :wn))]]
+     :refines-to {}}})
+
+(def optional-abstract-var-example
+  (assoc
+   simplest-abstract-var-example
+   :ws/C
+   '{:spec-vars {:w [:Maybe :ws/W] :cn "Integer"}
+     :constraints [["c1" (< cn (if-value w (get (refine-to w :ws/W) :wn) 10))]]
+     :refines-to {}}))
+
+(def lower-abstract-vars #'hp/lower-abstract-vars)
+
+(deftest test-lower-abstract-vars
+  (s/with-fn-validation
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+      (is (= '{:spec-vars
+               {:w$type "Integer"
+                :w$0 [:Maybe :ws/A]
+                :w$1 [:Maybe :ws/B]
+                :cn "Integer"}
+               :constraints
+               [["c1" (let [w (if-value w$0 w$0 (if-value w$1 w$1 (error "unreachable")))]
+                        (< cn (get (refine-to w :ws/W) :wn)))]
+                ["w$0" (= (= w$type 0) (if-value w$0 true false))]
+                ["w$1" (= (= w$type 1) (if-value w$1 true false))]]
+               :refines-to {}}
+             (lower-abstract-vars simplest-abstract-var-example alts
+                                  (:ws/C simplest-abstract-var-example))))
+
+      (is (= '{:spec-vars
+               {:w$type [:Maybe "Integer"]
+                :w$0 [:Maybe :ws/A]
+                :w$1 [:Maybe :ws/B]
+                :cn "Integer"}
+               :constraints
+               [["c1" (let [w (if-value w$0 w$0 (if-value w$1 w$1 $no-value))]
+                        (< cn (if-value w (get (refine-to w :ws/W) :wn) 10)))]
+                ["w$0" (= (= w$type 0) (if-value w$0 true false))]
+                ["w$1" (= (= w$type 1) (if-value w$1 true false))]]
+               :refines-to {}}
+             (lower-abstract-vars optional-abstract-var-example
+                                  alts (:ws/C optional-abstract-var-example)))))))
+
+(def lower-abstract-bounds #'hp/lower-abstract-bounds)
+
+(deftest test-lower-abstract-bounds
+  (s/with-fn-validation
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+      (are [in out]
+           (= out (lower-abstract-bounds in simplest-abstract-var-example alts))
+
+        ;; enumerate the discriminator's domain
+        {:$type :ws/C}
+        {:$type :ws/C :w$type {:$in #{0 1}}
+         :w$0 {:$type [:Maybe :ws/A]} :w$1 {:$type [:Maybe :ws/B]}}
+
+        {:$type :ws/C :cn {:$in [0 5]}}
+        {:$type :ws/C :cn {:$in [0 5]} :w$type {:$in #{0 1}}
+         :w$0 {:$type [:Maybe :ws/A]} :w$1 {:$type [:Maybe :ws/B]}}
+
+        ;; absence of an alternative in :$if is just absence of a constraint
+        {:$type :ws/C :w {:$if {:ws/A {:a 12}}}}
+        {:$type :ws/C
+         :w$type {:$in #{0 1}}
+         :w$0 {:$type [:Maybe :ws/A] :a 12}
+         :w$1 {:$type [:Maybe :ws/B]}}
+
+        ;; a concrete bound fixes the type
+        {:$type :ws/C :w {:$type :ws/A}}
+        {:$type :ws/C :w$type {:$in #{0}} :w$0 {:$type [:Maybe :ws/A]}}
+
+        ;; absence of an alternative in :$in is a constraint
+        {:$type :ws/C :w {:$in {:ws/A {}}}}
+        {:$type :ws/C :w$type {:$in #{0}}
+         :w$0 {:$type [:Maybe :ws/A]}}
+
+        {:$type :ws/C :w {:$in {:ws/A {} :ws/B {:b 12}}}}
+        {:$type :ws/C :w$type {:$in #{0 1}}
+         :w$0 {:$type [:Maybe :ws/A]}
+         :w$1 {:$type [:Maybe :ws/B] :b 12}}
+
+        ;; $refines-to constraints get passed down
+        {:$type :ws/C :w {:$if {:ws/A {:$refines-to {:ws/W {:wn 12}}}}}}
+        {:$type :ws/C :w$type {:$in #{0 1}}
+         :w$0 {:$type [:Maybe :ws/A] :$refines-to {:ws/W {:wn 12}}}
+         :w$1 {:$type [:Maybe :ws/B]}}
+
+        ;; unqualified :$refines-to applies to all alternatives
+        {:$type :ws/C :w {:$refines-to {:ws/W {:wn 7}}}}
+        {:$type :ws/C :w$type {:$in #{0 1}}
+         :w$0 {:$type [:Maybe :ws/A] :$refines-to {:ws/W {:wn 7}}}
+         :w$1 {:$type [:Maybe :ws/B] :$refines-to {:ws/W {:wn 7}}}}
+
+        ;; TODO: Intersect concrete bounds
+        ;; {:$type :ws/C :w {:$refines-to {:ws/W {:wn {:$in #{1 2 3}}}}
+        ;;                   :$if {:ws/A {:$refines-to {:ws/W {:wn {:$in #{2 3 4}}}}}}}}
+        ;; {:$type :ws/C :w$type {:$in #{0 1}}
+        ;;  :w$0 {:$type [:Maybe :ws/A] :$refines-to {:ws/W {:wn {:$in #{2 3}}}}}
+        ;;  :w$1 {:$type [:Maybe :ws/B] :$refines-to {:ws/W {:wn {:$in #{1 2 3}}}}}}
+        ))))
+
+(deftest test-lower-optional-abstract-bounds
+  (s/with-fn-validation
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+      (are [in out]
+           (= out (lower-abstract-bounds in optional-abstract-var-example alts))
+
+        ;; discriminator's domain includes :Unset
+        {:$type :ws/C}
+        {:$type :ws/C :w$type {:$in #{0 1 :Unset}}
+         :w$0 {:$type [:Maybe :ws/A]} :w$1 {:$type [:Maybe :ws/B]}}
+
+        {:$type :ws/C :w {:$if {:ws/A {:a 12}}}}
+        {:$type :ws/C
+         :w$type {:$in #{0 1 :Unset}}
+         :w$0 {:$type [:Maybe :ws/A] :a 12}
+         :w$1 {:$type [:Maybe :ws/B]}}
+
+        ;; it becomes possible to indicate with :$if that a value must be present
+        {:$type :ws/C :w {:$if {:ws/A {:a 12} :Unset false}}}
+        {:$type :ws/C
+         :w$type {:$in #{0 1}}
+         :w$0 {:$type [:Maybe :ws/A] :a 12}
+         :w$1 {:$type [:Maybe :ws/B]}}
+
+        ;; for :$in, a value must be present by default...
+        {:$type :ws/C :w {:$in {:ws/A {:a 12}}}}
+        {:$type :ws/C
+         :w$type {:$in #{0}}
+         :w$0 {:$type [:Maybe :ws/A] :a 12}}
+
+        ;; ...but it's still possible to indicate that a value can be absent
+        {:$type :ws/C :w {:$in {:ws/A {:a 12} :Unset true}}}
+        {:$type :ws/C
+         :w$type {:$in #{0 :Unset}}
+         :w$0 {:$type [:Maybe :ws/A] :a 12}}
+
+        {:$type :ws/C :w :Unset}
+        {:$type :ws/C :w$type :Unset}))))
+
+(def raise-abstract-bounds #'hp/raise-abstract-bounds)
+
+(deftest test-raise-abstract-bounds
+  (s/with-fn-validation
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+      (are [in out]
+           (= out (raise-abstract-bounds in simplest-abstract-var-example alts))
+
+        {:$type :ws/C
+         :cn 12
+         :w$type {:$in #{0 1}}
+         :w$0 {:$type [:Maybe :ws/A]
+               :a {:$in [2 5]}
+               :$refines-to {:ws/W {:wn 1}}}
+         :w$1 {:$type [:Maybe :ws/B]
+               :b {:$in #{6 7 8 9}}
+               :$refines-to {:ws/W {:wn 2}}}}
+        {:$type :ws/C
+         :cn 12
+         :w {:$in {:ws/A {:a {:$in [2 5]}
+                          :$refines-to {:ws/W {:wn 1}}}
+                   :ws/B {:b {:$in #{6 7 8 9}}
+                          :$refines-to {:ws/W {:wn 2}}}}
+             :$refines-to {:ws/W {:wn {:$in #{1 2}}}}}}
+
+        {:$type :ws/C
+         :cn 12
+         :w$type 0
+         :w$0 {:$type :ws/A
+               :a {:$in [2 5]}
+               :$refines-to #:ws{:W {:wn {:$in [3 6]}}}}
+         :w$1 :Unset}
+        {:$type :ws/C
+         :cn 12
+         :w {:$type :ws/A
+             :a {:$in [2 5]}
+             :$refines-to #:ws{:W {:wn {:$in [3 6]}}}}}))))
+
+(deftest test-raise-optional-abstract-bounds
+  (s/with-fn-validation
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+      (are [in out]
+           (= out (raise-abstract-bounds in optional-abstract-var-example alts))
+
+        {:$type :ws/C
+         :cn 12
+         :w$type {:$in #{0 1 :Unset}}
+         :w$0 {:$type [:Maybe :ws/A]
+               :a {:$in [2 5]}
+               :$refines-to {:ws/W {:wn 1}}}
+         :w$1 {:$type [:Maybe :ws/B]
+               :b {:$in #{6 7 8 9}}
+               :$refines-to {:ws/W {:wn 2}}}}
+        {:$type :ws/C
+         :cn 12
+         :w {:$in {:ws/A {:a {:$in [2 5]}
+                          :$refines-to {:ws/W {:wn 1}}}
+                   :ws/B {:b {:$in #{6 7 8 9}}
+                          :$refines-to {:ws/W {:wn 2}}}
+                   :Unset true}
+             :$refines-to {:ws/W {:wn {:$in #{1 2}}}}}}
+
+        {:$type :ws/C
+         :cn 12
+         :w$type :Unset
+         :w$0 :Unset
+         :w$1 :Unset}
+        {:$type :ws/C :cn 12 :w :Unset}))))
+
+(deftest test-propagate-for-abstract-variables
+  (are [in out]
+       (= out (hp/propagate simplest-abstract-var-example in))
+
+    {:$type :ws/C}
+    {:$type :ws/C
+     :cn {:$in [-1000 6]}
+     :w {:$in {:ws/A {:a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
+               :ws/B {:b {:$in [6 9]} :$refines-to {:ws/W {:wn {:$in [4 7]}}}}}
+         :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
+
+    {:$type :ws/C :w {:$type :ws/A}}
+    {:$type :ws/C :w {:$type :ws/A :a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
+     :cn {:$in [-1000 5]}}
+
+    {:$type :ws/C :w {:$refines-to {:ws/W {:wn 7}}}}
+    {:$type :ws/C :w {:$type :ws/B, :b 9 :$refines-to {:ws/W {:wn 7}}}
+     :cn {:$in [-1000 6]}}
+
+    {:$type :ws/C :w {:$refines-to {:ws/W {:wn {:$in #{6 7}}}}}}
+    {:$type :ws/C,
+     :cn {:$in [-1000 6]},
+     :w {:$in {:ws/A {:$refines-to {:ws/W {:wn 6}}, :a 5},
+               :ws/B {:$refines-to {:ws/W {:wn {:$in #{6 7}}}}, :b {:$in [8 9]}}},
+         :$refines-to {:ws/W {:wn {:$in #{6 7}}}}}}))
+
+(deftest test-propagate-for-optional-abstract-variables
+  (are [in out]
+       (= out (hp/propagate optional-abstract-var-example in))
+
+    {:$type :ws/C}
+    {:$type :ws/C
+     :cn {:$in [-1000 9]}
+     :w {:$in {:ws/A {:a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
+               :ws/B {:b {:$in [6 9]} :$refines-to {:ws/W {:wn {:$in [4 7]}}}}
+               :Unset true}
+         :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
+
+    {:$type :ws/C :w {:$if {:Unset false}}}
+    {:$type :ws/C,
+     :cn {:$in [-1000 6]},
+     :w {:$in {:ws/A {:$refines-to {:ws/W {:wn {:$in [3 6]}}}, :a {:$in [2 5]}},
+               :ws/B {:$refines-to {:ws/W {:wn {:$in [4 7]}}}, :b {:$in [6 9]}}},
+         :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
+
+    {:$type :ws/C :w {:$in {:ws/A {} :Unset true}}}
+    {:$type :ws/C,
+     :cn {:$in [-1000 9]},
+     :w {:$in {:Unset true, :ws/A {:$refines-to {:ws/W {:wn {:$in [3 6]}}}, :a {:$in [2 5]}}},
+         :$refines-to {:ws/W {:wn {:$in [3 6]}}}}}))
+
+(def nested-abstracts-example
+  '{:ws/W {:abstract? true
+           :spec-vars {:wn "Integer"}
+           :constraints []
+           :refines-to {}}
+
+    :ws/A {:spec-vars {:an "Integer"}
+           :constraints []
+           :refines-to {:ws/W {:expr {:$type :ws/W :wn an}}}}
+
+    :ws/B {:spec-vars {:bn "Integer"}
+           :constraints []
+           :refines-to {:ws/W {:expr {:$type :ws/W :wn bn}}}}
+
+    :ws/V {:abstract? true
+           :spec-vars {:vn "Integer"}
+           :constraints []
+           :refines-to {}}
+
+    :ws/C {:spec-vars {:cw :ws/W :cn "Integer"}
+           :constraints [["c1" (< 0 cn)]]
+           :refines-to {:ws/V {:expr {:$type :ws/V
+                                      :vn (+ cn (get (refine-to cw :ws/W) :wn))}}}}
+    :ws/D {:spec-vars {:dn "Integer"}
+           :constraints []
+           :refines-to {:ws/V {:expr {:$type :ws/V :vn dn}}}}
+
+    :ws/E {:spec-vars {:v :ws/V}
+           :constraints []
+           :refines-to {}}})
+
+(deftest test-lower-abstract-bounds-for-nested-abstracts
+  (s/with-fn-validation
+    (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}]
+      (are [in out]
+           (= out (lower-abstract-bounds in nested-abstracts-example alts))
+
+        {:$type :ws/E}
+        {:$type :ws/E
+         :v$type {:$in #{0 1}}
+         :v$0 {:$type [:Maybe :ws/C]
+               :cw$type {:$in #{0 1}}
+               :cw$0 {:$type [:Maybe :ws/A]}
+               :cw$1 {:$type [:Maybe :ws/B]}}
+         :v$1 {:$type [:Maybe :ws/D]}}
+
+        {:$type :ws/E :v {:$in {:ws/C {}}}}
+        {:$type :ws/E
+         :v$type {:$in #{0}}
+         :v$0 {:$type [:Maybe :ws/C]
+               :cw$type {:$in #{0 1}}
+               :cw$0 {:$type [:Maybe :ws/A]}
+               :cw$1 {:$type [:Maybe :ws/B]}}}
+
+        {:$type :ws/E :v {:$in {:ws/C {:cw {:$type :ws/B}}}}}
+        {:$type :ws/E
+         :v$type {:$in #{0}}
+         :v$0 {:$type [:Maybe :ws/C]
+               :cw$type {:$in #{1}}
+               :cw$1 {:$type [:Maybe :ws/B]}}}))))
+
+(deftest test-raise-nested-abstract-bounds
+  (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}]
+    (are [in out]
+         (= out (raise-abstract-bounds in nested-abstracts-example alts))
+
+      {:$type :ws/E,
+       :v$type {:$in #{0 1}},
+       :v$0
+       {:$type [:Maybe :ws/C],
+        :cn {:$in [1 1000]},
+        :cw$type {:$in #{0 1}},
+        :cw$0
+        {:$type [:Maybe :ws/A],
+         :an {:$in [-988 11]},
+         :$refines-to #:ws{:W {:wn {:$in [-1000 1000]}}}},
+        :cw$1
+        {:$type [:Maybe :ws/B],
+         :bn {:$in [-1000 1000]},
+         :$refines-to #:ws{:W {:wn {:$in [-1000 1000]}}}},
+        :$refines-to #:ws{:V {:vn 12}}},
+       :v$1 {:$type [:Maybe :ws/D], :dn 12, :$refines-to #:ws{:V {:vn 12}}}}
+
+      {:$type :ws/E
+       :v {:$in {:ws/C {:cn {:$in [1 1000]}
+                        :cw {:$in {:ws/A {:an {:$in [-988 11]}
+                                          :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}
+                                   :ws/B {:bn {:$in [-1000 1000]}
+                                          :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}}
+                             :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}
+                        :$refines-to {:ws/V {:vn 12}}}
+                 :ws/D {:dn 12
+                        :$refines-to {:ws/V {:vn 12}}}}
+           :$refines-to {:ws/V {:vn 12}}}})))
+
+(deftest test-propagate-for-nested-abstracts
+  (are [in out]
+       (= out (hp/propagate nested-abstracts-example in))
+
+    {:$type :ws/E :v {:$refines-to {:ws/V {:vn 12}}}}
+    {:$type :ws/E,
+     :v {:$in {:ws/C {:cn {:$in [1 1000]}
+                      :$refines-to {:ws/V {:vn 12}},
+                      :cw {:$in {:ws/A {:an {:$in [-988 11]}
+                                        :$refines-to {:ws/W {:wn {:$in [-988 11]}}}}
+                                 ;; TODO: figure out why bn's bounds aren't as tight as an's
+                                 :ws/B {:bn {:$in [-1000 1000]}
+                                        :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}}
+                           :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}}
+               :ws/D {:$refines-to {:ws/V {:vn 12}}, :dn 12}},
+         :$refines-to {:ws/V {:vn 12}}}}))
+
+(def abstract-refinement-chain-example
+  '{:ws/W {:abstract? true
+           :spec-vars {:wn "Integer"}
+           :constraints []
+           :refines-to {}}
+
+    :ws/A1 {:spec-vars {:a1n "Integer"}
+            :constraints []
+            :refines-to {:ws/W {:expr {:$type :ws/W :wn (+ a1n 1)}}}}
+
+    :ws/A2 {:abstract? true
+            :spec-vars {:a2n "Integer"}
+            :constraints []
+            :refines-to {:ws/A1 {:expr {:$type :ws/A1 :a1n (+ a2n 1)}}}}
+
+    :ws/A3 {:spec-vars {:a3n "Integer"}
+            :constraints []
+            :refines-to {:ws/A2 {:expr {:$type :ws/A2 :a2n (+ a3n 1)}}}}
+
+    :ws/B {:spec-vars {:w :ws/W} :constraints [] :refines-to {}}})
+
+(deftest test-abstract-refinement-chain
+  (are [in out]
+       (= out (hp/propagate abstract-refinement-chain-example in))
+
+    {:$type :ws/B :w {:$refines-to {:ws/W {:wn 42}}}}
+    {:$type :ws/B,
+     :w {:$in {:ws/A1 {:a1n 41
+                       :$refines-to {:ws/W {:wn 42}}}
+               :ws/A3 {:a3n 39
+                       :$refines-to {:ws/A1 {:a1n 41}
+                                     :ws/A2 {:a2n 40}
+                                     :ws/W {:wn 42}}}}
+         :$refines-to {:ws/A1 {:a1n 41}
+                       :ws/A2 {:a2n 40}
+                       :ws/W {:wn 42}}}}
+
+    {:$type :ws/B :w {:$type :ws/A3 :a3n {:$in #{3 4 5}}}}
+    {:$type :ws/B
+     :w {:$type :ws/A3
+         :a3n {:$in #{3 4 5}}
+         :$refines-to {:ws/A1 {:a1n {:$in [5 7]}}
+                       :ws/A2 {:a2n {:$in [4 6]}}
+                       :ws/W {:wn {:$in [6 8]}}}}}
+
+    ;; This case really demonstrates the importance of fixing the $refines-to issue.
+    {:$type :ws/B :w {:$in {:ws/A1 {:a1n 12}
+                            :ws/A3 {:a3n 10}}}}
+    {:$type :ws/B,
+     :w {:$in {:ws/A1 {:$refines-to {:ws/W {:wn 13}}, :a1n 12},
+               :ws/A3 {:$refines-to {:ws/A1 {:a1n 12},
+                                     :ws/A2 {:a2n 11},
+                                     :ws/W {:wn 13}},
+                       :a3n 10}},
+         :$refines-to {:ws/A1 {:a1n 12},
+                       :ws/A2 {:a2n 11},
+                       :ws/W {:wn 13}}}}
+
+    ;; Doesn't work :(
+    ;; {:$type :ws/B :w {:$refines-to {:ws/A2 {:a2n 42}}}}
+    ;; nil
+    ))
+
 (deftest test-tricky-inst-literal-simplification
   (let [senv (halite-envs/spec-env
               '{:ws/A
@@ -1093,9 +1493,12 @@
 (comment "
 Stuff to do/remember regarding abstractness!
 
-We'll need to extend the representation of a bound to handle alternative concrete types.
+[x] union of refines-to bounds for alternatives
+[x] optional abstract variables
+[ ] nesting (including 'recursive' specs)
+[ ] improved refines-to constraints
+[ ] properly handle optional refinements
 
-We'll need to handle that extension on the INPUT side, as well as producing the output.
 ")
 
 (comment
