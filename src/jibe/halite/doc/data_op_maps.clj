@@ -599,20 +599,15 @@
                               :expr-str "(if-value-let [x (when (> 2 1) 19)] (inc x) 0)"
                               :expr-str-j :auto
                               :result :auto}
-                             {:workspace-f (make-workspace-fn (workspace :my
-                                                                         {:my/Spec []
-                                                                          :my/Result []}
-                                                                         (spec :Result :concrete
-                                                                               (variables [:x "Integer"])
-                                                                               (refinements
-                                                                                [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                         (spec :Other :concrete)
-                                                                         (spec :Spec :concrete
-                                                                               (variables [:p "Integer"]
-                                                                                          [:n "Integer"]
-                                                                                          [:o "Integer" :optional])
-                                                                               (constraints [:pc [:halite "(> p 0)"]]
-                                                                                            [:pn [:halite "(< n 0)"]]))))
+                             {:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "my/Result$v1/r"
+                                                                                                       :expr 'placeholder
+                                                                                                       :inverted? true}}}
+                                                             :my/Result$v1 {:spec-vars {:x "Integer"}},
+                                                             :my/Spec$v1 {:spec-vars {:n "Integer"
+                                                                                      :o [:Maybe "Integer"]
+                                                                                      :p "Integer"}
+                                                                          :constraints [["pc" '(> p 0)]
+                                                                                        ["pn" '(< n 0)]]}})
                               :instance {:$type :my/Other$v1}
                               :expr-str "(if-value-let [x (when (> 1 2) 19)] (inc x) 0)"
                               :expr-str-j :auto
@@ -1070,29 +1065,21 @@
                 :tags #{:optional-op :optional-out :control-flow :special-form}
                 :basic-ref ['symbol 'any]
                 :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset."
-                :examples [{:workspace-f (make-workspace-fn (workspace :my
-                                                                       {:my/Spec []
-                                                                        :my/Result []}
-                                                                       (spec :Result :concrete
-                                                                             (variables [:x "Integer" :optional])
-                                                                             (refinements
-                                                                              [:r :from :my/Spec$v1 [:halite "placeholder"]]))
-                                                                       (spec :Spec :concrete
-                                                                             (variables [:x "Integer" :optional]))))
+                :examples [{:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
+                                                                                                    :inverted? true
+                                                                                                    :name "my/Result$v1/r"}}
+                                                                        :spec-vars {:x [:Maybe "Integer"]}}
+                                                           :my/Result$v1 {:spec-vars {:x [:Maybe "Integer"]}}})
                             :instance {:$type :my/Spec$v1, :x 1}
                             :expr-str "(when-value x (+ x 2))"
                             :expr-str-j "whenValue(x) {x + 2}"
                             :doc "In the context of an instance with an optional field, x, when the field is set to the value of '1'."
                             :result :auto}
-                           {:workspace-f (make-workspace-fn (workspace :my
-                                                                       {:my/Spec []
-                                                                        :my/Result []}
-                                                                       (spec :Result :concrete
-                                                                             (variables [:x "Integer" :optional])
-                                                                             (refinements
-                                                                              [:r :from :my/Spec$v1 [:halite "placeholder"]]))
-                                                                       (spec :Spec :concrete
-                                                                             (variables [:x "Integer" :optional]))))
+                           {:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
+                                                                                                    :inverted? true,
+                                                                                                    :name "my/Result$v1/r"}}
+                                                                        :spec-vars {:x [:Maybe "Integer"]}}
+                                                           :my/Result$v1 {:spec-vars {:x [:Maybe "Integer"]}}})
                             :instance {:$type :my/Spec$v1}
                             :expr-str "(when-value x (+ x 2))"
                             :expr-str-j "whenValue(x) {x + 2}"
@@ -1104,29 +1091,21 @@
                     :tags #{:optional-op :optional-out :control-flow :special-form}
                     :basic-ref ['symbol 'any]
                     :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'"
-                    :examples [{:workspace-f (make-workspace-fn (workspace :my
-                                                                           {:my/Spec []
-                                                                            :my/Result []}
-                                                                           (spec :Result :concrete
-                                                                                 (variables [:x "Integer" :optional])
-                                                                                 (refinements
-                                                                                  [:r :from :my/Spec$v1 [:halite "placeholder"]]))
-                                                                           (spec :Spec :concrete
-                                                                                 (variables [:y "Integer" :optional]))))
+                    :examples [{:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
+                                                                                                        :inverted? true
+                                                                                                        :name "my/Result$v1/r"}}
+                                                                            :spec-vars {:y [:Maybe "Integer"]}}
+                                                               :my/Result$v1 {:spec-vars {:x [:Maybe "Integer"]}}})
                                 :instance {:$type :my/Spec$v1, :y 1}
                                 :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
                                 :result :auto
                                 :doc "In the context of an instance with an optional field, y, when the field is set to the value of '1'."}
-                               {:workspace-f (make-workspace-fn (workspace :my
-                                                                           {:my/Spec []
-                                                                            :my/Result []}
-                                                                           (spec :Result :concrete
-                                                                                 (variables [:x "Integer" :optional])
-                                                                                 (refinements
-                                                                                  [:r :from :my/Spec$v1 [:halite "placeholder"]]))
-                                                                           (spec :Spec :concrete
-                                                                                 (variables [:y "Integer" :optional]))))
+                               {:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
+                                                                                                        :inverted? true
+                                                                                                        :name "my/Result$v1/r"}}
+                                                                            :spec-vars {:y [:Maybe "Integer"]}}
+                                                               :my/Result$v1 {:spec-vars {:x [:Maybe "Integer"]}}})
                                 :instance {:$type :my/Spec$v1}
                                 :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
