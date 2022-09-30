@@ -90,7 +90,7 @@
 (defn diagram-description [x]
   (str "The syntax diagrams are a graphical representation of the grammar rules for the different " x ".\n\n"))
 
-(def element-name-description "In the diagrams when a rule starts with 'element_name:', this is not part of the syntax for the grammar element, but is instead naming the grammar element so it can be referenced in subsequent diagrams.")
+(def element-name-description "In the diagrams when a rule starts with 'element_name:', this is not part of the syntax for the grammar element, but is instead naming the grammar element so it can be referenced in subsequent diagrams.\n\n")
 
 (def label-description "In the diagrams when a grammar element appears as 'x:label' the label is simply a descriptive label to convey to the reader the meaining of the element.\n\n")
 
