@@ -9339,21 +9339,13 @@
    (reduce [☺ 0] [x [[3] [1 2]]] (+ ☺ (count x)))
    [:syntax-check-throws
     "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: ☺"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A []}
-     (spec :A :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
    [(reduce [a 0] [x {:$type :spec/A$v1, :x 1}] a)
     [:throws
      "h-err/reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A []}
-     (spec :A :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
    [(reduce
      [a 10]
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]]
@@ -10075,51 +10067,31 @@
    (let [x [1]] (get-in [10 20 30] x))
    [:throws
     "h-err/get-in-path-must-be-vector-literal 0-0 : The path parameter in 'get-in' must be a vector literal: (get-in [10 20 30] x)"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:n "Integer"])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
    [(get-in {:$type :spec/T$v1, :n 1} [:n])
     :Integer
     1
     "{$type: spec/T$v1, n: 1}.n"
     "1"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:ns ["Integer"]])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 1])
     :Integer
     20
     "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[1]"
     "20"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:ns ["Integer"]])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [1 :ns])
     [:throws "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:ns ["Integer"]])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:q 1])
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:ns ["Integer"]])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 100])
     :Integer
     [:throws
@@ -10127,12 +10099,8 @@
     "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[100]"
     [:throws
      "h-err/index-out-of-bounds 0-0 : Index out of bounds, 100, for vector of length 3"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:ns ["Integer"]])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns :x])
     [:throws "h-err/invalid-vector-index 0-0 : Index must be an integer when target is a vector"]])
   (hc2
@@ -10142,67 +10110,35 @@
     :Unset
     "[{$type: my/Spec$v1, n: -3, p: 2}][0].o"
     "Unset"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec
-      :T
-      :concrete
-      (variables
-       [:ns ["Integer"] :optional]
-       [:x "Integer"]
-       [:y "Integer" :optional])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe ["Integer"]],
+                            :x "Integer",
+                            :y [:Maybe "Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:y])
     [:Maybe :Integer]
     :Unset
     "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.y"
     "Unset"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec
-      :T
-      :concrete
-      (variables
-       [:ns ["Integer"] :optional]
-       [:x "Integer"]
-       [:y "Integer" :optional])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe ["Integer"]],
+                            :x "Integer",
+                            :y [:Maybe "Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:x])
     :Integer
     9
     "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.x"
     "9"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec
-      :T
-      :concrete
-      (variables
-       [:ns ["Integer"] :optional]
-       [:x "Integer"]
-       [:y "Integer" :optional])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe ["Integer"]],
+                            :x "Integer",
+                            :y [:Maybe "Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:q])
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec
-      :T
-      :concrete
-      (variables
-       [:ns ["Integer"] :optional]
-       [:x "Integer"]
-       [:y "Integer" :optional])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe ["Integer"]],
+                            :x "Integer",
+                            :y [:Maybe "Integer"]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:ns 0])
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]]))
@@ -10266,12 +10202,8 @@
   (do
     (h :a [:throws "h-err/syntax-error 0-0 : Syntax error"])
     (h :my/Spec$v1 [:throws "h-err/syntax-error 0-0 : Syntax error"])
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T []}
-       (spec :T :concrete (variables [:1 "Integer"])))]
-     :spec
+    (hc2
+     {:spec/T$v1 {:spec-vars {:1 "Integer"}}}
      [(get {:$type :spec/T$v1, :1 10} :1)
       [:syntax-check-throws
        "h-err/invalid-keyword-char 0-0 : The keyword contains invalid characters: :1"]])
@@ -10294,21 +10226,13 @@
      :☺
      [:syntax-check-throws
       "h-err/invalid-keyword-char 0-0 : The keyword contains invalid characters: :☺"])
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T []}
-       (spec :T :concrete (variables [:x "Integer"])))]
-     :spec
+    (hc2
+     {:spec/T$v1 {:spec-vars {:x "Integer"}}}
      [(get {:$type :spec/T$v1, :x 10} :☺)
       [:throws
        "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: ☺"]])
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T []}
-       (spec :T :concrete (variables [:a1 "Integer"])))]
-     :spec
+    (hc2
+     {:spec/T$v1 {:spec-vars {:a1 "Integer"}}}
      [(get {:$type :spec/T$v1, :a1 10} :a1)
       :Integer
       10
@@ -10329,61 +10253,36 @@
         10
         "{$type: spec/T$v1, a1: 10}.a1"
         "10"])))
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T []}
-       (spec :T :concrete (variables [:a_1 "Integer"])))]
-     :spec
+    (hc2
+     {:spec/T$v1 {:spec-vars {:a_1 "Integer"}}}
      [(get {:$type :spec/T$v1, :a_1 10} :a_1)
       :Integer
       10
       "{$type: spec/T$v1, 'a_1': 10}.'a_1'"
       "10"])
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T []}
-       (spec :T :concrete (variables [:_1 "Integer"])))]
-     :spec
+    (hc2
+     {:spec/T$v1 {:spec-vars {:_1 "Integer"}}}
      [(get {:$type :spec/T$v1, :_1 10} :_1)
       :Integer
       10
       "{$type: spec/T$v1, '_1': 10}.'_1'"
       "10"])
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T []}
-       (spec :T :concrete (variables [:a$1 "Integer"])))]
-     :spec
+    (hc2
+     {:spec/T$v1 {:spec-vars {:a$1 "Integer"}}}
      [(get {:$type :spec/T$v1, :a$1 10} :a$1)
       :Integer
       10
       "{$type: spec/T$v1, 'a$1': 10}.'a$1'"
       "10"])
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T []}
-       (spec :T :concrete (variables [:$1 "Integer"])))]
-     :spec
+    (hc2
+     {:spec/T$v1 {:spec-vars {:$1 "Integer"}}}
      [(get {:$type :spec/T$v1, :$1 10} :$1)
       :Integer
       10
       "{$type: spec/T$v1, '$1': 10}.'$1'"
       "10"])
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T []}
-       (spec
-        :T
-        :concrete
-        (variables
-         [:a111111111111111111111111111111111111111111111111111111111111111111111111111111111111
-          "Integer"])))]
-     :spec
+    (hc2
+     {:spec/T$v1 {:spec-vars {:a111111111111111111111111111111111111111111111111111111111111111111111111111111111111 "Integer"}}}
      [(get
        {:$type :spec/T$v1,
         :a111111111111111111111111111111111111111111111111111111111111111111111111111111111111
