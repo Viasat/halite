@@ -47,12 +47,11 @@ The use of the word 'to' in 'refine-to' and 'refines-to?' refers to this directi
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference.md#instance)
+[`instance`](../halite_basic-syntax-reference.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### Operator reference:
 
 * [`refine-to`](../halite_full-reference.md#refine-to)
-* [`refines-to?`](../halite_full-reference.md#refines-to_Q)
 
 
 #### How Tos:

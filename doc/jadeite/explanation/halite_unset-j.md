@@ -209,6 +209,7 @@ The operators that branch on 'unset' values cannot be used with expressions that
 
 #### Operator reference:
 
+* [`$no-value`](../halite_full-reference-j.md#_Dno-value)
 * [`ifValue`](../halite_full-reference-j.md#ifValue)
 * [`ifValueLet`](../halite_full-reference-j.md#ifValueLet)
 * [`refineTo`](../halite_full-reference-j.md#refineTo)

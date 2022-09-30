@@ -112,3 +112,15 @@ A refinement defines a many-to-one mapping from one set of values to another set
 
 Note, a refinement is not the same as a sub-type relationship. This is not saying that 'spec/Ball' is a sub-type of 'spec/Ball'. In fact this is formally seen by the fact that the two sets are disjoint. An instance of 'spec/Ball' is never itself an instance of 'spec/Round'. Rather the refinement establishes a relationship between values from the two sets.
 
+### Reference
+
+#### Basic elements:
+
+[`instance`](../halite_basic-syntax-reference-j.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
+
+#### Operator reference:
+
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
+* [`valid?`](../halite_full-reference-j.md#valid_Q)
+
+

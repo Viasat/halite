@@ -161,6 +161,15 @@ So the abstract spec allows us to write code that composes and uses instances wi
 
 ### Reference
 
+#### Basic elements:
+
+[`instance`](../halite_basic-syntax-reference-j.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
+
+#### Operator reference:
+
+* [`refineTo`](../halite_full-reference-j.md#refineTo)
+
+
 #### Explanations:
 
 * [refinement-terminology](../explanation/halite_refinement-terminology-j.md)

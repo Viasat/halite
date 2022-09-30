@@ -207,7 +207,7 @@
               :instance/abstract-variables
               {:label "Variables with abstract types"
                :desc "How to use variables which are defined to be the type of abstract specs."
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :op-ref ['refine-to 'get-in 'get]
                :contents ["Consider the following specs, where a pet is composed of an animal object and a name. The animal field is declared to have a type of the abstract spec, 'spec/Animal'."
                           {:spec-map {:spec/Animal {:abstract? true
@@ -257,7 +257,7 @@
               :instance/abstract-variables-refinements
               {:label "Variables with abstract types used in refinements"
                :desc "How to use variables which are defined to be the type of abstract specs in refinements."
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :op-ref ['refine-to]
                :contents ["The way to use an abstract field value as the result value in a refinement is to refine it to its abstract type. This is necessary because the type of a refinement expression must exactly match the declared type of the refinement."
                           {:spec-map {:spec/Animal {:abstract? true
@@ -335,7 +335,7 @@
               :instance/string-enum
               {:label "String as enumeration"
                :desc "How to model an enumeration as a string"
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :contents ["Say we want to model a shirt size and the valid values are \"small\", \"medium\", and \"large\". We can start by modeling the size as a string."
                           {:spec-map {:spec/Shirt$v1 {:spec-vars {:size "String"}}}}
                           "This is a start, but it allows invalid size values."
@@ -355,7 +355,7 @@
               :refinement/convert-instances
               {:label "Converting instances between specs"
                :desc "How to convert an instance from one spec type to another."
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :op-ref ['refine-to]
                :contents ["An expression can convert an instance of one type to the instance of another type. Assume there are these two specs."
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}}
@@ -382,7 +382,7 @@
               :refinement/convert-instances-transitively
               {:label "Converting instances between specs transitively"
                :desc "How to convert an instance from one spec type to another through an intermediate spec."
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :op-ref ['refine-to]
                :contents ["Refinements are automatically, transitively applied to produce an instance of the target spec."
                           {:spec-map {:spec/A$v3 {:spec-vars {:b "Integer"}
@@ -403,7 +403,7 @@
               :refinement/arbitrary-expression-refinements
               {:label "Arbitrary expression in refinements"
                :desc "How to write arbitrary expressions to convert instances."
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :op-ref ['refine-to]
                :contents ["Refinement expressions can be arbitrary expressions over the fields of the instance or constant values."
                           {:spec-map {:spec/A$v4 {:spec-vars {:b "Integer"
@@ -426,7 +426,7 @@
               :refinement/optionally-convert-instances
               {:label "Optionally converting instances between specs"
                :desc "Consider there are some cases where an instance can be converted to another spec, but other cases where it cannot be. Refinement expressions can include logic to optionally convert an instance."
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :op-ref ['refine-to 'refines-to?]
                :contents ["In the following example, the refinement expression determines whether to convert an instance based on the value of 'b'."
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}
@@ -451,7 +451,7 @@
               :instance/constrain-instances
               {:label "Defining constraints on instance values"
                :desc "How to constrain the possible values for instance fields"
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :contents ["As a starting point specs specify the fields that make up instances."
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}}}}
                           "This indicates that 'b' must be an integer, but it doesn't indicate what valid values are. The following spec includes a constraint that requires b to be greater than 100."
@@ -479,7 +479,7 @@
               :instance/multi-constrain-instances
               {:label "Defining multiple constraints on instance values"
                :desc "How to define multiple constraints in a spec"
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :contents ["Multiple constraints can be defined on a spec. Each constraint must have a unique name within the context of a spec."
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"
                                                               :c "Integer"}
@@ -515,7 +515,7 @@
               :instance/compose-instances
               {:label "Compose instances"
                :desc "How to make specs which are the composition of other specs and how to make instances of those specs."
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :contents ["A spec variable can be of the type of another spec"
                           {:spec-map {:spec/A$v1 {:spec-vars {:b :spec/B$v1}}
                                       :spec/B$v1 {:spec-vars {:c "Integer"}}}}
@@ -526,7 +526,7 @@
               :instance/functions
               {:label "Use an instance as a function to compute a value"
                :desc "Consider there is some logic that needs to be reused in multiple contexts. How to package it up so that it can be reused?"
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :op-ref ['refine-to]
                :contents ["It is a bit convoluted, but consider the following specs."
                           {:spec-map {:spec/Add {:spec-vars {:x "Integer"
@@ -546,7 +546,7 @@
               :instance/predicate
               {:label "Use an instance as a predicate"
                :desc "Consider you need to evaluate an expression as a predicate, to determine if some values relate to each other properly."
-               :basic-ref ['instance]
+               :basic-ref ['instance 'spec-map]
                :op-ref ['valid?]
                :contents ["The following specification uses a constraint to capture a predicate that checks whether a value is equal to the sum of two other values."
                           {:spec-map {:spec/Sum {:spec-vars {:x "Integer"
@@ -778,5 +778,5 @@
                                     (get (filter [e x] (> (div 100 e) 0)) 0))
                            :result :auto}
                           "This means that the logical operators cannot be used to guard against runtime errors. Instead the control flow statements must be used."]
-               :basic-ref ['vector 'integer]
+               :basic-ref ['vector 'integer 'spec-map]
                :op-ref ['any? 'every? 'get 'div 'refine-to 'refines-to? 'if 'if-value-let 'when 'when-value-let 'valid 'valid?]}})

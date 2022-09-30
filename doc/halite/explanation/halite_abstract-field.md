@@ -58,3 +58,9 @@ However, it cannot hold a direct instance of car, because an abstract instance c
 
 In an interesting way, declaring a field to be of the type of an abstract instance, means it can hold any instance except for an instance of that type.
 
+### Reference
+
+#### Basic elements:
+
+[`instance`](../halite_basic-syntax-reference.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
+

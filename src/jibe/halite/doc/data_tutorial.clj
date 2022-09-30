@@ -6,7 +6,7 @@
 (def tutorials {:spec/sudoku
                 {:label "Model a sudokuo puzzle"
                  :desc "Consider how to use specs to model a sudoku game."
-                 :basic-ref ['integer 'vector 'instance 'set 'boolean]
+                 :basic-ref ['integer 'vector 'instance 'set 'boolean 'spec-map]
                  :op-ref ['valid? 'get 'concat 'get-in 'every? 'any? 'not]
                  :how-to-ref [:instance/constrain-instances]
                  :contents ["Say we want to represent a sudoku solution as a two dimensional vector of integers"
@@ -232,7 +232,7 @@
                 :spec/grocery
                 {:label "Model a grocery delivery business"
                  :desc "Consider how to use specs to model some of the important details of a business that provides grocery delivery to subscribers."
-                 :basic-ref ['vector 'instance 'set 'fixed-decimal 'integer 'string]
+                 :basic-ref ['vector 'instance 'set 'fixed-decimal 'integer 'string 'spec-map]
                  :op-ref ['refine-to 'reduce 'map 'get 'and '< '<= 'count]
                  :how-to-ref [:refinement/convert-instances]
                  :explanation-ref [:spec/specs-as-predicates :spec/refinements-as-functions]

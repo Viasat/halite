@@ -218,7 +218,7 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference.md#instance)
+[`instance`](../halite_basic-syntax-reference.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### Operator reference:
 

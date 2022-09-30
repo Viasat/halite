@@ -283,12 +283,10 @@ However, the 'valid?' operator cannot be used to handle cases that would violate
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference-j.md#instance)
+[`instance`](../halite_basic-syntax-reference-j.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### Operator reference:
 
-* [`refineTo`](../halite_full-reference-j.md#refineTo)
-* [`refinesTo?`](../halite_full-reference-j.md#refinesTo_Q)
 * [`valid?`](../halite_full-reference-j.md#valid_Q)
 
 

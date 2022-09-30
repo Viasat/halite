@@ -268,7 +268,7 @@ false
 
 #### Basic elements:
 
-[`boolean`](../halite_basic-syntax-reference-j.md#boolean), [`instance`](../halite_basic-syntax-reference-j.md#instance), [`integer`](../halite_basic-syntax-reference-j.md#integer), [`set`](../halite_basic-syntax-reference-j.md#set), [`vector`](../halite_basic-syntax-reference-j.md#vector)
+[`boolean`](../halite_basic-syntax-reference-j.md#boolean), [`instance`](../halite_basic-syntax-reference-j.md#instance), [`integer`](../halite_basic-syntax-reference-j.md#integer), [`set`](../halite_basic-syntax-reference-j.md#set), [`spec-map`](../../halite_spec-syntax-reference.md), [`vector`](../halite_basic-syntax-reference-j.md#vector)
 
 #### Operator reference:
 

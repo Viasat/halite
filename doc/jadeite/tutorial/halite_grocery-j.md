@@ -166,7 +166,7 @@ This final object is now in a form that the grocery store understands.
 
 #### Basic elements:
 
-[`fixed-decimal`](../halite_basic-syntax-reference-j.md#fixed-decimal), [`instance`](../halite_basic-syntax-reference-j.md#instance), [`integer`](../halite_basic-syntax-reference-j.md#integer), [`set`](../halite_basic-syntax-reference-j.md#set), [`string`](../halite_basic-syntax-reference-j.md#string), [`vector`](../halite_basic-syntax-reference-j.md#vector)
+[`fixed-decimal`](../halite_basic-syntax-reference-j.md#fixed-decimal), [`instance`](../halite_basic-syntax-reference-j.md#instance), [`integer`](../halite_basic-syntax-reference-j.md#integer), [`set`](../halite_basic-syntax-reference-j.md#set), [`spec-map`](../../halite_spec-syntax-reference.md), [`string`](../halite_basic-syntax-reference-j.md#string), [`vector`](../halite_basic-syntax-reference-j.md#vector)
 
 #### Operator reference:
 

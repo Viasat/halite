@@ -6,6 +6,8 @@
 (def explanations {:spec/big-picture
                    {:label "Specs are about modeling things"
                     :desc "Specs are a general mechanism for modelling whatever is of interest."
+                    :basic-ref ['spec-map 'instance]
+                    :op-ref ['valid? 'refine-to]
                     :contents ["Writing a spec is carving out a subset out of the universe of all possible values and giving them a name."
                                {:spec-map {:spec/Ball {:spec-vars {:color "String"}
                                                        :constraints [["color_constraint" '(contains? #{"red" "blue" "green"} color)]]}}}
@@ -42,6 +44,8 @@
                    {:label "What is an abstract spec?"
                     :desc "An abstract spec defines instances which cannot be used in the construction of other instances."
                     :explanation-ref [:spec/refinement-terminology]
+                    :basic-ref ['spec-map 'instance]
+                    :op-ref ['refine-to]
                     :contents ["Say we have an abstract concept of squareness."
                                {:spec-map {:spec/Square {:abstract? true
                                                          :spec-vars {:width "Integer"
@@ -112,6 +116,7 @@
                    :spec/abstract-field
                    {:label "What is an abstract field?"
                     :desc "If a field in a spec has a type of an abstract spec, then the field can hold values that refine to that abstract spec."
+                    :basic-ref ['spec-map 'instance]
                     :contents ["Say we have an abstract car."
                                {:spec-map {:spec/Car {:abstract? true
                                                       :spec-vars {:make "String"
@@ -143,6 +148,8 @@
                     :desc "Specs can be defined as refining other specs. When this is done what constraints are implied by the refinement?"
                     :how-to-ref [:refinement/arbitrary-expression-refinements]
                     :explanation-ref [:spec/abstract-spec :spec/refinement-terminology]
+                    :basic-ref ['spec-map 'instance]
+                    :op-ref ['refine-to 'valid? 'refines-to?]
                     :contents ["One spec can be defined to be a refinement of another spec. First consider a square which has a width and height. The constraint, which makes it a square, requires these two values to be equal."
                                {:spec-map {:spec/Square {:spec-vars {:width "Integer"
                                                                      :height "Integer"}
@@ -212,13 +219,13 @@
                                "A way of summarizing the two approaches to a refinement are: for 'normal' refinements, the refinement implies that the author of the spec is intending to incorporate all of the constraints implied by the refinement into the spec at hand. However, for an inverted refinement, the spec at hand is being defined independent of constraints implied by the refinement. Instead, it is the responsibility of the refinement expression to deal with all of the implications of the constraints of the spec being refined to. If the refinement expression does not take all the implications into account, then a runtime error results."
                                "As an advanced topic, there is a 'valid?' operator which deals with immediate constraint violations in the spec at hand, but it does not handle the case of the application of an inverted refinement leading to a constraint violation."
                                {:code '(valid? (refine-to {:$type :spec/Box$v3 :width 5 :length 6} :spec/Square))
-                                :throws :auto}]
-                    :basic-ref ['instance]
-                    :op-ref ['refine-to 'valid? 'refines-to?]}
+                                :throws :auto}]}
 
                    :spec/specs-as-predicates
                    {:label "Considering a spec as a predicate"
                     :desc "A spec can be considered a giant predicate which when applied to a value returns 'true' if the value is a valid instance and 'false' or a runtime error otherwise."
+                    :basic-ref ['instance 'spec-map]
+                    :op-ref ['valid?]
                     :contents ["The type indications of spec variables can be considered as predicates."
                                {:spec-map {:spec/X$v1 {:spec-vars {:x "String"}}}}
                                "If an instance is made with the correct type for a field value, then the predicate produces 'true'."
@@ -302,9 +309,7 @@
                                 :result :auto}
                                "However, the 'valid?' operator cannot be used to handle cases that would violate the required types of specs variables."
                                {:code '(valid? {:$type :spec/X$v7 :x 1 :y 9})
-                                :throws :auto}]
-                    :basic-ref ['instance]
-                    :op-ref ['refine-to 'valid? 'refines-to?]}
+                                :throws :auto}]}
 
                    :spec/refinement-terminology
                    {:label "Clarify terminology around refinements"
@@ -325,8 +330,8 @@
                                {:code '(refine-to {:$type :spec/X$v2} :spec/Y$v2)
                                 :result :auto}
                                "The use of the word 'to' in 'refine-to' and 'refines-to?' refers to this direction of the refinement mapping. So 'refine-to' means to 'execute a refinement', specifically a refinement that converts instances 'to' instances of the indicated spec."]
-                    :basic-ref ['instance]
-                    :op-ref ['refine-to 'refines-to?]
+                    :basic-ref ['instance 'spec-map]
+                    :op-ref ['refine-to]
                     :how-to-ref [:refinement/convert-instances]
                     :explanation-ref [:spec/abstract-spec :spec/refinement-implications :spec/refinements-as-functions]}
 
@@ -343,7 +348,7 @@
                                "In this example a highly abstract instance, just called a car, is converted into a concrete instance that has more detailed information."
                                {:code '(refine-to {:$type :spec/Car} :spec/Ford)
                                 :result :auto}]
-                    :basic-ref ['instance]
+                    :basic-ref ['instance 'spec-map]
                     :op-ref ['refine-to]
                     :how-to-ref [:refinement/convert-instances]
                     :tutorial-ref [:spec/grocery]
@@ -369,7 +374,7 @@
                    {:label "The pseduo-value 'unset' is handled specially"
                     :desc "The 'unset' value cannot be used in general and there are specific facilities for dealing with them when they are produced by an expression."
                     :basic-ref ['instance 'integer]
-                    :op-ref ['if-value 'when-value 'if-value-let 'when-value-let 'when 'refine-to]
+                    :op-ref ['$no-value 'if-value 'when-value 'if-value-let 'when-value-let 'when 'refine-to]
                     :contents ["Some languages have a notion of 'null' that appears throughout; this language uses 'unset' instead. Potentially 'unset' values generally need to be addressed using a special \"if value\" kind of operator to help prevent the 'unset' value from getting passed very far. The idea is that most code should therefore not need to deal with it. If an 'unset' value does need to be created, do so with `$no-value` or a 'when' operation."
                                {:code '$no-value
                                 :result :auto}

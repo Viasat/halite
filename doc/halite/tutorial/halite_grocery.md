@@ -220,7 +220,7 @@ This final object is now in a form that the grocery store understands.
 
 #### Basic elements:
 
-[`fixed-decimal`](../halite_basic-syntax-reference.md#fixed-decimal), [`instance`](../halite_basic-syntax-reference.md#instance), [`integer`](../halite_basic-syntax-reference.md#integer), [`set`](../halite_basic-syntax-reference.md#set), [`string`](../halite_basic-syntax-reference.md#string), [`vector`](../halite_basic-syntax-reference.md#vector)
+[`fixed-decimal`](../halite_basic-syntax-reference.md#fixed-decimal), [`instance`](../halite_basic-syntax-reference.md#instance), [`integer`](../halite_basic-syntax-reference.md#integer), [`set`](../halite_basic-syntax-reference.md#set), [`spec-map`](../../halite_spec-syntax-reference.md), [`string`](../halite_basic-syntax-reference.md#string), [`vector`](../halite_basic-syntax-reference.md#vector)
 
 #### Operator reference:
 

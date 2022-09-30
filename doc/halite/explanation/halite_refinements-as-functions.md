@@ -33,7 +33,7 @@ In this example a highly abstract instance, just called a car, is converted into
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference.md#instance)
+[`instance`](../halite_basic-syntax-reference.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### Operator reference:
 
