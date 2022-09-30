@@ -258,7 +258,10 @@
                       (zipmap *sids*
                               (->> *sids*
                                    (map #(internal/no-nil (update-vals (halite-envs/lookup-spec* senv %)
-                                                                                 internal/no-empty)))))
+                                                                                 (fn [x]
+                                                                                   (if (boolean? x)
+                                                                                     x
+                                                                                     (internal/no-empty x))))))))
                       senv))
            tenv (halite-envs/type-env {})
            env (halite-envs/env {})
@@ -7636,22 +7639,16 @@
     {:$type :spec/A$v1, :p 1, :n -1}
     "({ vs = [{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}]; (if(true) {vs[0]} else {vs[1]}) })"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
-   [(workspace :spec
-               {:spec/A []
-                :spec/B []
-                :spec/C []
-                :spec/D []}
-               (spec :A :concrete
-                     (refinements [:as_b :to :spec/B$v1 [:halite "{:$type :spec/B$v1}"]]
-                                  [:as_d :to :spec/D$v1 [:halite "{:$type :spec/D$v1}"]]))
-
-               (spec :B :abstract)
-               (spec :C :concrete
-                     (variables [:b :spec/B$v1])
-                     (refinements [:as_d :to :spec/D$v1 [:halite "(refine-to b :spec/D$v1)"]]))
-               (spec :D :concrete))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:refines-to {:spec/B$v1 {:expr {:$type :spec/B$v1}
+                                         :name "spec/A$v1/as_b"}
+                             :spec/D$v1 {:expr {:$type :spec/D$v1}
+                                         :name "spec/A$v1/as_d"}}}
+    :spec/B$v1 {:abstract? true}
+    :spec/C$v1 {:refines-to {:spec/D$v1 {:expr '(refine-to b :spec/D$v1)
+                                         :name "spec/C$v1/as_d"}}
+                :spec-vars {:b :spec/B$v1}}
+    :spec/D$v1 {}}
    [(refine-to {:$type :spec/C$v1, :b {:$type :spec/A$v1}} :spec/D$v1)
     [:Instance :spec/D$v1]
     {:$type :spec/D$v1}
@@ -8180,89 +8177,63 @@
 
 (deftest
   test-instantiate-use
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:n "Integer"])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
    [(get {:$type :spec/T$v1, :n 1} :n)
     :Integer
     1
     "{$type: spec/T$v1, n: 1}.n"
     "1"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:n "Integer"])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
    [(valid {:$type :spec/T$v1, :n 1})
     [:Maybe [:Instance :spec/T$v1]]
     {:$type :spec/T$v1, :n 1}
     "(valid {$type: spec/T$v1, n: 1})"
     "{$type: spec/T$v1, n: 1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:n "Integer"])))]
-   :spec
+
+  (hc2
+   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
    [(valid? {:$type :spec/T$v1, :n 1})
     :Boolean
     true
     "(valid? {$type: spec/T$v1, n: 1})"
     "true"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :concrete (variables [:n "Integer"])))]
-   :spec
+
+  (hc2
+   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
    [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1)
     [:Instance :spec/T$v1]
     {:$type :spec/T$v1, :n 1}
     "{$type: spec/T$v1, n: 1}.refineTo( spec/T$v1 )"
     "{$type: spec/T$v1, n: 1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :abstract (variables [:n "Integer"])))]
-   :spec
+
+  (hc2
+   {:spec/T$v1 {:abstract? true
+                :spec-vars {:n "Integer"}}}
    [(get {:$type :spec/T$v1, :n 1} :n)
     :Integer
     1
     "{$type: spec/T$v1, n: 1}.n"
     "1"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :abstract (variables [:n "Integer"])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:abstract? true
+                :spec-vars {:n "Integer"}}}
    [(valid {:$type :spec/T$v1, :n 1})
     [:Maybe [:Instance :spec/T$v1]]
     {:$type :spec/T$v1, :n 1}
     "(valid {$type: spec/T$v1, n: 1})"
     "{$type: spec/T$v1, n: 1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :abstract (variables [:n "Integer"])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:abstract? true, :spec-vars {:n "Integer"}}}
    [(valid? {:$type :spec/T$v1, :n 1})
     :Boolean
     true
     "(valid? {$type: spec/T$v1, n: 1})"
     "true"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T []}
-     (spec :T :abstract (variables [:n "Integer"])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:abstract? true
+                :spec-vars {:n "Integer"}}}
    [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1)
     [:Instance :spec/T$v1]
     {:$type :spec/T$v1, :n 1}
