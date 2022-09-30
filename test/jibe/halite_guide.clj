@@ -239,7 +239,7 @@
    (binding [format-errors/*squash-throw-site* true]
      (let [senv (or spec-env
                     (let [senv (spec-env/for-workspace *spec-store* workspace-id)]
-                       (zipmap *sids*
+                      (zipmap *sids*
                               (->> *sids*
                                    (map #(internal/no-nil (update-vals (halite-envs/lookup-spec* senv %)
                                                                                  (fn [x]
@@ -7357,16 +7357,15 @@
    [(get {:$type :my/Spec$v1, :p 1, :n -1} "p")
     [:throws
      "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
-  (binding [*sids* #{:spec/A$v1 :spec/B$v1 :spec/C$v1 :spec/D$v1 :spec/E$v1}]
-    (hc2
-     :basic-2
-     [(=
-       {:$type :spec/A$v1, :p 1, :n -1}
-       {:$type :spec/A$v1, :p 1, :n -1})
-      :Boolean
-      true
-      "({$type: spec/A$v1, n: -1, p: 1} == {$type: spec/A$v1, n: -1, p: 1})"
-      "true"]))
+  (hc2
+   :basic-2
+   [(=
+     {:$type :spec/A$v1, :p 1, :n -1}
+     {:$type :spec/A$v1, :p 1, :n -1})
+    :Boolean
+    true
+    "({$type: spec/A$v1, n: -1, p: 1} == {$type: spec/A$v1, n: -1, p: 1})"
+    "true"])
   (hc2
    :basic-2
    [(=
@@ -8130,41 +8129,31 @@
 
 (deftest
   test-component-use
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :V []}
-     (spec :T :concrete (variables [:n "Integer"]))
-     (spec :V :concrete (variables [:t :spec/T$v1])))]
-   :spec
+  (hc2
+   {:spec/T$v1 {:spec-vars {:n "Integer"}}
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(get {:$type :spec/V$v1, :t {:$type :spec/T$v1, :n 1}} :t)
     [:Instance :spec/T$v1]
     {:$type :spec/T$v1, :n 1}
     "{$type: spec/V$v1, t: {$type: spec/T$v1, n: 1}}.t"
     "{$type: spec/T$v1, n: 1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
-     (spec :T :concrete (variables [:n "Integer"]))
-     (spec :V :concrete (variables [:t :spec/T$v1])))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:name "spec/C$v1/as_T"
+                                         :expr '{:$type :spec/T$v1
+                                                 :n 1}}}}
+    :spec/T$v1 {:spec-vars {:n "Integer"}}
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 't' has wrong type"]])
   (hc2
    {:spec/C$v1 {:abstract? true
-                                                :refines-to {:spec/T$v1 {:name "spec/C$v1/as_T"
-                                                                         :expr '{:$type :spec/T$v1
-                                                                                 :n 1}}}}
-                                    :spec/T$v1 {:abstract? true
-                                                :spec-vars {:n "Integer"}}
-                                    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
+                :refines-to {:spec/T$v1 {:name "spec/C$v1/as_T"
+                                         :expr '{:$type :spec/T$v1
+                                                 :n 1}}}}
+    :spec/T$v1 {:abstract? true
+                :spec-vars {:n "Integer"}}
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
     [:throws
@@ -8172,18 +8161,13 @@
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
     [:throws
      "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
-     (spec :T :abstract (variables [:n "Integer"]))
-     (spec :V :concrete (variables [:t :spec/T$v1])))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:name "spec/C$v1/as_T"
+                                         :expr '{:$type :spec/T$v1
+                                                 :n 1}}}}
+    :spec/T$v1 {:abstract? true
+                :spec-vars {:n "Integer"}}
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)
     [:Instance :* #{:spec/T$v1}]
     {:$type :spec/C$v1}
@@ -8192,18 +8176,12 @@
 
 (deftest
   test-instantiate-construction
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :U []}
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :abstract)
-     (spec
-      :T
-      :abstract
-      (refinements
-       [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-   :spec
+  (hc2
+   {:spec/S$v1 {:abstract? true}
+    :spec/T$v1 {:abstract? true
+                :refines-to {:spec/S$v1 {:name "spec/T$v1/as_S"
+                                         :expr '{:$type :spec/S$v1}}}}
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}}}
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     [:Instance :spec/U$v1]
     [:throws
@@ -8211,60 +8189,35 @@
     "{$type: spec/U$v1, s: {$type: spec/T$v1}}"
     [:throws
      "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :U []}
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :concrete)
-     (spec
-      :T
-      :abstract
-      (refinements
-       [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-   :spec
+  (hc2
+   {:spec/S$v1 {},
+    :spec/T$v1 {:abstract? true
+                :refines-to {:spec/S$v1 {:name "spec/T$v1/as_S"
+                                         :expr '{:$type :spec/S$v1}}}}
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}}}
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 's' has wrong type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :U []}
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :concrete)
-     (spec
-      :T
-      :concrete
-      (refinements
-       [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-   :spec
+  (hc2
+   {:spec/S$v1 {}
+    :spec/T$v1 {:refines-to {:spec/S$v1 {:name "spec/T$v1/as_S"
+                                         :expr '{:$type :spec/S$v1}}}}
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}}}
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 's' has wrong type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :U []}
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :abstract)
-     (spec
-      :T
-      :concrete
-      (refinements
-       [:as_S :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-   :spec
+  (hc2
+   {:spec/S$v1 {:abstract? true},
+    :spec/T$v1 {:refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
+                                         :name "spec/T$v1/as_S"}}},
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}}}
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     [:Instance :spec/U$v1]
     {:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     "{$type: spec/U$v1, s: {$type: spec/T$v1}}"
     "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :U []}
-     (spec :U :concrete (variables [:s :spec/T$v1]))
-     (spec :T :concrete))]
-   :spec
+  (hc2
+   {:spec/S$v1 {}, :spec/T$v1 {}, :spec/U$v1 {:spec-vars {:s :spec/T$v1}}}
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     [:Instance :spec/U$v1]
     {:$type :spec/U$v1, :s {:$type :spec/T$v1}}
@@ -8273,104 +8226,65 @@
 
 (deftest
   test-component-construction
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/C$v1]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/U$v1 {:spec-vars {:s :spec/C$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 's' has wrong type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :C [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :concrete)
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :concrete))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/S$v1 {},
+    :spec/T$v1 {},
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 't' has wrong type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :abstract)
-     (spec
-      :T
-      :concrete
-      (refinements
-       [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-   :spec
+  (hc2
+   {:spec/S$v1 {:abstract? true},
+    :spec/T$v1 {:refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
+                                         :name "spec/T$v1/as_s"}}},
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)}
     [:Instance :spec/U$v1]
     {:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/T$v1}}.t}"
     "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/T$v1]))
-     (spec :S :concrete)
-     (spec :T :concrete))]
-   :spec
+  (hc2
+   {:spec/T$v1 {},
+    :spec/U$v1 {:spec-vars {:s :spec/T$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)}
     [:Instance :spec/U$v1]
     {:$type :spec/U$v1, :s {:$type :spec/T$v1}}
     "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/T$v1}}.t}"
     "{$type: spec/U$v1, s: {$type: spec/T$v1}}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/T$v1]))
-     (spec :S :concrete)
-     (spec
-      :C
-      :abstract
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :concrete))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:abstract? true,
+                :refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {},
+    :spec/U$v1 {:spec-vars {:s :spec/T$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 't' has wrong type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec
-      :C
-      :abstract
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:abstract? true,
+                :refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
     [:throws
@@ -8378,90 +8292,60 @@
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
     [:throws
      "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :C [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :concrete)
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
-       [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
-     (spec
-      :T
-      :abstract
-      (refinements
-       [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
+                                         :name "spec/C$v1/as_s"},
+                             :spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/S$v1 {},
+    :spec/T$v1 {:abstract? true,
+                :refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
+                                         :name "spec/T$v1/as_s"}}},
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 's' has wrong type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec
-      :S
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec
-      :T
-      :abstract
-      (refinements
-       [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-   :spec
+  (hc2
+   {:spec/C$v1 {},
+    :spec/S$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/S$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true,
+                :refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
+                                         :name "spec/T$v1/as_s"}}},
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/S$v1}} :t)}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 's' has wrong type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :C [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :abstract)
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
-       [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
-     (spec
-      :T
-      :abstract
-      (refinements
-       [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]])))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
+                                         :name "spec/C$v1/as_s"},
+                             :spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/S$v1 {:abstract? true},
+    :spec/T$v1 {:abstract? true,
+                :refines-to {:spec/S$v1 {:expr {:$type :spec/S$v1},
+                                         :name "spec/T$v1/as_s"}}},
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:Instance :spec/U$v1]
     {:$type :spec/U$v1, :s {:$type :spec/C$v1}}
     "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}"
     "{$type: spec/U$v1, s: {$type: spec/C$v1}}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :S [], :C [], :U [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :U :concrete (variables [:s :spec/S$v1]))
-     (spec :S :abstract)
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
-       [:as_s :to :spec/S$v1 [:halite "{:$type :spec/S$v1}"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
+                                         :name "spec/C$v1/as_s"},
+                             :spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/S$v1 {:abstract? true},
+    :spec/T$v1 {:abstract? true},
+    :spec/U$v1 {:spec-vars {:s :spec/S$v1}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/U$v1,
      :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:Instance :spec/U$v1]
