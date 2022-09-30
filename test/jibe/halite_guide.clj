@@ -203,44 +203,30 @@
                                                     :o [:Maybe "Integer"]
                                                     :p "Integer"}
                                         :constraints [["pc" '(> p 0)]
-                                                      ["pn" '(< n 0)]]}}})
-
-(def workspaces-map {:basic-abstract [(workspace :my
-                                                 {:my/Spec []}
-                                                 (spec :Spec :abstract
-                                                       (variables [:p "Integer"]
-                                                                  [:n "Integer"]
-                                                                  [:o "Integer" :optional])
-                                                       (constraints [:pc [:halite "(> p 0)"]]
-                                                                    [:pn [:halite "(< n 0)"]])))]
-                     :basic-2 [(workspace :spec
-                                          {:spec/A []
-                                           :spec/B []
-                                           :spec/C []
-                                           :spec/D []
-                                           :spec/E []}
-                                          (spec :A :concrete
-                                                (variables [:p "Integer"]
-                                                           [:n "Integer"]
-                                                           [:o "Integer" :optional])
-                                                (constraints [:pc [:halite "(> p 0)"]]
-                                                             [:pn [:halite "(< n 0)"]])
-                                                (refinements [:as_b :to :spec/B$v1 [:halite "{:$type :spec/B$v1, :x (* 10 p), :y n, :z o}"]]))
-
-                                          (spec :B :abstract
-                                                (variables [:x "Integer"]
-                                                           [:y "Integer"]
-                                                           [:z "Integer" :optional])
-                                                (constraints [:px [:halite "(< x 100)"]]
-                                                             [:py [:halite "(> y -100)"]]
-                                                             [:pz [:halite "(not= z 0)"]]))
-                                          (spec :C :concrete)
-                                          (spec :D :concrete
-                                                (variables [:ao :spec/A$v1 :optional]
-                                                           [:co :spec/C$v1 :optional]))
-                                          (spec :E :concrete
-                                                (variables [:co :spec/C$v1 :optional])
-                                                (refinements [:as_c :to :spec/C$v1 [:halite "co"]])))]})
+                                                      ["pn" '(< n 0)]]}}
+                   :basic-2 {:spec/A$v1 {:spec-vars {:n "Integer"
+                                                     :o [:Maybe "Integer"]
+                                                     :p "Integer"}
+                                         :constraints [["pc" '(> p 0)]
+                                                       ["pn" '(< n 0)]]
+                                         :refines-to {:spec/B$v1 {:name "spec/A$v1/as_b"
+                                                                  :expr '{:$type :spec/B$v1
+                                                                          :x (* 10 p)
+                                                                          :y n
+                                                                          :z o}}}}
+                             :spec/B$v1 {:abstract? true
+                                         :spec-vars {:x "Integer"
+                                                     :y "Integer"
+                                                     :z [:Maybe "Integer"]}
+                                         :constraints [["px" '(< x 100)]
+                                                       ["py" '(> y -100)]
+                                                       ["pz" '(not= z 0)]]}
+                             :spec/C$v1 {}
+                             :spec/D$v1 {:spec-vars {:ao [:Maybe :spec/A$v1]
+                                                     :co [:Maybe :spec/C$v1]}}
+                             :spec/E$v1 {:spec-vars {:co [:Maybe :spec/C$v1]}
+                                         :refines-to {:spec/C$v1 {:name "spec/E$v1/as_c"
+                                                                  :expr 'co}}}}})
 
 (deftype HCInfo [s t h-result j-expr jh-result j-result])
 
@@ -253,7 +239,7 @@
    (binding [format-errors/*squash-throw-site* true]
      (let [senv (or spec-env
                     (let [senv (spec-env/for-workspace *spec-store* workspace-id)]
-                      (zipmap *sids*
+                       (zipmap *sids*
                               (->> *sids*
                                    (map #(internal/no-nil (update-vals (halite-envs/lookup-spec* senv %)
                                                                                  (fn [x]
@@ -359,9 +345,7 @@
                    comment?)
         [expr & args] raw-args
         [expected-t result-expected j-expr-expected j-result-expected] args]
-    `(test-setup-specs/setup-specs ~(if (keyword? workspaces)
-                                      `(workspaces-map ~workspaces)
-                                      workspaces)
+    `(test-setup-specs/setup-specs ~workspaces
                                    (let [i# (hc* ~workspace-id '~expr)]
                                      (if (nil? (.-s i#))
                                        (do
@@ -7334,9 +7318,13 @@
    [{:$type :my/Spec$v1, :p "0", :n -1}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 'p' has wrong type"]])
-  (hc
-   :basic-abstract
-   :my
+  (hc2
+   {:my/Spec$v1 {:abstract? true
+                 :spec-vars {:n "Integer"
+                             :o [:Maybe "Integer"]
+                             :p "Integer"}
+                 :constraints [["pc" '(> p 0)]
+                               ["pn" '(< n 0)]]}}
    [{:$type :my/Spec$v1, :p 1, :n -1}
     [:Instance :my/Spec$v1]
     {:$type :my/Spec$v1, :p 1, :n -1}
@@ -7369,19 +7357,18 @@
    [(get {:$type :my/Spec$v1, :p 1, :n -1} "p")
     [:throws
      "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
-  (hc
+  (binding [*sids* #{:spec/A$v1 :spec/B$v1 :spec/C$v1 :spec/D$v1 :spec/E$v1}]
+    (hc2
+     :basic-2
+     [(=
+       {:$type :spec/A$v1, :p 1, :n -1}
+       {:$type :spec/A$v1, :p 1, :n -1})
+      :Boolean
+      true
+      "({$type: spec/A$v1, n: -1, p: 1} == {$type: spec/A$v1, n: -1, p: 1})"
+      "true"]))
+  (hc2
    :basic-2
-   :spec
-   [(=
-     {:$type :spec/A$v1, :p 1, :n -1}
-     {:$type :spec/A$v1, :p 1, :n -1})
-    :Boolean
-    true
-    "({$type: spec/A$v1, n: -1, p: 1} == {$type: spec/A$v1, n: -1, p: 1})"
-    "true"])
-  (hc
-   :basic-2
-   :spec
    [(=
      {:$type :spec/A$v1, :p 1, :n -1}
      {:$type :spec/A$v1, :p 2, :n -1})
@@ -7389,15 +7376,13 @@
     false
     "({$type: spec/A$v1, n: -1, p: 1} == {$type: spec/A$v1, n: -1, p: 2})"
     "false"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(= {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1})
     [:throws
      "l-err/result-always-known 0-0 : Result of '=' would always be false"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(=
      (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)
      {:$type :spec/B$v1, :x 10, :y -1})
@@ -7405,17 +7390,15 @@
     true
     "({$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 ) == {$type: spec/B$v1, x: 10, y: -1})"
     "true"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(=
      {:$type :spec/A$v1, :p 1, :n -1}
      (get {:$type :spec/B$v1, :x 10, :y -1} :z))
     [:throws
      "l-err/result-always-known 0-0 : Result of '=' would always be false"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(=
      (get {:$type :spec/A$v1, :p 1, :n -1} :o)
      (get {:$type :spec/B$v1, :x 10, :y -1} :z))
@@ -7423,17 +7406,15 @@
     true
     "({$type: spec/A$v1, n: -1, p: 1}.o == {$type: spec/B$v1, x: 10, y: -1}.z)"
     "true"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(= (get {:$type :spec/D$v1} :ao) (get {:$type :spec/D$v1} :ao))
     :Boolean
     true
     "({$type: spec/D$v1}.ao == {$type: spec/D$v1}.ao)"
     "true"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(if
      true
       {:$type :spec/A$v1, :p 1, :n -1}
@@ -7442,25 +7423,22 @@
     {:$type :spec/A$v1, :p 1, :n -1}
     "(if(true) {{$type: spec/A$v1, n: -1, p: 1}} else {{$type: spec/A$v1, n: -2, p: 1}})"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(if true {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1})
     [:Instance :*]
     {:$type :spec/A$v1, :p 1, :n -1}
     "(if(true) {{$type: spec/A$v1, n: -1, p: 1}} else {{$type: spec/C$v1}})"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(get
      (if true {:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1})
      :p)
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(if
      true
       {:$type :spec/A$v1, :p 1, :n -1}
@@ -7469,9 +7447,8 @@
     {:$type :spec/A$v1, :p 1, :n -1}
     "(if(true) {{$type: spec/A$v1, n: -1, p: 1}} else {{$type: spec/B$v1, x: 1, y: -1}})"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(if
      true
       {:$type :spec/A$v1, :p 1, :n -1}
@@ -7480,9 +7457,8 @@
     {:$type :spec/A$v1, :p 1, :n -1}
     "(if(true) {{$type: spec/A$v1, n: -1, p: 1}} else {{$type: spec/C$v1}.refineTo( spec/B$v1 )})"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(if
      true
       {:$type :spec/A$v1, :p 1, :n -1}
@@ -7491,9 +7467,8 @@
     {:$type :spec/A$v1, :p 1, :n -1}
     "(if(true) {{$type: spec/A$v1, n: -1, p: 1}} else {{$type: spec/C$v1}.refineTo( spec/A$v1 )})"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(if
      true
       (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)
@@ -7502,9 +7477,8 @@
     {:$type :spec/B$v1, :x 10, :y -1}
     "(if(true) {{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )} else {{$type: spec/C$v1}.refineTo( spec/B$v1 )})"
     "{$type: spec/B$v1, x: 10, y: -1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(if
      true
       (valid {:$type :spec/A$v1, :p 1, :n -1})
@@ -7513,23 +7487,20 @@
     {:$type :spec/A$v1, :p 1, :n -1}
     "(if(true) {(valid {$type: spec/A$v1, n: -1, p: 1})} else {{$type: spec/A$v1, n: -2, p: 1}})"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(get {:$type :spec/A$v1, :p 1, :n -1} :o)
     [:Maybe :Integer]
     :Unset
     "{$type: spec/A$v1, n: -1, p: 1}.o"
     "Unset"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(valid (get {:$type :spec/A$v1, :p 1, :n -1} :o))
     [:throws
      "h-err/arg-type-mismatch 0-0 : Argument to 'valid' must be an instance of known type"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v
       (if
@@ -7541,47 +7512,41 @@
     {:$type :spec/A$v1, :p 1, :n -1}
     "({ v = (if(true) {(valid {$type: spec/A$v1, n: -1, p: 1})} else {{$type: spec/A$v1, n: -2, p: 1}}); (ifValue(v) {v} else {{$type: spec/A$v1, n: -3, p: 1}}) })"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [[{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/A$v1, :p 1, :n -2}]
     [:Vec [:Instance :spec/A$v1]]
     [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/A$v1, :p 1, :n -2}]
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/A$v1, n: -2, p: 1}]"
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/A$v1, n: -2, p: 1}]"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [[{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}]
     [:Vec [:Instance :*]]
     [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}]
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}]"
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}]"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 0)
     [:Instance :*]
     {:$type :spec/A$v1, :p 1, :n -1}
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}][0]"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(count {:$type :spec/A$v1, :p 1, :n -1})
     [:throws
      "h-err/no-matching-signature 0-0 : No matching signature for 'count'"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(get
      (get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 0)
      :p)
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(get
      (refine-to
       (get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 0)
@@ -7591,9 +7556,8 @@
     1
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}][0].refineTo( spec/A$v1 ).p"
     "1"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(get
      (refine-to
       (get [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}] 1)
@@ -7605,9 +7569,8 @@
     "[{$type: spec/A$v1, n: -1, p: 1}, {$type: spec/C$v1}][1].refineTo( spec/A$v1 ).p"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/A$v1'"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [vs [{:$type :spec/A$v1, :p 1, :n -1} {:$type :spec/C$v1}]]
       (if true (get vs 0) (get vs 1)))
@@ -7777,33 +7740,29 @@
    [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :other/Spec$v1)
     [:throws
      "h-err/resource-spec-not-found 0-0 : Resource spec not found: other/Spec$v1"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)
     :Boolean
     true
     "{$type: spec/A$v1, n: -1, p: 1}.refinesTo?( spec/B$v1 )"
     "true"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1)
     :Boolean
     false
     "{$type: spec/A$v1, n: -1, p: 1}.refinesTo?( spec/C$v1 )"
     "false"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1)
     [:Instance :spec/B$v1]
     {:$type :spec/B$v1, :x 10, :y -1}
     "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )"
     "{$type: spec/B$v1, x: 10, y: -1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1)
     [:Instance :spec/C$v1]
     [:throws
@@ -7811,17 +7770,15 @@
     "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 )"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))
     :Boolean
     true
     "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 ))"
     "true"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     :Boolean
     [:throws
@@ -7829,9 +7786,8 @@
     "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)
     [:Instance :spec/B$v1]
     [:throws
@@ -7839,33 +7795,29 @@
     "{$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )"
     [:throws
      "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(valid? (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))
     :Boolean
     false
     "(valid? {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 ))"
     "false"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))
     [:Maybe [:Instance :spec/B$v1]]
     :Unset
     "(valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 ))"
     "Unset"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)]
       (if-value v [1] [2]))
     [:throws
      "l-err/first-argument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v
       (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))]
@@ -7874,9 +7826,8 @@
     [2]
     "({ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[2]}) })"
     "[2]"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))]
       (if-value v [1] [2]))
@@ -7884,9 +7835,8 @@
     [1]
     "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[2]}) })"
     "[1]"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))]
       (if-value v [1] "no"))
@@ -7894,9 +7844,8 @@
     [1]
     "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {\"no\"}) })"
     "[1]"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))]
       (if-value v [1] ["no"]))
@@ -7904,9 +7853,8 @@
     [1]
     "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[\"no\"]}) })"
     "[1]"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))]
       (if-value v [1] []))
@@ -7914,9 +7862,8 @@
     [1]
     "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) })"
     "[1]"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v
       (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))]
@@ -7925,9 +7872,8 @@
     []
     "({ v = (valid {$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[]}) })"
     "[]"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let
      [v
       (valid (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))
@@ -7936,9 +7882,8 @@
       (if-value w 1 2))
     [:throws
      "l-err/disallowed-unset-variable 0-0 : Disallowed use of Unset variable 'v'; you may want '$no-value'"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [{:$type :spec/A$v1, :p 10, :n -1}
     [:Instance :spec/A$v1]
     [:throws
@@ -7946,9 +7891,8 @@
     "{$type: spec/A$v1, n: -1, p: 10}"
     [:throws
      "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/A$v1)
     [:Instance :spec/A$v1]
     [:throws
@@ -7956,17 +7900,15 @@
     "{$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/A$v1 )"
     [:throws
      "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/A$v1)
     [:Instance :spec/A$v1]
     {:$type :spec/A$v1, :p 1, :n -1}
     "{$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/A$v1 )"
     "{$type: spec/A$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     [:Maybe [:Instance :spec/C$v1]]
     [:throws
@@ -7974,9 +7916,8 @@
     "(valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(valid? (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1))
     :Boolean
     [:throws
@@ -7984,37 +7925,32 @@
     "(valid? {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/C$v1 ))"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A$v1' to 'spec/C$v1'"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/C$v1)
     :Boolean
     false
     "{$type: spec/A$v1, n: -1, p: 1}.refinesTo?( spec/C$v1 )"
     "false"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/A$v1)
     :Boolean
     true
     "{$type: spec/A$v1, n: -1, p: 1}.refinesTo?( spec/A$v1 )"
     "true"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refines-to? {:$type :spec/A$v1, :p 1, :n -1} :spec/X$v1)
     [:throws
      "h-err/resource-spec-not-found 0-0 : Resource spec not found: spec/X$v1"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(get {:$type :spec/A$v1, :p 1, :n -1} :$type)
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: $type"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refine-to {:$type :spec/E$v1} :spec/C$v1)
     [:Instance :spec/C$v1]
     [:throws
@@ -8022,25 +7958,22 @@
     "{$type: spec/E$v1}.refineTo( spec/C$v1 )"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/E$v1' to 'spec/C$v1'"]])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refines-to? {:$type :spec/E$v1} :spec/C$v1)
     :Boolean
     false
     "{$type: spec/E$v1}.refinesTo?( spec/C$v1 )"
     "false"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refine-to {:$type :spec/E$v1, :co {:$type :spec/C$v1}} :spec/C$v1)
     [:Instance :spec/C$v1]
     {:$type :spec/C$v1}
     "{$type: spec/E$v1, co: {$type: spec/C$v1}}.refineTo( spec/C$v1 )"
     "{$type: spec/C$v1}"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(refines-to?
      {:$type :spec/E$v1, :co {:$type :spec/C$v1}}
      :spec/C$v1)
@@ -8048,9 +7981,8 @@
     true
     "{$type: spec/E$v1, co: {$type: spec/C$v1}}.refinesTo?( spec/C$v1 )"
     "true"])
-  (hc
+  (hc2
    :basic-2
-   :spec
    [(let [v {:$type :spec/A$v1, :p 10, :n -1}] (if-value v 1 2))
     [:throws
      "l-err/first-argument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]]))
@@ -8225,18 +8157,14 @@
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 't' has wrong type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec
-      :C
-      :abstract
-      (refinements
-       [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1 :n 1}"]]))
-     (spec :T :abstract (variables [:n "Integer"]))
-     (spec :V :concrete (variables [:t :spec/T$v1])))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:abstract? true
+                                                :refines-to {:spec/T$v1 {:name "spec/C$v1/as_T"
+                                                                         :expr '{:$type :spec/T$v1
+                                                                                 :n 1}}}}
+                                    :spec/T$v1 {:abstract? true
+                                                :spec-vars {:n "Integer"}}
+                                    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
     [:throws
