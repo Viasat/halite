@@ -7,19 +7,6 @@
    [jibe.logic.expression :as expression]
    [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]]))
 
-(defn make-workspace-fn [workspace]
-  (fn [expr-str] (update-in workspace
-                            [:specs
-                             0
-                             :jibe.data.model/spec-refinements
-                             0
-                             :jibe.data.model/refinement-e]
-                            (fn [_] (expression/parse :halite
-                                                      (string/replace
-                                                       "{:$type :my/Result$v1, :x <expr>}"
-                                                       "<expr>"
-                                                       expr-str))))))
-
 (defn make-spec-map-fn [spec-map]
   (fn [expr]
     (let [first-pair (first spec-map)
