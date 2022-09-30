@@ -8491,23 +8491,14 @@
      [(refine-to
        {:$type :spec/V$v1, :t {:$type :spec/C$v1}}
        :spec/C$v1)])))
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec
-      :V
-      :abstract
-      (variables [:t :spec/T$v1])
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "(refine-to t :spec/T$v1)"]]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:abstract? true,
+                :refines-to {:spec/T$v1 {:expr '(refine-to t :spec/T$v1),
+                                         :name "spec/V$v1/as_t"}},
+                :spec-vars {:t :spec/T$v1}}}
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1)
     [:Instance :spec/T$v1]
     [:throws
@@ -8515,26 +8506,16 @@
     "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/T$v1 )"
     [:throws
      "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec
-      :V
-      :abstract
-      (variables [:t :spec/T$v1])
-      (refinements
-       [:as_t
-        :to
-        :spec/T$v1
-        [:halite "(when false (refine-to t :spec/T$v1))"]]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:abstract? true,
+                :refines-to {:spec/T$v1 {:expr '(when
+                                                 false
+                                                  (refine-to t :spec/T$v1)),
+                                         :name "spec/V$v1/as_t"}},
+                :spec-vars {:t :spec/T$v1}}}
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1)
     [:Instance :spec/T$v1]
     [:throws
@@ -8542,21 +8523,11 @@
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t
-        :to
-        :spec/T$v1
-        [:halite "(when false {:$type :spec/T$v1})"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '(when false {:$type :spec/T$v1})
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
     [:throws
@@ -8564,83 +8535,46 @@
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :V []}
-     (spec
-      :V
-      :concrete
-      (variables [:t :spec/T$v1])
-      (refinements [:as_t :to :spec/T$v1 [:halite "t"]]))
-     (spec :T :concrete))]
-   :spec
+  (hc2
+   {:spec/T$v1 {},
+    :spec/V$v1 {:refines-to {:spec/T$v1 {:expr 't, :name "spec/V$v1/as_t"}}
+                :spec-vars {:t :spec/T$v1}}}
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1)
     [:Instance :spec/T$v1]
     {:$type :spec/T$v1}
     "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/T$v1 )"
     "{$type: spec/T$v1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec
-      :V
-      :concrete
-      (variables [:t :spec/T$v1])
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "(refine-to t :spec/T$v1)"]]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:refines-to {:spec/T$v1 {:expr '(refine-to t :spec/T$v1),
+                                         :name "spec/V$v1/as_t"}},
+                :spec-vars {:t :spec/T$v1}}}
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1)
     [:Instance :spec/T$v1]
     {:$type :spec/T$v1}
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )"
     "{$type: spec/T$v1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :V [], :R []}
-     (spec
-      :V
-      :concrete
-      (variables [:t :spec/T$v1])
-      (refinements
-       [:as_r :to :spec/R$v1 [:halite "(refine-to t :spec/R$v1)"]]))
-     (spec
-      :T
-      :concrete
-      (refinements
-       [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-     (spec :R :concrete))]
-   :spec
+  (hc2
+   {:spec/R$v1 {},
+    :spec/T$v1 {:refines-to {:spec/R$v1 {:expr '{:$type :spec/R$v1}
+                                         :name "spec/T$v1/as_r"}}},
+    :spec/V$v1 {:refines-to {:spec/R$v1 {:expr '(refine-to t :spec/R$v1),
+                                         :name "spec/V$v1/as_r"}},
+                :spec-vars {:t :spec/T$v1}}}
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/R$v1)
     [:Instance :spec/R$v1]
     {:$type :spec/R$v1}
     "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/R$v1 )"
     "{$type: spec/R$v1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec
-      :V
-      :concrete
-      (variables [:t :spec/T$v1])
-      (refinements
-       [:as_c :to :spec/C$v1 [:halite "(refine-to t :spec/C$v1)"]]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:refines-to {:spec/C$v1 {:expr '(refine-to t :spec/C$v1),
+                                         :name "spec/V$v1/as_c"}},
+                :spec-vars {:t :spec/T$v1}}}
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/C$v1)
     [:Instance :spec/C$v1]
     {:$type :spec/C$v1}
@@ -8723,18 +8657,11 @@
 
 (deftest
   test-component-refine-to
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :abstract))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(refine-to
      (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)
      :spec/T$v1)
@@ -8742,13 +8669,8 @@
     {:$type :spec/T$v1}
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/T$v1 )"
     "{$type: spec/T$v1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :V []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec :T :concrete))]
-   :spec
+  (hc2
+   {:spec/T$v1 {}, :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(refine-to
      (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)
      :spec/T$v1)
@@ -8756,20 +8678,14 @@
     {:$type :spec/T$v1}
     "{$type: spec/V$v1, t: {$type: spec/T$v1}}.t.refineTo( spec/T$v1 )"
     "{$type: spec/T$v1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V [], :N []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
-       [:as_n :to :spec/N$v1 [:halite "{:$type :spec/N$v1}"]]))
-     (spec :T :abstract)
-     (spec :N :concrete))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/N$v1 {:expr '{:$type :spec/N$v1},
+                                         :name "spec/C$v1/as_n"},
+                             :spec/T$v1 {:expr '{:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/N$v1 {},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(refine-to
      (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)
      :spec/N$v1)
@@ -8777,19 +8693,12 @@
     {:$type :spec/N$v1}
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )"
     "{$type: spec/N$v1}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :C [], :V [], :N []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec
-      :C
-      :concrete
-      (refinements
-       [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-     (spec :T :abstract)
-     (spec :N :concrete))]
-   :spec
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr {:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/N$v1 {},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(refine-to
      (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)
      :spec/N$v1)
@@ -8799,18 +8708,11 @@
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.t.refineTo( spec/N$v1 )"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/N$v1'"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:T [], :V [], :N []}
-     (spec :V :concrete (variables [:t :spec/T$v1]))
-     (spec
-      :T
-      :concrete
-      (refinements
-       [:as_n :to :spec/N$v1 [:halite "{:$type :spec/N$v1}"]]))
-     (spec :N :concrete))]
-   :spec
+  (hc2
+   {:spec/N$v1 {},
+    :spec/T$v1 {:refines-to {:spec/N$v1 {:expr '{:$type :spec/N$v1},
+                                         :name "spec/T$v1/as_n"}}},
+    :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(refine-to
      (get {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :t)
      :spec/N$v1)
@@ -8822,27 +8724,18 @@
 (deftest
   test-exception-handling-instances-vs-refinements
   (let
-   [ws
-    [(workspace
-      :spec
-      #:spec{:Inc []}
-      (spec
-       :Inc
-       :concrete
-       (variables [:x "Integer"] [:y "Integer"])
-       (constraints [:main [:halite (pr-str '(= (inc x) y))]])))]]
-    (hc
+   [ws {:spec/Inc$v1 {:constraints [["main" '(= (inc x) y)]]
+                      :spec-vars {:x "Integer", :y "Integer"}}}]
+    (hc2
      ws
-     :spec
      "Instance literal that meets all the constraints produces an instance"
      [{:$type :spec/Inc$v1, :x 1, :y 2}
       [:Instance :spec/Inc$v1]
       {:$type :spec/Inc$v1, :x 1, :y 2}
       "{$type: spec/Inc$v1, x: 1, y: 2}"
       "{$type: spec/Inc$v1, x: 1, y: 2}"])
-    (hc
+    (hc2
      ws
-     :spec
      "Instance literal that violates a constraint throws a runtime error"
      [{:$type :spec/Inc$v1, :x 1, :y 1}
       [:Instance :spec/Inc$v1]
@@ -8851,37 +8744,23 @@
       "{$type: spec/Inc$v1, x: 1, y: 1}"
       [:throws
        "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints main"]])
-    (hc
+    (hc2
      ws
-     :spec
      "`valid?` catches the constraint violations to produce a boolean"
      [(valid? {:$type :spec/Inc$v1, :x 1, :y 1})
       :Boolean
       false
       "(valid? {$type: spec/Inc$v1, x: 1, y: 1})"
       "false"])
-    (hc
-     [(workspace
-       :spec
-       #:spec{:Inc [], :BigInc [], :Ratio []}
-       (spec
-        :Inc
-        :concrete
-        (variables [:x "Integer"] [:y "Integer"])
-        (constraints [:main [:halite (pr-str '(= (inc x) y))]])
-        (refinements
-         [:as_big_inc
-          :to
-          :spec/BigInc$v1
-          [:halite
-           "(when (>= x 100) {:$type :spec/BigInc$v1, :x x, :y y})"]]))
-       (spec :BigInc :concrete (variables [:x "Integer"] [:y "Integer"]))
-       (spec
-        :Ratio
-        :concrete
-        (variables [:x "Integer"] [:y "Integer"] [:r "Integer"])
-        (constraints [:main [:halite (pr-str '(= r (div x y)))]])))]
-     :spec
+    (hc2
+     {:spec/Inc$v1 {:constraints [["main" '(= (inc x) y)]],
+                    :refines-to {:spec/BigInc$v1 {:expr '(when
+                                                          (>= x 100)
+                                                           {:$type :spec/BigInc$v1,
+                                                            :x x,
+                                                            :y y}),
+                                                  :name "spec/Inc$v1/as_big_inc"}},
+                    :spec-vars {:x "Integer", :y "Integer"}}}
      "valid` catches the constraint violations to produce a `Maybe`"
      [(valid {:$type :spec/Inc$v1, :x 1, :y 1})
       [:Maybe [:Instance :spec/Inc$v1]]
@@ -8889,44 +8768,33 @@
       "(valid {$type: spec/Inc$v1, x: 1, y: 1})"
       "Unset"]))
   (let
-   [ws
-    [(workspace
-      :spec
-      #:spec{:Ratio []}
-      (spec
-       :Ratio
-       :concrete
-       (variables [:x "Integer"] [:y "Integer"] [:r "Integer"])
-       (constraints [:main [:halite (pr-str '(= r (div x y)))]])))]]
-    (hc
+   [ws {:spec/Ratio$v1 {:constraints [["main" '(= r (div x y))]],
+                        :spec-vars {:r "Integer", :x "Integer", :y "Integer"}}}]
+    (hc2
      ws
-     :spec
      [{:$type :spec/Ratio$v1, :x 6, :y 3, :r 2}
       [:Instance :spec/Ratio$v1]
       {:$type :spec/Ratio$v1, :x 6, :y 3, :r 2}
       "{$type: spec/Ratio$v1, r: 2, x: 6, y: 3}"
       "{$type: spec/Ratio$v1, r: 2, x: 6, y: 3}"])
-    (hc
+    (hc2
      ws
-     :spec
      "A runtime error in a spec expression results in a runtime error to the user"
      [{:$type :spec/Ratio$v1, :x 6, :y 0, :r 8}
       [:Instance :spec/Ratio$v1]
       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
       "{$type: spec/Ratio$v1, r: 8, x: 6, y: 0}"
       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
-    (hc
+    (hc2
      ws
-     :spec
      "`valid?` does not handle these exceptions"
      [(valid? {:$type :spec/Ratio$v1, :x 6, :y 0, :r 8})
       :Boolean
       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
       "(valid? {$type: spec/Ratio$v1, r: 8, x: 6, y: 0})"
       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
-    (hc
+    (hc2
      ws
-     :spec
      "nor does `valid`"
      [(valid {:$type :spec/Ratio$v1, :x 6, :y 0, :r 8})
       [:Maybe [:Instance :spec/Ratio$v1]]
@@ -8934,35 +8802,26 @@
       "(valid {$type: spec/Ratio$v1, r: 8, x: 6, y: 0})"
       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]]))
   (let
-   [ws
-    [(workspace
-      :spec
-      #:spec{:Inc [], :BigInc [], :Meatball []}
-      (spec
-       :Inc
-       :concrete
-       (variables [:x "Integer"] [:y "Integer"])
-       (constraints [:main [:halite (pr-str '(= (inc x) y))]])
-       (refinements
-        [:as_big_inc
-         :to
-         :spec/BigInc$v1
-         [:halite
-          "(when (>= x 100) {:$type :spec/BigInc$v1, :x x, :y y})"]]))
-      (spec :BigInc :concrete (variables [:x "Integer"] [:y "Integer"]))
-      (spec :Meatball :concrete))]]
-    (hc
+   [ws {:spec/BigInc$v1 {:spec-vars {:x "Integer", :y "Integer"}},
+        :spec/Inc$v1 {:constraints [["main" '(= (inc x) y)]],
+                      :refines-to {:spec/BigInc$v1 {:expr '(when
+                                                            (>= x 100)
+                                                             {:$type :spec/BigInc$v1,
+                                                              :x x,
+                                                              :y y}),
+                                                    :name "spec/Inc$v1/as_big_inc"}},
+                      :spec-vars {:x "Integer", :y "Integer"}},
+        :spec/Meatball$v1 {}}]
+    (hc2
      ws
-     :spec
      "If the refinement expression produces a value then an instance value is produced"
      [(refine-to {:$type :spec/Inc$v1, :x 200, :y 201} :spec/BigInc$v1)
       [:Instance :spec/BigInc$v1]
       {:$type :spec/BigInc$v1, :x 200, :y 201}
       "{$type: spec/Inc$v1, x: 200, y: 201}.refineTo( spec/BigInc$v1 )"
       "{$type: spec/BigInc$v1, x: 200, y: 201}"])
-    (hc
+    (hc2
      ws
-     :spec
      "If the refinement expression produces :Unset, then a runtime exception is thrown"
      [(refine-to {:$type :spec/Inc$v1, :x 1, :y 2} :spec/BigInc$v1)
       [:Instance :spec/BigInc$v1]
@@ -8971,40 +8830,28 @@
       "{$type: spec/Inc$v1, x: 1, y: 2}.refineTo( spec/BigInc$v1 )"
       [:throws
        "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/Inc$v1' to 'spec/BigInc$v1'"]])
-    (hc
+    (hc2
      ws
-     :spec
      [(refines-to? {:$type :spec/Inc$v1, :x 1, :y 2} :spec/BigInc$v1)
       :Boolean
       false
       "{$type: spec/Inc$v1, x: 1, y: 2}.refinesTo?( spec/BigInc$v1 )"
       "false"])
-    (hc
+    (hc2
      ws
-     :spec
      [(refines-to? {:$type :spec/Inc$v1, :x 1, :y 2} :spec/Meatball$v1)
       :Boolean
       false
       "{$type: spec/Inc$v1, x: 1, y: 2}.refinesTo?( spec/Meatball$v1 )"
       "false"]))
   (let
-   [ws
-    [(workspace
-      :spec
-      #:spec{:Inc [], :BigInc []}
-      (spec
-       :Inc
-       :concrete
-       (refinements
-        [:as_big_inc
-         :to
-         :spec/BigInc$v1
-         [:halite
-          "(when (>= (div 1 0) 100) {:$type :spec/BigInc$v1})"]]))
-      (spec :BigInc :concrete))]]
-    (hc
+   [ws {:spec/BigInc$v1 {}
+        :spec/Inc$v1 {:refines-to {:spec/BigInc$v1 {:expr '(when
+                                                            (>= (div 1 0) 100)
+                                                             {:$type :spec/BigInc$v1}),
+                                                    :name "spec/Inc$v1/as_big_inc"}}}}]
+    (hc2
      ws
-     :spec
      "A legit runtime error in a refinement is propagated to the user"
      [(refine-to {:$type :spec/Inc$v1} :spec/BigInc$v1)
       [:Instance :spec/BigInc$v1]
@@ -9012,9 +8859,8 @@
       "{$type: spec/Inc$v1}.refineTo( spec/BigInc$v1 )"
       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
 
-    (hc
+    (hc2
      ws
-     :spec
      "A legit runtime error is not handled by `refines-to?`"
      [(refines-to? {:$type :spec/Inc$v1} :spec/BigInc$v1)
       :Boolean
@@ -9047,12 +8893,8 @@
   (h
    (map (inc x) [x []])
    [:throws "h-err/undefined-symbol 0-0 : Undefined: 'x'"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A []}
-     (spec :A :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
    [(map [x {:$type :spec/A$v1, :x 1}] true)
     [:throws
      "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'map', not :spec/A$v1"]])
