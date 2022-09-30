@@ -39,7 +39,7 @@
 (def do!-fence-ops
   "The set of ops that a $do! form cannot bubble up out of without changing semantics.
   The $do! form is in here too, to avoid redundant rewrites."
-  '#{if valid? $do!})
+  '#{if valid? $do! $value? $value!})
 
 (s/defn ^:private first-nested-do :- (s/maybe [(s/one s/Int :index) (s/one ssa/Node :node)])
   [{:keys [ssa-graph] :as ctx}, form]
