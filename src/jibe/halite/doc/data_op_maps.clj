@@ -20,6 +20,23 @@
                                                        "<expr>"
                                                        expr-str))))))
 
+(defn make-spec-map-fn [spec-map]
+  (fn [expr]
+    (let [first-pair (first spec-map)
+          rest-pairs (rest spec-map)]
+      (apply hash-map (mapcat identity (into [(update-in first-pair
+                                                         [1
+                                                          :refines-to]
+                                                         (fn [refinements]
+                                                           (let [first-refinement (first refinements)
+                                                                 rest-refinements (rest refinements)]
+                                                             (apply hash-map (mapcat identity (into [(update-in first-refinement [1 :expr]
+                                                                                                                (fn [_]
+                                                                                                                  {:$type :my/Result$v1
+                                                                                                                   :x expr}))]
+                                                                                                    rest-refinements))))))]
+                                             rest-pairs))))))
+
 (def op-maps
   {'$no-value {:sigs [["" "unset"]]
                :sigs-j [["'$no-value'" "unset"]]
@@ -569,20 +586,15 @@
                   :tags #{:optional-op :control-flow :special-form}
                   :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol."
                   :comment "This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value."
-                  :examples [{:workspace-f (make-workspace-fn (workspace :my
-                                                                         {:my/Spec []
-                                                                          :my/Result []}
-                                                                         (spec :Result :concrete
-                                                                               (variables [:x "Integer"])
-                                                                               (refinements
-                                                                                [:r :from :my/Other$v1 [:halite "placeholder"]]))
-                                                                         (spec :Other :concrete)
-                                                                         (spec :Spec :concrete
-                                                                               (variables [:p "Integer"]
-                                                                                          [:n "Integer"]
-                                                                                          [:o "Integer" :optional])
-                                                                               (constraints [:pc [:halite "(> p 0)"]]
-                                                                                            [:pn [:halite "(< n 0)"]]))))
+                  :examples [{:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "my/Result$v1/r"
+                                                                                                       :expr 'placeholder
+                                                                                                       :inverted? true}}}
+                                                             :my/Result$v1 {:spec-vars {:x "Integer"}}
+                                                             :my/Spec$v1 {:spec-vars {:n "Integer"
+                                                                                      :o [:Maybe "Integer"]
+                                                                                      :p "Integer"}
+                                                                          :constraints [["pc" '(> p 0)]
+                                                                                        ["pn" '(< n 0)]]}})
                               :instance {:$type :my/Other$v1}
                               :expr-str "(if-value-let [x (when (> 2 1) 19)] (inc x) 0)"
                               :expr-str-j :auto
