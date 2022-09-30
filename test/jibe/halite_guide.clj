@@ -199,15 +199,13 @@
                     j-result)))
           (list 'hf expr s))))))
 
-(def workspaces-map {:basic [(workspace :my
-                                        {:my/Spec []}
-                                        (spec :Spec :concrete
-                                              (variables [:p "Integer"]
-                                                         [:n "Integer"]
-                                                         [:o "Integer" :optional])
-                                              (constraints [:pc [:halite "(> p 0)"]]
-                                                           [:pn [:halite "(< n 0)"]])))]
-                     :basic-abstract [(workspace :my
+(def spec-map-map {:basic {:my/Spec$v1 {:spec-vars {:n "Integer"
+                                                    :o [:Maybe "Integer"]
+                                                    :p "Integer"}
+                                        :constraints [["pc" '(> p 0)]
+                                                      ["pn" '(< n 0)]]}}})
+
+(def workspaces-map {:basic-abstract [(workspace :my
                                                  {:my/Spec []}
                                                  (spec :Spec :abstract
                                                        (variables [:p "Integer"]
@@ -328,7 +326,12 @@
                    comment?)
         [expr & args] raw-args
         [expected-t result-expected j-expr-expected j-result-expected] args]
-    `(let [i# (hc* nil (to-spec-env ~spec-map) '~expr false)]
+    `(let [i# (hc* nil
+                   (to-spec-env ~(if (keyword? spec-map)
+                                   `(spec-map-map ~spec-map)
+                                   spec-map))
+                   '~expr
+                   false)]
        (if (nil? (.-s i#))
          (do
            (is (= ~expected-t (.-t i#)))
@@ -7093,15 +7096,13 @@
    (get (if true #{} [9 8 7 6]) (+ 1 2))
    [:throws
     "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])
-  (hc
+  (hc2
    :basic
-   :my
    [(get (if true {:$type :my/Spec$v1, :n -3, :p 2} [9 8 7 6]) (+ 1 2))
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (if-value o (div 5 0) 1))
@@ -7109,9 +7110,8 @@
     1
     "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {(5 / 0)} else {1}) })"
     "1"])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (if-value o 1 (div 5 0)))
@@ -7120,9 +7120,8 @@
     "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {1} else {(5 / 0)}) })"
     [:throws
      "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (if-value o o 1))
@@ -7130,9 +7129,8 @@
     1
     "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (ifValue(o) {o} else {1}) })"
     "1"])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)]
       (if-value o o 1))
@@ -7140,33 +7138,29 @@
     3
     "({ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; (ifValue(o) {o} else {1}) })"
     "3"])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (if-value o o o))
     [:throws
      "l-err/disallowed-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)]
       (if-value o o o))
     [:throws
      "l-err/disallowed-unset-variable 0-0 : Disallowed use of Unset variable 'o'; you may want '$no-value'"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(let [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)] o)
     [:Maybe :Integer]
     3
     "({ o = {$type: my/Spec$v1, n: -3, o: 3, p: 2}.o; o })"
     "3"])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (when-value o (div 5 0)))
@@ -7174,9 +7168,8 @@
     :Unset
     "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(5 / 0)}) })"
     "Unset"])
-  (hc
+  (hc2
    :basic
-   :my
    [(if-value-let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
      (div 5 0)
@@ -7185,9 +7178,8 @@
     1
     "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(5 / 0)} else {1})"
     "1"])
-  (hc
+  (hc2
    :basic
-   :my
    [(if-value-let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
      (when false 1)
@@ -7196,9 +7188,8 @@
     :Unset
     "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(when(false) {1})} else {(when(false) {2})})"
     "Unset"])
-  (hc
+  (hc2
    :basic
-   :my
    [(if-value-let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 4} :o)]
      (when false 1)
@@ -7207,9 +7198,8 @@
     :Unset
     "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, o: 4, p: 2}.o ) {(when(false) {1})} else {(when(false) {2})})"
     "Unset"])
-  (hc
+  (hc2
    :basic
-   :my
    [(when-value-let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
      (div 5 0))
@@ -7217,9 +7207,8 @@
     :Unset
     "(whenValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {(5 / 0)})"
     "Unset"])
-  (hc
+  (hc2
    :basic
-   :my
    [(if-value-let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
      1
@@ -7259,9 +7248,8 @@
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
    "(when(true) {(5 / 0)})"
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"])
-  (hc
+  (hc2
    :basic
-   :my
    [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2}))
     [:throws
      "h-err/arg-type-mismatch 0-0 : Argument to 'valid?' must be an instance of known type"]])
@@ -7295,23 +7283,20 @@
     {:$type :my/Spec$v1}
     "{$type: my/Spec$v1}"
     "{$type: my/Spec$v1}"])
-  (hc
+  (hc2
    :basic
-   :my
    [{:$type :my/Spec$v1}
     [:throws
      "h-err/missing-required-vars 0-0 : Missing required variables: n, p"]])
-  (hc
+  (hc2
    :basic
-   :my
    [{:$type :my/Spec$v1, :p 1, :n -1}
     [:Instance :my/Spec$v1]
     {:$type :my/Spec$v1, :p 1, :n -1}
     "{$type: my/Spec$v1, n: -1, p: 1}"
     "{$type: my/Spec$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic
-   :my
    [(=
      {:$type :my/Spec$v1, :p 1, :n -1}
      {:$type :my/Spec$v1, :p 1, :n -1})
@@ -7326,15 +7311,13 @@
    false
    "({$type: my/Spec$v1, n: -1, p: 1} == {$type: my/Spec$v1, n: -1, p: 2})"
    "false"]
-  (hc
-   :basic
-   :other
+  (hc2
+   {}
    [{:$type :my/Spec$v1, :p 1, :n -1}
     [:throws
      "h-err/resource-spec-not-found 0-0 : Resource spec not found: my/Spec$v1"]])
-  (hc
+  (hc2
    :basic
-   :my
    [{:$type :my/Spec$v1, :p 0, :n -1}
     [:Instance :my/Spec$v1]
     [:throws
@@ -7342,14 +7325,12 @@
     "{$type: my/Spec$v1, n: -1, p: 0}"
     [:throws
      "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints pc"]])
-  (hc
+  (hc2
    :basic
-   :my
    [{:$type :my/Spec$v1, :p 0, :n -1, :x 20}
     [:throws "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: x"]])
-  (hc
+  (hc2
    :basic
-   :my
    [{:$type :my/Spec$v1, :p "0", :n -1}
     [:throws
      "h-err/field-value-of-wrong-type 0-0 : Value of 'p' has wrong type"]])
@@ -7361,35 +7342,30 @@
     {:$type :my/Spec$v1, :p 1, :n -1}
     "{$type: my/Spec$v1, n: -1, p: 1}"
     "{$type: my/Spec$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic
-   :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} :p)
     :Integer
     1
     "{$type: my/Spec$v1, n: -1, p: 1}.p"
     "1"])
-  (hc
+  (hc2
    :basic
-   :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} :$type)
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: $type"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} :q)
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} 0)
     [:throws
      "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} "p")
     [:throws
      "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
@@ -7657,37 +7633,32 @@
 
 (deftest
   test-instances-optionality
-  (hc
+  (hc2
    :basic
-   :my
    [{:$type :my/Spec$v1, :p 1, :n -1, :o 100}
     [:Instance :my/Spec$v1]
     {:$type :my/Spec$v1, :p 1, :n -1, :o 100}
     "{$type: my/Spec$v1, n: -1, o: 100, p: 1}"
     "{$type: my/Spec$v1, n: -1, o: 100, p: 1}"])
-  (hc
+  (hc2
    :basic
-   :my
    [(get {:$type :my/Spec$v1, :p 1, :n -1} :o)
     [:Maybe :Integer]
     :Unset
     "{$type: my/Spec$v1, n: -1, p: 1}.o"
     "Unset"])
-  (hc
+  (hc2
    :basic
-   :my
    [(inc (get {:$type :my/Spec$v1, :p 1, :n -1} :o))
     [:throws
      "h-err/no-matching-signature 0-0 : No matching signature for 'inc'"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(if-value (get {:$type :my/Spec$v1, :p 1, :n -1} :o) 19 32)
     [:throws
      "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [v (get {:$type :my/Spec$v1, :p 1, :n -1} :o)]
       (if-value v 19 32))
@@ -7695,9 +7666,8 @@
     32
     "({ v = {$type: my/Spec$v1, n: -1, p: 1}.o; (ifValue(v) {19} else {32}) })"
     "32"])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [v (get {:$type :my/Spec$v1, :p 1, :n -1, :o 0} :o)]
       (if-value v 19 32))
@@ -7708,59 +7678,51 @@
 
 (deftest
   test-instances-valid
-  (hc
+  (hc2
    :basic
-   :my
    [{:$type :my/Spec$v1, :p 1}
     [:throws
      "h-err/missing-required-vars 0-0 : Missing required variables: n"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(valid {:$type :my/Spec$v1, :p 0})
     [:throws
      "h-err/missing-required-vars 0-0 : Missing required variables: n"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(valid? {:$type :my/Spec$v1, :p 0})
     [:throws
      "h-err/missing-required-vars 0-0 : Missing required variables: n"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(valid {:$type :my/Spec$v1, :p 1, :n 0})
     [:Maybe [:Instance :my/Spec$v1]]
     :Unset
     "(valid {$type: my/Spec$v1, n: 0, p: 1})"
     "Unset"])
-  (hc
+  (hc2
    :basic
-   :my
    [(valid {:$type :my/Spec$v1, :p 1, :n -1})
     [:Maybe [:Instance :my/Spec$v1]]
     {:$type :my/Spec$v1, :p 1, :n -1}
     "(valid {$type: my/Spec$v1, n: -1, p: 1})"
     "{$type: my/Spec$v1, n: -1, p: 1}"])
-  (hc
+  (hc2
    :basic
-   :my
    [(valid? {:$type :my/Spec$v1, :p 1, :n 0})
     :Boolean
     false
     "(valid? {$type: my/Spec$v1, n: 0, p: 1})"
     "false"])
-  (hc
+  (hc2
    :basic
-   :my
    [(valid? {:$type :my/Spec$v1, :p 1, :n -1})
     :Boolean
     true
     "(valid? {$type: my/Spec$v1, n: -1, p: 1})"
     "true"])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [v (valid {:$type :my/Spec$v1, :p 1, :n -1})]
       (if-value v "hi" "bye"))
@@ -7768,9 +7730,8 @@
     "hi"
     "({ v = (valid {$type: my/Spec$v1, n: -1, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) })"
     "\"hi\""])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [v (valid {:$type :my/Spec$v1, :p 1, :n 0})]
       (if-value v "hi" "bye"))
@@ -7778,9 +7739,8 @@
     "bye"
     "({ v = (valid {$type: my/Spec$v1, n: 0, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) })"
     "\"bye\""])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [v (valid {:$type :my/Spec$v1, :p 1, :n -1})]
       (if-value v "hi" "bye"))
@@ -7788,17 +7748,15 @@
     "hi"
     "({ v = (valid {$type: my/Spec$v1, n: -1, p: 1}); (ifValue(v) {\"hi\"} else {\"bye\"}) })"
     "\"hi\""])
-  (hc
+  (hc2
    :basic
-   :my
    [(if (valid? {:$type :my/Spec$v1, :p 1, :n 0}) "hi" "bye")
     :String
     "bye"
     "(if((valid? {$type: my/Spec$v1, n: 0, p: 1})) {\"hi\"} else {\"bye\"})"
     "\"bye\""])
-  (hc
+  (hc2
    :basic
-   :my
    [(if (valid? {:$type :my/Spec$v1, :p 1, :n -1}) "hi" "bye")
     :String
     "hi"
@@ -7807,17 +7765,15 @@
 
 (deftest
   test-instance-refine
-  (hc
+  (hc2
    :basic
-   :my
    [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Spec$v1)
     :Boolean
     true
     "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Spec$v1 )"
     "true"])
-  (hc
+  (hc2
    :basic
-   :my
    [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :other/Spec$v1)
     [:throws
      "h-err/resource-spec-not-found 0-0 : Resource spec not found: other/Spec$v1"]])
@@ -10537,9 +10493,8 @@
    (error #{})
    [:throws
     "h-err/no-matching-signature 0-0 : No matching signature for 'error'"])
-  (hc
+  (hc2
    :basic
-   :my
    [(error {:$type :my/Spec$v1, :n 1, :p 1})
     [:throws
      "h-err/no-matching-signature 0-0 : No matching signature for 'error'"]]))
@@ -10659,9 +10614,8 @@
    :spec
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns :x])
     [:throws "h-err/invalid-vector-index 0-0 : Index must be an integer when target is a vector"]])
-  (hc
+  (hc2
    :basic
-   :my
    [(get-in [{:$type :my/Spec$v1, :n -3, :p 2}] [0 :o])
     [:Maybe :Integer]
     :Unset
@@ -10746,9 +10700,8 @@
 
 (deftest
   test-when-value
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (when-value o (+ o 2)))
@@ -10756,9 +10709,8 @@
     :Unset
     "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValue(o) {(o + 2)}) })"
     "Unset"])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)]
       (when-value o (+ o 2)))
@@ -10769,9 +10721,8 @@
 
 (deftest
   test-when-value-let
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
       (when-value-let [x (when-value o (+ o 2))] (inc x)))
@@ -10779,9 +10730,8 @@
     :Unset
     "({ o = {$type: my/Spec$v1, n: -3, p: 2}.o; (whenValueLet ( x = (whenValue(o) {(o + 2)}) ) {(x + 1)}) })"
     "Unset"])
-  (hc
+  (hc2
    :basic
-   :my
    [(let
      [o (get {:$type :my/Spec$v1, :n -3, :p 2, :o 3} :o)]
       (when-value-let [x (when-value o (+ o 2))] (inc x)))
