@@ -8441,56 +8441,35 @@
 
 (deftest
   test-component-refinement
-  (is
-   (thrown-with-msg?
-    ExceptionInfo
-    #"Exception validating spec"
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T [], :C [], :V [], :R []}
-       (spec
-        :V
-        :concrete
-        (variables [:t :spec/T$v1])
-        (refinements [:as_r :to :spec/R$v1 [:halite "t"]]))
-       (spec
-        :C
-        :concrete
-        (refinements
-         [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]
-         [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-       (spec :T :abstract)
-       (spec :R :concrete))]
-     :spec
-     "fails because refinement expression is of type :Instance, but cannot work because R is not C, so the refinement type would not match, even if it knew it was a C in this case"
-     [(refine-to
-       {:$type :spec/V$v1, :t {:$type :spec/C$v1}}
-       :spec/R$v1)])))
-  (is
-   (thrown-with-msg?
-    ExceptionInfo
-    #"Exception validating spec"
-    (hc
-     [(workspace
-       :spec
-       #:spec{:T [], :C [], :V []}
-       (spec
-        :V
-        :concrete
-        (variables [:t :spec/T$v1])
-        (refinements [:as_c :to :spec/C$v1 [:halite "t"]]))
-       (spec
-        :C
-        :concrete
-        (refinements
-         [:as_t :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-       (spec :T :abstract))]
-     :spec
-     "fails because refinement expression is of type :Instance. This effectively means that the type of t is C"
-     [(refine-to
-       {:$type :spec/V$v1, :t {:$type :spec/C$v1}}
-       :spec/C$v1)])))
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/R$v1 {:expr {:$type :spec/R$v1},
+                                         :name "spec/C$v1/as_r"},
+                             :spec/T$v1 {:expr {:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/R$v1 {},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:refines-to {:spec/R$v1 {:expr 't :name "spec/V$v1/as_r"}},
+                :spec-vars {:t :spec/T$v1}}}
+   "fails because refinement expression is of type :Instance, but cannot work because R is not C, so the refinement type would not match, even if it knew it was a C in this case"
+   [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/R$v1)
+    [:Instance :spec/R$v1]
+    [:throws
+     "h-err/invalid-refinement-expression 0-0 : Refinement expression, 't', is not of the expected type"]
+    "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/R$v1 )"
+    [:throws
+     "h-err/invalid-refinement-expression 0-0 : Refinement expression, 't', is not of the expected type"]])
+  (hc2
+   {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr {:$type :spec/T$v1},
+                                         :name "spec/C$v1/as_t"}}},
+    :spec/T$v1 {:abstract? true},
+    :spec/V$v1 {:refines-to {:spec/C$v1 {:expr 't :name "spec/V$v1/as_c"}},
+                :spec-vars {:t :spec/T$v1}}}
+   "fails because refinement expression is of type :Instance. This effectively means that the type of t is C"
+   [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/C$v1)
+    [:Instance :spec/C$v1]
+    [:throws "h-err/invalid-refinement-expression 0-0 : Refinement expression, 't', is not of the expected type"]
+    "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/C$v1 )"
+    [:throws "h-err/invalid-refinement-expression 0-0 : Refinement expression, 't', is not of the expected type"]])
   (hc2
    {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
                                          :name "spec/C$v1/as_t"}}},
@@ -8583,77 +8562,43 @@
 
 (deftest
   test-instantiate-refinement
-  (is
-   (thrown-with-msg?
-    ExceptionInfo
-    #"Exception validating spec"
-    (hc
-     [(workspace
-       :spec
-       #:spec{:U [], :T [], :R []}
-       (spec
-        :U
-        :concrete
-        (refinements
-         [:as_r :to :spec/R$v1 [:halite "{:$type :spec/T$v1}"]]))
-       (spec
-        :T
-        :concrete
-        (refinements
-         [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-       (spec :R :concrete))]
-     :spec
-     [(refine-to {:$type :spec/U$v1} :spec/R$v1)])))
-  (is
-   (thrown-with-msg?
-    ExceptionInfo
-    #"Exception validating spec"
-    (hc
-     [(workspace
-       :spec
-       #:spec{:U [], :T [], :C [], :R []}
-       (spec
-        :U
-        :concrete
-        (refinements
-         [:as_r
-          :to
-          :spec/R$v1
-          [:halite "(refine-to {:$type :spec/C$v1} :spec/T$v1)"]]))
-       (spec
-        :C
-        :concrete
-        (refinements
-         [:as_T :to :spec/T$v1 [:halite "{:$type :spec/T$v1}"]]))
-       (spec
-        :T
-        :concrete
-        (refinements
-         [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-       (spec :R :concrete))]
-     :spec
-     [(refine-to {:$type :spec/U$v1} :spec/R$v1)])))
-  (is
-   (thrown-with-msg?
-    ExceptionInfo
-    #"Exception validating spec"
-    (hc
-     [(workspace
-       :spec
-       #:spec{:U [], :T [], :R []}
-       (spec
-        :U
-        :concrete
-        (refinements
-         [:as_r :to :spec/R$v1 [:halite "{:$type :spec/T$v1}"]]))
-       (spec
-        :T
-        :abstract
-        (refinements
-         [:as_r :to :spec/R$v1 [:halite "{:$type :spec/R$v1}"]]))
-       (spec :R :concrete))]
-     :spec
-     [(refine-to {:$type :spec/U$v1} :spec/R$v1)]))))
+  (hc2
+   {:spec/R$v1 {},
+    :spec/T$v1 {:refines-to {:spec/R$v1 {:expr {:$type :spec/R$v1},
+                                         :name "spec/T$v1/as_r"}}},
+    :spec/U$v1 {:refines-to {:spec/R$v1 {:expr {:$type :spec/T$v1} :name "spec/U$v1/as_r"}}}}
+   [(refine-to {:$type :spec/U$v1} :spec/R$v1)
+    [:Instance :spec/R$v1]
+    [:throws "h-err/invalid-refinement-expression 0-0 : Refinement expression, '{:$type :spec/T$v1}', is not of the expected type"]
+    "{$type: spec/U$v1}.refineTo( spec/R$v1 )"
+    [:throws "h-err/invalid-refinement-expression 0-0 : Refinement expression, '{:$type :spec/T$v1}', is not of the expected type"]])
+  (binding [*sids* [:spec/U$v1
+                    :spec/T$v1
+                    :spec/C$v1
+                    :spec/R$v1]]
+    (hc2
+     {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr {:$type :spec/T$v1},
+                                           :name "spec/C$v1/as_T"}}},
+      :spec/R$v1 {},
+      :spec/T$v1 {:refines-to {:spec/R$v1 {:expr {:$type :spec/R$v1},
+                                           :name "spec/T$v1/as_r"}}},
+      :spec/U$v1 {:refines-to {:spec/R$v1 {:expr '(refine-to {:$type :spec/C$v1} :spec/T$v1) :name "spec/U$v1/as_r"}}}}
+     [(refine-to {:$type :spec/U$v1} :spec/R$v1)
+      [:Instance :spec/R$v1]
+      [:throws "h-err/invalid-refinement-expression 0-0 : Refinement expression, '(refine-to {:$type :spec/C$v1} :spec/T$v1)', is not of the expected type"]
+      "{$type: spec/U$v1}.refineTo( spec/R$v1 )"
+      [:throws "h-err/invalid-refinement-expression 0-0 : Refinement expression, '(refine-to {:$type :spec/C$v1} :spec/T$v1)', is not of the expected type"]]))
+  (hc2
+   {:spec/R$v1 {},
+    :spec/T$v1 {:abstract? true,
+                :refines-to {:spec/R$v1 {:expr {:$type :spec/R$v1},
+                                         :name "spec/T$v1/as_r"}}},
+    :spec/U$v1 {:refines-to {:spec/R$v1 {:expr '{:$type :spec/T$v1} :name "spec/U$v1/as_r"}}}}
+   [(refine-to {:$type :spec/U$v1} :spec/R$v1)
+    [:Instance :spec/R$v1]
+    [:throws "h-err/invalid-refinement-expression 0-0 : Refinement expression, '{:$type :spec/T$v1}', is not of the expected type"]
+    "{$type: spec/U$v1}.refineTo( spec/R$v1 )"
+    [:throws "h-err/invalid-refinement-expression 0-0 : Refinement expression, '{:$type :spec/T$v1}', is not of the expected type"]]))
 
 (deftest
   test-component-refine-to
@@ -10207,21 +10152,10 @@
      [(get {:$type :spec/T$v1, :1 10} :1)
       [:syntax-check-throws
        "h-err/invalid-keyword-char 0-0 : The keyword contains invalid characters: :1"]])
-    (is
-     (thrown-with-msg?
-      ExceptionInfo
-      #"does not match schema"
-      (hc
-       [(workspace
-         :spec
-         #:spec{:T []}
-         (spec :T :concrete (variables [:☺ "Integer"])))]
-       :spec
-       [(get {:$type :spec/T$v1, :☺ 10} :☺)
-        :Integer
-        10
-        "{$type: spec/T$v1, 1: 10}.1"
-        [:throws "h-err/syntax-error 0-0 : Syntax error"]])))
+    (hc2
+     {:spec/T$v1 {:spec-vars {:☺ "Integer"}}}
+     [(get {:$type :spec/T$v1, :☺ 10} :☺)
+      [:syntax-check-throws "h-err/invalid-keyword-char 0-0 : The keyword contains invalid characters: :☺"]])
     (h
      :☺
      [:syntax-check-throws
@@ -10238,21 +10172,10 @@
       10
       "{$type: spec/T$v1, a1: 10}.a1"
       "10"])
-    (is
-     (thrown-with-msg?
-      ExceptionInfo
-      #"does not match schema"
-      (hc
-       [(workspace
-         :spec
-         #:spec{:T []}
-         (spec :T :concrete (variables [:a-1 "Integer"])))]
-       :spec
-       [(get {:$type :spec/T$v1, :a-1 10} :a-1)
-        :Integer
-        10
-        "{$type: spec/T$v1, a1: 10}.a1"
-        "10"])))
+    (hc2
+     {:spec/T$v1 {:spec-vars {:a- "Integer"}}}
+     [(get {:$type :spec/T$v1, :a-1 10} :a-1)
+      [:throws "h-err/missing-required-vars 0-0 : Missing required variables: a-"]])
     (hc2
      {:spec/T$v1 {:spec-vars {:a_1 "Integer"}}}
      [(get {:$type :spec/T$v1, :a_1 10} :a_1)
