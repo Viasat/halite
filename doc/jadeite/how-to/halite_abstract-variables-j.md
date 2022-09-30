@@ -99,7 +99,7 @@ Even if we know the concrete type of the field value we cannot access it as that
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference-j.md#instance)
+[`instance`](../halite_basic-syntax-reference-j.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### Operator reference:
 

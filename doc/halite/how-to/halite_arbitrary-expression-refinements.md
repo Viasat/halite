@@ -41,7 +41,7 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference.md#instance)
+[`instance`](../halite_basic-syntax-reference.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### Operator reference:
 

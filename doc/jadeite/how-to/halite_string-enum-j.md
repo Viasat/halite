@@ -65,7 +65,7 @@ But a shirt with a valid size can be constructed.
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference-j.md#instance)
+[`instance`](../halite_basic-syntax-reference-j.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### How Tos:
 

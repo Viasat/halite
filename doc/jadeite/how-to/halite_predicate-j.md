@@ -55,7 +55,7 @@ Note, for the case where the constraint is not met, a naked attempt to instantia
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference-j.md#instance)
+[`instance`](../halite_basic-syntax-reference-j.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### Operator reference:
 

@@ -41,7 +41,7 @@ This is not necessarily recommended, but it is possible.
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference.md#instance)
+[`instance`](../halite_basic-syntax-reference.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### Operator reference:
 

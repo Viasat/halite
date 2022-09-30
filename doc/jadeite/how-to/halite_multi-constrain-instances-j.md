@@ -110,7 +110,7 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference-j.md#instance)
+[`instance`](../halite_basic-syntax-reference-j.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### How Tos:
 

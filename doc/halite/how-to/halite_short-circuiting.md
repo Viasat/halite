@@ -325,7 +325,7 @@ This means that the logical operators cannot be used to guard against runtime er
 
 #### Basic elements:
 
-[`integer`](../halite_basic-syntax-reference.md#integer), [`vector`](../halite_basic-syntax-reference.md#vector)
+[`integer`](../halite_basic-syntax-reference.md#integer), [`spec-map`](../../halite_spec-syntax-reference.md), [`vector`](../halite_basic-syntax-reference.md#vector)
 
 #### Operator reference:
 

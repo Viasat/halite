@@ -270,7 +270,7 @@ This means that the logical operators cannot be used to guard against runtime er
 
 #### Basic elements:
 
-[`integer`](../halite_basic-syntax-reference-j.md#integer), [`vector`](../halite_basic-syntax-reference-j.md#vector)
+[`integer`](../halite_basic-syntax-reference-j.md#integer), [`spec-map`](../../halite_spec-syntax-reference.md), [`vector`](../halite_basic-syntax-reference-j.md#vector)
 
 #### Operator reference:
 

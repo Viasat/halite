@@ -25,7 +25,7 @@ Composite instances are created by nesting the instances at construction time.
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference.md#instance)
+[`instance`](../halite_basic-syntax-reference.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### How Tos:
 

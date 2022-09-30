@@ -82,7 +82,7 @@ In this example, the sum of 'a' and 'b' must be less than 10
 
 #### Basic elements:
 
-[`instance`](../halite_basic-syntax-reference.md#instance)
+[`instance`](../halite_basic-syntax-reference.md#instance), [`spec-map`](../../halite_spec-syntax-reference.md)
 
 #### How Tos:
 
