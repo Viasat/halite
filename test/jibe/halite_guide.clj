@@ -13,7 +13,7 @@
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]
             [jibe.logic.resource-spec :as resource-spec]
-            [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]]
+            [jibe.logic.resource-spec-construct :as resource-spec-construct]
             [jibe.logic.test-setup-specs :as test-setup-specs :refer [*spec-store*]]
             [internal-close :as with-close]
             [internal :refer :all])
