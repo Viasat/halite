@@ -729,7 +729,7 @@
     (are [in out]
          (= out (hp/propagate senv in))
 
-      {:$type :ws/A} {:$type :ws/A, :an {:$in [1 1000]}, :ap {:$in #{true :Unset}}}
+      {:$type :ws/A} {:$type :ws/A, :an {:$in [-1000 1000]}, :ap {:$in #{true :Unset}}}
       {:$type :ws/A :an {:$in (set (range 7 22))}} {:$type :ws/A,:an {:$in #{7 8 9 20 21}},:ap {:$in #{true :Unset}}}
       {:$type :ws/A :an 21} {:$type :ws/A :an 21 :ap :Unset}
       {:$type :ws/A :an {:$in (set (range 7 22))} :ap :Unset} {:$type :ws/A :an {:$in #{20 21}} :ap :Unset})))

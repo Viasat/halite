@@ -357,6 +357,19 @@
     (or (= [:Maybe "Boolean"] var-type) (= "Boolean" var-type)) :Bool
     :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type}))))
 
+(defn- error->unsatisfiable
+  [form]
+  (cond
+    (seq? form) (if (= 'error (first form))
+                  (if (not (string? (second form)))
+                    (throw (ex-info "BUG! Expressions other than string literals not currently supported as arguments to error"
+                                    {:form form}))
+                    (list 'unsatisfiable))
+                  (apply list (first form) (map error->unsatisfiable (rest form))))
+    (map? form) (update-vals form error->unsatisfiable)
+    (vector? form) (mapv error->unsatisfiable form)
+    :else form))
+
 (s/defn ^:private to-choco-spec :- choco-clj/ChocoSpec
   "Convert a spec-ified bound to a Choco spec."
   [senv :- (s/protocol halite-envs/SpecEnv), spec-info :- halite-envs/SpecInfo]
@@ -366,7 +379,7 @@
                                  (partial halite-envs/halite-type-from-var-type senv)
                                  val))
                    (map (comp symbol key)) set)
-   :constraints (->> spec-info :constraints (map second) set)})
+   :constraints (->> spec-info :constraints (map (comp error->unsatisfiable second)) set)})
 
 ;;;;;;;;;; Convert choco bounds to spec bounds ;;;;;;;;;
 
@@ -457,7 +470,13 @@
            (lowering/eliminate-runtime-constraint-violations)
            (lowering/lower-valid?)
            (drop-constraints-except-for-Bounds)
-           (lowering/eliminate-error-forms)
+
+           ;; We may wish to re-enable a weaker version of this rule that
+           ;; eliminates error forms in if, but not if-value (which we can't eliminate).
+           ;; Experimentation shows that whenever we can eliminate a conditional, we are likely
+           ;; to obtain better propagation bounds.
+           ;;(lowering/eliminate-error-forms)
+
            (rewriting/rewrite-reachable-sctx
             [(rewriting/rule simplify/simplify-do)
              (rewriting/rule lowering/bubble-up-do-expr)
