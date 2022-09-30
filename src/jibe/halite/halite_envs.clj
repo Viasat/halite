@@ -3,7 +3,8 @@
 
 (ns jibe.halite.halite-envs
   "Halite spec, type, and eval environment abstractions."
-  (:require [clojure.string :as str]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
             [jibe.halite.halite-types :as halite-types]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as s]))
@@ -170,3 +171,71 @@
       (assoc m (symbol kw) (if (contains? inst kw) (kw inst) :Unset)))
     {}
     (keys (:spec-vars spec-info)))))
+
+;;;;;; Spec Maps ;;;;;;;;;;;;
+
+;; The SpecEnv protocol probably needs to be eliminated. What value does it actually provide?
+;; Meanwhile, it gets in the way whenever we need to manipulate sets of SpecInfo values,
+;; like in the propagate namespace.
+
+;; Maybe this is the direction we should head in for replacing SpecEnv more generally?
+(s/defschema SpecMap
+  {halite-types/NamespacedKeyword SpecInfo})
+
+(defn- spec-ref-from-type [htype]
+  (cond
+    (and (keyword? htype) (namespace htype)) htype
+    (vector? htype) (recur (second htype))
+    :else nil))
+
+(defn- spec-refs-from-expr
+  [expr]
+  (cond
+    (integer? expr) #{}
+    (boolean? expr) #{}
+    (symbol? expr) #{}
+    (string? expr) #{}
+    (map? expr) (->> (dissoc expr :$type) vals (map spec-refs-from-expr) (apply set/union #{(:$type expr)}))
+    (seq? expr) (let [[op & args] expr]
+                  (condp = op
+                    'let (let [[bindings body] args]
+                           (->> bindings (partition 2) (map (comp spec-refs-from-expr second))
+                                (apply set/union (spec-refs-from-expr body))))
+                    'get (spec-refs-from-expr (first args))
+                    'get* (spec-refs-from-expr (first args))
+                    'refine-to (spec-refs-from-expr (first args))
+                    (apply set/union (map spec-refs-from-expr args))))
+    :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
+
+(s/defn spec-refs :- #{halite-types/NamespacedKeyword}
+  "The set of spec ids referenced by the given spec, as variable types or in constraint/refinement expressions."
+  [{:keys [spec-vars refines-to constraints] :as spec-info} :- SpecInfo]
+  (->> spec-vars
+       vals
+       (map spec-ref-from-type)
+       (remove nil?)
+       (concat (keys refines-to))
+       set
+       (set/union
+        (->> constraints (map (comp spec-refs-from-expr second)) (apply set/union)))
+       (set/union
+        (->> refines-to vals (map (comp spec-refs-from-expr :expr)) (apply set/union)))))
+
+(s/defn build-spec-map :- SpecMap
+  "Return a map of spec-id to SpecInfo, for all specs in senv reachable from the identified root spec."
+  [senv :- (s/protocol SpecEnv), root-spec-id :- halite-types/NamespacedKeyword]
+  (loop [spec-map {}
+         next-spec-ids [root-spec-id]]
+    (if-let [[spec-id & next-spec-ids] next-spec-ids]
+      (if (contains? spec-map spec-id)
+        (recur spec-map next-spec-ids)
+        (let [spec-info (lookup-spec senv spec-id)]
+          (recur
+           (assoc spec-map spec-id spec-info)
+           (into next-spec-ids (spec-refs spec-info)))))
+      spec-map)))
+
+;; Ensure that a SpecMap can be used anywhere a SpecEnv can.
+(extend-type clojure.lang.IPersistentMap
+  SpecEnv
+  (lookup-spec* [self spec-id] (get self spec-id)))

@@ -587,61 +587,17 @@
   (reify halite-envs/SpecEnv
     (lookup-spec* [self spec-id] (some-> sctx spec-id (dissoc :ssa-graph)))))
 
-(defn- spec-ref-from-type [htype]
-  (cond
-    (and (keyword? htype) (namespace htype)) htype
-    (vector? htype) (recur (second htype))
-    :else nil))
-
-(defn- spec-refs-from-expr
-  [expr]
-  (cond
-    (integer? expr) #{}
-    (boolean? expr) #{}
-    (symbol? expr) #{}
-    (string? expr) #{}
-    (map? expr) (->> (dissoc expr :$type) vals (map spec-refs-from-expr) (apply set/union #{(:$type expr)}))
-    (seq? expr) (let [[op & args] expr]
-                  (condp = (get renamed-ops op op)
-                    'let (let [[bindings body] args]
-                           (->> bindings (partition 2) (map (comp spec-refs-from-expr second))
-                                (apply set/union (spec-refs-from-expr body))))
-                    'get (spec-refs-from-expr (first args))
-                    'refine-to (spec-refs-from-expr (first args))
-                    (apply set/union (map spec-refs-from-expr args))))
-    :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
-
-(defn- spec-refs [{:keys [spec-vars refines-to constraints] :as spec-info}]
-  (->> spec-vars
-       vals
-       (map spec-ref-from-type)
-       (remove nil?)
-       (concat (keys refines-to))
-       set
-       (set/union
-        (->> constraints (map (comp spec-refs-from-expr second)) (apply set/union)))
-       ;; TODO: refinement exprs
-       ))
-
-(defn- reachable-specs [senv root-spec-id]
-  (loop [specs {}
-         next-spec-ids [root-spec-id]]
-    (if-let [[spec-id & next-spec-ids] next-spec-ids]
-      (if (contains? specs spec-id)
-        (recur specs next-spec-ids)
-        (let [spec-info (halite-envs/lookup-spec senv spec-id)]
-          (recur
-           (assoc specs spec-id spec-info)
-           (into next-spec-ids (spec-refs spec-info)))))
-      specs)))
-
 (s/defn build-spec-ctx :- SpecCtx
   "Starting from root-spec-id and looking up specs from senv, build and return a SpecContext
   containing the root spec and every spec transitively referenced from it, in SSA form."
   [senv :- (s/protocol halite-envs/SpecEnv), root-spec-id :- halite-types/NamespacedKeyword]
-  (-> root-spec-id
-      (->> (reachable-specs senv))
+  (-> senv
+      (halite-envs/build-spec-map root-spec-id)
       (update-vals (partial spec-to-ssa senv))))
+
+(s/defn spec-map-to-ssa :- SpecCtx
+  [spec-map :- halite-envs/SpecMap]
+  (update-vals spec-map (partial spec-to-ssa spec-map)))
 
 (s/defn replace-node :- SpecInfo
   "Replace node-id with replacement-id in spec-info."
