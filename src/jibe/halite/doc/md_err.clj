@@ -32,10 +32,9 @@
            "\n\n"])
         "---\n"]))
 
-(defn err-md-all [lang {:keys [mode sidebar-file] :as config} err-maps]
+(defn err-md-all [lang {:keys [mode] :as config} err-maps]
   (->> [(when (= :user-guide mode)
-          (utils/append-user-guide-sidebar sidebar-file (get-in utils/user-guide-values [:md_err lang :title]) (get-in utils/user-guide-values [:md_err lang :link]) false)
-          (utils/generate-user-guide-hdr "Halite Error ID Reference" "halite-err-id-reference" "/halite" "Halite err-id reference"))
+          (utils/generate-user-guide-hdr "Halite Error ID Reference" "halite_err-id-reference" "/halite" "Halite err-id reference"))
         utils/generated-msg
         "# "
         (utils/lang-str lang)

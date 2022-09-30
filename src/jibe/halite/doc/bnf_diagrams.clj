@@ -25,11 +25,14 @@
   (str "<!--\n" rule-str "\n-->\n" svg))
 
 (defn get-source-id [filename]
-  (with-open [r (io/reader filename)]
-    (->> (line-seq r)
-         next
-         (take-while #(not= "-->" %))
-         (string/join "\n"))))
+  (if (.exists (clojure.java.io/file filename))
+    (with-open [r (io/reader filename)]
+      (->> (line-seq r)
+           next
+           (take-while #(not= "-->" %))
+           (string/join "\n")))
+    ; file doesn't exist yet, no source-id
+    nil))
 
 (defn produce-diagram [out-file-name ^String rule-str]
   (when (not= rule-str (get-source-id out-file-name))

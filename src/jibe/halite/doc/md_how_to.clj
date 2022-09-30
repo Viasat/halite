@@ -25,10 +25,12 @@
        "summary: " (:desc how-to) "\n"
        "---\n\n"))
 
-(defn how-to-md [lang {:keys [mode prefix sidebar-file]} [id how-to]]
-  (when (= :user-guide mode)
-    (utils/append-user-guide-sidebar sidebar-file (:label how-to) (how-to-reference lang :user-guide prefix id) true))
+(defn append-how-to-sidebar [*sidebar-atom* lang mode prefix location title id]
+  (let [existing-text (get-in @*sidebar-atom* location)
+        new-text (utils/get-sidebar-l3-entry title (how-to-reference lang mode prefix id))]
+    (swap! *sidebar-atom* assoc-in location (str existing-text new-text))))
 
+(defn how-to-md [lang {:keys [mode prefix]} *sidebar-atom* [id how-to doc-type]]
   (->> [(when (= :user-guide mode)
           (generate-how-to-user-guide-hdr lang prefix id how-to))
         utils/generated-msg
@@ -86,6 +88,8 @@
               how-to-refs (:how-to-ref how-to)
               tutorial-refs (:tutorial-ref how-to)
               explanation-refs (:explanation-ref how-to)]
+          (when (= :user-guide mode)
+            (append-how-to-sidebar *sidebar-atom* lang mode prefix [lang doc-type] (:label how-to) id))
           [(when (or basic-ref-links op-refs how-to-refs tutorial-refs explanation-refs)
              "### Reference\n\n")
            (when basic-ref-links
@@ -94,13 +98,12 @@
            (when op-refs
              ["#### Operator reference:\n\n"
               (for [a (sort op-refs)]
-                (str "* " "[`" a "`](../" (utils/get-tag-reference lang mode prefix "full")
+                (str "* " "[`" a "`](../" (utils/get-reference-filename-link lang mode prefix "full")
                      "#" (utils/safe-op-anchor a) ")" "\n"))
               "\n\n"])
            (when how-to-refs
              ["#### How Tos:\n\n"
               (for [a (sort how-to-refs)]
-
                 (str "* " "[" (name a) "](" (when (= :local mode) "../how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
               "\n\n"])
            (when tutorial-refs

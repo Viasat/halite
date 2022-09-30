@@ -97,10 +97,9 @@
         "---\n"]))
 
 (s/defn full-md-all
-  [{:keys [lang] :as info} {:keys [mode sidebar-file] :as config} op-maps]
+  [{:keys [lang] :as info} {:keys [mode] :as config} op-maps]
   (->> [(when (= :user-guide mode)
-          (utils/append-user-guide-sidebar sidebar-file (get-in utils/user-guide-values [:md_full lang :title]) (get-in utils/user-guide-values [:md_full lang :link]) false)
-          (utils/generate-user-guide-hdr "Halite Full Reference" "halite_full_reference" "/halite" "Halite operator reference (all operators)"))
+          (utils/generate-user-guide-hdr "Halite Full Reference" "halite_full-reference" "/halite" "Halite operator reference (all operators)"))
         utils/generated-msg
         "# "
         (utils/lang-str lang)

@@ -10,9 +10,14 @@
             [zprint.core :as zprint]
             [schema.core :as s]))
 
-(defn spit-dir [filename txt]
-  (io/make-parents filename)
-  (spit filename txt))
+(defn spit-dir
+  ([filename txt]
+   (spit-dir filename txt false))
+  ([filename txt append?]
+   (io/make-parents filename)
+   (if append?
+     (spit filename txt :append true)
+     (spit filename txt))))
 
 (defn safe-op-name [s]
   (get {'+ 'plus
@@ -225,7 +230,7 @@
                                                        ".html"
                                                        ".md")))
 
-(defn get-tag-reference [lang mode prefix tag]
+(defn get-reference-filename-link [lang mode prefix tag]
   (if (= mode :user-guide)
     (str prefix tag "-reference" (when (= :jadeite lang) "-j") ".html")
     (str prefix tag "-reference" (when (= :jadeite lang) "-j") ".md")))
@@ -247,35 +252,32 @@
                                                        ".md"
                                                        ".html"))
            (str doc-dir
-                (get-tag-reference lang mode prefix "basic-syntax")
+                (get-reference-filename-link lang mode prefix "basic-syntax")
                 "#" basic-ref))
          ")"]))))
 
-(defn create-sidebar-entry [file-path title]
-  (spit file-path (str "  - title: " title "\n"
-                       "    output: web\n"
-                       "    folderitems:\n\n")
-        :append true))
+(defn get-sidebar-l1-entry [title]
+  (str "  - title: " title "\n"
+       "    output: web\n"
+       "    folderitems:\n\n"))
 
-(defn create-sidebar-subfolder [file-path title]
-  (spit file-path (str "      - title: " title "\n"
-                       "        output: web\n"
-                       "        subfolderitems:\n\n")
-        :append true))
+(defn get-sidebar-l2-entry [title link]
+  (str "    - title: " title "\n"
+       "      url: /" link "\n"
+       "      output: web\n\n"))
 
-(defn append-subfolders [file-path]
-  (spit file-path "      subfolders:\n" :append true))
+(defn get-sidebar-l3-entry [title link]
+  (str "        - title: " title "\n"
+       "          url: /" link "\n"
+       "          output: web\n\n"))
 
-(defn append-user-guide-sidebar [file-path title filename subfile]
-  (if subfile
-    (spit file-path (str "        - title: " title "\n"
-                         "          url: /" filename "\n"
-                         "          output: web\n\n")
-          :append true)
-    (spit file-path (str "    - title: " title "\n"
-                         "      url: /" filename "\n"
-                         "      output: web\n\n")
-          :append true)))
+(defn get-subfolder []
+  "      subfolders:\n")
+
+(defn get-sidebar-subfolder-entry [title]
+  (str "      - title: " title "\n"
+       "        output: web\n"
+       "        subfolderitems:\n\n"))
 
 (defn get-reference-extension [mode]
   (if (= :user-guide mode)

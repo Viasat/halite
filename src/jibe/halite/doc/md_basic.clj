@@ -69,19 +69,16 @@
               ["### How tos:\n\n"
                (for [a (sort how-to-refs)]
                  (str "* " "[" (name a) "](" (when (= :local mode) "how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
-                 ;(str "* " "[" (name a) "](" "how-to/" (name a) ".md" ")" "\n"))
                "\n\n"])
             (when-let [tutorial-refs (:tutorial-ref op)]
               ["### Tutorials:\n\n"
                (for [a (sort tutorial-refs)]
                  (str "* " "[" (name a) "](" (when (= :local mode) "tutorial/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
-                 ;(str "* " "[" (name a) "](" "tutorial/" (name a) ".md" ")" "\n"))
                "\n\n"])
             (when-let [explanation-refs (:explanation-ref op)]
               ["### Explanations:\n\n"
                (for [a (sort explanation-refs)]
                  (str "* " "[" (name a) "](" (when (= :local mode) "explanation/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
-                 ;(str "* " "[" (name a) "](" "explanation/" (name a) ".md" ")" "\n"))
                "\n\n"])
 
             "---\n"]
@@ -94,11 +91,10 @@
 
 (def label-description "In the diagrams when a grammar element appears as 'x:label' the label is simply a descriptive label to convey to the reader the meaining of the element.\n\n")
 
-(s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [mode sidebar-file] :as config} basic-bnf]
+(s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [mode] :as config} basic-bnf]
   (str
    (when (= :user-guide mode)
-     (utils/append-user-guide-sidebar sidebar-file (get-in utils/user-guide-values [:md_basic lang :title]) (get-in utils/user-guide-values [:md_basic lang :link]) false)
-     (utils/generate-user-guide-hdr "Halite Basic Syntax Reference" "halite-basic-syntax-reference" "/halite" "Halite basic syntax reference"))
+     (utils/generate-user-guide-hdr "Halite Basic Syntax Reference" "halite_basic-syntax-reference" "/halite" "Halite basic syntax reference"))
    utils/generated-msg
    "# "
    (utils/lang-str lang)
