@@ -246,13 +246,20 @@
 
 (deftype HCInfo [s t h-result j-expr jh-result j-result])
 
+(def ^:dynamic *sids* nil)
+
 (defn ^HCInfo hc*
   ([workspace-id expr]
    (hc* workspace-id nil expr false))
   ([workspace-id spec-env expr separate-err-id?]
    (binding [format-errors/*squash-throw-site* true]
      (let [senv (or spec-env
-                    (spec-env/for-workspace *spec-store* workspace-id))
+                    (let [senv (spec-env/for-workspace *spec-store* workspace-id)]
+                      (zipmap *sids*
+                              (->> *sids*
+                                   (map #(internal/no-nil (update-vals (halite-envs/lookup-spec* senv %)
+                                                                                 internal/no-empty)))))
+                      senv))
            tenv (halite-envs/type-env {})
            env (halite-envs/env {})
            j-expr (try (jadeite/to-jadeite expr)
@@ -303,6 +310,42 @@
      (resource-spec-construct/create-all-async spec-store workspaces)
      (binding [*spec-store* (resource-spec/add-resource-spec-cache-to-spec-store spec-store)]
        (hc* workspace-id nil expr true)))))
+
+(defn- to-spec-env [spec-map]
+  (reify halite-envs/SpecEnv
+    (lookup-spec* [_ spec-id]
+      (some->> (spec-map spec-id)
+               (merge {:spec-vars {}
+                       :constraints []
+                       :refines-to {}})))))
+
+(defmacro hc2 [spec-map comment? & raw-args]
+  (let [raw-args (if (string? comment?)
+                   (first raw-args)
+                   comment?)
+        [expr & args] raw-args
+        [expected-t result-expected j-expr-expected j-result-expected] args]
+    `(let [i# (hc* nil (to-spec-env ~spec-map) '~expr false)]
+       (if (nil? (.-s i#))
+         (do
+           (is (= ~expected-t (.-t i#)))
+           (if (is-harness-error? (.-t i#))
+             (vector (quote ~expr)
+                     (.-t i#))
+             (do
+               (is (= ~result-expected (.-h-result i#)))
+               (when (string? (.-j-expr i#))
+                 (is (= ~result-expected (.-jh-result i#)))
+                 (is (= ~j-result-expected (.-j-result i#))))
+               (is (= ~j-expr-expected (.-j-expr i#)))
+               (vector (quote ~expr)
+                       (.-t i#)
+                       (.-h-result i#)
+                       (.-j-expr i#)
+                       (.-j-result i#)))))
+         (do
+           (vector (quote ~expr)
+                   (.-s i#)))))))
 
 (defmacro hc [workspaces workspace-id comment? & raw-args]
   (let [raw-args (if (string? comment?)
@@ -7242,9 +7285,8 @@
    {:$type :my/Spec$v1}
    [:throws
     "h-err/resource-spec-not-found 0-0 : Resource spec not found: my/Spec$v1"])
-  (hc
-   [(workspace :my #:my{:Spec []} (spec :Spec :concrete))]
-   :my
+  (hc2
+   {:my/Spec$v1 {}}
    [{:$type :my/Spec$v1}
     [:Instance :my/Spec$v1]
     {:$type :my/Spec$v1}
