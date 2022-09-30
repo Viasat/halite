@@ -510,6 +510,38 @@
                (ssa/spec-from-ssa)
                :constraints first second)))))
 
+(deftest test-lower-refine-to-ignores-unknown-instance-type
+  (let [senv (halite-envs/spec-env
+              '{:ws/W {:spec-vars {:wn "Integer"} :constraints [] :refines-to {}}
+                :ws/A {:spec-vars {} :constraints [] :refines-to {:ws/W {:expr {:$type :ws/W :wn 1}}}}
+                :ws/B {:spec-vars {} :constraints [] :refines-to {:ws/W {:expr {:$type :ws/W :wn 2}}}}
+                :ws/C {:spec-vars {:a :ws/A :b :ws/B :p "Boolean"}
+                       :constraints [["c1" (< 0 (get (refine-to (if p a b) :ws/W) :wn))]]
+                       :refines-to {}}})]
+    (is (= '(< 0 (get (refine-to (if p a b) :ws/W) :wn))
+           (-> senv
+               (ssa/build-spec-ctx :ws/C)
+               lower-refine-to
+               :ws/C
+               ssa/spec-from-ssa
+               :constraints first second)))))
+
+(deftest test-push-refine-to-into-if
+  (let [senv (halite-envs/spec-env
+              '{:ws/W {:spec-vars {:wn "Integer"} :constraints [] :refines-to {}}
+                :ws/A {:spec-vars {} :constraints [] :refines-to {:ws/W {:expr {:$type :ws/W :wn 1}}}}
+                :ws/B {:spec-vars {} :constraints [] :refines-to {:ws/W {:expr {:$type :ws/W :wn 2}}}}
+                :ws/C {:spec-vars {:a :ws/A :b :ws/B :p "Boolean"}
+                       :constraints [["c1" (< 0 (get (refine-to (if p a b) :ws/W) :wn))]]
+                       :refines-to {}}})]
+    (is (= '(< 0 (get (if p (refine-to a :ws/W) (refine-to b :ws/W)) :wn))
+           (-> senv
+               (ssa/build-spec-ctx :ws/C)
+               (rewriting/rewrite-sctx lowering/push-refine-to-into-if)
+               :ws/C
+               ssa/spec-from-ssa
+               :constraints first second)))))
+
 (def lower-no-value-comparison-expr #'lowering/lower-no-value-comparison-expr)
 
 (deftest test-lower-no-value-comparisons

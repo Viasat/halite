@@ -342,22 +342,22 @@
 
 ;;;;;;;;;; Lower refine-to ;;;;;;;;;;;;;;;
 
-(s/defn ^:private lower-refine-to-expr
+(s/defn lower-refine-to-expr
   [rgraph, {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when-let [[_ expr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
-    (let [[_ from-htype] (ssa/deref-id ssa-graph expr-id)
-          from-spec-id (halite-types/spec-id from-htype)]
-      (->> (loom.alg/shortest-path rgraph from-spec-id to-spec-id)
-           (partition 2 1)
-           (reduce (fn [out-form [from-spec-id to-spec-id]]
-                     (let [{:keys [spec-vars refines-to] :as spec-info} (sctx from-spec-id)
-                           refine-expr-id (:expr (get refines-to to-spec-id))
-                           refine-expr (ssa/form-from-ssa spec-info refine-expr-id)
-                           bindings (vec (mapcat (fn [var-kw] [(symbol var-kw)
-                                                               (list 'get out-form var-kw)])
-                                                 (keys spec-vars)))]
-                       (list 'let bindings refine-expr)))
-                   expr-id)))))
+    (let [[_ from-htype] (ssa/deref-id ssa-graph expr-id)]
+      (when-let [from-spec-id (halite-types/spec-id from-htype)]
+        (->> (loom.alg/shortest-path rgraph from-spec-id to-spec-id)
+             (partition 2 1)
+             (reduce (fn [out-form [from-spec-id to-spec-id]]
+                       (let [{:keys [spec-vars refines-to] :as spec-info} (sctx from-spec-id)
+                             refine-expr-id (:expr (get refines-to to-spec-id))
+                             refine-expr (ssa/form-from-ssa spec-info refine-expr-id)
+                             bindings (vec (mapcat (fn [var-kw] [(symbol var-kw)
+                                                                 (list 'get out-form var-kw)])
+                                                   (keys spec-vars)))]
+                         (list 'let bindings refine-expr)))
+                     expr-id))))))
 
 (s/defn lower-refine-to :- SpecCtx
   [sctx :- SpecCtx]
@@ -366,6 +366,21 @@
                                      :rewrite-fn (partial lower-refine-to-expr g),
                                      :nodes :all}
                                     sctx)))
+
+(s/defn push-refine-to-into-if
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id [form htype]]
+  (when-let [[_ subexpr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
+    (let [subexpr-node (ssa/deref-id ssa-graph subexpr-id), subexpr (ssa/node-form subexpr-node)]
+      (when-let [[_ pred-id then-id else-id] (and (seq? subexpr) (= 'if (first subexpr)) subexpr)]
+        (let [then (ssa/deref-id ssa-graph then-id), then-type (ssa/node-type then)
+              else (ssa/deref-id ssa-graph else-id), else-type (ssa/node-type else)]
+          (list 'if pred-id
+                (if (= :Nothing then-type)
+                  then-id
+                  (list 'refine-to then-id to-spec-id))
+                (if (= :Nothing else-type)
+                  else-id
+                  (list 'refine-to else-id to-spec-id))))))))
 
 ;;;;;;;;;; Lower Refinement Constraints ;;;;;;;;;;;;;;;
 

@@ -444,11 +444,12 @@
    (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
      (let [flattened-vars (flatten-vars senv initial-bound)
            lowered-bounds (lower-spec-bound flattened-vars initial-bound)
-           spec-ified-bound (spec-ify-bound senv initial-bound)]
-       (-> senv
-           (ssa/build-spec-ctx (:$type initial-bound))
-           (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound))
-           (lowering/lower-refine-to)
+           spec-ified-bound (spec-ify-bound senv initial-bound)
+           initial-sctx (-> senv
+                            (ssa/build-spec-ctx (:$type initial-bound))
+                            (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound)))
+           refinement-graph (loom.graph/digraph (update-vals initial-sctx (comp keys :refines-to)))]
+       (-> initial-sctx
            (lowering/lower-refinement-constraints)
            ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
            ;; Conseqeuntly, no rewrite rules should introduce new when forms!
@@ -470,9 +471,14 @@
              (rewriting/rule lowering/lower-no-value-comparison-expr)
              (rewriting/rule lowering/lower-maybe-comparison-expr)
              (rewriting/rule lowering/push-gets-into-ifs-expr)
+             (rewriting/rule lowering/push-refine-to-into-if)
              (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
              (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
-             (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)])
+             (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)
+             ;; This rule needs access to the refinement graph, so we don't use the rule macro.
+             {:rule-name "lower-refine-to"
+              :rewrite-fn (partial lowering/lower-refine-to-expr refinement-graph)
+              :nodes :all}])
            simplify/simplify
            :$propagate/Bounds
            (ssa/spec-from-ssa)
