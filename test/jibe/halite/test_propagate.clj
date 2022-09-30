@@ -19,44 +19,38 @@
 ;; turning schema validation on is likely to help you track it down.
 ;; (use-fixtures :once schema.test/validate-schemas)
 
-;; TODO: We need to rewrite 'div forms in the case where the quotient is a variable,
-;; to ensure that choco doesn't force the variable to be zero even when the div might not
-;; be evaluated.
-
 (deftest test-spec-ify-bound-on-simple-spec
-  (let [senv (halite-envs/spec-env
-              '{:ws/A
+  (let [specs '{:ws/A
                 {:spec-vars {:x "Integer", :y "Integer", :b "Boolean"}
                  :constraints [["c1" (let [delta (abs (- x y))]
                                        (and (< 5 delta)
                                             (< delta 10)))]
                                ["c2" (= b (< x y))]]
-                 :refines-to {}}})]
+                 :refines-to {}}}]
 
     (is (= '{:spec-vars {:x "Integer", :y "Integer", :b "Boolean"}
              :constraints
              [["vars" (valid? {:$type :ws/A :x x :y y :b b})]]
              :refines-to {}}
-           (hp/spec-ify-bound senv {:$type :ws/A})))))
+           (hp/spec-ify-bound specs {:$type :ws/A})))))
 
 (deftest test-spec-ify-bound-with-composite-specs
   (testing "simple composition"
-    (let [senv (halite-envs/spec-env
-                '{:ws/A {:spec-vars {:x "Integer", :y "Integer"}
+    (let [specs '{:ws/A {:spec-vars {:x "Integer", :y "Integer"}
                          :constraints [["pos" (and (< 0 x) (< 0 y))]
                                        ["boundedSum" (< (+ x y) 20)]]
                          :refines-to {}}
                   :ws/B {:spec-vars {:a1 :ws/A, :a2 :ws/A}
                          :constraints [["a1smaller" (and (< (get a1 :x) (get a2 :x))
                                                          (< (get a1 :y) (get a2 :y)))]]
-                         :refines-to {}}})]
+                         :refines-to {}}}]
       (is (= '{:spec-vars {:a1|x "Integer", :a1|y "Integer", :a2|x "Integer", :a2|y "Integer"}
                :refines-to {}
                :constraints
                [["vars" (valid? {:$type :ws/B
                                  :a1 {:$type :ws/A :x a1|x :y a1|y}
                                  :a2 {:$type :ws/A :x a2|x :y a2|y}})]]}
-             (hp/spec-ify-bound senv {:$type :ws/B}))))))
+             (hp/spec-ify-bound specs {:$type :ws/B}))))))
 
 (deftest test-propagation-of-trivial-spec
   (let [senv (halite-envs/spec-env
@@ -189,17 +183,16 @@
 
 (deftest test-spec-ify-bound-for-primitive-optionals
   (s/without-fn-validation
-   (let [senv (halite-envs/spec-env
-               '{:ws/A
+   (let [specs '{:ws/A
                  {:spec-vars {:an "Integer", :aw [:Maybe "Integer"], :p "Boolean"}
                   :constraints [["a1" (= aw (when p an))]]
-                  :refines-to {}}})
+                  :refines-to {}}}
          opts {:default-int-bounds [-10 10]}]
 
      (is (= '{:spec-vars {:an "Integer", :aw [:Maybe "Integer"], :p "Boolean"}
               :constraints [["vars" (valid? {:$type :ws/A :an an :aw aw :p p})]]
               :refines-to {}}
-            (hp/spec-ify-bound senv {:$type :ws/A}))))))
+            (hp/spec-ify-bound specs {:$type :ws/A}))))))
 
 (deftest test-propagate-for-primitive-optionals
   (let [senv (halite-envs/spec-env
@@ -280,200 +273,197 @@
 (def flatten-vars #'hp/flatten-vars)
 
 (deftest test-flatten-vars-for-nested-optionals
-  (let [senv (halite-envs/spec-env nested-optionals-spec-env)]
+  (are [bound expected]
+       (= expected (flatten-vars nested-optionals-spec-env bound))
 
-    (are [bound expected]
-         (= expected (flatten-vars senv bound))
+    {:$type :ws/C}
+    {::hp/spec-id :ws/C
+     :cx [:cx "Integer"]
+     :cw [:cw [:Maybe "Integer"]]
+     ::hp/refines-to {}
+     ::hp/mandatory #{}}
 
-      {:$type :ws/C}
-      {::hp/spec-id :ws/C
-       :cx [:cx "Integer"]
-       :cw [:cw [:Maybe "Integer"]]
-       ::hp/refines-to {}
-       ::hp/mandatory #{}}
+    {:$type :ws/B}
+    {::hp/spec-id :ws/B
+     :bx [:bx "Integer"]
+     :bw [:bw [:Maybe "Integer"]]
+     :bp [:bp "Boolean"]
+     :c1 {::hp/spec-id :ws/C
+          :cx [:c1|cx "Integer"]
+          :cw [:c1|cw [:Maybe "Integer"]]
+          ::hp/refines-to {}
+          ::hp/mandatory #{}}
+     :c2 {::hp/spec-id :ws/C
+          :$witness [:c2? "Boolean"]
+          :cx [:c2|cx [:Maybe "Integer"]]
+          :cw [:c2|cw [:Maybe "Integer"]]
+          ::hp/refines-to {}
+          ::hp/mandatory #{:c2|cx}}
+     ::hp/refines-to {}
+     ::hp/mandatory #{}}
 
-      {:$type :ws/B}
-      {::hp/spec-id :ws/B
-       :bx [:bx "Integer"]
-       :bw [:bw [:Maybe "Integer"]]
-       :bp [:bp "Boolean"]
-       :c1 {::hp/spec-id :ws/C
-            :cx [:c1|cx "Integer"]
-            :cw [:c1|cw [:Maybe "Integer"]]
-            ::hp/refines-to {}
-            ::hp/mandatory #{}}
-       :c2 {::hp/spec-id :ws/C
-            :$witness [:c2? "Boolean"]
-            :cx [:c2|cx [:Maybe "Integer"]]
-            :cw [:c2|cw [:Maybe "Integer"]]
-            ::hp/refines-to {}
-            ::hp/mandatory #{:c2|cx}}
-       ::hp/refines-to {}
-       ::hp/mandatory #{}}
+    {:$type :ws/A}
+    {::hp/spec-id :ws/A
+     :b1 {::hp/spec-id :ws/B
+          :$witness [:b1? "Boolean"]
+          :bx [:b1|bx [:Maybe "Integer"]]
+          :bw [:b1|bw [:Maybe "Integer"]]
+          :bp [:b1|bp [:Maybe "Boolean"]]
+          :c1 {::hp/spec-id :ws/C
+               :cx [:b1|c1|cx [:Maybe "Integer"]]
+               :cw [:b1|c1|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b1|c1|cx}}
+          :c2 {::hp/spec-id :ws/C
+               :$witness [:b1|c2? "Boolean"]
+               :cx [:b1|c2|cx [:Maybe "Integer"]]
+               :cw [:b1|c2|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b1|c2|cx}}
+          ::hp/refines-to {}
+          ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
+     :b2 {::hp/spec-id :ws/B
+          :$witness [:b2? "Boolean"]
+          :bx [:b2|bx [:Maybe "Integer"]]
+          :bw [:b2|bw [:Maybe "Integer"]]
+          :bp [:b2|bp [:Maybe "Boolean"]]
+          :c1 {::hp/spec-id :ws/C
+               :cx [:b2|c1|cx [:Maybe "Integer"]]
+               :cw [:b2|c1|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b2|c1|cx}}
+          :c2 {::hp/spec-id :ws/C
+               :$witness [:b2|c2? "Boolean"]
+               :cx [:b2|c2|cx [:Maybe "Integer"]]
+               :cw [:b2|c2|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b2|c2|cx}}
+          ::hp/refines-to {}
+          ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
+     :ap [:ap "Boolean"]
+     ::hp/refines-to {}
+     ::hp/mandatory #{}}
 
-      {:$type :ws/A}
-      {::hp/spec-id :ws/A
-       :b1 {::hp/spec-id :ws/B
-            :$witness [:b1? "Boolean"]
-            :bx [:b1|bx [:Maybe "Integer"]]
-            :bw [:b1|bw [:Maybe "Integer"]]
-            :bp [:b1|bp [:Maybe "Boolean"]]
-            :c1 {::hp/spec-id :ws/C
-                 :cx [:b1|c1|cx [:Maybe "Integer"]]
-                 :cw [:b1|c1|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b1|c1|cx}}
-            :c2 {::hp/spec-id :ws/C
-                 :$witness [:b1|c2? "Boolean"]
-                 :cx [:b1|c2|cx [:Maybe "Integer"]]
-                 :cw [:b1|c2|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b1|c2|cx}}
-            ::hp/refines-to {}
-            ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
-       :b2 {::hp/spec-id :ws/B
-            :$witness [:b2? "Boolean"]
-            :bx [:b2|bx [:Maybe "Integer"]]
-            :bw [:b2|bw [:Maybe "Integer"]]
-            :bp [:b2|bp [:Maybe "Boolean"]]
-            :c1 {::hp/spec-id :ws/C
-                 :cx [:b2|c1|cx [:Maybe "Integer"]]
-                 :cw [:b2|c1|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b2|c1|cx}}
-            :c2 {::hp/spec-id :ws/C
-                 :$witness [:b2|c2? "Boolean"]
-                 :cx [:b2|c2|cx [:Maybe "Integer"]]
-                 :cw [:b2|c2|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b2|c2|cx}}
-            ::hp/refines-to {}
-            ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
-       :ap [:ap "Boolean"]
-       ::hp/refines-to {}
-       ::hp/mandatory #{}}
+    {:$type :ws/A :b1 {:$type [:Maybe :ws/B]}}
+    {::hp/spec-id :ws/A
+     :b1 {::hp/spec-id :ws/B
+          :$witness [:b1? "Boolean"]
+          :bx [:b1|bx [:Maybe "Integer"]]
+          :bw [:b1|bw [:Maybe "Integer"]]
+          :bp [:b1|bp [:Maybe "Boolean"]]
+          :c1 {::hp/spec-id :ws/C
+               :cx [:b1|c1|cx [:Maybe "Integer"]]
+               :cw [:b1|c1|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b1|c1|cx}}
+          :c2 {::hp/spec-id :ws/C
+               :$witness [:b1|c2? "Boolean"]
+               :cx [:b1|c2|cx [:Maybe "Integer"]]
+               :cw [:b1|c2|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b1|c2|cx}}
+          ::hp/refines-to {}
+          ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
+     :b2 {::hp/spec-id :ws/B
+          :$witness [:b2? "Boolean"]
+          :bx [:b2|bx [:Maybe "Integer"]]
+          :bw [:b2|bw [:Maybe "Integer"]]
+          :bp [:b2|bp [:Maybe "Boolean"]]
+          :c1 {::hp/spec-id :ws/C
+               :cx [:b2|c1|cx [:Maybe "Integer"]]
+               :cw [:b2|c1|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b2|c1|cx}}
+          :c2 {::hp/spec-id :ws/C
+               :$witness [:b2|c2? "Boolean"]
+               :cx [:b2|c2|cx [:Maybe "Integer"]]
+               :cw [:b2|c2|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b2|c2|cx}}
+          ::hp/refines-to {}
+          ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
+     :ap [:ap "Boolean"]
+     ::hp/refines-to {}
+     ::hp/mandatory #{}}
 
-      {:$type :ws/A :b1 {:$type [:Maybe :ws/B]}}
-      {::hp/spec-id :ws/A
-       :b1 {::hp/spec-id :ws/B
-            :$witness [:b1? "Boolean"]
-            :bx [:b1|bx [:Maybe "Integer"]]
-            :bw [:b1|bw [:Maybe "Integer"]]
-            :bp [:b1|bp [:Maybe "Boolean"]]
-            :c1 {::hp/spec-id :ws/C
-                 :cx [:b1|c1|cx [:Maybe "Integer"]]
-                 :cw [:b1|c1|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b1|c1|cx}}
-            :c2 {::hp/spec-id :ws/C
-                 :$witness [:b1|c2? "Boolean"]
-                 :cx [:b1|c2|cx [:Maybe "Integer"]]
-                 :cw [:b1|c2|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b1|c2|cx}}
-            ::hp/refines-to {}
-            ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
-       :b2 {::hp/spec-id :ws/B
-            :$witness [:b2? "Boolean"]
-            :bx [:b2|bx [:Maybe "Integer"]]
-            :bw [:b2|bw [:Maybe "Integer"]]
-            :bp [:b2|bp [:Maybe "Boolean"]]
-            :c1 {::hp/spec-id :ws/C
-                 :cx [:b2|c1|cx [:Maybe "Integer"]]
-                 :cw [:b2|c1|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b2|c1|cx}}
-            :c2 {::hp/spec-id :ws/C
-                 :$witness [:b2|c2? "Boolean"]
-                 :cx [:b2|c2|cx [:Maybe "Integer"]]
-                 :cw [:b2|c2|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b2|c2|cx}}
-            ::hp/refines-to {}
-            ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
-       :ap [:ap "Boolean"]
-       ::hp/refines-to {}
-       ::hp/mandatory #{}}
-
-      {:$type :ws/A :b1 :Unset}
-      {::hp/spec-id :ws/A
-       :b1 {::hp/spec-id :ws/B
-            :$witness [:b1? "Boolean"]
-            :bx [:b1|bx [:Maybe "Integer"]]
-            :bw [:b1|bw [:Maybe "Integer"]]
-            :bp [:b1|bp [:Maybe "Boolean"]]
-            :c1 {::hp/spec-id :ws/C
-                 :cx [:b1|c1|cx [:Maybe "Integer"]]
-                 :cw [:b1|c1|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b1|c1|cx}}
-            :c2 {::hp/spec-id :ws/C
-                 :$witness [:b1|c2? "Boolean"]
-                 :cx [:b1|c2|cx [:Maybe "Integer"]]
-                 :cw [:b1|c2|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b1|c2|cx}}
-            ::hp/refines-to {}
-            ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
-       :b2 {::hp/spec-id :ws/B
-            :$witness [:b2? "Boolean"]
-            :bx [:b2|bx [:Maybe "Integer"]]
-            :bw [:b2|bw [:Maybe "Integer"]]
-            :bp [:b2|bp [:Maybe "Boolean"]]
-            :c1 {::hp/spec-id :ws/C
-                 :cx [:b2|c1|cx [:Maybe "Integer"]]
-                 :cw [:b2|c1|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b2|c1|cx}}
-            :c2 {::hp/spec-id :ws/C
-                 :$witness [:b2|c2? "Boolean"]
-                 :cx [:b2|c2|cx [:Maybe "Integer"]]
-                 :cw [:b2|c2|cw [:Maybe "Integer"]]
-                 ::hp/refines-to {}
-                 ::hp/mandatory #{:b2|c2|cx}}
-            ::hp/refines-to {}
-            ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
-       :ap [:ap "Boolean"]
-       ::hp/refines-to {}
-       ::hp/mandatory #{}})))
+    {:$type :ws/A :b1 :Unset}
+    {::hp/spec-id :ws/A
+     :b1 {::hp/spec-id :ws/B
+          :$witness [:b1? "Boolean"]
+          :bx [:b1|bx [:Maybe "Integer"]]
+          :bw [:b1|bw [:Maybe "Integer"]]
+          :bp [:b1|bp [:Maybe "Boolean"]]
+          :c1 {::hp/spec-id :ws/C
+               :cx [:b1|c1|cx [:Maybe "Integer"]]
+               :cw [:b1|c1|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b1|c1|cx}}
+          :c2 {::hp/spec-id :ws/C
+               :$witness [:b1|c2? "Boolean"]
+               :cx [:b1|c2|cx [:Maybe "Integer"]]
+               :cw [:b1|c2|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b1|c2|cx}}
+          ::hp/refines-to {}
+          ::hp/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
+     :b2 {::hp/spec-id :ws/B
+          :$witness [:b2? "Boolean"]
+          :bx [:b2|bx [:Maybe "Integer"]]
+          :bw [:b2|bw [:Maybe "Integer"]]
+          :bp [:b2|bp [:Maybe "Boolean"]]
+          :c1 {::hp/spec-id :ws/C
+               :cx [:b2|c1|cx [:Maybe "Integer"]]
+               :cw [:b2|c1|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b2|c1|cx}}
+          :c2 {::hp/spec-id :ws/C
+               :$witness [:b2|c2? "Boolean"]
+               :cx [:b2|c2|cx [:Maybe "Integer"]]
+               :cw [:b2|c2|cw [:Maybe "Integer"]]
+               ::hp/refines-to {}
+               ::hp/mandatory #{:b2|c2|cx}}
+          ::hp/refines-to {}
+          ::hp/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
+     :ap [:ap "Boolean"]
+     ::hp/refines-to {}
+     ::hp/mandatory #{}}))
 
 (def lower-spec-bound #'hp/lower-spec-bound)
 
 (deftest test-lower-spec-bound-for-nested-optionals
-  (let [senv (halite-envs/spec-env nested-optionals-spec-env)]
-    (are [bound lowered]
-         (= lowered (lower-spec-bound (flatten-vars senv bound) bound))
+  (are [bound lowered]
+       (= lowered (lower-spec-bound (flatten-vars nested-optionals-spec-env bound) bound))
 
-      {:$type :ws/A} {}
+    {:$type :ws/A} {}
 
-      {:$type :ws/A, :ap true} '{ap true}
+    {:$type :ws/A, :ap true} '{ap true}
 
-      {:$type :ws/A, :b1 {:$type [:Maybe :ws/B]}} {}
+    {:$type :ws/A, :b1 {:$type [:Maybe :ws/B]}} {}
 
-      {:$type :ws/A, :b1 {:$type :ws/B}} '{b1? true}
+    {:$type :ws/A, :b1 {:$type :ws/B}} '{b1? true}
 
-      {:$type :ws/A, :b1 :Unset} '{b1? false}
+    {:$type :ws/A, :b1 :Unset} '{b1? false}
 
-      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx 7}}  '{b1|bx #{7 :Unset}}
+    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx 7}}  '{b1|bx #{7 :Unset}}
 
-      {:$type :ws/A :b1 {:$type :ws/B :bx 7}}   '{b1? true, b1|bx 7}
+    {:$type :ws/A :b1 {:$type :ws/B :bx 7}}   '{b1? true, b1|bx 7}
 
-      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx {:$in #{1 2 3}}}} '{b1|bx #{1 2 3 :Unset}}
+    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx {:$in #{1 2 3}}}} '{b1|bx #{1 2 3 :Unset}}
 
-      {:$type :ws/A :b1 {:$type :ws/B :bx {:$in #{1 2 3}}}} '{b1? true, b1|bx #{1 2 3}}
+    {:$type :ws/A :b1 {:$type :ws/B :bx {:$in #{1 2 3}}}} '{b1? true, b1|bx #{1 2 3}}
 
-      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx {:$in [2 4]}}} '{b1|bx [2 4 :Unset]}
+    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx {:$in [2 4]}}} '{b1|bx [2 4 :Unset]}
 
-      {:$type :ws/A :b1 {:$type :ws/B :bx {:$in [2 4]}}} '{b1? true, b1|bx [2 4]}
+    {:$type :ws/A :b1 {:$type :ws/B :bx {:$in [2 4]}}} '{b1? true, b1|bx [2 4]}
 
-      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type [:Maybe :ws/C] :cw 5}}} '{b1|c2|cw #{5 :Unset}}
+    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type [:Maybe :ws/C] :cw 5}}} '{b1|c2|cw #{5 :Unset}}
 
-      {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type [:Maybe :ws/C] :cw 5}}} '{b1? true, b1|c2|cw #{5 :Unset}}
+    {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type [:Maybe :ws/C] :cw 5}}} '{b1? true, b1|c2|cw #{5 :Unset}}
 
-      ;; TODO: Ensure that optionality-constraints for this case produces (=> b1? b1|c2?)
-      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type :ws/C :cw 5}}} '{b1|c2|cw #{5 :Unset}}
+    ;; TODO: Ensure that optionality-constraints for this case produces (=> b1? b1|c2?)
+    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type :ws/C :cw 5}}} '{b1|c2|cw #{5 :Unset}}
 
-      {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{b1? true, b1|c2? true, b1|c2|cw 5})))
+    {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{b1? true, b1|c2? true, b1|c2|cw 5}))
 
 (deftest test-lower-spec-bound-and-refines-to
   (s/with-fn-validation
@@ -487,9 +477,9 @@
                          :constraints [["c1" (if-value b (= cn (get (refine-to b :ws/A) :an)) true)]]
                          :refines-to {}}}
           bounds {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an 12}}}}
-          flattened-vars (flatten-vars (halite-envs/spec-env specs) bounds)]
+          flattened-vars (flatten-vars specs bounds)]
       (are [in out]
-           (= out (lower-spec-bound (flatten-vars (halite-envs/spec-env specs) in) in))
+           (= out (lower-spec-bound (flatten-vars specs in) in))
 
         {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an 12}}}}
         '{b|>ws$A|an #{:Unset 12}}
@@ -503,8 +493,8 @@
 (def optionality-constraint #'hp/optionality-constraint)
 
 (deftest test-constraints-for-composite-optional
-  (let [senv (halite-envs/spec-env nested-optionals-spec-env)
-        flattened-vars (flatten-vars senv {:$type :ws/A})]
+  (let [specs nested-optionals-spec-env
+        flattened-vars (flatten-vars specs {:$type :ws/A})]
     (is (= '(and
              (= b1?
                 (if-value b1|bp true false)
@@ -513,13 +503,13 @@
              (=> (if-value b1|bw true false) b1?)
              (=> b1|c2? b1?))
            (optionality-constraint
-            senv
+            specs
             (:b1 flattened-vars))))
     (is (= '(and
              (= b1|c2? (if-value b1|c2|cx true false))
              (=> (if-value b1|c2|cw true false) b1|c2?))
            (optionality-constraint
-            senv
+            specs
             (:c2 (:b1 flattened-vars)))))))
 
 (deftest test-propagate-for-spec-valued-optionals
@@ -665,15 +655,14 @@
 
 (deftest simpler-composite-optional-test
   (schema.core/without-fn-validation
-   (let [senv (halite-envs/spec-env
-               '{:ws/A
-                 {:spec-vars {:b1 :ws/B :b2 [:Maybe :ws/B]}
-                  :constraints [["a1" (= b1 b2)]]
-                  :refines-to {}}
-                 :ws/B
-                 {:spec-vars {:bx "Integer", :by [:Maybe "Integer"]}
-                  :constraints [["b1" (< 0 bx)]]
-                  :refines-to {}}})
+   (let [spec-map '{:ws/A
+                    {:spec-vars {:b1 :ws/B :b2 [:Maybe :ws/B]}
+                     :constraints [["a1" (= b1 b2)]]
+                     :refines-to {}}
+                    :ws/B
+                    {:spec-vars {:bx "Integer", :by [:Maybe "Integer"]}
+                     :constraints [["b1" (< 0 bx)]]
+                     :refines-to {}}}
          opts {:default-int-bounds [-10 10]}]
 
      (is (= '{:spec-vars {:b1|bx "Integer"
@@ -691,12 +680,12 @@
                             ["$b2?" (and (= b2? (if-value b2|bx true false))
                                          (=> (if-value b2|by true false) b2?))]]
               :refines-to {}}
-            (hp/spec-ify-bound senv {:$type :ws/A})))
+            (hp/spec-ify-bound spec-map {:$type :ws/A})))
 
      (is (= '{:$type :ws/A,
               :b1 {:$type :ws/B, :bx {:$in [1 1000]}, :by {:$in [-1000 1000 :Unset]}},
               :b2 {:$type :ws/B, :bx {:$in [1 1000]}, :by {:$in [-1000 1000 :Unset]}}}
-            (hp/propagate senv {:$type :ws/A}))))))
+            (hp/propagate spec-map {:$type :ws/A}))))))
 
 (deftest test-refine-optional
   ;; The 'features' that interact here: valid? and instance literals w/ unassigned variables.

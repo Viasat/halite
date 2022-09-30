@@ -89,19 +89,19 @@
   (str prefix ">" (namespace spec-id) "$" (name spec-id) "|"))
 
 (s/defn ^:private flatten-vars :- FlattenedVars
-  ([senv :- (s/protocol halite-envs/SpecEnv), spec-bound :- SpecBound]
-   (flatten-vars senv [] "" false spec-bound))
-  ([senv :- (s/protocol halite-envs/SpecEnv)
+  ([spec-map :- halite-envs/SpecMap, spec-bound :- SpecBound]
+   (flatten-vars spec-map [] "" false spec-bound))
+  ([spec-map :- halite-envs/SpecMap
     parent-spec-ids :- [halite-types/NamespacedKeyword]
     prefix :- s/Str
     already-optional? :- s/Bool
     spec-bound :- SpecBound]
    (let [spec-id (->> spec-bound :$type unwrap-maybe)
-         spec-refinements #(:refines-to (halite-envs/lookup-spec senv %))]
+         spec-refinements #(-> % spec-map :refines-to)]
      (->
       (reduce
        (fn [vars [var-kw vtype]]
-         (let [htype (halite-envs/halite-type-from-var-type senv vtype)]
+         (let [htype (halite-envs/halite-type-from-var-type spec-map vtype)]
            (cond
              (primitive-maybe-type? htype)
              (let [actually-mandatory? (and already-optional? (not (halite-types/maybe-type? htype)))
@@ -120,7 +120,7 @@
                    optional? (halite-types/maybe-type? htype)
                    sub-bound (get spec-bound var-kw :Unset)
                    flattened-vars (when recur?
-                                    (flatten-vars senv
+                                    (flatten-vars spec-map
                                                   (conj parent-spec-ids (unwrap-maybe (:$type spec-bound)))
                                                   (str prefix (name var-kw) "|")
                                                   (or already-optional? optional?)
@@ -135,12 +135,12 @@
              :else (throw (ex-info (format "BUG! Variables of type '%s' not supported yet" htype)
                                    {:var-kw var-kw :type htype})))))
        {::mandatory #{} ::spec-id spec-id}
-       (->> spec-id (halite-envs/lookup-spec senv) :spec-vars))
+       (->> spec-id spec-map :spec-vars))
       (assoc ::refines-to (->> (tree-seq (constantly true) #(map spec-refinements (keys %)) (spec-refinements spec-id))
                                (apply concat)
                                (into {}
                                      (map (fn [[dest-spec-id _]]
-                                            [dest-spec-id (-> (flatten-vars senv
+                                            [dest-spec-id (-> (flatten-vars spec-map
                                                                             (conj parent-spec-ids dest-spec-id)
                                                                             (refined-var-name prefix dest-spec-id)
                                                                             (or already-optional? #_optional?)
@@ -338,14 +338,14 @@
   can be translated into a valid instance of the bound.
   However, the expressed bound is generally not 'tight': there will usually be valid instances of the bound
   that do not correspond to any valid instance of the bounded spec."
-  [senv :- (s/protocol halite-envs/SpecEnv), spec-bound :- SpecBound]
+  [specs :- halite-envs/SpecMap, spec-bound :- SpecBound]
   ;; First, flatten out the variables we'll need.
-  (let [flattened-vars (flatten-vars senv spec-bound)]
+  (let [flattened-vars (flatten-vars specs spec-bound)]
     (->>
      {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
       :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]
       :refines-to {}}
-     (optionality-constraints senv flattened-vars)
+     (optionality-constraints specs flattened-vars)
      (add-refinement-equality-constraints flattened-vars))))
 
 ;;;;;;;;;;; Conversion to Choco ;;;;;;;;;
@@ -455,9 +455,10 @@
    (propagate senv default-options initial-bound))
   ([senv :- (s/protocol halite-envs/SpecEnv), opts :- Opts, initial-bound :- SpecBound]
    (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
-     (let [flattened-vars (flatten-vars senv initial-bound)
+     (let [specs (halite-envs/build-spec-map senv (:$type initial-bound))
+           flattened-vars (flatten-vars specs initial-bound)
            lowered-bounds (lower-spec-bound flattened-vars initial-bound)
-           spec-ified-bound (spec-ify-bound senv initial-bound)
+           spec-ified-bound (spec-ify-bound specs initial-bound)
            initial-sctx (-> senv
                             (ssa/build-spec-ctx (:$type initial-bound))
                             (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound)))
