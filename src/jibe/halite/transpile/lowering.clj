@@ -67,11 +67,26 @@
 
     ;; We *cannot* pull $do! forms out of valid? or the branches of if, but we can
     ;; pull it out of the predicates of ifs.
-    (and (seq? form) (= 'if (first form)) (do-form? (first (ssa/deref-id ssa-graph (second form)))))
+    (and (seq? form) (= 'if (first form)))
     (let [[_if pred-id then-id else-id] form
-          [pred-do-form] (ssa/deref-id ssa-graph (second form))]
-      (make-do (butlast (rest pred-do-form))
-               (list 'if (last pred-do-form) then-id else-id)))
+          pred (ssa/node-form (ssa/deref-id ssa-graph pred-id))]
+      ;; We need to handle if and if-value as separate sub-cases.
+      (if (do-form? pred)
+        (make-do (butlast (rest pred))
+                 (list 'if (last pred) then-id else-id))
+        (when (and (seq? pred) (= '$value? (first pred)))
+          (let [inner-id (second pred)
+                inner-form (ssa/node-form (ssa/deref-id ssa-graph inner-id))]
+            (when (do-form? inner-form)
+              ;; Yikes... we need to rewrite the then branch such that ($value! ($do! ... v)) becomes ($value! v).
+              ;; We don't need to rewrite the else branch, because in SSA form all the references to the tested
+              ;; value are replaced with $no-value in the else branch.
+              (let [[ssa-graph' new-then-id] (ssa/replace-in-expr ssa-graph then-id {inner-id (last inner-form)})]
+                (vary-meta
+                 (make-do
+                  (butlast (rest inner-form))
+                  (list 'if (list '$value? (last inner-form)) new-then-id else-id))
+                 assoc :ssa-graph ssa-graph')))))))
 
     (and (seq? form) (not (contains? do!-fence-ops (first form))))
     (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
