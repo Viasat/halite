@@ -8960,37 +8960,23 @@
    [1 "a"]
    "map(x in [1, \"a\"])x"
    "[1, \"a\"]")
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "String"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}
+    :spec/B$v1 {:spec-vars {:x "String"}}}
    [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] x)
     [:Vec [:Instance :*]]
     [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]
     "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x"
     "[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "String"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
    [(map
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
      (get x :x))
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "String"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
    [(map
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
      (get (refine-to x :spec/A$v1) :x))
@@ -9000,13 +8986,8 @@
     "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "String"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
    [(map
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
      (valid x))
@@ -9037,37 +9018,22 @@
    #{"a" "b" "c"}
    "map(x in #{\"a\", \"b\", \"c\"})x"
    "#{\"a\", \"b\", \"c\"}")
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "String"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
    [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] x)
     [:Set [:Instance :*]]
     #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}
     "map(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}})x"
     "#{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "String"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
    [(map
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}]
      (valid x))
     [:throws
      "h-err/arg-type-mismatch 0-0 : Argument to 'valid' must be an instance of known type"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "String"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
    [(map
      [x #{[{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]}]
      (count x))
@@ -9102,12 +9068,8 @@
    (filter [x [true false]] (when x x))
    [:throws
     "h-err/not-boolean-body 0-0 : Body expression in 'filter' must be boolean"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A []}
-     (spec :A :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
    [(filter [x {:$type :spec/A$v1, :x 1}] true)
     [:throws
      "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'filter', not :spec/A$v1"]])
@@ -9168,23 +9130,15 @@
    [false false]
    "filter(x in [true, false, false, true])!x"
    "[false, false]")
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A []}
-     (spec :A :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
    [(filter
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}]
      (valid x))
     [:throws
      "h-err/not-boolean-body 0-0 : Body expression in 'filter' must be boolean"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A []}
-     (spec :A :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
    [(filter
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}]
      (valid? x))
@@ -9192,12 +9146,8 @@
     #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}
     "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}})(valid? x)"
     "#{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}}"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A []}
-     (spec :A :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]]
      (> (get x :x) 1))
@@ -9205,12 +9155,8 @@
     [{:$type :spec/A$v1, :x 2}]
     "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])(x.x > 1)"
     "[{$type: spec/A$v1, x: 2}]"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A []}
-     (spec :A :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]]
      (refines-to? x :spec/A$v1))
@@ -9218,13 +9164,8 @@
     [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]
     "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])x.refinesTo?( spec/A$v1 )"
     "[{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}]"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "Integer"}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]]
      (refines-to? x :spec/A$v1))
@@ -9232,25 +9173,15 @@
     [{:$type :spec/A$v1, :x 1}]
     "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])x.refinesTo?( spec/A$v1 )"
     "[{$type: spec/A$v1, x: 1}]"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "Integer"}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]]
      (> (get x :x) 1))
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "Integer"}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]]
      (let
@@ -9263,13 +9194,8 @@
     [{:$type :spec/A$v1, :x 1}]
     "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])({ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) })"
     "[{$type: spec/A$v1, x: 1}]"])
-  (hc
-   [(workspace
-     :spec
-     #:spec{:A [], :B []}
-     (spec :A :concrete (variables [:x "Integer"]))
-     (spec :B :concrete (variables [:x "Integer"])))]
-   :spec
+  (hc2
+   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "Integer"}}}
    [(filter
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}}]
      (let
