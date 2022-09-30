@@ -8,6 +8,12 @@
 
 The syntax for all of the operators is summarized in the following 
 
+The syntax diagrams are a graphical representation of the grammar rules for the different operations.
+
+In the diagrams when a grammar element appears as '<x>:<label>' the label is simply a descriptive label to convey to the reader the meaining of the element.
+
+In the syntax diagrams the '»' is to be read as 'produces'. The element after this indicator is the type of the value produced by the prior form.
+
 ![all operators](../halite-bnf-diagrams/jadeite.svg)
 
 ## Operators

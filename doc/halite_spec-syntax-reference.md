@@ -20,3 +20,4 @@ All the specs in scope are packaged up into a spec-map:
 
 ![spec-map](halite-bnf-diagrams/spec-syntax/spec-map.svg)
 
+Note, of course each key can only appear once in each map that defines a spec. The diagram shows it this way just so it is easier to read.

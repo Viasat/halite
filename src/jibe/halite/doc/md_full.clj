@@ -3,6 +3,7 @@
 
 (ns jibe.halite.doc.md-full
   (:require [clojure.string :as string]
+            [jibe.halite.doc.md-basic :as md-basic]
             [jibe.halite.doc.utils :as utils]
             [schema.core :as s]))
 
@@ -11,6 +12,9 @@
    mode]
   ["## All Operators\n\n"
    "The syntax for all of the operators is summarized in the following \n\n"
+   (md-basic/diagram-description "operations")
+   md-basic/label-description
+   "In the syntax diagrams the '»' is to be read as 'produces'. The element after this indicator is the type of the value produced by the prior form.\n\n"
    (if (= mode :user-guide)
      (utils/get-svg-link (str "halite-bnf-diagrams/" (if (= :halite lang) "halite" "jadeite") ".svg"))
      (str "![" "all operators" "](../halite-bnf-diagrams/" (if (= :halite lang) "halite" "jadeite") ".svg)\n\n"))

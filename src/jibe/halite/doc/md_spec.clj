@@ -18,6 +18,7 @@
         "Any applicable refinements are defined as:\n\n"
         (embed-bnf run-config "refinement-map")
         "All the specs in scope are packaged up into a spec-map:\n\n"
-        (embed-bnf run-config "spec-map")]
+        (embed-bnf run-config "spec-map")
+        "Note, of course each key can only appear once in each map that defines a spec. The diagram shows it this way just so it is easier to read."]
        flatten
        (apply str)))

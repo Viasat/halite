@@ -87,6 +87,11 @@
             "---\n"]
            flatten (apply str)))))
 
+(defn diagram-description [x]
+  (str "The syntax diagrams are a graphical representation of the grammar rules for the different " x ".\n\n"))
+
+(def label-description "In the diagrams when a grammar element appears as '<x>:<label>' the label is simply a descriptive label to convey to the reader the meaining of the element.\n\n")
+
 (s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [mode sidebar-file] :as config} basic-bnf]
   (str
    (when (= :user-guide mode)
@@ -96,6 +101,8 @@
    "# "
    (utils/lang-str lang)
    " basic syntax and types reference\n\n"
+   (diagram-description "elements")
+   label-description
    (->> basic-bnf
         (partition 2)
         (map (partial apply basic-md info config))

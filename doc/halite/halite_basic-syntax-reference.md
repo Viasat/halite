@@ -4,6 +4,10 @@
 
 # Halite basic syntax and types reference
 
+The syntax diagrams are a graphical representation of the grammar rules for the different elements.
+
+In the diagrams when a grammar element appears as '<x>:<label>' the label is simply a descriptive label to convey to the reader the meaining of the element.
+
 ## <a name="non-numeric-character"></a>non-numeric-character
 
 
