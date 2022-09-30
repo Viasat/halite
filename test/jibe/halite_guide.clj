@@ -3,7 +3,6 @@
 
 (ns jibe.halite-guide
   (:require [clojure.string :as string]
-            [jibe.data.model :as model]
             [jibe.halite :as halite]
             [jibe.halite-base :as halite-base]
             [jibe.halite.halite-envs :as halite-envs]
@@ -11,7 +10,6 @@
             [jibe.halite.halite-lint :as halite-lint]
             [jibe.lib.fixed-decimal :as fixed-decimal]
             [jibe.lib.format-errors :as format-errors]
-            [jibe.logic.expression :as expression]
             [jibe.logic.halite.spec-env :as spec-env]
             [jibe.logic.jadeite :as jadeite]
             [jibe.logic.resource-spec :as resource-spec]
@@ -10532,62 +10530,6 @@
    [(error {:$type :my/Spec$v1, :n 1, :p 1})
     [:throws
      "h-err/no-matching-signature 0-0 : No matching signature for 'error'"]]))
-
-(deftest
-  test-col-row-in-exceptions
-  (try
-    (test-setup-specs/setup-specs
-     [(workspace
-       :my
-       #:my{:Spec []}
-       (spec
-        :Spec
-        :concrete
-        (variables
-         [:p "Integer"]
-         [:n "Integer"]
-         [:o "Integer" :optional])
-        (refinements
-         [:as_b
-          :to
-          :spec/B$v1
-          [:halite "\n(+ p\n   n asdf o\n   p)"]])))])
-    (catch
-     ExceptionInfo
-     e
-      (is (= "Exception validating spec " (ex-message e)))
-      (is
-       (=
-        #{:end-row
-          :throw-site
-          :user-visible-error?
-          :col
-          :message-template
-          :jibe.data.model/spec-name
-          :err-id
-          :form
-          :end-col
-          :refinement-name
-          :row}
-        (set (keys (ex-data e)))))
-      (is
-       (=
-        {:err-id :h-err/undefined-symbol,
-         :jibe.data.model/spec-name :my/Spec,
-         :refinement-name "my/Spec$v1/as_b",
-         :row 3,
-         :end-row 3,
-         :col 6,
-         :end-col 10}
-        (select-keys
-         (ex-data e)
-         [:row
-          :end-row
-          :col
-          :end-col
-          :err-id
-          :refinement-name
-          :jibe.data.model/spec-name]))))))
 
 (deftest
   test-reserved-words
