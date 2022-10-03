@@ -43,7 +43,7 @@
             (cond
               (string? c) (recur more-c spec-map (conj results (str c "\n\n")))
 
-              (and (map c) (:spec-map c)) (recur more-c (:spec-map c) (conj results (utils/code-snippet lang (utils/spec-map-str lang (:spec-map c)))))
+              (and (map c) (:spec-map c)) (recur more-c (:spec-map c) (conj results (utils/code-snippet lang mode (utils/spec-map-str lang (:spec-map c)))))
               (and (map c) (:code c)) (let [h-expr (:code c)
                                             ^HCInfo i (halite-run/hc-body
                                                        spec-map
@@ -69,15 +69,15 @@
                                           (throw (ex-info "expected to fail" {:h-expr h-expr
                                                                               :h-result h-result})))
                                         (recur more-c spec-map
-                                               (conj results (utils/code-snippet lang (str ({:halite (utils/pprint-halite h-expr)
-                                                                                             :jadeite (str j-expr "\n")} lang)
-                                                                                           (when (or (:result c)
-                                                                                                     (:throws c))
-                                                                                             (str ({:halite  "\n\n;-- result --\n"
-                                                                                                    :jadeite "\n\n//-- result --\n"}
-                                                                                                   lang)
-                                                                                                  ({:halite (utils/pprint-halite h-result)
-                                                                                                    :jadeite (str j-result "\n")} lang)))))))))
+                                               (conj results (utils/code-snippet lang mode (str ({:halite (utils/pprint-halite h-expr)
+                                                                                                  :jadeite (str j-expr "\n")} lang)
+                                                                                                (when (or (:result c)
+                                                                                                          (:throws c))
+                                                                                                  (str ({:halite  "\n\n;-- result --\n"
+                                                                                                         :jadeite "\n\n//-- result --\n"}
+                                                                                                        lang)
+                                                                                                       ({:halite (utils/pprint-halite h-result)
+                                                                                                         :jadeite (str j-result "\n")} lang)))))))))
             results))
         (let [basic-ref-links (utils/basic-ref-links lang mode prefix how-to (if (= :user-guide mode)
                                                                                nil

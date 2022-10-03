@@ -57,11 +57,17 @@
     op-names-j
     [op-name]))
 
-(defn code-snippet [lang code]
-  (str "```"
+(defn code-snippet [lang mode code]
+  (str (when (= :user-guide mode)
+         ;; tell user-guide dsl to ignore the code block
+         "{% raw %}\n")
+       "```"
        ({:halite "clojure", :jadeite "java"} lang) "\n"
        code
-       "```\n\n"))
+       "```\n"
+       (when (= :user-guide mode)
+         "{% endraw %}\n")
+       "\n"))
 
 (defn pprint-halite
   ([code]
