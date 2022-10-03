@@ -3,10 +3,10 @@
 
 (ns jibe.halite.doc.md-how-to
   (:require [jibe.halite.doc.utils :as utils]
-            [jibe.halite-guide :as halite-guide]
+            [jibe.halite.doc.halite-run :as halite-run]
             [jibe.logic.jadeite :as jadeite]
             [clojure.string :as string])
-  (:import [jibe.halite_guide HCInfo]))
+  (:import [jibe.halite.doc.halite_run HCInfo]))
 
 (defn how-to-reference [lang mode prefix id]
   (str prefix (name id) (when (= :jadeite lang) "-j") (if (= :user-guide mode)
@@ -45,7 +45,7 @@
 
               (and (map c) (:spec-map c)) (recur more-c (:spec-map c) (conj results (utils/code-snippet lang (utils/spec-map-str lang (:spec-map c)))))
               (and (map c) (:code c)) (let [h-expr (:code c)
-                                            ^HCInfo i (halite-guide/hc-body
+                                            ^HCInfo i (halite-run/hc-body
                                                        spec-map
                                                        h-expr)
                                             {:keys [t h-result j-result j-expr]} {:t (.-t i)
