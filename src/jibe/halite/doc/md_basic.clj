@@ -94,7 +94,7 @@
 (s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [mode] :as config} basic-bnf]
   (str
    (when (= :user-guide mode)
-     (utils/generate-user-guide-hdr "Halite Basic Syntax Reference" "halite_basic-syntax-reference" (str "/" (name lang)) "Halite basic syntax reference"))
+     (utils/generate-user-guide-hdr "Halite Basic Syntax Reference" (str "halite_basic-syntax-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite basic syntax reference"))
    utils/generated-msg
    "# "
    (utils/lang-str lang)

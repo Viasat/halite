@@ -6,8 +6,8 @@
             [jibe.halite.doc.utils :as utils]
             [jibe.halite.doc.md-basic :as md-basic]))
 
-(defn- embed-bnf [{:keys [mode image-dir]} label]
-  ["![" label "](" (when (= :user-guide mode) (str image-dir "/")) "halite-bnf-diagrams/spec-syntax/" label ".svg" ")\n\n"])
+(defn- embed-bnf [{:keys [mode]} label]
+  ["![" label "](" (when (= :user-guide mode) "images/") "halite-bnf-diagrams/spec-syntax/" label ".svg" ")\n\n"])
 
 (defn spec-md [{:keys [mode] :as run-config}]
   (->> [(when (= :user-guide mode)
