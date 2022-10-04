@@ -300,3 +300,12 @@
           '{:vars {n :Int p :Bool}
             :constraints #{(< n (if p 10 (unsatisfiable)))}}
           '{n [-20 20]}))))
+
+(deftest test-if-branches-can-have-same-value []
+  ;; Originally, in the case where the branches of an (if ...) form
+  ;; were integer-valued, we used ReExpression/ift for the (if ...) form.
+  ;; We later discovered that ReExpression/ift effectively constrains the
+  ;; variables for the if branches such that they cannot be equal.
+  ;; This test minimally demonstrates that problem.
+  (let [spec '{:vars {} :constraints #{(= 3 (if true 3 3))}}]
+    (is (= '{} (choco-clj/propagate spec)))))

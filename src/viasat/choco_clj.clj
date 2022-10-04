@@ -92,7 +92,7 @@
   (into-array ReExpression args))
 
 (defn- int-vars ^"[Lorg.chocosolver.solver.variables.IntVar;"
-  [& ivars]
+  [ivars]
   (into-array IntVar ivars))
 
 (defn- bool-vars ^"[Lorg.chocosolver.solver.variables.BoolVar;"
@@ -177,20 +177,25 @@
           (when (.contains rvar r)
             (.add tuples (int-array [val1 val2 r]))))))
     ;; guard implies a^b = r
-    (post-guarded guard (.table m (int-vars avar bvar rvar) tuples))
+    (post-guarded guard (.table m (int-vars [avar bvar rvar]) tuples))
     rvar))
 
-(defn- force-initialization
-  [var-or-expr]
+(defn- var-from-expr ^IntVar
+  [expr]
   (cond
-    (instance? ArExpression var-or-expr) (.intVar ^ArExpression var-or-expr)
-    (instance? ReExpression var-or-expr) (.boolVar ^ReExpression var-or-expr))
+    (instance? ArExpression expr) (.intVar ^ArExpression expr)
+    (instance? ReExpression expr) (.boolVar ^ReExpression expr)
+    (instance? IntVar expr) expr
+    :else (throw (ex-info "Not an IntVar" {:v expr}))))
+
+(defn- force-initialization [var-or-expr]
+  (var-from-expr var-or-expr)
   var-or-expr)
 
 (defn- unsatisfiable
-  [^Model m guard]
-  (let [bvar (.boolVar m)
-        unsat-prop (proxy [Propagator] [(bool-vars [bvar])]
+  [^Model m ^ReExpression guard]
+  (let [bvar (.boolVar m (.generateName m "unsatisfiable"))
+        unsat-prop (proxy [Propagator] [(bool-vars [bvar (.boolVar guard)])]
                      (propagate [evtmask])
                      (isEntailed [] ESat/FALSE))
         ^"[Lorg.chocosolver.solver.constraints.Propagator;" props (into-array [unsat-prop])]
@@ -239,10 +244,15 @@
                             not-pred (.not pred)
                             then (make-expr m vars (.and guard (relational [pred])) then-form)
                             else (make-expr m vars (.and guard (relational [not-pred])) else-form)]
-                        (if (and (instance? ReExpression else) (instance? ReExpression then))
-                          (.and (.imp ^ReExpression pred ^ReExpression then)
-                                (relational [(.imp not-pred ^ReExpression else)]))
-                          (.ift ^ReExpression pred ^ArExpression then ^ArExpression else)))
+                        (let [then-var (var-from-expr then)
+                              else-var (var-from-expr else)
+                              pred-var (.boolVar ^ReExpression pred)
+                              lb (min (.getLB then-var) (.getLB else-var))
+                              ub (max (.getUB then-var) (.getUB else-var))
+                              rvar (.intVar m (str form) (int lb) (int ub))]
+                          (.post
+                           (.element m rvar (int-vars [else-var then-var]) pred-var 0))
+                          rvar))
 
                       (= op 'unsatisfiable)
                       (unsatisfiable m guard)
