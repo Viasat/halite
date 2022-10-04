@@ -98,7 +98,7 @@
            (when op-refs
              ["#### Operator reference:\n\n"
               (for [a (sort op-refs)]
-                (str "* " "[`" a "`](../" (utils/get-reference-filename-link lang mode prefix "full")
+                (str "* " "[`" a "`](" (when (= :local mode) "../") (utils/get-reference-filename-link lang mode prefix "full")
                      "#" (utils/safe-op-anchor a) ")" "\n"))
               "\n\n"])
            (when how-to-refs
