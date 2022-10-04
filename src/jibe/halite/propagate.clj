@@ -156,7 +156,7 @@
 (declare lower-spec-bound)
 
 (s/defn ^:private lower-refines-to-bound
-  [refinements :- FlattenedRefinementMap choco-bound refine-to-map]
+  [optional-context? :- s/Bool, refinements :- FlattenedRefinementMap choco-bound refine-to-map]
   (->> refine-to-map
        (reduce (fn [choco-bound [dest-spec-id bound-map]]
                  (merge choco-bound
@@ -165,7 +165,7 @@
                                                  ::spec-id dest-spec-id
                                                  ::mandatory #{}
                                                  ::refines-to {})
-                                          false
+                                          optional-context?
                                           (assoc bound-map :$type dest-spec-id))))
                choco-bound)))
 
@@ -176,7 +176,7 @@
    (reduce
     (fn [choco-bounds [var-kw bound]]
       (if (= :$refines-to var-kw)
-        (lower-refines-to-bound (::refines-to vars) choco-bounds bound)
+        (lower-refines-to-bound optional-context? (::refines-to vars) choco-bounds bound)
         (let [composite-var? (map? (vars var-kw))
               choco-var (when-not composite-var?
                           (or (some-> var-kw vars first symbol)

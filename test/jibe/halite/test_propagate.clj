@@ -475,6 +475,31 @@
 
       {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{b1? true, b1|c2? true, b1|c2|cw 5})))
 
+(deftest test-lower-spec-bound-and-refines-to
+  (s/with-fn-validation
+    (let [specs '{:ws/A {:spec-vars {:an "Integer"}
+                         :constraints [["a1" (< 0 an)]]
+                         :refines-to {}}
+                  :ws/B {:spec-vars {:bn "Integer"}
+                         :constraints [["b1" (< bn 10)]]
+                         :refines-to {:ws/A {:expr {:an bn}}}}
+                  :ws/C {:spec-vars {:b [:Maybe :ws/B] :cn "Integer"}
+                         :constraints [["c1" (if-value b (= cn (get (refine-to b :ws/A) :an)) true)]]
+                         :refines-to {}}}
+          bounds {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an 12}}}}
+          flattened-vars (flatten-vars (halite-envs/spec-env specs) bounds)]
+      (are [in out]
+           (= out (lower-spec-bound (flatten-vars (halite-envs/spec-env specs) in) in))
+
+        {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an 12}}}}
+        '{b|>ws$A|an #{:Unset 12}}
+
+        {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an {:$in [10 12]}}}}}
+        '{b|>ws$A|an [10 12 :Unset]}
+
+        {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an {:$in #{10 11 12}}}}}}
+        '{b|>ws$A|an #{:Unset 10 11 12}}))))
+
 (def optionality-constraint #'hp/optionality-constraint)
 
 (deftest test-constraints-for-composite-optional
