@@ -129,79 +129,79 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 </td><td>
 
- [H](halite/halite_boolean-op-reference.md) [J](jadeite/halite_boolean-op-reference-j.md)
+ <a href="halite/halite_boolean-op-reference.md">H</a> <a href="jadeite/halite_boolean-op-reference-j.md">J</a>
 </td><td>
 
- [H](halite/halite_boolean-out-reference.md) [J](jadeite/halite_boolean-out-reference-j.md)
+ <a href="halite/halite_boolean-out-reference.md">H</a> <a href="jadeite/halite_boolean-out-reference-j.md">J</a>
 </td></tr><tr><th>fixed-decimal</th><td>
 
 </td><td>
 
- [H](halite/halite_fixed-decimal-op-reference.md) [J](jadeite/halite_fixed-decimal-op-reference-j.md)
+ <a href="halite/halite_fixed-decimal-op-reference.md">H</a> <a href="jadeite/halite_fixed-decimal-op-reference-j.md">J</a>
 </td><td>
 
- [H](halite/halite_fixed-decimal-out-reference.md) [J](jadeite/halite_fixed-decimal-out-reference-j.md)
+ <a href="halite/halite_fixed-decimal-out-reference.md">H</a> <a href="jadeite/halite_fixed-decimal-out-reference-j.md">J</a>
 </td></tr><tr><th>instance</th><td>
 
- [H](halite/halite_instance-field-op-reference.md) [J](jadeite/halite_instance-field-op-reference-j.md)
+ <a href="halite/halite_instance-field-op-reference.md">H</a> <a href="jadeite/halite_instance-field-op-reference-j.md">J</a>
 </td><td>
 
- [H](halite/halite_instance-op-reference.md) [J](jadeite/halite_instance-op-reference-j.md)
+ <a href="halite/halite_instance-op-reference.md">H</a> <a href="jadeite/halite_instance-op-reference-j.md">J</a>
 </td><td>
 
- [H](halite/halite_instance-out-reference.md) [J](jadeite/halite_instance-out-reference-j.md)
+ <a href="halite/halite_instance-out-reference.md">H</a> <a href="jadeite/halite_instance-out-reference-j.md">J</a>
 </td></tr><tr><th>integer</th><td>
 
 </td><td>
 
- [H](halite/halite_integer-op-reference.md) [J](jadeite/halite_integer-op-reference-j.md)
+ <a href="halite/halite_integer-op-reference.md">H</a> <a href="jadeite/halite_integer-op-reference-j.md">J</a>
 </td><td>
 
- [H](halite/halite_integer-out-reference.md) [J](jadeite/halite_integer-out-reference-j.md)
+ <a href="halite/halite_integer-out-reference.md">H</a> <a href="jadeite/halite_integer-out-reference-j.md">J</a>
 </td></tr><tr><th>nothing</th><td>
 
 </td><td>
 
 </td><td>
 
- [H](halite/halite_nothing-out-reference.md) [J](jadeite/halite_nothing-out-reference-j.md)
+ <a href="halite/halite_nothing-out-reference.md">H</a> <a href="jadeite/halite_nothing-out-reference-j.md">J</a>
 </td></tr><tr><th>optional</th><td>
 
 </td><td>
 
- [H](halite/halite_optional-op-reference.md) [J](jadeite/halite_optional-op-reference-j.md)
+ <a href="halite/halite_optional-op-reference.md">H</a> <a href="jadeite/halite_optional-op-reference-j.md">J</a>
 </td><td>
 
- [H](halite/halite_optional-out-reference.md) [J](jadeite/halite_optional-out-reference-j.md)
+ <a href="halite/halite_optional-out-reference.md">H</a> <a href="jadeite/halite_optional-out-reference-j.md">J</a>
 </td></tr><tr><th>set</th><td>
 
 </td><td>
 
- [H](halite/halite_set-op-reference.md) [J](jadeite/halite_set-op-reference-j.md)
+ <a href="halite/halite_set-op-reference.md">H</a> <a href="jadeite/halite_set-op-reference-j.md">J</a>
 </td><td>
 
- [H](halite/halite_set-out-reference.md) [J](jadeite/halite_set-out-reference-j.md)
+ <a href="halite/halite_set-out-reference.md">H</a> <a href="jadeite/halite_set-out-reference-j.md">J</a>
 </td></tr><tr><th>spec-id</th><td>
 
 </td><td>
 
- [H](halite/halite_spec-id-op-reference.md) [J](jadeite/halite_spec-id-op-reference-j.md)
+ <a href="halite/halite_spec-id-op-reference.md">H</a> <a href="jadeite/halite_spec-id-op-reference-j.md">J</a>
 </td><td>
 
 </td></tr><tr><th>string</th><td>
 
 </td><td>
 
- [H](halite/halite_string-op-reference.md) [J](jadeite/halite_string-op-reference-j.md)
+ <a href="halite/halite_string-op-reference.md">H</a> <a href="jadeite/halite_string-op-reference-j.md">J</a>
 </td><td>
 
 </td></tr><tr><th>vector</th><td>
 
 </td><td>
 
- [H](halite/halite_vector-op-reference.md) [J](jadeite/halite_vector-op-reference-j.md)
+ <a href="halite/halite_vector-op-reference.md">H</a> <a href="jadeite/halite_vector-op-reference-j.md">J</a>
 </td><td>
 
- [H](halite/halite_vector-out-reference.md) [J](jadeite/halite_vector-out-reference-j.md)
+ <a href="halite/halite_vector-out-reference.md">H</a> <a href="jadeite/halite_vector-out-reference-j.md">J</a>
 </td></tr></table>
 

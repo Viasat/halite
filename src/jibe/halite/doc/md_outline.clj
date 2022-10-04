@@ -90,8 +90,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
                                       (filter #(= tm (:type-mode (val %))))
                                       (filter #(= t (:type (val %))))
                                       (map (fn [[k v]]
-                                             [" [H](" (when (= :local mode) "halite/") (tag-reference :halite  mode prefix (name k)) ")"
-                                              " [J](" (when (= :local mode) "jadeite/") (tag-reference :jadeite mode prefix (name k)) ")\n"])))
+                                             [" <a href=\"" (when (= :local mode) "halite/") (tag-reference :halite  mode prefix (name k)) "\">H</a>"
+                                              " <a href=\"" (when (= :local mode) "jadeite/") (tag-reference :jadeite mode prefix (name k)) "\">J</a>\n"])))
                                  "</td>"])))
                     "</tr>"])))
        "</table>\n\n"])]

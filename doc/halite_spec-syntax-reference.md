@@ -1,3 +1,7 @@
+<!---
+  This markdown file was generated. Do not edit.
+  -->
+
 A spec-map is a data structure used to define specs that are in context for evaluating some expressions.
 
 The syntax diagrams are a graphical representation of the grammar rules for the different elements in spec-maps.

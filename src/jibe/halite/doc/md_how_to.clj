@@ -9,9 +9,9 @@
   (:import [jibe.halite.doc.halite_run HCInfo]))
 
 (defn how-to-reference [lang mode prefix id]
-  (str prefix (name id) (when (= :jadeite lang) "-j") (if (= :user-guide mode)
-                                                        ".html"
-                                                        ".md")))
+  (str prefix (name id) "-reference" (when (= :jadeite lang) "-j") (if (= :user-guide mode)
+                                                                     ".html"
+                                                                     ".md")))
 
 ;; user-guide requires this header
 (defn generate-how-to-user-guide-hdr [lang prefix id how-to]

@@ -8,7 +8,9 @@
   (->> [(:doc tag) "\n\n"
         (when-let [[link-md] (utils/basic-ref-links lang mode prefix tag "")]
           ["For basic syntax of this data type see: " link-md "\n\n"])
-        ["![" (pr-str tag-name) "](../halite-bnf-diagrams/"
+        ["![" (pr-str tag-name) "](" (if (= :user-guide mode)
+                                       "images"
+                                       "..") "/halite-bnf-diagrams/"
          (utils/url-encode tag-name) (when (= :jadeite lang) "-j") ".svg)\n\n"]
         [(when-let [op-names ((if (= :halite lang) tag-map tag-map-j) (keyword tag-name))]
            (->> op-names
@@ -28,7 +30,7 @@
   (let [tag-name (name tag-name)]
     (->> (tag-md info config tag-name tag)
          (str (when (= :user-guide mode)
-                (utils/generate-user-guide-hdr (:label tag) (str prefix tag-name) "/halite" (:doc tag)))
+                (utils/generate-user-guide-hdr (:label tag) (str prefix tag-name "-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) (:doc tag)))
               utils/generated-msg
               "# " (if (= :halite lang) "Halite" "Jadeite")
               " reference: "
