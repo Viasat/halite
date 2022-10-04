@@ -3,13 +3,17 @@
 
 (ns jibe.halite.doc.md-spec
   (:require [clojure.string :as string]
+            [jibe.halite.doc.utils :as utils]
             [jibe.halite.doc.md-basic :as md-basic]))
 
 (defn- embed-bnf [{:keys [mode image-dir]} label]
   ["![" label "](" (when (= :user-guide mode) (str image-dir "/")) "halite-bnf-diagrams/spec-syntax/" label ".svg" ")\n\n"])
 
-(defn spec-md [run-config]
-  (->> ["A spec-map is a data structure used to define specs that are in context for evaluating some expressions.\n\n"
+(defn spec-md [{:keys [mode] :as run-config}]
+  (->> [(when (= :user-guide mode)
+          (utils/generate-user-guide-hdr "Specification Syntax Reference" "halite_spec-syntax-reference" nil "Specification syntax reference."))
+        utils/generated-msg
+        "A spec-map is a data structure used to define specs that are in context for evaluating some expressions.\n\n"
         (md-basic/diagram-description "elements in spec-maps")
         md-basic/element-name-description
         md-basic/label-description

@@ -99,7 +99,7 @@
 (s/defn full-md-all
   [{:keys [lang] :as info} {:keys [mode] :as config} op-maps]
   (->> [(when (= :user-guide mode)
-          (utils/generate-user-guide-hdr "Halite Full Reference" "halite_full-reference" "/halite" "Halite operator reference (all operators)"))
+          (utils/generate-user-guide-hdr "Halite Full Reference" "halite_full-reference" (str "/" (name lang)) "Halite operator reference (all operators)"))
         utils/generated-msg
         "# "
         (utils/lang-str lang)
