@@ -466,6 +466,19 @@
    {}
    sctx))
 
+(defn- disallow-optional-refinements
+  "Our refinement lowering code is not currently correct when the refinements are optional.
+  We'll fix it, but until we do, we should at least not emit incorrect results silently."
+  [sctx]
+  (doseq [[spec-id {:keys [refines-to ssa-graph]}] sctx
+          [to-id {:keys [expr]}] refines-to]
+    (let [htype (->> expr (ssa/deref-id ssa-graph) ssa/node-type)]
+      (when (halite-types/maybe-type? htype)
+        (throw (ex-info (format "BUG! Refinement of %s to %s is optional, and propagate does not yet support optional refinements"
+                                spec-id to-id)
+                        {:sctx sctx})))))
+  sctx)
+
 (s/defn propagate :- ConcreteSpecBound
   ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- ConcreteSpecBound]
    (propagate senv default-options initial-bound))
@@ -480,6 +493,7 @@
                             (assoc :$propagate/Bounds (ssa/spec-to-ssa senv spec-ified-bound)))
            refinement-graph (loom.graph/digraph (update-vals initial-sctx (comp keys :refines-to)))]
        (-> initial-sctx
+           (disallow-optional-refinements)
            (lowering/lower-refinement-constraints)
            ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
            ;; Conseqeuntly, no rewrite rules should introduce new when forms!
