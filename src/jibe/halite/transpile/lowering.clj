@@ -402,7 +402,7 @@
                (halite-rewriting/trace!
                 sctx
                 {:op :add-constraint
-                 :rule "lower-refinement-to-constraint"
+                 :rule "lower-refinement-constraints"
                  :spec-id spec-id
                  :id' id
                  :result expr
@@ -712,7 +712,7 @@
 (s/defn ^:private instance-compatible-type? :- s/Bool
   "Returns true if there exists an expression of type htype that could evaluate to an instance, and false otherwise."
   [htype :- halite-types/HaliteType]
-  (or (#{:Any :Value} htype)
+  (or (boolean (#{:Any :Value} htype))
       (and (vector? htype) (= :Instance (first htype)))
       (and (halite-types/maybe-type? htype)
            (let [inner (halite-types/no-maybe htype)]

@@ -64,7 +64,7 @@
 ;; ::refines-to map because the right place to put such a flattening would be in
 ;; the FlattenedVar that contains this FlattenedRefinement.
 (s/defschema ^:private FlattenedRefinement
-  {::mandatory #{halite-types/BareKeyword} ;; will we need this?
+  {::mandatory #{halite-types/BareKeyword}
    halite-types/BareKeyword (s/cond-pre FlattenedVar FlattenedVars)})
 
 (s/defschema ^:private FlattenedRefinementMap
@@ -300,10 +300,11 @@
                       refinement-check (list '=
                                              (list 'refine-to '$from to-spec-id)
                                              (flattened-vars-as-instance-literal
-                                              (assoc to-vars
-                                                     :$witness (:$witness flattened-vars)
-                                                     ::spec-id to-spec-id
-                                                     ::refines-to {})))]
+                                              (conj to-vars
+                                                    [::spec-id to-spec-id]
+                                                    [::refines-to {}]
+                                                    (when-let [w (:$witness flattened-vars)]
+                                                      [:$witness w]))))]
                   (cons
                    [(str "$refine" constraint-name-prefix "-to-" to-spec-id)
                     (list 'let ['$from from-instance]
@@ -385,7 +386,7 @@
 
 (s/defn ^:private to-atom-bound :- AtomBound
   [choco-bounds :- choco-clj/VarBounds
-   var-type :- halite-envs/VarType
+   var-type :- halite-types/HaliteType
    [var-kw _] :- FlattenedVar]
   (let [bound (-> var-kw symbol choco-bounds)]
     (if-not (coll? bound)
@@ -426,7 +427,8 @@
                                 (-> (to-spec-bound choco-bounds
                                                    senv
                                                    (assoc flattened-vars
-                                                          ::spec-id spec-id))
+                                                          ::spec-id spec-id
+                                                          ::refines-to {}))
                                     (dissoc :$type))]))
                         (into {}))))))))
 

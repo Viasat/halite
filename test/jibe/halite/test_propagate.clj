@@ -800,8 +800,7 @@
       (let [senv (spec-env (merge env-map
                                   '{:my/D {:spec-vars {:d1 "Integer"}
                                            :refines-to {:my/B {:expr {:$type :my/B,
-                                                                      :b1 (* 2 d1)}}}}
-                                    :my/E {:spc-vars {:ed [:Maybe :my/D]}}}))]
+                                                                      :b1 (* 2 d1)}}}}}))]
 
         (is (= {:$type :my/D,
                 :d1 {:$in [-4 495]},
@@ -832,8 +831,7 @@
                                   '{:my/D {:spec-vars {:d1 "Integer"}
                                            :refines-to {:my/C {:expr {:$type :my/C,
                                                                       :cb {:$type :my/B
-                                                                           :b1 (* d1 2)}}}}}
-                                    :my/E {:spc-vars {:ed [:Maybe :my/D]}}}))]
+                                                                           :b1 (* d1 2)}}}}}}))]
 
         (is (= {:$type :my/D,
                 :d1 {:$in [-4 495]},
