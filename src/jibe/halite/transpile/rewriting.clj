@@ -161,7 +161,8 @@
           (let [node (ssa/deref-id ssa-graph id)
                 [spec-info' node']
                 ,(or (some #(apply-rule-to-node % sctx (assoc ctx :ssa-graph ssa-graph) scope spec-id spec-info id node) rules)
-                     [spec-info node])]
+                     [spec-info node])
+                spec-info' (cond-> spec-info' (not= spec-info' spec-info) (ssa/prune-ssa-graph false))]
             (recur spec-info'
                    (conj! reached id)
                    (-> ids-to-do
