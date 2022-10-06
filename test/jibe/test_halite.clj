@@ -9,7 +9,6 @@
             [clojure.test.check.properties :as prop]
             [jibe.halite :as halite]
             [jibe.halite-syntax-check :as halite-syntax-check]
-            [jibe.halite-type-check :as halite-type-check]
             [jibe.halite-type-of :as halite-type-of]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-lint :as halite-lint]

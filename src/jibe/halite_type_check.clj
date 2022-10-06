@@ -134,7 +134,11 @@
                                            :actual-arg-count (count (rest form))
                                            :form form}))))
 
+(def ^:dynamic *lookup-f* nil)
+
 (defn ^:private type-check-lookup [ctx form subexpr-type index]
+  (when *lookup-f*
+    (*lookup-f* subexpr-type index))
   (cond
     (halite-types/halite-vector-type? subexpr-type)
     (do
@@ -538,3 +542,15 @@
       (type-check-constraint-expr senv tenv cexpr))
     (doseq [[spec-id {:keys [expr name]}] refines-to]
       (type-check-refinement-expr senv tenv spec-id expr))))
+
+;;
+
+(s/defn find-field-accesses [senv spec-info expr]
+  (let [lookups-atom (atom #{})]
+    (binding [*lookup-f* (fn [halite-type index]
+                           (when-let [spec-id (jibe.halite.halite-types/spec-id halite-type)]
+                             (swap! lookups-atom conj {:spec-id spec-id
+                                                       :variable-name index})))]
+      (let [tenv (halite-envs/type-env-from-spec senv spec-info)]
+        (type-check senv tenv expr))
+      @lookups-atom)))
