@@ -601,7 +601,7 @@
 
 (s/defn replace-node :- SpecInfo
   "Replace node-id with replacement-id in spec-info."
-  [{:keys [ssa-graph constraints] :as spec-info} :- SpecInfo node-id replacement-id]
+  [{:keys [ssa-graph constraints refines-to] :as spec-info} :- SpecInfo node-id replacement-id]
   (assoc
    spec-info
    :ssa-graph (loop [dgraph (transient (:dgraph ssa-graph))
@@ -630,7 +630,9 @@
                   {:dgraph (persistent! dgraph)
                    :form-ids (persistent! form-ids)
                    :next-id (:next-id ssa-graph)}))
-   :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints)))
+   :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints)
+   :refines-to (update-vals refines-to
+                            (fn [r] (update r :expr #(if (= % node-id) replacement-id %))))))
 
 ;;;;;;;; Guards ;;;;;;;;;;;;;;
 
