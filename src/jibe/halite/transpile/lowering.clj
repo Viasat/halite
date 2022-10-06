@@ -760,7 +760,7 @@
                                              (instance-compatible-type? else-type)
                                              (rewrite-instance-valued-do-child rctx)))))
 
-                      (= 'get op) (rewrite-instance-valued-do-child rctx (first args))
+                      (#{'get '$value!} op) (rewrite-instance-valued-do-child rctx (first args))
 
                       (= '$do! op) (rewrite-child-exprs args)
 
