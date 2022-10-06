@@ -2352,6 +2352,13 @@ See also: [`refines-to?`](#refines-to_Q)
 * [grocery](tutorial/halite_grocery.md)
 
 
+#### Explanations:
+
+* [refinement-implications](explanation/halite_refinement-implications.md)
+* [refinement-terminology](explanation/halite_refinement-terminology.md)
+* [refinements-as-functions](explanation/halite_refinements-as-functions.md)
+
+
 #### Tags:
 
  [Instance operations](halite_instance-op-reference.md),  [Produce instances](halite_instance-out-reference.md),  [Spec-id operations](halite_spec-id-op-reference.md)

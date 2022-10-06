@@ -811,6 +811,7 @@
                :basic-ref ['instance 'keyword]
                :basic-ref-j ['instance 'symbol]
                :tutorial-ref [:spec/grocery]
+               :explanation-ref [:spec/refinement-terminology :spec/refinement-implications :spec/refinements-as-functions]
                :doc "Attempt to refine the given instance into an instance of type, spec-id."
                :throws ['h-err/no-refinement-path
                         'h-err/resource-spec-not-found
