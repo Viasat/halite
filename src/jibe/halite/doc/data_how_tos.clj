@@ -779,4 +779,12 @@
                            :result :auto}
                           "This means that the logical operators cannot be used to guard against runtime errors. Instead the control flow statements must be used."]
                :basic-ref ['vector 'integer 'spec-map]
-               :op-ref ['any? 'every? 'get 'div 'refine-to 'refines-to? 'if 'if-value-let 'when 'when-value-let 'valid 'valid?]}})
+               :op-ref ['any? 'every? 'get 'div 'refine-to 'refines-to? 'if 'if-value-let 'when 'when-value-let 'valid 'valid?]}
+
+              :instance/recurse
+              {:label "Recursive instances"
+               :desc "Specs can be defined to be recursive."
+               :contents [{:spec-map {:spec/Cell {:spec-vars {:value "Integer"
+                                                              :next [:Maybe :spec/Cell]}}}}
+                          {:code '{:$type :spec/Cell :value 10}}
+                          {:code '{:$type :spec/Cell :value 10 :next {:$type :spec/Cell :value 11}}}]}})

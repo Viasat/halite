@@ -25,6 +25,8 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
   * How to constrain the possible values for instance fields
 * Defining multiple constraints on instance values [(Halite)](halite/how-to/halite_multi-constrain-instances.md) [(Jadeite)](jadeite/how-to/halite_multi-constrain-instances-j.md)
   * How to define multiple constraints in a spec
+* Recursive instances [(Halite)](halite/how-to/halite_recurse.md) [(Jadeite)](jadeite/how-to/halite_recurse-j.md)
+  * Specs can be defined to be recursive.
 * Spec variables [(Halite)](halite/how-to/halite_spec-variables.md) [(Jadeite)](jadeite/how-to/halite_spec-variables-j.md)
   * How to model data fields in specifications.
 * String as enumeration [(Halite)](halite/how-to/halite_string-enum.md) [(Jadeite)](jadeite/how-to/halite_string-enum-j.md)
