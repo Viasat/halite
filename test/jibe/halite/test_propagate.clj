@@ -1477,6 +1477,27 @@
     ;; nil
     ))
 
+;; Trying to propgate this example currently causes a stack overflow.
+;; We'll want to support this sort of structural recursion eventually, but it will take some doing.
+(def list-example
+  '{:ws/List {:abstract? true
+              :spec-vars {:length "Integer"
+                          :sum "Integer"}
+              :constraints [["posLength" (<= 0 length)]]}
+    :ws/Empty {:spec-vars {}
+               :constraints []
+               :refines-to {:ws/List {:expr {:$type :ws/List :length 0 :sum 0}}}}
+    :ws/Node {:spec-vars {:head "Integer"
+                          :tail :ws/List}
+              :constraints [["shortList" (< (get (refine-to tail :ws/List) :length) 5)]]
+              :refines-to {:ws/List {:expr (let [t (refine-to tail :ws/List)]
+                                             {:$type :ws/List
+                                              :length (+ 1 (get t :length))
+                                              :sum (+ head (get t :sum))})}}}
+    :ws/A {:spec-vars {:list :ws/List}
+           :constraints []
+           :refines-to {}}})
+
 (deftest test-tricky-inst-literal-simplification
   (let [senv (halite-envs/spec-env
               '{:ws/A
