@@ -73,6 +73,7 @@
    'h-err/wrong-arg-count {:doc "The number of arguments provided to the operation did not match what was expected."}
    'h-err/wrong-arg-count-min {:doc "The operation expected at least a certain number of arguments. This minimum was not met."}
    'h-err/refinement-loop {:doc "Specs cannot be defined to refine to themselves either directly or transitively."}
+   'h-err/refinement-diamond {:doc "Spec refinements cannot be defined that allow multiple refinement paths between the same two specs."}
    'l-err/binding-expression-not-optional {:doc "The expression being tested in an 'if-value-let' statement must optionally produce a value."}
    'l-err/binding-target-invalid-symbol {:doc "The symbols to be bound are not to start with a '$'."}
    'l-err/cannot-bind-nothing {:doc "It is not permitted to bind a symbol to 'nothing'."}

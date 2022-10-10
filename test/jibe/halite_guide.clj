@@ -8136,12 +8136,11 @@
                                          :name "spec/T$v1/as_s"}}},
     :spec/U$v1 {:spec-vars {:s :spec/S$v1}},
     :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
-   [{:$type :spec/U$v1,
-     :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
+   [{:$type :spec/U$v1, :s (get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)}
     [:Instance :spec/U$v1]
-    {:$type :spec/U$v1, :s {:$type :spec/C$v1}}
+    [:throws "h-err/refinement-diamond 0-0 : Diamond detected in refinement graph"]
     "{$type: spec/U$v1, s: {$type: spec/V$v1, t: {$type: spec/C$v1}}.t}"
-    "{$type: spec/U$v1, s: {$type: spec/C$v1}}"])
+    [:throws "h-err/refinement-diamond 0-0 : Diamond detected in refinement graph"]])
   (hc
    {:spec/C$v1 {:refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
                                          :name "spec/C$v1/as_s"},

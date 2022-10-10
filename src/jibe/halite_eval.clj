@@ -220,6 +220,7 @@
   [senv :- (s/protocol halite-envs/SpecEnv)
    inst :- s/Any]
   (let [spec-id (:$type inst)
+        spec-id-0 spec-id
         {:keys [spec-vars refines-to] :as spec-info} (halite-envs/lookup-spec senv spec-id)
         spec-tenv (halite-envs/type-env-from-spec senv spec-info)
         env (halite-envs/env-from-inst spec-info inst)
@@ -266,7 +267,13 @@
                                                (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
                                                  ex
                                                  (throw ex))))]
-
+                                  (when (not= :Unset inst)
+                                    (when (not (empty? (set/intersection (set (keys transitive-refinements))
+                                                                         (conj (set (keys (:refinements (meta inst)))) spec-id))))
+                                      (throw-err (h-err/refinement-diamond {:spec-id (symbol spec-id-0)
+                                                                            :current-refinements (mapv symbol (keys transitive-refinements))
+                                                                            :additional-refinements (mapv symbol (keys (:refinements (meta inst))))
+                                                                            :referred-spec-id (symbol spec-id)}))))
                                   (cond-> transitive-refinements
                                     (not= :Unset inst) (->
                                                         (merge (:refinements (meta inst)))

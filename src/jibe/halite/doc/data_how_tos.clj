@@ -803,4 +803,27 @@
                                       :spec/B {:refines-to {:spec/A {:name "refine_to_A"
                                                                      :expr '{:$type :spec/A}}}}}}
                           {:code '{:$type :spec/A}
+                           :throws :auto}
+
+                          "It is a bit more subtle, but a cyclical dependency that crosses both a refinement and a composition relationship is also disallowed."
+                          {:spec-map {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                                                     :expr '{:$type :spec/B
+                                                                             :a {:$type :spec/A}}}}}
+                                      :spec/B {:spec-vars {:a :spec/A}}}}
+                          {:code '{:$type :spec/A}
+                           :throws :auto}
+
+                          "Diamonds are a bit different than a recursive refinement, but they too are disallowed and produce a similar error."
+                          {:spec-map {:spec/A {:spec-vars {:a "Integer"}}
+                                      :spec/B {:refines-to {:spec/A {:name "refine_to_A"
+                                                                     :expr '{:$type :spec/A
+                                                                             :a 1}}}}
+                                      :spec/C {:refines-to {:spec/A {:name "refine_to_A"
+                                                                     :expr '{:$type :spec/A
+                                                                             :a 2}}}}
+                                      :spec/D {:refines-to {:spec/B {:name "refine_to_B"
+                                                                     :expr '{:$type :spec/B}}
+                                                            :spec/C {:name "refine_to_C"
+                                                                     :expr '{:$type :spec/C}}}}}}
+                          {:code '(refine-to {:$type :spec/D} :spec/A)
                            :throws :auto}]}})

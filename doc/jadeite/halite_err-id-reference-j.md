@@ -670,6 +670,19 @@ The 'reduce' operation can only be applied to vectors. Specifically, sets cannot
 * [`reduce`](halite_full-reference-j.md#reduce)
 
 ---
+### <a name="h-err/refinement-diamond"></a>h-err/refinement-diamond
+
+Spec refinements cannot be defined that allow multiple refinement paths between the same two specs.
+
+#### Error message template:
+
+> Diamond detected in refinement graph
+
+#### Produced by elements:
+
+* [`instance`](halite_basic-syntax-reference-j.md#instance)
+
+---
 ### <a name="h-err/refinement-error"></a>h-err/refinement-error
 
 An unanticipated error condition was encountered while computing the refinement of an instance.
@@ -691,6 +704,10 @@ Specs cannot be defined to refine to themselves either directly or transitively.
 #### Error message template:
 
 > Loop detected in refinement graph
+
+#### Produced by elements:
+
+* [`instance`](halite_basic-syntax-reference-j.md#instance)
 
 ---
 ### <a name="h-err/resource-spec-not-found"></a>h-err/resource-spec-not-found
