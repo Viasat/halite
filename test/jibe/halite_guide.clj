@@ -10071,6 +10071,98 @@
    [:syntax-check-throws
     "h-err/invalid-symbol-length 0-0 : The symbol is too long"]))
 
+(deftest test-recursive-refinement
+  (hc
+   {:spec/Mirror {:spec-vars {:x "Integer"}
+                  :refines-to {:spec/Mirror {:name "refine_to_Mirror"
+                                             :expr '(when (> x 0)
+                                                      {:$type :spec/Mirror
+                                                       :x (dec x)})}}}}
+   [(refine-to {:$type :spec/Mirror, :x 1} :spec/Mirror)
+    [:Instance :spec/Mirror]
+    [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+    "{$type: spec/Mirror, x: 1}.refineTo( spec/Mirror )"
+    [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]])
+
+  (hc
+   {:spec/Mirror {:spec-vars {:x "Integer"}
+                  :refines-to {:spec/Mirror {:name "refine_to_Mirror"
+                                             :expr '(when (> x 0)
+                                                      {:$type :spec/Mirror
+                                                       :x (dec x)})}}}}
+   [(refine-to (refine-to {:$type :spec/Mirror, :x 10} :spec/Mirror) :spec/Mirror)
+    [:Instance :spec/Mirror]
+    [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+    "{$type: spec/Mirror, x: 10}.refineTo( spec/Mirror ).refineTo( spec/Mirror )"
+    [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]])
+
+  (hc
+   {:spec/A {:spec-vars {:x "Integer"}
+             :refines-to {:spec/B {:name "as_B"
+                                   :expr '(when (> x 0)
+                                            {:$type :spec/B
+                                             :y (dec x)})}}}
+    :spec/B {:spec-vars {:y "Integer"}
+             :refines-to {:spec/A {:name "as_A"
+                                   :expr '{:$type :spec/A
+                                           :x y}}}}}
+   [(refine-to {:$type :spec/A, :x 1} :spec/A)
+    [:Instance :spec/A]
+    {:$type :spec/A, :x 1}
+    "{$type: spec/A, x: 1}.refineTo( spec/A )"
+    "{$type: spec/A, x: 1}"])
+
+  (hc
+   {:spec/A {:spec-vars {:x "Integer"}
+             :refines-to {:spec/B {:name "as_B"
+                                   :expr '(when (> x 0)
+                                            {:$type :spec/B
+                                             :y (dec x)})}}}
+    :spec/B {:spec-vars {:y "Integer"}
+             :refines-to {:spec/A {:name "as_A"
+                                   :expr '{:$type :spec/A
+                                           :x y}}}}}
+   [(refine-to (refine-to {:$type :spec/A, :x 1} :spec/B) :spec/A)
+    [:Instance :spec/A]
+    {:$type :spec/A, :x 0}
+    "{$type: spec/A, x: 1}.refineTo( spec/B ).refineTo( spec/A )"
+    "{$type: spec/A, x: 0}"])
+
+  (hc
+   {:spec/A {:spec-vars {:x "Integer"}
+             :refines-to {:spec/B {:name "as_B"
+                                   :expr '(when (> x 0)
+                                            {:$type :spec/B
+                                             :y (dec x)})}}}
+    :spec/B {:spec-vars {:y "Integer"}
+             :refines-to {:spec/A {:name "as_A"
+                                   :expr '{:$type :spec/A
+                                           :x y}}}}}
+   [(refine-to (refine-to (refine-to {:$type :spec/A, :x 1} :spec/B) :spec/A) :spec/B)
+    [:Instance :spec/B]
+    [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A' to 'spec/B'"]
+    "{$type: spec/A, x: 1}.refineTo( spec/B ).refineTo( spec/A ).refineTo( spec/B )"
+    [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A' to 'spec/B'"]]))
+
+(deftest test-recursive-refinement
+  (hc {:spec/Mirror {:refines-to {:spec/Mirror {:name "refine_to_Mirror"
+                                                :expr '{:$type :spec/Mirror}}}}}
+      [{:$type :spec/Mirror}
+       [:Instance :spec/Mirror]
+       [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+       "{$type: spec/Mirror}"
+       [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]])
+
+  (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                      :expr '{:$type :spec/B}}}}
+       :spec/B {:refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A}}}}}
+      [{:$type :spec/A}
+       [:Instance :spec/A]
+       [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+       "{$type: spec/A}"
+       [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]]))
+
 ;; deftest-end
 
 (deftest test-symbol-with-forms-that-clojure-cannot-read

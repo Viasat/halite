@@ -787,4 +787,20 @@
                :contents [{:spec-map {:spec/Cell {:spec-vars {:value "Integer"
                                                               :next [:Maybe :spec/Cell]}}}}
                           {:code '{:$type :spec/Cell :value 10}}
-                          {:code '{:$type :spec/Cell :value 10 :next {:$type :spec/Cell :value 11}}}]}})
+                          {:code '{:$type :spec/Cell :value 10 :next {:$type :spec/Cell :value 11}}}]}
+
+              :instance/recursive-refinement
+              {:label "Recursive refinements"
+               :desc "Specs cannot be defined to recursively refine to themselves."
+               :contents ["For example, the following spec that refines to itself is not allowed."
+                          {:spec-map {:spec/Mirror {:refines-to {:spec/Mirror {:name "refine_to_Mirror"
+                                                                               :expr '{:$type :spec/Mirror}}}}}}
+                          {:code '{:$type :spec/Mirror}
+                           :throws :auto}
+                          "Similarly transitive refinement loops are not allowed. For example, a pair of specs that refine to each other is not allowed."
+                          {:spec-map {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                                                     :expr '{:$type :spec/B}}}}
+                                      :spec/B {:refines-to {:spec/A {:name "refine_to_A"
+                                                                     :expr '{:$type :spec/A}}}}}}
+                          {:code '{:$type :spec/A}
+                           :throws :auto}]}})

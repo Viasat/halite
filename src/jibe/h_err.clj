@@ -197,6 +197,9 @@
 (deferr overflow [data]
         {:message "Numeric value overflow"})
 
+(deferr refinement-loop [data]
+        {:message "Loop detected in refinement graph"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol

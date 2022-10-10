@@ -72,6 +72,7 @@
    'h-err/field-name-not-in-spec {:doc "The field name is not valid for the spec. The field name was provided to either define a field value in an instance or to lookup a field in an instance."}
    'h-err/wrong-arg-count {:doc "The number of arguments provided to the operation did not match what was expected."}
    'h-err/wrong-arg-count-min {:doc "The operation expected at least a certain number of arguments. This minimum was not met."}
+   'h-err/refinement-loop {:doc "Specs cannot be defined to refine to themselves either directly or transitively."}
    'l-err/binding-expression-not-optional {:doc "The expression being tested in an 'if-value-let' statement must optionally produce a value."}
    'l-err/binding-target-invalid-symbol {:doc "The symbols to be bound are not to start with a '$'."}
    'l-err/cannot-bind-nothing {:doc "It is not permitted to bind a symbol to 'nothing'."}

@@ -211,6 +211,8 @@
 
 (def ^:dynamic *refinements*)
 
+(def ^:dynamic *instance-path-atom* nil)
+
 (s/defn validate-instance :- s/Any
   "Check that an instance satisfies all applicable constraints.
   Return the instance if so, throw an exception if not.
@@ -241,27 +243,37 @@
                                             :violated-constraints (mapv (comp symbol first) violated-constraints)
                                             :value inst
                                             :halite-error :constraint-violation}))))
+    (binding [*instance-path-atom* (if *instance-path-atom*
+                                     *instance-path-atom*
+                                     (atom '()))]
+      (if (contains? (set @*instance-path-atom*) spec-id)
+        (throw-err (h-err/refinement-loop {:spec-id-path (->> (conj @*instance-path-atom* spec-id)
+                                                              (mapv symbol))}))
+        (swap! *instance-path-atom* conj spec-id))
 
-    ;; fully explore all active refinement paths, and store the results
-    (with-meta
-      inst
-      {:refinements
-       (->> refines-to
-            (sort-by first)
-            (reduce
-             (fn [transitive-refinements [spec-id {:keys [expr inverted? name]}]]
-               (binding [*refinements* transitive-refinements]
-                 (let [inst (try
-                              (*eval-refinement-fn* ctx spec-tenv spec-id expr name)
-                              (catch ExceptionInfo ex
-                                (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
-                                  ex
-                                  (throw ex))))]
-                   (cond-> transitive-refinements
-                     (not= :Unset inst) (->
-                                         (merge (:refinements (meta inst)))
-                                         (assoc spec-id inst))))))
-             {}))})))
+      ;; fully explore all active refinement paths, and store the results
+      (let [result (with-meta
+                     inst
+                     {:refinements
+                      (->> refines-to
+                           (sort-by first)
+                           (reduce
+                            (fn [transitive-refinements [spec-id {:keys [expr inverted? name]}]]
+                              (binding [*refinements* transitive-refinements]
+                                (let [inst (try
+                                             (*eval-refinement-fn* ctx spec-tenv spec-id expr name)
+                                             (catch ExceptionInfo ex
+                                               (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
+                                                 ex
+                                                 (throw ex))))]
+
+                                  (cond-> transitive-refinements
+                                    (not= :Unset inst) (->
+                                                        (merge (:refinements (meta inst)))
+                                                        (assoc spec-id inst))))))
+                            {}))})]
+        (swap! *instance-path-atom* rest)
+        result))))
 
 (declare eval-expr*)
 

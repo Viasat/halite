@@ -684,6 +684,15 @@ An unanticipated error condition was encountered while computing the refinement 
 * [`refinesTo?`](halite_full-reference-j.md#refinesTo_Q)
 
 ---
+### <a name="h-err/refinement-loop"></a>h-err/refinement-loop
+
+Specs cannot be defined to refine to themselves either directly or transitively.
+
+#### Error message template:
+
+> Loop detected in refinement graph
+
+---
 ### <a name="h-err/resource-spec-not-found"></a>h-err/resource-spec-not-found
 
 The spec identifier provided did not correspond to a known spec.
