@@ -44,9 +44,9 @@
                                true))))))))
     :refines-to
     (let [refines-to-graph (loom.graph/digraph (-> spec-map
-                                  (update-vals #(->> %
-                                                     :refines-to
-                                                     keys))))]
+                                                   (update-vals #(->> %
+                                                                      :refines-to
+                                                                      keys))))]
       (merge (->> (keys spec-map)
                   (map (partial loom.alg/shortest-path refines-to-graph spec-id))
                   (remove nil?)
@@ -107,7 +107,7 @@
                 inst))
      :valid? (fn [inst]
               ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-              ((get-in $exprs [(:$type inst) :predicate]) $exprs inst))
+               ((get-in $exprs [(:$type inst) :predicate]) $exprs inst))
      :validate-instance (fn [inst]
                           ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
                           (if ((get-in $exprs [(:$type inst) :predicate]) $exprs inst)
