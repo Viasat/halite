@@ -25,14 +25,14 @@ For example, the following spec that refines to itself is not allowed.
 Similarly transitive refinement loops are not allowed. For example, a pair of specs that refine to each other is not allowed.
 
 ```clojure
-{:spec/A {:refines-to {:spec/B {:name "refine_to_B",
-                                :expr '{:$type :spec/B}}}},
- :spec/B {:refines-to {:spec/A {:name "refine_to_A",
-                                :expr '{:$type :spec/A}}}}}
+{:spec/Back {:refines-to {:spec/Bounce {:name "refine_to_Bounce",
+                                        :expr '{:$type :spec/Bounce}}}},
+ :spec/Bounce {:refines-to {:spec/Back {:name "refine_to_Back",
+                                        :expr '{:$type :spec/Back}}}}}
 ```
 
 ```clojure
-{:$type :spec/A}
+{:$type :spec/Bounce}
 
 
 ;-- result --
@@ -43,14 +43,14 @@ Similarly transitive refinement loops are not allowed. For example, a pair of sp
 It is a bit more subtle, but a cyclical dependency that crosses both a refinement and a composition relationship is also disallowed.
 
 ```clojure
-{:spec/A {:refines-to {:spec/B {:name "refine_to_B",
-                                :expr '{:$type :spec/B,
-                                        :a {:$type :spec/A}}}}},
- :spec/B {:spec-vars {:a :spec/A}}}
+{:spec/Car {:refines-to {:spec/Garage {:name "refine_to_Garage",
+                                       :expr '{:$type :spec/Garage,
+                                               :car {:$type :spec/Car}}}}},
+ :spec/Garage {:spec-vars {:car :spec/Car}}}
 ```
 
 ```clojure
-{:$type :spec/A}
+{:$type :spec/Car}
 
 
 ;-- result --
@@ -61,21 +61,21 @@ It is a bit more subtle, but a cyclical dependency that crosses both a refinemen
 Diamonds are a bit different than a recursive refinement, but they too are disallowed and produce a similar error.
 
 ```clojure
-{:spec/A {:spec-vars {:a "Integer"}},
- :spec/B {:refines-to {:spec/A {:name "refine_to_A",
-                                :expr '{:$type :spec/A,
-                                        :a 1}}}},
- :spec/C {:refines-to {:spec/A {:name "refine_to_A",
-                                :expr '{:$type :spec/A,
-                                        :a 2}}}},
- :spec/D {:refines-to {:spec/B {:name "refine_to_B",
-                                :expr '{:$type :spec/B}},
-                       :spec/C {:name "refine_to_C",
-                                :expr '{:$type :spec/C}}}}}
+{:spec/Destination {:spec-vars {:d "Integer"}},
+ :spec/Path1 {:refines-to {:spec/Destination {:name "refine_to_Destination",
+                                              :expr '{:$type :spec/Destination,
+                                                      :d 1}}}},
+ :spec/Path2 {:refines-to {:spec/Destination {:name "refine_to_Destination",
+                                              :expr '{:$type :spec/Destination,
+                                                      :d 2}}}},
+ :spec/Start {:refines-to {:spec/Path1 {:name "refine_to_Path1",
+                                        :expr '{:$type :spec/Path1}},
+                           :spec/Path2 {:name "refine_to_Path2",
+                                        :expr '{:$type :spec/Path2}}}}}
 ```
 
 ```clojure
-(refine-to {:$type :spec/D} :spec/A)
+(refine-to {:$type :spec/Start} :spec/Destination)
 
 
 ;-- result --

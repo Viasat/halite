@@ -33,19 +33,19 @@ Similarly transitive refinement loops are not allowed. For example, a pair of sp
 
 ```java
 {
-  "spec/A" : {
+  "spec/Bounce" : {
     "refines-to" : {
-      "spec/B" : {
-        "name" : "refine_to_B",
-        "expr" : "{$type: spec/B}"
+      "spec/Back" : {
+        "name" : "refine_to_Back",
+        "expr" : "{$type: spec/Back}"
       }
     }
   },
-  "spec/B" : {
+  "spec/Back" : {
     "refines-to" : {
-      "spec/A" : {
-        "name" : "refine_to_A",
-        "expr" : "{$type: spec/A}"
+      "spec/Bounce" : {
+        "name" : "refine_to_Bounce",
+        "expr" : "{$type: spec/Bounce}"
       }
     }
   }
@@ -53,7 +53,7 @@ Similarly transitive refinement loops are not allowed. For example, a pair of sp
 ```
 
 ```java
-{$type: spec/A}
+{$type: spec/Bounce}
 
 
 //-- result --
@@ -64,24 +64,24 @@ It is a bit more subtle, but a cyclical dependency that crosses both a refinemen
 
 ```java
 {
-  "spec/A" : {
+  "spec/Car" : {
     "refines-to" : {
-      "spec/B" : {
-        "name" : "refine_to_B",
-        "expr" : "{$type: spec/B, a: {$type: spec/A}}"
+      "spec/Garage" : {
+        "name" : "refine_to_Garage",
+        "expr" : "{$type: spec/Garage, car: {$type: spec/Car}}"
       }
     }
   },
-  "spec/B" : {
+  "spec/Garage" : {
     "spec-vars" : {
-      "a" : "spec/A"
+      "car" : "spec/Car"
     }
   }
 }
 ```
 
 ```java
-{$type: spec/A}
+{$type: spec/Car}
 
 
 //-- result --
@@ -92,36 +92,36 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
 
 ```java
 {
-  "spec/A" : {
+  "spec/Destination" : {
     "spec-vars" : {
-      "a" : "Integer"
+      "d" : "Integer"
     }
   },
-  "spec/B" : {
+  "spec/Path1" : {
     "refines-to" : {
-      "spec/A" : {
-        "name" : "refine_to_A",
-        "expr" : "{$type: spec/A, a: 1}"
+      "spec/Destination" : {
+        "name" : "refine_to_Destination",
+        "expr" : "{$type: spec/Destination, d: 1}"
       }
     }
   },
-  "spec/C" : {
+  "spec/Path2" : {
     "refines-to" : {
-      "spec/A" : {
-        "name" : "refine_to_A",
-        "expr" : "{$type: spec/A, a: 2}"
+      "spec/Destination" : {
+        "name" : "refine_to_Destination",
+        "expr" : "{$type: spec/Destination, d: 2}"
       }
     }
   },
-  "spec/D" : {
+  "spec/Start" : {
     "refines-to" : {
-      "spec/B" : {
-        "name" : "refine_to_B",
-        "expr" : "{$type: spec/B}"
+      "spec/Path1" : {
+        "name" : "refine_to_Path1",
+        "expr" : "{$type: spec/Path1}"
       },
-      "spec/C" : {
-        "name" : "refine_to_C",
-        "expr" : "{$type: spec/C}"
+      "spec/Path2" : {
+        "name" : "refine_to_Path2",
+        "expr" : "{$type: spec/Path2}"
       }
     }
   }
@@ -129,7 +129,7 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
 ```
 
 ```java
-{$type: spec/D}.refineTo( spec/A )
+{$type: spec/Start}.refineTo( spec/Destination )
 
 
 //-- result --
