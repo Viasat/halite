@@ -16,13 +16,14 @@
     (is (= {:spec/A {:predicate '(fn [$exprs $this]
                                    (and (map? $this)
                                         (= :spec/A (:$type $this))
-                                        (= #{:$type} (set (keys $this)))))
+                                        (= #{:$type} (set (keys $this)))
+                                        true))
                      :refines-to {}}
             :spec/B {:predicate '(fn [$exprs $this]
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-
+                                        true
                                         ;; non-inverted refinement
                                         (if-let [refined ((get-in $exprs [:spec/B :refines-to :spec/A]) $exprs $this)]
                                           ((get-in $exprs [:spec/A :predicate]) $exprs refined)
@@ -49,7 +50,7 @@
       (is (= true
              (valid? {:$type :spec/B}))))))
 
-(deftest thing1
+(deftest test-transitive-refinements
   (let [exprs-data
         (synthesize
          {:spec/A {}
@@ -61,12 +62,14 @@
     (is (= {:spec/A {:predicate '(fn [$exprs $this]
                                    (and (map? $this)
                                         (= :spec/A (:$type $this))
-                                        (= #{:$type} (set (keys $this)))))
+                                        (= #{:$type} (set (keys $this)))
+                                        true))
                      :refines-to {}}
             :spec/B {:predicate '(fn [$exprs $this]
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
+                                        true
                                         (if-let [refined ((get-in $exprs [:spec/B :refines-to :spec/A]) $exprs $this)]
                                           ((get-in $exprs [:spec/A :predicate]) $exprs refined)
                                           true)))
@@ -76,6 +79,7 @@
                                    (and (map? $this)
                                         (= :spec/C (:$type $this))
                                         (= #{:$type} (set (keys $this)))
+                                        true
                                         (if-let [refined ((get-in $exprs [:spec/C :refines-to :spec/B]) $exprs $this)]
                                           ((get-in $exprs [:spec/B :predicate]) $exprs refined)
                                           true)))
@@ -92,5 +96,29 @@
                                   :spec/B '(fn [$exprs {:keys []}]
                                              {:$type :spec/B})}}}
            exprs-data))))
+
+(deftest test-constraints
+  (is (= {:spec/A {:predicate '(fn [$exprs $this]
+                                 (and
+                                  (map? $this)
+                                  (= :spec/A (:$type $this))
+                                  (= #{:$type :x} (set (keys $this)))
+                                  (let [{:keys [x]} $this]
+                                    (and (> x 12)))))
+                   :refines-to {}}}
+         (synthesize {:spec/A {:spec-vars {:x "Integer"}
+                               :constraints [["c" '(> x 12)]]}})))
+  (is (= {:spec/A {:predicate '(fn [$exprs $this]
+                                 (and
+                                  (map? $this)
+                                  (= :spec/A (:$type $this))
+                                  (= #{:$type :x} (set (keys $this)))
+                                  (let [{:keys [x]} $this]
+                                    (and (> x 12)
+                                         (< x 24)))))
+                   :refines-to {}}}
+         (synthesize {:spec/A {:spec-vars {:x "Integer"}
+                               :constraints [["c" '(> x 12)]
+                                             ["c2" '(< x 24)]]}}))))
 
 ;; (t/run-tests)

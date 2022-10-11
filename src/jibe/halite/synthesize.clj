@@ -31,7 +31,15 @@
              (= ~(into #{:$type} (keys (:spec-vars spec)))
                 (set (keys $this)))
 
-             ;; TODO insert constraints
+             ;; constraints
+
+             ~(if (:constraints spec)
+                `(let [{:keys ~(vec (map symbol (keys (:spec-vars spec))))} $this]
+                   (and
+                    ~@(->> (:constraints spec)
+                           (map (fn [[_ expr]]
+                                  expr)))))
+                true)
 
              ;; non-inverted refinements
              ~@(->> (:refines-to spec)
@@ -43,34 +51,39 @@
                                ((get-in $exprs [~to-spec-id :predicate]) $exprs refined)
                                true))))))))
     :refines-to
-    (let [refines-to-graph (loom.graph/digraph (-> spec-map
-                                                   (update-vals #(->> %
-                                                                      :refines-to
-                                                                      keys))))]
-      (merge (->> (keys spec-map)
-                  (map (partial loom.alg/shortest-path refines-to-graph spec-id))
-                  (remove nil?)
-                  (map (fn [refinement-path]
-                         [(last refinement-path)
-                          (strip-ns
-                           `(fn [$exprs $this]
-                              ~(loop [last-spec-id spec-id
-                                      [next-spec-id & rest-path] (rest refinement-path)
-                                      e '$this]
-                                 (if next-spec-id
-                                   (recur next-spec-id
-                                          rest-path
-                                          `((get-in $exprs [~last-spec-id :refines-to ~next-spec-id])
-                                            $exprs ~e))
-                                   e))))]))
-                  (into {}))
-             (->> (:refines-to spec) ;; TODO transitive refinements
-                  (map (fn [[to-spec-id {:keys [expr]}]]
-                         [to-spec-id
-                          (strip-ns
-                           `(fn [$exprs {:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
-                              ~expr))]))
-                  (into {}))))}])
+    (merge
+
+     ;; transitive refinements
+     (let [refines-to-graph (loom.graph/digraph (-> spec-map
+                                                    (update-vals #(->> %
+                                                                       :refines-to
+                                                                       keys))))]
+       (->> (keys spec-map)
+            (map (partial loom.alg/shortest-path refines-to-graph spec-id))
+            (remove nil?)
+            (map (fn [refinement-path]
+                   [(last refinement-path)
+                    (strip-ns
+                     `(fn [$exprs $this]
+                        ~(loop [last-spec-id spec-id
+                                [next-spec-id & rest-path] (rest refinement-path)
+                                e '$this]
+                           (if next-spec-id
+                             (recur next-spec-id
+                                    rest-path
+                                    `((get-in $exprs [~last-spec-id :refines-to ~next-spec-id])
+                                      $exprs ~e))
+                             e))))]))
+            (into {})))
+
+     ;; direct refinements
+     (->> (:refines-to spec)
+          (map (fn [[to-spec-id {:keys [expr]}]]
+                 [to-spec-id
+                  (strip-ns
+                   `(fn [$exprs {:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
+                      ~expr))]))
+          (into {})))}])
 
 (defn synthesize
   "Formal of definition of some halite concepts. Return an exprs-data"
@@ -106,7 +119,7 @@
               (when ((get-in $exprs [(:$type inst) :predicate]) $exprs inst)
                 inst))
      :valid? (fn [inst]
-              ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
+               ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
                ((get-in $exprs [(:$type inst) :predicate]) $exprs inst))
      :validate-instance (fn [inst]
                           ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
