@@ -295,28 +295,42 @@
    (let [from-instance (flattened-vars-as-instance-literal flattened-vars)]
      (->>
       (::refines-to flattened-vars)
-      (mapcat (fn [[to-spec-id to-vars]]
+      (mapcat (fn [[to-spec-id to-vars]] ;; to-var is a FlattenedRefinement
                 (let [witness-kw (first (:$witness flattened-vars))
-                      refinement-check (list '=
-                                             (list 'refine-to '$from to-spec-id)
-                                             (flattened-vars-as-instance-literal
-                                              (conj to-vars
-                                                    [::spec-id to-spec-id]
-                                                    [::refines-to {}]
-                                                    (when-let [w (:$witness flattened-vars)]
-                                                      [:$witness w]))))]
-                  (cons
-                   [(str "$refine" constraint-name-prefix "-to-" to-spec-id)
-                    (list 'let ['$from from-instance]
-                          (if witness-kw
-                            (list 'if-value '$from refinement-check true)
-                            refinement-check))]
+                      to-instance (flattened-vars-as-instance-literal
+                                   (conj to-vars
+                                         [::spec-id to-spec-id]
+                                         [::refines-to {}]
+                                         (when-let [w (:$witness flattened-vars)]
+                                           [:$witness w])))]
+                  (concat
+                   ;; instance equality
+                   [[(str "$refine" constraint-name-prefix "-to-" to-spec-id)
+                     (if-not witness-kw
+                       (list '=
+                             (list 'refine-to from-instance to-spec-id)
+                             to-instance)
+                       (list 'let ['$from from-instance]
+                             (list 'if-value '$from
+                                   (list '=
+                                         (list 'refine-to '$from to-spec-id)
+                                         to-instance)
+                                   true)))]]
+                   ;; recurse into spec-types
                    (->> (dissoc to-vars ::mandatory)
                         (mapcat (fn [[var-kw v]]
                                   (when (map? v)
                                     (refinement-equality-constraints
                                      (str constraint-name-prefix "-" to-spec-id "|" var-kw)
-                                     v)))))))))))
+                                     v)))))
+                   ;; equate inner mandatory provided to outer provided, for tighter bounds
+                   (when witness-kw
+                     (->> (::mandatory to-vars)
+                          (mapcat (fn [flat-kw]
+                                    [[(str "$refines" witness-kw "=" flat-kw "?")
+                                      (list '=
+                                            (symbol witness-kw)
+                                            (list 'if-value (symbol flat-kw) true false))]]))))))))))
    ;; recurse into spec-typed vars
    (->> (dissoc flattened-vars ::spec-id ::mandatory ::refines-to)
         (mapcat (fn [[var-kw v]]

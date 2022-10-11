@@ -792,7 +792,7 @@
       (is (= {:$type :my/C,
               :cb {:$type [:Maybe :my/B],
                    :b1 {:$in [-9 990]},
-                   :$refines-to {:my/A {:a1 {:$in [-1000 1000]},
+                   :$refines-to {:my/A {:a1 {:$in [1 1000]},
                                         :a2 {:$in [-1000 1000 :Unset]}}}}}
              (hp/propagate senv {:$type :my/C}))))
 
@@ -850,6 +850,33 @@
                (hp/propagate senv {:$type :my/D,
                                    :$refines-to {:my/C {:cb {:$type :my/B,
                                                              :$refines-to {:my/A {:a2 {:$in [-9 9]}}}}}}})))))))
+
+(deftest test-maybe-refines-to-bounds-tight
+  (let [env-map '{:my/A {:spec-vars {:ab [:Maybe :my/B]}}
+                  :my/B {:refines-to {:my/C {:expr {:$type :my/C
+                                                    :cn 5}}}}
+                  :my/C {:spec-vars {:cn "Integer"}}}]
+
+    (is (= '{:spec-vars {:ab|>my$C|cn [:Maybe "Integer"], :ab? "Boolean"},
+             :constraints
+             [["vars" (valid? {:$type :my/A, :ab (when ab? {:$type :my/B})})]
+              ["$refine|ab-to-:my/C"
+               (let [$from (when ab? {:$type :my/B})]
+                 (if-value $from
+                           (= (refine-to $from :my/C)
+                              (when ab?
+                                (if-value ab|>my$C|cn
+                                          {:$type :my/C, :cn ab|>my$C|cn}
+                                          $no-value)))
+                           true))]
+              ["$refines:ab?=:ab|>my$C|cn?"
+               (= ab? (if-value ab|>my$C|cn true false))]],
+             :refines-to {}}
+           (hp/spec-ify-bound env-map {:$type :my/A})))
+
+    (is (= {:$type :my/A,
+            :ab {:$type [:Maybe :my/B], :$refines-to #:my{:C {:cn {:$in #{5}}}}}}
+           (hp/propagate env-map {:$type :my/A})))))
 
 (deftest test-refines-to-bounds-errors
   (let [senv (spec-env
