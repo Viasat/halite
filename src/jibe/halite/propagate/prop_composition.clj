@@ -6,6 +6,7 @@
             [clojure.set :as set]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
+            [jibe.halite.propagate.prop-choco :as prop-choco]
             [jibe.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
@@ -174,7 +175,7 @@
                                           (assoc bound-map :$type dest-spec-id))))
                choco-bound)))
 
-(s/defn ^:private lower-spec-bound :- choco-clj/VarBounds
+(s/defn ^:private lower-spec-bound :- prop-choco/SpecBound
   ([vars :- FlattenedVars, spec-bound :- ConcreteSpecBound]
    (lower-spec-bound vars false spec-bound))
   ([vars :- FlattenedVars, optional-context? :- s/Bool, spec-bound :- ConcreteSpecBound]
@@ -184,14 +185,14 @@
         (lower-refines-to-bound optional-context? (::refines-to vars) choco-bounds bound)
         (let [composite-var? (map? (vars var-kw))
               choco-var (when-not composite-var?
-                          (or (some-> var-kw vars first symbol)
+                          (or (some-> var-kw vars first)
                               (throw (ex-info "BUG! No choco var for var in spec bound"
                                               {:vars vars :spec-bound spec-bound :var-kw var-kw}))))
               witness-var (when composite-var?
-                            (some-> var-kw vars :$witness first symbol))]
+                            (some-> var-kw vars :$witness first))]
           (cond
             (or (int? bound) (boolean? bound))
-            (assoc choco-bounds choco-var (if optional-context? #{bound :Unset} bound))
+            (assoc choco-bounds choco-var (if optional-context? {:$in #{bound :Unset}} bound))
 
             (= :Unset bound)
             (if composite-var?
@@ -208,10 +209,11 @@
                                 {:var-kw var-kw :bound bound})))
               (if (or (vector? range-or-set) (set? range-or-set))
                 (assoc choco-bounds choco-var
-                       (cond
-                         (and (set? range-or-set) optional-context?) (conj range-or-set :Unset)
-                         (and (vector range-or-set) (= 2 (count range-or-set)) optional-context?) (conj range-or-set :Unset)
-                         :else range-or-set))
+                       {:$in
+                        (cond
+                          (and (set? range-or-set) optional-context?) (conj range-or-set :Unset)
+                          (and (vector range-or-set) (= 2 (count range-or-set)) optional-context?) (conj range-or-set :Unset)
+                          :else range-or-set)})
                 (throw (ex-info (format "Invalid bound for %s" (name var-kw))
                                 {:var-kw var-kw :bound bound}))))
 
@@ -371,39 +373,6 @@
   ;; First, flatten out the variables we'll need.
   (spec-ify-bound* (flatten-vars specs spec-bound) specs spec-bound))
 
-;;;;;;;;;;; Conversion to Choco ;;;;;;;;;
-
-(s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
-  [var-type :- halite-envs/VarType]
-  (cond
-    (or (= [:Maybe "Integer"] var-type) (= "Integer" var-type)) :Int
-    (or (= [:Maybe "Boolean"] var-type) (= "Boolean" var-type)) :Bool
-    :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type}))))
-
-(defn- error->unsatisfiable
-  [form]
-  (cond
-    (seq? form) (if (= 'error (first form))
-                  (if (not (string? (second form)))
-                    (throw (ex-info "BUG! Expressions other than string literals not currently supported as arguments to error"
-                                    {:form form}))
-                    (list 'unsatisfiable))
-                  (apply list (first form) (map error->unsatisfiable (rest form))))
-    (map? form) (update-vals form error->unsatisfiable)
-    (vector? form) (mapv error->unsatisfiable form)
-    :else form))
-
-(s/defn ^:private to-choco-spec :- choco-clj/ChocoSpec
-  "Convert a spec-ified bound to a Choco spec."
-  [senv :- (s/protocol halite-envs/SpecEnv), spec-info :- halite-envs/SpecInfo]
-  {:vars (-> spec-info :spec-vars (update-keys symbol) (update-vals to-choco-type))
-   :optionals (->> spec-info :spec-vars
-                   (filter (comp halite-types/maybe-type?
-                                 (partial halite-envs/halite-type-from-var-type senv)
-                                 val))
-                   (map (comp symbol key)) set)
-   :constraints (->> spec-info :constraints (map (comp error->unsatisfiable second)) set)})
-
 ;;;;;;;;;; Convert choco bounds to spec bounds ;;;;;;;;;
 
 (s/defn ^:private simplify-atom-bound :- AtomBound
@@ -416,27 +385,28 @@
     bound))
 
 (s/defn ^:private to-atom-bound :- AtomBound
-  [choco-bounds :- choco-clj/VarBounds
+  [choco-bounds :- prop-choco/SpecBound
    var-type :- halite-types/HaliteType
    [var-kw _] :- FlattenedVar]
-  (let [bound (-> var-kw symbol choco-bounds)]
+  (let [bound (-> var-kw choco-bounds)]
     (simplify-atom-bound
-     (if-not (coll? bound)
+     (if-not (map? bound)
        bound ;; simple value
-       {:$in
-        (if (halite-types/maybe-type? var-type)
-          bound ;; leave any :Unset in the bounds
-          (cond ;; remove any :Unset in the bounds
-            (vector? bound) (subvec bound 0 2)
-            (set? bound) (disj bound :Unset)))}))))
+       (let [bound (:$in bound)]
+         {:$in
+          (if (halite-types/maybe-type? var-type)
+            bound ;; leave any :Unset in the bounds
+            (cond ;; remove any :Unset in the bounds
+              (vector? bound) (subvec bound 0 2)
+              (set? bound) (disj bound :Unset)))})))))
 
 (s/defn ^:private to-spec-bound :- ConcreteSpecBound
-  [choco-bounds :- choco-clj/VarBounds
+  [choco-bounds :- prop-choco/SpecBound
    senv :- (s/protocol halite-envs/SpecEnv)
    flattened-vars  :- FlattenedVars]
   (let [spec-id (::spec-id flattened-vars)
         spec-vars (:spec-vars (halite-envs/lookup-spec senv spec-id))
-        spec-type (case (some-> flattened-vars :$witness first symbol choco-bounds)
+        spec-type (case (some-> flattened-vars :$witness first choco-bounds)
                     false :Unset
                     (nil true) spec-id
                     [:Maybe spec-id])
@@ -466,13 +436,9 @@
 
 ;;;;;;;;;;;; Main API ;;;;;;;;;;;;;;;;
 
-(s/defschema Opts
-  {:default-int-bounds [(s/one s/Int :lower) (s/one s/Int :upper)]})
+(def Opts prop-choco/Opts)
 
-(def default-options
-  (s/validate
-   Opts
-   {:default-int-bounds [-1000 1000]}))
+(def default-options prop-choco/default-options)
 
 (defn- drop-constraints-except-for-Bounds
   [sctx]
@@ -501,57 +467,55 @@
   ([spec-map :- halite-envs/SpecMap, initial-bound :- ConcreteSpecBound]
    (propagate spec-map default-options initial-bound))
   ([spec-map :- halite-envs/SpecMap, opts :- Opts, initial-bound :- ConcreteSpecBound]
-   (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
-     (let [refinement-graph (loom-graph/digraph (update-vals spec-map (comp keys :refines-to)))
-           flattened-vars (flatten-vars spec-map initial-bound)
-           lowered-bounds (lower-spec-bound flattened-vars initial-bound)
-           spec-ified-bound (spec-ify-bound* flattened-vars spec-map initial-bound)
-           initial-sctx (-> spec-map
-                            (assoc :$propagate/Bounds spec-ified-bound)
-                            (ssa/spec-map-to-ssa))]
-       (-> initial-sctx
-           (disallow-optional-refinements)
-           (lowering/lower-refinement-constraints)
-           ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
-           ;; Conseqeuntly, no rewrite rules should introduce new when forms!
-           (lowering/lower-when)
-           (lowering/eliminate-runtime-constraint-violations)
-           (lowering/lower-valid?)
-           (drop-constraints-except-for-Bounds)
+   (let [refinement-graph (loom-graph/digraph (update-vals spec-map (comp keys :refines-to)))
+         flattened-vars (flatten-vars spec-map initial-bound)
+         lowered-bounds (lower-spec-bound flattened-vars initial-bound)
+         spec-ified-bound (spec-ify-bound* flattened-vars spec-map initial-bound)
+         initial-sctx (-> spec-map
+                          (assoc :$propagate/Bounds spec-ified-bound)
+                          (ssa/spec-map-to-ssa))]
+     (-> initial-sctx
+         (disallow-optional-refinements)
+         (lowering/lower-refinement-constraints)
+         ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
+         ;; Conseqeuntly, no rewrite rules should introduce new when forms!
+         (lowering/lower-when)
+         (lowering/eliminate-runtime-constraint-violations)
+         (lowering/lower-valid?)
+         (drop-constraints-except-for-Bounds)
 
-           ;; We may wish to re-enable a weaker version of this rule that
-           ;; eliminates error forms in if, but not if-value (which we can't eliminate).
-           ;; Experimentation shows that whenever we can eliminate a conditional, we are likely
-           ;; to obtain better propagation bounds.
-           ;;(lowering/eliminate-error-forms)
+         ;; We may wish to re-enable a weaker version of this rule that
+         ;; eliminates error forms in if, but not if-value (which we can't eliminate).
+         ;; Experimentation shows that whenever we can eliminate a conditional, we are likely
+         ;; to obtain better propagation bounds.
+         ;;(lowering/eliminate-error-forms)
 
-           (rewriting/rewrite-reachable-sctx
-            [(rewriting/rule simplify/simplify-do)
-             (rewriting/rule lowering/bubble-up-do-expr)
-             (rewriting/rule lowering/flatten-do-expr)
-             (rewriting/rule simplify-redundant-value!)
-             (rewriting/rule simplify-statically-known-value?)
-             (rewriting/rule lowering/cancel-get-of-instance-literal-expr)
-             (rewriting/rule lowering/lower-comparison-exprs-with-incompatible-types)
-             (rewriting/rule lowering/lower-instance-comparison-expr)
-             (rewriting/rule lowering/push-if-value-into-if-in-expr)
-             (rewriting/rule lowering/lower-no-value-comparison-expr)
-             (rewriting/rule lowering/lower-maybe-comparison-expr)
-             (rewriting/rule lowering/push-gets-into-ifs-expr)
-             (rewriting/rule lowering/push-refine-to-into-if)
-             (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
-             (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
-             (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)
-             ;; This rule needs access to the refinement graph, so we don't use the rule macro.
-             {:rule-name "lower-refine-to"
-              :rewrite-fn (partial lowering/lower-refine-to-expr refinement-graph)
-              :nodes :all}])
-           simplify/simplify
-           :$propagate/Bounds
-           (ssa/spec-from-ssa)
-           (->> (to-choco-spec spec-map))
-           (choco-clj/propagate lowered-bounds)
-           (to-spec-bound spec-map flattened-vars))))))
+         (rewriting/rewrite-reachable-sctx
+          [(rewriting/rule simplify/simplify-do)
+           (rewriting/rule lowering/bubble-up-do-expr)
+           (rewriting/rule lowering/flatten-do-expr)
+           (rewriting/rule simplify-redundant-value!)
+           (rewriting/rule simplify-statically-known-value?)
+           (rewriting/rule lowering/cancel-get-of-instance-literal-expr)
+           (rewriting/rule lowering/lower-comparison-exprs-with-incompatible-types)
+           (rewriting/rule lowering/lower-instance-comparison-expr)
+           (rewriting/rule lowering/push-if-value-into-if-in-expr)
+           (rewriting/rule lowering/lower-no-value-comparison-expr)
+           (rewriting/rule lowering/lower-maybe-comparison-expr)
+           (rewriting/rule lowering/push-gets-into-ifs-expr)
+           (rewriting/rule lowering/push-refine-to-into-if)
+           (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
+           (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
+           (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)
+           ;; This rule needs access to the refinement graph, so we don't use the rule macro.
+           {:rule-name "lower-refine-to"
+            :rewrite-fn (partial lowering/lower-refine-to-expr refinement-graph)
+            :nodes :all}])
+         simplify/simplify
+         :$propagate/Bounds
+         (ssa/spec-from-ssa)
+         (prop-choco/propagate opts lowered-bounds)
+         (to-spec-bound spec-map flattened-vars)))))
 
 (defn- int-bound? [bound]
   (or (int? bound)

@@ -425,39 +425,40 @@
 (def lower-spec-bound #'pc/lower-spec-bound)
 
 (deftest test-lower-spec-bound-for-nested-optionals
-  (are [bound lowered]
-       (= lowered (lower-spec-bound (flatten-vars nested-optionals-spec-env bound) bound))
+  (s/with-fn-validation
+    (are [bound lowered]
+        (= lowered (lower-spec-bound (flatten-vars nested-optionals-spec-env bound) bound))
 
-    {:$type :ws/A} {}
+      {:$type :ws/A} {}
 
-    {:$type :ws/A, :ap true} '{ap true}
+      {:$type :ws/A, :ap true} '{:ap true}
 
-    {:$type :ws/A, :b1 {:$type [:Maybe :ws/B]}} {}
+      {:$type :ws/A, :b1 {:$type [:Maybe :ws/B]}} {}
 
-    {:$type :ws/A, :b1 {:$type :ws/B}} '{b1? true}
+      {:$type :ws/A, :b1 {:$type :ws/B}} '{:b1? true}
 
-    {:$type :ws/A, :b1 :Unset} '{b1? false}
+      {:$type :ws/A, :b1 :Unset} '{:b1? false}
 
-    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx 7}}  '{b1|bx #{7 :Unset}}
+      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx 7}}  '{:b1|bx {:$in #{7 :Unset}}}
 
-    {:$type :ws/A :b1 {:$type :ws/B :bx 7}}   '{b1? true, b1|bx 7}
+      {:$type :ws/A :b1 {:$type :ws/B :bx 7}}   '{:b1? true, :b1|bx 7}
 
-    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx {:$in #{1 2 3}}}} '{b1|bx #{1 2 3 :Unset}}
+      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx {:$in #{1 2 3}}}} '{:b1|bx {:$in #{1 2 3 :Unset}}}
 
-    {:$type :ws/A :b1 {:$type :ws/B :bx {:$in #{1 2 3}}}} '{b1? true, b1|bx #{1 2 3}}
+      {:$type :ws/A :b1 {:$type :ws/B :bx {:$in #{1 2 3}}}} '{:b1? true, :b1|bx {:$in #{1 2 3}}}
 
-    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx {:$in [2 4]}}} '{b1|bx [2 4 :Unset]}
+      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :bx {:$in [2 4]}}} '{:b1|bx {:$in [2 4 :Unset]}}
 
-    {:$type :ws/A :b1 {:$type :ws/B :bx {:$in [2 4]}}} '{b1? true, b1|bx [2 4]}
+      {:$type :ws/A :b1 {:$type :ws/B :bx {:$in [2 4]}}} '{:b1? true, :b1|bx {:$in [2 4]}}
 
-    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type [:Maybe :ws/C] :cw 5}}} '{b1|c2|cw #{5 :Unset}}
+      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type [:Maybe :ws/C] :cw 5}}} '{:b1|c2|cw {:$in #{5 :Unset}}}
 
-    {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type [:Maybe :ws/C] :cw 5}}} '{b1? true, b1|c2|cw #{5 :Unset}}
+      {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type [:Maybe :ws/C] :cw 5}}} '{:b1? true, :b1|c2|cw {:$in #{5 :Unset}}}
 
-    ;; TODO: Ensure that optionality-constraints for this case produces (=> b1? b1|c2?)
-    {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type :ws/C :cw 5}}} '{b1|c2|cw #{5 :Unset}}
+      ;; TODO: Ensure that optionality-constraints for this case produces (=> b1? b1|c2?)
+      {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type :ws/C :cw 5}}} '{:b1|c2|cw {:$in #{5 :Unset}}}
 
-    {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{b1? true, b1|c2? true, b1|c2|cw 5}))
+      {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{:b1? true, :b1|c2? true, :b1|c2|cw 5})))
 
 (deftest test-lower-spec-bound-and-refines-to
   (s/with-fn-validation
@@ -476,13 +477,13 @@
            (= out (lower-spec-bound (flatten-vars specs in) in))
 
         {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an 12}}}}
-        '{b|>ws$A|an #{:Unset 12}}
+        '{:b|>ws$A|an {:$in #{:Unset 12}}}
 
         {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an {:$in [10 12]}}}}}
-        '{b|>ws$A|an [10 12 :Unset]}
+        '{:b|>ws$A|an {:$in [10 12 :Unset]}}
 
         {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an {:$in #{10 11 12}}}}}}
-        '{b|>ws$A|an #{:Unset 10 11 12}}))))
+        '{:b|>ws$A|an {:$in #{:Unset 10 11 12}}}))))
 
 (def optionality-constraint #'pc/optionality-constraint)
 
