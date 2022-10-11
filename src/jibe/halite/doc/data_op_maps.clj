@@ -1,11 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.doc.data-op-maps
-  (:require
-   [clojure.string :as string]
-   [jibe.logic.expression :as expression]
-   [jibe.logic.resource-spec-construct :as resource-spec-construct :refer [workspace spec variables constraints refinements]]))
+(ns jibe.halite.doc.data-op-maps)
 
 (defn make-spec-map-fn [spec-map]
   (fn [expr]

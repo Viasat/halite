@@ -3,7 +3,6 @@
 
 (ns jibe.halite.doc.md-basic
   (:require [clojure.string :as string]
-            [jibe.data.model :as model]
             [jibe.halite.doc.utils :as utils]
             [schema.core :as s]))
 
