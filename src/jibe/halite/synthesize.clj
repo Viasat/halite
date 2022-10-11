@@ -53,6 +53,15 @@
     :refines-to
     (merge
 
+     ;; direct refinements
+     (->> (:refines-to spec)
+          (map (fn [[to-spec-id {:keys [expr]}]]
+                 [to-spec-id
+                  (strip-ns
+                   `(fn [$exprs {:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
+                      ~expr))]))
+          (into {}))
+
      ;; transitive refinements
      (let [refines-to-graph (loom.graph/digraph (-> spec-map
                                                     (update-vals #(->> %
@@ -61,6 +70,8 @@
        (->> (keys spec-map)
             (map (partial loom.alg/shortest-path refines-to-graph spec-id))
             (remove nil?)
+            ;; remove the direct refinements
+            (remove #(= (count %) 2))
             (map (fn [refinement-path]
                    [(last refinement-path)
                     (strip-ns
@@ -74,16 +85,7 @@
                                     `((get-in $exprs [~last-spec-id :refines-to ~next-spec-id])
                                       $exprs ~e))
                              e))))]))
-            (into {})))
-
-     ;; direct refinements
-     (->> (:refines-to spec)
-          (map (fn [[to-spec-id {:keys [expr]}]]
-                 [to-spec-id
-                  (strip-ns
-                   `(fn [$exprs {:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
-                      ~expr))]))
-          (into {})))}])
+            (into {}))))}])
 
 (defn synthesize
   "Formal of definition of some halite concepts. Return an exprs-data"

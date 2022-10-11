@@ -95,7 +95,14 @@
                                                $this)))
                                   :spec/B '(fn [$exprs {:keys []}]
                                              {:$type :spec/B})}}}
-           exprs-data))))
+           exprs-data))
+    (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
+          (synth/compile-exprs exprs-data)]
+
+      (is (= {:$type :spec/A}
+             (refine-to {:$type :spec/C} :spec/A)))
+      (is (= true
+             (refines-to? {:$type :spec/C} :spec/A))))))
 
 (deftest test-constraints
   (is (= {:spec/A {:predicate '(fn [$exprs $this]
