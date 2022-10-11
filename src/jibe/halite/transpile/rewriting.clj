@@ -147,6 +147,24 @@
             :error ex})
           (throw ex))))))
 
+(s/defn add-constraint :- SpecInfo
+  [rule-name :- s/Str, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, spec-info :- SpecInfo, cname :- s/Str, expr]
+  (let [ctx (ssa/make-ssa-ctx sctx spec-info)
+        [ssa-graph id] (ssa/form-to-ssa ctx expr)
+        spec-info' (-> spec-info
+                       (assoc :ssa-graph ssa-graph)
+                       (update :constraints conj [cname id]))]
+    (trace!
+     sctx
+     {:op :add-constraint
+      :rule rule-name
+      :id' id
+      :result expr
+      :spec-id spec-id
+      :spec-info spec-info
+      :spec-info' spec-info'})
+    spec-info'))
+
 (s/defn apply-to-reachable :- (s/maybe SpecInfo)
   [sctx ctx scope spec-id spec-info
    roots,
