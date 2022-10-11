@@ -2,7 +2,9 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.synthesize
-  (:require [clojure.walk :refer [postwalk]]))
+  (:require [clojure.walk :refer [postwalk]]
+            [loom.alg]
+            [loom.graph]))
 
 ;; Ideas, options...
 ;; Insert literal 'eval' in the generated code to avoid the hidden update-eval step ???
@@ -41,13 +43,34 @@
                                ((get-in $exprs [~to-spec-id :predicate]) $exprs refined)
                                true))))))))
     :refines-to
-    (->> (:refines-to spec) ;; TODO transitive refinements
-         (map (fn [[to-spec-id {:keys [expr]}]]
-                [to-spec-id
-                 (strip-ns
-                  `(fn [$exprs {:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
-                     ~expr))]))
-         (into {}))}])
+    (let [refines-to-graph (loom.graph/digraph (-> spec-map
+                                  (update-vals #(->> %
+                                                     :refines-to
+                                                     keys))))]
+      (merge (->> (keys spec-map)
+                  (map (partial loom.alg/shortest-path refines-to-graph spec-id))
+                  (remove nil?)
+                  (map (fn [refinement-path]
+                         [(last refinement-path)
+                          (strip-ns
+                           `(fn [$exprs $this]
+                              ~(loop [last-spec-id spec-id
+                                      [next-spec-id & rest-path] (rest refinement-path)
+                                      e '$this]
+                                 (if next-spec-id
+                                   (recur next-spec-id
+                                          rest-path
+                                          `((get-in $exprs [~last-spec-id :refines-to ~next-spec-id])
+                                            $exprs ~e))
+                                   e))))]))
+                  (into {}))
+             (->> (:refines-to spec) ;; TODO transitive refinements
+                  (map (fn [[to-spec-id {:keys [expr]}]]
+                         [to-spec-id
+                          (strip-ns
+                           `(fn [$exprs {:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
+                              ~expr))]))
+                  (into {}))))}])
 
 (defn synthesize
   "Formal of definition of some halite concepts. Return an exprs-data"
