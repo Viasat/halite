@@ -123,4 +123,40 @@
                                :constraints [["c" '(> x 12)]
                                              ["c2" '(< x 24)]]}}))))
 
+(deftest test-optional-field
+  (let [exprs-data (synthesize {:spec/A {:spec-vars {:x [:Maybe "Integer"]}}})]
+    (is (= {:spec/A {:predicate '(fn [$exprs $this]
+                                   (and
+                                    (map? $this)
+                                    (= :spec/A (:$type $this))
+                                    (clojure.set/subset? (set (keys $this)) #{:$type :x})
+                                    (clojure.set/subset? #{:$type} (set (keys $this)))))
+                     :refines-to {}}}
+           exprs-data))
+    (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
+          (synth/compile-exprs exprs-data)]
+      (is (= {:$type :spec/A}
+             (validate-instance {:$type :spec/A})))
+      (is (= {:$type :spec/A :x 1}
+             (validate-instance {:$type :spec/A :x 1})))
+      (is (nil? (valid {:$type :spec/A :x 1 :y 0})))))
+
+  (let [exprs-data (synthesize {:spec/A {:spec-vars {:x [:Maybe "Integer"]
+                                                     :y "Integer"}}})]
+    (is (= {:spec/A {:predicate '(fn [$exprs $this]
+                                   (and
+                                    (map? $this)
+                                    (= :spec/A (:$type $this))
+                                    (clojure.set/subset? (set (keys $this)) #{:$type :x :y})
+                                    (clojure.set/subset? #{:$type :y} (set (keys $this)))))
+                     :refines-to {}}}
+           exprs-data))
+    (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
+          (synth/compile-exprs exprs-data)]
+      (is (= {:$type :spec/A :y 0}
+             (validate-instance {:$type :spec/A :y 0})))
+      (is (= {:$type :spec/A :x 1 :y 0}
+             (validate-instance {:$type :spec/A :x 1 :y 0})))
+      (is (nil? (valid {:$type :spec/A :x 1 :y 0 :z 2}))))))
+
 ;; (t/run-tests)

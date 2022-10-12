@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.synthesize
-  (:require [clojure.walk :refer [postwalk]]
+  (:require [clojure.set :as set]
+            [clojure.walk :refer [postwalk]]
             [loom.alg]
             [loom.graph]))
 
@@ -15,7 +16,8 @@
 
 (defn strip-ns [form]
   (postwalk (fn [x]
-              (if (symbol? x)
+              (if (and (symbol? x)
+                       (not (#{"clojure.set"} (namespace x))))
                 (symbol (name x))
                 x))
             form))
@@ -28,8 +30,17 @@
         (and (map? $this)
              (= ~spec-id (:$type $this))
              ;; TODO: handle optionals
-             (= ~(into #{:$type} (keys (:spec-vars spec)))
-                (set (keys $this)))
+             ~@(let [mandatory-spec-vars (->> (:spec-vars spec)
+                                              (remove (fn [[k v]]
+                                                        (and (vector? v)
+                                                             (= :Maybe (first v)))))
+                                              keys)]
+                 (if (= (count mandatory-spec-vars) (count (:spec-vars spec)))
+                   `[(= ~(into #{:$type} (keys (:spec-vars spec))) (set (keys $this)))]
+                   [`(set/subset? (set (keys $this))
+                                  ~(into #{:$type} (keys (:spec-vars spec))))
+                    `(set/subset? ~(into #{:$type} mandatory-spec-vars)
+                                  (set (keys $this)))]))
 
              ;; constraints
 
