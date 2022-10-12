@@ -23,7 +23,7 @@
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
                                         ;; non-inverted refinement
-                                        (if-let [refined (jibe.halite.synthesize/refine* $exprs :spec/B :spec/A $this)]
+                                        (if-let [refined (refine* $exprs :spec/B :spec/A $this)]
                                           ((get-in $exprs [:spec/A :predicate]) $exprs refined)
                                           true)))
                      :refines-to {:spec/A '(fn [$exprs {:keys []}]
@@ -63,7 +63,7 @@
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-                                        (if-let [refined (jibe.halite.synthesize/refine* $exprs :spec/B :spec/A $this)]
+                                        (if-let [refined (refine* $exprs :spec/B :spec/A $this)]
                                           ((get-in $exprs [:spec/A :predicate]) $exprs refined)
                                           true)))
                      :refines-to {:spec/A '(fn [$exprs {:keys []}]
@@ -72,13 +72,13 @@
                                    (and (map? $this)
                                         (= :spec/C (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-                                        (if-let [refined (jibe.halite.synthesize/refine* $exprs :spec/C :spec/B $this)]
+                                        (if-let [refined (refine* $exprs :spec/C :spec/B $this)]
                                           ((get-in $exprs [:spec/B :predicate]) $exprs refined)
                                           true)))
                      :refines-to {:spec/A '(fn [$exprs $this]
                                              (->> $this
-                                                  (jibe.halite.synthesize/refine* $exprs :spec/C :spec/B)
-                                                  (jibe.halite.synthesize/refine* $exprs :spec/B :spec/A)))
+                                                  (refine* $exprs :spec/C :spec/B)
+                                                  (refine* $exprs :spec/B :spec/A)))
                                   :spec/B '(fn [$exprs {:keys []}]
                                              {:$type :spec/B})}}}
            exprs-data))
@@ -117,8 +117,8 @@
                                    (and
                                     (map? $this)
                                     (= :spec/A (:$type $this))
-                                    (clojure.set/subset? (set (keys $this)) #{:$type :x})
-                                    (clojure.set/subset? #{:$type} (set (keys $this)))))
+                                    (subset? (set (keys $this)) #{:$type :x})
+                                    (subset? #{:$type} (set (keys $this)))))
                      :refines-to {}}}
            exprs-data))
     (is (= {:$type :spec/A}
@@ -134,8 +134,8 @@
                                    (and
                                     (map? $this)
                                     (= :spec/A (:$type $this))
-                                    (clojure.set/subset? (set (keys $this)) #{:$type :x :y})
-                                    (clojure.set/subset? #{:$type :y} (set (keys $this)))))
+                                    (subset? (set (keys $this)) #{:$type :x :y})
+                                    (subset? #{:$type :y} (set (keys $this)))))
                      :refines-to {}}}
            exprs-data))
     (is (= {:$type :spec/A :y 0}

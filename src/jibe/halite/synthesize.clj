@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.synthesize
-  (:require [clojure.set :as set]
+  (:require [clojure.set :as set :refer [subset?]]
             [clojure.walk :refer [postwalk]]
             [loom.alg]
             [loom.graph]))
@@ -16,9 +16,7 @@
 
 (defn strip-ns [form]
   (postwalk (fn [x]
-              (if (and (symbol? x)
-                       (not (#{"clojure.set"} (namespace x)))
-                       (not (#{"refine*"} (name x))))
+              (if (symbol? x)
                 (symbol (name x))
                 x))
             form))
@@ -100,12 +98,15 @@
        (map (partial synthesize-spec spec-map))
        (into {})))
 
+(def this-ns *ns*)
+
 (defn- compile-exprs [exprs-data]
   (let [$exprs (-> exprs-data
                    (update-vals
                     (fn [{:keys [predicate refines-to]}]
-                      {:predicate (eval predicate)
-                       :refines-to (update-vals refines-to eval)})))]
+                      (binding [*ns* this-ns]
+                        {:predicate (eval predicate)
+                         :refines-to (update-vals refines-to eval)}))))]
     {:refine-to (fn [inst spec-id]
                   ;; No need to follow path here -- it will have already been flattened out
                   ;; TODO use some-> ???
