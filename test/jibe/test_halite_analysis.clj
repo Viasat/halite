@@ -3,10 +3,14 @@
 
 (ns jibe.test-halite-analysis
   (:require [jibe.halite-analysis :as halite-analysis]
+            [jibe.halite.halite-envs :as halite-envs]
             [schema.core :as s]
+            [schema.test :refer [validate-schemas]]
             [clojure.test :refer :all]))
 
 (set! *warn-on-reflection* true)
+
+(clojure.test/use-fixtures :once validate-schemas)
 
 (deftest test-schema
   (s/check halite-analysis/EnumConstraint {:enum #{100}})
@@ -1302,5 +1306,29 @@
          (halite-analysis/find-spec-refs '(if true {:$type :my/Spec} {:$type :my/Other}))))
   (is (= #{:my/Other}
          (halite-analysis/find-spec-refs-but-tail :my/Spec '(if true {:$type :my/Spec} {:$type :my/Other})))))
+
+(deftest test-cyclical-dependencies
+  (let [spec-map {:spec/Destination {:spec-vars {:d "Integer"}}
+                  :spec/Path1 {:refines-to {:spec/Destination {:name "refine_to_Destination"
+                                                               :expr '{:$type :spec/Destination
+                                                                       :d 1}}}}
+                  :spec/Path2 {:refines-to {:spec/Destination {:name "refine_to_Destination"
+                                                               :expr '{:$type :spec/Destination
+                                                                       :d 2}}}}
+                  :spec/Start {:refines-to {:spec/Path1 {:name "refine_to_Path1"
+                                                         :expr '{:$type :spec/Path1}}
+                                            :spec/Path2 {:name "refine_to_Path2"
+                                                         :expr '{:$type :spec/Path2}}}}}]
+    (is (= {:spec/Path1 #{:spec/Destination}
+            :spec/Path2 #{:spec/Destination}
+            :spec/Start #{:spec/Path1 :spec/Path2}}
+           (#'halite-analysis/get-spec-map-dependencies (halite-envs/full-spec-map spec-map))))
+    (is (halite-analysis/free-of-cyclical-dependencies? spec-map)))
+  (let [spec-map {:spec/A {:spec-vars {:b :spec/B}}
+                  :spec/B {:spec-vars {:a :spec/A}}}]
+    (is (= {:spec/A #{:spec/B}
+            :spec/B #{:spec/A}}
+           (#'halite-analysis/get-spec-map-dependencies (halite-envs/full-spec-map spec-map))))
+    (is (not (halite-analysis/free-of-cyclical-dependencies? spec-map)))))
 
 ;; (run-tests)

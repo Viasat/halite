@@ -113,6 +113,11 @@
        (= :Instance (first t))
        (and (not= :* (second t)))))
 
+(s/defn inner-spec-type :- (s/maybe NamespacedKeyword)
+  [t]
+  (when (spec-type? t)
+    (second t)))
+
 (s/defschema TypeAtom
   "Type atoms are always unqualified keywords."
   (s/enum :Integer :String :Boolean :Value :Nothing :Any :Unset :PreInstance))
@@ -393,6 +398,16 @@
     (let [[x y] t]
       (when (or (= :Set x) (= :Vec x) (= :Coll x))
         y))))
+
+(s/defn innermost-type :- HaliteType
+  "Return the type at the core after all 'maybe' and 'collection wrappers are removed."
+  [t]
+  (if (spec-type? t)
+    t
+    (let [{:keys [kind arg]} (type-ptn t)]
+      (if arg
+        (recur arg)
+        kind))))
 
 (s/defn types-equivalent? [s :- HaliteType
                            t :- HaliteType]

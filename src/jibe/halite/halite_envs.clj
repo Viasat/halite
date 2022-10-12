@@ -51,6 +51,12 @@
    :refines-to {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
+(s/defschema PartialSpecInfo
+  {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
+   (s/optional-key :constraints) [NamedConstraint]
+   (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
+   (s/optional-key :abstract?) s/Bool})
+
 (defprotocol SpecEnv
   (lookup-spec* [self spec-id]))
 
@@ -108,7 +114,8 @@
                         scope)))
 
 (s/defn halite-type-from-var-type :- halite-types/HaliteType
-  [senv :- (s/protocol SpecEnv), var-type :- VarType]
+  [senv :- (s/protocol SpecEnv)
+   var-type :- VarType]
   (when (coll? var-type)
     (let [n (if (and (vector? var-type) (= :Maybe (first var-type))) 2 1)]
       (when (not= n (count var-type))
@@ -187,6 +194,9 @@
 ;; cycles), require that users provide a SpecMap instead of a SpecEnv. This way applications can
 ;; opt-in to the operations they want to use and deal with the implications of their choice
 
+(s/defschema PartialSpecMap
+  {halite-types/NamespacedKeyword PartialSpecInfo})
+
 (s/defschema SpecMap
   {halite-types/NamespacedKeyword SpecInfo})
 
@@ -243,15 +253,25 @@
            (into next-spec-ids (spec-refs spec-info)))))
       spec-map)))
 
+(s/defn full-spec-info :- SpecInfo
+  [spec-info :- PartialSpecInfo]
+  (let [{:keys [spec-vars constraints refines-to]} spec-info]
+    (cond-> spec-info
+      (nil? spec-vars) (assoc :spec-vars {})
+      (nil? constraints) (assoc :constraints [])
+      (nil? refines-to) (assoc :refines-to {}))))
+
+(s/defn full-spec-map :- SpecMap
+  [spec-map :- PartialSpecMap]
+  (-> spec-map
+      (update-vals full-spec-info)))
+
 ;; Ensure that a SpecMap can be used anywhere a SpecEnv can.
 (extend-type clojure.lang.IPersistentMap
   SpecEnv
   (lookup-spec* [spec-map spec-id]
-    (when-let [{:keys [spec-vars constraints refines-to] :as spec} (get spec-map spec-id)]
-      (cond-> spec
-        (nil? spec-vars) (assoc :spec-vars {})
-        (nil? constraints) (assoc :constraints [])
-        (nil? refines-to) (assoc :refines-to {})))))
+    (when-let [spec (get spec-map spec-id)]
+      (full-spec-info spec))))
 
 (defn init
   "Here to load the clojure map protocol extension above"
