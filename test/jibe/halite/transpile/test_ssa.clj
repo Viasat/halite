@@ -807,3 +807,14 @@
                   (< v1 24)
                   (<= 0 (get {:$type :ws/A, :an (* v1 2)} :an))))
            (ssa/form-from-ssa '#{x y p} ssa-graph3 new-id)))))
+
+(deftest test-roundtripping-nested-if-values
+  (let [spec '{:spec-vars {:n [:Maybe "Integer"]}
+               :constraints [["$all" (if-value n (if-value n n 0) 1)]]
+               :refines-to {}}]
+    ;; Round-tripping through SSA shouldn't introduce let bindings for nested, redundant if-value expressions.
+    ;; Not only does it hurt readability, it actually causes propagate failures (because choco-clj's rules on
+    ;; use of if-value are stricter than halite's, and disallow use of if-value with let-bound symbols).
+    ;;
+    ;; This is a regression test. Round-tripping spec used to produce (if-value n (let [v1 n] (if-value v1 v1 0)) 1).
+    (is (= spec (ssa/spec-from-ssa (ssa/spec-to-ssa {} spec))))))

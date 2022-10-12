@@ -395,7 +395,13 @@
           (form-to-ssa else))
 
       (not (halite-types/maybe-type? htype))
-      (let [[ssa-graph guard-id] (ensure-node ssa-graph (list '$value? unguarded-id) :Boolean)
+      (let [[unguarded-form] (deref-id ssa-graph unguarded-id)
+            ;; Unwrap $value! forms produced by containing if-value forms.
+            ;; See jibe.halite.transpile.test-ssa/test-roundtripping-nested-if-values for details.
+            unguarded-id (if (and (seq? unguarded-form) (= '$value! (first unguarded-form)))
+                           (second unguarded-form)
+                           unguarded-id)
+            [ssa-graph guard-id] (ensure-node ssa-graph (list '$value? unguarded-id) :Boolean)
             [ssa-graph then-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa then))
             [ssa-graph else-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa else))
             htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
