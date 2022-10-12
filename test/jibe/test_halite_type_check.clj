@@ -3,7 +3,6 @@
 
 (ns jibe.test-halite-type-check
   (:require [jibe.halite-type-check :as halite-type-check]
-            [jibe.test-halite :as test-halite]
             [schema.core :as s]
             [clojure.test :refer :all]))
 
@@ -15,12 +14,12 @@
            {:spec-id :ws2/B$v1
             :variable-name :d}}
          (halite-type-check/find-field-accesses
-          (test-halite/map->TestSpecEnv {:specs {:ws/A$v1 {:spec-vars {:x "Integer"
-                                                                       :y "Boolean"
-                                                                       :c :ws2/B$v1}}
-                                                 :ws2/B$v1 {:spec-vars {:d :ws/D$v1}}
-                                                 :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
-                                                 :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}}})
+          {:ws/A$v1 {:spec-vars {:x "Integer"
+                                 :y "Boolean"
+                                 :c :ws2/B$v1}}
+           :ws2/B$v1 {:spec-vars {:d :ws/D$v1}}
+           :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
+           :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}}
           {:spec-vars {:x "Integer"
                        :y "Boolean"
                        :c [:ws2/B$v1]}}

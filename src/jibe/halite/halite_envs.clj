@@ -182,11 +182,6 @@
 (s/defschema SpecMap
   {halite-types/NamespacedKeyword SpecInfo})
 
-(defn spec-map-to-spec-env [spec-map]
-  (reify SpecEnv
-    (lookup-spec* [_ spec-id]
-      (get spec-map spec-id))))
-
 (defn- spec-ref-from-type [htype]
   (cond
     (and (keyword? htype) (namespace htype)) htype
@@ -243,4 +238,13 @@
 ;; Ensure that a SpecMap can be used anywhere a SpecEnv can.
 (extend-type clojure.lang.IPersistentMap
   SpecEnv
-  (lookup-spec* [self spec-id] (get self spec-id)))
+  (lookup-spec* [spec-map spec-id]
+    (when-let [{:keys [spec-vars constraints refines-to] :as spec} (get spec-map spec-id)]
+      (cond-> spec
+        (nil? spec-vars) (assoc :spec-vars {})
+        (nil? constraints) (assoc :constraints [])
+        (nil? refines-to) (assoc :refines-to {})))))
+
+(defn init
+  "Here to load the clojure map protocol extension above"
+  [])
