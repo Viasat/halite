@@ -17,10 +17,14 @@
 (defn strip-ns [form]
   (postwalk (fn [x]
               (if (and (symbol? x)
-                       (not (#{"clojure.set"} (namespace x))))
+                       (not (#{"clojure.set"} (namespace x)))
+                       (not (#{"refine*"} (name x))))
                 (symbol (name x))
                 x))
             form))
+
+(defn refine* [$exprs from-spec-id to-spec-id instance]
+  ((get-in $exprs [from-spec-id :refines-to to-spec-id]) $exprs instance))
 
 (defn synthesize-spec [spec-map [spec-id spec]]
   [spec-id
@@ -57,8 +61,7 @@
                     (remove :inverted)
                     (map (fn [[to-spec-id {:keys [expr]}]]
                            (strip-ns
-                            `(if-let [refined ((get-in $exprs [~spec-id :refines-to ~to-spec-id])
-                                               $exprs $this)]
+                            `(if-let [refined (refine* $exprs ~spec-id ~to-spec-id $this)]
                                ((get-in $exprs [~to-spec-id :predicate]) $exprs refined)
                                true))))))))
     :refines-to
@@ -93,8 +96,7 @@
                            (if next-spec-id
                              (recur next-spec-id
                                     rest-path
-                                    `((get-in $exprs [~last-spec-id :refines-to ~next-spec-id])
-                                      $exprs ~e))
+                                    `(refine* $exprs ~last-spec-id ~next-spec-id ~e))
                              e))))]))
             (into {}))))}])
 
