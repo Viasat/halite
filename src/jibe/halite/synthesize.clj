@@ -83,21 +83,14 @@
                                                                        keys))))]
        (->> (keys spec-map)
             (map (partial loom.alg/shortest-path refines-to-graph spec-id))
-            (remove nil?)
-            ;; remove the direct refinements
-            (remove #(= (count %) 2))
+            (filter #(< 2 (count %))) ;; just multi-step refinements
             (map (fn [refinement-path]
                    [(last refinement-path)
                     (strip-ns
                      `(fn [$exprs $this]
-                        ~(loop [last-spec-id spec-id
-                                [next-spec-id & rest-path] (rest refinement-path)
-                                e '$this]
-                           (if next-spec-id
-                             (recur next-spec-id
-                                    rest-path
-                                    `(refine* $exprs ~last-spec-id ~next-spec-id ~e))
-                             e))))]))
+                        (->> $this
+                             (refine* $exprs ~spec-id ~(second refinement-path))
+                             (refine* $exprs ~(second refinement-path) ~(last refinement-path)))))]))
             (into {}))))}])
 
 (defn synthesize
