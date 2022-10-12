@@ -145,9 +145,4 @@
 
 (defn hc-body
   ([spec-map expr]
-   (hc* (-> spec-map
-            (update-vals #(merge {:spec-vars {}
-                                  :constraints []
-                                  :refines-to {}}
-                                 %)))
-        expr true)))
+   (hc* spec-map expr true)))

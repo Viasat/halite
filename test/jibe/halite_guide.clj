@@ -133,14 +133,6 @@
                                          :refines-to {:spec/C$v1 {:name "spec/E$v1/as_c"
                                                                   :expr 'co}}}}})
 
-(defn- to-spec-env [spec-map]
-  (reify halite-envs/SpecEnv
-    (lookup-spec* [_ spec-id]
-      (some->> (spec-map spec-id)
-               (merge {:spec-vars {}
-                       :constraints []
-                       :refines-to {}})))))
-
 (defmacro hc [spec-map comment? & raw-args]
   (let [raw-args (if (string? comment?)
                    (first raw-args)
