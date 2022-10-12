@@ -142,7 +142,7 @@
                             inst
                             (throw (ex-info "Invalid instance" {:instance inst}))))}))
 
-(defn eval [exprs-data expr]
+(defn synth-eval [exprs-data expr]
   (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
         (compile-exprs exprs-data)]
     (cond
