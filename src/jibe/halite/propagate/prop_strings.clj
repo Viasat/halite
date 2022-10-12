@@ -13,6 +13,7 @@
             [jibe.halite.propagate.prop-choco :as prop-choco]
             [jibe.halite.transpile.ssa :as ssa]
             [jibe.halite.transpile.rewriting :as rewriting]
+            [jibe.halite.transpile.simplify :as simplify]
             [jibe.halite.transpile.util :as util]
             [loom.alg :as loom-alg]
             [loom.graph :as loom-graph]
@@ -36,6 +37,96 @@
 
 (s/defschema SpecBound
   {halite-types/BareKeyword AtomBound})
+
+(s/defn ^:private push-comparison-into-string-valued-if
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (let [string-if? (fn [[form htype]]
+                     (and (seq? form) (= 'if (first form)) (= :String htype)))]
+    (when (and (seq? form) (contains? #{'= 'not=} (first form)))
+      (let [[op & arg-ids] form
+            args (mapv (partial ssa/deref-id ssa-graph) arg-ids)]
+        (when-let [[i [[_if pred-id then-id else-id]]] (first (filter (comp string-if? second) (map-indexed vector args)))]
+          (let [then-node (ssa/deref-id ssa-graph then-id), then-type (ssa/node-type then-node)
+                else-node (ssa/deref-id ssa-graph else-id), else-type (ssa/node-type else-node)]
+            (list 'if pred-id
+                  (if (= :Nothing then-type)
+                    then-id
+                    (apply list op (assoc (vec arg-ids) i then-id)))
+                  (if (= :Nothing else-type)
+                    else-id
+                    (apply list op (assoc (vec arg-ids) i else-id))))))))))
+
+(s/defn ^:private string-compatible-type? :- s/Bool
+  "Returns true if there exists an expression of type htype that could evaluate to a String, and false otherwise."
+  [htype :- halite-types/HaliteType]
+  (or (boolean (#{:Any :Value} htype)) (= :String (halite-types/no-maybe htype))))
+
+(s/defn ^:private rewrite-string-valued-do-child
+  [{:keys [sctx ctx] :as rctx} :- rewriting/RewriteFnCtx, id]
+  (let [{:keys [ssa-graph]} ctx
+        node (ssa/deref-id ssa-graph id), form (ssa/node-form node), htype (ssa/node-type node)
+        rewrite-child-exprs (fn [child-exprs]
+                              (-> child-exprs
+                                  (->> (remove #(->> % (ssa/deref-id ssa-graph) ssa/node-form (simplify/always-evaluates? ssa-graph)))
+                                       (mapcat #(let [node (ssa/deref-id ssa-graph %)
+                                                      form (ssa/node-form node)
+                                                      htype (ssa/node-type node)]
+                                                  (if (string-compatible-type? htype)
+                                                    (let [r (rewrite-string-valued-do-child rctx %)]
+                                                      (if (and (seq? r) (= '$do! (first r)))
+                                                        (rest r)
+                                                        [r]))
+                                                    [%]))))
+                                  (util/make-do true)))]
+    (when-not (string-compatible-type? htype)
+      (throw (ex-info "BUG! Called rewrite-string-valued-do-child with expr that can never evaluate to a string."
+                      {:ssa-graph ssa-graph :id id :form form :htype htype})))
+    (cond
+      (or (symbol? form) (string? form)) true
+      (seq? form) (let [[op & args] form]
+                    (cond
+                      (= 'str op) true
+                      (= 'if op) (let [[pred-id then-id else-id] args
+                                       then-type (ssa/node-type (ssa/deref-id ssa-graph then-id))
+                                       else-type (ssa/node-type (ssa/deref-id ssa-graph else-id))]
+                                   (if (and (not (string-compatible-type? then-type))
+                                            (not (string-compatible-type? else-type)))
+                                     id
+                                     (list 'if pred-id
+                                           (cond->> then-id
+                                             (string-compatible-type? then-type)
+                                             (rewrite-string-valued-do-child rctx))
+                                           (cond->> else-id
+                                             (string-compatible-type? else-type)
+                                             (rewrite-string-valued-do-child rctx)))))
+
+                      (= '$do! op) (rewrite-child-exprs args)
+
+                      :else (throw (ex-info "BUG! Unrecognized string-valued form"
+                                            {:ssa-graph ssa-graph :id id :form form}))))
+      :else (throw (ex-info "BUG! Unrecognized string-valued form"
+                            {:ssa-graph ssa-graph :id id :form form})))))
+
+(s/defn eliminate-unused-string-valued-exprs
+  [{:keys [sctx ctx] :as rctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (let [ssa-graph (:ssa-graph ctx)]
+    (when (and (seq? form) (= '$do! (first form)))
+      (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]
+        (when (some string-compatible-type? child-htypes)
+          (util/make-do
+           (mapv (fn [child htype]
+                   (cond->> child
+                     (string-compatible-type? htype) (rewrite-string-valued-do-child rctx)))
+                 (butlast (rest form)) child-htypes)
+           (last form)))))))
+
+(s/defn ^:private simplify-string-exprs :- ssa/SpecInfo
+  [spec :- ssa/SpecInfo]
+  (-> {:$propagate/Bounds spec}
+      (rewriting/rewrite-reachable-sctx
+       [(rewriting/rule push-comparison-into-string-valued-if)
+        (rewriting/rule eliminate-unused-string-valued-exprs)])
+      :$propagate/Bounds))
 
 (s/defn ^:private compute-string-comparison-graph :- (s/protocol loom-graph/Graph)
   "Return an undirected graph where the nodes are string expressions and an edge represents
@@ -153,12 +244,12 @@
   [{:keys [spec-vars constraints ssa-graph] :as spec} :- ssa/SpecInfo, scg :- (s/protocol loom-graph/Graph)]
   (let [spec (update spec :spec-vars add-comparison-vars scg)
         [spec alts] (add-exclusivity-vars spec scg)
-        spec (rewriting/rewrite-reachable
-              [{:rule-name "replace-string-comparison-with-var"
-                :rewrite-fn (partial replace-string-comparison-with-var scg)
-                :nodes :all}]
-              {:$propagate/Bounds spec}
-              :$propagate/Bounds)
+        spec (-> {:$propagate/Bounds spec}
+                 (rewriting/rewrite-reachable-sctx
+                  [{:rule-name "replace-string-comparison-with-var"
+                    :rewrite-fn (partial replace-string-comparison-with-var scg)
+                    :nodes :all}])
+                 :$propagate/Bounds)
         spec (reduce
               (fn [spec str-var-kw]
                 (let [alt-kw (alts-var-kw str-var-kw)
@@ -281,7 +372,7 @@
   ([spec :- halite-envs/SpecInfo, initial-bound :- SpecBound]
    (propagate spec default-options initial-bound))
   ([spec :- halite-envs/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
-   (let [spec (ssa/spec-to-ssa {} spec)
+   (let [spec (->> spec (ssa/spec-to-ssa {}) (simplify-string-exprs))
          scg (-> spec compute-string-comparison-graph label-scg)
          [spec' alts] (lower-spec spec scg)]
      (-> spec'

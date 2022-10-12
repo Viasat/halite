@@ -11,18 +11,12 @@
              :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
             [jibe.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as halite-rewriting]
             [jibe.halite.transpile.simplify :refer [simplify always-evaluates?]]
-            [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
+            [jibe.halite.transpile.util :refer [fixpoint mk-junct make-do]]
             [loom.alg]
             [loom.graph]
             [schema.core :as s]))
 
 ;;;;;;;;; Bubble up and Flatten $do! ;;;;;;;;;;;;
-
-(defn- make-do
-  [side-effects body]
-  (if (empty? side-effects)
-    body
-    `(~'$do! ~@side-effects ~body)))
 
 ;; We don't generally want to have to invent rewrite rules for
 ;; all the various forms as combined with $do!, so we'll write

@@ -12,6 +12,12 @@
     1 (first clauses)
     (apply list op clauses)))
 
+(defn make-do
+  [side-effects body]
+  (if (empty? side-effects)
+    body
+    `(~'$do! ~@side-effects ~body)))
+
 (def ^:dynamic *fixpoint-iteration-limit* nil)
 
 (defn fixpoint
