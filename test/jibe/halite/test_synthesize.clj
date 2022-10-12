@@ -4,7 +4,10 @@
 (ns jibe.halite.test-synthesize
   (:require
    [jibe.halite.synthesize :refer [synthesize] :as synth]
-   [clojure.test :as t :refer [deftest is]]))
+   [clojure.test :as t :refer [deftest is]]
+   [schema.test :refer [validate-schemas]]))
+
+(clojure.test/use-fixtures :once validate-schemas)
 
 (deftest thing1
   (let [exprs-data
@@ -13,20 +16,20 @@
           :spec/B {:refines-to {:spec/A {:name "as_A"
                                          :expr '{:$type :spec/A}}}}})]
 
-    (is (= {:spec/A {:predicate '(fn [$this]
+    (is (= {:spec/A {:valid?-fn '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/A (:$type $this))
                                         (= #{:$type} (set (keys $this)))))
-                     :refines-to {}}
-            :spec/B {:predicate '(fn [$this]
+                     :refine-fns {}}
+            :spec/B {:valid?-fn '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
                                         ;; non-inverted refinement
                                         (if-let [refined (refine* :spec/B :spec/A $this)]
-                                          (predicate* :spec/A refined)
+                                          (valid?* :spec/A refined)
                                           true)))
-                     :refines-to {:spec/A '(fn [{:keys []}]
+                     :refine-fns {:spec/A '(fn [{:keys []}]
                                              {:$type :spec/A})}}}
            exprs-data))
 
@@ -54,28 +57,28 @@
           :spec/C {:refines-to {:spec/B {:name "as_B"
                                          :expr '{:$type :spec/B}}}}})]
 
-    (is (= {:spec/A {:predicate '(fn [$this]
+    (is (= {:spec/A {:valid?-fn '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/A (:$type $this))
                                         (= #{:$type} (set (keys $this)))))
-                     :refines-to {}}
-            :spec/B {:predicate '(fn [$this]
+                     :refine-fns {}}
+            :spec/B {:valid?-fn '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
                                         (if-let [refined (refine* :spec/B :spec/A $this)]
-                                          (predicate* :spec/A refined)
+                                          (valid?* :spec/A refined)
                                           true)))
-                     :refines-to {:spec/A '(fn [{:keys []}]
+                     :refine-fns {:spec/A '(fn [{:keys []}]
                                              {:$type :spec/A})}}
-            :spec/C {:predicate '(fn [$this]
+            :spec/C {:valid?-fn '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/C (:$type $this))
                                         (= #{:$type} (set (keys $this)))
                                         (if-let [refined (refine* :spec/C :spec/B $this)]
-                                          (predicate* :spec/B refined)
+                                          (valid?* :spec/B refined)
                                           true)))
-                     :refines-to {:spec/A '(fn [$this]
+                     :refine-fns {:spec/A '(fn [$this]
                                              (->> $this
                                                   (refine* :spec/C :spec/B)
                                                   (refine* :spec/B :spec/A)))
@@ -88,17 +91,17 @@
            (synth/synth-eval exprs-data '(refines-to? {:$type :spec/C} :spec/A))))))
 
 (deftest test-constraints
-  (is (= {:spec/A {:predicate '(fn [$this]
+  (is (= {:spec/A {:valid?-fn '(fn [$this]
                                  (and
                                   (map? $this)
                                   (= :spec/A (:$type $this))
                                   (= #{:$type :x} (set (keys $this)))
                                   (let [{:keys [x]} $this]
                                     (and (> x 12)))))
-                   :refines-to {}}}
+                   :refine-fns {}}}
          (synthesize {:spec/A {:spec-vars {:x "Integer"}
                                :constraints [["c" '(> x 12)]]}})))
-  (is (= {:spec/A {:predicate '(fn [$this]
+  (is (= {:spec/A {:valid?-fn '(fn [$this]
                                  (and
                                   (map? $this)
                                   (= :spec/A (:$type $this))
@@ -106,20 +109,20 @@
                                   (let [{:keys [x]} $this]
                                     (and (> x 12)
                                          (< x 24)))))
-                   :refines-to {}}}
+                   :refine-fns {}}}
          (synthesize {:spec/A {:spec-vars {:x "Integer"}
                                :constraints [["c" '(> x 12)]
                                              ["c2" '(< x 24)]]}}))))
 
 (deftest test-optional-field
   (let [exprs-data (synthesize {:spec/A {:spec-vars {:x [:Maybe "Integer"]}}})]
-    (is (= {:spec/A {:predicate '(fn [$this]
+    (is (= {:spec/A {:valid?-fn '(fn [$this]
                                    (and
                                     (map? $this)
                                     (= :spec/A (:$type $this))
                                     (subset? (set (keys $this)) #{:$type :x})
                                     (subset? #{:$type} (set (keys $this)))))
-                     :refines-to {}}}
+                     :refine-fns {}}}
            exprs-data))
     (is (= {:$type :spec/A}
            (synth/synth-eval exprs-data '{:$type :spec/A})))
@@ -130,13 +133,13 @@
 
   (let [exprs-data (synthesize {:spec/A {:spec-vars {:x [:Maybe "Integer"]
                                                      :y "Integer"}}})]
-    (is (= {:spec/A {:predicate '(fn [$this]
+    (is (= {:spec/A {:valid?-fn '(fn [$this]
                                    (and
                                     (map? $this)
                                     (= :spec/A (:$type $this))
                                     (subset? (set (keys $this)) #{:$type :x :y})
                                     (subset? #{:$type :y} (set (keys $this)))))
-                     :refines-to {}}}
+                     :refine-fns {}}}
            exprs-data))
     (is (= {:$type :spec/A :y 0}
            (synth/synth-eval exprs-data '{:$type :spec/A :y 0})))

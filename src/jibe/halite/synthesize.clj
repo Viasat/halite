@@ -4,6 +4,7 @@
 (ns jibe.halite.synthesize
   (:require [clojure.set :as set :refer [subset?]]
             [clojure.walk :refer [postwalk]]
+            [schema.core :as s]
             [loom.alg]
             [loom.graph]))
 
@@ -21,9 +22,14 @@
                 x))
             form))
 
-(defn synthesize-spec [spec-map [spec-id spec]]
-  [spec-id
-   {:predicate
+(s/defschema SpecFnMap
+  {:valid?-fn (s/pred seq?)
+   :refine-fns {s/Keyword (s/pred seq?)}})
+
+(s/defn synthesize-spec :- {s/Keyword SpecFnMap}
+  [spec-map [spec-id spec]]
+  {spec-id
+   {:valid?-fn
     (strip-ns
      `(fn [$this]
         (and (map? $this)
@@ -57,9 +63,9 @@
                     (map (fn [[to-spec-id {:keys [expr]}]]
                            (strip-ns
                             `(if-let [refined (refine* ~spec-id ~to-spec-id $this)]
-                               (predicate* ~to-spec-id refined)
+                               (valid?* ~to-spec-id refined)
                                true))))))))
-    :refines-to
+    :refine-fns
     (merge
 
      ;; direct refinements
@@ -86,65 +92,67 @@
                         (->> $this
                              (refine* ~spec-id ~(second refinement-path))
                              (refine* ~(second refinement-path) ~(last refinement-path)))))]))
-            (into {}))))}])
+            (into {}))))}})
 
 (defn synthesize
-  "Formal of definition of some halite concepts. Return an exprs-data"
+  "Formal definition of some halite concepts. Return an exprs-data"
   [spec-map]
   (->> spec-map
        (map (partial synthesize-spec spec-map))
-       (into {})))
+       (apply merge)))
+
+(s/defn exprs-interface
+  "Returns Clojure code that when evaluated returns a map of our public
+  interface functions."
+  [exprs-data :- {s/Keyword SpecFnMap}]
+  (strip-ns
+   `(letfn [(get-exprs [] ~exprs-data)
+
+            (get-refine-fn* [from-spec-id to-spec-id]
+              (get-in (get-exprs) [from-spec-id :refine-fns to-spec-id]))
+            (refine* [from-spec-id to-spec-id instance]
+              ((get-in (get-exprs) [from-spec-id :refine-fns to-spec-id]) instance))
+            (valid?* [spec-id instance]
+              ((get-in (get-exprs) [spec-id :valid?-fn]) instance))]
+
+      {:refine-to (fn [inst spec-id]
+                    ;; No need to follow path here -- it will have already been flattened out
+                    ;; TODO use some-> ???
+                    (if-let [refine-fn (get-refine-fn* (:$type inst) spec-id)]
+                      (if-let [inst-refined (refine-fn inst)]
+                        (if (valid?* spec-id inst-refined)
+                          inst-refined
+                          (throw (ex-info "Refined instance is invalid" {})))
+                        (throw (ex-info "Refinement return :Unset" {})))
+                      (throw (ex-info "No path at all"))))
+       :refines-to? (fn [inst spec-id]
+                      (if-let [refine-fn (get-refine-fn* (:$type inst) spec-id)]
+                        (if-let [inst-refined (refine-fn inst)]
+                          (valid?* spec-id inst-refined)
+                          false)
+                        false))
+       :valid (fn [inst]
+                ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
+                (when (valid?* (:$type inst) inst)
+                  inst))
+       :valid? (fn [inst]
+                 ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
+                 (valid?* (:$type inst) inst))
+       :validate-instance (fn [inst]
+                            ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
+                            (if (valid?* (:$type inst) inst)
+                              inst
+                              (throw (ex-info "Invalid instance" {:instance inst}))))})))
 
 (def this-ns *ns*)
 
-
-
-(defn- compile-exprs [exprs-data]
-  (let [{:keys [get-refinement* refine* predicate*]}
-        (binding [*ns* this-ns]
-          (eval (strip-ns
-                 `(letfn [(get-refinement* [from-spec-id to-spec-id]
-                            (get-in (get-exprs) [from-spec-id :refines-to to-spec-id]))
-                          (refine* [from-spec-id to-spec-id instance]
-                            ((get-in (get-exprs) [from-spec-id :refines-to to-spec-id]) instance))
-                          (predicate* [spec-id instance]
-                            ((get-in (get-exprs) [spec-id :predicate]) instance))
-                          (get-exprs [] ~exprs-data)]
-                    {:get-refinement* get-refinement*
-                     :refine* refine*
-                     :predicate* predicate*}))))]
-    {:refine-to (fn [inst spec-id]
-                  ;; No need to follow path here -- it will have already been flattened out
-                  ;; TODO use some-> ???
-                  (if-let [refinement (get-refinement* (:$type inst) spec-id)]
-                    (if-let [inst-refined (refinement inst)]
-                      (if (predicate* spec-id inst-refined)
-                        inst-refined
-                        (throw (ex-info "Refined instance is invalid" {})))
-                      (throw (ex-info "Refinement return :Unset" {})))
-                    (throw (ex-info "No path at all"))))
-     :refines-to? (fn [inst spec-id]
-                    (if-let [refinement (get-refinement* (:$type inst) spec-id)]
-                      (if-let [inst-refined (refinement inst)]
-                        (predicate* spec-id inst-refined)
-                        false)
-                      false))
-     :valid (fn [inst]
-              ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-              (when (predicate* (:$type inst) inst)
-                inst))
-     :valid? (fn [inst]
-               ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-               (predicate* (:$type inst) inst))
-     :validate-instance (fn [inst]
-                          ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-                          (if (predicate* (:$type inst) inst)
-                            inst
-                            (throw (ex-info "Invalid instance" {:instance inst}))))}))
+(defn- eval-form [form]
+  (binding [*ns* this-ns]
+    (eval form)))
 
 (defn synth-eval [exprs-data expr]
-  (let [{:keys [validate-instance refine-to refines-to? valid valid? exprs]}
-        (compile-exprs exprs-data)]
+  (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
+        (eval-form (exprs-interface exprs-data))]
     (cond
       (map? expr) (validate-instance expr)
       :default (apply (condp = (first expr)
