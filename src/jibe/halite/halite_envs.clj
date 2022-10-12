@@ -179,6 +179,14 @@
 ;; like in the propagate namespace.
 
 ;; Maybe this is the direction we should head in for replacing SpecEnv more generally?
+
+;; DM (talking with CH): SpecEnv is providing value to apps that do not want to proactively load
+;; all specs into a map (e.g. they are stored in a database). So the thought is that we keep
+;; SpecEnv and we keep most halite operations simply performing lookups of the specs they need
+;; however, for operations that require enumarating all specs (such as a global check for dependency
+;; cycles), require that users provide a SpecMap instead of a SpecEnv. This way applications can
+;; opt-in to the operations they want to use and deal with the implications of their choice
+
 (s/defschema SpecMap
   {halite-types/NamespacedKeyword SpecInfo})
 
