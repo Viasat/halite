@@ -21,14 +21,22 @@
                 x))
             form))
 
-(defn refine* [$exprs from-spec-id to-spec-id instance]
-  ((get-in $exprs [from-spec-id :refines-to to-spec-id]) $exprs instance))
+(def ^:dynamic *exprs*)
+
+(defn get-refinement* [from-spec-id to-spec-id]
+  (get-in *exprs* [from-spec-id :refines-to to-spec-id]))
+
+(defn refine* [from-spec-id to-spec-id instance]
+  ((get-in *exprs* [from-spec-id :refines-to to-spec-id]) instance))
+
+(defn predicate* [spec-id instance]
+  ((get-in *exprs* [spec-id :predicate]) instance))
 
 (defn synthesize-spec [spec-map [spec-id spec]]
   [spec-id
    {:predicate
     (strip-ns
-     `(fn [$exprs $this]
+     `(fn [$this]
         (and (map? $this)
              (= ~spec-id (:$type $this))
              ;; TODO: handle optionals
@@ -59,8 +67,8 @@
                     (remove :inverted)
                     (map (fn [[to-spec-id {:keys [expr]}]]
                            (strip-ns
-                            `(if-let [refined (refine* $exprs ~spec-id ~to-spec-id $this)]
-                               ((get-in $exprs [~to-spec-id :predicate]) $exprs refined)
+                            `(if-let [refined (refine* ~spec-id ~to-spec-id $this)]
+                               (predicate* ~to-spec-id refined)
                                true))))))))
     :refines-to
     (merge
@@ -70,7 +78,7 @@
           (map (fn [[to-spec-id {:keys [expr]}]]
                  [to-spec-id
                   (strip-ns
-                   `(fn [$exprs {:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
+                   `(fn [{:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
                       ~expr))]))
           (into {}))
 
@@ -85,10 +93,10 @@
             (map (fn [refinement-path]
                    [(last refinement-path)
                     (strip-ns
-                     `(fn [$exprs $this]
+                     `(fn [$this]
                         (->> $this
-                             (refine* $exprs ~spec-id ~(second refinement-path))
-                             (refine* $exprs ~(second refinement-path) ~(last refinement-path)))))]))
+                             (refine* ~spec-id ~(second refinement-path))
+                             (refine* ~(second refinement-path) ~(last refinement-path)))))]))
             (into {}))))}])
 
 (defn synthesize
@@ -101,48 +109,50 @@
 (def this-ns *ns*)
 
 (defn- compile-exprs [exprs-data]
-  (let [$exprs (-> exprs-data
-                   (update-vals
-                    (fn [{:keys [predicate refines-to]}]
-                      (binding [*ns* this-ns]
-                        {:predicate (eval predicate)
-                         :refines-to (update-vals refines-to eval)}))))]
-    {:refine-to (fn [inst spec-id]
+  (let [exprs (-> exprs-data
+                  (update-vals
+                   (fn [{:keys [predicate refines-to]}]
+                     (binding [*ns* this-ns]
+                       {:predicate (eval predicate)
+                        :refines-to (update-vals refines-to eval)}))))]
+    {:exprs exprs
+     :refine-to (fn [inst spec-id]
                   ;; No need to follow path here -- it will have already been flattened out
                   ;; TODO use some-> ???
-                  (if-let [refinement (get-in $exprs [(:$type inst) :refines-to spec-id])]
-                    (if-let [inst-refined (refinement $exprs inst)]
-                      (if ((get-in $exprs [spec-id :predicate]) $exprs inst-refined)
+                  (if-let [refinement (get-refinement* (:$type inst) spec-id)]
+                    (if-let [inst-refined (refinement inst)]
+                      (if (predicate* spec-id inst-refined)
                         inst-refined
                         (throw (ex-info "Refined instance is invalid" {})))
                       (throw (ex-info "Refinement return :Unset" {})))
                     (throw (ex-info "No path at all"))))
      :refines-to? (fn [inst spec-id]
-                    (if-let [refinement (get-in $exprs [(:$type inst) :refines-to spec-id])]
-                      (if-let [inst-refined (refinement $exprs inst)]
-                        ((get-in $exprs [spec-id :predicate]) $exprs inst-refined)
+                    (if-let [refinement (get-refinement* (:$type inst) spec-id)]
+                      (if-let [inst-refined (refinement inst)]
+                        (predicate* spec-id inst-refined)
                         false)
                       false))
      :valid (fn [inst]
               ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-              (when ((get-in $exprs [(:$type inst) :predicate]) $exprs inst)
+              (when (predicate* (:$type inst) inst)
                 inst))
      :valid? (fn [inst]
                ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-               ((get-in $exprs [(:$type inst) :predicate]) $exprs inst))
+               (predicate* (:$type inst) inst))
      :validate-instance (fn [inst]
                           ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-                          (if ((get-in $exprs [(:$type inst) :predicate]) $exprs inst)
+                          (if (predicate* (:$type inst) inst)
                             inst
                             (throw (ex-info "Invalid instance" {:instance inst}))))}))
 
 (defn synth-eval [exprs-data expr]
-  (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
+  (let [{:keys [validate-instance refine-to refines-to? valid valid? exprs]}
         (compile-exprs exprs-data)]
-    (cond
-      (map? expr) (validate-instance expr)
-      :default (apply (condp = (first expr)
-                        'refine-to refine-to
-                        'refines-to? refines-to?
-                        'valid valid
-                        'valid? valid?) (rest expr)))))
+    (binding [*exprs* exprs]
+      (cond
+        (map? expr) (validate-instance expr)
+        :default (apply (condp = (first expr)
+                          'refine-to refine-to
+                          'refines-to? refines-to?
+                          'valid valid
+                          'valid? valid?) (rest expr))))))

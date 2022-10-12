@@ -13,20 +13,20 @@
           :spec/B {:refines-to {:spec/A {:name "as_A"
                                          :expr '{:$type :spec/A}}}}})]
 
-    (is (= {:spec/A {:predicate '(fn [$exprs $this]
+    (is (= {:spec/A {:predicate '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/A (:$type $this))
                                         (= #{:$type} (set (keys $this)))))
                      :refines-to {}}
-            :spec/B {:predicate '(fn [$exprs $this]
+            :spec/B {:predicate '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
                                         ;; non-inverted refinement
-                                        (if-let [refined (refine* $exprs :spec/B :spec/A $this)]
-                                          ((get-in $exprs [:spec/A :predicate]) $exprs refined)
+                                        (if-let [refined (refine* :spec/B :spec/A $this)]
+                                          (predicate* :spec/A refined)
                                           true)))
-                     :refines-to {:spec/A '(fn [$exprs {:keys []}]
+                     :refines-to {:spec/A '(fn [{:keys []}]
                                              {:$type :spec/A})}}}
            exprs-data))
 
@@ -54,32 +54,32 @@
           :spec/C {:refines-to {:spec/B {:name "as_B"
                                          :expr '{:$type :spec/B}}}}})]
 
-    (is (= {:spec/A {:predicate '(fn [$exprs $this]
+    (is (= {:spec/A {:predicate '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/A (:$type $this))
                                         (= #{:$type} (set (keys $this)))))
                      :refines-to {}}
-            :spec/B {:predicate '(fn [$exprs $this]
+            :spec/B {:predicate '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-                                        (if-let [refined (refine* $exprs :spec/B :spec/A $this)]
-                                          ((get-in $exprs [:spec/A :predicate]) $exprs refined)
+                                        (if-let [refined (refine* :spec/B :spec/A $this)]
+                                          (predicate* :spec/A refined)
                                           true)))
-                     :refines-to {:spec/A '(fn [$exprs {:keys []}]
+                     :refines-to {:spec/A '(fn [{:keys []}]
                                              {:$type :spec/A})}}
-            :spec/C {:predicate '(fn [$exprs $this]
+            :spec/C {:predicate '(fn [$this]
                                    (and (map? $this)
                                         (= :spec/C (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-                                        (if-let [refined (refine* $exprs :spec/C :spec/B $this)]
-                                          ((get-in $exprs [:spec/B :predicate]) $exprs refined)
+                                        (if-let [refined (refine* :spec/C :spec/B $this)]
+                                          (predicate* :spec/B refined)
                                           true)))
-                     :refines-to {:spec/A '(fn [$exprs $this]
+                     :refines-to {:spec/A '(fn [$this]
                                              (->> $this
-                                                  (refine* $exprs :spec/C :spec/B)
-                                                  (refine* $exprs :spec/B :spec/A)))
-                                  :spec/B '(fn [$exprs {:keys []}]
+                                                  (refine* :spec/C :spec/B)
+                                                  (refine* :spec/B :spec/A)))
+                                  :spec/B '(fn [{:keys []}]
                                              {:$type :spec/B})}}}
            exprs-data))
     (is (= {:$type :spec/A}
@@ -88,7 +88,7 @@
            (synth/synth-eval exprs-data '(refines-to? {:$type :spec/C} :spec/A))))))
 
 (deftest test-constraints
-  (is (= {:spec/A {:predicate '(fn [$exprs $this]
+  (is (= {:spec/A {:predicate '(fn [$this]
                                  (and
                                   (map? $this)
                                   (= :spec/A (:$type $this))
@@ -98,7 +98,7 @@
                    :refines-to {}}}
          (synthesize {:spec/A {:spec-vars {:x "Integer"}
                                :constraints [["c" '(> x 12)]]}})))
-  (is (= {:spec/A {:predicate '(fn [$exprs $this]
+  (is (= {:spec/A {:predicate '(fn [$this]
                                  (and
                                   (map? $this)
                                   (= :spec/A (:$type $this))
@@ -113,7 +113,7 @@
 
 (deftest test-optional-field
   (let [exprs-data (synthesize {:spec/A {:spec-vars {:x [:Maybe "Integer"]}}})]
-    (is (= {:spec/A {:predicate '(fn [$exprs $this]
+    (is (= {:spec/A {:predicate '(fn [$this]
                                    (and
                                     (map? $this)
                                     (= :spec/A (:$type $this))
@@ -130,7 +130,7 @@
 
   (let [exprs-data (synthesize {:spec/A {:spec-vars {:x [:Maybe "Integer"]
                                                      :y "Integer"}}})]
-    (is (= {:spec/A {:predicate '(fn [$exprs $this]
+    (is (= {:spec/A {:predicate '(fn [$this]
                                    (and
                                     (map? $this)
                                     (= :spec/A (:$type $this))
