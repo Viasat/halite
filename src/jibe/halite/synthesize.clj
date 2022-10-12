@@ -21,17 +21,6 @@
                 x))
             form))
 
-(def ^:dynamic *exprs*)
-
-(defn get-refinement* [from-spec-id to-spec-id]
-  (get-in *exprs* [from-spec-id :refines-to to-spec-id]))
-
-(defn refine* [from-spec-id to-spec-id instance]
-  ((get-in *exprs* [from-spec-id :refines-to to-spec-id]) instance))
-
-(defn predicate* [spec-id instance]
-  ((get-in *exprs* [spec-id :predicate]) instance))
-
 (defn synthesize-spec [spec-map [spec-id spec]]
   [spec-id
    {:predicate
@@ -108,15 +97,23 @@
 
 (def this-ns *ns*)
 
+
+
 (defn- compile-exprs [exprs-data]
-  (let [exprs (-> exprs-data
-                  (update-vals
-                   (fn [{:keys [predicate refines-to]}]
-                     (binding [*ns* this-ns]
-                       {:predicate (eval predicate)
-                        :refines-to (update-vals refines-to eval)}))))]
-    {:exprs exprs
-     :refine-to (fn [inst spec-id]
+  (let [{:keys [get-refinement* refine* predicate*]}
+        (binding [*ns* this-ns]
+          (eval (strip-ns
+                 `(letfn [(get-refinement* [from-spec-id to-spec-id]
+                            (get-in (get-exprs) [from-spec-id :refines-to to-spec-id]))
+                          (refine* [from-spec-id to-spec-id instance]
+                            ((get-in (get-exprs) [from-spec-id :refines-to to-spec-id]) instance))
+                          (predicate* [spec-id instance]
+                            ((get-in (get-exprs) [spec-id :predicate]) instance))
+                          (get-exprs [] ~exprs-data)]
+                    {:get-refinement* get-refinement*
+                     :refine* refine*
+                     :predicate* predicate*}))))]
+    {:refine-to (fn [inst spec-id]
                   ;; No need to follow path here -- it will have already been flattened out
                   ;; TODO use some-> ???
                   (if-let [refinement (get-refinement* (:$type inst) spec-id)]
@@ -148,11 +145,10 @@
 (defn synth-eval [exprs-data expr]
   (let [{:keys [validate-instance refine-to refines-to? valid valid? exprs]}
         (compile-exprs exprs-data)]
-    (binding [*exprs* exprs]
-      (cond
-        (map? expr) (validate-instance expr)
-        :default (apply (condp = (first expr)
-                          'refine-to refine-to
-                          'refines-to? refines-to?
-                          'valid valid
-                          'valid? valid?) (rest expr))))))
+    (cond
+      (map? expr) (validate-instance expr)
+      :default (apply (condp = (first expr)
+                        'refine-to refine-to
+                        'refines-to? refines-to?
+                        'valid valid
+                        'valid? valid?) (rest expr)))))
