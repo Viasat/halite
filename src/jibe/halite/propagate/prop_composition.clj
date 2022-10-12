@@ -6,7 +6,7 @@
             [clojure.set :as set]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
-            [jibe.halite.propagate.prop-choco :as prop-choco]
+            [jibe.halite.propagate.prop-strings :as prop-strings]
             [jibe.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
@@ -30,13 +30,7 @@
    halite-types/BareKeyword (s/recursive #'ConcreteBound)})
 
 (s/defschema AtomBound
-  (s/cond-pre
-   s/Int
-   s/Bool
-   (s/enum :Unset)
-   {:$in (s/cond-pre
-          #{(s/cond-pre s/Int s/Bool (s/enum :Unset))}
-          [(s/one s/Int :lower) (s/one s/Int :upper) (s/optional (s/enum :Unset) :Unset)])}))
+  prop-strings/AtomBound)
 
 (s/defschema ConcreteBound
   (s/conditional
@@ -78,7 +72,7 @@
 
 (defn- primitive-maybe-type?
   [htype]
-  (or (#{:Integer :Boolean} htype)
+  (or (#{:Integer :Boolean :String} htype)
       (and (halite-types/maybe-type? htype) (vector? htype)
            (#{:Integer :Boolean} (second htype)))))
 
@@ -175,7 +169,7 @@
                                           (assoc bound-map :$type dest-spec-id))))
                choco-bound)))
 
-(s/defn ^:private lower-spec-bound :- prop-choco/SpecBound
+(s/defn ^:private lower-spec-bound :- prop-strings/SpecBound
   ([vars :- FlattenedVars, spec-bound :- ConcreteSpecBound]
    (lower-spec-bound vars false spec-bound))
   ([vars :- FlattenedVars, optional-context? :- s/Bool, spec-bound :- ConcreteSpecBound]
@@ -191,7 +185,7 @@
               witness-var (when composite-var?
                             (some-> var-kw vars :$witness first))]
           (cond
-            (or (int? bound) (boolean? bound))
+            (or (int? bound) (boolean? bound) (string? bound))
             (assoc choco-bounds choco-var (if optional-context? {:$in #{bound :Unset}} bound))
 
             (= :Unset bound)
@@ -385,7 +379,7 @@
     bound))
 
 (s/defn ^:private to-atom-bound :- AtomBound
-  [choco-bounds :- prop-choco/SpecBound
+  [choco-bounds :- prop-strings/SpecBound
    var-type :- halite-types/HaliteType
    [var-kw _] :- FlattenedVar]
   (let [bound (-> var-kw choco-bounds)]
@@ -401,7 +395,7 @@
               (set? bound) (disj bound :Unset)))})))))
 
 (s/defn ^:private to-spec-bound :- ConcreteSpecBound
-  [choco-bounds :- prop-choco/SpecBound
+  [choco-bounds :- prop-strings/SpecBound
    senv :- (s/protocol halite-envs/SpecEnv)
    flattened-vars  :- FlattenedVars]
   (let [spec-id (::spec-id flattened-vars)
@@ -436,9 +430,9 @@
 
 ;;;;;;;;;;;; Main API ;;;;;;;;;;;;;;;;
 
-(def Opts prop-choco/Opts)
+(def Opts prop-strings/Opts)
 
-(def default-options prop-choco/default-options)
+(def default-options prop-strings/default-options)
 
 (defn- drop-constraints-except-for-Bounds
   [sctx]
@@ -514,7 +508,7 @@
          simplify/simplify
          :$propagate/Bounds
          (ssa/spec-from-ssa)
-         (prop-choco/propagate opts lowered-bounds)
+         (prop-strings/propagate opts lowered-bounds)
          (to-spec-bound spec-map flattened-vars)))))
 
 (defn- int-bound? [bound]

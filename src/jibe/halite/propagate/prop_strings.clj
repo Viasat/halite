@@ -269,21 +269,24 @@
                   (and (map? alt-bound) (not (contains? (:$in alt-bound) :Unset)))
                   {:$in (set (vals (select-keys (get alts (alts-var-kw var-kw)) (:$in alt-bound))))}
 
-                  :else :String))
-         #_(assoc bound var-kw
-                (if (empty? literals)
-                  (get initial-bound var-kw :String)
-                  (first literals)))))
+                  :else :String))))
      (apply dissoc computed-bound (concat (vals witness-var-kws) (keys alts)))
      (string-var-kws spec))))
 
+(def Opts prop-choco/Opts)
+
+(def default-options prop-choco/default-options)
+
 (s/defn propagate :- SpecBound
-  [spec :- halite-envs/SpecInfo, initial-bound :- SpecBound]
-  (let [spec (ssa/spec-to-ssa {} spec)
-        scg (-> spec compute-string-comparison-graph label-scg)
-        [spec' alts] (lower-spec spec scg)]
-    (-> spec'
-        (ssa/spec-from-ssa)
-        (prop-choco/propagate
-         (lower-spec-bound scg spec alts initial-bound))
-        (raise-spec-bound scg spec alts initial-bound))))
+  ([spec :- halite-envs/SpecInfo, initial-bound :- SpecBound]
+   (propagate spec default-options initial-bound))
+  ([spec :- halite-envs/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
+   (let [spec (ssa/spec-to-ssa {} spec)
+         scg (-> spec compute-string-comparison-graph label-scg)
+         [spec' alts] (lower-spec spec scg)]
+     (-> spec'
+         (ssa/spec-from-ssa)
+         (prop-choco/propagate
+          opts
+          (lower-spec-bound scg spec alts initial-bound))
+         (raise-spec-bound scg spec alts initial-bound)))))

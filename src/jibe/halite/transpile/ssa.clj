@@ -832,6 +832,7 @@
                                   (or (bound? form) (bound? id)
                                       (integer? form)
                                       (boolean? form)
+                                      (string? form)
                                       (= :Unset form)
                                       (<= (get usage-counts id 0) 1)
                                       ;; safe to bind if current guard implies some conjunct
