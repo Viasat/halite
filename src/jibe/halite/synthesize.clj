@@ -8,6 +8,12 @@
             [loom.alg]
             [loom.graph]))
 
+
+;; user-eval
+;; - will be given a Clojure map (a candidate instance) and only and exactly the
+;;   expressions given as refinements and constraints in the specs.
+;; - for constraints, must return a boolean; for refinements must return a Clojure map or nil
+
 ;; Ideas, options...
 ;; Insert literal 'eval' in the generated code to avoid the hidden update-eval step ???
 ;; Lift out repeated pattern forms ???
@@ -48,13 +54,11 @@
                                   (set (keys $this)))]))
 
              ;; constraints
-
              ~@(if (:constraints spec)
-                 `[(let [{:keys ~(vec (map symbol (keys (:spec-vars spec))))} $this]
-                     (and
-                      ~@(->> (:constraints spec)
-                             (map (fn [[_ expr]]
-                                    expr)))))]
+                 `[(and
+                    ~@(->> (:constraints spec)
+                           (map (fn [[_ expr]]
+                                  `(user-eval $this '~expr)))))]
                  [])
 
              ;; non-inverted refinements
@@ -73,8 +77,7 @@
           (map (fn [[to-spec-id {:keys [expr]}]]
                  [to-spec-id
                   (strip-ns
-                   `(fn [{:keys ~(vec (map symbol (keys (:spec-vars spec))))}]
-                      ~expr))]))
+                   `(fn [$this] (user-eval $this '~expr)))]))
           (into {}))
 
      ;; transitive refinements
@@ -106,57 +109,75 @@
   interface functions."
   [exprs-data :- {s/Keyword SpecFnMap}]
   (strip-ns
-   `(letfn [(get-exprs [] ~exprs-data)
+   `(fn [user-eval]
+      (letfn [(get-exprs [] ~exprs-data)
 
-            (get-refine-fn* [from-spec-id to-spec-id]
-              (get-in (get-exprs) [from-spec-id :refine-fns to-spec-id]))
-            (refine* [from-spec-id to-spec-id instance]
-              ((get-in (get-exprs) [from-spec-id :refine-fns to-spec-id]) instance))
-            (valid?* [spec-id instance]
-              ((get-in (get-exprs) [spec-id :valid?-fn]) instance))]
+              (get-refine-fn* [from-spec-id to-spec-id]
+                (get-in (get-exprs) [from-spec-id :refine-fns to-spec-id]))
+              (refine* [from-spec-id to-spec-id instance]
+                ((get-in (get-exprs) [from-spec-id :refine-fns to-spec-id]) instance))
+              (valid?* [spec-id instance]
+                ((get-in (get-exprs) [spec-id :valid?-fn]) instance))]
 
-      {:refine-to (fn [inst spec-id]
-                    ;; No need to follow path here -- it will have already been flattened out
-                    ;; TODO use some-> ???
-                    (if-let [refine-fn (get-refine-fn* (:$type inst) spec-id)]
-                      (if-let [inst-refined (refine-fn inst)]
-                        (if (valid?* spec-id inst-refined)
-                          inst-refined
-                          (throw (ex-info "Refined instance is invalid" {})))
-                        (throw (ex-info "Refinement return :Unset" {})))
-                      (throw (ex-info "No path at all"))))
-       :refines-to? (fn [inst spec-id]
+        {'refine-to (fn [inst spec-id]
+                      ;; No need to follow path here -- it will have already been flattened out
+                      ;; TODO use some-> ???
                       (if-let [refine-fn (get-refine-fn* (:$type inst) spec-id)]
                         (if-let [inst-refined (refine-fn inst)]
-                          (valid?* spec-id inst-refined)
-                          false)
-                        false))
-       :valid (fn [inst]
-                ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-                (when (valid?* (:$type inst) inst)
-                  inst))
-       :valid? (fn [inst]
-                 ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-                 (valid?* (:$type inst) inst))
-       :validate-instance (fn [inst]
-                            ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
-                            (if (valid?* (:$type inst) inst)
-                              inst
-                              (throw (ex-info "Invalid instance" {:instance inst}))))})))
+                          (if (valid?* spec-id inst-refined)
+                            inst-refined
+                            (throw (ex-info "Refined instance is invalid"
+                                            {:invalid-instance inst-refined})))
+                          (throw (ex-info "Refinement return :Unset" {})))
+                        (throw (ex-info "No path at all"))))
+         'refines-to? (fn [inst spec-id]
+                        (if-let [refine-fn (get-refine-fn* (:$type inst) spec-id)]
+                          (if-let [inst-refined (refine-fn inst)]
+                            (valid?* spec-id inst-refined)
+                            false)
+                          false))
+         'valid (fn [inst]
+                  ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
+                  (when (valid?* (:$type inst) inst)
+                    inst))
+         'valid? (fn [inst]
+                   ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
+                   (valid?* (:$type inst) inst))
+         'validate-instance (fn [inst]
+                              ;; TODO support arbitrary expression, not just instances? Requires calling eval here?
+                              (if (valid?* (:$type inst) inst)
+                                inst
+                                (throw (ex-info "Invalid instance" {:instance inst}))))}))))
+
+(defn clj-user-eval-form [spec-map $this expr]
+  (strip-ns
+   `(let [{:keys ~(vec (map symbol (keys (:spec-vars (spec-map (:$type $this))))))} ~$this]
+      ~expr)))
 
 (def this-ns *ns*)
 
-(defn- eval-form [form]
+(defn eval-form
+  "eval's the given form in this namespace so that unqualified symbols have a
+  stable meaning. This is particulary important with forms generated by
+  strip-ns."
+  [form]
   (binding [*ns* this-ns]
     (eval form)))
 
-(defn synth-eval [exprs-data expr]
-  (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
-        (eval-form (exprs-interface exprs-data))]
-    (cond
-      (map? expr) (validate-instance expr)
-      :default (apply (condp = (first expr)
-                        'refine-to refine-to
-                        'refines-to? refines-to?
-                        'valid valid
-                        'valid? valid?) (rest expr)))))
+(defn clj-user-eval [spec-map $this expr]
+  (let [form (clj-user-eval-form spec-map $this expr)]
+    (try
+      (eval-form form)
+      (catch Exception ex
+        (ex-info (str "Exception evaluting user form: " (.getMessage ex) "\n" (pr-str form))
+                 {:form form} ex)))))
+
+(defn spec-map-eval
+  ([spec-map expr]
+   (spec-map-eval spec-map (partial clj-user-eval spec-map) expr))
+  ([spec-map user-eval expr]
+   (let [interface-fn (-> spec-map synthesize exprs-interface eval-form)
+         {:syms [validate-instance] :as fns} (interface-fn user-eval)]
+     (if (map? expr)
+       (validate-instance expr)
+       (apply (get fns (first expr)) (rest expr))))))
