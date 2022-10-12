@@ -105,7 +105,7 @@
 (deftype HCInfo [s t h-result j-expr jh-result j-result])
 
 (defn ^HCInfo hc*
-  [senv expr separate-err-id?]
+  [spec-map expr separate-err-id?]
   (binding [format-errors/*squash-throw-site* true]
     (let [tenv (halite-envs/type-env {})
           env (halite-envs/env {})
@@ -116,10 +116,10 @@
                  nil
                  (catch RuntimeException e
                    [:syntax-check-throws (.getMessage e)]))
-          t (try (halite-lint/type-check senv tenv expr)
+          t (try (halite-lint/type-check (halite-envs/spec-map-to-spec-env spec-map) tenv expr)
                  (catch RuntimeException e
                    [:throws (.getMessage e)]))
-          h-result (try (halite/eval-expr senv tenv env expr)
+          h-result (try (halite/eval-expr (halite-envs/spec-map-to-spec-env spec-map) tenv env expr)
                         (catch ExceptionInfo e
                           (if separate-err-id?
                             [:throws (.getMessage e) (:err-id (ex-data e))]
@@ -133,11 +133,11 @@
                         [:throws (.getMessage e)])))
 
           jh-result (try
-                      (halite/eval-expr senv tenv env jh-expr)
+                      (halite/eval-expr (halite-envs/spec-map-to-spec-env spec-map) tenv env jh-expr)
                       (catch RuntimeException e
                         [:throws (.getMessage e)]))
           j-result (try
-                     (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
+                     (jadeite/to-jadeite (halite/eval-expr (halite-envs/spec-map-to-spec-env spec-map) tenv env jh-expr))
                      (catch RuntimeException e
                        [:throws (.getMessage e)]))]
 
@@ -145,10 +145,9 @@
 
 (defn hc-body
   ([spec-map expr]
-   (let [spec-env (reify halite-envs/SpecEnv
-                    (lookup-spec* [_ spec-id]
-                      (some->> (spec-map spec-id)
-                               (merge {:spec-vars {}
-                                       :constraints []
-                                       :refines-to {}}))))]
-     (hc* spec-env expr true))))
+   (hc* (-> spec-map
+            (update-vals #(merge {:spec-vars {}
+                                  :constraints []
+                                  :refines-to {}}
+                                 %)))
+        expr true)))

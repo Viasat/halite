@@ -182,6 +182,11 @@
 (s/defschema SpecMap
   {halite-types/NamespacedKeyword SpecInfo})
 
+(defn spec-map-to-spec-env [spec-map]
+  (reify SpecEnv
+    (lookup-spec* [_ spec-id]
+      (get spec-map spec-id))))
+
 (defn- spec-ref-from-type [htype]
   (cond
     (and (keyword? htype) (namespace htype)) htype

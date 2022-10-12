@@ -147,9 +147,9 @@
                    comment?)
         [expr & args] raw-args
         [expected-t result-expected j-expr-expected j-result-expected] args]
-    `(let [i# (halite-run/hc* (to-spec-env ~(if (keyword? spec-map)
-                                              `(spec-map-map ~spec-map)
-                                              spec-map))
+    `(let [i# (halite-run/hc* ~(if (keyword? spec-map)
+                                 `(spec-map-map ~spec-map)
+                                 spec-map)
                               '~expr
                               false)]
        (if (nil? (.-s i#))
