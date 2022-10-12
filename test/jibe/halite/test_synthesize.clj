@@ -30,23 +30,20 @@
                                              {:$type :spec/A})}}}
            exprs-data))
 
-    (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
-          (synth/compile-exprs exprs-data)]
+    (is (= {:$type :spec/B}
+           (synth/eval exprs-data '{:$type :spec/B})))
 
-      (is (= {:$type :spec/B}
-             (validate-instance {:$type :spec/B})))
+    (is (= {:$type :spec/A}
+           (synth/eval exprs-data '(refine-to {:$type :spec/B} :spec/A))))
 
-      (is (= {:$type :spec/A}
-             (refine-to {:$type :spec/B} :spec/A)))
+    (is (= true
+           (synth/eval exprs-data '(refines-to? {:$type :spec/B} :spec/A))))
 
-      (is (= true
-             (refines-to? {:$type :spec/B} :spec/A)))
+    (is (= {:$type :spec/B}
+           (synth/eval exprs-data '(valid {:$type :spec/B}))))
 
-      (is (= {:$type :spec/B}
-             (valid {:$type :spec/B})))
-
-      (is (= true
-             (valid? {:$type :spec/B}))))))
+    (is (= true
+           (synth/eval exprs-data '(valid? {:$type :spec/B}))))))
 
 (deftest test-transitive-refinements
   (let [exprs-data
@@ -91,13 +88,10 @@
                                   :spec/B '(fn [$exprs {:keys []}]
                                              {:$type :spec/B})}}}
            exprs-data))
-    (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
-          (synth/compile-exprs exprs-data)]
-
-      (is (= {:$type :spec/A}
-             (refine-to {:$type :spec/C} :spec/A)))
-      (is (= true
-             (refines-to? {:$type :spec/C} :spec/A))))))
+    (is (= {:$type :spec/A}
+           (synth/eval exprs-data '(refine-to {:$type :spec/C} :spec/A))))
+    (is (= true
+           (synth/eval exprs-data '(refines-to? {:$type :spec/C} :spec/A))))))
 
 (deftest test-constraints
   (is (= {:spec/A {:predicate '(fn [$exprs $this]
@@ -133,13 +127,12 @@
                                     (clojure.set/subset? #{:$type} (set (keys $this)))))
                      :refines-to {}}}
            exprs-data))
-    (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
-          (synth/compile-exprs exprs-data)]
-      (is (= {:$type :spec/A}
-             (validate-instance {:$type :spec/A})))
-      (is (= {:$type :spec/A :x 1}
-             (validate-instance {:$type :spec/A :x 1})))
-      (is (nil? (valid {:$type :spec/A :x 1 :y 0})))))
+    (is (= {:$type :spec/A}
+           (synth/eval exprs-data '{:$type :spec/A})))
+    (is (= {:$type :spec/A :x 1}
+           (synth/eval exprs-data '{:$type :spec/A :x 1})))
+    (is (nil?
+         (synth/eval exprs-data '(valid {:$type :spec/A :x 1 :y 0})))))
 
   (let [exprs-data (synthesize {:spec/A {:spec-vars {:x [:Maybe "Integer"]
                                                      :y "Integer"}}})]
@@ -151,12 +144,11 @@
                                     (clojure.set/subset? #{:$type :y} (set (keys $this)))))
                      :refines-to {}}}
            exprs-data))
-    (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
-          (synth/compile-exprs exprs-data)]
-      (is (= {:$type :spec/A :y 0}
-             (validate-instance {:$type :spec/A :y 0})))
-      (is (= {:$type :spec/A :x 1 :y 0}
-             (validate-instance {:$type :spec/A :x 1 :y 0})))
-      (is (nil? (valid {:$type :spec/A :x 1 :y 0 :z 2}))))))
+    (is (= {:$type :spec/A :y 0}
+           (synth/eval exprs-data '{:$type :spec/A :y 0})))
+    (is (= {:$type :spec/A :x 1 :y 0}
+           (synth/eval exprs-data {:$type :spec/A :x 1 :y 0})))
+    (is (nil?
+         (synth/eval exprs-data '(valid {:$type :spec/A :x 1 :y 0 :z 2}))))))
 
 ;; (t/run-tests)

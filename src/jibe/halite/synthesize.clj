@@ -105,7 +105,7 @@
        (map (partial synthesize-spec spec-map))
        (into {})))
 
-(defn compile-exprs [exprs-data]
+(defn- compile-exprs [exprs-data]
   (let [$exprs (-> exprs-data
                    (update-vals
                     (fn [{:keys [predicate refines-to]}]
@@ -139,3 +139,14 @@
                           (if ((get-in $exprs [(:$type inst) :predicate]) $exprs inst)
                             inst
                             (throw (ex-info "Invalid instance" {:instance inst}))))}))
+
+(defn eval [exprs-data expr]
+  (let [{:keys [validate-instance refine-to refines-to? valid valid?]}
+        (compile-exprs exprs-data)]
+    (cond
+      (map? expr) (validate-instance expr)
+      :default (apply (condp = (first expr)
+                        'refine-to refine-to
+                        'refines-to? refines-to?
+                        'valid valid
+                        'valid? valid?) (rest expr)))))
