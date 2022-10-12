@@ -16,14 +16,12 @@
     (is (= {:spec/A {:predicate '(fn [$exprs $this]
                                    (and (map? $this)
                                         (= :spec/A (:$type $this))
-                                        (= #{:$type} (set (keys $this)))
-                                        true))
+                                        (= #{:$type} (set (keys $this)))))
                      :refines-to {}}
             :spec/B {:predicate '(fn [$exprs $this]
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-                                        true
                                         ;; non-inverted refinement
                                         (if-let [refined ((get-in $exprs [:spec/B :refines-to :spec/A]) $exprs $this)]
                                           ((get-in $exprs [:spec/A :predicate]) $exprs refined)
@@ -62,14 +60,12 @@
     (is (= {:spec/A {:predicate '(fn [$exprs $this]
                                    (and (map? $this)
                                         (= :spec/A (:$type $this))
-                                        (= #{:$type} (set (keys $this)))
-                                        true))
+                                        (= #{:$type} (set (keys $this)))))
                      :refines-to {}}
             :spec/B {:predicate '(fn [$exprs $this]
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-                                        true
                                         (if-let [refined ((get-in $exprs [:spec/B :refines-to :spec/A]) $exprs $this)]
                                           ((get-in $exprs [:spec/A :predicate]) $exprs refined)
                                           true)))
@@ -79,7 +75,6 @@
                                    (and (map? $this)
                                         (= :spec/C (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-                                        true
                                         (if-let [refined ((get-in $exprs [:spec/C :refines-to :spec/B]) $exprs $this)]
                                           ((get-in $exprs [:spec/B :predicate]) $exprs refined)
                                           true)))

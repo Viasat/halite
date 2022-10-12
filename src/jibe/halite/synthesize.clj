@@ -33,13 +33,13 @@
 
              ;; constraints
 
-             ~(if (:constraints spec)
-                `(let [{:keys ~(vec (map symbol (keys (:spec-vars spec))))} $this]
-                   (and
-                    ~@(->> (:constraints spec)
-                           (map (fn [[_ expr]]
-                                  expr)))))
-                true)
+             ~@(if (:constraints spec)
+                 `[(let [{:keys ~(vec (map symbol (keys (:spec-vars spec))))} $this]
+                     (and
+                      ~@(->> (:constraints spec)
+                             (map (fn [[_ expr]]
+                                    expr)))))]
+                 [])
 
              ;; non-inverted refinements
              ~@(->> (:refines-to spec)
