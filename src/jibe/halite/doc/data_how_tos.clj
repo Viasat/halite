@@ -826,4 +826,8 @@
                                                                 :spec/Path2 {:name "refine_to_Path2"
                                                                              :expr '{:$type :spec/Path2}}}}}}
                           {:code '(refine-to {:$type :spec/Start} :spec/Destination)
-                           :throws :auto}]}})
+                           :throws :auto}
+
+                          #_{:spec-map {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}}
+                          #_{:code '{:$type :spec/Self}
+                             :throws :auto}]}})

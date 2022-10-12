@@ -138,5 +138,5 @@
   integer-or-long? fixed-decimal? check-count])
 
 (potemkin/import-vars
- [halite-eval
+ [halite-base
   h< h> h<= h>= h+ h-])

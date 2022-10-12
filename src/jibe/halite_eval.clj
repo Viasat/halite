@@ -27,27 +27,6 @@
   {:impl impl
    :signatures (halite-base/make-signatures signatures)})
 
-(defmacro math-f [integer-f fixed-decimal-f]
-  `(fn [& args#]
-     (apply (if (halite-base/fixed-decimal? (first args#)) ~fixed-decimal-f ~integer-f) args#)))
-
-(def ^:private hstr  (math-f str  fixed-decimal/string-representation))
-(def ^:private hneg? (math-f neg? fixed-decimal/fneg?))
-(def           h+    (math-f +    fixed-decimal/f+))
-(def           h-    (math-f -    fixed-decimal/f-))
-(def ^:private h*    (math-f *    fixed-decimal/f*))
-(def ^:private hquot (math-f quot fixed-decimal/fquot))
-(def ^:private habs  (comp #(if (hneg? %)
-                              (throw-err (h-err/abs-failure {:value %}))
-                              %)
-                           (math-f abs #(try (fixed-decimal/fabs %)
-                                             (catch NumberFormatException ex
-                                               (throw-err (h-err/abs-failure {:value %})))))))
-(def           h<=   (math-f <=   fixed-decimal/f<=))
-(def           h>=   (math-f >=   fixed-decimal/f>=))
-(def           h<    (math-f <    fixed-decimal/f<))
-(def           h>    (math-f >    fixed-decimal/f>))
-
 (def ^:private decimal-sigs (mapcat (fn [s]
                                       [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
                                        (halite-types/decimal-type s)])
@@ -88,13 +67,13 @@
 
 (def builtins
   (s/with-fn-validation
-    {'+ (apply mk-builtin (handle-overflow h+) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
-     '- (apply mk-builtin (handle-overflow h-) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
-     '* (apply mk-builtin (handle-overflow h*) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
-     '< (apply mk-builtin h< (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '<= (apply mk-builtin h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '> (apply mk-builtin h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '>= (apply mk-builtin h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+    {'+ (apply mk-builtin (handle-overflow halite-base/h+) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
+     '- (apply mk-builtin (handle-overflow halite-base/h-) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
+     '* (apply mk-builtin (handle-overflow halite-base/h*) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
+     '< (apply mk-builtin halite-base/h< (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '<= (apply mk-builtin halite-base/h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '> (apply mk-builtin halite-base/h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '>= (apply mk-builtin halite-base/h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      'count (mk-builtin count [(halite-types/coll-type :Value)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
@@ -109,7 +88,7 @@
      'div (apply mk-builtin (fn [num divisor]
                               (when (= 0 divisor)
                                 (throw-err (h-err/divide-by-zero {:num num})))
-                              (hquot num divisor)) (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
+                              (halite-base/hquot num divisor)) (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
      'mod (mk-builtin (fn [num divisor]
                         (when (= 0 divisor)
                           (throw-err (h-err/divide-by-zero {:num num})))
@@ -122,7 +101,7 @@
                              (throw-err (h-err/overflow {})))
                            result))
                        [:Integer :Integer] :Integer)
-     'abs (apply mk-builtin habs (into [[:Integer] :Integer] decimal-sigs-unary))
+     'abs (apply mk-builtin halite-base/habs (into [[:Integer] :Integer] decimal-sigs-unary))
      'str (mk-builtin (comp (partial halite-base/check-limit :string-runtime-length) str) [& :String] :String)
      'subset? (mk-builtin set/subset? [(halite-types/set-type :Value) (halite-types/set-type :Value)] :Boolean)
      'sort (apply mk-builtin (fn [expr]

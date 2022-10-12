@@ -91,3 +91,26 @@
          (cond-> {:arg-types (cond-> arg-types variadic? (subvec 0 (- n 2)))
                   :return-type return-type}
            variadic? (assoc :variadic-tail (last arg-types))))))
+
+;;
+
+(defmacro math-f [integer-f fixed-decimal-f]
+  `(fn [& args#]
+     (apply (if (fixed-decimal? (first args#)) ~fixed-decimal-f ~integer-f) args#)))
+
+(def hstr  (math-f str  fixed-decimal/string-representation))
+(def hneg? (math-f neg? fixed-decimal/fneg?))
+(def h+    (math-f +    fixed-decimal/f+))
+(def h-    (math-f -    fixed-decimal/f-))
+(def h*    (math-f *    fixed-decimal/f*))
+(def hquot (math-f quot fixed-decimal/fquot))
+(def habs  (comp #(if (hneg? %)
+                    (throw-err (h-err/abs-failure {:value %}))
+                    %)
+                 (math-f abs #(try (fixed-decimal/fabs %)
+                                   (catch NumberFormatException ex
+                                     (throw-err (h-err/abs-failure {:value %})))))))
+(def h<=   (math-f <=   fixed-decimal/f<=))
+(def h>=   (math-f >=   fixed-decimal/f>=))
+(def h<    (math-f <    fixed-decimal/f<))
+(def h>    (math-f >    fixed-decimal/f>))
