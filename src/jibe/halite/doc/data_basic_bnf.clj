@@ -121,7 +121,7 @@
                        'h-err/field-name-not-in-spec
                        'h-err/invalid-type-value
                        'h-err/not-boolean-constraint ;; is this right?
-                       'h-err/refinement-loop
+                       'h-err/spec-cycle-runtime
                        'h-err/refinement-diamond]
               :how-to-ref [:instance/spec-variables]
               :tutorial-ref [:spec/sudoku]

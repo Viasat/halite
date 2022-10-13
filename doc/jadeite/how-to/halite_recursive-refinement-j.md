@@ -26,7 +26,7 @@ For example, the following spec that refines to itself is not allowed.
 
 
 //-- result --
-[:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+[:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
 ```
 
 Similarly transitive refinement loops are not allowed. For example, a pair of specs that refine to each other is not allowed.
@@ -57,7 +57,7 @@ Similarly transitive refinement loops are not allowed. For example, a pair of sp
 
 
 //-- result --
-[:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+[:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
 ```
 
 It is a bit more subtle, but a cyclical dependency that crosses both a refinement and a composition relationship is also disallowed.
@@ -85,7 +85,7 @@ It is a bit more subtle, but a cyclical dependency that crosses both a refinemen
 
 
 //-- result --
-[:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+[:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
 ```
 
 Diamonds are a bit different than a recursive refinement, but they too are disallowed and produce a similar error.
@@ -136,6 +136,8 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
 [:throws "h-err/refinement-diamond 0-0 : Diamond detected in refinement graph"]
 ```
 
+Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced.
+
 ```java
 {
   "spec/Self" : {
@@ -148,3 +150,11 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
 
 //-- result --
 [:throws "h-err/spec-cycle 0-0 : Cycle detected in spec dependencies" :h-err/spec-cycle]
+```java
+{$type: spec/Self}
+
+
+//-- result --
+[:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
+```
+

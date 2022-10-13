@@ -197,8 +197,8 @@
 (deferr overflow [data]
         {:message "Numeric value overflow"})
 
-(deferr refinement-loop [data]
-        {:message "Loop detected in refinement graph"})
+(deferr spec-cycle-runtime [data]
+        {:message "Loop detected in spec dependencies"})
 
 (deferr refinement-diamond [data]
         {:message "Diamond detected in refinement graph"})

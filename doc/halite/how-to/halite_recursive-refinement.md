@@ -18,8 +18,8 @@ For example, the following spec that refines to itself is not allowed.
 
 
 ;-- result --
-[:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"
- :h-err/refinement-loop]
+[:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"
+ :h-err/spec-cycle-runtime]
 ```
 
 Similarly transitive refinement loops are not allowed. For example, a pair of specs that refine to each other is not allowed.
@@ -36,8 +36,8 @@ Similarly transitive refinement loops are not allowed. For example, a pair of sp
 
 
 ;-- result --
-[:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"
- :h-err/refinement-loop]
+[:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"
+ :h-err/spec-cycle-runtime]
 ```
 
 It is a bit more subtle, but a cyclical dependency that crosses both a refinement and a composition relationship is also disallowed.
@@ -54,8 +54,8 @@ It is a bit more subtle, but a cyclical dependency that crosses both a refinemen
 
 
 ;-- result --
-[:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"
- :h-err/refinement-loop]
+[:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"
+ :h-err/spec-cycle-runtime]
 ```
 
 Diamonds are a bit different than a recursive refinement, but they too are disallowed and produce a similar error.
@@ -83,6 +83,8 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
  :h-err/refinement-diamond]
 ```
 
+Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced.
+
 ```clojure
 {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
 ```
@@ -92,3 +94,12 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
 ;-- result --
 [:throws "h-err/spec-cycle 0-0 : Cycle detected in spec dependencies"
  :h-err/spec-cycle]
+```clojure
+{:$type :spec/Self}
+
+
+;-- result --
+[:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"
+ :h-err/spec-cycle-runtime]
+```
+

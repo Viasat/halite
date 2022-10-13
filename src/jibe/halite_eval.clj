@@ -198,39 +198,38 @@
   Assumes that the instance has been type-checked successfully against the given type environment."
   [senv :- (s/protocol halite-envs/SpecEnv)
    inst :- s/Any]
-  (let [spec-id (:$type inst)
-        spec-id-0 spec-id
-        {:keys [spec-vars refines-to] :as spec-info} (halite-envs/lookup-spec senv spec-id)
-        spec-tenv (halite-envs/type-env-from-spec senv spec-info)
-        env (halite-envs/env-from-inst spec-info inst)
-        ctx {:senv senv, :env env}
-        satisfied? (fn [[cname expr]]
-                     (*eval-predicate-fn* ctx spec-tenv expr spec-id cname))]
+  (binding [*instance-path-atom* (if *instance-path-atom*
+                                   *instance-path-atom*
+                                   (atom '()))]
+    (let [spec-id (:$type inst)
+          _ (if (contains? (set @*instance-path-atom*) spec-id)
+              (throw-err (h-err/spec-cycle-runtime {:spec-id-path (->> (conj @*instance-path-atom* spec-id)
+                                                                       (mapv symbol))}))
+              (swap! *instance-path-atom* conj spec-id))
+          spec-id-0 spec-id
+          {:keys [spec-vars refines-to] :as spec-info} (halite-envs/lookup-spec senv spec-id)
+          spec-tenv (halite-envs/type-env-from-spec senv spec-info)
+          env (halite-envs/env-from-inst spec-info inst)
+          ctx {:senv senv, :env env}
+          satisfied? (fn [[cname expr]]
+                       (*eval-predicate-fn* ctx spec-tenv expr spec-id cname))]
 
-    ;; check that all variables have values that are concrete and that conform to the
-    ;; types declared in the parent resource spec
-    (doseq [[kw v] (dissoc inst :$type)
-            :let [declared-type (->> kw spec-vars (halite-envs/halite-type-from-var-type senv))]]
-      ;; TODO: consider letting instances of abstract spec contain abstract values
-      (when-not (concrete? senv v)
-        (throw-err (h-err/no-abstract {:value v})))
-      (check-against-declared-type declared-type v))
+      ;; check that all variables have values that are concrete and that conform to the
+      ;; types declared in the parent resource spec
+      (doseq [[kw v] (dissoc inst :$type)
+              :let [declared-type (->> kw spec-vars (halite-envs/halite-type-from-var-type senv))]]
+        ;; TODO: consider letting instances of abstract spec contain abstract values
+        (when-not (concrete? senv v)
+          (throw-err (h-err/no-abstract {:value v})))
+        (check-against-declared-type declared-type v))
 
-    ;; check all constraints
-    (let [violated-constraints (->> spec-info :constraints (remove satisfied?) vec)]
-      (when (seq violated-constraints)
-        (throw-err (h-err/invalid-instance {:spec-id (symbol spec-id)
-                                            :violated-constraints (mapv (comp symbol first) violated-constraints)
-                                            :value inst
-                                            :halite-error :constraint-violation}))))
-    (binding [*instance-path-atom* (if *instance-path-atom*
-                                     *instance-path-atom*
-                                     (atom '()))]
-      (if (contains? (set @*instance-path-atom*) spec-id)
-        (throw-err (h-err/refinement-loop {:spec-id-path (->> (conj @*instance-path-atom* spec-id)
-                                                              (mapv symbol))}))
-        (swap! *instance-path-atom* conj spec-id))
-
+      ;; check all constraints
+      (let [violated-constraints (->> spec-info :constraints (remove satisfied?) vec)]
+        (when (seq violated-constraints)
+          (throw-err (h-err/invalid-instance {:spec-id (symbol spec-id)
+                                              :violated-constraints (mapv (comp symbol first) violated-constraints)
+                                              :value inst
+                                              :halite-error :constraint-violation}))))
       ;; fully explore all active refinement paths, and store the results
       (let [result (with-meta
                      inst

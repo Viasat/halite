@@ -10074,9 +10074,9 @@
                                                        :x (dec x)})}}}}
    [(refine-to {:$type :spec/Mirror, :x 1} :spec/Mirror)
     [:Instance :spec/Mirror]
-    [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+    [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
     "{$type: spec/Mirror, x: 1}.refineTo( spec/Mirror )"
-    [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]])
+    [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
 
   (hc
    {:spec/Mirror {:spec-vars {:x "Integer"}
@@ -10086,9 +10086,9 @@
                                                        :x (dec x)})}}}}
    [(refine-to (refine-to {:$type :spec/Mirror, :x 10} :spec/Mirror) :spec/Mirror)
     [:Instance :spec/Mirror]
-    [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+    [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
     "{$type: spec/Mirror, x: 10}.refineTo( spec/Mirror ).refineTo( spec/Mirror )"
-    [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]])
+    [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
 
   (hc
    {:spec/A {:spec-vars {:x "Integer"}
@@ -10143,9 +10143,9 @@
                                                 :expr '{:$type :spec/Mirror}}}}}
       [{:$type :spec/Mirror}
        [:Instance :spec/Mirror]
-       [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+       [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
        "{$type: spec/Mirror}"
-       [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]])
+       [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
 
   (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
                                       :expr '{:$type :spec/B}}}}
@@ -10153,9 +10153,9 @@
                                       :expr '{:$type :spec/A}}}}}
       [{:$type :spec/A}
        [:Instance :spec/A]
-       [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]
+       [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
        "{$type: spec/A}"
-       [:throws "h-err/refinement-loop 0-0 : Loop detected in refinement graph"]]))
+       [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]]))
 
 ;; deftest-end
 

@@ -697,19 +697,6 @@ An unanticipated error condition was encountered while computing the refinement 
 * [`refinesTo?`](halite_full-reference-j.md#refinesTo_Q)
 
 ---
-### <a name="h-err/refinement-loop"></a>h-err/refinement-loop
-
-Specs cannot be defined to refine to themselves either directly or transitively.
-
-#### Error message template:
-
-> Loop detected in refinement graph
-
-#### Produced by elements:
-
-* [`instance`](halite_basic-syntax-reference-j.md#instance)
-
----
 ### <a name="h-err/resource-spec-not-found"></a>h-err/resource-spec-not-found
 
 The spec identifier provided did not correspond to a known spec.
@@ -770,6 +757,19 @@ Dependencies between specs cannot form a cycle.
 #### Error message template:
 
 > Cycle detected in spec dependencies
+
+---
+### <a name="h-err/spec-cycle-runtime"></a>h-err/spec-cycle-runtime
+
+Specs cannot be defined to refine to themselves either directly or transitively. At execution time, this was violated.
+
+#### Error message template:
+
+> Loop detected in spec dependencies
+
+#### Produced by elements:
+
+* [`instance`](halite_basic-syntax-reference-j.md#instance)
 
 ---
 ### <a name="h-err/spec-map-needed"></a>h-err/spec-map-needed

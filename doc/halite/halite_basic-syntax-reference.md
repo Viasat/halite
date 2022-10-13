@@ -342,8 +342,8 @@ The contents of the instance are specified in pair-wise fashion with alternating
 * [`h-err/no-abstract`](halite_err-id-reference.md#h-err/no-abstract)
 * [`h-err/not-boolean-constraint`](halite_err-id-reference.md#h-err/not-boolean-constraint)
 * [`h-err/refinement-diamond`](halite_err-id-reference.md#h-err/refinement-diamond)
-* [`h-err/refinement-loop`](halite_err-id-reference.md#h-err/refinement-loop)
 * [`h-err/resource-spec-not-found`](halite_err-id-reference.md#h-err/resource-spec-not-found)
+* [`h-err/spec-cycle-runtime`](halite_err-id-reference.md#h-err/spec-cycle-runtime)
 
 ### Tags:
 

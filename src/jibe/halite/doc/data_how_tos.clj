@@ -827,8 +827,8 @@
                                                                              :expr '{:$type :spec/Path2}}}}}}
                           {:code '(refine-to {:$type :spec/Start} :spec/Destination)
                            :throws :auto}
-
+                          "Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced."
                           {:spec-map {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
                            :throws :auto}
-                          #_{:code '{:$type :spec/Self}
-                             :throws :auto}]}})
+                          {:code '{:$type :spec/Self}
+                           :throws :auto}]}})
