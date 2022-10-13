@@ -6,6 +6,7 @@
   not quite, a drop-in replacement for salt."
   (:require [clojure.set :as set]
             [jibe.h-err :as h-err]
+            [jibe.halite-analysis :as halite-analysis]
             [jibe.halite-base :as halite-base]
             [jibe.halite-type-check :as halite-type-check]
             [jibe.halite-type-of :as halite-type-of]
@@ -99,16 +100,22 @@
     tenv :- (s/protocol halite-envs/TypeEnv)
     env :- (s/protocol halite-envs/Env)
     expr]
-   (eval-expr true true true senv tenv env expr))
+   (eval-expr true true true true senv tenv env expr))
 
   ([type-check-expr? :- Boolean
     type-check-env? :- Boolean
     type-check-spec-refinements-and-constraints? :- Boolean
+    check-for-spec-cycles? :- Boolean
 
     senv :- (s/protocol halite-envs/SpecEnv)
     tenv :- (s/protocol halite-envs/TypeEnv)
     env :- (s/protocol halite-envs/Env)
     expr]
+   (when check-for-spec-cycles?
+     (when (not (map? senv))
+       (throw (ex-info "cannot check for specs unless a spec-map is provided" {})))
+     (when-not (halite-analysis/free-of-cyclical-dependencies? senv)
+       (throw (ex-info "cycles detected" {}))))
    (when type-check-expr?
      ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
      ;; evaluator

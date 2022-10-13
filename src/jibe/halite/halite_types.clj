@@ -399,15 +399,18 @@
       (when (or (= :Set x) (= :Vec x) (= :Coll x))
         y))))
 
-(s/defn innermost-type :- HaliteType
+(s/defn innermost-types :- #{HaliteType}
   "Return the type at the core after all 'maybe' and 'collection wrappers are removed."
   [t]
   (if (spec-type? t)
-    t
-    (let [{:keys [kind arg]} (type-ptn t)]
-      (if arg
-        (recur arg)
-        kind))))
+    #{t}
+    (let [{:keys [kind arg r2]} (type-ptn t)]
+      (if (= :* arg)
+        (set (map (fn [r]
+                    [:Instance r]) r2))
+        (if arg
+          (recur arg)
+          #{kind})))))
 
 (s/defn types-equivalent? [s :- HaliteType
                            t :- HaliteType]

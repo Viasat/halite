@@ -1004,7 +1004,7 @@
     expr))
 
 (s/defn ^:private unwrap-tail-set :- #{halite-types/NamespacedKeyword}
-  [s :- #{SpecRef}]
+  [s :- (s/maybe #{SpecRef})]
   (->> s
        (map unwrap-tail)
        set))
@@ -1112,11 +1112,14 @@
   [spec-map :- halite-envs/SpecMap
    spec-id :- halite-types/NamespacedKeyword
    [_ var-type]]
-  (when-let [t (->> var-type
-                    (halite-envs/halite-type-from-var-type spec-map)
-                    halite-types/innermost-type
-                    halite-types/inner-spec-type)]
-    {spec-id #{t}}))
+  (let [ts (->> var-type
+                (halite-envs/halite-type-from-var-type spec-map)
+                halite-types/innermost-types
+                (map halite-types/inner-spec-type)
+                (remove nil?)
+                set)]
+    (when-not (empty? ts)
+      {spec-id ts})))
 
 (s/defn ^:private get-constraint-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
   [spec-id :- halite-types/NamespacedKeyword
@@ -1125,11 +1128,9 @@
 
 (s/defn ^:private get-refines-to-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
   [spec-id :- halite-types/NamespacedKeyword
-   [other-spec-id {:keys [expr inverted?]}]]
+   [other-spec-id {:keys [expr]}]]
   (let [spec-refs (unwrap-tail-set (find-spec-refs expr))]
-    (if inverted?
-      {other-spec-id (into #{spec-id} spec-refs)}
-      {spec-id (into #{other-spec-id} spec-refs)})))
+    {spec-id (into #{other-spec-id} spec-refs)}))
 
 (s/defn ^:private get-spec-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
   [spec-map :- halite-envs/SpecMap
@@ -1143,7 +1144,7 @@
          (reduce into [])
          (reduce (partial merge-with into) {}))))
 
-(s/defn ^:private get-spec-map-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
+(s/defn get-spec-map-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
   [spec-map :- halite-envs/PartialSpecMap]
   (->> spec-map
        (map (fn [[k v]] (get-spec-dependencies spec-map k v)))
@@ -1151,8 +1152,11 @@
 
 (s/defn free-of-cyclical-dependencies? :- s/Bool
   [spec-map :- halite-envs/PartialSpecMap]
-  (->> spec-map
-       halite-envs/full-spec-map
-       get-spec-map-dependencies
-       loom.graph/digraph
-       loom.alg/dag?))
+  (let [spec-map-dependencies (->> spec-map
+                                   halite-envs/full-spec-map
+                                   get-spec-map-dependencies)]
+    (if (empty? spec-map-dependencies)
+      true
+      (->> spec-map-dependencies
+           loom.graph/digraph
+           loom.alg/dag?))))

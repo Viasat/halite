@@ -49,7 +49,7 @@
   (let [[expected-t result-expected j-expr-expected j-result-expected] args]
     (binding [halite-base/*limits* halite-run/halite-limits
               format-errors/*squash-throw-site* true]
-      (let [senv (halite-envs/spec-env {})
+      (let [senv {}
             tenv (halite-envs/type-env {})
             env (halite-envs/env {})
             s (try (halite/syntax-check expr)

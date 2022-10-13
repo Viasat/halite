@@ -15,12 +15,15 @@
 
 (deftype HInfo [s t j-expr h-result jh-result j-result])
 
+(defn- eval-h-expr [senv tenv env expr]
+  (halite/eval-expr true true true false senv tenv env expr))
+
 (defmacro h-eval [expr]
   ;; helper for debugging
   `(let [spec-map# {}
          tenv# (halite-envs/type-env {})
          env# (halite-envs/env {})]
-     (halite/eval-expr spec-map# tenv# env# '~expr)))
+     (eval-h-expr spec-map# tenv# env# '~expr)))
 
 (defmacro h-lint [expr]
   ;; helper for debugging
@@ -34,7 +37,7 @@
         tenv (halite-envs/type-env {})
         env (halite-envs/env {})
         expr (jadeite/to-halite expr-str)]
-    (halite/eval-expr spec-map tenv env expr)))
+    (eval-h-expr spec-map tenv env expr)))
 
 (defn is-harness-error? [x]
   (and (vector? x)
@@ -77,7 +80,7 @@
            t (try (halite-lint/type-check spec-map tenv expr)
                   (catch RuntimeException e
                     [:throws (.getMessage e)]))
-           h-result (try (halite/eval-expr spec-map tenv env expr)
+           h-result (try (eval-h-expr spec-map tenv env expr)
                          (catch ExceptionInfo e
                            (if separate-err-id?
                              [:throws (.getMessage e) (:err-id (ex-data e))]
@@ -92,12 +95,12 @@
                          [:throws (.getMessage e)])))
 
            jh-result (try
-                       (halite/eval-expr spec-map tenv env jh-expr)
+                       (eval-h-expr spec-map tenv env jh-expr)
                        (catch RuntimeException e
                          [:throws (.getMessage e)]))
            jh-result-type (check-result-type spec-map tenv t jh-result)
            j-result (try
-                      (jadeite/to-jadeite (halite/eval-expr spec-map tenv env jh-expr))
+                      (jadeite/to-jadeite (eval-h-expr spec-map tenv env jh-expr))
                       (catch RuntimeException e
                         [:throws (.getMessage e)]))]
        (HInfo. s t j-expr h-result jh-result j-result)))))
@@ -119,7 +122,7 @@
           t (try (halite-lint/type-check spec-map tenv expr)
                  (catch RuntimeException e
                    [:throws (.getMessage e)]))
-          h-result (try (halite/eval-expr spec-map tenv env expr)
+          h-result (try (eval-h-expr spec-map tenv env expr)
                         (catch ExceptionInfo e
                           (if separate-err-id?
                             [:throws (.getMessage e) (:err-id (ex-data e))]
@@ -133,11 +136,11 @@
                         [:throws (.getMessage e)])))
 
           jh-result (try
-                      (halite/eval-expr spec-map tenv env jh-expr)
+                      (eval-h-expr spec-map tenv env jh-expr)
                       (catch RuntimeException e
                         [:throws (.getMessage e)]))
           j-result (try
-                     (jadeite/to-jadeite (halite/eval-expr spec-map tenv env jh-expr))
+                     (jadeite/to-jadeite (eval-h-expr spec-map tenv env jh-expr))
                      (catch RuntimeException e
                        [:throws (.getMessage e)]))]
 
