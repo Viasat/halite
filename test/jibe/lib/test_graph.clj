@@ -2,9 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns jibe.lib.test-graph
-  (:require [jibe.data.model :as model]
-            [jibe.lib.graph :as graph]
-            [internal :refer :all]))
+  (:require [jibe.lib.graph :as graph]
+            [clojure.test :refer :all]))
 
 (deftest test-detect-cycle
   ;; test helper functions
