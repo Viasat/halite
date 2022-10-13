@@ -203,6 +203,12 @@
 (deferr refinement-diamond [data]
         {:message "Diamond detected in refinement graph"})
 
+(deferr spec-cycle [data]
+        {:message "Cycle detected in spec dependencies"})
+
+(deferr spec-map-needed [data]
+        {:message "Operation cannot be performed unless a spec-map is provided"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol

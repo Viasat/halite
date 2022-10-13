@@ -113,9 +113,9 @@
     expr]
    (when check-for-spec-cycles?
      (when (not (map? senv))
-       (throw (ex-info "cannot check for specs unless a spec-map is provided" {})))
-     (when-not (halite-analysis/free-of-cyclical-dependencies? senv)
-       (throw (ex-info "cycles detected" {}))))
+       (throw-err (h-err/spec-map-needed {})))
+     (when-let [cycle (halite-analysis/find-cycle-in-dependencies senv)]
+       (throw-err (h-err/spec-cycle {:cycle cycle}))))
    (when type-check-expr?
      ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
      ;; evaluator

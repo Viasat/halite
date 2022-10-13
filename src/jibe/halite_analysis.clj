@@ -7,10 +7,10 @@
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.lib.fixed-decimal :as fixed-decimal]
-            [loom.alg]
-            [loom.graph]
+            [jibe.lib.graph :as graph]
             [schema.core :as s])
-  (:import [jibe.lib.fixed_decimal FixedDecimal]))
+  (:import [clojure.lang ExceptionInfo]
+           [jibe.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
@@ -1150,13 +1150,15 @@
        (map (fn [[k v]] (get-spec-dependencies spec-map k v)))
        (reduce (partial merge-with into) {})))
 
-(s/defn free-of-cyclical-dependencies? :- s/Bool
+(s/defn find-cycle-in-dependencies
   [spec-map :- halite-envs/PartialSpecMap]
   (let [spec-map-dependencies (->> spec-map
                                    halite-envs/full-spec-map
                                    get-spec-map-dependencies)]
     (if (empty? spec-map-dependencies)
-      true
-      (->> spec-map-dependencies
-           loom.graph/digraph
-           loom.alg/dag?))))
+      nil
+      (try
+        (graph/detect-cycle (keys spec-map-dependencies) spec-map-dependencies)
+        nil
+        (catch ExceptionInfo ex
+          (:path (ex-data ex)))))))

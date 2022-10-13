@@ -74,6 +74,9 @@
    'h-err/wrong-arg-count-min {:doc "The operation expected at least a certain number of arguments. This minimum was not met."}
    'h-err/refinement-loop {:doc "Specs cannot be defined to refine to themselves either directly or transitively."}
    'h-err/refinement-diamond {:doc "Spec refinements cannot be defined that allow multiple refinement paths between the same two specs."}
+   'h-err/spec-cycle {:doc "Dependencies between specs cannot form a cycle."}
+   'h-err/spec-map-needed {:doc "This is a low-level exception indicating that an operation was invoked that provided an interface to retreive specs, rather than a literal spec-map."}
+
    'l-err/binding-expression-not-optional {:doc "The expression being tested in an 'if-value-let' statement must optionally produce a value."}
    'l-err/binding-target-invalid-symbol {:doc "The symbols to be bound are not to start with a '$'."}
    'l-err/cannot-bind-nothing {:doc "It is not permitted to bind a symbol to 'nothing'."}

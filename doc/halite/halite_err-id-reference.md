@@ -765,6 +765,24 @@ When sorting a collection with 'sort-by', the sort expression must produce a uni
 * [`sort-by`](halite_full-reference.md#sort-by)
 
 ---
+### <a name="h-err/spec-cycle"></a>h-err/spec-cycle
+
+Dependencies between specs cannot form a cycle.
+
+#### Error message template:
+
+> Cycle detected in spec dependencies
+
+---
+### <a name="h-err/spec-map-needed"></a>h-err/spec-map-needed
+
+This is a low-level exception indicating that an operation was invoked that provided an interface to retreive specs, rather than a literal spec-map.
+
+#### Error message template:
+
+> Operation cannot be performed unless a spec-map is provided
+
+---
 ### <a name="h-err/spec-threw"></a>h-err/spec-threw
 
 An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers it not possible to proceed in the encountered situation. See the error string in the exception detail for details.
