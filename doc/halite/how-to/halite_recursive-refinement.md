@@ -83,3 +83,12 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
  :h-err/refinement-diamond]
 ```
 
+```clojure
+{:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
+```
+
+
+
+;-- result --
+[:throws "h-err/spec-cycle 0-0 : Cycle detected in spec dependencies"
+ :h-err/spec-cycle]

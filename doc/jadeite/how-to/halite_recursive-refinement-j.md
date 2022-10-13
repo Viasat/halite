@@ -136,3 +136,15 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
 [:throws "h-err/refinement-diamond 0-0 : Diamond detected in refinement graph"]
 ```
 
+```java
+{
+  "spec/Self" : {
+    "constraints" : [ [ "example", "(1 == [{$type: spec/Self}].count())" ] ]
+  }
+}
+```
+
+
+
+//-- result --
+[:throws "h-err/spec-cycle 0-0 : Cycle detected in spec dependencies" :h-err/spec-cycle]

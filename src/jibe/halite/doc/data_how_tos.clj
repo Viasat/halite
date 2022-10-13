@@ -828,6 +828,7 @@
                           {:code '(refine-to {:$type :spec/Start} :spec/Destination)
                            :throws :auto}
 
-                          #_{:spec-map {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}}
+                          {:spec-map {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
+                           :throws :auto}
                           #_{:code '{:$type :spec/Self}
                              :throws :auto}]}})

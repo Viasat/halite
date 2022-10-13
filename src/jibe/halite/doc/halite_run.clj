@@ -15,8 +15,10 @@
 
 (deftype HInfo [s t j-expr h-result jh-result j-result])
 
+(def ^:dynamic *check-spec-map-for-cycles?* false)
+
 (defn- eval-h-expr [senv tenv env expr]
-  (halite/eval-expr true true true false senv tenv env expr))
+  (halite/eval-expr true true true *check-spec-map-for-cycles?* senv tenv env expr))
 
 (defmacro h-eval [expr]
   ;; helper for debugging

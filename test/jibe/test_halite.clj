@@ -1036,4 +1036,13 @@
       (is (thrown-with-msg? ExceptionInfo #"disallowed symbol.*[$]foo"
                             (halite-lint/type-check senv tenv '(+ $foo 25)))))))
 
+(deftest test-cycle-in-spec-deps
+  (try (halite/eval-expr {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
+                         tenv
+                         empty-env
+                         'true)
+       (is false)
+       (catch ExceptionInfo ex
+         (is (= [:spec/Self :spec/Self] (:cycle (ex-data ex)))))))
+
 ;; (time (clojure.test/run-tests))
