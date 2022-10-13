@@ -651,8 +651,7 @@
                     {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
                                            :y "Boolean"}
                                :constraints [["x-if-y" '(=> y (if-value x true false))]]}
-                     :ws/Invalid$v1 {:spec-vars {}
-                                     :constraints [["broken" '(or (+ 1 2) true)]]}})]
+                     :ws/Invalid$v1 {:constraints [["broken" '(or (+ 1 2) true)]]}})]
     ;; type-check cannot detect constraint violations, because that would often involve
     ;; actually evaluating forms
     (are [expr etype]
@@ -695,7 +694,7 @@
                      :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 (* 2 x))}}}}
               :ws/D {:spec-vars {:x "Integer"}
                      :constraints '[["xIsOdd" (= 1 (mod x 2))]]}
-              :ws/E {:spec-vars {}}}]
+              :ws/E {}}]
 
     (let [invalid-a {:$type :ws/A :x -10}
           sketchy-a {:$type :ws/A :x 20}]
@@ -765,14 +764,13 @@
                      :abstract? true
                      :constraints '[["posX" (< 0 x)]
                                     ["boundedX" (< x 10)]]}
-              :ws/A1 {:spec-vars {}
-                      :refines-to {:ws/A {:expr '{:$type :ws/A :x 5}}}}
+              :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A :x 5}}}}
               :ws/A2 {:spec-vars {:a "Integer"
                                   :b "Integer"}
                       :refines-to {:ws/A {:expr '{:$type :ws/A :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}}
               :ws/C {:spec-vars {:as [:ws/A]}}
-              :ws/D {:spec-vars {}}}
+              :ws/D {}}
         tenv2 (-> tenv
                   (halite-envs/extend-scope 'ax [:Instance :* #{:ws/A2}])
                   (halite-envs/extend-scope 'ay [:Instance :* #{:ws/A1}])
@@ -814,14 +812,13 @@
                      :abstract? true
                      :constraints '[["posX" (< 0 x)]
                                     ["boundedX" (< x 10)]]}
-              :ws/A1 {:spec-vars {}
-                      :refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
+              :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
               :ws/A2 {:spec-vars {:a "Integer"
                                   :b "Integer"}
                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}}
               :ws/C {:spec-vars {:as [:ws/A]}}
-              :ws/D {:spec-vars {}}}
+              :ws/D {}}
         tenv2 (-> tenv
                   (halite-envs/extend-scope 'ax [:Instance :* #{:ws/A}])
                   (halite-envs/extend-scope 'ay [:Instance :* #{:ws/A}])
@@ -897,15 +894,14 @@
                      :constraints '[["posX" (< 0 x)]
                                     ["boundedX" (< x 10)]]
                      :abstract? true}
-              :ws/A1 {:spec-vars {}
-                      :refines-to {:ws/A {:expr '{:$type :ws/A, :x 6}}}}
+              :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A, :x 6}}}}
               :ws/A2 {:spec-vars {:a "Integer"
                                   :b "Integer"}
                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}
                      :constraints '[["notFive" (not= 5 (get (refine-to a :ws/A) :x))]]}
               :ws/C {:spec-vars {:as [:ws/A]}}
-              :ws/D {:spec-vars {}}
+              :ws/D {}
               :ws/Z {:abstract? true}
               :ws/Z1 {:refines-to {:ws/Z {:expr '{:$type :ws/Z}}}}
               :ws/Invalid {:spec-vars {:a :ws/A
@@ -980,7 +976,7 @@
                           :entries (set (map (fn [[k v]] {:$type :ws/JsonObjEntry :key k :val (to-json v)}) arg))}
               :else (throw (ex-info "Not convertable to json" {:value arg}))))]
     (let [senv {:ws/JsonVal
-                {:abstract? true, :spec-vars {}, :constraints [], :refines-to {}}
+                {:abstract? true}
 
                 :ws/JsonStr
                 {:spec-vars {:s "String"}
