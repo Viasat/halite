@@ -409,7 +409,9 @@
         (set (map (fn [r]
                     [:Instance r]) r2))
         (if arg
-          (recur arg)
+          (if (= kind :Instance)
+            #{[:Instance arg]}
+            (recur arg))
           #{kind})))))
 
 (s/defn types-equivalent? [s :- HaliteType
