@@ -1,9 +1,9 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.test-synthesize
+(ns jibe.halite.test-synth
   (:require
-   [jibe.halite.synthesize :refer [synthesize spec-map-eval] :as synth]
+   [jibe.halite.synth :refer [synth spec-map-eval] :as synth]
    [jibe.halite :as halite]
    [jibe.halite.halite-envs :as halite-envs]
    [clojure.test :as t :refer [deftest is]]
@@ -32,7 +32,7 @@
                                           true)))
                      :refine-fns {:spec/A '(fn [$this]
                                              (user-eval $this '{:$type :spec/A}))}}}
-           (synthesize spec-map)))
+           (synth spec-map)))
 
     (is (= {:$type :spec/B}
            (spec-map-eval spec-map '{:$type :spec/B})))
@@ -84,7 +84,7 @@
                                                   (refine* :spec/B :spec/A)))
                                   :spec/B '(fn [$this]
                                              (user-eval $this '{:$type :spec/B}))}}}
-           (synthesize spec-map)))
+           (synth spec-map)))
     (is (= {:$type :spec/A}
            (spec-map-eval spec-map '(refine-to {:$type :spec/C} :spec/A))))
     (is (= true
@@ -98,8 +98,8 @@
                                   (= #{:$type :x} (set (keys $this)))
                                   (and (user-eval $this '(> x 12)))))
                    :refine-fns {}}}
-         (synthesize {:spec/A {:spec-vars {:x "Integer"}
-                               :constraints [["c" '(> x 12)]]}})))
+         (synth {:spec/A {:spec-vars {:x "Integer"}
+                          :constraints [["c" '(> x 12)]]}})))
   (is (= {:spec/A {:valid?-fn '(fn [$this]
                                  (and
                                   (map? $this)
@@ -108,11 +108,9 @@
                                   (and (user-eval $this '(> x 12))
                                        (user-eval $this '(< x 24)))))
                    :refine-fns {}}}
-         (synthesize {:spec/A {:spec-vars {:x "Integer"}
-                               :constraints [["c" '(> x 12)]
-                                             ["c2" '(< x 24)]]}})))
-
-  )
+         (synth {:spec/A {:spec-vars {:x "Integer"}
+                          :constraints [["c" '(> x 12)]
+                                        ["c2" '(< x 24)]]}}))))
 
 (deftest test-optional-field
   (let [spec-map {:spec/A {:spec-vars {:x [:Maybe "Integer"]}}}]
@@ -123,7 +121,7 @@
                                     (subset? (set (keys $this)) #{:$type :x})
                                     (subset? #{:$type} (set (keys $this)))))
                      :refine-fns {}}}
-           (synthesize spec-map)))
+           (synth spec-map)))
     (is (= {:$type :spec/A}
            (spec-map-eval spec-map '{:$type :spec/A})))
     (is (= {:$type :spec/A :x 1}
@@ -140,7 +138,7 @@
                                     (subset? (set (keys $this)) #{:$type :x :y})
                                     (subset? #{:$type :y} (set (keys $this)))))
                      :refine-fns {}}}
-           (synthesize spec-map)))
+           (synth spec-map)))
     (is (= {:$type :spec/A :y 0}
            (spec-map-eval spec-map '{:$type :spec/A :y 0})))
     (is (= {:$type :spec/A :x 1 :y 0}

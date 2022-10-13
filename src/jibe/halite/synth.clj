@@ -1,13 +1,12 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.halite.synthesize
+(ns jibe.halite.synth
   (:require [clojure.set :as set :refer [subset?]]
             [clojure.walk :refer [postwalk]]
             [schema.core :as s]
             [loom.alg]
             [loom.graph]))
-
 
 ;; user-eval
 ;; - will be given a Clojure map (a candidate instance) and only and exactly the
@@ -32,7 +31,7 @@
   {:valid?-fn (s/pred seq?)
    :refine-fns {s/Keyword (s/pred seq?)}})
 
-(s/defn synthesize-spec :- {s/Keyword SpecFnMap}
+(s/defn synth-spec :- {s/Keyword SpecFnMap}
   [spec-map [spec-id spec]]
   {spec-id
    {:valid?-fn
@@ -97,11 +96,11 @@
                              (refine* ~(second refinement-path) ~(last refinement-path)))))]))
             (into {}))))}})
 
-(defn synthesize
+(defn synth
   "Formal definition of some halite concepts. Return an exprs-data"
   [spec-map]
   (->> spec-map
-       (map (partial synthesize-spec spec-map))
+       (map (partial synth-spec spec-map))
        (apply merge)))
 
 (s/defn exprs-interface
@@ -176,7 +175,7 @@
   ([spec-map expr]
    (spec-map-eval spec-map (partial clj-user-eval spec-map) expr))
   ([spec-map user-eval expr]
-   (let [interface-fn (-> spec-map synthesize exprs-interface eval-form)
+   (let [interface-fn (-> spec-map synth exprs-interface eval-form)
          {:syms [validate-instance] :as fns} (interface-fn user-eval)]
      (if (map? expr)
        (validate-instance expr)
