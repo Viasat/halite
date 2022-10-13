@@ -63,8 +63,8 @@
                                                    (:spec-map c)
                                                    (:throws c)
                                                    (conj results
-                                                         (str (utils/code-snippet lang mode (utils/spec-map-str lang (:spec-map c)))
-                                                              spec-map-result))))
+                                                         (utils/code-snippet lang mode (str (utils/spec-map-str lang (:spec-map c))
+                                                                                            spec-map-result)))))
               (and (map c) (:code c)) (let [h-expr (:code c)
                                             ^HCInfo i (halite-run/hc-body
                                                        spec-map

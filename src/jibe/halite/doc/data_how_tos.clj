@@ -827,8 +827,10 @@
                                                                              :expr '{:$type :spec/Path2}}}}}}
                           {:code '(refine-to {:$type :spec/Start} :spec/Destination)
                            :throws :auto}
-                          "Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced."
+
+                          "Generally, dependency cycles between specs are not allowed. The following spec-map is detected as invalid."
                           {:spec-map {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
                            :throws :auto}
+                          "Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced."
                           {:code '{:$type :spec/Self}
                            :throws :auto}]}})

@@ -136,7 +136,7 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
 [:throws "h-err/refinement-diamond 0-0 : Diamond detected in refinement graph"]
 ```
 
-Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced.
+Generally, dependency cycles between specs are not allowed. The following spec-map is detected as invalid.
 
 ```java
 {
@@ -144,12 +144,14 @@ Although this error can be detected in advance, if an attempt is made to use the
     "constraints" : [ [ "example", "(1 == [{$type: spec/Self}].count())" ] ]
   }
 }
-```
-
 
 
 //-- result --
 [:throws "h-err/spec-cycle 0-0 : Cycle detected in spec dependencies" :h-err/spec-cycle]
+```
+
+Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced.
+
 ```java
 {$type: spec/Self}
 

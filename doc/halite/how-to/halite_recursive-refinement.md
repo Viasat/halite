@@ -83,17 +83,19 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
  :h-err/refinement-diamond]
 ```
 
-Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced.
+Generally, dependency cycles between specs are not allowed. The following spec-map is detected as invalid.
 
 ```clojure
 {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
-```
-
 
 
 ;-- result --
 [:throws "h-err/spec-cycle 0-0 : Cycle detected in spec dependencies"
  :h-err/spec-cycle]
+```
+
+Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced.
+
 ```clojure
 {:$type :spec/Self}
 
