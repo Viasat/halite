@@ -10,10 +10,13 @@
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-lint :as halite-lint]
             [jibe.lib.format-errors :as format-errors]
-            [jibe.logic.jadeite :as jadeite])
+            [jibe.logic.jadeite :as jadeite]
+            [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
+
+(clojure.test/use-fixtures :once validate-schemas)
 
 (defmacro h
   [expr & args]

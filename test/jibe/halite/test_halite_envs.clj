@@ -7,9 +7,8 @@
   (:use [clojure.test]))
 
 (deftest test-halite-type-from-var-type
-  (let [senv (halite-envs/spec-env
-              '{:ws/A {:abstract? true :spec-vars {} :constraints #{} :refines-to {}}
-                :ws/B {:spec-vars {} :constraints #{} refines-to {}}})]
+  (let [senv {:ws/A {:abstract? true}
+              :ws/B {}}]
     (are [vtype htype]
          (= htype (halite-envs/halite-type-from-var-type senv vtype))
 
@@ -44,16 +43,12 @@
       :foo #"Invalid spec variable type")))
 
 (deftest test-type-env-from-spec
-  (let [senv (halite-envs/spec-env
-              '{:ws/A {:abstract? true :spec-vars {} :constraints #{} :refines-to {}}
-                :ws/B {:spec-vars {} :constraints #{} refines-to {}}
-                :ws/C
-                {:spec-vars {:x "Integer"
-                             :w [:Maybe "Integer"]
-                             :as [:Maybe #{:ws/A}]
-                             :bs [:ws/B]}
-                 :constraints #{}
-                 :refines-to {}}})]
+  (let [senv {:ws/A {:abstract? true}
+              :ws/B {}
+              :ws/C {:spec-vars {:x "Integer"
+                                 :w [:Maybe "Integer"]
+                                 :as [:Maybe #{:ws/A}]
+                                 :bs [:ws/B]}}}]
     (is (=
          '{no-value :Unset
            x :Integer
