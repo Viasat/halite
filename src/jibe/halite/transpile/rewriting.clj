@@ -275,3 +275,9 @@
   `(rewrite-sctx* (rule ~rewrite-fn-sym) ~sctx))
 
 (defmacro ->>rewrite-sctx [rewrite-fn-sym sctx] `(rewrite-sctx ~sctx ~rewrite-fn-sym))
+
+(defmacro with-captured-traces [& body]
+  `(with-tracing [traces#]
+     (try ~@body
+          (finally
+            (def ~'TRACES @traces#)))))
