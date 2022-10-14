@@ -2,16 +2,16 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.test-synth
-  (:require
-   [jibe.halite.synth :refer [synth spec-map-eval] :as synth]
-   [jibe.halite :as halite]
-   [jibe.halite.halite-envs :as halite-envs]
-   [clojure.test :as t :refer [deftest is]]
-   [schema.test :refer [validate-schemas]]))
+  (:require [jibe.halite.synth :refer [synth spec-map-eval] :as synth]
+            [jibe.halite :as halite]
+            [jibe.halite.halite-envs :as halite-envs]
+            [clojure.test :as t :refer [deftest is]]
+            [schema.test :refer [validate-schemas]])
+  (:import [clojure.lang ExceptionInfo]))
 
 (clojure.test/use-fixtures :once validate-schemas)
 
-(deftest thing1
+(deftest test-basic
   (let [spec-map
         {:spec/A {}
          :spec/B {:refines-to {:spec/A {:name "as_A"
@@ -89,6 +89,55 @@
            (spec-map-eval spec-map '(refine-to {:$type :spec/C} :spec/A))))
     (is (= true
            (spec-map-eval spec-map '(refines-to? {:$type :spec/C} :spec/A))))))
+
+(deftest test-transitive-refinements-with-invalid-inverted-step
+  (let [spec-map
+        {:spec/Object {}
+         :spec/Falsey {:spec-vars {:f "Boolean"}
+                       :constraints [["cf" '(not f)]]
+                       :refines-to {:spec/Object {:name "as_Object"
+                                                  :expr '{:$type :spec/Object}}}}
+         :spec/Truthy {:spec-vars {:t "Boolean"}
+                       :constraints [["ct" 't]]
+                       :refines-to {:spec/Falsey {:name "as_Falsey"
+                                                  :expr '{:$type :spec/Falsey
+                                                          :f t}
+                                                  :inverted? true}}}}]
+    (is (= '{:spec/Object {:valid?-fn (fn [$this]
+                                        (and (map? $this)
+                                             (= :spec/Object (:$type $this))
+                                             (= #{:$type} (set (keys $this)))))
+                           :refine-fns {}}
+             :spec/Falsey {:valid?-fn (fn [$this]
+                                        (and (map? $this)
+                                             (= :spec/Falsey (:$type $this))
+                                             (= #{:$type :f} (set (keys $this)))
+                                             (and (user-eval $this '(not f)))
+                                             (if-let [refined (refine* :spec/Falsey :spec/Object $this)]
+                                               (valid?* :spec/Object refined)
+                                               true)))
+                           :refine-fns {:spec/Object (fn [$this]
+                                                       (user-eval $this '{:$type :spec/Object}))}}
+             :spec/Truthy {:valid?-fn (fn [$this]
+                                        (and (map? $this)
+                                             (= :spec/Truthy (:$type $this))
+                                             (= #{:$type :t} (set (keys $this)))
+                                             (and (user-eval $this 't))
+                                             (if-let [refined (refine* :spec/Truthy :spec/Falsey $this)]
+                                               (valid?* :spec/Falsey refined)
+                                               true)))
+                           :refine-fns {:spec/Falsey (fn [$this]
+                                                       (user-eval $this '{:$type :spec/Falsey, :f t})),
+                                        :spec/Object (fn [$this]
+                                                       (let [next (refine* :spec/Truthy :spec/Falsey  $this)]
+                                                         (when (not (valid?* :spec/Falsey next))
+                                                           (throw (ex-info "failed in refinement" {})))
+                                                         (refine* :spec/Falsey :spec/Object next)))}}}
+           (synth spec-map)))
+    (is (thrown-with-msg? ExceptionInfo #"failed in refinement"
+                          (spec-map-eval spec-map '(refine-to {:$type :spec/Truthy :t true} :spec/Object))))
+    (is (thrown-with-msg? ExceptionInfo #"instance is invalid"
+                          (spec-map-eval spec-map '(refine-to {:$type :spec/Truthy :t true} :spec/Falsey))))))
 
 (deftest test-constraints
   (is (= {:spec/A {:valid?-fn '(fn [$this]

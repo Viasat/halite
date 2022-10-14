@@ -91,9 +91,14 @@
                    [(last refinement-path)
                     (strip-ns
                      `(fn [$this]
-                        (->> $this
-                             (refine* ~spec-id ~(second refinement-path))
-                             (refine* ~(second refinement-path) ~(last refinement-path)))))]))
+                        ~(if (get-in spec-map [spec-id :refines-to (second refinement-path) :inverted?])
+                           `(let [next (refine* ~spec-id ~(second refinement-path) $this)]
+                              (when (not (valid?* ~(second refinement-path) next))
+                                (throw (ex-info "failed in refinement" {})))
+                              (refine* ~(second refinement-path) ~(last refinement-path) next))
+                           `(->> $this
+                                 (refine* ~spec-id ~(second refinement-path))
+                                 (refine* ~(second refinement-path) ~(last refinement-path))))))]))
             (into {}))))}})
 
 (defn synth
