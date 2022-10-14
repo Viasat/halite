@@ -74,7 +74,7 @@
   [htype]
   (or (#{:Integer :Boolean :String} htype)
       (and (halite-types/maybe-type? htype) (vector? htype)
-           (#{:Integer :Boolean} (second htype)))))
+           (#{:Integer :Boolean :String} (second htype)))))
 
 (defn- spec-maybe-type?
   [htype]
