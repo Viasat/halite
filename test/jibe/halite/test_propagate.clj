@@ -23,14 +23,14 @@
 
     :ws/Car
     {:spec-vars {:horsePower "Integer"}
-     :constraints [["validHorsePowers" (and (<= 120 horsePower ) (<= horsePower 300))]]
+     :constraints [["validHorsePowers" (and (<= 120 horsePower) (<= horsePower 300))]]
      :refines-to {:ws/Colored
                   {:expr {:$type :ws/Colored
                           :color (if (> horsePower 250) "red" "blue")}}}}})
 
 (deftest test-strings-and-abstract-specs-example
   (are [in out]
-      (= out (hp/propagate strings-and-abstract-specs-example in))
+       (= out (hp/propagate strings-and-abstract-specs-example in))
 
     {:$type :ws/Car}
     {:$type :ws/Car,

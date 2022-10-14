@@ -10,7 +10,6 @@
             [jibe.halite.halite-types :as halite-types]
             [viasat.choco-clj-opt :as choco-clj]))
 
-
 (s/defschema AtomBound
   (s/cond-pre
    s/Int

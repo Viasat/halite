@@ -12,7 +12,7 @@
                              ["c3" (< n (if p 10 15))]]
                :refines-to {}}]
     (are [in out]
-        (= out (prop-choco/propagate spec in))
+         (= out (prop-choco/propagate spec in))
 
       {} {:m {:$in [1 13 :Unset]}, :n {:$in [1 14]}, :p {:$in #{false true}}}
       {:p true} {:m {:$in [1 8]}, :n {:$in [2 9]}, :p true}

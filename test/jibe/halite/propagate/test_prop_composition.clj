@@ -63,7 +63,7 @@
                       :refines-to {}}}
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
-        (= out (pc/propagate specs opts in))
+         (= out (pc/propagate specs opts in))
 
       {:$type :ws/A} {:$type :ws/A, :x {:$in [1 99]}, :y {:$in [2 100]}, :oddSum {:$in #{true false}}}
 
@@ -228,8 +228,8 @@
                       [["$all" (= (refine-to {:dx dx, :$type :ws/D} :ws/B)
                                   {:bw bw,
                                    :c2 (if-value cw
-                                         {:cw cw, :$type :ws/C}
-                                         $no-value),
+                                                 {:cw cw, :$type :ws/C}
+                                                 $no-value),
                                    :$type :ws/B})]],
                       :refines-to {}}}]
     (is (= {:$type :ws/E, :bw {:$in #{5 :Unset}}, :cw 6, :dx {:$in [-10 10]}}
@@ -427,7 +427,7 @@
 (deftest test-lower-spec-bound-for-nested-optionals
   (s/with-fn-validation
     (are [bound lowered]
-        (= lowered (lower-spec-bound (flatten-vars nested-optionals-spec-env bound) bound))
+         (= lowered (lower-spec-bound (flatten-vars nested-optionals-spec-env bound) bound))
 
       {:$type :ws/A} {}
 
