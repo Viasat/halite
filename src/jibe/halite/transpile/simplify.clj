@@ -121,6 +121,22 @@
       (when-not (halite-types/maybe-type? inner-htype)
         (second form)))))
 
+(def ^:private comparison-fns
+  "Comparisons that can be evaluated if all the arguments are literals, and the clojure fns for evaluating them."
+  {'= =
+   'not= not=
+   '< <
+   '<= <=
+   '> >
+   '>= >=})
+
+(s/defn simplify-statically-known-comparisons
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (when (and (seq? form) (contains? comparison-fns (first form)))
+    (let [args (map #(ssa/node-form (ssa/deref-id ssa-graph %)) (rest form))]
+      (when (every? #(or (integer? %) (string? %) (boolean? %) (keyword? %)) args)
+        (apply (comparison-fns (first form)) args)))))
+
 (s/defn simplify :- ssa/SpecCtx
   "Perform semantics-preserving simplifications on the expressions in the specs."
   [sctx :- ssa/SpecCtx]
@@ -133,4 +149,5 @@
     (rewriting/rule simplify-do)
     (rewriting/rule simplify-no-value)
     (rewriting/rule simplify-statically-known-value?)
-    (rewriting/rule simplify-redundant-value!)]))
+    (rewriting/rule simplify-redundant-value!)
+    (rewriting/rule simplify-statically-known-comparisons)]))
