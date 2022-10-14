@@ -11,6 +11,7 @@
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.propagate.prop-choco :as prop-choco]
+            [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.ssa :as ssa]
             [jibe.halite.transpile.rewriting :as rewriting]
             [jibe.halite.transpile.simplify :as simplify]
@@ -22,6 +23,7 @@
             [schema.core :as s])
   (:import [org.chocosolver.solver.exception ContradictionException]))
 
+;;;;; Bounds, extended with Strings ;;;;;
 (s/defschema AtomBound
   (s/cond-pre
    s/Int
@@ -29,15 +31,25 @@
    s/Str
    (s/enum :Unset :String)
    {:$in (s/cond-pre
-          #{(s/cond-pre s/Int s/Bool s/Str (s/enum :Unset))}
+          #{(s/cond-pre s/Int s/Bool s/Str (s/enum :Unset :String))}
           [(s/one s/Int :lower) (s/one s/Int :upper) (s/optional (s/enum :Unset) :Unset)])}))
 
 (s/defschema StringBound
-  (s/cond-pre s/Str (s/enum :String) {:$in #{s/Str}}))
+  (s/cond-pre s/Str (s/enum :Unset :String) {:$in #{(s/cond-pre s/Str (s/enum :String :Unset))}}))
 
 (s/defschema SpecBound
   {halite-types/BareKeyword AtomBound})
 
+;;;;;;; String expression simplification ;;;;;;;;
+
+;; The strategy for lowering strings depends on the only string-valued expressions
+;; being string-type variables, string literals, and flat (str ...) forms.
+;; These rewrite rules simplify string-valued expressions of other forms.
+
+;;    (= ... (if p a b) ...)
+;;    (if p a b) :- :String
+;; ===========================
+;;  (if p (= ... a ...) (= ... b ...))
 (s/defn ^:private push-comparison-into-string-valued-if
   [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (let [string-if? (fn [[form htype]]
@@ -120,163 +132,210 @@
                  (butlast (rest form)) child-htypes)
            (last form)))))))
 
+(s/defn ^:private expand-higher-arity-string-comparisons
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (when (and (seq? form) (contains? #{'not= '=} (first form)))
+    (let [arg-nodes (map #(ssa/deref-id ssa-graph %) (rest form))]
+      (when (true? (some #(= :String (halite-types/no-maybe %)) (map ssa/node-type arg-nodes)))
+        (let [args (map first arg-nodes)]
+          (cond->>
+           (->> (rest args)
+                (map #(list '= %1 %2) args)
+                (util/mk-junct 'and))
+            (= 'not= (first form)) (list 'not)))))))
+
 (s/defn ^:private simplify-string-exprs :- ssa/SpecInfo
+  "Simplify expressions in spec such that the only string-valued expressions
+  are string-typed variable references, string literals, and unnested (str ...) forms."
   [spec :- ssa/SpecInfo]
   (-> {:$propagate/Bounds spec}
       (rewriting/rewrite-reachable-sctx
        [(rewriting/rule push-comparison-into-string-valued-if)
-        (rewriting/rule eliminate-unused-string-valued-exprs)])
+        (rewriting/rule eliminate-unused-string-valued-exprs)
+        (rewriting/rule expand-higher-arity-string-comparisons)
+        ;; We actually DO NOT want these next two rules! They
+        ;; have the effect of rewriting comparisons that we'd rather turn
+        ;; directly into boolean variables.
+        ;; TODO: WEAKEN these rules as they appear in prop-composition, so we don't lose important string-related info!
+        ;;(rewriting/rule lowering/lower-maybe-comparison-expr)
+        ;;(rewriting/rule lowering/lower-no-value-comparison-expr)
+        (rewriting/rule simplify/simplify-do)
+        (rewriting/rule lowering/bubble-up-do-expr)
+        (rewriting/rule lowering/flatten-do-expr)
+        (rewriting/rule simplify/simplify-redundant-value!)
+        (rewriting/rule simplify/simplify-statically-known-value?)
+        (rewriting/rule lowering/push-if-value-into-if-in-expr)
+        (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
+        (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)])
+      simplify/simplify
       :$propagate/Bounds))
 
-(s/defn ^:private compute-string-comparison-graph :- (s/protocol loom-graph/Graph)
-  "Return an undirected graph where the nodes are string expressions and an edge represents
-  an equality comparison between two string expressions. Each edge is labeled with the name
-  of a boolean variable whose value represents that of the corresponding comparison."
-  [{{dgraph :dgraph} :ssa-graph :as spec} :- ssa/SpecInfo]
-  (as-> (loom-graph/graph) g
-
-    ;; add all necessary nodes
-    (reduce-kv
-     (fn [g id node]
-       (let [form (ssa/node-form node)]
-         (cond
-           (or (string? form) (symbol? form)) (loom-graph/add-nodes g id)
-           (and (seq? form) (= 'str (first form))) (throw (ex-info "TODO: Composite strings not imlemented yet!"
-                                                                   {:id id :node node}))
-           :else (throw (ex-info "BUG! Unrecognized string-valued expression" {:id id :node node})))))
-     g
-     ;; string-valued nodes become graph nodes
-     (filter #(= :String (ssa/node-type (val %))) dgraph))
-
-    ;; add all edges
-    (reduce-kv
-     (fn [g id node]
-       (let [arg-ids (rest (ssa/node-form node))
-             pairs (map vector arg-ids (rest arg-ids))]
-         (apply loom-graph/add-edges g pairs)))
-     g
-     (filter
-      #(let [form (ssa/node-form (val %))]
-         ;; We only need to consider equality nodes, because every disequality node must have
-         ;; a corresponding equality node as its negation.
-         (and (seq? form) (= '= (first form))
-              (every? (partial loom-graph/has-node? g) (rest form))))
-      dgraph))))
-
-(s/defn ^:private label-scg :- (s/protocol loom-graph/Graph)
-  [scg :- (s/protocol loom-graph/Graph)]
-  (reduce
-   (fn [scg e]
-     (let [a (loom-graph/src e)
-           b (loom-graph/dest e)]
-       (loom-label/add-label scg a b (symbol (str (name a) "=" (name b))))))
-   scg
-   (set (loom-graph/edges scg))))
+;;;;;;;;;; String Comparison Graph ;;;;;;;;;;;;;;;;
 
 (defn- string-type? [var-type]
   (= :String (->> var-type (halite-envs/halite-type-from-var-type {}) halite-types/no-maybe)))
 
-(defn- string-var-kws [{:keys [spec-vars] :as spec}]
-  (reduce-kv (fn [acc var-kw var-type] (cond-> acc (string-type? var-type) (conj var-kw))) #{} spec-vars))
+(defn- maybe-string-type?
+  "Return true if var-type is [:Maybe \"String\"]"
+  [var-type]
+  (let [ht (halite-envs/halite-type-from-var-type {} var-type)]
+    (and (halite-types/maybe-type? ht)
+         (= :String (halite-types/no-maybe ht)))))
 
-(defn- remove-string-vars
-  [spec-vars]
-  (when-let [[var-kw var-type] (some #(= [:Maybe "String"] (second %)) spec-vars)]
-    (throw (ex-info "TODO: Implement optional string variables" {:var-kv var-kw})))
-  (reduce-kv
-   (fn [spec-vars var-kw var-type]
-     (cond-> spec-vars (string-type? var-type) (dissoc var-kw)))
-   spec-vars
-   spec-vars))
+(defn- get-alt-var [scg n]
+  (:alt-var (loom-label/label scg n)))
 
-(defn- add-comparison-vars
-  [spec-vars scg]
-  (reduce
-   (fn [spec-vars edge]
-     (let [l (loom-label/label scg (loom-graph/src edge) (loom-graph/dest edge))]
-       (assoc spec-vars (keyword l) "Boolean")))
-   spec-vars
-   (loom-graph/edges scg)))
+(defn- get-alt-val [scg a b]
+  (get-in (loom-label/label scg a) [:alt-vals b]))
 
-(defn- compared-literals
-  [connectivity-fn ssa-graph scg var-kw]
-  (->> (symbol var-kw)
-       (ssa/find-form ssa-graph)
-       (connectivity-fn scg)
-       ;;(rest)
-       (map #(ssa/node-form (ssa/deref-id ssa-graph %)))
-       (filter string?)))
+(defn- scg-node-for-id [ssa-graph id]
+  ;; note that for some var v, 'v and '($value! v) map to the same scg node
+  (let [form (ssa/node-form (ssa/deref-id ssa-graph id))]
+    (if (and (seq? form) (= '$value! (first form)))
+      (ssa/node-form (ssa/deref-id ssa-graph (second form)))
+      form)))
 
-(def ^:private directly-compared-literals (partial compared-literals loom-graph/successors))
-(def ^:private indirectly-compared-literals (partial compared-literals loom-alg/pre-traverse))
+(defn- scg-edge [scg e]
+  (let [a (loom-graph/src e), b (loom-graph/dest e)]
+    (conj
+     (if (not (symbol? a))
+       [b a]
+       [a b])
+     (loom-label/label scg a b))))
 
-(defn- alts-var-kw [var-kw]
-  (keyword (str "$" (name var-kw) "$alts")))
+(defn- scg-edges [scg]
+  (map #(scg-edge scg %) (loom-graph/edges scg)))
 
-(defn- alts-var-sym [var-kw]
-  (symbol (alts-var-kw var-kw)))
+(s/defn ^:private compute-string-comparison-graph :- (s/protocol loom-graph/Graph)
+  "Return an undirected graph where the nodes are string expressions (or :Unset) and an edge represents
+  an equality comparison between two string expressions. Each edge is labeled with a boolean expression
+  whose value represents that of the corresponding comparison. Variable-variable comparisons are
+  represented with boolean variables. Variable-literal comparisons are represented by
+  variable-int comparisons."
+  [{{dgraph :dgraph :as ssa-graph} :ssa-graph, spec-vars :spec-vars :as spec} :- ssa/SpecInfo]
+  (let [g (loom-graph/graph)
+        g (loom-graph/add-nodes g :Unset)
+        ;; ensure nodes for all string-valued variables
+        optional-str-var? (->> spec-vars (filter (comp maybe-string-type? val)) (map (comp symbol key)) set)
+        g (->> spec-vars
+               (filter (comp string-type? val))
+               (map (comp symbol key))
+               (apply loom-graph/add-nodes g))
+        ;; ensure nodes for all string-valued expressions
+        g (->> dgraph
+               vals
+               (filter #(= :String (-> % ssa/node-type halite-types/no-maybe)))
+               (map ssa/node-form)
+               ;; We don't need separate nodes for ($value! <sym>)
+               (remove #(and (seq? %) (= '$value! (first %))))
+               (apply loom-graph/add-nodes g))
+        ;; add edges from optional vars to :Unset
+        g (apply loom-graph/add-edges g (for [v optional-str-var?] [v :Unset]))
+        ;; add edges for all comparisons
+        comp-forms (->> dgraph
+                        vals
+                        (map ssa/node-form)
+                        (filter #(and (seq? %) (= '= (first %))))
+                        (map (fn [[_ & arg-ids]] (mapv #(scg-node-for-id ssa-graph %) arg-ids)))
+                        (filter #(every? (partial loom-graph/has-node? g) %))
+                        ;; ensure comparisons of optional vars with :Unset
+                        (concat (for [v optional-str-var?] [v :Unset]))
+                        set)
+        edges (->> comp-forms
+                   (mapcat #(map vector % (rest %)))
+                   ;; we only care about comparisons between symbols and things
+                   ;; NOTE: This stops being true when (str ...) forms are supported!
+                   (filter #(true? (some symbol? %)))
+                   ;; when the comparison is with a literal, the symbol comes first
+                   (map (fn [[a b]] (if (symbol? a) [a b] [b a])))
+                   set)
+        g (apply loom-graph/add-edges g edges)
+        var-nodes (->> g loom-graph/nodes (filter symbol?))
+        ;; compute alternatives for each var based on comparisons with literals
+        alts (->> var-nodes
+                  (map #(zipmap
+                         (->> %
+                              (loom-graph/successors g)
+                              (filter (fn [n] (or (string? n) (and (optional-str-var? %) (= :Unset n)))))
+                              (sort-by name))
+                         (range)))
+                  (zipmap var-nodes))
+        ;; add node labels
+        g (reduce
+           (fn [g [n alts-for-n]]
+             (loom-label/add-label g n {:alt-var (symbol (str "$" (name n)))
+                                        :alt-vals alts-for-n}))
+           g
+           alts)
+        ;; add edge labels
+        g (reduce
+           (fn [g [a b]]
+             (->> (if (symbol? b)
+                    (let [[a b] (sort [a b])]
+                      (symbol (str "$" (name a) "=" (name b))))
+                    (let [alt-var (get-alt-var g a)
+                          alt-val (get-alt-val g a b)]
+                      (if (nil? alt-val)
+                        false
+                        (list 'if-value alt-var (list '= alt-var alt-val) false))))
+                  (loom-label/add-label g a b)))
+           g
+           edges)]
+    g))
 
-(defn- add-exclusivity-vars
-  "Add an integer variable for each string variable whose purpose is to encode mutually exclusive comparisons."
-  [{:keys [spec-vars ssa-graph] :as spec} scg]
-  (reduce
-   (fn [[spec alts] var-kw]
-     (let [literals (sort (directly-compared-literals ssa-graph scg var-kw))]
-       (if (empty? literals)
-         [spec alts]
-         [(assoc-in spec [:spec-vars (alts-var-kw var-kw)] [:Maybe "Integer"])
-          (assoc alts (alts-var-kw var-kw) (assoc (zipmap (range) literals) :Unset :String))])))
-   [spec {}]
-   (string-var-kws spec)))
+;;;;;;;;;;;;;; Spec Lowering ;;;;;;;;;;;;;;;;;;;;
+
+(defn- alt-var-decls [scg]
+  (-> (loom-graph/nodes scg)
+      (->> (filter symbol?) (map #(keyword (get-alt-var scg %))))
+      (zipmap (repeat [:Maybe "Integer"]))))
+
+(defn- comp-var-decls [scg]
+  (-> scg
+      (scg-edges)
+      (->>
+       (map last)
+       (filter symbol?)
+       (map keyword))
+      (zipmap (repeat "Boolean"))))
 
 (s/defn ^:private replace-string-comparison-with-var
-  [scg {:keys [sctx ctx] :as rctx} :- rewriting/RewriteFnCtx, id, [form htype]]
-  (when (and (seq? form) (contains? #{'not= '=} (first form)) (every? (partial loom-graph/has-node? scg) (rest form)))
-    (let [arg-ids (rest form)
-          pairs (map vector arg-ids (rest arg-ids))]
-      (cond->> (util/mk-junct
-                (if (= '= (first form)) 'and 'or)
-                (map #(apply loom-label/label scg %) pairs))
-        (= 'not= (first form)) (list 'not)))))
+  [scg {{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (when (and (seq? form) (contains? #{'not= '=} (first form)))
+    (let [nodes (map #(scg-node-for-id ssa-graph %) (rest form))]
+      (when (every? #(loom-graph/has-node? scg %) nodes)
+        (when (not= 2 (count nodes))
+          (throw (ex-info "BUG! expected all string comparisons of arity > 2 to have been rewritten" {:form form})))
+        (let [expr (apply loom-label/label scg nodes)]
+          (cond->> expr (= 'not= (first form)) (list 'not)))))))
 
-(s/defn ^:private lower-spec :- [(s/one ssa/SpecInfo :spec)
-                                 (s/one {s/Keyword {(s/cond-pre (s/enum :Unset) s/Int) (s/cond-pre (s/enum :String) s/Str)}} :alts)]
-  [{:keys [spec-vars constraints ssa-graph] :as spec} :- ssa/SpecInfo, scg :- (s/protocol loom-graph/Graph)]
-  (let [spec (update spec :spec-vars add-comparison-vars scg)
-        [spec alts] (add-exclusivity-vars spec scg)
-        spec (-> {:$propagate/Bounds spec}
-                 (rewriting/rewrite-reachable-sctx
-                  [{:rule-name "replace-string-comparison-with-var"
+(s/defn ^:private replace-$value?-with-unset-comparison
+  [scg {{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (when (and (seq? form) (= '$value? (first form)))
+    (when-let [var-sym (scg-node-for-id ssa-graph (second form))]
+      (when (loom-graph/has-node? scg var-sym)
+        (let [expr (loom-label/label scg var-sym :Unset)]
+          (list 'not expr))))))
+
+(s/defn ^:private lower-spec :- ssa/SpecInfo
+  [spec :- ssa/SpecInfo, scg]
+  (let [spec (update spec :spec-vars merge (alt-var-decls scg))
+        spec (update spec :spec-vars merge (comp-var-decls scg))
+        spec (->> {:$propagate/Bounds spec}
+                  (rewriting/rewrite-sctx*
+                   {:rule-name "replace-string-comparison-with-var"
                     :rewrite-fn (partial replace-string-comparison-with-var scg)
-                    :nodes :all}])
-                 :$propagate/Bounds)
-        spec (reduce
-              (fn [spec str-var-kw]
-                (let [alt-kw (alts-var-kw str-var-kw)
-                      alts-for-var (dissoc (alts alt-kw) :Unset)
-                      str-var-id (ssa/find-form ssa-graph (symbol str-var-kw))
-                      comp-vars (reduce-kv
-                                 (fn [acc i s]
-                                   (assoc acc s (loom-label/label scg str-var-id (ssa/find-form ssa-graph s))))
-                                 {}
-                                 alts-for-var)]
-                  (if (empty? alts-for-var)
-                    spec
-                    (rewriting/add-constraint
-                     "add-string-exclusivity-constraint" {} :$propagate/Bounds spec (name alt-kw)
-                     (list 'if-value (symbol alt-kw)
-                           (->> alts-for-var
-                                (map (fn [[i s]] (list '= (list '= i (symbol alt-kw)) (comp-vars s))))
-                                (util/mk-junct 'and))
-                           (util/mk-junct 'and (map #(list 'not %) (vals comp-vars))))))))
-              spec
-              (string-var-kws spec))]
-    [(update spec :spec-vars remove-string-vars)
-     alts]))
+                    :nodes :all})
+                  (rewriting/rewrite-sctx*
+                   {:rule-name "replace-$value?-with-unset-comparison"
+                    :rewrite-fn (partial replace-$value?-with-unset-comparison scg)
+                    :nodes :all})
+                  :$propagate/Bounds)
+        str-var-kws (->> scg loom-graph/nodes (filter symbol?) (map keyword))]
+    (-> spec
+        (update :spec-vars #(apply dissoc % str-var-kws)))))
 
-(defn- pprinted [& args]
-  (clojure.pprint/pprint (vec args))
-  (last args))
+;;;;;;;;;;; Bounds ;;;;;;;;;;;;;;;;;
 
 (s/defn ^:private disjoint-string-bounds? :- s/Bool
   [a :- StringBound, b :- StringBound]
@@ -286,83 +345,130 @@
     (string? b) (recur a {:$in #{b}})
     :else (empty? (set/intersection (:$in a) (:$in b)))))
 
-(s/defn ^:private simplify-string-bound :- StringBound
-  [a :- StringBound]
+(s/defn ^:private simplify-atom-bound :- AtomBound
+  [a :- AtomBound]
   (if (and (map? a) (= 1 (count (:$in a))))
     (first (:$in a))
     a))
 
 (s/defn ^:private lower-spec-bound :- prop-choco/SpecBound
-  [scg, {:keys [ssa-graph spec-vars] :as spec} :- ssa/SpecInfo, alts, initial-bound :- SpecBound]
-  (reduce
-   (fn [bound edge]
-     (let [[a-id b-id] ((juxt loom-graph/src loom-graph/dest) edge)
-           [a b] (map #(ssa/node-form (ssa/deref-id ssa-graph %)) [a-id b-id])
-           [[a-id b-id] [a b]] (if (string? a) [[b-id a-id] [b a]] [[a-id b-id] [a b]])]
-       (if (and (symbol? a) (contains? initial-bound (keyword a)))
-         (let [a-bound (simplify-string-bound (get initial-bound (keyword a)))
-               b-bound (simplify-string-bound
-                        (cond (string? b) b
-                              (symbol? b) (get initial-bound (keyword b) :String)
-                              :else :String))
-               comp-var (keyword (loom-label/label scg a-id b-id))]
-           (cond
-             (disjoint-string-bounds? a-bound b-bound) (assoc bound comp-var false)
-             (and (string? a-bound) (string? b-bound) (= a-bound b-bound)) (assoc bound comp-var true)
-             :else bound))
-         bound)))
-   (-> (apply dissoc initial-bound (string-var-kws spec))
-       (merge (-> alts (update-vals #(hash-map :$in (set (keys %)))))))
-   (loom-graph/edges scg)))
+  [initial-bound :- SpecBound scg]
+  (let [str-var-kws (->> scg loom-graph/nodes (filter symbol?) (map keyword))
+        ;; first, lower the user-supplied bounds into bounds for the alts vars
+        bound (->> str-var-kws
+                   (map (juxt identity initial-bound))
+                   (map (fn [[var-kw var-bound]]
+                          (let [{:keys [alt-var alt-vals]} (loom-label/label scg (symbol var-kw))
+                                alts (conj (set (vals alt-vals)) :Unset)
+                                optional? (= 0 (alt-vals :Unset))
+                                var-bound (cond
+                                            (nil? var-bound) (cond-> #{:String} optional? (conj :Unset))
+                                            (or (string? var-bound) (keyword? var-bound)) #{var-bound}
+                                            :else (:$in var-bound))]
+                            [(keyword alt-var)
+                             (simplify-atom-bound
+                              {:$in (if (contains? var-bound :String)
+                                      (cond-> (conj (set (vals alt-vals)) :Unset)
+                                        (and optional? (not (contains? var-bound :Unset))) (disj 0))
+                                      (->> var-bound (map #(get alt-vals % :Unset)) set))})])))
+                   (into {})
+                   (merge initial-bound))
+        ;; next, see if bounds for compared variables allow us to conclude that
+        ;; the variables are equal or inequal, and update comparison variable bounds accordingly
+        bound (->> scg
+                   (scg-edges)
+                   (filter #(every? symbol? %))
+                   (map (fn [[a b comp-var]]
+                          (let [a-bound (get initial-bound (keyword a) :String)
+                                b-bound (get initial-bound (keyword b) :String)
+                                comp-kw (keyword comp-var)]
+                            (cond
+                              (disjoint-string-bounds? a-bound b-bound) [comp-kw false]
+                              (and (string? a-bound) (string? b-bound) (= a-bound b-bound)) [comp-kw true]
+                              :else nil))))
+                   (remove nil?)
+                   (into {})
+                   (merge bound))]
+    (apply dissoc bound str-var-kws)))
 
 (defn- throw-contradiction
   "For now, we're throwing a choco ContradictionException so that at least there's a consistent
   way to catch these exceptions. Really though, we need a way to signal contradiction in general that is
   decoupled from Choco."
   []
-  (throw (ContradictionException. )))
+  (throw (ContradictionException.)))
 
 (s/defn ^:private raise-spec-bound :- SpecBound
-  [computed-bound :- prop-choco/SpecBound
-   scg, {:keys [ssa-graph spec-vars] :as spec} :- ssa/SpecInfo, alts, initial-bound :- SpecBound]
-  (let [witness-var-kws (->> scg
-                             loom-graph/edges
-                             (map #(vector % (keyword (loom-label/label scg (loom-graph/src %) (loom-graph/dest %)))))
-                             (into {}))
-        ;; The eq-g graph's edges represent proven equality.
-        ;; Two nodes in eq-g have an edge if they are known to have the same value.
-        eq-g (loom-derived/edges-filtered-by #(true? (get computed-bound (witness-var-kws %))) scg)
-        ;; The ne-g graph's edges represent proven inequality.
-        ;; Two nodes in ne-g have an edge if they are known to have different values.
-        ne-g (loom-derived/edges-filtered-by #(false? (get computed-bound (witness-var-kws %))) scg)]
-    ;; No two nodes can be both equal and not equal.
-    (doseq [a (loom-graph/nodes eq-g)
-            b (loom-alg/pre-traverse eq-g a)]
-      (when (loom-graph/has-edge? ne-g a b)
-        (throw-contradiction)))
-    (reduce
-     (fn [bound var-kw]
-       (let [var-id (ssa/find-form ssa-graph (symbol var-kw))
-             literals (indirectly-compared-literals ssa-graph eq-g var-kw)
-             alt-bound (get computed-bound (alts-var-kw var-kw))]
-         ;; If we've 'proven' a string variable to be two different literal strings simultaneously,
-         ;; then we've found a contradiction.
-         (when (< 1 (count literals))
-           (throw-contradiction))
-         (assoc bound var-kw
-                (cond
-                  (= 1 (count literals))
-                  (first literals)
+  [bound :- prop-choco/SpecBound scg initial-bound :- SpecBound]
+  (let [str-vars (->> scg loom-graph/nodes (filter symbol?))
+        ;; expressions proven to be equal
+        eq-g (loom-derived/edges-filtered-by
+              #(let [[a b expr :as e] (scg-edge scg %)]
+                 (and (symbol? expr) (true? (bound (keyword expr)))))
+              scg)
+        ;; compute per-var bounds from alt vars
+        new-bound (reduce
+                   (fn [new-bound var-sym]
+                     (let [{:keys [alt-var alt-vals]} (loom-label/label scg var-sym)
+                           could-be-unset? (seq? (loom-label/label scg var-sym :Unset))
+                           given-bound (get initial-bound (keyword var-sym) (if could-be-unset? {:$in #{:String :Unset}} :String))
+                           var-bound (get bound (keyword alt-var))
+                           var-bound (if (map? var-bound) (:$in var-bound) #{var-bound})
+                           alt-map (assoc (set/map-invert alt-vals) :Unset :String)
+                           var-bound (set (map alt-map var-bound))
+                           var-bound (if (contains? var-bound :String) #{:String} var-bound)]
+                       (-> new-bound
+                           (dissoc (keyword alt-var))
+                           (assoc (keyword var-sym)
+                                  (cond
+                                    (contains? var-bound :String) given-bound
+                                    (= 1 (count var-bound)) (first var-bound)
+                                    :else {:$in var-bound})))))
+                   (apply dissoc bound (->> scg scg-edges (map last) (filter symbol?) (map keyword)))
+                   str-vars)
+        ;; when two vars are proven equal, use each one's computed bound to restrict the others'
+        new-bound (reduce
+                   (fn [new-bound [a-kw b-kw]]
+                     (let [a-bound (new-bound a-kw)
+                           b-bound (new-bound b-kw)
+                           {:keys [alt-var alt-vals]} (loom-label/label scg (symbol b-kw))
+                           val-map (set/map-invert alt-vals)
+                           b-alt-bound (bound (keyword alt-var))
+                           b-alt-vals (if (map? b-alt-bound) (:$in b-alt-bound) #{b-alt-bound})
+                           disproved-vals (set (vals (apply dissoc val-map b-alt-vals)))]
+                       (cond
+                         ;; if a and b must be equal, but must also be different
+                         (and (string? a-bound) (string? b-bound) (not= a-bound b-bound))
+                         (throw-contradiction)
 
-                  (int? alt-bound)
-                  (get-in alts [(alts-var-kw var-kw) alt-bound])
+                         ;; otherwise, if b is a specific value, then so must be a
+                         (string? b-bound)
+                         (assoc new-bound a-kw b-bound)
 
-                  (and (map? alt-bound) (not (contains? (:$in alt-bound) :Unset)))
-                  {:$in (set (vals (select-keys (get alts (alts-var-kw var-kw)) (:$in alt-bound))))}
+                         ;; if a has been narrowed to a specific value, and b cannot be that value, contradiction
+                         (string? a-bound)
+                         (if (contains? disproved-vals a-bound)
+                           (throw-contradiction)
+                           new-bound)
 
-                  :else :String))))
-     (apply dissoc computed-bound (concat (vals witness-var-kws) (keys alts)))
-     (string-var-kws spec))))
+                         ;; if a has been narrowed to a specific set of values, we can remove
+                         ;; disproven b alternatives
+                         (and (map? a-bound) (every? string? (:$in a-bound)))
+                         (let [remaining (set/difference (:$in a-bound) disproved-vals)]
+                           (when (empty? remaining)
+                             (throw-contradiction))
+                           (assoc new-bound a-kw (simplify-atom-bound {:$in remaining})))
+
+                         :else new-bound)))
+                   new-bound
+                   (for [a (filter symbol? (loom-graph/nodes eq-g))
+                         b (filter symbol? (loom-graph/successors eq-g a))]
+                     [(keyword a) (keyword b)]))]
+
+    ;; TODO: when two vars are proven different, subtract each bound from the other
+    (update-vals new-bound simplify-atom-bound)))
+
+;;;;;;;;;;;; Propagate ;;;;;;;;;;;;;;;;;
 
 (def Opts prop-choco/Opts)
 
@@ -373,11 +479,11 @@
    (propagate spec default-options initial-bound))
   ([spec :- halite-envs/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
    (let [spec (->> spec (ssa/spec-to-ssa {}) (simplify-string-exprs))
-         scg (-> spec compute-string-comparison-graph label-scg)
-         [spec' alts] (lower-spec spec scg)]
+         scg (-> spec compute-string-comparison-graph)
+         spec' (lower-spec spec scg)]
      (-> spec'
          (ssa/spec-from-ssa)
          (prop-choco/propagate
           opts
-          (lower-spec-bound scg spec alts initial-bound))
-         (raise-spec-bound scg spec alts initial-bound)))))
+          (lower-spec-bound initial-bound scg))
+         (raise-spec-bound scg initial-bound)))))
