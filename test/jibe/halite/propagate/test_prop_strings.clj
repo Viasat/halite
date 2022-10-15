@@ -169,13 +169,14 @@
       {:s1 :String :s2 "bar" :s3 :String})))
 
 (deftest test-propagate-simple-example
-  (are [in out]
-       (= out (try (prop-strings/propagate simple-example in)
-                   (catch ContradictionException ex
-                     :contradiction)))
+  (let [spec (ssa/spec-to-ssa {} simple-example)]
+    (are [in out]
+         (= out (try (prop-strings/propagate spec in)
+                     (catch ContradictionException ex
+                       :contradiction)))
 
-    {} {:s1 :String :s2 "bar" :s3 :String}
-    {:s2 {:$in #{"bar" "baz"}}} {:s1 "bar" :s2 "bar" :s3 :String}))
+      {} {:s1 :String :s2 "bar" :s3 :String}
+      {:s2 {:$in #{"bar" "baz"}}} {:s1 "bar" :s2 "bar" :s3 :String})))
 
 (def mixed-constraints-example
   '{:spec-vars {:p "Boolean" :n "Integer" :s1 "String" :s2 "String"}
@@ -190,35 +191,36 @@
     :refines-to {}})
 
 (deftest test-propagate-mixed-constraints-example
-  (schema.core/without-fn-validation
-   (are [in out]
-        (= out (try (prop-strings/propagate mixed-constraints-example in)
-                    (catch ContradictionException ex
-                      :contradiction)))
+  (let [spec (ssa/spec-to-ssa {} mixed-constraints-example)]
+    (schema.core/without-fn-validation
+     (are [in out]
+          (= out (try (prop-strings/propagate spec in)
+                      (catch ContradictionException ex
+                        :contradiction)))
 
-     {}
-     {:n {:$in [0 10]}, :p {:$in #{false true}}, :s1 :String, :s2 {:$in #{"bar" "baz" "foo"}}}
+       {}
+       {:n {:$in [0 10]}, :p {:$in #{false true}}, :s1 :String, :s2 {:$in #{"bar" "baz" "foo"}}}
 
-     {:p true}
-     {:n {:$in [0 10]}, :p true, :s1 "foo", :s2 {:$in #{"bar" "baz" "foo"}}}
+       {:p true}
+       {:n {:$in [0 10]}, :p true, :s1 "foo", :s2 {:$in #{"bar" "baz" "foo"}}}
 
-     {:p true :s1 "bar"}
-     :contradiction
+       {:p true :s1 "bar"}
+       :contradiction
 
-     {:p true :s2 "bar"}
-     {:n {:$in [0 10]}, :p true, :s1 "foo", :s2 "bar"}
+       {:p true :s2 "bar"}
+       {:n {:$in [0 10]}, :p true, :s1 "foo", :s2 "bar"}
 
-     {:p true :s2 "foo"}
-     {:n {:$in [0 10]}, :p true, :s1 "foo", :s2 "foo"}
+       {:p true :s2 "foo"}
+       {:n {:$in [0 10]}, :p true, :s1 "foo", :s2 "foo"}
 
-     {:s1 "foo" :s2 "bar"}
-     {:n {:$in [0 5]}, :p {:$in #{false true}}, :s1 "foo", :s2 "bar"}
+       {:s1 "foo" :s2 "bar"}
+       {:n {:$in [0 5]}, :p {:$in #{false true}}, :s1 "foo", :s2 "bar"}
 
-     {:s1 "blerg"}
-     {:n {:$in [0 4]}, :p false, :s1 "blerg", :s2 {:$in #{"bar" "baz" "foo"}}}
+       {:s1 "blerg"}
+       {:n {:$in [0 4]}, :p false, :s1 "blerg", :s2 {:$in #{"bar" "baz" "foo"}}}
 
-     {:s1 "blerg" :n 2 :p false :s2 "baz"}
-     {:s1 "blerg" :n 2 :p false :s2 "baz"})))
+       {:s1 "blerg" :n 2 :p false :s2 "baz"}
+       {:s1 "blerg" :n 2 :p false :s2 "baz"}))))
 
 (def simple-optional-string-var-example
   '{:spec-vars {:s1 [:Maybe "String"], :s2 "String"}
@@ -351,24 +353,11 @@
            (raise-spec-bound {:$s1 :Unset :$s2 {:$in #{0 :Unset}}} scg {})))))
 
 (deftest test-propagate-optional-string-vars
-  (s/without-fn-validation
-   (are [in out]
-        (= out (prop-strings/propagate simple-optional-string-var-example in))
+  (let [spec (ssa/spec-to-ssa {} simple-optional-string-var-example)]
+    (s/without-fn-validation
+     (are [in out]
+          (= out (prop-strings/propagate spec in))
 
-     {} {:s1 {:$in #{"foo" :Unset}}, :s2 :String}
-     {:s1 "foo"} {:s1 "foo" :s2 "foo"}
-     {:s1 :Unset} {:s1 :Unset :s2 "bar"})))
-
-"
-TODO TODAY:
-
-* Don't include redundant variables for 'var = literal' comparisons
-* Refactor comparison variable naming to avoid node ids.
-* Refactor string bounds representation to include {:$type :String :$unset true/false}.
-* Actually get everything working.
-
-It might be worth copying off prop_strings, reverting to a working state, and then doing
-the variable renaming for the mandatory-only case first.
-
-"
-
+       {} {:s1 {:$in #{"foo" :Unset}}, :s2 :String}
+       {:s1 "foo"} {:s1 "foo" :s2 "foo"}
+       {:s1 :Unset} {:s1 :Unset :s2 "bar"}))))

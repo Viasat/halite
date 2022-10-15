@@ -2,15 +2,18 @@
 ;; Licensed under the MIT license
 
 (ns jibe.halite.propagate.test-prop-choco
-  (:require [jibe.halite.propagate.prop-choco :as prop-choco])
+  (:require [jibe.halite.propagate.prop-choco :as prop-choco]
+            [jibe.halite.transpile.ssa :as ssa])
   (:use clojure.test))
 
 (deftest test-propagate
-  (let [spec '{:spec-vars {:n "Integer" :m [:Maybe "Integer"] :p "Boolean"}
-               :constraints [["c1" (< 0 n)]
-                             ["c2" (if-value m (and (< 0 m) (< m n)) (not p))]
-                             ["c3" (< n (if p 10 15))]]
-               :refines-to {}}]
+  (let [spec (ssa/spec-to-ssa
+              {}
+              '{:spec-vars {:n "Integer" :m [:Maybe "Integer"] :p "Boolean"}
+                :constraints [["c1" (< 0 n)]
+                              ["c2" (if-value m (and (< 0 m) (< m n)) (not p))]
+                              ["c3" (< n (if p 10 15))]]
+                :refines-to {}})]
     (are [in out]
          (= out (prop-choco/propagate spec in))
 

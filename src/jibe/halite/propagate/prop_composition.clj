@@ -89,19 +89,20 @@
   (str prefix ">" (namespace spec-id) "$" (name spec-id) "|"))
 
 (s/defn ^:private flatten-vars :- FlattenedVars
-  ([spec-map :- halite-envs/SpecMap, spec-bound :- ConcreteSpecBound]
-   (flatten-vars spec-map [] "" false spec-bound))
-  ([spec-map :- halite-envs/SpecMap
+  ([sctx :- ssa/SpecCtx, spec-bound :- ConcreteSpecBound]
+   (flatten-vars sctx [] "" false spec-bound))
+  ([sctx :- ssa/SpecCtx
     parent-spec-ids :- [halite-types/NamespacedKeyword]
     prefix :- s/Str
     already-optional? :- s/Bool
     spec-bound :- ConcreteSpecBound]
    (let [spec-id (->> spec-bound :$type unwrap-maybe)
-         spec-refinements #(-> % spec-map :refines-to)]
+         spec-refinements #(-> % sctx :refines-to)
+         senv (ssa/as-spec-env sctx)]
      (->
       (reduce
        (fn [vars [var-kw vtype]]
-         (let [htype (halite-envs/halite-type-from-var-type spec-map vtype)]
+         (let [htype (halite-envs/halite-type-from-var-type senv vtype)]
            (cond
              (primitive-maybe-type? htype)
              (let [actually-mandatory? (and already-optional? (not (halite-types/maybe-type? htype)))
@@ -120,7 +121,7 @@
                    optional? (halite-types/maybe-type? htype)
                    sub-bound (get spec-bound var-kw :Unset)
                    flattened-vars (when recur?
-                                    (flatten-vars spec-map
+                                    (flatten-vars sctx
                                                   (conj parent-spec-ids (unwrap-maybe (:$type spec-bound)))
                                                   (str prefix (name var-kw) "|")
                                                   (or already-optional? optional?)
@@ -135,12 +136,12 @@
              :else (throw (ex-info (format "BUG! Variables of type '%s' not supported yet" htype)
                                    {:var-kw var-kw :type htype})))))
        {::mandatory #{} ::spec-id spec-id}
-       (->> spec-id spec-map :spec-vars))
+       (->> spec-id sctx :spec-vars))
       (assoc ::refines-to (->> (tree-seq (constantly true) #(map spec-refinements (keys %)) (spec-refinements spec-id))
                                (apply concat)
                                (into {}
                                      (map (fn [[dest-spec-id _]]
-                                            [dest-spec-id (-> (flatten-vars spec-map
+                                            [dest-spec-id (-> (flatten-vars sctx
                                                                             (conj parent-spec-ids dest-spec-id)
                                                                             (refined-var-name prefix dest-spec-id)
                                                                             (or already-optional? #_optional?)
@@ -345,12 +346,12 @@
   (update spec-info :constraints into (refinement-equality-constraints "" flattened-vars)))
 
 (defn- spec-ify-bound*
-  [flattened-vars specs spec-bound]
+  [flattened-vars sctx spec-bound]
   (->>
    {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
     :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]
     :refines-to {}}
-   (optionality-constraints specs flattened-vars)
+   (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
    (add-refinement-equality-constraints flattened-vars)))
 
 (s/defn spec-ify-bound :- halite-envs/SpecInfo
@@ -363,9 +364,9 @@
   can be translated into a valid instance of the bound.
   However, the expressed bound is generally not 'tight': there will usually be valid instances of the bound
   that do not correspond to any valid instance of the bounded spec."
-  [specs :- halite-envs/SpecMap, spec-bound :- ConcreteSpecBound]
+  [sctx :- ssa/SpecCtx, spec-bound :- ConcreteSpecBound]
   ;; First, flatten out the variables we'll need.
-  (spec-ify-bound* (flatten-vars specs spec-bound) specs spec-bound))
+  (spec-ify-bound* (flatten-vars sctx spec-bound) sctx spec-bound))
 
 ;;;;;;;;;; Convert choco bounds to spec bounds ;;;;;;;;;
 
@@ -458,17 +459,15 @@
   sctx)
 
 (s/defn propagate :- ConcreteSpecBound
-  ([spec-map :- halite-envs/SpecMap, initial-bound :- ConcreteSpecBound]
-   (propagate spec-map default-options initial-bound))
-  ([spec-map :- halite-envs/SpecMap, opts :- Opts, initial-bound :- ConcreteSpecBound]
-   (let [refinement-graph (loom-graph/digraph (update-vals spec-map (comp keys :refines-to)))
-         flattened-vars (flatten-vars spec-map initial-bound)
+  ([sctx :- ssa/SpecCtx, initial-bound :- ConcreteSpecBound]
+   (propagate sctx default-options initial-bound))
+  ([sctx :- ssa/SpecCtx, opts :- Opts, initial-bound :- ConcreteSpecBound]
+   (let [refinement-graph (loom-graph/digraph (update-vals sctx (comp keys :refines-to)))
+         flattened-vars (flatten-vars sctx initial-bound)
          lowered-bounds (lower-spec-bound flattened-vars initial-bound)
-         spec-ified-bound (spec-ify-bound* flattened-vars spec-map initial-bound)
-         initial-sctx (-> spec-map
-                          (assoc :$propagate/Bounds spec-ified-bound)
-                          (ssa/spec-map-to-ssa))]
-     (-> initial-sctx
+         spec-ified-bound (spec-ify-bound* flattened-vars sctx initial-bound)]
+     (-> sctx
+         (assoc :$propagate/Bounds (ssa/spec-to-ssa (ssa/as-spec-env sctx) spec-ified-bound))
          (disallow-optional-refinements)
          (lowering/lower-refinement-constraints)
          ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
@@ -507,9 +506,8 @@
             :nodes :all}])
          simplify/simplify
          :$propagate/Bounds
-         (ssa/spec-from-ssa)
          (prop-strings/propagate opts lowered-bounds)
-         (to-spec-bound spec-map flattened-vars)))))
+         (to-spec-bound (ssa/as-spec-env sctx) flattened-vars)))))
 
 (defn- int-bound? [bound]
   (or (int? bound)

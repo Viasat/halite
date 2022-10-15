@@ -8,6 +8,7 @@
   (:require [schema.core :as s]
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
+            [jibe.halite.transpile.ssa :as ssa]
             [viasat.choco-clj-opt :as choco-clj]))
 
 (s/defschema AtomBound
@@ -73,11 +74,12 @@
    {:default-int-bounds [-1000 1000]}))
 
 (s/defn propagate :- SpecBound
-  ([spec :- halite-envs/SpecInfo, initial-bound :- SpecBound]
+  ([spec :- ssa/SpecInfo, initial-bound :- SpecBound]
    (propagate spec default-options initial-bound))
-  ([spec :- halite-envs/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
+  ([spec :- ssa/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
    (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
      (-> spec
+         (ssa/spec-from-ssa)
          (lower-spec)
          (choco-clj/propagate (lower-spec-bound initial-bound))
          (raise-spec-bound)))))

@@ -7,7 +7,7 @@
             [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.halite-types :as halite-types]
             [jibe.halite.propagate.prop-composition :as prop-composition]
-            [jibe.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
+            [jibe.halite.transpile.ssa :as ssa]
             [jibe.halite.transpile.lowering :as lowering]
             [jibe.halite.transpile.util :refer [fixpoint mk-junct]]
             [jibe.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
@@ -84,64 +84,97 @@
 (defn- discriminator-var-kw [var-kw] (keyword (discriminator-var-name var-kw)))
 (defn- discriminator-var-sym [var-kw] (symbol (discriminator-var-name var-kw)))
 
-(defn- var-entry->spec-id [specs [var-kw var-type]]
-  (->> var-type (halite-envs/halite-type-from-var-type specs) halite-types/no-maybe halite-types/spec-id))
+(defn- var-entry->spec-id [senv [var-kw var-type]]
+  (->> var-type (halite-envs/halite-type-from-var-type senv) halite-types/no-maybe halite-types/spec-id))
 
 (defn- abstract-var?
-  [specs var-entry]
-  (if-let [spec-id (var-entry->spec-id specs var-entry)]
-    (true? (:abstract? (specs spec-id)))
+  [senv var-entry]
+  (if-let [spec-id (var-entry->spec-id senv var-entry)]
+    (true? (:abstract? (halite-envs/lookup-spec senv spec-id)))
     false))
 
+(s/defn ^:private replace-all
+  [{:keys [constraints refines-to ssa-graph] :as spec} replacements]
+  (as-> spec spec
+    (reduce
+     (fn [{:keys [ssa-graph] :as spec} [cname cid]]
+       (let [[ssa-graph cid'] (ssa/replace-in-expr ssa-graph cid replacements)]
+         (-> spec
+             (update :constraints conj [cname cid'])
+             (assoc :ssa-graph ssa-graph))))
+     (assoc spec :constraints [])
+     constraints)
+    (reduce-kv
+     (fn [{:keys [ssa-graph] :as spec} spec-id {:keys [expr]}]
+       (let [[ssa-graph id'] (ssa/replace-in-expr ssa-graph expr replacements)]
+         (-> spec
+             (assoc :ssa-graph ssa-graph)
+             (assoc-in [:refines-to spec-id :expr] id'))))
+     spec
+     refines-to)))
+
 (defn- lower-abstract-vars
-  [specs alternatives {:keys [spec-vars] :as spec-info}]
-  (reduce-kv
-   (fn [{:keys [spec-vars constraints refines-to] :as spec-info} var-kw var-type]
-     (let [alts (alternatives (var-entry->spec-id specs [var-kw var-type]))
-           optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
-           lowered-expr (reduce
-                         (fn [expr i]
-                           (let [alt-var (symbol (str (name var-kw) "$" i))]
-                             (list 'if-value alt-var alt-var expr)))
-                         (if optional-var? '$no-value '(error "unreachable"))
-                         (reverse (sort (vals alts))))]
-       ;; TODO: Should this just produce an unsatisfiable spec, instead?
-       (when (empty? alts)
-         (throw (ex-info (format "No values for variable %s: No concrete specs refine to %s" var-kw var-type)
-                         {:spec-info spec-info :alternatives alternatives})))
-       (assoc
-        spec-info
+  [sctx alternatives spec-id {:keys [spec-vars] :as spec}]
+  (let [senv (ssa/as-spec-env sctx)]
+    (assoc
+     sctx
+     spec-id
+     (reduce-kv
+      (fn [{:keys [spec-vars constraints refines-to] :as spec} var-kw var-type]
+        (let [alts (alternatives (var-entry->spec-id senv [var-kw var-type]))
+              ;; TODO: Should this just produce an unsatisfiable spec, instead?
+              _ (when (empty? alts)
+                  (throw (ex-info (format "No values for variable %s: No concrete specs refine to %s" var-kw var-type)
+                                  {:spec-info spec :alternatives alternatives})))
+              optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
 
-        :spec-vars
-        (reduce-kv
-         (fn [spec-vars alt-spec-id i]
-           (assoc spec-vars (keyword (str (name var-kw) "$" i)) [:Maybe alt-spec-id]))
-         (-> spec-vars
-             (dissoc var-kw)
-             (assoc (discriminator-var-kw var-kw) (cond->> "Integer" optional-var? (vector :Maybe))))
-         alts)
+              ;; add the discriminator var
+              spec (assoc-in spec [:spec-vars (discriminator-var-kw var-kw)] (cond->> "Integer" optional-var? (vector :Maybe)))
 
-        :constraints
-        (vec
-         (concat
-          (map
-           (fn [[cname cexpr]]
-             [cname (list 'let [(symbol var-kw) lowered-expr] cexpr)])
-           constraints)
-          (map (fn [i] [(str (name var-kw) "$" i)
-                        (list '=
-                              (list '= (discriminator-var-sym var-kw) i)
-                              (list 'if-value (symbol (str (name var-kw) "$" i)) true false))])
-               (sort (vals alts)))))
-        :refines-to
-        (reduce-kv
-         (fn [acc target-spec-id {:keys [expr] :as refn}]
-           (assoc acc target-spec-id
-                  (assoc refn :expr (list 'let [(symbol var-kw) lowered-expr] expr))))
-         {}
-         refines-to))))
-   spec-info
-   (filter (partial abstract-var? specs) spec-vars)))
+              ;; add the alt vars
+              spec (reduce-kv
+                    (fn [spec alt-spec-id i]
+                      (assoc-in spec [:spec-vars (keyword (str (name var-kw) "$" i))] [:Maybe alt-spec-id]))
+                    spec alts)
+
+              ;; the expression that this abstract var will be replaced with
+              lowered-expr (reduce
+                            (fn [expr i]
+                              (let [alt-var (symbol (str (name var-kw) "$" i))]
+                                (list 'if-value alt-var alt-var expr)))
+                            (if optional-var? '$no-value '(error "unreachable"))
+                            (reverse (sort (vals alts))))
+
+              ;; fold the lowered expression into the SSA graph
+              ctx (ssa/make-ssa-ctx sctx spec)
+              [ssa-graph lowered-expr-id] (ssa/form-to-ssa ctx lowered-expr)
+              ctx (assoc ctx :ssa-graph ssa-graph)
+              spec (assoc spec :ssa-graph ssa-graph)
+
+              ;; replace all abstract variable occurrences
+              var-node-id (ssa/find-form (:ssa-graph ctx) (symbol var-kw))
+              spec (cond-> spec
+                     (some? var-node-id) (replace-all {var-node-id lowered-expr-id}))
+
+              ;; add constraints tying discriminator to alt vars
+              spec (reduce
+                    (fn [spec i]
+                      (let [])
+                      (rewriting/add-constraint
+                       "link-abstract-var-discriminator-to-alt"
+                       sctx spec-id spec
+                       (str (name var-kw) "$" i)
+                       (list '=
+                             (list '= (discriminator-var-sym var-kw) i)
+                             (list 'if-value (symbol (str (name var-kw) "$" i)) true false))))
+                    spec
+                    (sort (vals alts)))
+
+              ;; remove abstract var
+              spec (update spec :spec-vars dissoc var-kw)]
+          spec))
+      spec
+      (filter (partial abstract-var? senv) spec-vars)))))
 
 (defn- invert-adj [adj-lists]
   (reduce-kv
@@ -159,14 +192,14 @@
 (declare lower-abstract-bounds)
 
 (defn- lower-abstract-var-bound
-  [specs alternatives var-kw optional-var? alts-for-spec {:keys [$if $in $type $refines-to] :as abstract-bound} parent-bound]
+  [senv alternatives var-kw optional-var? alts-for-spec {:keys [$if $in $type $refines-to] :as abstract-bound} parent-bound]
   (cond
     $if (let [b {:$in (merge (zipmap (keys alts-for-spec) (repeat {})) $if)}
               b (cond-> b $refines-to (assoc :$refines-to $refines-to))
               b (cond-> b (and optional-var? (not (false? (:Unset $if)))) (assoc-in [:$in :Unset] true))]
-          (recur specs alternatives var-kw optional-var? alts-for-spec b parent-bound))
+          (recur senv alternatives var-kw optional-var? alts-for-spec b parent-bound))
     $type (let [b {:$in {$type (dissoc abstract-bound :$type)}}]
-            (recur specs alternatives var-kw optional-var? alts-for-spec b parent-bound))
+            (recur senv alternatives var-kw optional-var? alts-for-spec b parent-bound))
     $in (let [unset? (true? (:Unset $in))
               alt-ids (->> (dissoc $in :Unset) keys (map alts-for-spec) set)]
           (reduce-kv
@@ -176,23 +209,23 @@
                       (lower-abstract-bounds
                        (cond-> (assoc spec-bound :$type [:Maybe spec-id])
                          $refines-to (assoc :$refines-to $refines-to))
-                       specs alternatives))))
+                       senv alternatives))))
            ;; restrict the discriminator
            (assoc parent-bound (discriminator-var-kw var-kw) {:$in (cond-> alt-ids unset? (conj :Unset))})
            (dissoc $in :Unset)))
     :else (throw (ex-info "Invalid abstract bound" {:bound abstract-bound}))))
 
 (s/defn ^:private lower-abstract-bounds :- ConcreteSpecBound2
-  [spec-bound :- SpecBound, specs :- halite-envs/SpecMap, alternatives]
+  [spec-bound :- SpecBound, senv :- (s/protocol halite-envs/SpecEnv), alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second) ; unwrap [:Maybe ..]
-        {:keys [spec-vars] :as spec} (specs spec-id)]
+        {:keys [spec-vars] :as spec} (halite-envs/lookup-spec senv spec-id)]
     (->>
      spec-vars
-     (filter #(abstract-var? specs %))
+     (filter #(abstract-var? senv %))
      (reduce
       (fn [spec-bound [var-kw var-type :as var-entry]]
-        (let [var-spec-id (var-entry->spec-id specs var-entry)
+        (let [var-spec-id (var-entry->spec-id senv var-entry)
               optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
               alts (alternatives var-spec-id)
               var-bound (or (var-kw spec-bound) {:$if {}})]
@@ -207,13 +240,13 @@
                   ;; add in a bound for the discriminator
                   (assoc (discriminator-var-kw var-kw) {:$in (cond-> (set (range (count alts))) optional-var? (conj :Unset))})
                   ;; if an abstract bound was provided, lower it
-                  (cond->> var-bound (lower-abstract-var-bound specs alternatives var-kw optional-var? alts var-bound)))))))
+                  (cond->> var-bound (lower-abstract-var-bound senv alternatives var-kw optional-var? alts var-bound)))))))
       spec-bound))))
 
 (declare raise-abstract-bounds)
 
 (defn- raise-abstract-var-bound
-  [specs alternatives var-kw alts parent-bound]
+  [senv alternatives var-kw alts parent-bound]
   (let [discrim-kw (discriminator-var-kw var-kw)
         parent-bound (reduce
                       (fn [parent-bound [spec-id i]]
@@ -221,7 +254,7 @@
                               alt-bound (parent-bound alt-var-kw)]
                           (cond-> (dissoc parent-bound alt-var-kw)
                             (not= :Unset alt-bound)
-                            (-> (assoc-in [var-kw :$in spec-id] (-> alt-bound (raise-abstract-bounds specs alternatives) (dissoc :$type)))
+                            (-> (assoc-in [var-kw :$in spec-id] (-> alt-bound (raise-abstract-bounds senv alternatives) (dissoc :$type)))
                                 (update-in [var-kw :$refines-to] prop-composition/union-refines-to-bounds (:$refines-to alt-bound))))))
                       (-> parent-bound
                           (assoc var-kw (if (= :Unset (discrim-kw parent-bound))
@@ -236,29 +269,26 @@
       parent-bound)))
 
 (s/defn ^:private raise-abstract-bounds :- SpecBound
-  [spec-bound :- ConcreteSpecBound2, specs :- halite-envs/SpecMap, alternatives]
+  [spec-bound :- ConcreteSpecBound2, senv :- (s/protocol halite-envs/SpecEnv), alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second)
-        {:keys [spec-vars] :as spec} (specs spec-id)]
+        {:keys [spec-vars] :as spec} (halite-envs/lookup-spec senv spec-id)]
     (->>
      spec-vars
-     (filter #(abstract-var? specs %))
+     (filter #(abstract-var? senv %))
      (reduce
       (fn [spec-bound [var-kw var-type :as var-entry]]
-        (let [var-spec-id (var-entry->spec-id specs var-entry)
+        (let [var-spec-id (var-entry->spec-id senv var-entry)
               alts (alternatives var-spec-id)]
-          (raise-abstract-var-bound specs alternatives var-kw alts spec-bound)))
+          (raise-abstract-var-bound senv alternatives var-kw alts spec-bound)))
       spec-bound))))
 
 (s/defn propagate :- SpecBound
-  ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- SpecBound]
-   (propagate senv prop-composition/default-options initial-bound))
-  ([senv :- (s/protocol halite-envs/SpecEnv), opts :- prop-composition/Opts, initial-bound :- SpecBound]
-   (let [specs (cond-> senv
-                 (or (instance? jibe.halite.halite_envs.SpecEnvImpl senv)
-                     (not (map? senv))) (halite-envs/build-spec-map (:$type initial-bound)))
-         abstract? #(-> % specs :abstract? true?)
-         refns (invert-adj (update-vals specs (comp keys :refines-to)))
+  ([sctx :- ssa/SpecCtx, initial-bound :- SpecBound]
+   (propagate sctx prop-composition/default-options initial-bound))
+  ([sctx :- ssa/SpecCtx, opts :- prop-composition/Opts, initial-bound :- SpecBound]
+   (let [abstract? #(-> % sctx :abstract? true?)
+         refns (invert-adj (update-vals sctx (comp keys :refines-to)))
          refn-graph (if (empty? refns)
                       (loom-graph/digraph)
                       (loom-graph/digraph refns))
@@ -272,8 +302,8 @@
                               (#(zipmap % (range)))
                               (assoc alts spec-id)))
                        {}
-                       (filter abstract? (keys specs)))]
-     (-> specs
-         (update-vals #(lower-abstract-vars specs alternatives %))
-         (prop-composition/propagate opts (lower-abstract-bounds initial-bound specs alternatives))
-         (raise-abstract-bounds specs alternatives)))))
+                       (filter abstract? (keys sctx)))
+         senv (ssa/as-spec-env sctx)]
+     (-> (reduce-kv (fn [acc spec-id spec] (lower-abstract-vars acc alternatives spec-id spec)) sctx sctx)
+         (prop-composition/propagate opts (lower-abstract-bounds initial-bound senv alternatives))
+         (raise-abstract-bounds senv alternatives)))))

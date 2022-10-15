@@ -47,20 +47,31 @@
 
 (deftest test-lower-abstract-vars
   (s/with-fn-validation
-    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
+          specs simplest-abstract-var-example
+          sctx (update-vals specs #(ssa/spec-to-ssa specs %))
+          c (:ws/C sctx)]
       (is (= '{:spec-vars
                {:w$type "Integer"
                 :w$0 [:Maybe :ws/A]
                 :w$1 [:Maybe :ws/B]
                 :cn "Integer"}
                :constraints
-               [["c1" (let [w (if-value w$0 w$0 (if-value w$1 w$1 (error "unreachable")))]
-                        (< cn (get (refine-to w :ws/W) :wn)))]
+               [["c1" (< cn (get (refine-to (if-value w$0 w$0 (if-value w$1 w$1 (error "unreachable"))) :ws/W) :wn))]
                 ["w$0" (= (= w$type 0) (if-value w$0 true false))]
                 ["w$1" (= (= w$type 1) (if-value w$1 true false))]]
                :refines-to {}}
-             (lower-abstract-vars simplest-abstract-var-example alts
-                                  (:ws/C simplest-abstract-var-example))))
+             (-> sctx
+                 (lower-abstract-vars alts :ws/C c)
+                 :ws/C
+                 (ssa/spec-from-ssa {})))))))
+
+(deftest test-lower-optional-abstract-vars
+  (s/with-fn-validation
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
+          specs optional-abstract-var-example
+          sctx (update-vals specs #(ssa/spec-to-ssa specs %))
+          c (:ws/C sctx)]
 
       (is (= '{:spec-vars
                {:w$type [:Maybe "Integer"]
@@ -68,21 +79,24 @@
                 :w$1 [:Maybe :ws/B]
                 :cn "Integer"}
                :constraints
-               [["c1" (let [w (if-value w$0 w$0 (if-value w$1 w$1 $no-value))]
-                        (< cn (if-value w (get (refine-to w :ws/W) :wn) 10)))]
+               [["c1" (let [v1 (if-value w$0 w$0 (if-value w$1 w$1 $no-value))]
+                        (< cn (if-value v1 (get (refine-to v1 :ws/W) :wn) 10)))]
                 ["w$0" (= (= w$type 0) (if-value w$0 true false))]
                 ["w$1" (= (= w$type 1) (if-value w$1 true false))]]
                :refines-to {}}
-             (lower-abstract-vars optional-abstract-var-example
-                                  alts (:ws/C optional-abstract-var-example)))))))
+             (-> sctx
+                 (lower-abstract-vars alts :ws/C c)
+                 :ws/C
+                 (ssa/spec-from-ssa {})))))))
 
 (def lower-abstract-bounds #'pa/lower-abstract-bounds)
 
 (deftest test-lower-abstract-bounds
   (s/with-fn-validation
-    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
+          senv (halite-envs/spec-env simplest-abstract-var-example)]
       (are [in out]
-           (= out (lower-abstract-bounds in simplest-abstract-var-example alts))
+           (= out (lower-abstract-bounds in senv alts))
 
         ;; enumerate the discriminator's domain
         {:$type :ws/C}
@@ -136,9 +150,10 @@
 
 (deftest test-lower-optional-abstract-bounds
   (s/with-fn-validation
-    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
+          senv (halite-envs/spec-env optional-abstract-var-example)]
       (are [in out]
-           (= out (lower-abstract-bounds in optional-abstract-var-example alts))
+           (= out (lower-abstract-bounds in senv alts))
 
         ;; discriminator's domain includes :Unset
         {:$type :ws/C}
@@ -177,9 +192,10 @@
 
 (deftest test-raise-abstract-bounds
   (s/with-fn-validation
-    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
+          senv (halite-envs/spec-env simplest-abstract-var-example)]
       (are [in out]
-           (= out (raise-abstract-bounds in simplest-abstract-var-example alts))
+           (= out (raise-abstract-bounds in senv alts))
 
         {:$type :ws/C
          :cn 12
@@ -213,9 +229,10 @@
 
 (deftest test-raise-optional-abstract-bounds
   (s/with-fn-validation
-    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}]
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
+          senv (halite-envs/spec-env optional-abstract-var-example)]
       (are [in out]
-           (= out (raise-abstract-bounds in optional-abstract-var-example alts))
+           (= out (raise-abstract-bounds in senv alts))
 
         {:$type :ws/C
          :cn 12
@@ -243,55 +260,57 @@
         {:$type :ws/C :cn 12 :w :Unset}))))
 
 (deftest test-propagate-for-abstract-variables
-  (are [in out]
-       (= out (pa/propagate simplest-abstract-var-example in))
+  (let [sctx (ssa/spec-map-to-ssa simplest-abstract-var-example)]
+    (are [in out]
+         (= out (pa/propagate sctx in))
 
-    {:$type :ws/C}
-    {:$type :ws/C
-     :cn {:$in [-1000 6]}
-     :w {:$in {:ws/A {:a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
-               :ws/B {:b {:$in [6 9]} :$refines-to {:ws/W {:wn {:$in [4 7]}}}}}
-         :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
+      {:$type :ws/C}
+      {:$type :ws/C
+       :cn {:$in [-1000 6]}
+       :w {:$in {:ws/A {:a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
+                 :ws/B {:b {:$in [6 9]} :$refines-to {:ws/W {:wn {:$in [4 7]}}}}}
+           :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
 
-    {:$type :ws/C :w {:$type :ws/A}}
-    {:$type :ws/C :w {:$type :ws/A :a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
-     :cn {:$in [-1000 5]}}
+      {:$type :ws/C :w {:$type :ws/A}}
+      {:$type :ws/C :w {:$type :ws/A :a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
+       :cn {:$in [-1000 5]}}
 
-    {:$type :ws/C :w {:$refines-to {:ws/W {:wn 7}}}}
-    {:$type :ws/C :w {:$type :ws/B, :b 9 :$refines-to {:ws/W {:wn 7}}}
-     :cn {:$in [-1000 6]}}
+      {:$type :ws/C :w {:$refines-to {:ws/W {:wn 7}}}}
+      {:$type :ws/C :w {:$type :ws/B, :b 9 :$refines-to {:ws/W {:wn 7}}}
+       :cn {:$in [-1000 6]}}
 
-    {:$type :ws/C :w {:$refines-to {:ws/W {:wn {:$in #{6 7}}}}}}
-    {:$type :ws/C,
-     :cn {:$in [-1000 6]},
-     :w {:$in {:ws/A {:$refines-to {:ws/W {:wn 6}}, :a 5},
-               :ws/B {:$refines-to {:ws/W {:wn {:$in #{6 7}}}}, :b {:$in [8 9]}}},
-         :$refines-to {:ws/W {:wn {:$in #{6 7}}}}}}))
+      {:$type :ws/C :w {:$refines-to {:ws/W {:wn {:$in #{6 7}}}}}}
+      {:$type :ws/C,
+       :cn {:$in [-1000 6]},
+       :w {:$in {:ws/A {:$refines-to {:ws/W {:wn 6}}, :a 5},
+                 :ws/B {:$refines-to {:ws/W {:wn {:$in #{6 7}}}}, :b {:$in [8 9]}}},
+           :$refines-to {:ws/W {:wn {:$in #{6 7}}}}}})))
 
 (deftest test-propagate-for-optional-abstract-variables
-  (are [in out]
-       (= out (pa/propagate optional-abstract-var-example in))
+  (let [sctx (ssa/spec-map-to-ssa optional-abstract-var-example)]
+    (are [in out]
+         (= out (pa/propagate sctx in))
 
-    {:$type :ws/C}
-    {:$type :ws/C
-     :cn {:$in [-1000 9]}
-     :w {:$in {:ws/A {:a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
-               :ws/B {:b {:$in [6 9]} :$refines-to {:ws/W {:wn {:$in [4 7]}}}}
-               :Unset true}
-         :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
+      {:$type :ws/C}
+      {:$type :ws/C
+       :cn {:$in [-1000 9]}
+       :w {:$in {:ws/A {:a {:$in [2 5]} :$refines-to {:ws/W {:wn {:$in [3 6]}}}}
+                 :ws/B {:b {:$in [6 9]} :$refines-to {:ws/W {:wn {:$in [4 7]}}}}
+                 :Unset true}
+           :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
 
-    {:$type :ws/C :w {:$if {:Unset false}}}
-    {:$type :ws/C,
-     :cn {:$in [-1000 6]},
-     :w {:$in {:ws/A {:$refines-to {:ws/W {:wn {:$in [3 6]}}}, :a {:$in [2 5]}},
-               :ws/B {:$refines-to {:ws/W {:wn {:$in [4 7]}}}, :b {:$in [6 9]}}},
-         :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
+      {:$type :ws/C :w {:$if {:Unset false}}}
+      {:$type :ws/C,
+       :cn {:$in [-1000 6]},
+       :w {:$in {:ws/A {:$refines-to {:ws/W {:wn {:$in [3 6]}}}, :a {:$in [2 5]}},
+                 :ws/B {:$refines-to {:ws/W {:wn {:$in [4 7]}}}, :b {:$in [6 9]}}},
+           :$refines-to {:ws/W {:wn {:$in [3 7]}}}}}
 
-    {:$type :ws/C :w {:$in {:ws/A {} :Unset true}}}
-    {:$type :ws/C,
-     :cn {:$in [-1000 9]},
-     :w {:$in {:Unset true, :ws/A {:$refines-to {:ws/W {:wn {:$in [3 6]}}}, :a {:$in [2 5]}}},
-         :$refines-to {:ws/W {:wn {:$in [3 6]}}}}}))
+      {:$type :ws/C :w {:$in {:ws/A {} :Unset true}}}
+      {:$type :ws/C,
+       :cn {:$in [-1000 9]},
+       :w {:$in {:Unset true, :ws/A {:$refines-to {:ws/W {:wn {:$in [3 6]}}}, :a {:$in [2 5]}}},
+           :$refines-to {:ws/W {:wn {:$in [3 6]}}}}})))
 
 (def nested-abstracts-example
   '{:ws/W {:abstract? true
@@ -326,9 +345,10 @@
 
 (deftest test-lower-abstract-bounds-for-nested-abstracts
   (s/with-fn-validation
-    (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}]
+    (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}
+          senv (halite-envs/spec-env nested-abstracts-example)]
       (are [in out]
-           (= out (lower-abstract-bounds in nested-abstracts-example alts))
+           (= out (lower-abstract-bounds in senv alts))
 
         {:$type :ws/E}
         {:$type :ws/E
@@ -355,9 +375,10 @@
                :cw$1 {:$type [:Maybe :ws/B]}}}))))
 
 (deftest test-raise-nested-abstract-bounds
-  (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}]
+  (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}
+        senv (halite-envs/spec-env nested-abstracts-example)]
     (are [in out]
-         (= out (raise-abstract-bounds in nested-abstracts-example alts))
+         (= out (raise-abstract-bounds in senv alts))
 
       {:$type :ws/E,
        :v$type {:$in #{0 1}},
@@ -389,21 +410,22 @@
            :$refines-to {:ws/V {:vn 12}}}})))
 
 (deftest test-propagate-for-nested-abstracts
-  (are [in out]
-       (= out (pa/propagate nested-abstracts-example in))
+  (let [sctx (ssa/spec-map-to-ssa nested-abstracts-example)]
+    (are [in out]
+         (= out (pa/propagate sctx in))
 
-    {:$type :ws/E :v {:$refines-to {:ws/V {:vn 12}}}}
-    {:$type :ws/E,
-     :v {:$in {:ws/C {:cn {:$in [1 1000]}
-                      :$refines-to {:ws/V {:vn 12}},
-                      :cw {:$in {:ws/A {:an {:$in [-988 11]}
-                                        :$refines-to {:ws/W {:wn {:$in [-988 11]}}}}
-                                 ;; TODO: figure out why bn's bounds aren't as tight as an's
-                                 :ws/B {:bn {:$in [-1000 1000]}
-                                        :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}}
-                           :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}}
-               :ws/D {:$refines-to {:ws/V {:vn 12}}, :dn 12}},
-         :$refines-to {:ws/V {:vn 12}}}}))
+      {:$type :ws/E :v {:$refines-to {:ws/V {:vn 12}}}}
+      {:$type :ws/E,
+       :v {:$in {:ws/C {:cn {:$in [1 1000]}
+                        :$refines-to {:ws/V {:vn 12}},
+                        :cw {:$in {:ws/A {:an {:$in [-988 11]}
+                                          :$refines-to {:ws/W {:wn {:$in [-988 11]}}}}
+                                   ;; TODO: figure out why bn's bounds aren't as tight as an's
+                                   :ws/B {:bn {:$in [-1000 1000]}
+                                          :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}}
+                             :$refines-to {:ws/W {:wn {:$in [-1000 1000]}}}}}
+                 :ws/D {:$refines-to {:ws/V {:vn 12}}, :dn 12}},
+           :$refines-to {:ws/V {:vn 12}}}})))
 
 (def abstract-refinement-chain-example
   '{:ws/W {:abstract? true
@@ -427,46 +449,47 @@
     :ws/B {:spec-vars {:w :ws/W} :constraints [] :refines-to {}}})
 
 (deftest test-abstract-refinement-chain
-  (are [in out]
-       (= out (pa/propagate abstract-refinement-chain-example in))
+  (let [sctx (ssa/spec-map-to-ssa abstract-refinement-chain-example)]
+    (are [in out]
+         (= out (pa/propagate sctx in))
 
-    {:$type :ws/B :w {:$refines-to {:ws/W {:wn 42}}}}
-    {:$type :ws/B,
-     :w {:$in {:ws/A1 {:a1n 41
-                       :$refines-to {:ws/W {:wn 42}}}
-               :ws/A3 {:a3n 39
-                       :$refines-to {:ws/A1 {:a1n 41}
-                                     :ws/A2 {:a2n 40}
-                                     :ws/W {:wn 42}}}}
-         :$refines-to {:ws/A1 {:a1n 41}
-                       :ws/A2 {:a2n 40}
-                       :ws/W {:wn 42}}}}
+      {:$type :ws/B :w {:$refines-to {:ws/W {:wn 42}}}}
+      {:$type :ws/B,
+       :w {:$in {:ws/A1 {:a1n 41
+                         :$refines-to {:ws/W {:wn 42}}}
+                 :ws/A3 {:a3n 39
+                         :$refines-to {:ws/A1 {:a1n 41}
+                                       :ws/A2 {:a2n 40}
+                                       :ws/W {:wn 42}}}}
+           :$refines-to {:ws/A1 {:a1n 41}
+                         :ws/A2 {:a2n 40}
+                         :ws/W {:wn 42}}}}
 
-    {:$type :ws/B :w {:$type :ws/A3 :a3n {:$in #{3 4 5}}}}
-    {:$type :ws/B
-     :w {:$type :ws/A3
-         :a3n {:$in #{3 4 5}}
-         :$refines-to {:ws/A1 {:a1n {:$in [5 7]}}
-                       :ws/A2 {:a2n {:$in [4 6]}}
-                       :ws/W {:wn {:$in [6 8]}}}}}
+      {:$type :ws/B :w {:$type :ws/A3 :a3n {:$in #{3 4 5}}}}
+      {:$type :ws/B
+       :w {:$type :ws/A3
+           :a3n {:$in #{3 4 5}}
+           :$refines-to {:ws/A1 {:a1n {:$in [5 7]}}
+                         :ws/A2 {:a2n {:$in [4 6]}}
+                         :ws/W {:wn {:$in [6 8]}}}}}
 
-    ;; This case really demonstrates the importance of fixing the $refines-to issue.
-    {:$type :ws/B :w {:$in {:ws/A1 {:a1n 12}
-                            :ws/A3 {:a3n 10}}}}
-    {:$type :ws/B,
-     :w {:$in {:ws/A1 {:$refines-to {:ws/W {:wn 13}}, :a1n 12},
-               :ws/A3 {:$refines-to {:ws/A1 {:a1n 12},
-                                     :ws/A2 {:a2n 11},
-                                     :ws/W {:wn 13}},
-                       :a3n 10}},
-         :$refines-to {:ws/A1 {:a1n 12},
-                       :ws/A2 {:a2n 11},
-                       :ws/W {:wn 13}}}}
+      ;; This case really demonstrates the importance of fixing the $refines-to issue.
+      {:$type :ws/B :w {:$in {:ws/A1 {:a1n 12}
+                              :ws/A3 {:a3n 10}}}}
+      {:$type :ws/B,
+       :w {:$in {:ws/A1 {:$refines-to {:ws/W {:wn 13}}, :a1n 12},
+                 :ws/A3 {:$refines-to {:ws/A1 {:a1n 12},
+                                       :ws/A2 {:a2n 11},
+                                       :ws/W {:wn 13}},
+                         :a3n 10}},
+           :$refines-to {:ws/A1 {:a1n 12},
+                         :ws/A2 {:a2n 11},
+                         :ws/W {:wn 13}}}}
 
-    ;; Doesn't work :(
-    ;; {:$type :ws/B :w {:$refines-to {:ws/A2 {:a2n 42}}}}
-    ;; nil
-    ))
+      ;; Doesn't work :(
+      ;; {:$type :ws/B :w {:$refines-to {:ws/A2 {:a2n 42}}}}
+      ;; nil
+      )))
 
 ;; Trying to propgate this example currently causes a stack overflow.
 ;; We'll want to support this sort of structural recursion eventually, but it will take some doing.
@@ -490,7 +513,7 @@
            :refines-to {}}})
 
 (deftest test-tricky-inst-literal-simplification
-  (let [senv (halite-envs/spec-env
+  (let [sctx (ssa/spec-map-to-ssa
               '{:ws/A
                 {:spec-vars {:b1 [:Maybe :ws/B]}
                  :constraints [["a2" (if-value b1 true false)]]
@@ -500,7 +523,7 @@
                  :constraints []
                  :refines-to {}}})]
     (is (= {:$type :ws/A :b1 {:$type :ws/B}}
-           (pa/propagate senv {:$type :ws/A})))))
+           (pa/propagate sctx {:$type :ws/A})))))
 
 (comment "
 Stuff to do/remember regarding abstractness!

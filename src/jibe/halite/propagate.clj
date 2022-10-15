@@ -5,6 +5,7 @@
   "Constraint propagation for halite."
   (:require [jibe.halite.halite-envs :as halite-envs]
             [jibe.halite.propagate.prop-abstract :as prop-abstract]
+            [jibe.halite.transpile.ssa :as ssa]
             [schema.core :as s]))
 
 (def Bound prop-abstract/Bound)
@@ -19,5 +20,8 @@
   ([senv :- (s/protocol halite-envs/SpecEnv), initial-bound :- SpecBound]
    (propagate senv default-options initial-bound))
   ([senv :- (s/protocol halite-envs/SpecEnv), opts :- prop-abstract/Opts, initial-bound :- SpecBound]
-   (prop-abstract/propagate senv opts initial-bound)))
+   (let [sctx (if (map? senv)
+                (ssa/spec-map-to-ssa senv)
+                (ssa/build-spec-ctx senv (:$type initial-bound)))]
+     (prop-abstract/propagate sctx opts initial-bound))))
 

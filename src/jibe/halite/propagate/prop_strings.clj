@@ -475,14 +475,13 @@
 (def default-options prop-choco/default-options)
 
 (s/defn propagate :- SpecBound
-  ([spec :- halite-envs/SpecInfo, initial-bound :- SpecBound]
+  ([spec :- ssa/SpecInfo, initial-bound :- SpecBound]
    (propagate spec default-options initial-bound))
-  ([spec :- halite-envs/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
-   (let [spec (->> spec (ssa/spec-to-ssa {}) (simplify-string-exprs))
+  ([spec :- ssa/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
+   (let [spec (simplify-string-exprs spec)
          scg (-> spec compute-string-comparison-graph)
          spec' (lower-spec spec scg)]
      (-> spec'
-         (ssa/spec-from-ssa)
          (prop-choco/propagate
           opts
           (lower-spec-bound initial-bound scg))
