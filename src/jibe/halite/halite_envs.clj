@@ -31,9 +31,17 @@
                        "exactly one inner type")
    :else halite-types/NamespacedKeyword))
 
+(defn maybe-type? [t]
+  (and (vector? t) (= :Maybe (first t))))
+
+(defn no-maybe [t]
+  (if (maybe-type? t)
+    (second t)
+    t))
+
 (s/defschema VarType
   (s/conditional
-   #(and (vector? %) (= :Maybe (first %)))
+   maybe-type?
    [(s/one (s/enum :Maybe) :maybe) (s/one MandatoryVarType :inner)]
 
    :else MandatoryVarType))
