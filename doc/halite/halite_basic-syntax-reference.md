@@ -390,6 +390,7 @@ A collection of values in a prescribed sequence.
 
 * [`h-err/literal-must-evaluate-to-value`](halite_err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](halite_err-id-reference.md#h-err/size-exceeded)
+* [`h-err/unknown-type-collection`](halite_err-id-reference.md#h-err/unknown-type-collection)
 
 ### Tags:
 
@@ -428,6 +429,7 @@ The members of sets are not directly accessible. If it is necessary to access th
 
 * [`h-err/literal-must-evaluate-to-value`](halite_err-id-reference.md#h-err/literal-must-evaluate-to-value)
 * [`h-err/size-exceeded`](halite_err-id-reference.md#h-err/size-exceeded)
+* [`h-err/unknown-type-collection`](halite_err-id-reference.md#h-err/unknown-type-collection)
 
 ### Tags:
 

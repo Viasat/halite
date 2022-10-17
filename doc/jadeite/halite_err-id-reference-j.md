@@ -839,6 +839,25 @@ The operator being invoked is not recognized as a valid operation.
 > Unknown function or operator: :op
 
 ---
+### <a name="h-err/unknown-type-collection"></a>h-err/unknown-type-collection
+
+Collections of heterogenous types are not allowed. Similarly collections whose element type cannot be statically determined are not allowed.
+
+#### Error message template:
+
+> Collections must contain values of a single known type
+
+#### Produced by elements:
+
+* [`set`](halite_basic-syntax-reference-j.md#set)
+* [`vector`](halite_basic-syntax-reference-j.md#vector)
+
+#### Produced by operators:
+
+* [`conj`](halite_full-reference-j.md#conj)
+* [`union`](halite_full-reference-j.md#union)
+
+---
 ### <a name="h-err/value-of-wrong-type"></a>h-err/value-of-wrong-type
 
 The value did not match the expected type for this symbol in the context.

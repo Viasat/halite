@@ -1353,6 +1353,7 @@ Invoking this operation with a vector and an empty set has the effect of convert
 
 * [`h-err/not-both-vectors`](halite_err-id-reference-j.md#h-err/not-both-vectors)
 * [`h-err/size-exceeded`](halite_err-id-reference-j.md#h-err/size-exceeded)
+* [`h-err/unknown-type-collection`](halite_err-id-reference-j.md#h-err/unknown-type-collection)
 
 #### Tags:
 
@@ -1409,6 +1410,7 @@ Only definite values may be put into collections, i.e. collections cannot contai
 * [`h-err/argument-not-set-or-vector`](halite_err-id-reference-j.md#h-err/argument-not-set-or-vector)
 * [`h-err/cannot-conj-unset`](halite_err-id-reference-j.md#h-err/cannot-conj-unset)
 * [`h-err/size-exceeded`](halite_err-id-reference-j.md#h-err/size-exceeded)
+* [`h-err/unknown-type-collection`](halite_err-id-reference-j.md#h-err/unknown-type-collection)
 
 #### Tags:
 
@@ -3039,6 +3041,7 @@ This produces a set which contains all of the values that appear in any of the a
 #### Possible errors:
 
 * [`h-err/arguments-not-sets`](halite_err-id-reference-j.md#h-err/arguments-not-sets)
+* [`h-err/unknown-type-collection`](halite_err-id-reference-j.md#h-err/unknown-type-collection)
 
 See also: [`difference`](#difference) [`intersection`](#intersection) [`subset?`](#subset_Q)
 

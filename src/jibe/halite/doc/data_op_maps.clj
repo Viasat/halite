@@ -291,7 +291,8 @@
                         :expr-str-j :auto
                         :result :auto}]
             :throws ['h-err/not-both-vectors
-                     'h-err/size-exceeded]}
+                     'h-err/size-exceeded
+                     'h-err/unknown-type-collection]}
    'conj {:sigs [["set value {value}" "set"]
                  ["vector value {value}" "vector"]]
           :sigs-j [["set '.' 'conj' '(' value {',' value} ')'" "set"]
@@ -311,7 +312,8 @@
                       :result :auto}]
           :throws ['h-err/argument-not-set-or-vector
                    'h-err/cannot-conj-unset
-                   'h-err/size-exceeded]}
+                   'h-err/size-exceeded
+                   'h-err/unknown-type-collection]}
    'contains? {:sigs [["set value" "boolean"]]
                :sigs-j [["set '.' 'contains?' '(' value ')'" "boolean"]]
                :tags #{:set-op :boolean-out}
@@ -982,7 +984,8 @@
                        :result :auto}]
            :doc "Compute the union of all the sets."
            :comment "This produces a set which contains all of the values that appear in any of the arguments."
-           :throws ['h-err/arguments-not-sets]
+           :throws ['h-err/arguments-not-sets
+                    'h-err/unknown-type-collection]
            :op-ref ['difference 'intersection 'subset?]}
    'valid {:sigs [["instance-expression" "any"]]
            :sigs-j [["'valid' instance-expression" "any"]]

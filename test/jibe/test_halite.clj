@@ -627,7 +627,8 @@
     '(concat [] #{}) #"second argument must also be a vector"
     '(sort) #"No matching signature"
     '(sort 1) #"No matching signature"
-    '(conj [1] "two") #"must contain values of a single known type")
+    '(conj [1] "two") #"must contain values of a single known type"
+    '(concat [1] ["two"]) #"must contain values of a single known type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))

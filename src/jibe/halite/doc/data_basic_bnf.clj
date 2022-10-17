@@ -136,7 +136,8 @@
                        {:expr-str "[#{1 2} #{3}]"
                         :expr-str-j :auto}]
             :throws ['h-err/literal-must-evaluate-to-value
-                     'h-err/size-exceeded]
+                     'h-err/size-exceeded
+                     'h-err/unknown-type-collection]
             :tags #{'vector-op 'vector-out}}
    'set {:bnf "'#' '{' [whitespace] { value [whitespace]} [value] [whitespace] '}'"
          :bnf-j "'#' '{' [whitespace] [value] [whitespace] {',' [whitespace] value [whitespace]} '}'"
@@ -149,7 +150,8 @@
                     {:expr-str "#{[1 2] [3]}"
                      :expr-str-j :auto}]
          :throws ['h-err/literal-must-evaluate-to-value
-                  'h-err/size-exceeded]
+                  'h-err/size-exceeded
+                  'h-err/unknown-type-collection]
          :tags #{'set-op 'set-out}}
    'value {:bnf "boolean | string | integer | fixed-decimal | instance | vector | set"
            :doc "Expressions and many literals produce values."}
