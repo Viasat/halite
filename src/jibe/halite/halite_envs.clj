@@ -53,10 +53,14 @@
 (s/defschema NamedConstraint
   [(s/one s/Str :name) (s/one s/Any :expr)])
 
+(s/defschema SpecVars {halite-types/BareKeyword VarType})
+
+(s/defschema RefinesTo {halite-types/NamespacedKeyword Refinement})
+
 (s/defschema SpecInfo
-  {:spec-vars {halite-types/BareKeyword VarType}
+  {:spec-vars SpecVars
    :constraints [NamedConstraint]
-   :refines-to {halite-types/NamespacedKeyword Refinement}
+   :refines-to RefinesTo
    (s/optional-key :abstract?) s/Bool})
 
 (s/defschema PartialSpecInfo
