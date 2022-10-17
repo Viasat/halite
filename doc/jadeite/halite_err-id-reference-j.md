@@ -854,6 +854,7 @@ Collections of heterogenous types are not allowed. Similarly collections whose e
 
 #### Produced by operators:
 
+* [`concat`](halite_full-reference-j.md#concat)
 * [`conj`](halite_full-reference-j.md#conj)
 * [`union`](halite_full-reference-j.md#union)
 

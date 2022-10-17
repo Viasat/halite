@@ -571,7 +571,7 @@
                   :tags #{:optional-op :control-flow :special-form}
                   :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then evaluate the third argument without introducing a new binding for the symbol."
                   :comment "This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value."
-                  :examples [{:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "my/Result$v1/r"
+                  :examples [{:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "r"
                                                                                                        :expr 'placeholder
                                                                                                        :inverted? true}}}
                                                              :my/Result$v1 {:spec-vars {:x "Integer"}}
@@ -584,7 +584,7 @@
                               :expr-str "(if-value-let [x (when (> 2 1) 19)] (inc x) 0)"
                               :expr-str-j :auto
                               :result :auto}
-                             {:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "my/Result$v1/r"
+                             {:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "r"
                                                                                                        :expr 'placeholder
                                                                                                        :inverted? true}}}
                                                              :my/Result$v1 {:spec-vars {:x "Integer"}},
@@ -1054,7 +1054,7 @@
                 :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset."
                 :examples [{:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
                                                                                                     :inverted? true
-                                                                                                    :name "my/Result$v1/r"}}
+                                                                                                    :name "r"}}
                                                                         :spec-vars {:x [:Maybe "Integer"]}}
                                                            :my/Result$v1 {:spec-vars {:x [:Maybe "Integer"]}}})
                             :instance {:$type :my/Spec$v1, :x 1}
@@ -1064,7 +1064,7 @@
                             :result :auto}
                            {:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
                                                                                                     :inverted? true,
-                                                                                                    :name "my/Result$v1/r"}}
+                                                                                                    :name "r"}}
                                                                         :spec-vars {:x [:Maybe "Integer"]}}
                                                            :my/Result$v1 {:spec-vars {:x [:Maybe "Integer"]}}})
                             :instance {:$type :my/Spec$v1}
@@ -1080,17 +1080,17 @@
                     :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'"
                     :examples [{:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
                                                                                                         :inverted? true
-                                                                                                        :name "my/Result$v1/r"}}
+                                                                                                        :name "r"}}
                                                                             :spec-vars {:y [:Maybe "Integer"]}}
                                                                :my/Result$v1 {:spec-vars {:x [:Maybe "Integer"]}}})
                                 :instance {:$type :my/Spec$v1, :y 1}
-                                :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
+                                :expr-str "(when-value-let [x (wxohen-value y (+ y 2))] (inc x))"
                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
                                 :result :auto
                                 :doc "In the context of an instance with an optional field, y, when the field is set to the value of '1'."}
                                {:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
                                                                                                         :inverted? true
-                                                                                                        :name "my/Result$v1/r"}}
+                                                                                                        :name "r"}}
                                                                             :spec-vars {:y [:Maybe "Integer"]}}
                                                                :my/Result$v1 {:spec-vars {:x [:Maybe "Integer"]}}})
                                 :instance {:$type :my/Spec$v1}
