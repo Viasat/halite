@@ -17,7 +17,7 @@
 
 (s/defschema TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
 
-(s/defn check-instance :- halite-types/HaliteType
+(s/defn type-check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
   (let [t (or (:$type inst)
               (throw-err (h-err/missing-type-field {error-key inst})))
@@ -60,8 +60,11 @@
     (set? coll) "set"
     :else nil))
 
-(s/defn check-coll :- halite-types/HaliteType
-  [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, coll]
+(s/defn type-check-coll :- halite-types/HaliteType
+  [check-fn :- clojure.lang.IFn
+   error-key :- s/Keyword
+   ctx :- TypeContext
+   coll]
   (let [elem-types (map (partial check-fn ctx) coll)
         coll-type-string (get-typestring-for-coll coll)]
     (when (not coll-type-string)
@@ -470,47 +473,53 @@
       :else (throw-err (h-err/arg-type-mismatch (add-position nil {:op 'valid?, :expected-type-description (text "an instance of known type"), :form expr}))))))
 
 (s/defn type-check* :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
-  (cond
-    (boolean? expr) :Boolean
-    (halite-base/integer-or-long? expr) :Integer
-    (halite-base/fixed-decimal? expr) (type-check-fixed-decimal expr)
-    (string? expr) :String
-    (symbol? expr) (type-check-symbol ctx expr)
-    (map? expr) (check-instance type-check* :form ctx expr)
-    (seq? expr) (condp = (first expr)
-                  'get (type-check-get ctx expr)
-                  'get-in (type-check-get-in ctx expr)
-                  '= (type-check-equals ctx expr)
-                  'not= (type-check-equals ctx expr) ; = and not= have same typing rule
-                  'rescale (type-check-set-scale ctx expr)
-                  'if (type-check-if ctx expr)
-                  'when (type-check-when ctx expr)
-                  'let (type-check-let ctx expr)
-                  'if-value (type-check-if-value ctx expr)
-                  'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
-                  'if-value-let (type-check-if-value-let ctx expr)
-                  'when-value-let (type-check-if-value-let ctx expr) ; if-value-let type-checks when-value-let
-                  'union (type-check-union ctx expr)
-                  'intersection (type-check-intersection ctx expr)
-                  'difference (type-check-difference ctx expr)
-                  'first (type-check-first ctx expr)
-                  'rest (type-check-rest ctx expr)
-                  'conj (type-check-conj ctx expr)
-                  'concat (type-check-concat ctx expr)
-                  'refine-to (type-check-refine-to ctx expr)
-                  'refines-to? (type-check-refines-to? ctx expr)
-                  'every? (type-check-quantifier ctx expr)
-                  'any? (type-check-quantifier ctx expr)
-                  'map (type-check-map ctx expr)
-                  'filter (type-check-filter ctx expr)
-                  'valid (type-check-valid ctx expr)
-                  'valid? (type-check-valid? ctx expr)
-                  'sort-by (type-check-sort-by ctx expr)
-                  'reduce (type-check-reduce ctx expr)
-                  (type-check-fn-application ctx expr))
-    (coll? expr) (check-coll type-check* :form ctx expr)
-    :else (throw-err (h-err/syntax-error {:form expr, :form-class (class expr)}))))
+  [ctx :- TypeContext
+   expr]
+  (let [type (cond
+               (boolean? expr) :Boolean
+               (halite-base/integer-or-long? expr) :Integer
+               (halite-base/fixed-decimal? expr) (type-check-fixed-decimal expr)
+               (string? expr) :String
+               (symbol? expr) (type-check-symbol ctx expr)
+               (map? expr) (type-check-instance type-check* :form ctx expr)
+               (seq? expr) (condp = (first expr)
+                             'get (type-check-get ctx expr)
+                             'get-in (type-check-get-in ctx expr)
+                             '= (type-check-equals ctx expr)
+                             'not= (type-check-equals ctx expr) ; = and not= have same typing rule
+                             'rescale (type-check-set-scale ctx expr)
+                             'if (type-check-if ctx expr)
+                             'when (type-check-when ctx expr)
+                             'let (type-check-let ctx expr)
+                             'if-value (type-check-if-value ctx expr)
+                             'when-value (type-check-if-value ctx expr) ; if-value type-checks when-value
+                             'if-value-let (type-check-if-value-let ctx expr)
+                             'when-value-let (type-check-if-value-let ctx expr) ; if-value-let type-checks when-value-let
+                             'union (type-check-union ctx expr)
+                             'intersection (type-check-intersection ctx expr)
+                             'difference (type-check-difference ctx expr)
+                             'first (type-check-first ctx expr)
+                             'rest (type-check-rest ctx expr)
+                             'conj (type-check-conj ctx expr)
+                             'concat (type-check-concat ctx expr)
+                             'refine-to (type-check-refine-to ctx expr)
+                             'refines-to? (type-check-refines-to? ctx expr)
+                             'every? (type-check-quantifier ctx expr)
+                             'any? (type-check-quantifier ctx expr)
+                             'map (type-check-map ctx expr)
+                             'filter (type-check-filter ctx expr)
+                             'valid (type-check-valid ctx expr)
+                             'valid? (type-check-valid? ctx expr)
+                             'sort-by (type-check-sort-by ctx expr)
+                             'reduce (type-check-reduce ctx expr)
+                             (type-check-fn-application ctx expr))
+               (coll? expr) (type-check-coll type-check* :form ctx expr)
+               :else (throw-err (h-err/syntax-error {:form expr, :form-class (class expr)})))]
+    (when (and (or (halite-types/halite-vector-type? type)
+                   (halite-types/halite-set-type? type))
+               (halite-types/value-type? (halite-types/elem-type type)))
+      (throw-err (h-err/mixed-type-collection {:form expr})))
+    type))
 
 (s/defn type-check :- halite-types/HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,

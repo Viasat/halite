@@ -399,6 +399,10 @@
       (when (or (= :Set x) (= :Vec x) (= :Coll x))
         y))))
 
+(s/defn value-type? :- s/Bool
+  [t]
+  (= :Value t))
+
 (s/defn innermost-types :- #{HaliteType}
   "Return the type at the core after all 'maybe' and 'collection wrappers are removed."
   [t]
@@ -466,6 +470,11 @@
   "Return true if this type corresponds to vector values."
   [t :- HaliteType]
   (subtype? t [:Vec :Value]))
+
+(s/defn halite-set-type? :- s/Bool
+  "Return true if this type corresponds to set values."
+  [t :- HaliteType]
+  (subtype? t [:Set :Value]))
 
 (s/defn set-type :- HaliteType
   "Construct a type representing sets of the given type."

@@ -968,11 +968,17 @@
    #{"☺" "a"}
    "#{\"a\", \"☺\"}"
    "#{\"a\", \"☺\"}")
-  (h #{1 "a"} [:Set :Value] #{1 "a"} "#{\"a\", 1}" "#{\"a\", 1}")
+  (h
+   #{1 "a"}
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    #{(when true 1)}
    [:throws "h-err/literal-must-evaluate-to-value 0-0 : set literal element must always evaluate to a value"])
-  (h (count #{1 true "a"}) :Integer 3 "#{\"a\", 1, true}.count()" "3")
+  (h
+   (count #{1 true "a"})
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h (count #{}) :Integer 0 "#{}.count()" "0")
   (h
    (count)
@@ -1028,10 +1034,8 @@
   (h (concat #{} #{}) [:Set :Nothing] #{} "#{}.concat(#{})" "#{}")
   (h
    (concat #{"a" "b"} #{1 2})
-   [:Set :Value]
-   #{1 "a" 2 "b"}
-   "#{\"a\", \"b\"}.concat(#{1, 2})"
-   "#{\"a\", \"b\", 1, 2}")
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    #{#{4 3} #{1}}
    [:Set [:Set :Integer]]
@@ -1086,10 +1090,7 @@
    "true")
   (h
    (subset? #{1 "a"} #{1 "a"})
-   :Boolean
-   true
-   "#{\"a\", 1}.subset?(#{\"a\", 1})"
-   "true")
+   [:throws "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h (= #{} #{}) :Boolean true "(#{} == #{})" "true")
   (h (= #{1 2} #{1 2}) :Boolean true "(#{1, 2} == #{1, 2})" "true")
   (h (= #{1} #{2}) :Boolean false "(#{1} == #{2})" "false")
@@ -1246,10 +1247,8 @@
     "h-err/cannot-conj-unset 0-0 : Cannot conj possibly unset value to set"])
   (h
    (conj #{} 1 #{3 2})
-   [:Set :Value]
-   #{1 #{3 2}}
-   "#{}.conj(1, #{2, 3})"
-   "#{#{2, 3}, 1}")
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (hf
    (reduce conj #{} (range 1024))
    [:Set :Integer]
@@ -5575,10 +5574,8 @@
   (h [1 2] [:Vec :Integer] [1 2] "[1, 2]" "[1, 2]")
   (h
    [[] [1] ["a" true]]
-   [:Vec [:Vec :Value]]
-   [[] [1] ["a" true]]
-   "[[], [1], [\"a\", true]]"
-   "[[], [1], [\"a\", true]]")
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h [[1] []] [:Vec [:Vec :Integer]] [[1] []] "[[1], []]" "[[1], []]")
   (h
    [(when true 1)]
@@ -5601,13 +5598,14 @@
    [:throws
     "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'first': expected 1, but got 2"])
   (h (first [10]) :Integer 10 "[10].first()" "10")
-  (h (first [10 true "b"]) :Value 10 "[10, true, \"b\"].first()" "10")
+  (h
+   (first [10 true "b"])
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (rest [10 true "b"])
-   [:Vec :Value]
-   [true "b"]
-   "[10, true, \"b\"].rest()"
-   "[true, \"b\"]")
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h (concat [] []) [:Vec :Nothing] [] "[].concat([])" "[]")
   (h (concat [] [1]) [:Vec :Integer] [1] "[].concat([1])" "[1]")
   (h
@@ -5672,10 +5670,8 @@
   (h (conj [] 30) [:Vec :Integer] [30] "[].conj(30)" "[30]")
   (h
    (conj [10 20] [])
-   [:Vec :Value]
-   [10 20 []]
-   "[10, 20].conj([])"
-   "[10, 20, []]")
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (conj [10])
    [:throws
@@ -5722,9 +5718,15 @@
     "h-err/index-out-of-bounds 0-0 : Index out of bounds, -1, for vector of length 1"])
   (h (get [10 20 30] 1) :Integer 20 "[10, 20, 30][1]" "20")
   (h
+   (get (get (get [[[10] [20] [300 302]] [[30 40]]] 0) 2) 1)
+   :Integer
+   302
+   "[[[10], [20], [300, 302]], [[30, 40]]][0][2][1]"
+   "302")
+  (h
    (get (get (get [[10 20 [300 302]] [30 40]] 0) 2) 1)
    [:throws
-    "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"])
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (get (get (get [[[10] [20] [300 302]] [[30] [40]]] 0) 2) 1)
    :Integer
@@ -5742,7 +5744,7 @@
   (h
    (count (get [[10 20] "hi" [40 50 60]] 2))
    [:throws
-    "h-err/no-matching-signature 0-0 : No matching signature for 'count'"])
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h (= [1] [1] [1]) :Boolean true "equalTo([1], [1], [1])" "true")
   (h
    (not= [1] [1] [1])
@@ -7645,13 +7647,8 @@
     "[1]"])
   (hc
    :basic-2
-   [(let
-     [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))]
-      (if-value v [1] ["no"]))
-    [:Vec :Value]
-    [1]
-    "({ v = (valid {$type: spec/A$v1, n: -1, p: 1}.refineTo( spec/B$v1 )); (ifValue(v) {[1]} else {[\"no\"]}) })"
-    "[1]"])
+   [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] ["no"]))
+    [:throws "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"]])
   (hc
    :basic-2
    [(let
@@ -8696,10 +8693,8 @@
     "h-err/must-produce-value 0-0 : Expression provided to 'map' must produce a value: (map [x [1]] $no-value)"])
   (h
    (map [x [1 "a"]] x)
-   [:Vec :Value]
-   [1 "a"]
-   "map(x in [1, \"a\"])x"
-   "[1, \"a\"]")
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (hc
    {:spec/A$v1 {:spec-vars {:x "Integer"}}
     :spec/B$v1 {:spec-vars {:x "String"}}}
@@ -8854,10 +8849,8 @@
     "h-err/no-matching-signature 0-0 : No matching signature for '+'"])
   (h
    (filter [x [1 "a"]] true)
-   [:Vec :Value]
-   [1 "a"]
-   "filter(x in [1, \"a\"])true"
-   "[1, \"a\"]")
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (filter [x #{true false}] x)
    [:Set :Boolean]
@@ -9127,16 +9120,19 @@
    "[#d \"1.1\", #d \"2.2\", #d \"3.3\"]")
   (h
    (sort [#d "0.01" #d "0.002"])
-   [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
+   [:throws "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
-   (sort #{#d "0.01" #d "0.002"})
-   [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
+   (sort #{#d "0.002" #d "0.01"})
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (sort [#d "0.01" 5])
-   [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (sort #{#d "0.01" 5})
-   [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'sort'"])
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (sort #{1 3 2})
    [:Vec :Integer]
@@ -9615,32 +9611,20 @@
    "#{#d \"0.0\", #d \"1.0\", #d \"2.0\"}.intersection(#{#d \"0.00\", #d \"1.00\", #d \"2.00\"})"
    "#{}")
   (h
-   #{0 #d "1.0" #d "2.00"}
-   [:Set :Value]
-   #{0 #d "1.0" #d "2.00"}
-   "#{#d \"1.0\", #d \"2.00\", 0}"
-   "#{#d \"1.0\", #d \"2.00\", 0}")
+   #{0 #d "2.00" #d "1.0"}
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
-   #{0 #d "0.0" #d "0.00"}
-   [:Set :Value]
-   #{0 #d "0.0" #d "0.00"}
-   "#{#d \"0.0\", #d \"0.00\", 0}"
-   "#{#d \"0.0\", #d \"0.00\", 0}")
+   #{0 #d "0.00" #d "0.0"}
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (hf
    #{0 #d "0.0"}
-   [:Set :Value]
-   #{0 #d "0.0"}
-   "#{#d \"0.0\", 0}"
-   "#{#d \"0.0\", 0}")
+   [:throws "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
-   (reduce
-    [a #{}]
-    [x [0 #d "0.0" #d "0.00" 0 #d "0.0" #d "0.00"]]
-    (conj a x))
-   [:Set :Value]
-   #{0 #d "0.0" #d "0.00"}
-   "(reduce( a = #{}; x in [0, #d \"0.0\", #d \"0.00\", 0, #d \"0.0\", #d \"0.00\"] ) { a.conj(x) })"
-   "#{#d \"0.0\", #d \"0.00\", 0}")
+   (reduce [a #{}] [x [0 #d "0.0" #d "0.00" 0 #d "0.0" #d "0.00"]] (conj a x))
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (= 0 #d "0.0")
    [:throws
@@ -9666,11 +9650,9 @@
    [:throws
     "l-err/result-always-known 0-0 : Result of '=' would always be false"])
   (hf
-   (reduce conj #{} [1 #d "1.0" #d "1.00"])
-   [:Set :Value]
-   #{1 #d "1.0" #d "1.00"}
-   "#{#d \"1.0\", #d \"1.00\", 1}"
-   "#{#d \"1.0\", #d \"1.00\", 1}")
+   #{1 #d "1.00" #d "1.0"}
+   [:throws
+    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
   (h
    (dec #d "0.1")
    [:throws

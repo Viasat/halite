@@ -283,7 +283,7 @@
     (halite-base/fixed-decimal? expr) (halite-type-check/type-check-fixed-decimal expr)
     (string? expr) :String
     (symbol? expr) (type-check-symbol ctx expr)
-    (map? expr) (halite-type-check/check-instance type-check* :form ctx expr)
+    (map? expr) (halite-type-check/type-check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
                   'get-in (type-check-get-in ctx expr)
@@ -315,7 +315,7 @@
                   'sort-by (type-check-sort-by ctx expr)
                   'reduce (type-check-reduce ctx expr)
                   (type-check-fn-application ctx expr))
-    (coll? expr) (halite-type-check/check-coll type-check* :form ctx expr)))
+    (coll? expr) (halite-type-check/type-check-coll type-check* :form ctx expr)))
 
 (s/defn lint!
   "Assumes type-checked halite. Return nil if no violations found, or throw the

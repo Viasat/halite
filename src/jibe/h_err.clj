@@ -209,6 +209,9 @@
 (deferr spec-map-needed [data]
         {:message "Operation cannot be performed unless a spec-map is provided"})
 
+(deferr mixed-type-collection [data]
+        {:message "Collections must contain values of the same type"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol

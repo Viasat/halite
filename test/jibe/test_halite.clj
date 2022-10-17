@@ -76,7 +76,7 @@
     #{1 2 3} [:Set :Integer]
     [[]] [:Vec [:Vec :Nothing]]
     [#{} #{"foo"}] [:Vec [:Set :String]]
-    [1 "two"] [:Vec :Value]
+    ["one" "two"] [:Vec :String]
     #{[] #{}} [:Set [:Coll :Nothing]]
     #{[1] #{}} [:Set [:Coll :Integer]]
     {:$type :ws/C$v1 :xs []} [:Instance :ws/C$v1]
@@ -95,7 +95,7 @@
     {:$type :ws/A$v1 :x 1 :y 1 :c {:$type :ws2/B$v1 :s "foo"}} #"Value of 'y' has wrong type"
     {:$type :ws/A$v1 :x 1 :y false :c {:$type :ws2/B$v1 :s 12}} #"Value of 's' has wrong type"
     {:$type :ws2/B$v1 :s "foo" :foo "bar"} #"Variables not defined on spec: foo"
-    {:$type :ws/C$v1 :xs [1 "two"]} #"Value of 'xs' has wrong type"))
+    {:$type :ws/C$v1 :xs ["one" "two"]} #"Value of 'xs' has wrong type"))
 
 (deftest literal-eval-tests
   (are [expr]
@@ -357,7 +357,7 @@
     '(if true 1 2) :Integer
     '(if false [[]] [[1]]) [:Vec [:Vec :Integer]]
     '(if true 1 "two") :Value
-    '(conj #{} (if true 1 "two")) [:Set :Value]
+
     '(conj (if true #{} []) (if true 1 "two")) [:Coll :Value])
 
   (are [expr err-msg]
@@ -365,7 +365,8 @@
 
     '(conj #{} (if true (when false 1) 2)) #"possibly unset value"
     '(if true 2) #"Wrong number of arguments"
-    '(if 1 2 3) #"must be boolean")
+    '(if 1 2 3) #"must be boolean"
+    '(conj #{} (if true 1 "two")) #"must contain values of the same type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -526,7 +527,7 @@
 
     '(union #{1 2 3} #{3 4 5}) [:Set :Integer]
     '(union #{} #{"foo"}) [:Set :String]
-    '(union #{1} #{"foo"}) [:Set :Value]
+    '(union #{1} #{2}) [:Set :Integer]
     '(union #{[]} #{#{}}) [:Set [:Coll :Nothing]]
     '(union #{1} #{2} #{3} #{4}) [:Set :Integer]
     '(union #{#{}} #{#{3}}) [:Set [:Set :Integer]])
@@ -541,7 +542,7 @@
 
     '(union #{1 2 3} #{3 4 5}) #{1 2 3 4 5}
     '(union #{} #{"foo"}) #{"foo"}
-    '(union #{1} #{"foo"}) #{1 "foo"}
+    '(union #{1} #{2}) #{1 2}
     '(union #{[]} #{#{}}) #{[] #{}}
     '(union #{1} #{2} #{3} #{4}) #{1 2 3 4}))
 
@@ -551,36 +552,35 @@
 
     '(intersection #{1 2} #{"three"}) [:Set :Nothing]
     '(intersection #{1 2} #{}) [:Set :Nothing]
-    '(intersection #{1 2} (union #{1} #{"two"})) [:Set :Integer]
-    '(intersection #{"two" 3} #{12}) [:Set :Integer])
+    '(intersection #{1 2} (union #{1} #{2})) [:Set :Integer])
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(intersection) #"Wrong number of arguments"
-    '(intersection #{1} [2]) #"must be sets")
+    '(intersection #{1} [2]) #"must be sets"
+    '(intersection #{1} #{"two" 3}) #"must contain values of the same type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(intersection #{1 2} #{"three"}) #{}
     '(intersection #{1 2} #{}) #{}
-    '(intersection #{1 2} (union #{1} #{"two"})) #{1}
+    '(intersection #{1 2} (union #{1} #{9})) #{1}
     '(intersection #{3} #{12}) #{}))
 
 (deftest difference-tests
   (are [expr etype]
        (= etype (halite/type-check senv tenv expr))
-
-    '(difference #{1 2} #{}) [:Set :Integer]
-    '(difference #{1 2} #{"three" true}) [:Set :Integer])
+    '(difference #{1 2} #{}) [:Set :Integer])
 
   (are [expr err-msg]
        (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
     '(difference #{1}) #"Wrong number of arguments"
     '(difference #{1} #{2} #{3}) #"Wrong number of arguments"
-    '(difference #{1} 1) #"must be sets")
+    '(difference #{1} 1) #"must be sets"
+    '(difference #{1 2} #{"three" true}) #"must contain values of the same type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -598,7 +598,7 @@
     '(conj [] 1) [:Vec :Integer]
     '(conj [1] 2) [:Vec :Integer]
     '(conj [] "one" "two") [:Vec :String]
-    '(conj [1] "two") [:Vec :Value]
+
     '(conj #{} "one") [:Set :String]
     '(concat [] []) [:Vec :Nothing]
     '(concat [1 2] [3]) [:Vec :Integer]
@@ -626,7 +626,8 @@
     '(concat 1 2) #"must be a set or vector"
     '(concat [] #{}) #"second argument must also be a vector"
     '(sort) #"No matching signature"
-    '(sort 1) #"No matching signature")
+    '(sort 1) #"No matching signature"
+    '(conj [1] "two") #"must contain values of the same type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -637,7 +638,6 @@
     '(rest [1 2 3]) [2 3]
     '(conj [] 1) [1]
     '(conj [1] 2) [1 2]
-    '(conj [1] "two") [1 "two"]
     '(conj [1] 2 3 4) [1 2 3 4]
     '(conj #{1} 2 3 2 4) #{1 2 3 4}
     '(concat [] []) []

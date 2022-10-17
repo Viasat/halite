@@ -23,10 +23,10 @@
     (halite-base/fixed-decimal? value) (halite-type-check/type-check-fixed-decimal value)
     (string? value) :String
     (= :Unset value) :Unset
-    (map? value) (let [t (halite-type-check/check-instance type-of* :value ctx value)]
+    (map? value) (let [t (halite-type-check/type-check-instance type-of* :value ctx value)]
                    (halite-eval/validate-instance (:senv ctx) value)
                    t)
-    (coll? value) (halite-type-check/check-coll type-of* :value ctx value)
+    (coll? value) (halite-type-check/type-check-coll type-of* :value ctx value)
     :else (throw-err (h-err/invalid-value {:value value}))))
 
 (s/defn type-of :- halite-types/HaliteType
