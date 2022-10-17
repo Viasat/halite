@@ -366,7 +366,7 @@
     '(conj #{} (if true (when false 1) 2)) #"possibly unset value"
     '(if true 2) #"Wrong number of arguments"
     '(if 1 2 3) #"must be boolean"
-    '(conj #{} (if true 1 "two")) #"must contain values of the same type")
+    '(conj #{} (if true 1 "two")) #"must contain values of a single known type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -559,7 +559,7 @@
 
     '(intersection) #"Wrong number of arguments"
     '(intersection #{1} [2]) #"must be sets"
-    '(intersection #{1} #{"two" 3}) #"must contain values of the same type")
+    '(intersection #{1} #{"two" 3}) #"must contain values of a single known type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -580,7 +580,7 @@
     '(difference #{1}) #"Wrong number of arguments"
     '(difference #{1} #{2} #{3}) #"Wrong number of arguments"
     '(difference #{1} 1) #"must be sets"
-    '(difference #{1 2} #{"three" true}) #"must contain values of the same type")
+    '(difference #{1 2} #{"three" true}) #"must contain values of a single known type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))
@@ -627,7 +627,7 @@
     '(concat [] #{}) #"second argument must also be a vector"
     '(sort) #"No matching signature"
     '(sort 1) #"No matching signature"
-    '(conj [1] "two") #"must contain values of the same type")
+    '(conj [1] "two") #"must contain values of a single known type")
 
   (are [expr v]
        (= v (halite/eval-expr senv tenv empty-env expr))

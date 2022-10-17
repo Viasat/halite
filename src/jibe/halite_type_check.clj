@@ -518,7 +518,7 @@
     (when (and (or (halite-types/halite-vector-type? type)
                    (halite-types/halite-set-type? type))
                (halite-types/value-type? (halite-types/elem-type type)))
-      (throw-err (h-err/mixed-type-collection {:form expr})))
+      (throw-err (h-err/unknown-type-collection {:form expr})))
     type))
 
 (s/defn type-check :- halite-types/HaliteType

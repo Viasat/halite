@@ -971,14 +971,14 @@
   (h
    #{1 "a"}
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    #{(when true 1)}
    [:throws "h-err/literal-must-evaluate-to-value 0-0 : set literal element must always evaluate to a value"])
   (h
    (count #{1 true "a"})
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h (count #{}) :Integer 0 "#{}.count()" "0")
   (h
    (count)
@@ -1035,7 +1035,7 @@
   (h
    (concat #{"a" "b"} #{1 2})
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    #{#{4 3} #{1}}
    [:Set [:Set :Integer]]
@@ -1090,7 +1090,7 @@
    "true")
   (h
    (subset? #{1 "a"} #{1 "a"})
-   [:throws "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+   [:throws "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h (= #{} #{}) :Boolean true "(#{} == #{})" "true")
   (h (= #{1 2} #{1 2}) :Boolean true "(#{1, 2} == #{1, 2})" "true")
   (h (= #{1} #{2}) :Boolean false "(#{1} == #{2})" "false")
@@ -1248,7 +1248,7 @@
   (h
    (conj #{} 1 #{3 2})
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (hf
    (reduce conj #{} (range 1024))
    [:Set :Integer]
@@ -5575,7 +5575,7 @@
   (h
    [[] [1] ["a" true]]
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h [[1] []] [:Vec [:Vec :Integer]] [[1] []] "[[1], []]" "[[1], []]")
   (h
    [(when true 1)]
@@ -5601,11 +5601,11 @@
   (h
    (first [10 true "b"])
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (rest [10 true "b"])
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h (concat [] []) [:Vec :Nothing] [] "[].concat([])" "[]")
   (h (concat [] [1]) [:Vec :Integer] [1] "[].concat([1])" "[1]")
   (h
@@ -5671,7 +5671,7 @@
   (h
    (conj [10 20] [])
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (conj [10])
    [:throws
@@ -5726,7 +5726,7 @@
   (h
    (get (get (get [[10 20 [300 302]] [30 40]] 0) 2) 1)
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (get (get (get [[[10] [20] [300 302]] [[30] [40]]] 0) 2) 1)
    :Integer
@@ -5744,7 +5744,7 @@
   (h
    (count (get [[10 20] "hi" [40 50 60]] 2))
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h (= [1] [1] [1]) :Boolean true "equalTo([1], [1], [1])" "true")
   (h
    (not= [1] [1] [1])
@@ -7648,7 +7648,7 @@
   (hc
    :basic-2
    [(let [v (valid (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1))] (if-value v [1] ["no"]))
-    [:throws "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"]])
+    [:throws "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"]])
   (hc
    :basic-2
    [(let
@@ -8694,7 +8694,7 @@
   (h
    (map [x [1 "a"]] x)
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (hc
    {:spec/A$v1 {:spec-vars {:x "Integer"}}
     :spec/B$v1 {:spec-vars {:x "String"}}}
@@ -8850,7 +8850,7 @@
   (h
    (filter [x [1 "a"]] true)
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (filter [x #{true false}] x)
    [:Set :Boolean]
@@ -9120,19 +9120,19 @@
    "[#d \"1.1\", #d \"2.2\", #d \"3.3\"]")
   (h
    (sort [#d "0.01" #d "0.002"])
-   [:throws "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+   [:throws "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (sort #{#d "0.002" #d "0.01"})
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (sort [#d "0.01" 5])
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (sort #{#d "0.01" 5})
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (sort #{1 3 2})
    [:Vec :Integer]
@@ -9613,18 +9613,18 @@
   (h
    #{0 #d "2.00" #d "1.0"}
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    #{0 #d "0.00" #d "0.0"}
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (hf
    #{0 #d "0.0"}
-   [:throws "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+   [:throws "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (reduce [a #{}] [x [0 #d "0.0" #d "0.00" 0 #d "0.0" #d "0.00"]] (conj a x))
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (= 0 #d "0.0")
    [:throws
@@ -9652,7 +9652,7 @@
   (hf
    #{1 #d "1.00" #d "1.0"}
    [:throws
-    "h-err/mixed-type-collection 0-0 : Collections must contain values of the same type"])
+    "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (h
    (dec #d "0.1")
    [:throws
