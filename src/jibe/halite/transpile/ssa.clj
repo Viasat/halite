@@ -904,19 +904,23 @@
 
 (s/defn spec-from-ssa :- halite-envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
-  [spec-info :- SpecInfo]
-  (let [{:keys [ssa-graph constraints refines-to spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
-        scope (->> spec-vars keys (map symbol) set)
-        constraint (mk-junct 'and constraints)
-        ssa-ctx {:senv (halite-envs/spec-env {})
-                 :tenv (halite-envs/type-env {})
-                 :env {}
-                 :ssa-graph ssa-graph}
-        [ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
-    (-> spec-info
-        (dissoc :ssa-graph)
-        (assoc :constraints [["$all" (form-from-ssa scope ssa-graph id)]])
-        (assoc :refines-to (update-vals refines-to #(update % :expr (partial form-from-ssa scope ssa-graph)))))))
+  ([spec-info :- SpecInfo]
+   (spec-from-ssa spec-info {:conjoin-constraints? true}))
+  ([spec-info :- SpecInfo {:keys [conjoin-constraints?] :or {conjoin-constraints? false}}]
+   (let [{:keys [ssa-graph constraints refines-to spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
+         scope (->> spec-vars keys (map symbol) set)
+         ssa-ctx {:senv (halite-envs/spec-env {})
+                  :tenv (halite-envs/type-env {})
+                  :env {}
+                  :ssa-graph ssa-graph}
+         constraints (if conjoin-constraints?
+                       (let [[ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
+                         [["$all" (form-from-ssa scope ssa-graph id)]])
+                       (map (fn [[cname cid]] [cname (form-from-ssa scope (:ssa-graph ssa-ctx) cid)]) constraints))]
+     (-> spec-info
+         (dissoc :ssa-graph)
+         (assoc :constraints constraints)
+         (assoc :refines-to (update-vals refines-to #(update % :expr (partial form-from-ssa scope ssa-graph))))))))
 
 (s/defn make-ssa-ctx :- SSACtx
   [sctx :- SpecCtx, {:keys [ssa-graph] :as spec-info} :- SpecInfo]
