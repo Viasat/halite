@@ -434,20 +434,30 @@
         (ensure-node ssa-graph (list 'if guard-id then-id else-id) htype)))))
 
 (s/defn ^:private get-to-ssa :- NodeInGraph
-  [{:keys [ssa-graph senv] :as ctx} :- SSACtx, [_ subexpr var-kw :as form]]
+  [{:keys [ssa-graph senv] :as ctx} :- SSACtx, [_ subexpr var-kw-or-idx :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)
-        t (->> id (deref-id ssa-graph) node-type)
-        _ (when-not (halite-types/spec-type? t)
-            (throw (ex-info (format "BUG! get sub-expression has type %s, expected a spec type" t)
-                            {:form form :subexpr-type t})))
-        spec-id (halite-types/spec-id t)
-        vtype (or (->> spec-id (halite-envs/lookup-spec senv) :spec-vars var-kw)
-                  (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
-                                  {:form form, :var-kw var-kw, :spec-id spec-id})))
-        htype (or (halite-envs/halite-type-from-var-type senv vtype)
-                  (throw (ex-info (format "BUG! Couldn't determine type of field '%s' of spec '%s'" var-kw spec-id)
-                                  {:form form, :var-kw var-kw, :spec-id spec-id})))]
-    (ensure-node ssa-graph (list 'get id var-kw) htype)))
+        t (->> id (deref-id ssa-graph) node-type)]
+    (cond
+      (halite-types/spec-type? t)
+      (let [spec-id (halite-types/spec-id t)
+            var-kw var-kw-or-idx
+            vtype (or (->> spec-id (halite-envs/lookup-spec senv) :spec-vars var-kw)
+                      (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
+                                      {:form form, :var-kw var-kw, :spec-id spec-id})))
+            htype (or (halite-envs/halite-type-from-var-type senv vtype)
+                      (throw (ex-info (format "BUG! Couldn't determine type of field '%s' of spec '%s'" var-kw spec-id)
+                                      {:form form, :var-kw var-kw, :spec-id spec-id})))]
+        (ensure-node ssa-graph (list 'get id var-kw) htype))
+
+      (halite-types/halite-vector-type? t)
+      (let [[ssa-graph idx-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) var-kw-or-idx)
+            _ (when (not= :Integer (node-type (deref-id ssa-graph idx-id)))
+                (throw (ex-info "BUG! 1st argument has vector type, 2nd is not of type :Integer" {:form form})))]
+        (ensure-node ssa-graph (list 'get id idx-id) (halite-types/elem-type t)))
+
+      :else
+      (throw (ex-info (format "BUG! get sub-expression has type %s, expected a spec type" t)
+                            {:form form :subexpr-type t})))))
 
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
@@ -689,21 +699,21 @@
       (or (integer? form) (boolean? form) (= :Unset form) (string? form)) result
       (symbol? form) result
       (seq? form) (let [[op & args] form]
-                    (condp = op
-                      'get (compute-guards* ssa-graph current result (first args))
-                      'refine-to (compute-guards* ssa-graph current result (first args))
-                      'when (let [[pred-id then-id] args
-                                  not-pred-id (negated ssa-graph pred-id)]
-                              (as-> result result
-                                (compute-guards* ssa-graph current result pred-id)
-                                (compute-guards* ssa-graph (conj current pred-id) result then-id)))
-                      'if (let [[pred-id then-id else-id] args
-                                not-pred-id (negated ssa-graph pred-id)]
-                            (as-> result result
-                              (compute-guards* ssa-graph current result pred-id)
-                              (compute-guards* ssa-graph (conj current pred-id) result then-id)
-                              (compute-guards* ssa-graph (conj current not-pred-id) result else-id)))
-                      (reduce (partial compute-guards* ssa-graph current) result args)))
+                    (cond
+                      (and (= 'get op) (keyword? (last form))) (compute-guards* ssa-graph current result (first args))
+                      (= 'refine-to op) (compute-guards* ssa-graph current result (first args))
+                      (= 'when op) (let [[pred-id then-id] args
+                                         not-pred-id (negated ssa-graph pred-id)]
+                                     (as-> result result
+                                       (compute-guards* ssa-graph current result pred-id)
+                                       (compute-guards* ssa-graph (conj current pred-id) result then-id)))
+                      (= 'if op) (let [[pred-id then-id else-id] args
+                                       not-pred-id (negated ssa-graph pred-id)]
+                                   (as-> result result
+                                     (compute-guards* ssa-graph current result pred-id)
+                                     (compute-guards* ssa-graph (conj current pred-id) result then-id)
+                                     (compute-guards* ssa-graph (conj current not-pred-id) result else-id)))
+                      :else (reduce (partial compute-guards* ssa-graph current) result args)))
       (map? form) (->> (dissoc form :$type) vals (reduce (partial compute-guards* ssa-graph current) result))
       (vector? form) (reduce (partial compute-guards* ssa-graph current) result form)
       :else (throw (ex-info "BUG! Could not compute guards for form"
@@ -775,7 +785,7 @@
                          form
                          (form-from-ssa* ssa-graph ordering guards bound? curr-guard form))
         (seq? form) (cond
-                      (= 'get (first form))
+                      (and (= 'get (first form)) (keyword? (last form)))
                       (list 'get (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
 
                       (= 'refine-to (first form))

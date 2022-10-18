@@ -376,7 +376,7 @@
         $6 [(not $5) :Boolean $5]}
       '[$5]
 
-      ;; vector literals
+      ;; vector stuff
       '[(not= [1 2 3] [])]
       '{$1 [1 :Integer],
         $2 [2 :Integer],
@@ -385,7 +385,16 @@
         $5 [[] [:Vec :Nothing]],
         $6 [(= $4 $5) :Boolean $7],
         $7 [(not= $4 $5) :Boolean $6]}
-      '[$7])))
+      '[$7]
+
+      '[(= 1 (get [1] x))]
+      '{$1 [1 :Integer],
+        $2 [[$1] [:Vec :Integer]],
+        $3 [x :Integer],
+        $4 [(get $2 $3) :Integer],
+        $5 [(= $1 $4) :Boolean $6],
+        $6 [(not= $1 $4) :Boolean $5]}
+      '[$5])))
 
 (deftest test-spec-to-ssa-with-refinements
   (let [senv '{:ws/A
@@ -577,7 +586,14 @@
       '{1 b1
         [1 2] b1
         3 (not b1)
-        [2 3] (not b1)})))
+        [2 3] (not b1)}
+
+      '[(if b1 (get [1] x) y)]
+      '{1 b1
+        [1] b1
+        x b1
+        (get [1] x) b1
+        y (not b1)})))
 
 (def normalize-vars #'ssa/normalize-vars)
 
@@ -765,7 +781,7 @@
         $6 [(not $5) :Boolean $5]}
       '(if true (error "nope") true)
 
-      ;; vector literals
+      ;; vector stuff
       '[$7]
       '{$1 [1 :Integer],
         $2 [2 :Integer],
@@ -774,7 +790,16 @@
         $5 [[] [:Vec :Nothing]],
         $6 [(= $4 $5) :Boolean $7],
         $7 [(not= $4 $5) :Boolean $6]}
-      '(not= [1 2 3] []))))
+      '(not= [1 2 3] [])
+
+      '[$5]
+      '{$1 [1 :Integer],
+        $2 [[$1] [:Vec :Integer]],
+        $3 [x :Integer],
+        $4 [(get $2 $3) :Integer],
+        $5 [(= $1 $4) :Boolean $6],
+        $6 [(not= $1 $4) :Boolean $5]}
+      '(= 1 (get [1] x)))))
 
 (deftest test-spec-from-ssa-preserves-guards
   (let [senv (halite-envs/spec-env
