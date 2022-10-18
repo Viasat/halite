@@ -122,14 +122,11 @@
                                         (and (map? $this)
                                              (= :spec/Truthy (:$type $this))
                                              (= #{:$type :t} (set (keys $this)))
-                                             (and (user-eval $this 't))
-                                             (if-let [refined (refine* :spec/Truthy :spec/Falsey $this)]
-                                               (valid?* :spec/Falsey refined)
-                                               true)))
+                                             (and (user-eval $this 't))))
                            :refine-fns {:spec/Falsey (fn [$this]
-                                                       (user-eval $this '{:$type :spec/Falsey, :f t})),
+                                                       (user-eval $this '{:$type :spec/Falsey, :f t}))
                                         :spec/Object (fn [$this]
-                                                       (let [next (refine* :spec/Truthy :spec/Falsey  $this)]
+                                                       (let [next (refine* :spec/Truthy :spec/Falsey $this)]
                                                          (when (not (valid?* :spec/Falsey next))
                                                            (throw (ex-info "failed in refinement" {})))
                                                          (refine* :spec/Falsey :spec/Object next)))}}}
@@ -215,5 +212,45 @@
            (spec-map-eval spec-map
                           (partial halite-user-eval senv)
                           '(refine-to {:$type :spec/C} :spec/A))))))
+
+(defn halite-eval [spec-map expr]
+  (halite/eval-expr spec-map
+                    (halite-envs/type-env {})
+                    (halite-envs/env {})
+                    expr))
+
+(defmacro compare-to-halite [spec-map expr]
+  `(is (= (try (halite-eval ~spec-map ~expr)
+               (catch Throwable t#
+                 [:throws]))
+          (try (spec-map-eval ~spec-map ~expr)
+               (catch Throwable t#
+                 [:throws])))))
+
+(deftest test-against-halite
+  (let [spec-map {:spec/A {:spec-vars {:a "Boolean"}
+                           :constraints [["ca" 'a]]}
+                  :spec/B {:spec-vars {:b "Boolean"
+                                       :c "Boolean"}
+                           :refines-to {:spec/A {:name "as_A"
+                                                 :expr '{:$type :spec/A
+                                                         :a (and b c)}}}}
+                  :spec/C {:spec-vars {:b "Boolean"
+                                       :c "Boolean"}
+                           :refines-to {:spec/A {:name "as_A"
+                                                 :expr '{:$type :spec/A
+                                                         :a (and b c)}
+                                                 :inverted? true}}}}]
+    (compare-to-halite spec-map '{:$type :spec/B :b true :c false})
+    (compare-to-halite spec-map '(refine-to {:$type :spec/B :b true :c false} :spec/A))
+
+    (compare-to-halite spec-map '{:$type :spec/B :b true :c true})
+    (compare-to-halite spec-map '(refine-to {:$type :spec/B :b true :c true} :spec/A))
+
+    (compare-to-halite spec-map '{:$type :spec/C :b true :c false})
+    (compare-to-halite spec-map '(refine-to {:$type :spec/C :b true :c false} :spec/A))
+
+    (compare-to-halite spec-map '{:$type :spec/C :b true :c true})
+    (compare-to-halite spec-map '(refine-to {:$type :spec/C :b true :c true} :spec/A))))
 
 ;; (t/run-tests)

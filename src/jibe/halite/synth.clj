@@ -62,7 +62,7 @@
 
              ;; non-inverted refinements
              ~@(->> (:refines-to spec)
-                    (remove :inverted)
+                    (remove (comp :inverted? val))
                     (map (fn [[to-spec-id {:keys [expr]}]]
                            (strip-ns
                             `(if-let [refined (refine* ~spec-id ~to-spec-id $this)]
