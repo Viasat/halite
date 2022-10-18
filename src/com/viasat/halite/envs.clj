@@ -226,6 +226,7 @@
     (symbol? expr) #{}
     (string? expr) #{}
     (map? expr) (->> (dissoc expr :$type) vals (map spec-refs-from-expr) (apply set/union #{(:$type expr)}))
+    (vector? expr) (reduce set/union #{} (map spec-refs-from-expr expr))
     (seq? expr) (let [[op & args] expr]
                   (condp = op
                     'let (let [[bindings body] args]

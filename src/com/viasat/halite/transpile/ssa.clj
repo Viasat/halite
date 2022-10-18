@@ -45,7 +45,11 @@
    ;;#{SSATerm}
    {:$type halite-types/NamespacedKeyword
     s/Keyword SSATerm}
-   [(s/one SSAOp :op) (s/cond-pre NodeId s/Keyword)]))
+   (s/constrained
+    [(s/cond-pre SSAOp NodeId s/Keyword)]
+    #(if (vector? %)
+       (every? symbol? %)
+       (contains? supported-halite-ops (first %))))))
 
 (s/defschema Node
   [(s/one SSAForm :form) (s/one halite-types/HaliteType :type) (s/optional NodeId :negation)])
@@ -112,7 +116,7 @@
   "Return the node in ssa-graph referenced by id."
   [{:keys [dgraph] :as ssa-graph} :- SSAGraph id]
   (or (dgraph id)
-      (throw (ex-info "BUG! Failed to deref node id." {:id id}))))
+      (throw (ex-info "BUG! Failed to deref node id." {:id id :ssa-graph ssa-graph}))))
 
 (s/defn negated :- NodeId
   "Return the id of the node that represents the negation of the node with given id."
@@ -173,9 +177,10 @@
                      ids (if (and (coll? form) (or conditionally? (not (and (seq? form) (#{'if 'when} (first form))))))
                            (reduce (fn [ids v] (if (symbol? v) (conj! ids v) ids))
                                    ids
-                                   (if (map? form)
-                                     (vals (dissoc form :$type))
-                                     (rest form)))
+                                   (cond
+                                     (map? form) (vals (dissoc form :$type))
+                                     (vector? form) form
+                                     :else (rest form)))
                            ids)
                      ids (if (and include-negations? neg-id)
                            (conj! ids neg-id)
@@ -461,6 +466,22 @@
                           (-> form (dissoc :$type) keys sort))]
     (ensure-node ssa-graph inst (halite-types/concrete-spec-type spec-id))))
 
+(s/defn ^:private vec-literal-to-ssa :- NodeInGraph
+  [ctx :- SSACtx, form]
+  (let [[ssa-graph elem-info] (reduce
+                               (fn [[ssa-graph elem-info] elem]
+                                 (let [[ssa-graph id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) elem)]
+                                   [ssa-graph (conj elem-info [id (node-type (deref-id ssa-graph id))])]))
+                               [(:ssa-graph ctx) []]
+                               form)
+        elem-type (reduce
+                   (fn [& htypes]
+                     (if (empty? htypes)
+                       :Nothing
+                       (apply halite-types/meet htypes)))
+                   (map second elem-info))]
+    (ensure-node ssa-graph (mapv first elem-info) (halite-types/vector-type elem-type))))
+
 (s/defn ^:private do!-to-ssa :- NodeInGraph
   [{:keys [ssa-graph] :as ctx} :- SSACtx, [_do & args :as form]]
   (let [[ssa-graph arg-ids] (reduce (fn [[ssa-graph arg-ids] arg]
@@ -548,6 +569,7 @@
                     'error (error-to-ssa ctx form)
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
+    (vector? form) (vec-literal-to-ssa ctx form)
     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                           {:form form}))))
 
@@ -681,6 +703,7 @@
                               (compute-guards* ssa-graph (conj current not-pred-id) result else-id)))
                       (reduce (partial compute-guards* ssa-graph current) result args)))
       (map? form) (->> (dissoc form :$type) vals (reduce (partial compute-guards* ssa-graph current) result))
+      (vector? form) (reduce (partial compute-guards* ssa-graph current) result form)
       :else (throw (ex-info "BUG! Could not compute guards for form"
                             {:id id :form form :ssa-graph ssa-graph :current current :result result})))))
 
@@ -802,6 +825,7 @@
                       :else
                       (apply list (first form) (map #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %) (rest form))))
         (map? form) (-> form (dissoc :$type) (update-vals #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %)) (assoc :$type (:$type form)))
+        (vector? form) (mapv #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %) form)
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation"
                               {:id id :form form :ssa-graph ssa-graph :guards guards :bound? bound? :curr-guard curr-guard}))))))
 

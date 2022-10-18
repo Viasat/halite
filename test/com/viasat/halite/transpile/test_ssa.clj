@@ -374,7 +374,18 @@
         $4 [(error $3) :Nothing]
         $5 [(if $1 $4 $1) :Boolean $6]
         $6 [(not $5) :Boolean $5]}
-      '[$5])))
+      '[$5]
+
+      ;; vector literals
+      '[(not= [1 2 3] [])]
+      '{$1 [1 :Integer],
+        $2 [2 :Integer],
+        $3 [3 :Integer],
+        $4 [[$1 $2 $3] [:Vec :Integer]],
+        $5 [[] [:Vec :Nothing]],
+        $6 [(= $4 $5) :Boolean $7],
+        $7 [(not= $4 $5) :Boolean $6]}
+      '[$7])))
 
 (deftest test-spec-to-ssa-with-refinements
   (let [senv '{:ws/A
@@ -560,7 +571,13 @@
         1 (and ($value? w) b1)
         true (not b1)
         (if ($value? w) (+ ($value! w) 1) 0) b1
-        (not= 0 (if ($value? w) (+ ($value! w) 1) 0)) b1})))
+        (not= 0 (if ($value? w) (+ ($value! w) 1) 0)) b1}
+
+      '[(if b1 [1 2] [2 3])]
+      '{1 b1
+        [1 2] b1
+        3 (not b1)
+        [2 3] (not b1)})))
 
 (def normalize-vars #'ssa/normalize-vars)
 
@@ -583,7 +600,8 @@
     '(let [v1 1, v2 2, v4 3] (+ v1 v2 v3 v4))))
 
 (deftest test-spec-from-ssa
-  (let [spec-info {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}
+  (let [spec-info {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C
+                               :s "String"}
                    :constraints []
                    :refines-to {}}]
 
@@ -729,23 +747,34 @@
       '{$1 [:Unset :Unset]
         $2 [($value? $1) :Boolean $3]
         $3 [(not $2) :Boolean $2]}
-      '($value? $no-value)))
+      '($value? $no-value)
 
-  '[$3]
-  '{$1 ["foo" :String]
-    $2 [s :String]
-    $3 [(= $1 $2) :Boolean $4]
-    $4 [(not= $1 $2) :Boolean $3]}
-  '(= "foo" s)
+      '[$3]
+      '{$1 ["foo" :String]
+        $2 [s :String]
+        $3 [(= $1 $2) :Boolean $4]
+        $4 [(not= $1 $2) :Boolean $3]}
+      '(= "foo" s)
 
-  '[$5]
-  '{$1 [true :Boolean $2]
-    $2 [false :Boolean $1]
-    $3 ["nope" :String]
-    $4 [(error $3) :Nothing]
-    $5 [(if $1 $4 $1) :Boolean $6]
-    $6 [(not $5) :Boolean $5]}
-  '(if true (error "nope") true))
+      '[$5]
+      '{$1 [true :Boolean $2]
+        $2 [false :Boolean $1]
+        $3 ["nope" :String]
+        $4 [(error $3) :Nothing]
+        $5 [(if $1 $4 $1) :Boolean $6]
+        $6 [(not $5) :Boolean $5]}
+      '(if true (error "nope") true)
+
+      ;; vector literals
+      '[$7]
+      '{$1 [1 :Integer],
+        $2 [2 :Integer],
+        $3 [3 :Integer],
+        $4 [[$1 $2 $3] [:Vec :Integer]],
+        $5 [[] [:Vec :Nothing]],
+        $6 [(= $4 $5) :Boolean $7],
+        $7 [(not= $4 $5) :Boolean $6]}
+      '(not= [1 2 3] []))))
 
 (deftest test-spec-from-ssa-preserves-guards
   (let [senv (halite-envs/spec-env
