@@ -90,10 +90,10 @@
 
 (def label-description "In the diagrams when a grammar element appears as 'x:label' the label is simply a descriptive label to convey to the reader the meaining of the element.\n\n")
 
-(s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [mode] :as config} basic-bnf]
+(s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [mode generate-user-guide-hdr-f] :as config} basic-bnf]
   (str
    (when (= :user-guide mode)
-     (utils/generate-user-guide-hdr "Halite Basic Syntax Reference" (str "halite_basic-syntax-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite basic syntax reference"))
+     (generate-user-guide-hdr-f "Halite Basic Syntax Reference" (str "halite_basic-syntax-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite basic syntax reference"))
    utils/generated-msg
    "# "
    (utils/lang-str lang)

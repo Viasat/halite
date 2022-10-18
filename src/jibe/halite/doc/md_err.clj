@@ -32,9 +32,9 @@
            "\n\n"])
         "---\n"]))
 
-(defn err-md-all [lang {:keys [mode] :as config} err-maps]
+(defn err-md-all [lang {:keys [mode generate-user-guide-hdr-f] :as config} err-maps]
   (->> [(when (= :user-guide mode)
-          (utils/generate-user-guide-hdr "Halite Error ID Reference" (str "halite_err-id-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite err-id reference"))
+          (generate-user-guide-hdr-f "Halite Error ID Reference" (str "halite_err-id-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite err-id reference"))
         utils/generated-msg
         "# "
         (utils/lang-str lang)

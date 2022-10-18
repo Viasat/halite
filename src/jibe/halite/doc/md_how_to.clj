@@ -45,7 +45,7 @@
                                              (:spec-map c)
                                              (:throws c)
                                              (conj results
-                                                   (if (= :spec-json mode) 
+                                                   (if (= :spec-json mode)
                                                      (json-conversions/spec-to-json (first (spec-env/spec-map-convert (:spec-map c))))
                                                      (utils/code-snippet lang mode (str (utils/spec-map-str lang (:spec-map c))
                                                                                         spec-map-result))))))
@@ -91,26 +91,14 @@
                                                                         :jadeite (str j-result "\n")} lang))))))))))
       results)))
 
-;; user-guide requires this header
-(defn generate-how-to-user-guide-hdr [lang prefix id how-to]
-  (str "---\n"
-       "title: " (:label how-to) "\n"
-       "tags: \n"
-       "keywords: \n"
-       "sidebar:  jibe_sidebar\n"
-       "permalink: " (how-to-reference lang :user-guide prefix id) "\n"
-       "folder: jibe/halite/" (name lang) "\n"
-       "summary: " (:desc how-to) "\n"
-       "---\n\n"))
-
 (defn append-how-to-sidebar [*sidebar-atom* lang mode prefix location title id]
   (let [existing-text (get-in @*sidebar-atom* location)
         new-text (utils/get-sidebar-l3-entry title (how-to-reference lang mode prefix id))]
     (swap! *sidebar-atom* assoc-in location (str existing-text new-text))))
 
-(defn how-to-md [lang {:keys [mode prefix]} *sidebar-atom* [id how-to doc-type]]
+(defn how-to-md [lang {:keys [mode prefix generate-how-to-user-guide-hdr-f]} *sidebar-atom* [id how-to doc-type]]
   (->> [(when (= :user-guide mode)
-          (generate-how-to-user-guide-hdr lang prefix id how-to))
+          (generate-how-to-user-guide-hdr-f lang prefix id how-to))
         utils/generated-msg
         "## " (:label how-to) "\n\n"
         (:desc how-to) "\n\n"

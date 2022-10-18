@@ -209,19 +209,6 @@
                                            :subdir "/jadeite"
                                            :summary "Jadeite err-id reference"}}})
 
-;; user-guide requires this header
-(s/defn generate-user-guide-hdr [title link subdir summary]
-
-  (str "---\n"
-       "title: " title "\n"
-       "tags: \n"
-       "keywords: \n"
-       "sidebar: jibe_sidebar\n"
-       "permalink: " link ".html\n"
-       "folder: jibe/halite" subdir "\n"
-       "summary: " summary "\n"
-       "---\n\n"))
-
 ;; generate html object block to display svg image
 (s/defn get-svg-link
   [svg]

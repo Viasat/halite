@@ -6,10 +6,10 @@
 
 (defn produce-outline [{:keys [tutorials how-tos explanations tag-def-map
                                tutorial-filename how-to-filename explanation-filename tag-reference]}
-                       {:keys [mode prefix]}]
+                       {:keys [mode prefix generate-user-guide-hdr-f]}]
   (->>
    [(when (= :user-guide mode)
-      (utils/generate-user-guide-hdr "Halite Outline" "halite_outline" nil "Outline of Halite expression lanuage documentation."))
+      (generate-user-guide-hdr-f "Halite Outline" "halite_outline" nil "Outline of Halite expression lanuage documentation."))
     utils/generated-msg
     "# Halite resource specifications\n
 All features are available in both Halite (s-expression) syntax and Jadeite (C-like) syntax.\n\n"

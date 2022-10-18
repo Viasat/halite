@@ -9,9 +9,9 @@
 (defn- embed-bnf [{:keys [mode]} label]
   ["![" label "](" (when (= :user-guide mode) "images/") "halite-bnf-diagrams/spec-syntax/" label ".svg" ")\n\n"])
 
-(defn spec-md [{:keys [mode] :as run-config}]
+(defn spec-md [{:keys [mode generate-user-guide-hdr-f] :as run-config}]
   (->> [(when (= :user-guide mode)
-          (utils/generate-user-guide-hdr "Specification Syntax Reference" "halite_spec-syntax-reference" nil "Specification syntax reference."))
+          (generate-user-guide-hdr-f "Specification Syntax Reference" "halite_spec-syntax-reference" nil "Specification syntax reference."))
         utils/generated-msg
         "A spec-map is a data structure used to define specs that are in context for evaluating some expressions.\n\n"
         (md-basic/diagram-description "elements in spec-maps")

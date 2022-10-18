@@ -26,11 +26,11 @@
         "---\n"]
        flatten (apply str)))
 
-(defn produce-tag-md [{:keys [lang] :as info} {:keys [mode prefix] :as config} [tag-name tag]]
+(defn produce-tag-md [{:keys [lang] :as info} {:keys [mode prefix generate-user-guide-hdr-f] :as config} [tag-name tag]]
   (let [tag-name (name tag-name)]
     (->> (tag-md info config tag-name tag)
          (str (when (= :user-guide mode)
-                (utils/generate-user-guide-hdr (:label tag) (str prefix tag-name "-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) (:doc tag)))
+                (generate-user-guide-hdr-f (:label tag) (str prefix tag-name "-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) (:doc tag)))
               utils/generated-msg
               "# " (if (= :halite lang) "Halite" "Jadeite")
               " reference: "
