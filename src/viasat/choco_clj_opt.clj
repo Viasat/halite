@@ -84,10 +84,13 @@
        (cond
          (= bound :Unset) (assoc acc witness-sym false)
 
-         (set? bound) (let [real-vals (set (filter #(or (int? %) (boolean? %)) bound))]
+         (set? bound) (let [var-set? (not (contains? bound :Unset))
+                            var-unset? (= #{:Unset} bound)
+                            bound-if-set (disj bound :Unset)]
                         (cond-> acc
-                          (seq real-vals) (assoc var-sym real-vals)
-                          (not (contains? bound :Unset)) (assoc witness-sym true)))
+                          var-set? (assoc witness-sym true)
+                          (not var-unset?) (assoc var-sym bound-if-set)
+                          var-unset? (assoc witness-sym false)))
 
          (or (int? bound) (boolean? bound)) (assoc acc var-sym bound witness-sym true)
 

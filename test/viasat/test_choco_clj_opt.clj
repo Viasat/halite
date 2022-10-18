@@ -93,3 +93,8 @@
                               (=> (not p) (if-value w false true))
                               (=> p (if-value w (< w 0) true))}}]
     (is (= '{w :Unset, p false} (cco/propagate spec)))))
+
+(deftest test-optional-var-with-empty-initial-bound
+  (is (thrown? clojure.lang.ExceptionInfo
+               (cco/propagate '{:vars {x :Int} :optionals #{x} :constraints #{}}
+                              '{x #{}}))))
