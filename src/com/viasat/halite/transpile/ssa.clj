@@ -20,6 +20,7 @@
 (def ^:private supported-halite-ops
   (into
    '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when error
+      count range
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
       $do!
       ;; These are not available to halite users; they serve as the internal representation of if-value forms.
@@ -317,8 +318,9 @@
      ssa-graph
      (cons op args)
      (cond
-       ('#{+ - * div mod expt abs} op) :Integer
+       ('#{+ - * div mod expt abs count} op) :Integer
        ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
+       ('#{range} op) [:Vec :Integer]
        :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
                              {:form form}))))))
 
