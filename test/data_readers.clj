@@ -1,1 +1,1 @@
-{d jibe.lib.fixed-decimal/fixed-decimal-reader}
+{d com.viasat.halite.lib.fixed-decimal/fixed-decimal-reader}

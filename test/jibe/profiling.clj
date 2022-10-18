@@ -90,8 +90,8 @@
 
 (comment
 
-  (require '[jibe.halite.transpile.ssa :as ssa]
-           '[jibe.halite.halite-types :as halite-types])
+  (require '[com.viasat.halite.transpile.ssa :as ssa]
+           '[com.viasat.halite.types :as halite-types])
 
   (unprof-all-vars)
   (run! prof-var [#'halite-types/meet
