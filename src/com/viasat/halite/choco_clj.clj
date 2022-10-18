@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns viasat.choco-clj
+(ns com.viasat.halite.choco-clj
   (:require [clojure.set :as set]
             [schema.core :as s])
   (:import [org.chocosolver.solver Model Solver]

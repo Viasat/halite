@@ -11,7 +11,7 @@
             [com.viasat.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
             [schema.test]
-            [viasat.choco-clj-opt :as choco-clj])
+            [com.viasat.halite.choco-clj-opt :as choco-clj])
   (:use clojure.test))
 
 (def simplest-abstract-var-example

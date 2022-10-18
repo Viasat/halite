@@ -137,7 +137,7 @@
     comment = #'\\s*//.*(\\n\\s*|$)'"))
 
 (def parse
-  (insta/parser (io/resource "jibe/jadeite.bnf")
+  (insta/parser (io/resource "com/viasat/halite/jadeite.bnf")
                 :auto-whitespace whitespace-or-comments))
 
 (defn to-halite [jadeite-string]

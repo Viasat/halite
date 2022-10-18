@@ -1,9 +1,9 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns viasat.test-choco-clj-opt
+(ns com.viasat.halite.test-choco-clj-opt
   (:require [schema.test]
-            [viasat.choco-clj-opt :as cco])
+            [com.viasat.halite.choco-clj-opt :as cco])
   (:use clojure.test))
 
 (use-fixtures :once schema.test/validate-schemas)

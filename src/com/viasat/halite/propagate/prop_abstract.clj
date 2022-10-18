@@ -15,7 +15,7 @@
             [loom.graph :as loom-graph]
             [loom.derived :as loom-derived]
             [schema.core :as s]
-            [viasat.choco-clj-opt :as choco-clj]))
+            [com.viasat.halite.choco-clj-opt :as choco-clj]))
 
 ;;;;;;;;;;;; Abstractness ;;;;;;;;;;;;
 

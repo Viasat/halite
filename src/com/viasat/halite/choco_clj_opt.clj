@@ -1,11 +1,11 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns viasat.choco-clj-opt
+(ns com.viasat.halite.choco-clj-opt
   "An extended Choco front-end that simulates 'optional' variables, whose domains may be
   empty in a solution."
   (:require [schema.core :as s]
-            [viasat.choco-clj :as choco-clj])
+            [com.viasat.halite.choco-clj :as choco-clj])
   (:import [org.chocosolver.solver.exception ContradictionException]))
 
 (s/defschema ChocoVarType choco-clj/ChocoVarType)

@@ -2,14 +2,14 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.prop-choco
-  "Handles propagation for single specs that can be directly mapped to viasat.choco-clj-opt.
+  "Handles propagation for single specs that can be directly mapped to com.viasat.halite.choco-clj-opt.
   Specifically: single specs with (possibly optional) boolean or integer variables,
   and no refinements."
   (:require [schema.core :as s]
             [com.viasat.halite.envs :as halite-envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [viasat.choco-clj-opt :as choco-clj]))
+            [com.viasat.halite.choco-clj-opt :as choco-clj]))
 
 (s/defschema AtomBound
   (s/cond-pre
