@@ -8,6 +8,7 @@
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.analysis :as halite-analysis]
             [com.viasat.halite.base :as halite-base]
+            [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.type-check :as halite-type-check]
             [com.viasat.halite.type-of :as halite-type-of]
             [com.viasat.halite.eval :as halite-eval]
@@ -159,3 +160,7 @@
   PartialSpecMap SpecMap
   ;; more advanced
   maybe-type? no-maybe])
+
+(potemkin/import-vars
+ [halite-lint
+  type-check-and-lint])

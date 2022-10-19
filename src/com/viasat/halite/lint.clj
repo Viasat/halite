@@ -5,9 +5,9 @@
   "Analyize halite expressions to find patterns of usage unnecessary and
   undesireable for users, though legal and supported by the language."
   (:require [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite :as halite]
             [com.viasat.halite.base :as halite-base]
             [com.viasat.halite.eval :as halite-eval]
+            [com.viasat.halite.type-check :as halite-type-check]
             [com.viasat.halite.type-check :as halite-type-check]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.envs :as halite-envs]
@@ -331,12 +331,12 @@
   (type-check* {:senv senv :tenv tenv} expr)
   nil)
 
-(s/defn type-check
-  "Convenience function to run `lint!` and also `halite/type-check` in the
+(s/defn type-check-and-lint
+  "Convenience function to run `lint!` and also `halite-type-check/type-check` in the
   required order.  Returns the halite type of the expr if no lint violations
   found, otherwise throw the first linting rule violation found."
   [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
-  (let [t (halite/type-check senv tenv expr)]
+  (let [t (halite-type-check/type-check senv tenv expr)]
     (lint! senv tenv expr)
     t))
 

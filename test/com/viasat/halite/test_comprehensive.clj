@@ -62,7 +62,7 @@
             j-expr (try (jadeite/to-jadeite expr)
                         (catch RuntimeException e
                           [:throws (.getMessage e)]))
-            t (try (halite-lint/type-check senv tenv expr)
+            t (try (halite-lint/type-check-and-lint senv tenv expr)
                    (catch RuntimeException e
                      [:throws (.getMessage e)]))
             h-result (try (halite/eval-expr senv tenv env expr)

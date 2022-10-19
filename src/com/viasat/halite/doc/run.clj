@@ -31,7 +31,7 @@
   ;; helper for debugging
   `(let [spec-map# {}
          tenv# (halite-envs/type-env {})]
-     (halite-lint/type-check spec-map# tenv# '~expr)))
+     (halite-lint/type-check-and-lint spec-map# tenv# '~expr)))
 
 (defn j-eval [expr-str]
   ;; helper for debugging
@@ -50,7 +50,7 @@
                 (is-harness-error? t))
     (if (= :Unset result)
       (assert (halite-types/maybe-type? t))
-      (let [result-type (halite-lint/type-check spec-map tenv result)]
+      (let [result-type (halite-lint/type-check-and-lint spec-map tenv result)]
         (when-not (is-harness-error? t)
           (assert (halite-types/subtype? result-type t)))))))
 
@@ -79,7 +79,7 @@
                   nil
                   (catch RuntimeException e
                     [:syntax-check-throws (.getMessage e)]))
-           t (try (halite-lint/type-check spec-map tenv expr)
+           t (try (halite-lint/type-check-and-lint spec-map tenv expr)
                   (catch RuntimeException e
                     [:throws (.getMessage e)]))
            h-result (try (eval-h-expr spec-map tenv env expr)
@@ -121,7 +121,7 @@
                  nil
                  (catch RuntimeException e
                    [:syntax-check-throws (.getMessage e)]))
-          t (try (halite-lint/type-check spec-map tenv expr)
+          t (try (halite-lint/type-check-and-lint spec-map tenv expr)
                  (catch RuntimeException e
                    [:throws (.getMessage e)]))
           h-result (try (eval-h-expr spec-map tenv env expr)

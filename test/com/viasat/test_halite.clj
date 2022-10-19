@@ -118,7 +118,7 @@
     '(error (str "error" " message")) :Nothing)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
     '(error 10) #"No matching signature for 'error'"
     '(error (error "foo")) #"Disallowed.*expression"
     '(let [x (error "Fail")] "Dead code") #"Disallowed binding 'x' to :Nothing")
@@ -177,7 +177,7 @@
     '(abs -10) :Integer)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
 
     '(foo) #"Unknown function or operator: foo"
     '(+ 1 "two") #"No matching signature for '\+'"
@@ -289,7 +289,7 @@
       '(get-in c [:bs 2 :a :x]) :Integer)
 
     (are [expr err-msg]
-         (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
 
       'foo #"Undefined"
       '(get) #"Wrong number of arguments"
@@ -335,7 +335,7 @@
     '(= (when false 5) (when false "foo")) :Boolean)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
 
     '(= 1 "two") #"would always be false"
     '(= [] #{}) #"would always be false"
@@ -376,7 +376,7 @@
 
 (deftest let-tests
   (are [expr etype]
-       (= etype (halite-lint/type-check senv tenv expr))
+       (= etype (halite-lint/type-check-and-lint senv tenv expr))
 
     '(let [x (+ 1 2)
            y [x]]
@@ -387,7 +387,7 @@
        y) :Integer)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
 
     '(let) #"Wrong number of arguments"
     '(let [x] x) #"must have an even number of forms"
@@ -411,7 +411,7 @@
                  (halite-envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (halite-envs/extend-scope 'x [:Maybe :Integer]))]
     (are [expr etype]
-         (= etype (halite-lint/type-check senv tenv expr))
+         (= etype (halite-lint/type-check-and-lint senv tenv expr))
 
       '$no-value :Unset
       'no-value :Unset
@@ -434,7 +434,7 @@
       '(if-value-let [y (get m :x)] y 5) :Integer)
 
     (are [expr err-msg]
-         (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
 
       '(let [x $no-value] (if-value x x 1)) #"Disallowed binding.*to :Unset"
       '(let [no-value $no-value] 2) #"Disallowed binding.*to :Unset"
@@ -1023,19 +1023,19 @@
   (test/testing "Initial scope may bind plain symbols"
     (let [tenv (-> tenv (halite-envs/extend-scope 'that :Integer))
           env (-> empty-env (halite-envs/bind 'that 71))]
-      (is (= :Integer (halite-lint/type-check senv tenv '(+ that 25))))
+      (is (= :Integer (halite-lint/type-check-and-lint senv tenv '(+ that 25))))
       (is (= 96 (halite/eval-expr senv tenv env '(+ that 25))))))
 
   (test/testing "Initial scope may bind external-reserved-words"
     (let [tenv (-> tenv (halite-envs/extend-scope '$this :Integer))
           env (-> empty-env (halite-envs/bind '$this 71))]
-      (is (= :Integer (halite-lint/type-check senv tenv '(+ $this 25))))
+      (is (= :Integer (halite-lint/type-check-and-lint senv tenv '(+ $this 25))))
       (is (= 96 (halite/eval-expr senv tenv env '(+ $this 25))))))
 
   (test/testing "Initial scope may not bind arbitrary $-words"
     (let [tenv (-> tenv (halite-envs/extend-scope '$foo :Integer))]
       (is (thrown-with-msg? ExceptionInfo #"disallowed symbol.*[$]foo"
-                            (halite-lint/type-check senv tenv '(+ $foo 25)))))))
+                            (halite-lint/type-check-and-lint senv tenv '(+ $foo 25)))))))
 
 (deftest test-cycle-in-spec-deps
   (try (halite/eval-expr {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
