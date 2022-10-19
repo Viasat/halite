@@ -164,3 +164,8 @@
 (potemkin/import-vars
  [halite-lint
   type-check-and-lint])
+
+(potemkin/import-vars
+ [halite-types
+  HaliteType decimal-type vector-type set-type namespaced-keyword? abstract-spec-type concrete-spec-type
+  nothing-like? join])
