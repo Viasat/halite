@@ -470,10 +470,9 @@
                                     :tag-reference utils/get-reference-filename-link}
                                    @*run-config-atom*)))
 
-(comment
-  (do
-    (reset! *run-config-atom* {:mode :local
-                               :root-dir "doc"
-                               :image-dir "doc"
-                               :prefix "halite_"})
-    (generate-docs)))
+(defn generate-local-docs []
+  (reset! *run-config-atom* {:mode :local
+                             :root-dir "doc"
+                             :image-dir "doc"
+                             :prefix "halite_"})
+  (generate-docs))
