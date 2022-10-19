@@ -31,10 +31,10 @@
 
 (set! *warn-on-reflection* true)
 
-(def ^:dynamic *run-config-atom* (atom {:mode :local
-                                        :root-dir "doc"
-                                        :image-dir "doc"
-                                        :prefix "halite_"}))
+(def ^:dynamic *run-config* {:mode :local
+                             :root-dir "doc"
+                             :image-dir "doc"
+                             :prefix "halite_"})
 
 (def ^:dynamic *sidebar-atom* (atom {}))
 
@@ -210,7 +210,7 @@
                     (apply merge-with into)))
 
 (defn tag-md-filename [lang tag]
-  (str (:prefix @*run-config-atom*) tag "-reference" (utils/get-language-modifier lang) ".md"))
+  (str (:prefix *run-config*) tag "-reference" (utils/get-language-modifier lang) ".md"))
 
 (assert (= (set (keys tag-def-map))
            (set (concat (map keyword (mapcat :tags (take-nth 2 (next basic-bnf))))
@@ -218,7 +218,7 @@
         "Mismatch between defined tags and used tags.")
 
 (defn append-sidebar [lang location title link]
-  (let [{:keys [mode prefix]} @*run-config-atom*
+  (let [{:keys [mode prefix]} *run-config*
         existing-text (get-in @*sidebar-atom* location)
         new-text (utils/get-sidebar-l3-entry title (utils/get-reference-filename-link lang mode prefix link))]
     (swap! *sidebar-atom* assoc-in location (str existing-text "\n" new-text))))
@@ -228,23 +228,23 @@
                 :jadeite "Jadeite Full Reference"}
         info {:tag-def-map tag-def-map
               :tag-reference utils/get-reference-filename-link}
-        {:keys [mode prefix]} @*run-config-atom*]
+        {:keys [mode prefix]} *run-config*]
 
     (when (= :user-guide mode)
       (append-sidebar lang [lang :reference] (lang titles) "full"))
     (if (= :halite lang)
       (->> op-maps
            sort
-           (md-full/full-md-all (assoc info :lang :halite) @*run-config-atom*)
-           (utils/spit-dir (str (:root-dir @*run-config-atom*)
+           (md-full/full-md-all (assoc info :lang :halite) *run-config*)
+           (utils/spit-dir (str (:root-dir *run-config*)
                                 "/halite/"
                                 (tag-md-filename lang "full"))))
       (->> op-maps-j
            sort
            (remove (fn [[k _]]
                      (jadeite-ommitted-ops k)))
-           (md-full/full-md-all (assoc info :lang :jadeite) @*run-config-atom*)
-           (utils/spit-dir (str (:root-dir @*run-config-atom*)
+           (md-full/full-md-all (assoc info :lang :jadeite) *run-config*)
+           (utils/spit-dir (str (:root-dir *run-config*)
                                 "/jadeite/"
                                 (tag-md-filename lang "full")))))))
 
@@ -253,41 +253,41 @@
                 :jadeite "Jadeite Basic Syntax Reference"}
         info {:tag-def-map tag-def-map
               :tag-reference utils/get-reference-filename-link}
-        {:keys [mode]} @*run-config-atom*]
+        {:keys [mode]} *run-config*]
     (when (= :user-guide mode)
       (append-sidebar lang [lang :reference] (lang titles) "basic-syntax"))
     (if (= :halite lang)
-      (->> (md-basic/produce-basic-core-md (assoc info :lang :halite) @*run-config-atom* basic-bnf)
-           (utils/spit-dir (str (:root-dir @*run-config-atom*)
+      (->> (md-basic/produce-basic-core-md (assoc info :lang :halite) *run-config* basic-bnf)
+           (utils/spit-dir (str (:root-dir *run-config*)
                                 "/halite/"
                                 (tag-md-filename lang "basic-syntax"))))
-      (->> (md-basic/produce-basic-core-md (assoc info :lang :jadeite) @*run-config-atom* basic-bnf)
-           (utils/spit-dir (str (:root-dir @*run-config-atom*)
+      (->> (md-basic/produce-basic-core-md (assoc info :lang :jadeite) *run-config* basic-bnf)
+           (utils/spit-dir (str (:root-dir *run-config*)
                                 "/jadeite/"
                                 (tag-md-filename lang "basic-syntax")))))))
 
 (defn produce-err-md [lang]
   (let [titles {:halite "Halite Error ID Reference"
                 :jadeite "Jadeite Error ID Reference"}
-        {:keys [mode]} @*run-config-atom*]
+        {:keys [mode]} *run-config*]
     (when (= :user-guide mode)
       (append-sidebar lang [lang :reference] (lang titles) "err-id"))
     (if (= :halite lang)
       (->> err-maps
            sort
-           (md-err/err-md-all :halite @*run-config-atom*)
-           (utils/spit-dir (str (:root-dir @*run-config-atom*)
+           (md-err/err-md-all :halite *run-config*)
+           (utils/spit-dir (str (:root-dir *run-config*)
                                 "/halite/"
                                 (tag-md-filename lang "err-id"))))
       (->> err-maps
            sort
-           (md-err/err-md-all :jadeite @*run-config-atom*)
-           (utils/spit-dir (str (:root-dir @*run-config-atom*)
+           (md-err/err-md-all :jadeite *run-config*)
+           (utils/spit-dir (str (:root-dir *run-config*)
                                 "/jadeite/"
                                 (tag-md-filename lang "err-id")))))))
 
 (defn produce-tag-md [lang [tag-name tag]]
-  (let [{:keys [mode]} @*run-config-atom*
+  (let [{:keys [mode]} *run-config*
         label (:label tag)]
     (when (= :user-guide mode)
       (append-sidebar lang [lang :reference] label (name tag-name)))
@@ -297,50 +297,50 @@
                                  :op-maps-j op-maps-j
                                  :tag-map tag-map
                                  :tag-map-j tag-map-j}
-                                @*run-config-atom*)
-         (utils/spit-dir (str (:root-dir @*run-config-atom*)
+                                *run-config*)
+         (utils/spit-dir (str (:root-dir *run-config*)
                               "/" (name lang)
                               "/" (tag-md-filename lang (name tag-name)))))))
 
 (defn how-to-filename [lang id]
-  (str "how-to/" (str (:prefix @*run-config-atom*) (name id) (utils/get-language-modifier lang))))
+  (str "how-to/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
 (defn how-to-reference [lang mode id]
   (str (when (= :local mode) (if (= :halite lang)
                                "halite/how-to/"
-                               "jadeite/how-to/")) (str (:prefix @*run-config-atom*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
+                               "jadeite/how-to/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
 
 (defn how-to-md [lang [id how-to]]
-  (->> (md-how-to/how-to-md lang @*run-config-atom* *sidebar-atom* [id how-to :how-to (how-to-reference lang (:mode @*run-config-atom*) id)])
-       (utils/spit-dir (str (:root-dir @*run-config-atom*)
+  (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id how-to :how-to (how-to-reference lang (:mode *run-config*) id)])
+       (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
                             "/" (how-to-filename lang id) ".md"))))
 
 (defn tutorial-filename [lang id]
-  (str "tutorial/" (str (:prefix @*run-config-atom*) (name id) (utils/get-language-modifier lang))))
+  (str "tutorial/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
 (defn tutorial-reference [lang mode id]
   (str (when (= :local mode) (if (= :halite lang)
                                "halite/tutorial/"
-                               "jadeite/tutorial/")) (str (:prefix @*run-config-atom*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
+                               "jadeite/tutorial/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
 
 (defn tutorial-md [lang [id tutorial]]
-  (->> (md-how-to/how-to-md lang @*run-config-atom* *sidebar-atom* [id tutorial :tutorial (tutorial-reference lang (:mode @*run-config-atom*) id)])
-       (utils/spit-dir (str (:root-dir @*run-config-atom*)
+  (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id tutorial :tutorial (tutorial-reference lang (:mode *run-config*) id)])
+       (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
                             "/" (tutorial-filename lang id) ".md"))))
 
 (defn explanation-filename [lang id]
-  (str "explanation/" (str (:prefix @*run-config-atom*) (name id) (utils/get-language-modifier lang))))
+  (str "explanation/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
 (defn explanation-reference [lang mode id]
   (str (when (= :local mode) (if (= :halite lang)
                                "halite/explanation/"
-                               "jadeite/explanation/")) (str (:prefix @*run-config-atom*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
+                               "jadeite/explanation/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
 
 (defn explanation-md [lang [id explanation]]
-  (->> (md-how-to/how-to-md lang @*run-config-atom* *sidebar-atom* [id explanation :explanation (explanation-reference lang (:mode @*run-config-atom*) id)])
-       (utils/spit-dir (str (:root-dir @*run-config-atom*)
+  (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id explanation :explanation (explanation-reference lang (:mode *run-config*) id)])
+       (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
                             "/" (explanation-filename lang id) ".md"))))
 
@@ -355,7 +355,7 @@
 
 (defn produce-bnf-diagram-for-tag [tag]
   (bnf-diagrams/produce-bnf-diagrams
-   @*run-config-atom*
+   *run-config*
    (query-ops tag)
    (translate-op-maps-to-jadeite (query-ops tag))
    (str (name tag) ".svg")
@@ -372,7 +372,7 @@
                    (produce-full-md :halite)
                    (produce-full-md :jadeite))]
    [#'basic-bnf-vector #(alter-var-root #'basic-bnf (constantly (expand-examples-vector basic-bnf-vector)))]
-   [#'basic-bnf #(do (bnf-diagrams/produce-basic-bnf-diagrams @*run-config-atom* "basic-all.svg" "basic-all-j.svg" basic-bnf)
+   [#'basic-bnf #(do (bnf-diagrams/produce-basic-bnf-diagrams *run-config* "basic-all.svg" "basic-all-j.svg" basic-bnf)
                      (produce-basic-md :halite)
                      (produce-basic-md :jadeite))]
    [#'explanations #(do (run! (partial explanation-md :halite)  explanations)
@@ -401,78 +401,78 @@
   (bnf-diagrams/produce-spec-bnf-diagram run-config "refinement-map.svg" data-spec-bnf/refinement-map-bnf-pair)
   (bnf-diagrams/produce-spec-bnf-diagram run-config "spec-map.svg" data-spec-bnf/spec-map-bnf-pair))
 
-(defn generate-docs []
+(defn generate-docs [run-config]
+  (binding [*run-config* run-config]
 
-  (produce-spec-bnf-diagrams @*run-config-atom*)
+    (produce-spec-bnf-diagrams run-config)
 
-  (->> (md-spec/spec-md @*run-config-atom*)
-       (utils/spit-dir (str (:root-dir @*run-config-atom*)
-                            "/" (:prefix @*run-config-atom*) "spec-syntax-reference.md")))
+    (->> (md-spec/spec-md run-config)
+         (utils/spit-dir (str (:root-dir run-config)
+                              "/" (:prefix run-config) "spec-syntax-reference.md")))
 
-  (bnf-diagrams/produce-basic-bnf-diagrams @*run-config-atom* "basic-all.svg" "basic-all-j.svg" basic-bnf)
-  (bnf-diagrams/produce-bnf-diagrams @*run-config-atom* op-maps op-maps-j "halite.svg" "jadeite.svg")
-  (->> (keys tag-def-map)
-       (map produce-bnf-diagram-for-tag)
-       dorun)
+    (bnf-diagrams/produce-basic-bnf-diagrams run-config "basic-all.svg" "basic-all-j.svg" basic-bnf)
+    (bnf-diagrams/produce-bnf-diagrams run-config op-maps op-maps-j "halite.svg" "jadeite.svg")
+    (->> (keys tag-def-map)
+         (map produce-bnf-diagram-for-tag)
+         dorun)
 
-  (produce-full-md :halite)
-  (produce-basic-md :halite)
-  (produce-err-md :halite)
+    (produce-full-md :halite)
+    (produce-basic-md :halite)
+    (produce-err-md :halite)
 
-  (->> tag-def-map
-       (map (partial produce-tag-md :halite))
-       dorun)
+    (->> tag-def-map
+         (map (partial produce-tag-md :halite))
+         dorun)
 
-  (->> explanations
-       (map (partial explanation-md :halite))
-       dorun)
+    (->> explanations
+         (map (partial explanation-md :halite))
+         dorun)
 
-  (->> how-tos
-       (map (partial how-to-md :halite))
-       dorun)
+    (->> how-tos
+         (map (partial how-to-md :halite))
+         dorun)
 
-  (->> tutorials
-       (map (partial tutorial-md :halite))
-       dorun)
+    (->> tutorials
+         (map (partial tutorial-md :halite))
+         dorun)
 
-  (produce-full-md :jadeite)
-  (produce-basic-md :jadeite)
-  (produce-err-md :jadeite)
+    (produce-full-md :jadeite)
+    (produce-basic-md :jadeite)
+    (produce-err-md :jadeite)
 
-  (->> tag-def-map
-       (map (partial produce-tag-md :jadeite))
-       dorun)
+    (->> tag-def-map
+         (map (partial produce-tag-md :jadeite))
+         dorun)
 
-  (->> explanations
-       (map (partial explanation-md :jadeite))
-       dorun)
+    (->> explanations
+         (map (partial explanation-md :jadeite))
+         dorun)
 
-  (->> how-tos
-       (map (partial how-to-md :jadeite))
-       dorun)
+    (->> how-tos
+         (map (partial how-to-md :jadeite))
+         dorun)
 
-  (->> tutorials
-       (map (partial tutorial-md :jadeite))
-       dorun)
+    (->> tutorials
+         (map (partial tutorial-md :jadeite))
+         dorun)
 
-  (if-let [sidebar-file (:sidebar-file @*run-config-atom*)]
-    (utils/spit-dir sidebar-file ((:produce-sidebar-f @*run-config-atom*) @*sidebar-atom*) true))
+    (if-let [sidebar-file (:sidebar-file run-config)]
+      (utils/spit-dir sidebar-file ((:produce-sidebar-f run-config) @*sidebar-atom*) true))
 
-  (utils/spit-dir (str (:root-dir @*run-config-atom*)
-                       "/" (:prefix @*run-config-atom*) "outline.md")
-                  (produce-outline {:tag-def-map tag-def-map
-                                    :tutorials tutorials
-                                    :tutorial-filename tutorial-reference
-                                    :how-tos how-tos
-                                    :explanations explanations
-                                    :explanation-filename explanation-reference
-                                    :how-to-filename how-to-reference
-                                    :tag-reference utils/get-reference-filename-link}
-                                   @*run-config-atom*)))
+    (utils/spit-dir (str (:root-dir run-config)
+                         "/" (:prefix run-config) "outline.md")
+                    (produce-outline {:tag-def-map tag-def-map
+                                      :tutorials tutorials
+                                      :tutorial-filename tutorial-reference
+                                      :how-tos how-tos
+                                      :explanations explanations
+                                      :explanation-filename explanation-reference
+                                      :how-to-filename how-to-reference
+                                      :tag-reference utils/get-reference-filename-link}
+                                     run-config))))
 
 (defn generate-local-docs []
-  (reset! *run-config-atom* {:mode :local
-                             :root-dir "doc"
-                             :image-dir "doc"
-                             :prefix "halite_"})
-  (generate-docs))
+  (generate-docs {:mode :local
+                  :root-dir "doc"
+                  :image-dir "doc"
+                  :prefix "halite_"}))
