@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.guide
+(ns com.viasat.halite.test_comprehensive
   (:require [clojure.string :as string]
             [clojure.test :refer :all]
             [com.viasat.halite :as halite]
