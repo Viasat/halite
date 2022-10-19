@@ -5,7 +5,7 @@
   (:require [com.viasat.halite.doc.utils :as utils]
             [com.viasat.halite.doc.run :as halite-run]
             [com.viasat.halite.jadeite :as jadeite]
-            [jibe.logic.halite.spec-env :as spec-env]
+            [jibe.logic.spec-env :as spec-env]
             [jibe.http.json-conversions :as json-conversions]
             [clojure.string :as string])
   (:import [com.viasat.halite.doc.run HCInfo]))
