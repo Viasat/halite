@@ -20,11 +20,13 @@
 (def ^:private supported-halite-ops
   (into
    '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when error
-      count range
+      count range every?
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
       $do!
       ;; These are not available to halite users; they serve as the internal representation of if-value forms.
-      $value? $value!}
+      $value? $value!
+      ;; This form represents 'local' variables introduced by e.g. every?/any?
+      $local}
    (keys renamed-ops)))
 
 (s/defschema NodeId
@@ -40,17 +42,20 @@
 
 (s/defschema SSAOp (apply s/enum (disj supported-halite-ops 'let)))
 
+(s/defschema SSALocalForm [(s/one (s/enum '$local) "op") (s/one s/Int "i") (s/one halite-types/HaliteType "type")])
+
 (s/defschema SSAForm
-  (s/cond-pre
-   SSATerm
-   ;;#{SSATerm}
-   {:$type halite-types/NamespacedKeyword
-    s/Keyword SSATerm}
-   (s/constrained
-    [(s/cond-pre SSAOp NodeId s/Keyword)]
-    #(if (vector? %)
-       (every? symbol? %)
-       (contains? supported-halite-ops (first %))))))
+  (s/conditional
+   ;; instance literals
+   map? {:$type halite-types/NamespacedKeyword
+         s/Keyword NodeId}
+   ;; vector literals
+   vector? [NodeId]
+   ;; special $(local ...) form
+   #(and (seq? %) (= '$local (first %))) SSALocalForm
+   ;; application in general
+   seq? [(s/one SSAOp "op") (s/cond-pre NodeId s/Keyword)]
+   :else SSATerm))
 
 (s/defschema Node
   [(s/one SSAForm :form) (s/one halite-types/HaliteType :type) (s/optional NodeId :negation)])
@@ -330,7 +335,17 @@
   {:senv (s/protocol halite-envs/SpecEnv)
    :tenv (s/protocol halite-envs/TypeEnv)
    :env {s/Symbol NodeId}
-   :ssa-graph SSAGraph})
+   :ssa-graph SSAGraph
+   :local-stack [NodeId]})
+
+(s/defn ^:private init-ssa-ctx :- SSACtx
+  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), ssa-graph :- SSAGraph]
+  {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph :local-stack []})
+
+(s/defn ^:private push-local :- [(s/one SSACtx "ctx") (s/one NodeId "id")]
+  [{:keys [ssa-graph local-stack] :as ctx} :- SSACtx, htype :- halite-types/HaliteType]
+  (let [[ssa-graph id] (ensure-node ssa-graph (list '$local (inc (count local-stack)) htype) htype)]
+    [(-> ctx (assoc :ssa-graph ssa-graph) (update :local-stack conj id)) id]))
 
 (def ^:private no-value-symbols
   "All of these symbols mean :Unset"
@@ -457,7 +472,7 @@
 
       :else
       (throw (ex-info (format "BUG! get sub-expression has type %s, expected a spec type" t)
-                            {:form form :subexpr-type t})))))
+                      {:form form :subexpr-type t})))))
 
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
@@ -523,6 +538,18 @@
   (let [[ssa-graph arg-id] (form-to-ssa ctx (second form))]
     (ensure-node ssa-graph (list 'error arg-id) :Nothing)))
 
+(s/defn ^:private every?-to-ssa :- NodeInGraph
+  [ctx :- SSACtx form]
+  (let [[_ [var-sym coll-expr] body] form
+        [ssa-graph coll-id] (form-to-ssa ctx coll-expr)
+        elem-type (->> coll-id (deref-id ssa-graph) node-type halite-types/elem-type)
+        [ctx local-id] (push-local (assoc ctx :ssa-graph ssa-graph) elem-type)
+        [ssa-graph body-id] (-> ctx
+                                (update :tenv halite-envs/extend-scope var-sym elem-type)
+                                (update :env assoc var-sym local-id)
+                                (form-to-ssa body))]
+    (ensure-node ssa-graph (list 'every? local-id coll-id body-id) :Boolean)))
+
 (s/defn replace-in-expr :- NodeInGraph
   [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
   (let [node (deref-id ssa-graph id), form (node-form node), htype (node-type node)]
@@ -579,6 +606,7 @@
                     'if-value (if-value-to-ssa ctx form)
                     '$value! (value!-to-ssa ctx form)
                     'error (error-to-ssa ctx form)
+                    'every? (every?-to-ssa ctx form)
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)
@@ -588,7 +616,7 @@
 (s/defn constraint-to-ssa :- [(s/one SSAGraph :ssa-graph), [(s/one s/Str :cname) (s/one NodeId :form)]]
   "TODO: Refactor me as add-constraint, taking and returning SpecInfo."
   [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), ssa-graph :- SSAGraph, [cname constraint-form]]
-  (let [[ssa-graph id] (form-to-ssa {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph} constraint-form)]
+  (let [[ssa-graph id] (form-to-ssa (init-ssa-ctx senv tenv ssa-graph) constraint-form)]
     [ssa-graph [cname id]]))
 
 (s/defn spec-to-ssa :- SpecInfo
@@ -605,7 +633,7 @@
         [ssa-graph refines-to]
         ,,(reduce
            (fn [[ssa-graph refines-to] [spec-id refn]]
-             (let [[ssa-graph id] (form-to-ssa {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph} (:expr refn))]
+             (let [[ssa-graph id] (form-to-ssa (init-ssa-ctx senv tenv ssa-graph) (:expr refn))]
                [ssa-graph (assoc refines-to spec-id (assoc refn :expr id))]))
            [ssa-graph {}]
            (:refines-to spec-info))]
@@ -700,6 +728,7 @@
       (symbol? form) result
       (seq? form) (let [[op & args] form]
                     (cond
+                      (= '$local op) result
                       (and (= 'get op) (keyword? (last form))) (compute-guards* ssa-graph current result (first args))
                       (= 'refine-to op) (compute-guards* ssa-graph current result (first args))
                       (= 'when op) (let [[pred-id then-id] args
@@ -713,6 +742,10 @@
                                      (compute-guards* ssa-graph current result pred-id)
                                      (compute-guards* ssa-graph (conj current pred-id) result then-id)
                                      (compute-guards* ssa-graph (conj current not-pred-id) result else-id)))
+                      (= 'every? op) (let [[local-id coll-id body-id] args]
+                                       (as-> result result
+                                         (compute-guards* ssa-graph current result coll-id)
+                                         (compute-guards* ssa-graph (conj current local-id) result body-id)))
                       :else (reduce (partial compute-guards* ssa-graph current) result args)))
       (map? form) (->> (dissoc form :$type) vals (reduce (partial compute-guards* ssa-graph current) result))
       (vector? form) (reduce (partial compute-guards* ssa-graph current) result form)
@@ -726,7 +759,12 @@
   ;; This is just a heuristic intended primarily to catch when an expression shows up
   ;; in both branches of an if. This problem is in general co-NP-hard.
   ;; https://en.wikipedia.org/wiki/Disjunctive_normal_form
-  (let [negated-clauses (->> guards (map #(->> % (map (partial negated ssa-graph)) set)))]
+  ;; NOTE! As an added wrinkle, some of the NodeIds may refer to ($local ...) forms. Those
+  ;; signify that an expression is only evaluated when that local has been bound to a value.
+  ;; Those nodes obviously cannot be negated, and require special handling.
+  (let [negated-clauses (->> guards
+                             (filter (fn [terms] (every? #(= :Boolean (node-type (deref-id ssa-graph %))) terms)))
+                             (map #(->> % (map (partial negated ssa-graph)) set)))]
     (if (some (fn [negated-terms] (every? #(contains? guards #{%}) negated-terms)) negated-clauses)
       #{#{}} ; true
       guards)))
@@ -808,6 +846,9 @@
                       (and (= '$value! (first form)) *hide-non-halite-ops*)
                       (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form))
 
+                      (= '$local (first form))
+                      form
+
                       (= 'if (first form))
                       (let [[_if pred-id then-id else-id] form
                             [pred] (deref-id ssa-graph pred-id)
@@ -833,6 +874,12 @@
                         (list 'when
                               (form-from-ssa* ssa-graph ordering guards bound? curr-guard pred-id)
                               (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard pred-id) then-id)))
+
+                      (= 'every? (first form))
+                      (let [[_every? local-id coll-id body-id] form]
+                        (list 'every?
+                              [local-id (form-from-ssa* ssa-graph ordering guards bound? curr-guard coll-id)]
+                              (let-bindable-exprs ssa-graph ordering guards (conj bound? local-id) (conj curr-guard local-id) body-id)))
 
                       :else
                       (apply list (first form) (map #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %) (rest form))))
@@ -926,6 +973,10 @@
                                   [aliases []]
                                   (partition 2 bindings))]
                            (list 'let bindings (normalize-vars scope aliases body)))
+                     every? (let [[[var-sym coll-expr] body-expr] args
+                                  alias (next-free-var scope aliases)]
+                              (list 'every? [alias (normalize-vars scope aliases coll-expr)]
+                                    (normalize-vars scope (assoc aliases var-sym alias) body-expr)))
                      (cons op (map (partial normalize-vars scope aliases) args))))
      :else (throw (ex-info "Couldn't normalize expression" {:expr expr})))))
 
@@ -945,10 +996,7 @@
   ([spec-info :- SpecInfo {:keys [conjoin-constraints?] :or {conjoin-constraints? false}}]
    (let [{:keys [ssa-graph constraints refines-to spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
          scope (->> spec-vars keys (map symbol) set)
-         ssa-ctx {:senv (halite-envs/spec-env {})
-                  :tenv (halite-envs/type-env {})
-                  :env {}
-                  :ssa-graph ssa-graph}
+         ssa-ctx (init-ssa-ctx (halite-envs/spec-env {}) (halite-envs/type-env {}) ssa-graph)
          constraints (if conjoin-constraints?
                        (let [[ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
                          [["$all" (form-from-ssa scope ssa-graph id)]])
@@ -962,7 +1010,7 @@
   [sctx :- SpecCtx, {:keys [ssa-graph] :as spec-info} :- SpecInfo]
   (let [senv (as-spec-env sctx)
         tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :ssa-graph))]
-    {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph}))
+    {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph :local-stack []}))
 
 (s/defn build-spec-env :- (s/protocol halite-envs/SpecEnv)
   [sctx :- SpecCtx]

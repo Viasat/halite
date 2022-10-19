@@ -53,7 +53,8 @@
    {:senv (halite-envs/spec-env senv)
     :tenv (halite-envs/type-env tenv)
     :env env
-    :ssa-graph ssa/empty-ssa-graph}))
+    :ssa-graph ssa/empty-ssa-graph
+    :local-stack []}))
 
 (defn- make-empty-ssa-ctx []
   (make-ssa-ctx))

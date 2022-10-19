@@ -394,7 +394,39 @@
         $4 [(get $2 $3) :Integer],
         $5 [(= $1 $4) :Boolean $6],
         $6 [(not= $1 $4) :Boolean $5]}
-      '[$5])))
+      '[$5]
+
+      '[(every? [x [x y]] (< x 1))]
+      '{$1 [x :Integer],
+        $2 [y :Integer],
+        $3 [[$1 $2] [:Vec :Integer]],
+        $4 [($local 1 :Integer) :Integer],
+        $5 [1 :Integer],
+        $6 [(< $4 $5) :Boolean $7],
+        $7 [(<= $5 $4) :Boolean $6],
+        $8 [(every? $4 $3 $6) :Boolean $9],
+        $9 [(not $8) :Boolean $8]}
+      '[$8]
+
+      '[(and (every? [x [x y]] (< x 1))
+             (every? [z [x y]] (< z 1))
+             (every? [x [0]] (< x 1)))]
+      '{$1 [x :Integer]
+        $2 [y :Integer]
+        $3 [[$1 $2] [:Vec :Integer]]
+        $4 [($local 1 :Integer) :Integer]
+        $5 [1 :Integer]
+        $6 [(< $4 $5) :Boolean $7]
+        $7 [(<= $5 $4) :Boolean $6]
+        $8 [(every? $4 $3 $6) :Boolean $9]
+        $9 [(not $8) :Boolean $8]
+        $10 [0 :Integer]
+        $11 [[$10] [:Vec :Integer]]
+        $12 [(every? $4 $11 $6) :Boolean $13]
+        $13 [(not $12) :Boolean $12]
+        $14 [(and $8 $8 $12) :Boolean $15]
+        $15 [(not $14) :Boolean $14]}
+      '[$14])))
 
 (deftest test-spec-to-ssa-with-refinements
   (let [senv '{:ws/A
@@ -593,7 +625,10 @@
         [1] b1
         x b1
         (get [1] x) b1
-        y (not b1)})))
+        y (not b1)}
+
+      '[(every? [x [1 2 3]] b1)]
+      '{b1 ($local 1 :Integer)})))
 
 (def normalize-vars #'ssa/normalize-vars)
 
@@ -799,7 +834,26 @@
         $4 [(get $2 $3) :Integer],
         $5 [(= $1 $4) :Boolean $6],
         $6 [(not= $1 $4) :Boolean $5]}
-      '(= 1 (get [1] x)))))
+      '(= 1 (get [1] x))
+
+      '[$14]
+      '{$1 [x :Integer]
+        $2 [y :Integer]
+        $3 [[$1 $2] [:Vec :Integer]]
+        $4 [($local 1 :Integer) :Integer]
+        $5 [1 :Integer]
+        $6 [(< $4 $5) :Boolean $7]
+        $7 [(<= $5 $4) :Boolean $6]
+        $8 [(every? $4 $3 $6) :Boolean $9]
+        $9 [(not $8) :Boolean $8]
+        $10 [0 :Integer]
+        $11 [[$10] [:Vec :Integer]]
+        $12 [(every? $4 $11 $6) :Boolean $13]
+        $13 [(not $12) :Boolean $12]
+        $14 [(and $8 $8 $12) :Boolean $15]
+        $15 [(not $14) :Boolean $14]}
+      '(let [v1 (every? [v1 [x y]] (< v1 1))]
+         (and v1 v1 (every? [v2 [0]] (< v2 1)))))))
 
 (deftest test-spec-from-ssa-preserves-guards
   (let [senv (halite-envs/spec-env
@@ -842,7 +896,7 @@
   (let [senv (halite-envs/spec-env
               '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}})
         tenv (halite-envs/type-env '{x :Integer, y :Integer, p :Boolean})
-        ctx {:senv senv, :tenv tenv, :env {}, :ssa-graph ssa/empty-ssa-graph}
+        ctx {:senv senv, :tenv tenv, :env {}, :ssa-graph ssa/empty-ssa-graph :local-stack []}
         [ssa-graph1 orig-id] (ssa/form-to-ssa ctx '(let [foo (+ x (- 0 y))]
                                                      (or p
                                                          (< foo 24)
