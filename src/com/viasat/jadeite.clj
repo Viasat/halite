@@ -7,7 +7,7 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [instaparse.core :as insta]
-            [com.viasat.halite :as halite]
+            [com.viasat.halite.base :as halite-base]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]))
 
 (set! *warn-on-reflection* true)
@@ -196,7 +196,7 @@
 (defn toj [x]
   (cond
     (string? x) (pr-str x)
-    (halite/fixed-decimal? x) (str "#d" " \"" (fixed-decimal/string-representation x) "\"")
+    (halite-base/fixed-decimal? x) (str "#d" " \"" (fixed-decimal/string-representation x) "\"")
     (keyword? x) (typename x)
     (symbol? x) (wrap-string (str x))
     (set? x) (infix "#{" ", " "}" x :sort? true)
