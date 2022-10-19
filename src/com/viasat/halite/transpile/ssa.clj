@@ -20,7 +20,7 @@
 (def ^:private supported-halite-ops
   (into
    '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when error
-      count range every?
+      count range every? any? concat conj map
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
       $do!
       ;; These are not available to halite users; they serve as the internal representation of if-value forms.
@@ -538,17 +538,47 @@
   (let [[ssa-graph arg-id] (form-to-ssa ctx (second form))]
     (ensure-node ssa-graph (list 'error arg-id) :Nothing)))
 
-(s/defn ^:private every?-to-ssa :- NodeInGraph
+(s/defn ^:private comprehension-to-ssa :- NodeInGraph
   [ctx :- SSACtx form]
-  (let [[_ [var-sym coll-expr] body] form
+  (let [[op [var-sym coll-expr] body] form
         [ssa-graph coll-id] (form-to-ssa ctx coll-expr)
-        elem-type (->> coll-id (deref-id ssa-graph) node-type halite-types/elem-type)
+        coll-type (->> coll-id (deref-id ssa-graph) node-type)
+        elem-type (halite-types/elem-type coll-type)
         [ctx local-id] (push-local (assoc ctx :ssa-graph ssa-graph) elem-type)
         [ssa-graph body-id] (-> ctx
                                 (update :tenv halite-envs/extend-scope var-sym elem-type)
                                 (update :env assoc var-sym local-id)
-                                (form-to-ssa body))]
-    (ensure-node ssa-graph (list 'every? local-id coll-id body-id) :Boolean)))
+                                (form-to-ssa body))
+        htype (if (= 'map op)
+                (let [body-type (->> body-id (deref-id ssa-graph) node-type)]
+                  (halite-types/change-elem-type coll-type body-type))
+                :Boolean)]
+    (ensure-node ssa-graph (list op local-id coll-id body-id) htype)))
+
+(s/defn ^:private concat-to-ssa :- NodeInGraph
+  [ctx :- SSACtx form]
+  (let [[a b] (rest form)
+        [ssa-graph a-id] (form-to-ssa ctx a)
+        [ssa-graph b-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) b)
+        [a-type b-type] (map #(node-type (deref-id ssa-graph %)) [a-id b-id])
+        htype (->> b-type halite-types/elem-type
+                   (halite-types/change-elem-type a-type)
+                   (halite-types/meet a-type))]
+    (ensure-node ssa-graph (list 'concat a-id b-id) htype)))
+
+(s/defn ^:private conj-to-ssa :- NodeInGraph
+  [ctx :- SSACtx form]
+  (let [[coll & elems] (rest form)
+        [ssa-graph coll-id] (form-to-ssa ctx coll)
+        coll-type (node-type (deref-id ssa-graph coll-id))
+        [ssa-graph elem-ids elem-type] (reduce
+                                        (fn [[ssa-graph elem-ids elem-type] elem]
+                                          (let [[ssa-graph elem-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) elem)
+                                                t (node-type (deref-id ssa-graph coll-id))]
+                                            [ssa-graph (conj elem-ids elem-id) (halite-types/meet elem-type t)]))
+                                        [ssa-graph [] (halite-types/elem-type coll-type)]
+                                        elems)]
+    (ensure-node ssa-graph (apply list 'conj coll-id elem-ids) (halite-types/change-elem-type coll-type elem-type))))
 
 (s/defn replace-in-expr :- NodeInGraph
   [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
@@ -606,7 +636,11 @@
                     'if-value (if-value-to-ssa ctx form)
                     '$value! (value!-to-ssa ctx form)
                     'error (error-to-ssa ctx form)
-                    'every? (every?-to-ssa ctx form)
+                    'every? (comprehension-to-ssa ctx form)
+                    'any? (comprehension-to-ssa ctx form)
+                    'map (comprehension-to-ssa ctx form)
+                    'concat (concat-to-ssa ctx form)
+                    'conj (conj-to-ssa ctx form)
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)
@@ -742,10 +776,10 @@
                                      (compute-guards* ssa-graph current result pred-id)
                                      (compute-guards* ssa-graph (conj current pred-id) result then-id)
                                      (compute-guards* ssa-graph (conj current not-pred-id) result else-id)))
-                      (= 'every? op) (let [[local-id coll-id body-id] args]
-                                       (as-> result result
-                                         (compute-guards* ssa-graph current result coll-id)
-                                         (compute-guards* ssa-graph (conj current local-id) result body-id)))
+                      (#{'every? 'any? 'map} op) (let [[local-id coll-id body-id] args]
+                                                   (as-> result result
+                                                     (compute-guards* ssa-graph current result coll-id)
+                                                     (compute-guards* ssa-graph (conj current local-id) result body-id)))
                       :else (reduce (partial compute-guards* ssa-graph current) result args)))
       (map? form) (->> (dissoc form :$type) vals (reduce (partial compute-guards* ssa-graph current) result))
       (vector? form) (reduce (partial compute-guards* ssa-graph current) result form)
@@ -875,9 +909,9 @@
                               (form-from-ssa* ssa-graph ordering guards bound? curr-guard pred-id)
                               (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard pred-id) then-id)))
 
-                      (= 'every? (first form))
-                      (let [[_every? local-id coll-id body-id] form]
-                        (list 'every?
+                      (#{'every? 'any? 'map} (first form))
+                      (let [[op local-id coll-id body-id] form]
+                        (list op
                               [local-id (form-from-ssa* ssa-graph ordering guards bound? curr-guard coll-id)]
                               (let-bindable-exprs ssa-graph ordering guards (conj bound? local-id) (conj curr-guard local-id) body-id)))
 
@@ -973,10 +1007,10 @@
                                   [aliases []]
                                   (partition 2 bindings))]
                            (list 'let bindings (normalize-vars scope aliases body)))
-                     every? (let [[[var-sym coll-expr] body-expr] args
-                                  alias (next-free-var scope aliases)]
-                              (list 'every? [alias (normalize-vars scope aliases coll-expr)]
-                                    (normalize-vars scope (assoc aliases var-sym alias) body-expr)))
+                     (every? any? map) (let [[[var-sym coll-expr] body-expr] args
+                                             alias (next-free-var scope aliases)]
+                                         (list op [alias (normalize-vars scope aliases coll-expr)]
+                                               (normalize-vars scope (assoc aliases var-sym alias) body-expr)))
                      (cons op (map (partial normalize-vars scope aliases) args))))
      :else (throw (ex-info "Couldn't normalize expression" {:expr expr})))))
 

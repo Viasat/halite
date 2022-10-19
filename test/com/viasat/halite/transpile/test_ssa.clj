@@ -426,7 +426,20 @@
         $13 [(not $12) :Boolean $12]
         $14 [(and $8 $8 $12) :Boolean $15]
         $15 [(not $14) :Boolean $14]}
-      '[$14])))
+      '[$14]
+
+      '[(= 1 (map [x [x y]] (* x 2)))]
+      '{$1 [1 :Integer]
+        $2 [x :Integer]
+        $3 [y :Integer]
+        $4 [[$2 $3] [:Vec :Integer]]
+        $5 [($local 1 :Integer) :Integer]
+        $6 [2 :Integer]
+        $7 [(* $5 $6) :Integer]
+        $8 [(map $5 $4 $7) [:Vec :Integer]]
+        $9 [(= $1 $8) :Boolean $10]
+        $10 [(not= $1 $8) :Boolean $9]}
+      '[$9])))
 
 (deftest test-spec-to-ssa-with-refinements
   (let [senv '{:ws/A
@@ -853,7 +866,20 @@
         $14 [(and $8 $8 $12) :Boolean $15]
         $15 [(not $14) :Boolean $14]}
       '(let [v1 (every? [v1 [x y]] (< v1 1))]
-         (and v1 v1 (every? [v2 [0]] (< v2 1)))))))
+         (and v1 v1 (every? [v2 [0]] (< v2 1))))
+
+      '[$9]
+      '{$1 [1 :Integer]
+        $2 [x :Integer]
+        $3 [y :Integer]
+        $4 [[$2 $3] [:Vec :Integer]]
+        $5 [($local 1 :Integer) :Integer]
+        $6 [2 :Integer]
+        $7 [(* $5 $6) :Integer]
+        $8 [(map $5 $4 $7) [:Vec :Integer]]
+        $9 [(= $1 $8) :Boolean $10]
+        $10 [(not= $1 $8) :Boolean $9]}
+      '(= 1 (map [v1 [x y]] (* v1 2))))))
 
 (deftest test-spec-from-ssa-preserves-guards
   (let [senv (halite-envs/spec-env
