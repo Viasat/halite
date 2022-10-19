@@ -147,3 +147,15 @@
 (potemkin/import-vars
  [halite-base
   h< h> h<= h>= h+ h-])
+
+(potemkin/import-vars
+ [halite-envs
+  primitive-types
+  Refinement MandatoryVarType VarType NamedConstraint SpecVars RefinesTo SpecInfo PartialSpecInfo
+  halite-type-from-var-type
+  SpecEnv lookup-spec spec-env
+  TypeEnv type-env type-env-from-spec
+  Env env env-from-inst
+  PartialSpecMap SpecMap
+  ;; more advanced
+  maybe-type? no-maybe])
