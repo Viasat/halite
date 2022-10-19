@@ -6,7 +6,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.jadeite :as jadeite]
+            [com.viasat.jadeite :as jadeite]
             [zprint.core :as zprint]
             [schema.core :as s]))
 
@@ -249,35 +249,17 @@
                 "#" basic-ref))
          ")"]))))
 
-(defn get-sidebar-l1-entry [title]
-  (str "  - title: " title "\n"
-       "    output: web\n"
-       "    folderitems:\n\n"))
-
-(defn get-sidebar-l2-entry [title link]
-  (str "    - title: " title "\n"
-       "      url: /" link "\n"
-       "      output: web\n\n"))
-
-(defn get-sidebar-l3-entry [title link]
-  (str "        - title: " title "\n"
-       "          url: /" link "\n"
-       "          output: web\n\n"))
-
-(defn get-subfolder []
-  "      subfolders:\n")
-
-(defn get-sidebar-subfolder-entry [title]
-  (str "      - title: " title "\n"
-       "        output: web\n"
-       "        subfolderitems:\n\n"))
+(defn get-language-modifier [lang]
+  (if (= :halite lang)
+    ""
+    "-j"))
 
 (defn get-reference-extension [mode]
   (if (= :user-guide mode)
     ".html"
     ".md"))
 
-(defn get-language-modifier [lang]
-  (if (= :halite lang)
-    ""
-    "-j"))
+(defn get-sidebar-l3-entry [title link]
+  (str "        - title: " title "\n"
+       "          url: /" link "\n"
+       "          output: web\n\n"))

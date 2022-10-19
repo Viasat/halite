@@ -10,7 +10,7 @@
             [com.viasat.halite.envs :as halite-envs]
             [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
-            [com.viasat.halite.jadeite :as jadeite]
+            [com.viasat.jadeite :as jadeite]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 

@@ -26,7 +26,7 @@
             [com.viasat.halite.doc.utils :as utils]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :as format-errors]
-            [com.viasat.halite.jadeite :as jadeite])
+            [com.viasat.jadeite :as jadeite])
   (:import [com.viasat.halite.doc.run HCInfo]))
 
 (set! *warn-on-reflection* true)

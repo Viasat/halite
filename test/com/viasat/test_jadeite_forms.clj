@@ -1,10 +1,10 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.test-jadeite-forms
-  (:require [com.viasat.halite.jadeite :as jadeite]
-            [com.viasat.halite :as halite]
+(ns com.viasat.test-jadeite-forms
+  (:require [com.viasat.halite :as halite]
             [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.jadeite :as jadeite]
             [clojure.test :refer :all])
   (:import (clojure.lang ExceptionInfo)))
 

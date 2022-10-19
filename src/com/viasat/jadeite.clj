@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.jadeite
+(ns com.viasat.jadeite
   (:require [clojure.core.match :as match :refer [match]]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
@@ -137,7 +137,7 @@
     comment = #'\\s*//.*(\\n\\s*|$)'"))
 
 (def parse
-  (insta/parser (io/resource "com/viasat/halite/jadeite.bnf")
+  (insta/parser (io/resource "com/viasat/jadeite.bnf")
                 :auto-whitespace whitespace-or-comments))
 
 (defn to-halite [jadeite-string]

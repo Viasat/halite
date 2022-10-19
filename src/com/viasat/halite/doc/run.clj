@@ -8,7 +8,7 @@
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
-            [com.viasat.halite.jadeite :as jadeite])
+            [com.viasat.jadeite :as jadeite])
   (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
