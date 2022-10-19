@@ -90,46 +90,50 @@
        ~form)
      ~form))
 
+(def default-eval-expr-options {:type-check-expr? true
+                                :type-check-env? true
+                                :type-check-spec-refinements-and-constraints? true
+                                :check-for-spec-cycles? true})
+
 (s/defn eval-expr :- s/Any
   "Evaluate a halite expression against the given type environment, and return the result. Optionally check the
   bindings in the environment are checked against the type environment before evaluation. Optionally
   type check the expression before evaluating it. Optionally type check any refinements or
   constraints involved with instance literals in the expr and env. By default all checks are
   performed."
-
   ([senv :- (s/protocol halite-envs/SpecEnv)
     tenv :- (s/protocol halite-envs/TypeEnv)
     env :- (s/protocol halite-envs/Env)
     expr]
-   (eval-expr true true true true senv tenv env expr))
+   (eval-expr senv tenv env expr default-eval-expr-options))
 
-  ([type-check-expr? :- Boolean
-    type-check-env? :- Boolean
-    type-check-spec-refinements-and-constraints? :- Boolean
-    check-for-spec-cycles? :- Boolean
-
-    senv :- (s/protocol halite-envs/SpecEnv)
+  ([senv :- (s/protocol halite-envs/SpecEnv)
     tenv :- (s/protocol halite-envs/TypeEnv)
     env :- (s/protocol halite-envs/Env)
-    expr]
-   (when check-for-spec-cycles?
-     (when (not (map? senv))
-       (throw-err (h-err/spec-map-needed {})))
-     (when-let [cycle (halite-analysis/find-cycle-in-dependencies senv)]
-       (throw-err (h-err/spec-cycle {:cycle cycle}))))
-   (when type-check-expr?
-     ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
-     ;; evaluator
-     (halite-type-check/type-check senv tenv expr))
-   (let [loaded-env (optionally-with-eval-bindings
-                     type-check-spec-refinements-and-constraints?
-                     (load-env senv env))]
-     (when type-check-env?
-       ;; it is not necessary to setup the eval bindings here because env values were checked by load-env
-       (type-check-env senv tenv loaded-env))
-     (optionally-with-eval-bindings
-      type-check-spec-refinements-and-constraints?
-      (halite-eval/eval-expr* {:env loaded-env :senv senv} expr)))))
+    expr
+    options :- {(s/optional-key :type-check-expr?) Boolean
+                (s/optional-key :type-check-env?) Boolean
+                (s/optional-key :type-check-spec-refinements-and-constraints?) Boolean
+                (s/optional-key :check-for-spec-cycles?) Boolean}]
+   (let [{:keys [type-check-expr? type-check-env? type-check-spec-refinements-and-constraints? check-for-spec-cycles?]} options]
+     (when check-for-spec-cycles?
+       (when (not (map? senv))
+         (throw-err (h-err/spec-map-needed {})))
+       (when-let [cycle (halite-analysis/find-cycle-in-dependencies senv)]
+         (throw-err (h-err/spec-cycle {:cycle cycle}))))
+     (when type-check-expr?
+       ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
+       ;; evaluator
+       (halite-type-check/type-check senv tenv expr))
+     (let [loaded-env (optionally-with-eval-bindings
+                       type-check-spec-refinements-and-constraints?
+                       (load-env senv env))]
+       (when type-check-env?
+         ;; it is not necessary to setup the eval bindings here because env values were checked by load-env
+         (type-check-env senv tenv loaded-env))
+       (optionally-with-eval-bindings
+        type-check-spec-refinements-and-constraints?
+        (halite-eval/eval-expr* {:env loaded-env :senv senv} expr))))))
 
 ;;
 

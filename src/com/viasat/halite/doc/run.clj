@@ -18,7 +18,9 @@
 (def ^:dynamic *check-spec-map-for-cycles?* false)
 
 (defn- eval-h-expr [senv tenv env expr]
-  (halite/eval-expr true true true *check-spec-map-for-cycles?* senv tenv env expr))
+  (halite/eval-expr senv tenv env expr
+                    (assoc halite/default-eval-expr-options
+                           :check-for-spec-cycles? *check-spec-map-for-cycles?*)))
 
 (defmacro h-eval [expr]
   ;; helper for debugging
