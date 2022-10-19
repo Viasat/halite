@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns jibe.profiling)
+(ns com.viasat.halite.profiling)
 
 ;; Tools for collecting timing information on clojure functions. See comment
 ;; form at the end for usage examples.
