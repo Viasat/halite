@@ -5,8 +5,6 @@
   (:require [com.viasat.halite.doc.utils :as utils]
             [com.viasat.halite.doc.run :as halite-run]
             [com.viasat.halite.jadeite :as jadeite]
-            [jibe.logic.spec-env :as spec-env]
-            [jibe.http.json-conversions :as json-conversions]
             [clojure.string :as string])
   (:import [com.viasat.halite.doc.run HCInfo]))
 
@@ -15,7 +13,7 @@
                                                                      ".html"
                                                                      ".md")))
 
-(defn how-to-contents [lang mode how-to]
+(defn how-to-contents [lang mode translate-spec-map-f how-to]
   (loop [[c & more-c] (:contents how-to)
          spec-map nil
          spec-map-throws nil
@@ -46,7 +44,7 @@
                                              (:throws c)
                                              (conj results
                                                    (if (= :spec-json mode)
-                                                     (json-conversions/spec-to-json (first (spec-env/spec-map-convert (:spec-map c))))
+                                                     (translate-spec-map-f (:spec-map c))
                                                      (utils/code-snippet lang mode (str (utils/spec-map-str lang (:spec-map c))
                                                                                         spec-map-result))))))
         (and (map c) (:code c)) (let [h-expr (:code c)
@@ -96,13 +94,13 @@
         new-text (utils/get-sidebar-l3-entry title (how-to-reference lang mode prefix id))]
     (swap! *sidebar-atom* assoc-in location (str existing-text new-text))))
 
-(defn how-to-md [lang {:keys [mode prefix generate-how-to-user-guide-hdr-f]} *sidebar-atom* [id how-to doc-type]]
+(defn how-to-md [lang {:keys [mode prefix generate-how-to-user-guide-hdr-f translate-spec-map-f]} *sidebar-atom* [id how-to doc-type]]
   (->> [(when (= :user-guide mode)
           (generate-how-to-user-guide-hdr-f lang prefix id how-to))
         utils/generated-msg
         "## " (:label how-to) "\n\n"
         (:desc how-to) "\n\n"
-        (how-to-contents lang mode how-to)
+        (how-to-contents lang mode translate-spec-map-f how-to)
         (let [basic-ref-links (utils/basic-ref-links lang mode prefix how-to (if (= :user-guide mode)
                                                                                nil
                                                                                "../"))
