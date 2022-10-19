@@ -19,6 +19,15 @@
 
 ;;;;
 
+(s/defschema Limits {(s/optional-key :string-literal-length) (s/maybe s/Int)
+                     (s/optional-key :string-runtime-length) (s/maybe s/Int)
+                     (s/optional-key :vector-literal-count) (s/maybe s/Int)
+                     (s/optional-key :vector-runtime-count) (s/maybe s/Int)
+                     (s/optional-key :set-literal-count) (s/maybe s/Int)
+                     (s/optional-key :set-runtime-count) (s/maybe s/Int)
+                     (s/optional-key :list-literal-count) (s/maybe s/Int)
+                     (s/optional-key :expression-nesting-depth) (s/maybe s/Int)})
+
 (def ^:dynamic *limits* {:string-literal-length nil
                          :string-runtime-length nil
                          :vector-literal-count nil

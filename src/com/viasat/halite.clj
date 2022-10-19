@@ -114,26 +114,29 @@
     options :- {(s/optional-key :type-check-expr?) Boolean
                 (s/optional-key :type-check-env?) Boolean
                 (s/optional-key :type-check-spec-refinements-and-constraints?) Boolean
-                (s/optional-key :check-for-spec-cycles?) Boolean}]
-   (let [{:keys [type-check-expr? type-check-env? type-check-spec-refinements-and-constraints? check-for-spec-cycles?]} options]
-     (when check-for-spec-cycles?
-       (when (not (map? senv))
-         (throw-err (h-err/spec-map-needed {})))
-       (when-let [cycle (halite-analysis/find-cycle-in-dependencies senv)]
-         (throw-err (h-err/spec-cycle {:cycle cycle}))))
-     (when type-check-expr?
-       ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
-       ;; evaluator
-       (halite-type-check/type-check senv tenv expr))
-     (let [loaded-env (optionally-with-eval-bindings
-                       type-check-spec-refinements-and-constraints?
-                       (load-env senv env))]
-       (when type-check-env?
-         ;; it is not necessary to setup the eval bindings here because env values were checked by load-env
-         (type-check-env senv tenv loaded-env))
-       (optionally-with-eval-bindings
-        type-check-spec-refinements-and-constraints?
-        (halite-eval/eval-expr* {:env loaded-env :senv senv} expr))))))
+                (s/optional-key :check-for-spec-cycles?) Boolean
+                (s/optional-key :limits) halite-base/Limits}]
+   (let [{:keys [type-check-expr? type-check-env? type-check-spec-refinements-and-constraints? check-for-spec-cycles?
+                 limits]} options]
+     (binding [halite-base/*limits* (or limits halite-base/*limits*)]
+       (when check-for-spec-cycles?
+         (when (not (map? senv))
+           (throw-err (h-err/spec-map-needed {})))
+         (when-let [cycle (halite-analysis/find-cycle-in-dependencies senv)]
+           (throw-err (h-err/spec-cycle {:cycle cycle}))))
+       (when type-check-expr?
+         ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
+         ;; evaluator
+         (halite-type-check/type-check senv tenv expr))
+       (let [loaded-env (optionally-with-eval-bindings
+                         type-check-spec-refinements-and-constraints?
+                         (load-env senv env))]
+         (when type-check-env?
+           ;; it is not necessary to setup the eval bindings here because env values were checked by load-env
+           (type-check-env senv tenv loaded-env))
+         (optionally-with-eval-bindings
+          type-check-spec-refinements-and-constraints?
+          (halite-eval/eval-expr* {:env loaded-env :senv senv} expr)))))))
 
 ;;
 
@@ -147,7 +150,8 @@
 
 (potemkin/import-vars
  [halite-base
-  integer-or-long? fixed-decimal? check-count])
+  integer-or-long? fixed-decimal? check-count
+  Limits])
 
 (potemkin/import-vars
  [halite-base
