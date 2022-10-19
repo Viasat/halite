@@ -138,6 +138,22 @@
           type-check-spec-refinements-and-constraints?
           (halite-eval/eval-expr* {:env loaded-env :senv senv} expr)))))))
 
+(defn syntax-check
+  ([expr]
+   (syntax-check expr {}))
+  ([expr options]
+   (let [{:keys [limits]} options]
+     (binding [halite-base/*limits* (or limits halite-base/*limits*)]
+       (halite-syntax-check/syntax-check expr)))))
+
+(defn type-check-and-lint
+  ([senv tenv expr]
+   (type-check-and-lint senv tenv expr))
+  ([senv tenv expr options]
+   (let [{:keys [limits]} options]
+     (binding [halite-base/*limits* (or limits halite-base/*limits*)]
+       (halite-lint/type-check-and-lint senv tenv expr)))))
+
 ;;
 
 (potemkin/import-vars
@@ -146,7 +162,7 @@
 
 (potemkin/import-vars
  [halite-syntax-check
-  syntax-check check-n])
+  check-n])
 
 (potemkin/import-vars
  [halite-base
@@ -168,10 +184,6 @@
   PartialSpecMap SpecMap
   ;; more advanced
   maybe-type? no-maybe])
-
-(potemkin/import-vars
- [halite-lint
-  type-check-and-lint])
 
 (potemkin/import-vars
  [halite-types

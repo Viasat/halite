@@ -29,7 +29,8 @@
                                'str (halite-base/make-signatures [[:String :String :& :String] :String])})
 
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
-  [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
+  [ctx :- TypeContext
+   form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
         {:keys [signatures impl deprecated?] :as builtin} (get halite-eval/builtins op)
@@ -51,7 +52,8 @@
         :else (recur more)))))
 
 (s/defn ^:private type-check-symbol :- halite-types/HaliteType
-  [ctx :- TypeContext, sym]
+  [ctx :- TypeContext
+   sym]
   (if (= '$no-value sym)
     :Unset
     (let [t (get (halite-envs/scope (:tenv ctx)) sym)]
@@ -77,19 +79,22 @@
       (get field-types index))))
 
 (s/defn ^:private type-check-get :- halite-types/HaliteType
-  [ctx :- TypeContext, form]
+  [ctx :- TypeContext
+   form]
   (let [[_ subexpr index] form]
     (type-check-lookup ctx form (type-check* ctx subexpr) index)))
 
 (s/defn ^:private type-check-get-in :- halite-types/HaliteType
-  [ctx :- TypeContext, form]
+  [ctx :- TypeContext
+   form]
   (let [[_ subexpr indexes] form]
     (when (empty? indexes)
       (throw-err (l-err/get-in-path-empty {:form form})))
     (reduce (partial type-check-lookup ctx form) (type-check* ctx subexpr) indexes)))
 
 (s/defn ^:private type-check-equals :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (reduce
      (fn [s t]
@@ -103,7 +108,8 @@
   :Boolean)
 
 (s/defn ^:private type-check-set-scale :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [[_ _ scale] expr
         arg-types (mapv (partial type-check* ctx) (rest expr))]
     (if (zero? scale)
@@ -111,17 +117,20 @@
       (halite-types/decimal-type scale))))
 
 (s/defn ^:private type-check-if :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
     (halite-types/meet s t)))
 
 (s/defn ^:private type-check-when :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (let [[pred-type body-type] (map (partial type-check* ctx) (rest expr))]
     (halite-types/maybe-type body-type)))
 
 (s/defn ^:private type-check-let :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [[bindings body] (rest expr)]
     (when (zero? (count bindings))
       (throw-err (l-err/let-bindings-empty {:form expr})))
@@ -141,7 +150,8 @@
      body)))
 
 (s/defn ^:private type-check-comprehend
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (let [[op [sym expr :as bindings] body] expr]
     (when (re-find #"^[$]" (name sym))
       (throw-err (l-err/binding-target-invalid-symbol {:op op :form expr :sym sym})))
@@ -152,29 +162,34 @@
        :body-type body-type})))
 
 (s/defn ^:private type-check-quantifier :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (type-check-comprehend ctx expr)
   :Boolean)
 
 (s/defn ^:private type-check-map :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (let [{:keys [coll-type body-type]} (type-check-comprehend ctx expr)]
     [(first coll-type) (if (some #(halite-types/subtype? coll-type %) halite-types/empty-colls)
                          :Nothing
                          body-type)]))
 
 (s/defn ^:private type-check-filter :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (let [{:keys [coll-type]} (type-check-comprehend ctx expr)]
     coll-type))
 
 (s/defn ^:private type-check-sort-by :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (let [{:keys [coll-type]} (type-check-comprehend ctx expr)]
     (halite-types/vector-type (halite-types/elem-type coll-type))))
 
 (s/defn ^:private type-check-reduce :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (let [[op [acc init] [elem coll] body] expr]
     (let [init-type (type-check* ctx init)
           coll-type (type-check* ctx coll)
@@ -186,7 +201,8 @@
 
 (s/defn ^:private type-check-if-value :- halite-types/HaliteType
   "handles if-value and when-value"
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [[op sym set-expr unset-expr] expr]
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
@@ -199,7 +215,8 @@
         (halite-types/meet set-type unset-type)))))
 
 (s/defn ^:private type-check-if-value-let :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
     (let [maybe-type (type-check* ctx maybe-expr)
           else-type (if (= 'when-value-let op)
@@ -212,13 +229,15 @@
         (halite-types/meet then-type else-type)))))
 
 (s/defn ^:private type-check-union :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (halite-type-check/check-all-sets expr arg-types)
     (reduce halite-types/meet halite-types/empty-set arg-types)))
 
 (s/defn ^:private type-check-intersection :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (halite-type-check/check-all-sets expr arg-types)
     (if (empty? arg-types)
@@ -226,57 +245,67 @@
       (reduce halite-types/join arg-types))))
 
 (s/defn ^:private type-check-difference :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
     (halite-type-check/check-all-sets expr arg-types)
     (first arg-types)))
 
 (s/defn ^:private type-check-first :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (second (type-check* ctx (second expr))))
 
 (s/defn ^:private type-check-rest :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (type-check* ctx (second expr)))
 
 (s/defn ^:private type-check-conj :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [[base-type & elem-types] (mapv (partial type-check* ctx) (rest expr))]
     (halite-types/change-elem-type
      base-type
      (reduce halite-types/meet (halite-types/elem-type base-type) elem-types))))
 
 (s/defn ^:private type-check-concat :- halite-types/HaliteType
-  [ctx :- TypeContext, expr :- s/Any]
+  [ctx :- TypeContext
+   expr :- s/Any]
   (let [op (first expr)
         [s t] (mapv (partial type-check* ctx) (rest expr))]
     (halite-types/meet s
                        (halite-types/change-elem-type s (halite-types/elem-type t)))))
 
 (s/defn ^:private type-check-refine-to :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     (halite-types/concrete-spec-type kw)))
 
 (s/defn ^:private type-check-refines-to? :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (let [[subexpr kw] (rest expr)
         s (type-check* ctx subexpr)]
     :Boolean))
 
 (s/defn ^:private type-check-valid :- halite-types/HaliteType
-  [ctx :- TypeContext, [_valid subexpr :as expr]]
+  [ctx :- TypeContext
+   [_valid subexpr :as expr]]
   (let [t (type-check* ctx subexpr)]
     (halite-types/spec-type? t) (halite-types/maybe-type t)))
 
 (s/defn ^:private type-check-valid? :- halite-types/HaliteType
-  [ctx :- TypeContext, [_valid? subexpr :as expr]]
+  [ctx :- TypeContext
+   [_valid? subexpr :as expr]]
   (let [t (type-check* ctx subexpr)]
     (halite-types/spec-type? t) :Boolean))
 
 (s/defn ^:private type-check* :- halite-types/HaliteType
-  [ctx :- TypeContext, expr]
+  [ctx :- TypeContext
+   expr]
   (cond
     (boolean? expr) :Boolean
     (halite-base/integer-or-long? expr) :Integer
@@ -320,7 +349,9 @@
 (s/defn lint!
   "Assumes type-checked halite. Return nil if no violations found, or throw the
   first linting rule violation found."
-  [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
+  [senv :- (s/protocol halite-envs/SpecEnv)
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   expr :- s/Any]
   (some (fn [[sym t]]
           (when (and (re-find #"^[$]" (name sym))
                      (not (contains? halite-base/reserved-words sym))
@@ -335,7 +366,9 @@
   "Convenience function to run `lint!` and also `halite-type-check/type-check` in the
   required order.  Returns the halite type of the expr if no lint violations
   found, otherwise throw the first linting rule violation found."
-  [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
+  [senv :- (s/protocol halite-envs/SpecEnv)
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   expr :- s/Any]
   (let [t (halite-type-check/type-check senv tenv expr)]
     (lint! senv tenv expr)
     t))
@@ -343,7 +376,9 @@
 (s/defn lint :- halite-types/HaliteType
   "Assumes type-checked halite. Return nil if no violations found, or a seq of
   one or more linting rule violations."
-  [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
+  [senv :- (s/protocol halite-envs/SpecEnv)
+   tenv :- (s/protocol halite-envs/TypeEnv)
+   expr :- s/Any]
   (try
     (lint! senv tenv expr)
     (catch clojure.lang.ExceptionInfo ex
