@@ -3,12 +3,12 @@
 
 (ns com.viasat.gen-docs
   (:require [clojure.test :as test :refer [deftest]]
-            [com.viasat.halite.doc.docs :as docs]
+            [com.viasat.halite-docs :as halite-docs]
             [schema.test :refer [validate-schemas]]))
 
 ;; (clojure.test/use-fixtures :once validate-schemas)
 
 (deftest gen-docs
-  (docs/generate-local-docs))
+  (#'halite-docs/generate-local-docs))
 
 ;; (time (clojure.test/run-tests))

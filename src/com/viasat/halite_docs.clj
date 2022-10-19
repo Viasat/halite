@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.doc.docs
+(ns com.viasat.halite-docs
   (:require [cheshire.core :as json]
             [clojure.pprint :as pprint]
             [clojure.string :as string]
@@ -57,7 +57,7 @@
                                            :x 100} :spec/B))]
     (.-h-result r)))
 
-(defn expand-example [[op m]]
+(defn- expand-example [[op m]]
   [op (if (:examples m)
         (assoc m :examples (mapv (fn [example]
                                    (let [{:keys [expr-str expr-str-j result result-j spec-map-f instance spec-map]} example]
@@ -118,12 +118,12 @@
                                  (:examples m)))
         m)])
 
-(defn expand-examples-map [op-maps]
+(defn- expand-examples-map [op-maps]
   (->> op-maps
        (mapcat expand-example)
        (apply sorted-map)))
 
-(defn expand-examples-vector [basic-bnf]
+(defn- expand-examples-vector [basic-bnf]
   (->> basic-bnf
        (partition 2)
        (mapcat expand-example)
@@ -131,32 +131,32 @@
 
 ;;;;
 
-(def misc-notes ["'whitespace' refers to characters such as spaces, tabs, and newlines."
-                 "Whitespace is generally not called out in the following diagrams. However, it is specified for a few syntactic constructs that explicitly rely on whitespace."])
+(def ^:private misc-notes ["'whitespace' refers to characters such as spaces, tabs, and newlines."
+                           "Whitespace is generally not called out in the following diagrams. However, it is specified for a few syntactic constructs that explicitly rely on whitespace."])
 
-(def misc-notes-halite ["For halite, whitespace also includes the comma. The comma can be used as an optional delimiter in sequences to improve readability."])
+(def ^:private misc-notes-halite ["For halite, whitespace also includes the comma. The comma can be used as an optional delimiter in sequences to improve readability."])
 
-(def basic-bnf (expand-examples-vector basic-bnf-vector))
+(def ^:private basic-bnf (expand-examples-vector basic-bnf-vector))
 
-(def op-maps (expand-examples-map op-maps/op-maps))
+(def ^:private op-maps (expand-examples-map op-maps/op-maps))
 
-(def jadeite-ommitted-ops #{'dec 'inc})
+(def ^:private jadeite-ommitted-ops #{'dec 'inc})
 
-(def thrown-by-map (->> (-> op-maps
-                            (update-vals :throws))
-                        (remove (comp nil? second))
-                        (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
-                        (apply merge-with into)))
+(def ^:private thrown-by-map (->> (-> op-maps
+                                      (update-vals :throws))
+                                  (remove (comp nil? second))
+                                  (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                                  (apply merge-with into)))
 
-(def thrown-by-basic-map (->> basic-bnf
-                              (partition 2)
-                              (map (fn [[k v]]
-                                     [k (:throws v)]))
-                              (remove (comp nil? second))
-                              (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
-                              (apply merge-with into)))
+(def ^:private thrown-by-basic-map (->> basic-bnf
+                                        (partition 2)
+                                        (map (fn [[k v]]
+                                               [k (:throws v)]))
+                                        (remove (comp nil? second))
+                                        (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                                        (apply merge-with into)))
 
-(def err-maps
+(def ^:private err-maps
   (apply hash-map
          (mapcat (fn [[err-id err]]
                    [err-id (let [err (if-let [thrown-by (thrown-by-map err-id)]
@@ -176,7 +176,7 @@
                                      @format-errors/error-atom
                                      err-maps/err-maps)))))
 
-(defn translate-op-maps-to-jadeite [op-maps]
+(defn- translate-op-maps-to-jadeite [op-maps]
   (let [op-maps (-> op-maps
                     (update-vals (fn [op]
                                    (if (:op-ref op)
@@ -195,21 +195,21 @@
                                         :default v)])))))
          (apply sorted-map))))
 
-(def op-maps-j (translate-op-maps-to-jadeite op-maps))
+(def ^:private op-maps-j (translate-op-maps-to-jadeite op-maps))
 
-(def tag-map (->> (-> op-maps
-                      (update-vals :tags))
-                  (remove (comp nil? second))
-                  (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
-                  (apply merge-with into)))
+(def ^:private tag-map (->> (-> op-maps
+                                (update-vals :tags))
+                            (remove (comp nil? second))
+                            (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                            (apply merge-with into)))
 
-(def tag-map-j (->> (-> op-maps-j
-                        (update-vals :tags))
-                    (remove (comp nil? second))
-                    (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
-                    (apply merge-with into)))
+(def ^:private tag-map-j (->> (-> op-maps-j
+                                  (update-vals :tags))
+                              (remove (comp nil? second))
+                              (mapcat (fn [[k vs]] (map (fn [v] {v #{k}}) vs)))
+                              (apply merge-with into)))
 
-(defn tag-md-filename [lang tag]
+(defn- tag-md-filename [lang tag]
   (str (:prefix *run-config*) tag "-reference" (utils/get-language-modifier lang) ".md"))
 
 (assert (= (set (keys tag-def-map))
@@ -217,13 +217,13 @@
                         (mapcat :tags (vals op-maps)))))
         "Mismatch between defined tags and used tags.")
 
-(defn append-sidebar [lang location title link]
+(defn- append-sidebar [lang location title link]
   (let [{:keys [mode prefix]} *run-config*
         existing-text (get-in @*sidebar-atom* location)
         new-text (utils/get-sidebar-l3-entry title (utils/get-reference-filename-link lang mode prefix link))]
     (swap! *sidebar-atom* assoc-in location (str existing-text "\n" new-text))))
 
-(defn produce-full-md [lang]
+(defn- produce-full-md [lang]
   (let [titles {:halite "Halite Full Reference"
                 :jadeite "Jadeite Full Reference"}
         info {:tag-def-map tag-def-map
@@ -248,7 +248,7 @@
                                 "/jadeite/"
                                 (tag-md-filename lang "full")))))))
 
-(defn produce-basic-md [lang]
+(defn- produce-basic-md [lang]
   (let [titles {:halite "Halite Basic Syntax Reference"
                 :jadeite "Jadeite Basic Syntax Reference"}
         info {:tag-def-map tag-def-map
@@ -266,7 +266,7 @@
                                 "/jadeite/"
                                 (tag-md-filename lang "basic-syntax")))))))
 
-(defn produce-err-md [lang]
+(defn- produce-err-md [lang]
   (let [titles {:halite "Halite Error ID Reference"
                 :jadeite "Jadeite Error ID Reference"}
         {:keys [mode]} *run-config*]
@@ -286,7 +286,7 @@
                                 "/jadeite/"
                                 (tag-md-filename lang "err-id")))))))
 
-(defn produce-tag-md [lang [tag-name tag]]
+(defn- produce-tag-md [lang [tag-name tag]]
   (let [{:keys [mode]} *run-config*
         label (:label tag)]
     (when (= :user-guide mode)
@@ -302,43 +302,43 @@
                               "/" (name lang)
                               "/" (tag-md-filename lang (name tag-name)))))))
 
-(defn how-to-filename [lang id]
+(defn- how-to-filename [lang id]
   (str "how-to/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
-(defn how-to-reference [lang mode id]
+(defn- how-to-reference [lang mode id]
   (str (when (= :local mode) (if (= :halite lang)
                                "halite/how-to/"
                                "jadeite/how-to/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
 
-(defn how-to-md [lang [id how-to]]
+(defn- how-to-md [lang [id how-to]]
   (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id how-to :how-to (how-to-reference lang (:mode *run-config*) id)])
        (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
                             "/" (how-to-filename lang id) ".md"))))
 
-(defn tutorial-filename [lang id]
+(defn- tutorial-filename [lang id]
   (str "tutorial/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
-(defn tutorial-reference [lang mode id]
+(defn- tutorial-reference [lang mode id]
   (str (when (= :local mode) (if (= :halite lang)
                                "halite/tutorial/"
                                "jadeite/tutorial/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
 
-(defn tutorial-md [lang [id tutorial]]
+(defn- tutorial-md [lang [id tutorial]]
   (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id tutorial :tutorial (tutorial-reference lang (:mode *run-config*) id)])
        (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
                             "/" (tutorial-filename lang id) ".md"))))
 
-(defn explanation-filename [lang id]
+(defn- explanation-filename [lang id]
   (str "explanation/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
-(defn explanation-reference [lang mode id]
+(defn- explanation-reference [lang mode id]
   (str (when (= :local mode) (if (= :halite lang)
                                "halite/explanation/"
                                "jadeite/explanation/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
 
-(defn explanation-md [lang [id explanation]]
+(defn- explanation-md [lang [id explanation]]
   (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id explanation :explanation (explanation-reference lang (:mode *run-config*) id)])
        (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
@@ -346,14 +346,14 @@
 
 ;;
 
-(defn query-ops
+(defn- query-ops
   "Returns a subset of op-maps that include the given tag"
   [tag]
   (apply sorted-map (mapcat identity (filter (fn [[op m]]
                                                (get (:tags m) tag))
                                              op-maps))))
 
-(defn produce-bnf-diagram-for-tag [tag]
+(defn- produce-bnf-diagram-for-tag [tag]
   (bnf-diagrams/produce-bnf-diagrams
    *run-config*
    (query-ops tag)
@@ -366,7 +366,7 @@
 ;; watcher on the data-var.  The fn is optional -- if not given, the watcher
 ;; will be removed from data-var. This is incomplete -- add entries as needed
 ;; for your documentation tasks:
-(def gen-doc-fns
+(def ^:private gen-doc-fns
   [[#'op-maps/op-maps #(alter-var-root #'op-maps (constantly (expand-examples-map op-maps/op-maps)))]
    [#'op-maps #(do (alter-var-root #'op-maps-j (constantly (translate-op-maps-to-jadeite op-maps)))
                    (produce-full-md :halite)
@@ -380,7 +380,7 @@
 
 (def ^:dynamic *running-gen-doc* #{})
 
-(defn gen-doc-with-fn [f _key data-var _old-val new-val]
+(defn- gen-doc-with-fn [f _key data-var _old-val new-val]
   (when-not (*running-gen-doc* data-var)
     (let [indent (apply str (repeat (count *running-gen-doc*) "  "))]
       (binding [*running-gen-doc* (conj *running-gen-doc* data-var)]
@@ -394,7 +394,7 @@
     (remove-watch data-var ::gen-doc)
     (add-watch data-var ::gen-doc (partial gen-doc-with-fn f))))
 
-(defn produce-spec-bnf-diagrams [run-config]
+(defn- produce-spec-bnf-diagrams [run-config]
   (bnf-diagrams/produce-spec-bnf-diagram run-config "type.svg" data-spec-bnf/type-bnf-vector)
   (bnf-diagrams/produce-spec-bnf-diagram run-config "spec-var-map.svg" data-spec-bnf/spec-var-map-bnf-pair)
   (bnf-diagrams/produce-spec-bnf-diagram run-config "constraints.svg" data-spec-bnf/constraints-bnf-pair)
@@ -472,7 +472,7 @@
                                       :tag-reference utils/get-reference-filename-link}
                                      run-config))))
 
-(defn generate-local-docs []
+(defn- generate-local-docs []
   (generate-docs {:mode :local
                   :root-dir "doc"
                   :image-dir "doc"
