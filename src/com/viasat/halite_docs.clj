@@ -36,7 +36,7 @@
                              :image-dir "doc"
                              :prefix "halite_"})
 
-(def ^:dynamic *sidebar-atom* (atom {}))
+(def ^:dynamic *sidebar-atom* nil)
 
 ;; TODO:
 ;; define jadeite operator precedence
@@ -402,7 +402,8 @@
   (bnf-diagrams/produce-spec-bnf-diagram run-config "spec-map.svg" data-spec-bnf/spec-map-bnf-pair))
 
 (defn generate-docs [run-config]
-  (binding [*run-config* run-config]
+  (binding [*run-config* run-config
+            *sidebar-atom* (atom {})]
 
     (produce-spec-bnf-diagrams run-config)
 
