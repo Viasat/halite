@@ -31,10 +31,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def ^:dynamic *run-config* {:mode :local
-                             :root-dir "doc"
-                             :image-dir "doc"
-                             :prefix "halite_"})
+(def ^:dynamic *run-config* nil)
 
 (def ^:dynamic *sidebar-atom* nil)
 
