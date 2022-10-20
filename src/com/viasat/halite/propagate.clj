@@ -5,6 +5,7 @@
   "Constraint propagation for halite."
   (:require [com.viasat.halite.envs :as halite-envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
+            [com.viasat.halite.propagate.prop-top-abstract :as prop-top-abstract]
             [com.viasat.halite.transpile.ssa :as ssa]
             [schema.core :as s]))
 
@@ -23,5 +24,5 @@
    (let [sctx (if (map? senv)
                 (ssa/spec-map-to-ssa senv)
                 (ssa/build-spec-ctx senv (:$type initial-bound)))]
-     (prop-abstract/propagate sctx opts initial-bound))))
+     (prop-top-abstract/propagate sctx opts initial-bound))))
 
