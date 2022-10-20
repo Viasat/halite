@@ -7,28 +7,35 @@
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
             [schema.core :as s]))
 
+(def ^:private generated-field-name :$x)
+
 (s/defn ^:private translate-down
   "Convert a top-level bound by expressing it in terms of a new, enclosing spec."
-  [bound]
-  {:$type :ws/Q
-   :q bound})
+  [generated-spec-id bound]
+  {:$type generated-spec-id
+   generated-field-name bound})
 
 (s/defn ^:private translate-up
   "Convert the resulting bound by lifting the bound on the fabricated spec's field to be the
   top-level result bound."
   [bound]
-  (:q bound))
+  (generated-field-name bound))
 
 (s/defn ^:private add-spec
   "Fabricate a new spec to hold a field of the required abstract type. Add it to the context."
-  [sctx refines-to-spec-id]
+  [generated-spec-id sctx refines-to-spec-id]
   (assoc sctx
-         ;; how to generate a unique spec name?
-         :ws/Q
+         generated-spec-id
          (ssa/spec-to-ssa (ssa/as-spec-env sctx)
-                          {:spec-vars {:q refines-to-spec-id}
+                          {:spec-vars {generated-field-name refines-to-spec-id}
                            :constraints []
                            :refines-to {}})))
+
+(s/defn ^:private generate-spec-id
+  "Generate a unique spec-id that will not collide with the current context."
+  [spec-id]
+  (keyword (name spec-id)
+           (str "$" (namespace spec-id))))
 
 (s/defn propagate :- prop-abstract/SpecBound
   ([sctx :- ssa/SpecCtx
@@ -41,12 +48,14 @@
      (if (or
           ;; the bound is a concrete bound
           $type
-           ;; the bound specifies multiple refinements
+          ;; the bound specifies multiple refinements
           (> (count $refines-to) 1))
        ;; bypass this module's functionality by passing the call straight through
        (prop-abstract/propagate sctx opts initial-bound)
        ;; if the bound is an abstract bound then perform the transformation to turn it into a bound
        ;; on a field
-       (translate-up (prop-abstract/propagate (add-spec sctx (key (first $refines-to)))
-                                              opts
-                                              (translate-down initial-bound)))))))
+       (let [refines-to-spec-id (key (first $refines-to))
+             generated-spec-id (generate-spec-id refines-to-spec-id)]
+         (translate-up (prop-abstract/propagate (add-spec generated-spec-id sctx refines-to-spec-id)
+                                                opts
+                                                (translate-down generated-spec-id initial-bound))))))))
