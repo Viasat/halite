@@ -10,18 +10,25 @@
 (s/defn ^:private translate-down
   "Convert a top-level bound by expressing it in terms of a new, enclosing spec."
   [bound]
-  bound)
+  {:$type :ws/Q
+   :q bound})
 
 (s/defn ^:private translate-up
   "Convert the resulting bound by lifting the bound on the fabricated spec's field to be the
   top-level result bound."
   [bound]
-  bound)
+  (:q bound))
 
 (s/defn ^:private add-spec
   "Fabricate a new spec to hold a field of the required abstract type. Add it to the context."
-  [sctx]
-  sctx)
+  [sctx refines-to-spec-id]
+  (assoc sctx
+         ;; how to generate a unique spec name?
+         :ws/Q
+         (ssa/spec-to-ssa (ssa/as-spec-env sctx)
+                          {:spec-vars {:q refines-to-spec-id}
+                           :constraints []
+                           :refines-to {}})))
 
 (s/defn propagate :- prop-abstract/SpecBound
   ([sctx :- ssa/SpecCtx
@@ -31,11 +38,15 @@
     opts :- prop-composition/Opts
     initial-bound :- prop-abstract/SpecBound]
    (let [{:keys [$refines-to $type]} initial-bound]
-     (if $type
-       ;; if the bound is a concrete bound then bypass this module's functionality
+     (if (or
+          ;; the bound is a concrete bound
+          $type
+           ;; the bound specifies multiple refinements
+          (> (count $refines-to) 1))
+       ;; bypass this module's functionality by passing the call straight through
        (prop-abstract/propagate sctx opts initial-bound)
        ;; if the bound is an abstract bound then perform the transformation to turn it into a bound
        ;; on a field
-       (let [initial-bound' (translate-down initial-bound)
-             sctx' (add-spec sctx)]
-         (translate-up (prop-abstract/propagate sctx' opts initial-bound')))))))
+       (translate-up (prop-abstract/propagate (add-spec sctx (key (first $refines-to)))
+                                              opts
+                                              (translate-down initial-bound)))))))
