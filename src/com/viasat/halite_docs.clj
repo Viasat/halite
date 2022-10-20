@@ -217,21 +217,15 @@
                         (mapcat :tags (vals op-maps)))))
         "Mismatch between defined tags and used tags.")
 
-(defn- append-sidebar [lang location title link]
-  (let [{:keys [mode prefix]} *run-config*
-        existing-text (get-in @*sidebar-atom* location)
-        new-text (utils/get-sidebar-l3-entry title (utils/get-reference-filename-link lang mode prefix link))]
-    (swap! *sidebar-atom* assoc-in location (str existing-text "\n" new-text))))
-
-(defn- produce-full-md [lang]
+(defn produce-full-md [lang]
   (let [titles {:halite "Halite Full Reference"
                 :jadeite "Jadeite Full Reference"}
         info {:tag-def-map tag-def-map
               :tag-reference utils/get-reference-filename-link}
-        {:keys [mode prefix]} *run-config*]
+        {:keys [mode prefix append-sidebar-l2-f]} *run-config*]
 
     (when (= :user-guide mode)
-      (append-sidebar lang [lang :reference] (lang titles) "full"))
+      (append-sidebar-l2-f *sidebar-atom* lang mode prefix [lang :reference] (lang titles) "full"))
     (if (= :halite lang)
       (->> op-maps
            sort
@@ -253,9 +247,9 @@
                 :jadeite "Jadeite Basic Syntax Reference"}
         info {:tag-def-map tag-def-map
               :tag-reference utils/get-reference-filename-link}
-        {:keys [mode]} *run-config*]
+        {:keys [mode prefix append-sidebar-l2-f]} *run-config*]
     (when (= :user-guide mode)
-      (append-sidebar lang [lang :reference] (lang titles) "basic-syntax"))
+      (append-sidebar-l2-f *sidebar-atom* lang mode prefix [lang :reference] (lang titles) "basic-syntax"))
     (if (= :halite lang)
       (->> (md-basic/produce-basic-core-md (assoc info :lang :halite) *run-config* basic-bnf)
            (utils/spit-dir (str (:root-dir *run-config*)
@@ -269,9 +263,9 @@
 (defn- produce-err-md [lang]
   (let [titles {:halite "Halite Error ID Reference"
                 :jadeite "Jadeite Error ID Reference"}
-        {:keys [mode]} *run-config*]
+        {:keys [mode prefix append-sidebar-l2-f]} *run-config*]
     (when (= :user-guide mode)
-      (append-sidebar lang [lang :reference] (lang titles) "err-id"))
+      (append-sidebar-l2-f *sidebar-atom* lang mode prefix [lang :reference] (lang titles) "err-id"))
     (if (= :halite lang)
       (->> err-maps
            sort
@@ -287,10 +281,10 @@
                                 (tag-md-filename lang "err-id")))))))
 
 (defn- produce-tag-md [lang [tag-name tag]]
-  (let [{:keys [mode]} *run-config*
+  (let [{:keys [mode prefix append-sidebar-l2-f]} *run-config*
         label (:label tag)]
     (when (= :user-guide mode)
-      (append-sidebar lang [lang :reference] label (name tag-name)))
+      (append-sidebar-l2-f *sidebar-atom* lang mode prefix [lang :reference] label (name tag-name)))
     (->> [tag-name tag]
          (md-tag/produce-tag-md {:lang lang
                                  :op-maps op-maps

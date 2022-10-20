@@ -8,11 +8,6 @@
             [clojure.string :as string])
   (:import [com.viasat.halite.doc.run HCInfo]))
 
-(defn how-to-reference [lang mode prefix id]
-  (str prefix (name id) "-reference" (when (= :jadeite lang) "-j") (if (= :user-guide mode)
-                                                                     ".html"
-                                                                     ".md")))
-
 (defn how-to-contents [lang mode translate-spec-map-f how-to]
   (loop [[c & more-c] (:contents how-to)
          spec-map nil
@@ -20,7 +15,7 @@
          results []]
     (if c
       (cond
-        (string? c) (recur more-c spec-map spec-map-throws (conj results (if (= mode :spec-json)
+        (string? c) (recur more-c spec-map spec-map-throws (conj results (if (= mode :specs-only)
                                                                            nil
                                                                            (str c "\n\n"))))
 
@@ -43,7 +38,7 @@
                                              (:spec-map c)
                                              (:throws c)
                                              (conj results
-                                                   (if (= :spec-json mode)
+                                                   (if (= :specs-only mode)
                                                      (translate-spec-map-f (:spec-map c))
                                                      (utils/code-snippet lang mode (str (utils/spec-map-str lang (:spec-map c))
                                                                                         spec-map-result))))))
@@ -74,7 +69,7 @@
                                   (recur more-c
                                          spec-map
                                          spec-map-throws
-                                         (conj results (if (= mode :spec-json)
+                                         (conj results (if (= mode :specs-only)
                                                          nil
                                                          (utils/code-snippet
                                                           lang mode
@@ -89,12 +84,7 @@
                                                                         :jadeite (str j-result "\n")} lang))))))))))
       results)))
 
-(defn append-how-to-sidebar [*sidebar-atom* lang mode prefix location title id]
-  (let [existing-text (get-in @*sidebar-atom* location)
-        new-text (utils/get-sidebar-l3-entry title (how-to-reference lang mode prefix id))]
-    (swap! *sidebar-atom* assoc-in location (str existing-text new-text))))
-
-(defn how-to-md [lang {:keys [mode prefix generate-how-to-user-guide-hdr-f translate-spec-map-f]} *sidebar-atom* [id how-to doc-type]]
+(defn how-to-md [lang {:keys [mode prefix append-sidebar-l3-f generate-how-to-user-guide-hdr-f translate-spec-map-f]} *sidebar-atom* [id how-to doc-type]]
   (->> [(when (= :user-guide mode)
           (generate-how-to-user-guide-hdr-f lang prefix id how-to))
         utils/generated-msg
@@ -111,7 +101,7 @@
               tutorial-refs (:tutorial-ref how-to)
               explanation-refs (:explanation-ref how-to)]
           (when (= :user-guide mode)
-            (append-how-to-sidebar *sidebar-atom* lang mode prefix [lang doc-type] (:label how-to) id))
+            (append-sidebar-l3-f *sidebar-atom* lang mode prefix [lang doc-type] (:label how-to) id))
           [(when (or basic-ref-links op-refs how-to-refs tutorial-refs explanation-refs)
              "### Reference\n\n")
            (when basic-ref-links

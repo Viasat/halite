@@ -184,31 +184,6 @@
         :jadeite "Jadeite"} lang)
       (throw (ex-info (str "Unsupported lang " lang) {:lang lang}))))
 
-(def user-guide-values {:md_full {:halite {:title "Halite Full Reference"
-                                           :link "halite_full_reference.html"
-                                           :subdir "/halite"
-                                           :summary "Halite operator reference (all operators)"}
-                                  :jadeite {:title "Jadeite Full Reference"
-                                            :link "jadeite_full_reference.html"
-                                            :subdir "/jadeite"
-                                            :summary "Jadeite operator reference (all operators)"}}
-                        :md_basic {:halite {:title "Halite Basic Syntax Reference"
-                                            :link "halite-basic-syntax-reference.html"
-                                            :subdir "/halite"
-                                            :summary "Halite basic syntax reference"}
-                                   :jadeite {:title "Jadeite Basic Syntax Reference"
-                                             :link "jadeite-basic-syntax-reference.html"
-                                             :subdir "/jadeite"
-                                             :summary "Jadeite basic syntax reference"}}
-                        :md_err {:halite {:title "Halite Error ID Reference"
-                                          :link "halite-err-id-reference.html"
-                                          :subdir "/halite"
-                                          :summary "Halite err-id reference"}
-                                 :jadeite {:title "Jadeite Error ID Reference"
-                                           :link "jadeite-err-id-reference.html"
-                                           :subdir "/jadeite"
-                                           :summary "Jadeite err-id reference"}}})
-
 ;; generate html object block to display svg image
 (s/defn get-svg-link
   [svg]
@@ -249,17 +224,17 @@
                 "#" basic-ref))
          ")"]))))
 
-(defn get-language-modifier [lang]
-  (if (= :halite lang)
-    ""
-    "-j"))
-
 (defn get-reference-extension [mode]
   (if (= :user-guide mode)
     ".html"
     ".md"))
 
-(defn get-sidebar-l3-entry [title link]
-  (str "        - title: " title "\n"
-       "          url: /" link "\n"
-       "          output: web\n\n"))
+(defn get-language-modifier [lang]
+  (if (= :halite lang)
+    ""
+    "-j"))
+
+(defn how-to-reference [lang mode prefix id]
+  (str prefix (name id) "-reference" (when (= :jadeite lang) "-j") (if (= :user-guide mode)
+                                                                     ".html"
+                                                                     ".md")))
