@@ -39,14 +39,14 @@
 
 (declare Bound)
 
+(s/defschema UntypedSpecBound {halite-types/BareKeyword (s/recursive #'Bound)})
+
 (s/defschema SpecIdToBound
-  {halite-types/NamespacedKeyword
-   {halite-types/BareKeyword (s/recursive #'Bound)}})
+  {halite-types/NamespacedKeyword UntypedSpecBound})
 
 (s/defschema SpecIdToBoundWithRefinesTo
-  {halite-types/NamespacedKeyword
-   {(s/optional-key :$refines-to) SpecIdToBound
-    halite-types/BareKeyword (s/recursive #'Bound)}
+  {halite-types/NamespacedKeyword {(s/optional-key :$refines-to) SpecIdToBound
+                                   halite-types/BareKeyword (s/recursive #'Bound)}
    (s/optional-key :Unset) s/Bool})
 
 (s/defschema AbstractSpecBound

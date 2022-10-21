@@ -50,23 +50,25 @@
 
 (declare combine-bounds)
 
-(s/defn ^:private combine-$in-bounds
-  [a-in b-in]
-  (cond
-    (and (map? a-in) (map b-in))
-    (let [common-spec-ids (set/intersection (set (keys a-in))
-                                            (set (keys b-in)))]
-      (when-not (seq common-spec-ids)
-        (prop-strings/throw-contradiction))
-      (merge-with combine-bounds
-                  (select-keys a-in common-spec-ids)
-                  (select-keys b-in common-spec-ids)))
+(s/defn ^:private combine-abstract-$in-bounds
+  [a-in :- prop-abstract/SpecIdToBoundWithRefinesTo
+   b-in :- prop-abstract/SpecIdToBoundWithRefinesTo]
+  (let [common-spec-ids (set/intersection (set (keys a-in))
+                                          (set (keys b-in)))]
+    (when-not (seq common-spec-ids)
+      (prop-strings/throw-contradiction))
+    (merge-with combine-bounds
+                (select-keys a-in common-spec-ids)
+                (select-keys b-in common-spec-ids))))
 
-    (and (= a-in b-in))
-    a-in))
+(s/defn ^:private combine-untyped-spec-bounds
+  [a :- prop-abstract/UntypedSpecBound
+   b :- prop-abstract/UntypedSpecBound]
+  (merge-with combine-bounds a b))
 
-(s/defn ^:private combine-bounds
-  [a b]
+(s/defn ^:private combine-spec-bounds
+  [a :- prop-abstract/SpecBound
+   b :- prop-abstract/SpecBound]
   (let [{a-type :$type
          a-refines-to :$refines-to
          a-in :$in} a
@@ -75,20 +77,115 @@
          b-in :$in} b]
     (when (and a-type b-type (not= a-type b-type))
       (prop-strings/throw-contradiction))
-    (no-nil {:$type (or a-type b-type)
-             :$refines-to (no-empty
-                           (merge-with #(merge-with combine-bounds %1 %2) a-refines-to b-refines-to))
-             :$in (when (or (seq a-in) (seq b-in))
-                    (combine-$in-bounds a-in b-in))})))
+    (merge (no-nil {:$type (or a-type b-type)
+                    :$refines-to (no-empty
+                                  ;; TODO: consider detecting whether there are any specs that refine to the combined results
+                                  ;; or has that already been accounted for?
+                                  (merge-with combine-untyped-spec-bounds a-refines-to b-refines-to))
+                    ;; TODO: if there is a single common-spec-id, then lift it up to the :$type
+                    :$in (when (or (seq a-in) (seq b-in))
+                           (combine-abstract-$in-bounds a-in b-in))})
+           (combine-untyped-spec-bounds (dissoc a :$in :$if :$type :$refines-to)
+                                        (dissoc b :$in :$if :$type :$refines-to)))))
+
+(s/defn ^:private bound-type
+  [bound :- prop-abstract/Bound]
+  (cond
+    (:$type bound) prop-abstract/SpecBound
+    (or (not (map? bound))
+        (and (contains? bound :$in)
+             (not (map? (:$in bound))))) prop-composition/AtomBound
+    :else prop-abstract/SpecBound))
+
+(s/defn ^:private primitive?
+  [bound :- prop-strings/AtomBound]
+  (or (integer? bound)
+      (boolean? bound)
+      (string? bound)))
+
+(s/defn ^:private atom-bound-object
+  [bound :- prop-strings/AtomBound]
+  {:bound bound
+   :bound-type (cond
+                 (primitive? bound) :primitive
+                 (#{:Unset :String} bound) bound
+                 (set? (:$in bound)) :enum
+                 (vector? (:$in bound)) :range
+                 :default (throw (ex-info "unknown atom bound" {:bound bound})))})
+
+(s/defn ^:private combine-atom-bounds
+  [a b]
+  (let [bound-objects (sort-by :bound-type (map atom-bound-object [a b]))
+        [x y] (map :bound bound-objects)]
+    (condp = (vec (map :bound-type bound-objects))
+      [:String :String] :String
+      [:String :Unset] (prop-strings/throw-contradiction)
+      [:String :enum] y
+      [:String :primitive] y
+      [:String :range] (prop-strings/throw-contradiction)
+      [:Unset :Unset] :Unset
+      [:Unset :enum] {:$in (set/intersection #{:Unset}
+                                             (:$in y))}
+      [:Unset :primitive] :Unset
+      [:Unset :range] :Unset
+      [:enum :enum] {:$in (set/intersection (:$in x)
+                                            (:$in y))}
+      [:enum :primitive] (if (contains? (:$in x) y)
+                           y
+                           (prop-strings/throw-contradiction))
+      [:enum :range] (let [[lower upper unset?] (:$in y)
+                           unsettable? (and
+                                        ; range allows :Unset
+                                        unset?
+                                        ; enum allows :Unset
+                                        (contains? (:$in x) :Unset))
+                           filtered-enum (set (filter #(<= lower % upper) (disj (:$in x)
+                                                                                :Unset)))
+                           filtered-enum (if unsettable?
+                                           (conj filtered-enum :Unset)
+                                           filtered-enum)]
+                       (cond
+                         (empty? filtered-enum) (prop-strings/throw-contradiction)
+                         (= 1 (count filtered-enum)) (first filtered-enum)
+                         :default {:$in filtered-enum}))
+      [:primitive :primitive] (if (= a b)
+                                a
+                                (prop-strings/throw-contradiction))
+      [:primitive :range] (let [[lower upper _] (:$in y)]
+                            (if (<= lower x upper)
+                              x
+                              (prop-strings/throw-contradiction)))
+      [:range :range] (let [[x-lower x-upper x-unset?] (:$in x)
+                            [y-lower y-upper y-unset?] (:$in y)
+                            lower (max x-lower y-lower)
+                            upper (min x-upper y-upper)
+                            unsettable? (and x-unset? y-unset?)]
+                        (cond
+                          (and (> lower upper) unsettable?) :Unset
+                          (> lower upper) (prop-strings/throw-contradiction)
+                          :default {:$in (if unsettable?
+                                           [lower upper :Unset]
+                                           [lower upper])})))))
+
+(s/defn ^:private combine-bounds
+  [a :- prop-abstract/Bound
+   b :- prop-abstract/Bound]
+  (let [bound-types (set (map bound-type [a b]))]
+    (when (> (count bound-types) 1)
+      (throw (ex-info "invalid bound types" {:bound-types bound-types})))
+    (let [bound-type (first bound-types)]
+      (condp = bound-type
+        prop-abstract/SpecBound (combine-spec-bounds a b)
+        prop-composition/AtomBound (combine-atom-bounds a b)))))
 
 (s/defn ^:private translate-up
   "Convert the resulting bound by lifting the bound on the fabricated spec's field to be the
   top-level result bound."
-  [bound]
+  [bound :- prop-abstract/ConcreteSpecBound2]
   (let [bounds (-> bound
-                   (dissoc :$type)
+                   (dissoc :$type :$refines-to)
                    vals)]
-    (reduce combine-bounds (first bounds) (rest bounds))))
+    (reduce combine-spec-bounds (first bounds) (rest bounds))))
 
 (s/defn ^:private add-specs
   "Fabricate a new spec to hold a field of the required abstract type. Add it to the context."
