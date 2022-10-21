@@ -105,34 +105,31 @@
 
 (s/defn ^:private atom-bound-object
   [bound :- prop-strings/AtomBound]
-  {:bound bound
-   :bound-type (cond
-                 (primitive? bound) :primitive
-                 (#{:Unset :String} bound) bound
-                 (set? (:$in bound)) :enum
-                 (vector? (:$in bound)) :range
-                 :default (throw (ex-info "unknown atom bound" {:bound bound})))})
+  (cond
+    (primitive? bound) {:bound {:$in #{bound}}
+                        :bound-type :enum}
+    (#{:Unset :String} bound) {:bound {:$in #{bound}}
+                               :bound-type :enum}
+    (set? (:$in bound)) {:bound bound
+                         :bound-type :enum}
+    (vector? (:$in bound)) {:bound bound
+                            :bound-type :range}
+    :default (throw (ex-info "unknown atom bound" {:bound bound}))))
+
+(s/defn ^:private simplify-enum :- prop-strings/AtomBound
+  [enum :- #{s/Any}]
+  (cond
+    (empty? enum) (prop-strings/throw-contradiction)
+    (= 1 (count enum)) (first enum)
+    :default {:$in enum}))
 
 (s/defn ^:private combine-atom-bounds
   [a b]
   (let [bound-objects (sort-by :bound-type (map atom-bound-object [a b]))
         [x y] (map :bound bound-objects)]
     (condp = (vec (map :bound-type bound-objects))
-      [:String :String] :String
-      [:String :Unset] (prop-strings/throw-contradiction)
-      [:String :enum] y
-      [:String :primitive] y
-      [:String :range] (prop-strings/throw-contradiction)
-      [:Unset :Unset] :Unset
-      [:Unset :enum] {:$in (set/intersection #{:Unset}
-                                             (:$in y))}
-      [:Unset :primitive] :Unset
-      [:Unset :range] :Unset
-      [:enum :enum] {:$in (set/intersection (:$in x)
-                                            (:$in y))}
-      [:enum :primitive] (if (contains? (:$in x) y)
-                           y
-                           (prop-strings/throw-contradiction))
+      [:enum :enum] (simplify-enum (set/intersection (:$in x)
+                                                     (:$in y)))
       [:enum :range] (let [[lower upper unset?] (:$in y)
                            unsettable? (and
                                         ; range allows :Unset
@@ -144,17 +141,7 @@
                            filtered-enum (if unsettable?
                                            (conj filtered-enum :Unset)
                                            filtered-enum)]
-                       (cond
-                         (empty? filtered-enum) (prop-strings/throw-contradiction)
-                         (= 1 (count filtered-enum)) (first filtered-enum)
-                         :default {:$in filtered-enum}))
-      [:primitive :primitive] (if (= a b)
-                                a
-                                (prop-strings/throw-contradiction))
-      [:primitive :range] (let [[lower upper _] (:$in y)]
-                            (if (<= lower x upper)
-                              x
-                              (prop-strings/throw-contradiction)))
+                       (simplify-enum filtered-enum))
       [:range :range] (let [[x-lower x-upper x-unset?] (:$in x)
                             [y-lower y-upper y-unset?] (:$in y)
                             lower (max x-lower y-lower)
