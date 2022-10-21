@@ -48,6 +48,23 @@
                         {:$refines-to {spec-id bound-val}}) (:$refines-to bound)))
          :$type generated-spec-id))
 
+(declare combine-bounds)
+
+(s/defn ^:private combine-$in-bounds
+  [a-in b-in]
+  (cond
+    (and (map? a-in) (map b-in))
+    (let [common-spec-ids (set/intersection (set (keys a-in))
+                                            (set (keys b-in)))]
+      (when-not (seq common-spec-ids)
+        (prop-strings/throw-contradiction))
+      (merge-with combine-bounds
+                  (select-keys a-in common-spec-ids)
+                  (select-keys b-in common-spec-ids)))
+
+    (and (= a-in b-in))
+    a-in))
+
 (s/defn ^:private combine-bounds
   [a b]
   (let [{a-type :$type
@@ -59,15 +76,10 @@
     (when (and a-type b-type (not= a-type b-type))
       (prop-strings/throw-contradiction))
     (no-nil {:$type (or a-type b-type)
-             :$refines-to (no-empty (merge-with combine-bounds a-refines-to b-refines-to))
+             :$refines-to (no-empty
+                           (merge-with #(merge-with combine-bounds %1 %2) a-refines-to b-refines-to))
              :$in (when (or (seq a-in) (seq b-in))
-                    (let [common-spec-ids (set/intersection (set (keys a-in))
-                                                            (set (keys b-in)))]
-                      (when-not (seq common-spec-ids)
-                        (prop-strings/throw-contradiction))
-                      (merge-with combine-bounds
-                                  (select-keys a-in common-spec-ids)
-                                  (select-keys b-in common-spec-ids))))})))
+                    (combine-$in-bounds a-in b-in))})))
 
 (s/defn ^:private translate-up
   "Convert the resulting bound by lifting the bound on the fabricated spec's field to be the

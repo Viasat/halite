@@ -65,6 +65,45 @@
                        {:$refines-to {:ws/A {}
                                       :ws/X {}}}))))
 
+(deftest test-top-level-refines-to-bound-multiple-with-fields
+  (is (= {:$in {:ws/Q {:$refines-to {:ws/Y {:y {:$in [120 130]}}
+                                     :ws/B {:b {:$in [120 130]}}
+                                     :ws/X {:x {:$in [120 130]}}
+                                     :ws/A {:a {:$in [120 130]}}}}}
+          :$refines-to {:ws/A {:a {:$in [120 130]}}
+                        :ws/B {:b {:$in [120 130]}}
+                        :ws/Y {:y {:$in [120 130]}}
+                        :ws/X {:x {:$in [120 130]}}}}
+         (hp/propagate '{:ws/A {:abstract? true
+                                :spec-vars {:a "Integer"}
+                                :constraints [["ac" (< a 200)]]
+                                :refines-to {}}
+
+                         :ws/B {:spec-vars {:b "Integer"}
+                                :constraints []
+                                :refines-to {:ws/A {:expr {:$type :ws/A
+                                                           :a b}}}}
+
+                         :ws/X {:abstract? true
+                                :spec-vars {:x "Integer"}
+                                :constraints [["xc" (> x 100)]]
+                                :refines-to {}}
+
+                         :ws/Y {:spec-vars {:y "Integer"}
+                                :constraints []
+                                :refines-to {:ws/X {:expr {:$type :ws/X
+                                                           :x y}}}}
+
+                         :ws/Q {:spec-vars {:q "Integer"}
+                                :constraints []
+                                :refines-to {:ws/Y {:expr {:$type :ws/Y
+                                                           :y q}}
+                                             :ws/B {:expr {:$type :ws/B
+                                                           :b q}}}}}
+
+                       {:$refines-to {:ws/A {:a {:$in [120 130]}}
+                                      :ws/X {:x {:$in [120 130]}}}}))))
+
 (deftest test-top-level-refines-to-bound-multiple-no-match
   (is (= :contradiction
          (try (hp/propagate '{:ws/A {:abstract? true
