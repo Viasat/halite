@@ -171,7 +171,7 @@
 (defn no-empty
   "Convert empty collection to nil"
   [coll]
-  (when-not (empty? coll)
+  (when (seq coll)
     coll))
 
 (defn no-nil

@@ -391,7 +391,7 @@
                    (merge bound))]
     (apply dissoc bound str-var-kws)))
 
-(defn- throw-contradiction
+(defn throw-contradiction
   "For now, we're throwing a choco ContradictionException so that at least there's a consistent
   way to catch these exceptions. Really though, we need a way to signal contradiction in general that is
   decoupled from Choco."
