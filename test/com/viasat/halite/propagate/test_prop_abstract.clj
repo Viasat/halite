@@ -79,7 +79,7 @@
                 :w$1 [:Maybe :ws/B]
                 :cn "Integer"}
                :constraints
-               [["c1" (let [v1 (if-value w$0 w$0 (if-value w$1 w$1 $no-value))]
+               [["c1" (let [v1 (if-value w$0 w$0 (when-value w$1 w$1))]
                         (< cn (if-value v1 (get (refine-to v1 :ws/W) :wn) 10)))]
                 ["w$0" (= (= w$type 0) (if-value w$0 true false))]
                 ["w$1" (= (= w$type 1) (if-value w$1 true false))]]

@@ -19,7 +19,7 @@
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when error
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when-value when error
       count range every? any? concat conj map
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
       $do!
@@ -634,6 +634,7 @@
                     'refine-to (refine-to-to-ssa ctx form)
                     '$do! (do!-to-ssa ctx form)
                     'if-value (if-value-to-ssa ctx form)
+                    'when-value (if-value-to-ssa ctx (concat ['if-value] (rest form) ['$no-value]))
                     '$value! (value!-to-ssa ctx form)
                     'error (error-to-ssa ctx form)
                     'every? (comprehension-to-ssa ctx form)
@@ -893,10 +894,12 @@
                             (if (and (not (bound? value-arg-id)) (not (symbol? value-arg)))
                               (list 'let [value-arg-id (form-from-ssa* ssa-graph ordering guards bound? curr-guard value-arg-id)]
                                     (form-from-ssa* ssa-graph ordering guards (conj bound? (second pred)) curr-guard id))
-                              (list 'if-value
-                                    (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second pred))
-                                    (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard pred-id) then-id)
-                                    (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard (negated ssa-graph pred-id)) else-id))))
+                              (let [predf (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second pred))
+                                    thenf (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard pred-id) then-id)
+                                    elsef (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard (negated ssa-graph pred-id)) else-id)]
+                                (if (= '$no-value elsef)
+                                  (list 'when-value predf thenf)
+                                  (list 'if-value predf thenf elsef)))))
                           (list 'if
                                 (form-from-ssa* ssa-graph ordering guards bound? curr-guard pred-id)
                                 (let-bindable-exprs ssa-graph ordering guards bound? (conj curr-guard pred-id) then-id)

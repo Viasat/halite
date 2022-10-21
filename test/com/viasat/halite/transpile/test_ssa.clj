@@ -952,3 +952,9 @@
     ;;
     ;; This is a regression test. Round-tripping spec used to produce (if-value n (let [v1 n] (if-value v1 v1 0)) 1).
     (is (= spec (ssa/spec-from-ssa (ssa/spec-to-ssa {} spec))))))
+
+(deftest test-roundtripping-when-value
+  (let [spec '{:spec-vars {:n [:Maybe "Integer"]}
+               :constraints [["$all" (when-value n (+ n 1))]]
+               :refines-to {}}]
+    (is (= spec (ssa/spec-from-ssa (ssa/spec-to-ssa {} spec))))))
