@@ -35,6 +35,7 @@
 (s/defn ^:private combine-abstract-$in-bounds
   [a-in :- prop-abstract/SpecIdToBoundWithRefinesTo
    b-in :- prop-abstract/SpecIdToBoundWithRefinesTo]
+  ;; TODO: this code is WRONG!, it needs to be taking the union of the keys
   (let [common-spec-ids (set/intersection (set (keys a-in))
                                           (set (keys b-in)))]
     (when-not (seq common-spec-ids)
