@@ -35,7 +35,7 @@
 ;; occurrence of a with:
 ;;   (if-value a$0 a$0 (if-value a$1 .... (error "unreachable")))
 ;;
-;; 
+;;
 
 (declare Bound)
 
@@ -70,6 +70,19 @@
   (s/conditional
    :$type ConcreteSpecBound2
    :else AbstractSpecBound))
+
+(defn- concrete-spec-bound? [bound]
+  (:$type bound))
+
+(defn- atom-bound? [bound]
+  (and (not (concrete-spec-bound? bound))
+       (or (not (map? bound))
+           (and (contains? bound :$in)
+                (not (map? (:$in bound)))))))
+
+(defn- abstract-spec-bound? [bound]
+  (and (not (concrete-spec-bound? bound))
+       (not (atom-bound? bound))))
 
 (s/defschema Bound
   (s/conditional
@@ -218,8 +231,27 @@
            (dissoc $in :Unset)))
     :else (throw (ex-info "Invalid abstract bound" {:bound abstract-bound}))))
 
+(s/defn ^:private convert-abstract-bounds-to-concrete-bounds-where-appropriate
+  "If an abstract var bound was used for a concrete field, then populate the type field of the
+  bound (to make it a concrete bound)."
+  [spec-bound senv spec-vars]
+  (->> spec-vars
+       (filter (complement #(abstract-var? senv %)))
+       (reduce (fn [spec-bound [var-kw var-type :as var-entry]]
+                 (let [var-spec-id (if (and (vector? var-type) (= :Maybe (first var-type)))
+                                     (second var-type)
+                                     var-type)
+                       var-bound (var-kw spec-bound)]
+                   (if (and var-bound
+                            (abstract-spec-bound? var-bound))
+                     (assoc spec-bound var-kw (assoc var-bound :$type var-spec-id))
+                     spec-bound)))
+               spec-bound)))
+
 (s/defn ^:private lower-abstract-bounds :- ConcreteSpecBound2
-  [spec-bound :- SpecBound, senv :- (s/protocol halite-envs/SpecEnv), alternatives]
+  [spec-bound :- SpecBound
+   senv :- (s/protocol halite-envs/SpecEnv)
+   alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second) ; unwrap [:Maybe ..]
         {:keys [spec-vars] :as spec} (halite-envs/lookup-spec senv spec-id)]
@@ -244,7 +276,7 @@
                   (assoc (discriminator-var-kw var-kw) {:$in (cond-> (set (range (count alts))) optional-var? (conj :Unset))})
                   ;; if an abstract bound was provided, lower it
                   (cond->> var-bound (lower-abstract-var-bound senv alternatives var-kw optional-var? alts var-bound)))))))
-      spec-bound))))
+      (convert-abstract-bounds-to-concrete-bounds-where-appropriate spec-bound senv spec-vars)))))
 
 (declare raise-abstract-bounds)
 

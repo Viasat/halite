@@ -529,6 +529,23 @@
     (is (= {:$type :ws/A :b1 {:$type :ws/B}}
            (pa/propagate sctx {:$type :ws/A})))))
 
+(deftest test-test-abstract-spec-bound-on-concrete-field
+  (let [sctx (ssa/spec-map-to-ssa
+              '{:ws/A {}
+                :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                :ws/C {:spec-vars {:b :ws/B}}})
+        expected {:$type :ws/C
+                  :b {:$type :ws/B
+                      :$refines-to {:ws/A {}}}}]
+    (is (= expected
+           (pa/propagate sctx {:$type :ws/C
+                               :b {:$type :ws/B
+                                   :$refines-to {:ws/A {}}}})))
+    (is (= expected
+           (pa/propagate sctx {:$type :ws/C
+                               :b {;; omit the $type field
+                                   :$refines-to {:ws/A {}}}})))))
+
 (comment "
 Stuff to do/remember regarding abstractness!
 
@@ -538,3 +555,5 @@ Stuff to do/remember regarding abstractness!
 [x] improved refines-to constraints
 [ ] properly handle optional refinements
 ")
+
+;; (run-tests)
