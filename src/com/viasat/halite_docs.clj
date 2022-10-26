@@ -294,8 +294,7 @@
 
 (defn- how-to-reference [lang id]
   (let [{:keys [prefix get-link-f]} *run-config*]
-    (get-link-f lang prefix (str (name lang) "/how-to/") (name id)))
-  )
+    (get-link-f lang prefix (str (name lang) "/how-to/") (name id))))
 
 (defn- how-to-md [lang [id how-to]]
   (->> (md-how-to/how-to-md lang *run-config* [id how-to :how-to (how-to-reference lang id)])
