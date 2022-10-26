@@ -1018,9 +1018,7 @@
 
     {:$type :ws/A :$refines-to {:ws/B {:n 1} :ws/D {:d {:$in [1 2]}}}}
     {:$type :ws/A :$refines-to {:ws/B {:n 2} :ws/C {:c true}}}
-    {:$type :ws/A :$refines-to {:ws/B {:n {:$in #{1 2}}}
-                                :ws/C {:c true}
-                                :ws/D {:d {:$in [1 2]}}}}
+    {:$type :ws/A :$refines-to {:ws/B {:n {:$in #{1 2}}}}}
 
     {:$type :ws/A} {:$type [:Maybe :ws/A]} {:$type [:Maybe :ws/A]}
     {:$type [:Maybe :ws/A]} {:$type :ws/A} {:$type [:Maybe :ws/A]}

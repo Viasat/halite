@@ -552,6 +552,10 @@
 (declare union-bounds)
 
 (s/defn union-refines-to-bounds :- RefinementBound
+  "The union of two :$refines-to bounds is the union of bounds for each spec-id
+  that appears in BOTH. Including a spec-id that appeared in only `a` would
+  cause the resulting bound to be narrower than `b`, because :$refines-to is a
+  kind of conjunction."
   [a :- (s/maybe RefinementBound), b :- (s/maybe RefinementBound)]
   (reduce
    (fn [result spec-id]
@@ -562,7 +566,7 @@
               (assoc (spec-id b) :$type spec-id))
              :$type)))
    {}
-   (set (concat (keys a) (keys b)))))
+   (filter (set (keys a)) (keys b))))
 
 (defn- union-spec-bounds [a b]
   (when (not= (:$type a) (:$type b))

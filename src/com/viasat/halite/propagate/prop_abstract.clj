@@ -57,6 +57,9 @@
    #(< (count (select-keys % [:$in :$if])) 2)
    "$in-and-$if-mutually-exclusive"))
 
+;; Despite the name, this can appear at the position of a field whose declared
+;; type is an abstract spec, though the :$type actually identified in this
+;; bounds will always be concrete.
 (s/defschema ConcreteSpecBound2
   {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one halite-types/NamespacedKeyword :type)]
                       halite-types/NamespacedKeyword)
@@ -248,6 +251,7 @@
 (defn- raise-abstract-var-bound
   [senv alternatives var-kw alts parent-bound]
   (let [discrim-kw (discriminator-var-kw var-kw)
+        first-refines-to-bounds (get-in parent-bound [(keyword (str (name var-kw) "$0")) :$refines-to])
         parent-bound (reduce
                       (fn [parent-bound [spec-id i]]
                         (let [alt-var-kw (keyword (str (name var-kw) "$" i))
@@ -259,7 +263,9 @@
                       (-> parent-bound
                           (assoc var-kw (if (= :Unset (discrim-kw parent-bound))
                                           :Unset
-                                          {:$in (cond-> {} (some-> parent-bound discrim-kw :$in :Unset) (assoc :Unset true))}))
+                                          {:$in (cond-> {}
+                                                  (some-> parent-bound discrim-kw :$in :Unset) (assoc :Unset true))
+                                           :$refines-to first-refines-to-bounds}))
                           (dissoc discrim-kw))
                       alts)
         alt-bounds (get-in parent-bound [var-kw :$in])]

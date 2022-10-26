@@ -453,6 +453,15 @@
     (are [in out]
          (= out (pa/propagate sctx in))
 
+      {:$type :ws/B}
+      {:$type :ws/B,
+       :w {:$in {:ws/A1 {:$refines-to {:ws/W {:wn {:$in [-999 1000]}}}, :a1n {:$in [-1000 999]}},
+                 :ws/A3 {:$refines-to {:ws/A1 {:a1n {:$in [-998 999]}},
+                                       :ws/A2 {:a2n {:$in [-999 998]}},
+                                       :ws/W {:wn {:$in [-997 1000]}}},
+                         :a3n {:$in [-1000 997]}}}
+           :$refines-to {:ws/W {:wn {:$in [-999 1000]}}}}}
+
       {:$type :ws/B :w {:$refines-to {:ws/W {:wn 42}}}}
       {:$type :ws/B,
        :w {:$in {:ws/A1 {:a1n 41
@@ -461,9 +470,7 @@
                          :$refines-to {:ws/A1 {:a1n 41}
                                        :ws/A2 {:a2n 40}
                                        :ws/W {:wn 42}}}}
-           :$refines-to {:ws/A1 {:a1n 41}
-                         :ws/A2 {:a2n 40}
-                         :ws/W {:wn 42}}}}
+           :$refines-to {:ws/W {:wn 42}}}}
 
       {:$type :ws/B :w {:$type :ws/A3 :a3n {:$in #{3 4 5}}}}
       {:$type :ws/B
@@ -473,7 +480,6 @@
                          :ws/A2 {:a2n {:$in [4 6]}}
                          :ws/W {:wn {:$in [6 8]}}}}}
 
-      ;; This case really demonstrates the importance of fixing the $refines-to issue.
       {:$type :ws/B :w {:$in {:ws/A1 {:a1n 12}
                               :ws/A3 {:a3n 10}}}}
       {:$type :ws/B,
@@ -482,9 +488,7 @@
                                        :ws/A2 {:a2n 11},
                                        :ws/W {:wn 13}},
                          :a3n 10}},
-           :$refines-to {:ws/A1 {:a1n 12},
-                         :ws/A2 {:a2n 11},
-                         :ws/W {:wn 13}}}}
+           :$refines-to {:ws/W {:wn 13}}}}
 
       ;; Doesn't work :(
       ;; {:$type :ws/B :w {:$refines-to {:ws/A2 {:a2n 42}}}}
