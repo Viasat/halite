@@ -454,7 +454,7 @@
                                       :how-to-filename how-to-reference}
                                      run-config))))
 
-(defn- generate-local-docs []
+(defn generate-local-docs []
   (generate-docs {:root-dir "doc"
                   :image-dir "doc"
                   :prefix "halite_"
