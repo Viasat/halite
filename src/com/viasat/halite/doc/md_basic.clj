@@ -8,14 +8,14 @@
 
 (defn tags-md-block
   "Return markdown string with links to all the tags given as keywords"
-  [{:keys [lang tag-def-map tag-reference]} {:keys [mode prefix]} tags]
+  [{:keys [lang tag-def-map]} {:keys [prefix get-link-f]} tags]
   (string/join ", "
                (for [a (sort tags)]
                  (str " [" (:label (tag-def-map a)) "]("
-                      (tag-reference lang mode prefix (name a))
+                      (get-link-f lang prefix "" (str (name a) "-reference"))
                       ")"))))
 
-(defn basic-md [{:keys [lang] :as info} {:keys [mode prefix] :as config} op-name op]
+(defn basic-md [{:keys [lang] :as info} {:keys [prefix get-link-f get-svg-link-f get-table-data-f] :as config} op-name op]
   (let [bnf (if (= :halite lang)
               (:bnf op)
               (if (contains? (set (keys op)) :bnf-j)
@@ -27,10 +27,7 @@
             "<a name=\"" (utils/safe-op-anchor op-name) "\"></a>"
             op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
             (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
-            (if (= :user-guide mode)
-              ;; user-guide format
-              [(utils/get-svg-link (str "halite-bnf-diagrams/basic-syntax/" (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg"))]
-              ["![" (pr-str bnf) "](../halite-bnf-diagrams/basic-syntax/" (utils/url-encode (utils/safe-op-name op-name)) (when (= :jadeite lang) "-j") ".svg)\n\n"])
+            (get-svg-link-f "halite-bnf-diagrams/basic-syntax/" (str (utils/url-encode (utils/safe-op-name op-name)) (utils/get-language-modifier lang)) (pr-str bnf))
             (let [c-1 (if (= :halite lang) (:comment op) (or (:comment-j op) (:comment op)))
                   c-2 (if (= :halite lang) (:comment-2 op) (or (:comment-2-j op) (:comment-2 op)))
                   c-3 (if (= :halite lang) (:comment-3 op) (or (:comment-3-j op) (:comment-3 op)))]
@@ -40,24 +37,14 @@
                (for [row (utils/text-tile-rows (map (partial utils/example-text lang) es))]
                  ["<tr>"
                   (for [tile (:tiles row)]
-                    (if (= :user-guide mode)
-                      ;; user-guide mode: examples are assigned to variable, then run through the liquid filter mardownify to render html
-                      ["<td colspan=\"" (:cols tile) "\">\n\n"
-                       (str "{% assign example = \n'```" ({:halite "clojure", :jadeite "java"} lang) "\n" (:text tile) "\n```' %}\n")
-                       "{{ example | markdownify }}\n"
-                       "\n</td>"]
-                      ;; local docs can be formatted normally
-                      ["<td colspan=\"" (:cols tile) "\">\n\n"
-                       "```" ({:halite "clojure", :jadeite "java"} lang) "\n"
-                       (:text tile)
-                       "\n```\n\n</td>"]))
+                    (get-table-data-f lang tile))
                   "</tr>"])
                "</table>\n\n"])
             (when-let [t (:throws op)]
               ["### Possible errors:\n\n"
                (for [msg (sort t)]
                  (str "* " "[`" msg "`]("
-                      (utils/get-reference lang mode prefix "err-id-reference")
+                      (get-link-f lang prefix "" "err-id-reference")
                       "#" (utils/safe-op-anchor msg) ")" "\n"))
                "\n"])
             (when-let [tags (seq (or (when (= :jadeite lang)
@@ -67,17 +54,17 @@
             (when-let [how-to-refs (:how-to-ref op)]
               ["### How tos:\n\n"
                (for [a (sort how-to-refs)]
-                 (str "* " "[" (name a) "](" (when (= :local mode) "how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
+                 (str "* " "[" (name a) "](" (get-link-f lang prefix "how-to/" (name a)) ")" "\n"))
                "\n\n"])
             (when-let [tutorial-refs (:tutorial-ref op)]
               ["### Tutorials:\n\n"
                (for [a (sort tutorial-refs)]
-                 (str "* " "[" (name a) "](" (when (= :local mode) "tutorial/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
+                 (str "* " "[" (name a) "](" (get-link-f lang prefix "tutorial/" (name a)) ")" "\n"))
                "\n\n"])
             (when-let [explanation-refs (:explanation-ref op)]
               ["### Explanations:\n\n"
                (for [a (sort explanation-refs)]
-                 (str "* " "[" (name a) "](" (when (= :local mode) "explanation/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
+                 (str "* " "[" (name a) "](" (get-link-f lang prefix "explanation/" (name a)) ")" "\n"))
                "\n\n"])
 
             "---\n"]
@@ -90,11 +77,9 @@
 
 (def label-description "In the diagrams when a grammar element appears as 'x:label' the label is simply a descriptive label to convey to the reader the meaining of the element.\n\n")
 
-(s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [mode generate-user-guide-hdr-f] :as config} basic-bnf]
+(s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [generate-hdr-f get-image-link-f] :as config} basic-bnf]
   (str
-   (when (= :user-guide mode)
-     (generate-user-guide-hdr-f "Halite Basic Syntax Reference" (str "halite_basic-syntax-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite basic syntax reference"))
-   utils/generated-msg
+   (generate-hdr-f "Halite Basic Syntax Reference" (str "halite_basic-syntax-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite basic syntax reference")
    "# "
    (utils/lang-str lang)
    " basic syntax and types reference\n\n"
@@ -106,6 +91,4 @@
         (map (partial apply basic-md info config))
         (apply str))
    "# Type Graph"
-   (if (= :user-guide mode)
-     (str "![" "type graph" "](images/types.dot.png)\n\n")
-     (str "![" "type graph" "](../types.dot.png)\n\n"))))
+   (get-image-link-f "types.dot.png" "type graph")))

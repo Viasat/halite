@@ -8,14 +8,14 @@
             [clojure.string :as string])
   (:import [com.viasat.halite.doc.run HCInfo]))
 
-(defn how-to-contents [lang mode translate-spec-map-f how-to]
+(defn how-to-contents [{:keys [code-snippet-f spec-snippet-f translate-spec-map-to-f]} lang how-to specs-only?]
   (loop [[c & more-c] (:contents how-to)
          spec-map nil
          spec-map-throws nil
          results []]
     (if c
       (cond
-        (string? c) (recur more-c spec-map spec-map-throws (conj results (if (= mode :specs-only)
+        (string? c) (recur more-c spec-map spec-map-throws (conj results (if specs-only?
                                                                            nil
                                                                            (str c "\n\n"))))
 
@@ -38,10 +38,8 @@
                                              (:spec-map c)
                                              (:throws c)
                                              (conj results
-                                                   (if (= :specs-only mode)
-                                                     (translate-spec-map-f (:spec-map c))
-                                                     (utils/code-snippet lang mode (str (utils/spec-map-str lang (:spec-map c))
-                                                                                        spec-map-result))))))
+                                                   (spec-snippet-f lang (translate-spec-map-to-f lang (:spec-map c)
+                                                                             spec-map-result)))))
         (and (map c) (:code c)) (let [h-expr (:code c)
                                       ^HCInfo i (halite-run/hc-body
                                                  spec-map
@@ -69,10 +67,10 @@
                                   (recur more-c
                                          spec-map
                                          spec-map-throws
-                                         (conj results (if (= mode :specs-only)
+                                         (conj results (if specs-only?
                                                          nil
-                                                         (utils/code-snippet
-                                                          lang mode
+                                                         (code-snippet-f
+                                                          lang 
                                                           (str ({:halite (utils/pprint-halite h-expr)
                                                                  :jadeite (str j-expr "\n")} lang)
                                                                (when (or (:result c)
@@ -84,24 +82,25 @@
                                                                         :jadeite (str j-result "\n")} lang))))))))))
       results)))
 
-(defn how-to-md [lang {:keys [mode prefix append-sidebar-l3-f generate-how-to-user-guide-hdr-f translate-spec-map-f]} *sidebar-atom* [id how-to doc-type]]
-  (->> [(when (= :user-guide mode)
-          (generate-how-to-user-guide-hdr-f lang prefix id how-to))
-        utils/generated-msg
+(defn how-to-md [lang {:keys [menu-file 
+                              prefix 
+                              generate-how-to-hdr-f 
+                              append-to-how-to-menu-f
+                              get-link-f
+                              get-reference-links-f] :as config} [id how-to doc-type]]
+  (->> [(generate-how-to-hdr-f lang prefix id how-to)
         "## " (:label how-to) "\n\n"
         (:desc how-to) "\n\n"
-        (how-to-contents lang mode translate-spec-map-f how-to)
-        (let [basic-ref-links (utils/basic-ref-links lang mode prefix how-to (if (= :user-guide mode)
-                                                                               nil
-                                                                               "../"))
+        (how-to-contents config lang how-to false)
+        (let [basic-ref-links (get-reference-links-f lang prefix  "../" how-to)
               op-refs (some->> (:op-ref how-to)
                                (map ({:halite identity
                                       :jadeite utils/translate-op-name-to-jadeite} lang)))
               how-to-refs (:how-to-ref how-to)
               tutorial-refs (:tutorial-ref how-to)
               explanation-refs (:explanation-ref how-to)]
-          (when (= :user-guide mode)
-            (append-sidebar-l3-f *sidebar-atom* lang mode prefix [lang doc-type] (:label how-to) id))
+          (when menu-file
+           (append-to-how-to-menu-f lang prefix [lang doc-type] (:label how-to) id))
           [(when (or basic-ref-links op-refs how-to-refs tutorial-refs explanation-refs)
              "### Reference\n\n")
            (when basic-ref-links
@@ -110,23 +109,23 @@
            (when op-refs
              ["#### Operator reference:\n\n"
               (for [a (sort op-refs)]
-                (str "* " "[`" a "`](" (when (= :local mode) "../") (utils/get-reference-filename-link lang mode prefix "full")
+                (str "* " "[`" a "`](" (get-link-f lang prefix "../" "full-reference")
                      "#" (utils/safe-op-anchor a) ")" "\n"))
               "\n\n"])
            (when how-to-refs
              ["#### How Tos:\n\n"
               (for [a (sort how-to-refs)]
-                (str "* " "[" (name a) "](" (when (= :local mode) "../how-to/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
+                (str "* " "[" (name a) "](" (get-link-f lang prefix "../how-to/" (name a)) ")" "\n"))
               "\n\n"])
            (when tutorial-refs
              ["#### Tutorials:\n\n"
               (for [a (sort tutorial-refs)]
-                (str "* " "[" (name a) "](" (when (= :local mode) "../tutorial/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
+                (str "* " "[" (name a) "](" (get-link-f lang prefix "../tutorial/" (name a)) ")" "\n"))
               "\n\n"])
            (when explanation-refs
              ["#### Explanations:\n\n"
               (for [a (sort explanation-refs)]
-                (str "* " "[" (name a) "](" (when (= :local mode) "../explanation/") (utils/get-reference lang mode prefix (name a)) ")" "\n"))
+                (str "* " "[" (name a) "](" (get-link-f lang prefix "../explanation/" (name a)) ")" "\n"))
               "\n\n"])])]
        flatten
        (apply str)))

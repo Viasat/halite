@@ -57,16 +57,12 @@
     op-names-j
     [op-name]))
 
-(defn code-snippet [lang mode code]
-  (str (when (= :user-guide mode)
-         ;; tell user-guide dsl to ignore the code block
-         "{% raw %}\n")
-       "```"
-       ({:halite "clojure", :jadeite "java"} lang) "\n"
-       code
-       "```\n"
-       (when (= :user-guide mode)
-         "{% endraw %}\n")
+(defn code-snippet
+  [lang code]
+  (str "```"
+       ({:halite "clojure" :jadeite "java"} lang) "\n"
+       code 
+       "```\n" 
        "\n"))
 
 (defn pprint-halite
@@ -106,6 +102,11 @@
     :jadeite (str (json/encode (update-spec-map-exprs spec-map jadeite/to-jadeite)
                                {:pretty true}) "\n")} lang))
 
+(defn translate-spec-map
+  [lang spec-map spec-map-result]
+  (str (spec-map-str lang spec-map)
+       spec-map-result))
+
 ;; (zprint/zprint nil :explain)
 
 (defn read-edn [s]
@@ -131,6 +132,11 @@
   "<!---
   This markdown file was generated. Do not edit.
   -->\n\n")
+
+(defn generate-hdr 
+  "local docs header"
+  [title link subdir summary]
+  generated-msg)
 
 (defn text-width [s]
   (apply max 0 (map count (re-seq #".*" s))))
@@ -184,29 +190,35 @@
         :jadeite "Jadeite"} lang)
       (throw (ex-info (str "Unsupported lang " lang) {:lang lang}))))
 
-;; generate html object block to display svg image
+(defn get-link
+  [lang prefix directory filename]
+  (str directory prefix filename (when (= :jadeite lang) "-j") ".md"))
+
+(defn get-image-link
+  "return an image for display in the user guide"
+  [filename description]
+  (str "![" description "](../" filename ")\n\n"))
+
 (s/defn get-svg-link
-  [svg]
-  (str "<object type=\"image/svg+xml\" data=\"images/" svg "\"></object>\n\n"))
+  [directory link-name sig]
+  (str "![" sig "](../" directory link-name ".svg)\n\n"))
 
-(defn get-reference
-  [lang
-   mode
-   prefix
-   filename]
-  (str prefix filename (when (= :jadeite lang) "-j") (if (= :user-guide mode)
-                                                       ".html"
-                                                       ".md")))
+(defn get-table-data [lang tile]
+  ["<td colspan=\"" (:cols tile) "\">\n\n"
+   "```" ({:halite "clojure", :jadeite "java"} lang) "\n"
+   (:text tile)
+   "\n```\n\n</td>"])
 
-(defn get-reference-filename-link [lang mode prefix tag]
-  (if (= mode :user-guide)
-    (str prefix tag "-reference" (when (= :jadeite lang) "-j") ".html")
-    (str prefix tag "-reference" (when (= :jadeite lang) "-j") ".md")))
+(defn embed-bnf [label]
+  ["![" label "](halite-bnf-diagrams/spec-syntax/" label ".svg" ")\n\n"])
 
-(defn basic-ref-links
+(defn get-reference-filename [lang prefix directory tag]
+  (str directory prefix tag "-reference" (when (= :jadeite lang) "-j") ".md"))
+
+(defn get-reference-links
   "Returns a list of markdown links based on the :basic-ref or :basic-ref-j
   entries in the given data map."
-  [lang mode prefix data doc-dir]
+  [lang prefix directory data ]
   (let [v (if (= :halite lang)
             (:basic-ref data)
             (or (:basic-ref-j data)
@@ -216,25 +228,12 @@
         ["[`" basic-ref "`]"
          "("
          (if (= 'spec-map basic-ref)
-           (str (when (= :local mode) "../../") "halite_spec-syntax-reference" (if (= mode :local)
-                                                                                 ".md"
-                                                                                 ".html"))
-           (str doc-dir
-                (get-reference-filename-link lang mode prefix "basic-syntax")
+           (str "../../halite_spec-syntax-reference.md")
+           (str (get-reference-filename lang prefix directory "basic-syntax")
                 "#" basic-ref))
          ")"]))))
-
-(defn get-reference-extension [mode]
-  (if (= :user-guide mode)
-    ".html"
-    ".md"))
 
 (defn get-language-modifier [lang]
   (if (= :halite lang)
     ""
     "-j"))
-
-(defn how-to-reference [lang mode prefix id]
-  (str prefix (name id) "-reference" (when (= :jadeite lang) "-j") (if (= :user-guide mode)
-                                                                     ".html"
-                                                                     ".md")))

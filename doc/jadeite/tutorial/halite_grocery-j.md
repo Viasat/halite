@@ -10,13 +10,13 @@ The following is a full model for the grocery delivery business.
 
 ```java
 {
-  "spec/Country" : {
+  "tutorials.grocery/Country$v1" : {
     "spec-vars" : {
       "name" : "String"
     },
     "constraints" : [ [ "name_constraint", "#{\"Canada\", \"Mexico\", \"US\"}.contains?(name)" ] ]
   },
-  "spec/Perk" : {
+  "tutorials.grocery/Perk$v1" : {
     "abstract?" : true,
     "spec-vars" : {
       "perkId" : "Integer",
@@ -26,57 +26,57 @@ The following is a full model for the grocery delivery business.
     },
     "constraints" : [ [ "feePerMonth_limit", "((#d \"0.00\" <= feePerMonth) && (feePerMonth <= #d \"199.99\"))" ], [ "feePerUse_limit", "((#d \"0.00\" <= feePerUse) && (feePerUse <= #d \"14.99\"))" ], [ "usesPerMonth_limit", "(ifValue(usesPerMonth) {((0 <= usesPerMonth) && (usesPerMonth <= 999))} else {true})" ] ]
   },
-  "spec/FreeDeliveryPerk" : {
+  "tutorials.grocery/FreeDeliveryPerk$v1" : {
     "spec-vars" : {
       "usesPerMonth" : "Integer"
     },
     "constraints" : [ [ "usesPerMonth_limit", "(usesPerMonth < 20)" ] ],
     "refines-to" : {
-      "spec/Perk" : {
+      "tutorials.grocery/Perk$v1" : {
         "name" : "refine_to_Perk",
-        "expr" : "{$type: spec/Perk, feePerMonth: #d \"2.99\", feePerUse: #d \"0.00\", perkId: 101, usesPerMonth: usesPerMonth}"
+        "expr" : "{$type: tutorials.grocery/Perk$v1, feePerMonth: #d \"2.99\", feePerUse: #d \"0.00\", perkId: 101, usesPerMonth: usesPerMonth}"
       }
     }
   },
-  "spec/DiscountedPrescriptionPerk" : {
+  "tutorials.grocery/DiscountedPrescriptionPerk$v1" : {
     "spec-vars" : {
       "prescriptionID" : "String"
     },
     "refines-to" : {
-      "spec/Perk" : {
+      "tutorials.grocery/Perk$v1" : {
         "name" : "refine_to_Perk",
-        "expr" : "{$type: spec/Perk, feePerMonth: #d \"3.99\", feePerUse: #d \"0.00\", perkId: 102}"
+        "expr" : "{$type: tutorials.grocery/Perk$v1, feePerMonth: #d \"3.99\", feePerUse: #d \"0.00\", perkId: 102}"
       }
     }
   },
-  "spec/EmergencyDeliveryPerk" : {
+  "tutorials.grocery/EmergencyDeliveryPerk$v1" : {
     "refines-to" : {
-      "spec/Perk" : {
+      "tutorials.grocery/Perk$v1" : {
         "name" : "refine_to_Perk",
-        "expr" : "{$type: spec/Perk, feePerMonth: #d \"0.00\", feePerUse: #d \"1.99\", perkId: 103, usesPerMonth: 2}"
+        "expr" : "{$type: tutorials.grocery/Perk$v1, feePerMonth: #d \"0.00\", feePerUse: #d \"1.99\", perkId: 103, usesPerMonth: 2}"
       }
     }
   },
-  "spec/GroceryService" : {
+  "tutorials.grocery/GroceryService$v1" : {
     "spec-vars" : {
       "deliveriesPerMonth" : "Integer",
       "feePerMonth" : "Decimal2",
-      "perks" : [ "spec/Perk" ],
-      "subscriberCountry" : "spec/Country"
+      "perks" : [ "tutorials.grocery/Perk$v1" ],
+      "subscriberCountry" : "tutorials.grocery/Country$v1"
     },
-    "constraints" : [ [ "feePerMonth_limit", "((#d \"5.99\" < feePerMonth) && (feePerMonth < #d \"12.99\"))" ], [ "perk_limit", "(perks.count() <= 2)" ], [ "perk_sum", "({ perkInstances = sortBy(pi in map(p in perks)p.refineTo( spec/Perk ))pi.perkId; ((reduce( a = #d \"0.00\"; pi in perkInstances ) { (a + pi.feePerMonth) }) < #d \"6.00\") })" ] ],
+    "constraints" : [ [ "feePerMonth_limit", "((#d \"5.99\" < feePerMonth) && (feePerMonth < #d \"12.99\"))" ], [ "perk_limit", "(perks.count() <= 2)" ], [ "perk_sum", "({ perkInstances = sortBy(pi in map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 ))pi.perkId; ((reduce( a = #d \"0.00\"; pi in perkInstances ) { (a + pi.feePerMonth) }) < #d \"6.00\") })" ] ],
     "refines-to" : {
-      "spec/GroceryStoreSubscription" : {
+      "tutorials.grocery/GroceryStoreSubscription$v1" : {
         "name" : "refine_to_Store",
-        "expr" : "{$type: spec/GroceryStoreSubscription, name: \"Acme Foods\", perkIds: map(p in sortBy(pi in map(p in perks)p.refineTo( spec/Perk ))pi.perkId)p.perkId, storeCountry: subscriberCountry}",
+        "expr" : "{$type: tutorials.grocery/GroceryStoreSubscription$v1, name: \"Acme Foods\", perkIds: map(p in sortBy(pi in map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 ))pi.perkId)p.perkId, storeCountry: subscriberCountry}",
         "inverted?" : true
       }
     }
   },
-  "spec/GroceryStoreSubscription" : {
+  "tutorials.grocery/GroceryStoreSubscription$v1" : {
     "spec-vars" : {
       "name" : "String",
-      "storeCountry" : "spec/Country",
+      "storeCountry" : "tutorials.grocery/Country$v1",
       "perkIds" : [ "Integer" ]
     },
     "constraints" : [ [ "valid_stores", "((name == \"Acme Foods\") || (name == \"Good Foods\"))" ], [ "storeCountryServed", "(((name == \"Acme Foods\") && #{\"Canada\", \"Costa Rica\", \"US\"}.contains?(storeCountry.name)) || ((name == \"Good Foods\") && #{\"Mexico\", \"US\"}.contains?(storeCountry.name)))" ] ]
@@ -87,77 +87,77 @@ The following is a full model for the grocery delivery business.
 Taking it one part at a time. Consider first the country model. This is modeling the countries where the company is operating. This is a valid country instance.
 
 ```java
-{$type: spec/Country, name: "Canada"}
+{$type: tutorials.grocery/Country$v1, name: "Canada"}
 ```
 
 Whereas this is not a valid instance.
 
 ```java
-{$type: spec/Country, name: "Germany"}
+{$type: tutorials.grocery/Country$v1, name: "Germany"}
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Country', violates constraints name_constraint"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Country$v1', violates constraints name_constraint"]
 ```
 
 Next the model introduces the abstract notion of a 'perk'. These are extra options that can be added on to the base grocery subscription service. Each type of perk has a unique number assigned as its 'perkID', it has fees, and it has an optional value indicating how many times the perk can be used per month. The perk model includes certain rules that all valid perk instances must satisfy. So, for example, the following are valid perk instances under this model.
 
 ```java
-{$type: spec/Perk, feePerMonth: #d "4.50", feePerUse: #d "0.00", perkId: 1, usesPerMonth: 3}
+{$type: tutorials.grocery/Perk$v1, feePerMonth: #d "4.50", feePerUse: #d "0.00", perkId: 1, usesPerMonth: 3}
 ```
 
 ```java
-{$type: spec/Perk, feePerMonth: #d "4.50", feePerUse: #d "1.40", perkId: 2}
+{$type: tutorials.grocery/Perk$v1, feePerMonth: #d "4.50", feePerUse: #d "1.40", perkId: 2}
 ```
 
 While this is not a valid perk instance.
 
 ```java
-{$type: spec/Perk, feePerMonth: #d "4.50", feePerUse: #d "0.00", perkId: 1, usesPerMonth: 1000}
+{$type: tutorials.grocery/Perk$v1, feePerMonth: #d "4.50", feePerUse: #d "0.00", perkId: 1, usesPerMonth: 1000}
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Perk', violates constraints usesPerMonth_limit"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Perk$v1', violates constraints usesPerMonth_limit"]
 ```
 
 The model then defines the three types of perks that are actually offered. The following are example instances of these three specs.
 
 ```java
-{$type: spec/FreeDeliveryPerk, usesPerMonth: 10}
+{$type: tutorials.grocery/FreeDeliveryPerk$v1, usesPerMonth: 10}
 ```
 
 ```java
-{$type: spec/DiscountedPrescriptionPerk, prescriptionID: "ABC"}
+{$type: tutorials.grocery/DiscountedPrescriptionPerk$v1, prescriptionID: "ABC"}
 ```
 
 ```java
-{$type: spec/EmergencyDeliveryPerk}
+{$type: tutorials.grocery/EmergencyDeliveryPerk$v1}
 ```
 
 The overall grocery service spec now pulls together perks along with the subscriber's country and some service specific fields. The grocery service includes constraints that place additional restrictions on the service being offered. The following is an example valid instance.
 
 ```java
-{$type: spec/GroceryService, deliveriesPerMonth: 3, feePerMonth: #d "9.99", perks: #{{$type: spec/FreeDeliveryPerk, usesPerMonth: 1}}, subscriberCountry: {$type: spec/Country, name: "Canada"}}
+{$type: tutorials.grocery/GroceryService$v1, deliveriesPerMonth: 3, feePerMonth: #d "9.99", perks: #{{$type: tutorials.grocery/FreeDeliveryPerk$v1, usesPerMonth: 1}}, subscriberCountry: {$type: tutorials.grocery/Country$v1, name: "Canada"}}
 ```
 
 While the following violates the constraint that limits the total monthly charges for perks.
 
 ```java
-{$type: spec/GroceryService, deliveriesPerMonth: 3, feePerMonth: #d "9.99", perks: #{{$type: spec/DiscountedPrescriptionPerk, prescriptionID: "XYZ:123"}, {$type: spec/FreeDeliveryPerk, usesPerMonth: 1}}, subscriberCountry: {$type: spec/Country, name: "Canada"}}
+{$type: tutorials.grocery/GroceryService$v1, deliveriesPerMonth: 3, feePerMonth: #d "9.99", perks: #{{$type: tutorials.grocery/DiscountedPrescriptionPerk$v1, prescriptionID: "XYZ:123"}, {$type: tutorials.grocery/FreeDeliveryPerk$v1, usesPerMonth: 1}}, subscriberCountry: {$type: tutorials.grocery/Country$v1, name: "Canada"}}
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/GroceryService', violates constraints perk_sum"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/GroceryService$v1', violates constraints perk_sum"]
 ```
 
 This spec models the service from the subscriber's perspective, but now the business needs to translate this into an order for a back-end grocery store to actually provide the delivery service. This involves executing the refinement to a subscription object.
 
 ```java
-{$type: spec/GroceryService, deliveriesPerMonth: 3, feePerMonth: #d "9.99", perks: #{{$type: spec/FreeDeliveryPerk, usesPerMonth: 1}}, subscriberCountry: {$type: spec/Country, name: "Canada"}}.refineTo( spec/GroceryStoreSubscription )
+{$type: tutorials.grocery/GroceryService$v1, deliveriesPerMonth: 3, feePerMonth: #d "9.99", perks: #{{$type: tutorials.grocery/FreeDeliveryPerk$v1, usesPerMonth: 1}}, subscriberCountry: {$type: tutorials.grocery/Country$v1, name: "Canada"}}.refineTo( tutorials.grocery/GroceryStoreSubscription$v1 )
 
 
 //-- result --
-{$type: spec/GroceryStoreSubscription, name: "Acme Foods", perkIds: [101], storeCountry: {$type: spec/Country, name: "Canada"}}
+{$type: tutorials.grocery/GroceryStoreSubscription$v1, name: "Acme Foods", perkIds: [101], storeCountry: {$type: tutorials.grocery/Country$v1, name: "Canada"}}
 ```
 
 This final object is now in a form that the grocery store understands.

@@ -10,10 +10,13 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ### spec
 
-* Model a grocery delivery business [(Halite)](halite/tutorial/halite_grocery.md) [(Jadeite)](jadeite/tutorial/halite_grocery-j.md)
-  * Consider how to use specs to model some of the important details of a business that provides grocery delivery to subscribers.
 * Model a sudokuo puzzle [(Halite)](halite/tutorial/halite_sudoku.md) [(Jadeite)](jadeite/tutorial/halite_sudoku-j.md)
   * Consider how to use specs to model a sudoku game.
+
+### tutorials.grocery
+
+* Model a grocery delivery business [(Halite)](halite/tutorial/halite_grocery.md) [(Jadeite)](jadeite/tutorial/halite_grocery-j.md)
+  * Consider how to use specs to model some of the important details of a business that provides grocery delivery to subscribers.
 
 ## How-To Guides
 

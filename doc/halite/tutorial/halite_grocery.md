@@ -9,65 +9,72 @@ Consider how to use specs to model some of the important details of a business t
 The following is a full model for the grocery delivery business.
 
 ```clojure
-{:spec/Country {:spec-vars {:name "String"},
-                :constraints [["name_constraint"
-                               '(contains? #{"Canada" "Mexico" "US"} name)]]},
- :spec/DiscountedPrescriptionPerk
+{:tutorials.grocery/Country$v1
+   {:spec-vars {:name "String"},
+    :constraints [["name_constraint"
+                   '(contains? #{"Canada" "Mexico" "US"} name)]]},
+ :tutorials.grocery/DiscountedPrescriptionPerk$v1
    {:spec-vars {:prescriptionID "String"},
-    :refines-to {:spec/Perk {:name "refine_to_Perk",
-                             :expr '{:$type :spec/Perk,
-                                     :perkId 102,
-                                     :feePerMonth #d "3.99",
-                                     :feePerUse #d "0.00"}}}},
- :spec/EmergencyDeliveryPerk {:refines-to {:spec/Perk
-                                             {:name "refine_to_Perk",
-                                              :expr '{:$type :spec/Perk,
-                                                      :perkId 103,
-                                                      :feePerMonth #d "0.00",
-                                                      :feePerUse #d "1.99",
-                                                      :usesPerMonth 2}}}},
- :spec/FreeDeliveryPerk
+    :refines-to {:tutorials.grocery/Perk$v1
+                   {:name "refine_to_Perk",
+                    :expr '{:$type :tutorials.grocery/Perk$v1,
+                            :perkId 102,
+                            :feePerMonth #d "3.99",
+                            :feePerUse #d "0.00"}}}},
+ :tutorials.grocery/EmergencyDeliveryPerk$v1
+   {:refines-to {:tutorials.grocery/Perk$v1
+                   {:name "refine_to_Perk",
+                    :expr '{:$type :tutorials.grocery/Perk$v1,
+                            :perkId 103,
+                            :feePerMonth #d "0.00",
+                            :feePerUse #d "1.99",
+                            :usesPerMonth 2}}}},
+ :tutorials.grocery/FreeDeliveryPerk$v1
    {:spec-vars {:usesPerMonth "Integer"},
     :constraints [["usesPerMonth_limit" '(< usesPerMonth 20)]],
-    :refines-to {:spec/Perk {:name "refine_to_Perk",
-                             :expr '{:$type :spec/Perk,
-                                     :perkId 101,
-                                     :feePerMonth #d "2.99",
-                                     :feePerUse #d "0.00",
-                                     :usesPerMonth usesPerMonth}}}},
- :spec/GroceryService
+    :refines-to {:tutorials.grocery/Perk$v1
+                   {:name "refine_to_Perk",
+                    :expr '{:$type :tutorials.grocery/Perk$v1,
+                            :perkId 101,
+                            :feePerMonth #d "2.99",
+                            :feePerUse #d "0.00",
+                            :usesPerMonth usesPerMonth}}}},
+ :tutorials.grocery/GroceryService$v1
    {:spec-vars {:deliveriesPerMonth "Integer",
                 :feePerMonth "Decimal2",
-                :perks #{:spec/Perk},
-                :subscriberCountry :spec/Country},
-    :constraints [["feePerMonth_limit"
-                   '(and (< #d "5.99" feePerMonth) (< feePerMonth #d "12.99"))]
-                  ["perk_limit" '(<= (count perks) 2)]
-                  ["perk_sum"
-                   '(let [perkInstances (sort-by [pi
-                                                  (map [p perks]
-                                                    (refine-to p :spec/Perk))]
-                                                 (get pi :perkId))]
-                      (< (reduce [a #d "0.00"]
-                           [pi perkInstances]
-                           (+ a (get pi :feePerMonth)))
-                         #d "6.00"))]],
+                :perks #{:tutorials.grocery/Perk$v1},
+                :subscriberCountry :tutorials.grocery/Country$v1},
+    :constraints
+      [["feePerMonth_limit"
+        '(and (< #d "5.99" feePerMonth) (< feePerMonth #d "12.99"))]
+       ["perk_limit" '(<= (count perks) 2)]
+       ["perk_sum"
+        '(let [perkInstances
+                 (sort-by
+                   [pi (map [p perks] (refine-to p :tutorials.grocery/Perk$v1))]
+                   (get pi :perkId))]
+           (< (reduce [a #d "0.00"]
+                [pi perkInstances]
+                (+ a (get pi :feePerMonth)))
+              #d "6.00"))]],
     :refines-to
-      {:spec/GroceryStoreSubscription
+      {:tutorials.grocery/GroceryStoreSubscription$v1
          {:name "refine_to_Store",
-          :expr '{:$type :spec/GroceryStoreSubscription,
+          :expr '{:$type :tutorials.grocery/GroceryStoreSubscription$v1,
                   :name "Acme Foods",
                   :storeCountry subscriberCountry,
-                  :perkIds (map [p
-                                 (sort-by
-                                   [pi (map [p perks] (refine-to p :spec/Perk))]
+                  :perkIds
+                    (map [p
+                          (sort-by [pi
+                                    (map [p perks]
+                                      (refine-to p :tutorials.grocery/Perk$v1))]
                                    (get pi :perkId))]
-                             (get p :perkId))},
+                      (get p :perkId))},
           :inverted? true}}},
- :spec/GroceryStoreSubscription
+ :tutorials.grocery/GroceryStoreSubscription$v1
    {:spec-vars {:name "String",
                 :perkIds ["Integer"],
-                :storeCountry :spec/Country},
+                :storeCountry :tutorials.grocery/Country$v1},
     :constraints
       [["valid_stores" '(or (= name "Acme Foods") (= name "Good Foods"))]
        ["storeCountryServed"
@@ -76,46 +83,47 @@ The following is a full model for the grocery delivery business.
                              (get storeCountry :name)))
              (and (= name "Good Foods")
                   (contains? #{"Mexico" "US"} (get storeCountry :name))))]]},
- :spec/Perk {:abstract? true,
-             :spec-vars {:feePerMonth "Decimal2",
-                         :feePerUse "Decimal2",
-                         :perkId "Integer",
-                         :usesPerMonth [:Maybe "Integer"]},
-             :constraints
-               [["feePerMonth_limit"
-                 '(and (<= #d "0.00" feePerMonth) (<= feePerMonth #d "199.99"))]
-                ["feePerUse_limit"
-                 '(and (<= #d "0.00" feePerUse) (<= feePerUse #d "14.99"))]
-                ["usesPerMonth_limit"
-                 '(if-value usesPerMonth
-                            (and (<= 0 usesPerMonth) (<= usesPerMonth 999))
-                            true)]]}}
+ :tutorials.grocery/Perk$v1
+   {:abstract? true,
+    :spec-vars {:feePerMonth "Decimal2",
+                :feePerUse "Decimal2",
+                :perkId "Integer",
+                :usesPerMonth [:Maybe "Integer"]},
+    :constraints [["feePerMonth_limit"
+                   '(and (<= #d "0.00" feePerMonth)
+                         (<= feePerMonth #d "199.99"))]
+                  ["feePerUse_limit"
+                   '(and (<= #d "0.00" feePerUse) (<= feePerUse #d "14.99"))]
+                  ["usesPerMonth_limit"
+                   '(if-value usesPerMonth
+                              (and (<= 0 usesPerMonth) (<= usesPerMonth 999))
+                              true)]]}}
 ```
 
 Taking it one part at a time. Consider first the country model. This is modeling the countries where the company is operating. This is a valid country instance.
 
 ```clojure
 {:name "Canada",
- :$type :spec/Country}
+ :$type :tutorials.grocery/Country$v1}
 ```
 
 Whereas this is not a valid instance.
 
 ```clojure
 {:name "Germany",
- :$type :spec/Country}
+ :$type :tutorials.grocery/Country$v1}
 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Country', violates constraints name_constraint"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Country$v1', violates constraints name_constraint"
  :h-err/invalid-instance]
 ```
 
 Next the model introduces the abstract notion of a 'perk'. These are extra options that can be added on to the base grocery subscription service. Each type of perk has a unique number assigned as its 'perkID', it has fees, and it has an optional value indicating how many times the perk can be used per month. The perk model includes certain rules that all valid perk instances must satisfy. So, for example, the following are valid perk instances under this model.
 
 ```clojure
-{:$type :spec/Perk,
+{:$type :tutorials.grocery/Perk$v1,
  :feePerMonth #d "4.50",
  :feePerUse #d "0.00",
  :perkId 1,
@@ -123,7 +131,7 @@ Next the model introduces the abstract notion of a 'perk'. These are extra optio
 ```
 
 ```clojure
-{:$type :spec/Perk,
+{:$type :tutorials.grocery/Perk$v1,
  :feePerMonth #d "4.50",
  :feePerUse #d "1.40",
  :perkId 2}
@@ -132,7 +140,7 @@ Next the model introduces the abstract notion of a 'perk'. These are extra optio
 While this is not a valid perk instance.
 
 ```clojure
-{:$type :spec/Perk,
+{:$type :tutorials.grocery/Perk$v1,
  :feePerMonth #d "4.50",
  :feePerUse #d "0.00",
  :perkId 1,
@@ -141,77 +149,77 @@ While this is not a valid perk instance.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Perk', violates constraints usesPerMonth_limit"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Perk$v1', violates constraints usesPerMonth_limit"
  :h-err/invalid-instance]
 ```
 
 The model then defines the three types of perks that are actually offered. The following are example instances of these three specs.
 
 ```clojure
-{:$type :spec/FreeDeliveryPerk,
+{:$type :tutorials.grocery/FreeDeliveryPerk$v1,
  :usesPerMonth 10}
 ```
 
 ```clojure
-{:$type :spec/DiscountedPrescriptionPerk,
+{:$type :tutorials.grocery/DiscountedPrescriptionPerk$v1,
  :prescriptionID "ABC"}
 ```
 
 ```clojure
-{:$type :spec/EmergencyDeliveryPerk}
+{:$type :tutorials.grocery/EmergencyDeliveryPerk$v1}
 ```
 
 The overall grocery service spec now pulls together perks along with the subscriber's country and some service specific fields. The grocery service includes constraints that place additional restrictions on the service being offered. The following is an example valid instance.
 
 ```clojure
-{:$type :spec/GroceryService,
+{:$type :tutorials.grocery/GroceryService$v1,
  :deliveriesPerMonth 3,
  :feePerMonth #d "9.99",
- :perks #{{:$type :spec/FreeDeliveryPerk,
+ :perks #{{:$type :tutorials.grocery/FreeDeliveryPerk$v1,
            :usesPerMonth 1}},
  :subscriberCountry {:name "Canada",
-                     :$type :spec/Country}}
+                     :$type :tutorials.grocery/Country$v1}}
 ```
 
 While the following violates the constraint that limits the total monthly charges for perks.
 
 ```clojure
-{:$type :spec/GroceryService,
+{:$type :tutorials.grocery/GroceryService$v1,
  :deliveriesPerMonth 3,
  :feePerMonth #d "9.99",
- :perks #{{:$type :spec/DiscountedPrescriptionPerk,
+ :perks #{{:$type :tutorials.grocery/DiscountedPrescriptionPerk$v1,
            :prescriptionID "XYZ:123"}
-          {:$type :spec/FreeDeliveryPerk,
+          {:$type :tutorials.grocery/FreeDeliveryPerk$v1,
            :usesPerMonth 1}},
  :subscriberCountry {:name "Canada",
-                     :$type :spec/Country}}
+                     :$type :tutorials.grocery/Country$v1}}
 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/GroceryService', violates constraints perk_sum"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/GroceryService$v1', violates constraints perk_sum"
  :h-err/invalid-instance]
 ```
 
 This spec models the service from the subscriber's perspective, but now the business needs to translate this into an order for a back-end grocery store to actually provide the delivery service. This involves executing the refinement to a subscription object.
 
 ```clojure
-(refine-to {:$type :spec/GroceryService,
+(refine-to {:$type :tutorials.grocery/GroceryService$v1,
             :deliveriesPerMonth 3,
             :feePerMonth #d "9.99",
-            :perks #{{:$type :spec/FreeDeliveryPerk,
+            :perks #{{:$type :tutorials.grocery/FreeDeliveryPerk$v1,
                       :usesPerMonth 1}},
-            :subscriberCountry {:$type :spec/Country,
+            :subscriberCountry {:$type :tutorials.grocery/Country$v1,
                                 :name "Canada"}}
-           :spec/GroceryStoreSubscription)
+           :tutorials.grocery/GroceryStoreSubscription$v1)
 
 
 ;-- result --
 {:name "Acme Foods",
- :$type :spec/GroceryStoreSubscription,
+ :$type :tutorials.grocery/GroceryStoreSubscription$v1,
  :perkIds [101],
  :storeCountry {:name "Canada",
-                :$type :spec/Country}}
+                :$type :tutorials.grocery/Country$v1}}
 ```
 
 This final object is now in a form that the grocery store understands.

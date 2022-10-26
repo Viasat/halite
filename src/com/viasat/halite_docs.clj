@@ -33,7 +33,7 @@
 
 (def ^:dynamic *run-config* nil)
 
-(def ^:dynamic *sidebar-atom* nil)
+
 
 ;; TODO:
 ;; define jadeite operator precedence
@@ -217,12 +217,11 @@
 (defn produce-full-md [lang]
   (let [titles {:halite "Halite Full Reference"
                 :jadeite "Jadeite Full Reference"}
-        info {:tag-def-map tag-def-map
-              :tag-reference utils/get-reference-filename-link}
-        {:keys [mode prefix append-sidebar-l2-f]} *run-config*]
+        info {:tag-def-map tag-def-map}
+        {:keys [menu-file prefix append-to-menu-f]} *run-config*]
 
-    (when (= :user-guide mode)
-      (append-sidebar-l2-f *sidebar-atom* lang mode prefix [lang :reference] (lang titles) "full"))
+    (when menu-file
+      (append-to-menu-f lang prefix [lang :reference] (lang titles) "full"))
     (if (= :halite lang)
       (->> op-maps
            sort
@@ -242,11 +241,10 @@
 (defn- produce-basic-md [lang]
   (let [titles {:halite "Halite Basic Syntax Reference"
                 :jadeite "Jadeite Basic Syntax Reference"}
-        info {:tag-def-map tag-def-map
-              :tag-reference utils/get-reference-filename-link}
-        {:keys [mode prefix append-sidebar-l2-f]} *run-config*]
-    (when (= :user-guide mode)
-      (append-sidebar-l2-f *sidebar-atom* lang mode prefix [lang :reference] (lang titles) "basic-syntax"))
+        info {:tag-def-map tag-def-map}
+        {:keys [menu-file prefix append-to-menu-f]} *run-config*]
+    (when menu-file
+      (append-to-menu-f lang prefix [lang :reference] (lang titles) "basic-syntax"))
     (if (= :halite lang)
       (->> (md-basic/produce-basic-core-md (assoc info :lang :halite) *run-config* basic-bnf)
            (utils/spit-dir (str (:root-dir *run-config*)
@@ -260,9 +258,9 @@
 (defn- produce-err-md [lang]
   (let [titles {:halite "Halite Error ID Reference"
                 :jadeite "Jadeite Error ID Reference"}
-        {:keys [mode prefix append-sidebar-l2-f]} *run-config*]
-    (when (= :user-guide mode)
-      (append-sidebar-l2-f *sidebar-atom* lang mode prefix [lang :reference] (lang titles) "err-id"))
+        {:keys [menu-file prefix append-to-menu-f]} *run-config*]
+    (when menu-file
+      (append-to-menu-f lang prefix [lang :reference] (lang titles) "err-id"))
     (if (= :halite lang)
       (->> err-maps
            sort
@@ -278,10 +276,10 @@
                                 (tag-md-filename lang "err-id")))))))
 
 (defn- produce-tag-md [lang [tag-name tag]]
-  (let [{:keys [mode prefix append-sidebar-l2-f]} *run-config*
+  (let [{:keys [menu-file prefix append-to-menu-f]} *run-config*
         label (:label tag)]
-    (when (= :user-guide mode)
-      (append-sidebar-l2-f *sidebar-atom* lang mode prefix [lang :reference] label (name tag-name)))
+    (when menu-file
+      (append-to-menu-f lang prefix [lang :reference] label (name tag-name)))
     (->> [tag-name tag]
          (md-tag/produce-tag-md {:lang lang
                                  :op-maps op-maps
@@ -296,13 +294,16 @@
 (defn- how-to-filename [lang id]
   (str "how-to/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
-(defn- how-to-reference [lang mode id]
-  (str (when (= :local mode) (if (= :halite lang)
-                               "halite/how-to/"
-                               "jadeite/how-to/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
+(defn- how-to-reference [lang id]
+  (let [{:keys [prefix get-link-f]} *run-config*]
+  (get-link-f lang prefix (str (name lang) "/how-to/") (name id)))
+  ;(str (when (= :local mode) (if (= :halite lang)
+  ;                             "halite/how-to/"
+  ;                             "jadeite/how-to/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
+  )
 
 (defn- how-to-md [lang [id how-to]]
-  (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id how-to :how-to (how-to-reference lang (:mode *run-config*) id)])
+  (->> (md-how-to/how-to-md lang *run-config* [id how-to :how-to (how-to-reference lang id)])
        (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
                             "/" (how-to-filename lang id) ".md"))))
@@ -310,13 +311,16 @@
 (defn- tutorial-filename [lang id]
   (str "tutorial/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
-(defn- tutorial-reference [lang mode id]
-  (str (when (= :local mode) (if (= :halite lang)
-                               "halite/tutorial/"
-                               "jadeite/tutorial/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
+(defn- tutorial-reference [lang id]
+  (let [{:keys [prefix get-link-f]} *run-config*]
+    (get-link-f lang prefix (str (name lang) "/tutorial/") (name id)))
+  ;(str (when (= :local mode) (if (= :halite lang)
+  ;                             "halite/tutorial/"
+  ;                             "jadeite/tutorial/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode)))
+  )
 
 (defn- tutorial-md [lang [id tutorial]]
-  (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id tutorial :tutorial (tutorial-reference lang (:mode *run-config*) id)])
+  (->> (md-how-to/how-to-md lang *run-config* [id tutorial :tutorial (tutorial-reference lang id)])
        (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
                             "/" (tutorial-filename lang id) ".md"))))
@@ -324,13 +328,16 @@
 (defn- explanation-filename [lang id]
   (str "explanation/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
 
-(defn- explanation-reference [lang mode id]
-  (str (when (= :local mode) (if (= :halite lang)
-                               "halite/explanation/"
-                               "jadeite/explanation/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
+(defn- explanation-reference [lang id]
+  (let [{:keys [prefix get-link-f]} *run-config*]
+    (get-link-f lang prefix (str (name lang) "/explanation/") (name id)))
+  ;(str (when (= :local mode) (if (= :halite lang)
+  ;                             "halite/explanation/"
+  ;                             "jadeite/explanation/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode)))
+  )
 
 (defn- explanation-md [lang [id explanation]]
-  (->> (md-how-to/how-to-md lang *run-config* *sidebar-atom* [id explanation :explanation (explanation-reference lang (:mode *run-config*) id)])
+  (->> (md-how-to/how-to-md lang *run-config* [id explanation :explanation (explanation-reference lang id)])
        (utils/spit-dir (str (:root-dir *run-config*)
                             "/" (name lang)
                             "/" (explanation-filename lang id) ".md"))))
@@ -393,8 +400,7 @@
   (bnf-diagrams/produce-spec-bnf-diagram run-config "spec-map.svg" data-spec-bnf/spec-map-bnf-pair))
 
 (defn generate-docs [run-config]
-  (binding [*run-config* run-config
-            *sidebar-atom* (atom {})]
+  (binding [*run-config* run-config]
 
     (produce-spec-bnf-diagrams run-config)
 
@@ -448,8 +454,8 @@
          (map (partial tutorial-md :jadeite))
          dorun)
 
-    (if-let [sidebar-file (:sidebar-file run-config)]
-      (utils/spit-dir sidebar-file ((:produce-sidebar-f run-config) @*sidebar-atom*) true))
+    (if-let [menu-file (:menu-file run-config)]
+      (utils/spit-dir menu-file ((:produce-menu-f run-config) @(:menu-atom run-config)) true))
 
     (utils/spit-dir (str (:root-dir run-config)
                          "/" (:prefix run-config) "outline.md")
@@ -459,12 +465,21 @@
                                       :how-tos how-tos
                                       :explanations explanations
                                       :explanation-filename explanation-reference
-                                      :how-to-filename how-to-reference
-                                      :tag-reference utils/get-reference-filename-link}
+                                      :how-to-filename how-to-reference}
                                      run-config))))
 
 (defn- generate-local-docs []
-  (generate-docs {:mode :local
-                  :root-dir "doc"
+  (generate-docs {:root-dir "doc"
                   :image-dir "doc"
-                  :prefix "halite_"}))
+                  :prefix "halite_"
+                  :generate-hdr-f utils/generate-hdr
+                  :generate-how-to-hdr-f utils/generate-hdr
+                  :code-snippet-f utils/code-snippet
+                  :spec-snippet-f utils/code-snippet
+                  :embed-bnf-f utils/embed-bnf
+                  :get-link-f utils/get-link
+                  :get-image-link-f utils/get-image-link
+                  :get-svg-link-f utils/get-svg-link
+                  :get-table-data-f utils/get-table-data
+                  :get-reference-links-f utils/get-reference-links
+                  :translate-spec-map-to-f utils/translate-spec-map}))

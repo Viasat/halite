@@ -6,28 +6,23 @@
             [com.viasat.halite.doc.utils :as utils]
             [com.viasat.halite.doc.md-basic :as md-basic]))
 
-(defn- embed-bnf [{:keys [mode]} label]
-  ["![" label "](" (when (= :user-guide mode) "images/") "halite-bnf-diagrams/spec-syntax/" label ".svg" ")\n\n"])
-
-(defn spec-md [{:keys [mode generate-user-guide-hdr-f] :as run-config}]
-  (->> [(when (= :user-guide mode)
-          (generate-user-guide-hdr-f "Specification Syntax Reference" "halite_spec-syntax-reference" nil "Specification syntax reference."))
-        utils/generated-msg
+(defn spec-md [{:keys [generate-hdr-f embed-bnf-f]}]
+  (->> [(generate-hdr-f "Specification Syntax Reference" "halite_spec-syntax-reference" nil "Specification syntax reference.")
         "A spec-map is a data structure used to define specs that are in context for evaluating some expressions.\n\n"
         (md-basic/diagram-description "elements in spec-maps")
         md-basic/element-name-description
         md-basic/label-description
 
         "Specs include variables which have types as:\n\n"
-        (embed-bnf run-config "type")
+        (embed-bnf-f "type")
         "The variables for a spec are defined in a spec-var-map:\n\n"
-        (embed-bnf run-config "spec-var-map")
+        (embed-bnf-f "spec-var-map")
         "Constraints on those variables are defined as:\n\n"
-        (embed-bnf run-config "constraints")
+        (embed-bnf-f "constraints")
         "Any applicable refinements are defined as:\n\n"
-        (embed-bnf run-config "refinement-map")
+        (embed-bnf-f "refinement-map")
         "All the specs in scope are packaged up into a spec-map:\n\n"
-        (embed-bnf run-config "spec-map")
+        (embed-bnf-f "spec-map")
         "Note, of course each key can only appear once in each map that defines a spec. The diagram shows it this way just so it is easier to read."]
        flatten
        (apply str)))

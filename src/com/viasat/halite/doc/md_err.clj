@@ -4,7 +4,7 @@
 (ns com.viasat.halite.doc.md-err
   (:require [com.viasat.halite.doc.utils :as utils]))
 
-(defn err-md [lang {:keys [mode prefix]} err-id err]
+(defn err-md [lang {:keys [prefix get-link-f]} err-id err]
   (->> ["### "
         "<a name=\"" (utils/safe-op-anchor err-id) "\"></a>"
         err-id "\n\n" (:doc err) "\n\n"
@@ -14,7 +14,7 @@
         (when-let [thrown-bys (:thrown-by-basic err)]
           ["#### Produced by elements:\n\n"
            (for [a (sort thrown-bys)]
-             (str "* " "[`" a "`](" (utils/get-reference lang mode prefix "basic-syntax-reference")
+             (str "* " "[`" a "`](" (get-link-f lang prefix nil "basic-syntax-reference")
                   "#" (utils/safe-op-anchor a) ")" "\n"))
            "\n"])
         (when-let [thrown-bys (if (= :halite lang)
@@ -22,7 +22,7 @@
                                 (:thrown-by-j err))]
           ["#### Produced by operators:\n\n"
            (for [a (sort thrown-bys)]
-             (str "* " "[`" a "`](" (utils/get-reference lang mode prefix "full-reference")
+             (str "* " "[`" a "`](" (get-link-f lang prefix nil "full-reference")
                   "#" (utils/safe-op-anchor a) ")" "\n"))
            "\n"])
         (when-let [alsos (:err-ref err)]
@@ -32,10 +32,8 @@
            "\n\n"])
         "---\n"]))
 
-(defn err-md-all [lang {:keys [mode generate-user-guide-hdr-f] :as config} err-maps]
-  (->> [(when (= :user-guide mode)
-          (generate-user-guide-hdr-f "Halite Error ID Reference" (str "halite_err-id-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite err-id reference"))
-        utils/generated-msg
+(defn err-md-all [lang {:keys [generate-hdr-f] :as config} err-maps]
+  (->> [(generate-hdr-f "Halite Error ID Reference" (str "halite_err-id-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite err-id reference")
         "# "
         (utils/lang-str lang)
         " err-id reference\n\n"
