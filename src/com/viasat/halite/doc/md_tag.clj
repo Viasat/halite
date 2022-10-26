@@ -14,7 +14,7 @@
                 (map (fn [op-name]
                        (let [op ((if (= :halite lang) op-maps op-maps-j) op-name)]
                          {:op-name op-name
-                          :md (str "#### [`" op-name "`](" (get-link-f lang prefix nil "full-reference" )
+                          :md (str "#### [`" op-name "`](" (get-link-f lang prefix nil "full-reference")
                                    "#" (utils/safe-op-anchor op-name) ")" "\n\n"
                                    (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op)))
                                    "\n\n")})))

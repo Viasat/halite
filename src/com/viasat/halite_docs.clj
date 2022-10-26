@@ -33,8 +33,6 @@
 
 (def ^:dynamic *run-config* nil)
 
-
-
 ;; TODO:
 ;; define jadeite operator precedence
 ;; specify use of parens and {} in jadeite
@@ -296,10 +294,7 @@
 
 (defn- how-to-reference [lang id]
   (let [{:keys [prefix get-link-f]} *run-config*]
-  (get-link-f lang prefix (str (name lang) "/how-to/") (name id)))
-  ;(str (when (= :local mode) (if (= :halite lang)
-  ;                             "halite/how-to/"
-  ;                             "jadeite/how-to/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode))))
+    (get-link-f lang prefix (str (name lang) "/how-to/") (name id)))
   )
 
 (defn- how-to-md [lang [id how-to]]
@@ -313,11 +308,7 @@
 
 (defn- tutorial-reference [lang id]
   (let [{:keys [prefix get-link-f]} *run-config*]
-    (get-link-f lang prefix (str (name lang) "/tutorial/") (name id)))
-  ;(str (when (= :local mode) (if (= :halite lang)
-  ;                             "halite/tutorial/"
-  ;                             "jadeite/tutorial/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode)))
-  )
+    (get-link-f lang prefix (str (name lang) "/tutorial/") (name id))))
 
 (defn- tutorial-md [lang [id tutorial]]
   (->> (md-how-to/how-to-md lang *run-config* [id tutorial :tutorial (tutorial-reference lang id)])
@@ -330,11 +321,7 @@
 
 (defn- explanation-reference [lang id]
   (let [{:keys [prefix get-link-f]} *run-config*]
-    (get-link-f lang prefix (str (name lang) "/explanation/") (name id)))
-  ;(str (when (= :local mode) (if (= :halite lang)
-  ;                             "halite/explanation/"
-  ;                             "jadeite/explanation/")) (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang) (utils/get-reference-extension mode)))
-  )
+    (get-link-f lang prefix (str (name lang) "/explanation/") (name id))))
 
 (defn- explanation-md [lang [id explanation]]
   (->> (md-how-to/how-to-md lang *run-config* [id explanation :explanation (explanation-reference lang id)])

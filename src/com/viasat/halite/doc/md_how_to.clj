@@ -39,7 +39,7 @@
                                              (:throws c)
                                              (conj results
                                                    (spec-snippet-f lang (translate-spec-map-to-f lang (:spec-map c)
-                                                                             spec-map-result)))))
+                                                                                                 spec-map-result)))))
         (and (map c) (:code c)) (let [h-expr (:code c)
                                       ^HCInfo i (halite-run/hc-body
                                                  spec-map
@@ -70,7 +70,7 @@
                                          (conj results (if specs-only?
                                                          nil
                                                          (code-snippet-f
-                                                          lang 
+                                                          lang
                                                           (str ({:halite (utils/pprint-halite h-expr)
                                                                  :jadeite (str j-expr "\n")} lang)
                                                                (when (or (:result c)
@@ -82,9 +82,9 @@
                                                                         :jadeite (str j-result "\n")} lang))))))))))
       results)))
 
-(defn how-to-md [lang {:keys [menu-file 
-                              prefix 
-                              generate-how-to-hdr-f 
+(defn how-to-md [lang {:keys [menu-file
+                              prefix
+                              generate-how-to-hdr-f
                               append-to-how-to-menu-f
                               get-link-f
                               get-reference-links-f] :as config} [id how-to doc-type]]
@@ -100,7 +100,7 @@
               tutorial-refs (:tutorial-ref how-to)
               explanation-refs (:explanation-ref how-to)]
           (when menu-file
-           (append-to-how-to-menu-f lang prefix [lang doc-type] (:label how-to) id))
+            (append-to-how-to-menu-f lang prefix [lang doc-type] (:label how-to) id))
           [(when (or basic-ref-links op-refs how-to-refs tutorial-refs explanation-refs)
              "### Reference\n\n")
            (when basic-ref-links

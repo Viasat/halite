@@ -61,8 +61,8 @@
   [lang code]
   (str "```"
        ({:halite "clojure" :jadeite "java"} lang) "\n"
-       code 
-       "```\n" 
+       code
+       "```\n"
        "\n"))
 
 (defn pprint-halite
@@ -133,7 +133,7 @@
   This markdown file was generated. Do not edit.
   -->\n\n")
 
-(defn generate-hdr 
+(defn generate-hdr
   "local docs header"
   [title link subdir summary]
   generated-msg)
@@ -218,7 +218,7 @@
 (defn get-reference-links
   "Returns a list of markdown links based on the :basic-ref or :basic-ref-j
   entries in the given data map."
-  [lang prefix directory data ]
+  [lang prefix directory data]
   (let [v (if (= :halite lang)
             (:basic-ref data)
             (or (:basic-ref-j data)
