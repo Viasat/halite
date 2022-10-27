@@ -7050,7 +7050,50 @@
    :Unset
    :Unset
    "(when((if(true) {true} else {false})) {'$no-value'})"
-   "Unset"))
+   "Unset")
+
+  (hc
+   :basic
+   [(= (get {:$type :my/Spec$v1, :n -3, :p 2} :o)
+       $no-value)
+    :Boolean
+    true
+    "({$type: my/Spec$v1, n: -3, p: 2}.o == '$no-value')"
+    "true"])
+
+  (hc
+   :basic
+   [(not= (get {:$type :my/Spec$v1, :n -3, :p 2} :o) $no-value)
+    :Boolean
+    false
+    "({$type: my/Spec$v1, n: -3, p: 2}.o != '$no-value')" "false"])
+  (hc
+   :basic
+   [(let [x (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
+      (when (not= x $no-value)
+        x))
+    [:Maybe :Integer]
+    :Unset
+    "({ x = {$type: my/Spec$v1, n: -3, p: 2}.o; (when((x != '$no-value')) {x}) })"
+    "Unset"])
+  (hc
+   :basic
+   [(let [x (get {:$type :my/Spec$v1, :n -3, :p 2} :o)]
+      (when (not= x $no-value)
+        (inc x)))
+    [:throws "h-err/no-matching-signature 0-0 : No matching signature for 'inc'"]])
+  (hc
+   :basic
+   [(= (get {:$type :my/Spec$v1, :n -3, :p 2} :o) 3)
+    :Boolean
+    false
+    "({$type: my/Spec$v1, n: -3, p: 2}.o == 3)"
+    "false"])
+
+  (hc
+   :basic
+   [(when (get {:$type :my/Spec$v1, :n -3, :p 2} :o) 3)
+    [:throws "h-err/arg-type-mismatch 0-0 : First argument to 'when' must be boolean"]]))
 
 (deftest
   test-instances

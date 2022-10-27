@@ -127,7 +127,8 @@
    '= {:sigs [["value value {value}" "boolean"]]
        :sigs-j [["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]
                 ["value '==' value" "boolean"]]
-       :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :boolean-out :boolean-op :instance-op}
+       :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :boolean-out :boolean-op :instance-op
+               :optional-op}
        :basic-ref ['value 'boolean]
        :doc "Determine if values are equivalent. For vectors and sets this performs a comparison of their contents."
        :throws ['l-err/result-always-known]
@@ -712,7 +713,8 @@
    'not= {:sigs [["value value {value}" "boolean"]]
           :sigs-j [["'notEqualTo' '(' value ',' value {',' value} ')'" "boolean"]
                    ["value '!=' value" "boolean"]]
-          :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :instance-op :boolean-op :boolean-out}
+          :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :instance-op :boolean-op :boolean-out
+                  :optional-op}
           :basic-ref ['value 'boolean]
           :doc "Produces a false value if all of the values are equal to each other. Otherwise produces a true value."
           :throws ['l-err/result-always-known]

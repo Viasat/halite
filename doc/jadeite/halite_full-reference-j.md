@@ -198,7 +198,7 @@ See also: [`==`](#_E_E) [`equalTo`](#equalTo) [`notEqualTo`](#notEqualTo)
 
 #### Tags:
 
- [Boolean operations](halite_boolean-op-reference-j.md),  [Produce booleans](halite_boolean-out-reference-j.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference-j.md),  [Instance operations](halite_instance-op-reference-j.md),  [Integer operations](halite_integer-op-reference-j.md),  [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
+ [Boolean operations](halite_boolean-op-reference-j.md),  [Produce booleans](halite_boolean-out-reference-j.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference-j.md),  [Instance operations](halite_instance-op-reference-j.md),  [Integer operations](halite_integer-op-reference-j.md),  [Optional operations](halite_optional-op-reference-j.md),  [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
 
 ---
 ### <a name="_Dno-value"></a>$no-value
@@ -898,7 +898,7 @@ See also: [`!=`](#_B_E) [`equalTo`](#equalTo) [`notEqualTo`](#notEqualTo)
 
 #### Tags:
 
- [Boolean operations](halite_boolean-op-reference-j.md),  [Produce booleans](halite_boolean-out-reference-j.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference-j.md),  [Instance operations](halite_instance-op-reference-j.md),  [Integer operations](halite_integer-op-reference-j.md),  [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
+ [Boolean operations](halite_boolean-op-reference-j.md),  [Produce booleans](halite_boolean-out-reference-j.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference-j.md),  [Instance operations](halite_instance-op-reference-j.md),  [Integer operations](halite_integer-op-reference-j.md),  [Optional operations](halite_optional-op-reference-j.md),  [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
 
 ---
 ### <a name="_E_G"></a>=>
@@ -1744,7 +1744,7 @@ See also: [`!=`](#_B_E) [`==`](#_E_E) [`notEqualTo`](#notEqualTo)
 
 #### Tags:
 
- [Boolean operations](halite_boolean-op-reference-j.md),  [Produce booleans](halite_boolean-out-reference-j.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference-j.md),  [Instance operations](halite_instance-op-reference-j.md),  [Integer operations](halite_integer-op-reference-j.md),  [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
+ [Boolean operations](halite_boolean-op-reference-j.md),  [Produce booleans](halite_boolean-out-reference-j.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference-j.md),  [Instance operations](halite_instance-op-reference-j.md),  [Integer operations](halite_integer-op-reference-j.md),  [Optional operations](halite_optional-op-reference-j.md),  [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
 
 ---
 ### <a name="error"></a>error
@@ -2399,7 +2399,7 @@ See also: [`!=`](#_B_E) [`==`](#_E_E) [`equalTo`](#equalTo)
 
 #### Tags:
 
- [Boolean operations](halite_boolean-op-reference-j.md),  [Produce booleans](halite_boolean-out-reference-j.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference-j.md),  [Instance operations](halite_instance-op-reference-j.md),  [Integer operations](halite_integer-op-reference-j.md),  [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
+ [Boolean operations](halite_boolean-op-reference-j.md),  [Produce booleans](halite_boolean-out-reference-j.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference-j.md),  [Instance operations](halite_instance-op-reference-j.md),  [Integer operations](halite_integer-op-reference-j.md),  [Optional operations](halite_optional-op-reference-j.md),  [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
 
 ---
 ### <a name="range"></a>range
