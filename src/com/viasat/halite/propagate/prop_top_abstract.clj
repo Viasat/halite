@@ -48,14 +48,15 @@
      (if (or
           ;; the bound is a concrete bound
           $type
-          ;; the bound specifies multiple refinements
-          (> (count $refines-to) 1))
+          ;; no refines-to to handle
+          (empty? $refines-to))
+
        ;; bypass this module's functionality by passing the call straight through
        (prop-abstract/propagate sctx opts initial-bound)
        ;; if the bound is an abstract bound then perform the transformation to turn it into a bound
        ;; on a field
-       (let [refines-to-spec-id (key (first $refines-to))
-             generated-spec-id (generate-spec-id refines-to-spec-id)]
-         (translate-up (prop-abstract/propagate (add-spec generated-spec-id sctx refines-to-spec-id)
+       (let [[primary-refines-to-spec-id] (keys $refines-to)
+             generated-spec-id (generate-spec-id primary-refines-to-spec-id)]
+         (translate-up (prop-abstract/propagate (add-spec generated-spec-id sctx primary-refines-to-spec-id)
                                                 opts
                                                 (translate-down generated-spec-id initial-bound))))))))
