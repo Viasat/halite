@@ -12,7 +12,8 @@
             [schema.core :as s]
             [schema.test]
             [com.viasat.halite.choco-clj-opt :as choco-clj])
-  (:use clojure.test))
+  (:use clojure.test)
+  (:import [clojure.lang ExceptionInfo]))
 
 (def simplest-abstract-var-example
   '{:ws/W
@@ -544,7 +545,19 @@
     (is (= expected
            (pa/propagate sctx {:$type :ws/C
                                :b {;; omit the $type field
-                                   :$refines-to {:ws/A {}}}})))))
+                                   :$refines-to {:ws/A {}}}})))
+    (is (thrown-with-msg? ExceptionInfo #"Invalid bound for"
+                          (pa/propagate sctx {:$type :ws/C
+                                              :b {;; omit the $type field
+                                                  :$refines-to {:ws/A {}}
+                                   ;; with the :$if field, it cannot be promoted to a concrete bound
+                                                  :$if {}}})))
+    (is (thrown-with-msg? ExceptionInfo #"Invalid bound for"
+                          (pa/propagate sctx {:$type :ws/C
+                                              :b {;; omit the $type field
+                                                  :$refines-to {:ws/A {}}
+                                   ;; with the :$in field, it cannot be promoted to a concrete bound
+                                                  :$in {}}})))))
 
 (comment "
 Stuff to do/remember regarding abstractness!

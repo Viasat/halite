@@ -231,19 +231,20 @@
            (dissoc $in :Unset)))
     :else (throw (ex-info "Invalid abstract bound" {:bound abstract-bound}))))
 
-(s/defn ^:private convert-abstract-bounds-to-concrete-bounds-where-appropriate
+(s/defn ^:private promote-abstract-bounds-to-concrete-bounds-where-appropriate
   "If an abstract var bound was used for a concrete field, then populate the type field of the
   bound (to make it a concrete bound)."
   [spec-bound senv spec-vars]
   (->> spec-vars
-       (filter (complement #(abstract-var? senv %)))
+       (remove #(abstract-var? senv %))
        (reduce (fn [spec-bound [var-kw var-type :as var-entry]]
                  (let [var-spec-id (if (and (vector? var-type) (= :Maybe (first var-type)))
                                      (second var-type)
                                      var-type)
                        var-bound (var-kw spec-bound)]
                    (if (and var-bound
-                            (abstract-spec-bound? var-bound))
+                            (abstract-spec-bound? var-bound)
+                            (empty? (select-keys var-bound [:$in :$if])))
                      (assoc spec-bound var-kw (assoc var-bound :$type var-spec-id))
                      spec-bound)))
                spec-bound)))
@@ -276,7 +277,7 @@
                   (assoc (discriminator-var-kw var-kw) {:$in (cond-> (set (range (count alts))) optional-var? (conj :Unset))})
                   ;; if an abstract bound was provided, lower it
                   (cond->> var-bound (lower-abstract-var-bound senv alternatives var-kw optional-var? alts var-bound)))))))
-      (convert-abstract-bounds-to-concrete-bounds-where-appropriate spec-bound senv spec-vars)))))
+      (promote-abstract-bounds-to-concrete-bounds-where-appropriate spec-bound senv spec-vars)))))
 
 (declare raise-abstract-bounds)
 
