@@ -205,6 +205,13 @@
    {}
    adj-lists))
 
+(s/defn spec-context-to-inverted-refinement-graph
+  [sctx :- ssa/SpecCtx]
+  (let [refns (invert-adj (update-vals sctx (comp keys :refines-to)))]
+    (if (empty? refns)
+      (loom-graph/digraph)
+      (loom-graph/digraph refns))))
+
 (declare lower-abstract-bounds)
 
 (defn- lower-abstract-var-bound
@@ -327,10 +334,7 @@
    (propagate sctx prop-composition/default-options initial-bound))
   ([sctx :- ssa/SpecCtx, opts :- prop-composition/Opts, initial-bound :- SpecBound]
    (let [abstract? #(-> % sctx :abstract? true?)
-         refns (invert-adj (update-vals sctx (comp keys :refines-to)))
-         refn-graph (if (empty? refns)
-                      (loom-graph/digraph)
-                      (loom-graph/digraph refns))
+         refn-graph (spec-context-to-inverted-refinement-graph sctx)
          alternatives (reduce
                        (fn [alts spec-id]
                          (->> spec-id

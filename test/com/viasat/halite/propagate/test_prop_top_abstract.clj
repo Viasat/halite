@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.propagate.test-prop-composition
+(ns com.viasat.halite.propagate.test-prop-abstract
   (:require [com.viasat.halite.propagate :as hp])
   (:use clojure.test)
   (:import [clojure.lang ExceptionInfo]
@@ -42,6 +42,90 @@
                         }}
          (hp/propagate '{:ws/A {:abstract? true
                                 :spec-vars {}
+                                :constraints []
+                                :refines-to {}}
+
+                         :ws/B {:spec-vars {}
+                                :constraints []
+                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+
+                         :ws/C {:spec-vars {}
+                                :constraints []
+                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+
+                         :ws/X {:abstract? true
+                                :spec-vars {}
+                                :constraints []
+                                :refines-to {}}
+
+                         :ws/Y {:spec-vars {}
+                                :constraints []
+                                :refines-to {:ws/X {:expr {:$type :ws/X}}}}
+
+                         :ws/Q {:spec-vars {}
+                                :constraints []
+                                :refines-to {:ws/Y {:expr {:$type :ws/Y}}
+                                             :ws/C {:expr {:$type :ws/C}}}}}
+
+                       {:$refines-to {:ws/A {}
+                                      :ws/X {}}}))))
+
+(deftest test-top-level-refines-to-bound-multiple-some-concrete
+  (is (= {:$in {:ws/Q {:$refines-to #:ws{:ws/A {}
+                                         :ws/C {}
+                                         :ws/X {}
+                                         :ws/Y {}}}
+                ;; ideally the following two entries would not appear, to be addressed at a lower layer
+                :ws/B {:$refines-to {:ws/A {}}}
+                :ws/C {:$refines-to {:ws/A {}}}}
+          :$refines-to {:ws/A {}
+                        ;; ideally the following would appear (?), to be addressed at a lower layer
+                        ;;:ws/C {}
+                        ;;:ws/X {}
+                        ;;:ws/Y {}
+                        }}
+         (hp/propagate '{:ws/A {:abstract? true
+                                :spec-vars {}
+                                :constraints []
+                                :refines-to {}}
+
+                         :ws/B {:spec-vars {}
+                                :constraints []
+                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+
+                         :ws/C {:spec-vars {}
+                                :constraints []
+                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+
+                         :ws/X {:spec-vars {}
+                                :constraints []
+                                :refines-to {}}
+
+                         :ws/Y {:spec-vars {}
+                                :constraints []
+                                :refines-to {:ws/X {:expr {:$type :ws/X}}}}
+
+                         :ws/Q {:spec-vars {}
+                                :constraints []
+                                :refines-to {:ws/Y {:expr {:$type :ws/Y}}
+                                             :ws/C {:expr {:$type :ws/C}}}}}
+
+                       {:$refines-to {:ws/A {}
+                                      :ws/X {}}})))
+
+  (is (= {:$in {:ws/Q {:$refines-to #:ws{:ws/A {}
+                                         :ws/C {}
+                                         :ws/X {}
+                                         :ws/Y {}}}
+                ;; ideally the following two entries would not appear, to be addressed at a lower layer
+                :ws/Y {:$refines-to #:ws{:X {}}}}
+          :$refines-to {:ws/X {}
+                        ;; ideally the following would appear (?), to be addressed at a lower layer
+                        ;; :ws/A {}
+                        ;; :ws/C {}
+                        ;; :ws/Y {}
+                        }}
+         (hp/propagate '{:ws/A {:spec-vars {}
                                 :constraints []
                                 :refines-to {}}
 

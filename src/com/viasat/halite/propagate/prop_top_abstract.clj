@@ -2,7 +2,11 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.prop-top-abstract
-  (:require [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
+  "Handle the case where a top-level abstract spec bound is used. Introduce a new spec which contains
+  a field of the type of one of the abstract specs referenced in the bound. Does not handle the case
+  where all of the specs in the :$refines-to field of the bound are concrete."
+  (:require [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
             [schema.core :as s]))
@@ -35,7 +39,7 @@
   "Generate a unique spec-id that will not collide with the current context."
   [spec-id]
   (keyword (namespace spec-id)
-           (str "$" (name spec-id))))
+           (str "$prop-top-abstract" (name spec-id))))
 
 (s/defn propagate :- prop-abstract/SpecBound
   ([sctx :- ssa/SpecCtx
@@ -55,7 +59,11 @@
        (prop-abstract/propagate sctx opts initial-bound)
        ;; if the bound is an abstract bound then perform the transformation to turn it into a bound
        ;; on a field
-       (let [[primary-refines-to-spec-id] (keys $refines-to)
+       (let [senv (ssa/as-spec-env sctx)
+             ;; choose an abstract spec to be the field type in the synthesized spec
+             primary-refines-to-spec-id (->> (keys $refines-to)
+                                             (filter #(:abstract? (halite-envs/lookup-spec senv %)))
+                                             first)
              generated-spec-id (generate-spec-id primary-refines-to-spec-id)]
          (translate-up (prop-abstract/propagate (add-spec generated-spec-id sctx primary-refines-to-spec-id)
                                                 opts
