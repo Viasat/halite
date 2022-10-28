@@ -27,19 +27,8 @@
                        {:$refines-to {:ws/A {}}}))))
 
 (deftest test-top-level-refines-to-bound-multiple
-  (is (= {:$in {:ws/Q {:$refines-to #:ws{:ws/A {}
-                                         :ws/C {}
-                                         :ws/X {}
-                                         :ws/Y {}}}
-                ;; ideally the following two entries would not appear, to be addressed at a lower layer
-                :ws/B {:$refines-to {:ws/A {}}}
-                :ws/C {:$refines-to {:ws/A {}}}}
-          :$refines-to {:ws/A {}
-                        ;; ideally the following would appear (?), to be addressed at a lower layer
-                        ;;:ws/C {}
-                        ;;:ws/X {}
-                        ;;:ws/Y {}
-                        }}
+  (is (= {:$type :ws/Q
+          :$refines-to {:ws/Y {} :ws/C {} :ws/X {} :ws/A {}}}
          (hp/propagate '{:ws/A {:abstract? true
                                 :spec-vars {}
                                 :constraints []
@@ -71,19 +60,8 @@
                                       :ws/X {}}}))))
 
 (deftest test-top-level-refines-to-bound-multiple-some-concrete
-  (is (= {:$in {:ws/Q {:$refines-to #:ws{:ws/A {}
-                                         :ws/C {}
-                                         :ws/X {}
-                                         :ws/Y {}}}
-                ;; ideally the following two entries would not appear, to be addressed at a lower layer
-                :ws/B {:$refines-to {:ws/A {}}}
-                :ws/C {:$refines-to {:ws/A {}}}}
-          :$refines-to {:ws/A {}
-                        ;; ideally the following would appear (?), to be addressed at a lower layer
-                        ;;:ws/C {}
-                        ;;:ws/X {}
-                        ;;:ws/Y {}
-                        }}
+  (is (= {:$type :ws/Q
+          :$refines-to {:ws/Y {} :ws/C {} :ws/X {} :ws/A {}}}
          (hp/propagate '{:ws/A {:abstract? true
                                 :spec-vars {}
                                 :constraints []
@@ -113,18 +91,8 @@
                        {:$refines-to {:ws/A {}
                                       :ws/X {}}})))
 
-  (is (= {:$in {:ws/Q {:$refines-to #:ws{:ws/A {}
-                                         :ws/C {}
-                                         :ws/X {}
-                                         :ws/Y {}}}
-                ;; ideally the following two entries would not appear, to be addressed at a lower layer
-                :ws/Y {:$refines-to #:ws{:X {}}}}
-          :$refines-to {:ws/X {}
-                        ;; ideally the following would appear (?), to be addressed at a lower layer
-                        ;; :ws/A {}
-                        ;; :ws/C {}
-                        ;; :ws/Y {}
-                        }}
+  (is (= {:$type :ws/Q
+          :$refines-to {:ws/Y {} :ws/C {} :ws/X {} :ws/A {}}}
          (hp/propagate '{:ws/A {:spec-vars {}
                                 :constraints []
                                 :refines-to {}}

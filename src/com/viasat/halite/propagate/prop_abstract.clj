@@ -270,7 +270,15 @@
       (fn [spec-bound [var-kw var-type :as var-entry]]
         (let [var-spec-id (var-entry->spec-id senv var-entry)
               optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
-              alts (alternatives var-spec-id)
+              alts (select-keys (alternatives var-spec-id)
+                                ;; find the spec-ids which have the prescribed refinement paths
+                                (seq (reduce
+                                      (fn [alts-set spec-id]
+                                        (set/intersection alts-set
+                                                          (conj (set (keys (alternatives spec-id)))
+                                                                spec-id)))
+                                      (set (keys (alternatives var-spec-id)))
+                                      (keys (:$refines-to (var-kw spec-bound))))))
               var-bound (or (var-kw spec-bound) {:$if {}})]
           (if (= :Unset var-bound)
             (-> spec-bound (dissoc var-kw) (assoc (discriminator-var-kw var-kw) :Unset))
@@ -345,7 +353,7 @@
                               (#(zipmap % (range)))
                               (assoc alts spec-id)))
                        {}
-                       (filter abstract? (keys sctx)))
+                       (keys sctx))
          senv (ssa/as-spec-env sctx)]
      (-> (reduce-kv (fn [acc spec-id spec] (lower-abstract-vars acc alternatives spec-id spec)) sctx sctx)
          (prop-composition/propagate opts (lower-abstract-bounds initial-bound senv alternatives))
