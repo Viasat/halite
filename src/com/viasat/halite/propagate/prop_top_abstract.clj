@@ -31,9 +31,7 @@
   (assoc sctx
          generated-spec-id
          (ssa/spec-to-ssa (ssa/as-spec-env sctx)
-                          {:spec-vars {generated-field-name refines-to-spec-id}
-                           :constraints []
-                           :refines-to {}})))
+                          {:spec-vars {generated-field-name refines-to-spec-id}})))
 
 (s/defn ^:private generate-spec-id
   "Generate a unique spec-id that will not collide with the current context."

@@ -11,49 +11,28 @@
   (is (= {:$in #:ws{:B {:$refines-to #:ws{:A {}}}
                     :C {:$refines-to #:ws{:A {}}}}
           :$refines-to #:ws{:A {}}}
-         (hp/propagate '{:ws/A {:abstract? true
-                                :spec-vars {}
-                                :constraints []
-                                :refines-to {}}
+         (hp/propagate '{:ws/A {:abstract? true}
 
-                         :ws/B {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                         :ws/C {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}}
+                         :ws/C {:refines-to {:ws/A {:expr {:$type :ws/A}}}}}
 
                        {:$refines-to {:ws/A {}}}))))
 
 (deftest test-top-level-refines-to-bound-multiple
   (is (= {:$type :ws/Q
           :$refines-to {:ws/Y {} :ws/C {} :ws/X {} :ws/A {}}}
-         (hp/propagate '{:ws/A {:abstract? true
-                                :spec-vars {}
-                                :constraints []
-                                :refines-to {}}
+         (hp/propagate '{:ws/A {:abstract? true}
 
-                         :ws/B {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                         :ws/C {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/C {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                         :ws/X {:abstract? true
-                                :spec-vars {}
-                                :constraints []
-                                :refines-to {}}
+                         :ws/X {:abstract? true}
 
-                         :ws/Y {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                         :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
 
-                         :ws/Q {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/Y {:expr {:$type :ws/Y}}
+                         :ws/Q {:refines-to {:ws/Y {:expr {:$type :ws/Y}}
                                              :ws/C {:expr {:$type :ws/C}}}}}
 
                        {:$refines-to {:ws/A {}
@@ -62,30 +41,17 @@
 (deftest test-top-level-refines-to-bound-multiple-some-concrete
   (is (= {:$type :ws/Q
           :$refines-to {:ws/Y {} :ws/C {} :ws/X {} :ws/A {}}}
-         (hp/propagate '{:ws/A {:abstract? true
-                                :spec-vars {}
-                                :constraints []
-                                :refines-to {}}
+         (hp/propagate '{:ws/A {:abstract? true}
 
-                         :ws/B {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                         :ws/C {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/C {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                         :ws/X {:spec-vars {}
-                                :constraints []
-                                :refines-to {}}
+                         :ws/X {}
 
-                         :ws/Y {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                         :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
 
-                         :ws/Q {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/Y {:expr {:$type :ws/Y}}
+                         :ws/Q {:refines-to {:ws/Y {:expr {:$type :ws/Y}}
                                              :ws/C {:expr {:$type :ws/C}}}}}
 
                        {:$refines-to {:ws/A {}
@@ -93,30 +59,17 @@
 
   (is (= {:$type :ws/Q
           :$refines-to {:ws/Y {} :ws/C {} :ws/X {} :ws/A {}}}
-         (hp/propagate '{:ws/A {:spec-vars {}
-                                :constraints []
-                                :refines-to {}}
+         (hp/propagate '{:ws/A {}
 
-                         :ws/B {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                         :ws/C {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/C {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                         :ws/X {:abstract? true
-                                :spec-vars {}
-                                :constraints []
-                                :refines-to {}}
+                         :ws/X {:abstract? true}
 
-                         :ws/Y {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                         :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
 
-                         :ws/Q {:spec-vars {}
-                                :constraints []
-                                :refines-to {:ws/Y {:expr {:$type :ws/Y}}
+                         :ws/Q {:refines-to {:ws/Y {:expr {:$type :ws/Y}}
                                              :ws/C {:expr {:$type :ws/C}}}}}
 
                        {:$refines-to {:ws/A {}
@@ -133,26 +86,21 @@
                           :ws/X {:x {:$in [120 130]}}}}
            (hp/propagate '{:ws/A {:abstract? true
                                   :spec-vars {:a "Integer"}
-                                  :constraints [["ac" (< a 200)]]
-                                  :refines-to {}}
+                                  :constraints [["ac" (< a 200)]]}
 
                            :ws/B {:spec-vars {:b "Integer"}
-                                  :constraints []
                                   :refines-to {:ws/A {:expr {:$type :ws/A
                                                              :a b}}}}
 
                            :ws/X {:abstract? true
                                   :spec-vars {:x "Integer"}
-                                  :constraints [["xc" (> x 100)]]
-                                  :refines-to {}}
+                                  :constraints [["xc" (> x 100)]]}
 
                            :ws/Y {:spec-vars {:y "Integer"}
-                                  :constraints []
                                   :refines-to {:ws/X {:expr {:$type :ws/X
                                                              :x y}}}}
 
                            :ws/Q {:spec-vars {:q "Integer"}
-                                  :constraints []
                                   :refines-to {:ws/Y {:expr {:$type :ws/Y
                                                              :y q}}
                                                :ws/B {:expr {:$type :ws/B
@@ -173,26 +121,21 @@
                           :ws/X {:x {:$in [120 130]}}}}
            (hp/propagate '{:ws/A {:abstract? true
                                   :spec-vars {:a "Integer"}
-                                  :constraints [["ac" (< a 200)]]
-                                  :refines-to {}}
+                                  :constraints [["ac" (< a 200)]]}
 
                            :ws/B {:spec-vars {:b "Integer"}
-                                  :constraints []
                                   :refines-to {:ws/A {:expr {:$type :ws/A
                                                              :a b}}}}
 
                            :ws/X {:abstract? true
                                   :spec-vars {:x "Integer"}
-                                  :constraints [["xc" (> x 100)]]
-                                  :refines-to {}}
+                                  :constraints [["xc" (> x 100)]]}
 
                            :ws/Y {:spec-vars {:y "Integer"}
-                                  :constraints []
                                   :refines-to {:ws/X {:expr {:$type :ws/X
                                                              :x y}}}}
 
                            :ws/Q {:spec-vars {:q "Integer"}
-                                  :constraints []
                                   :refines-to {:ws/Y {:expr {:$type :ws/Y
                                                              :y q}}
                                                :ws/B {:expr {:$type :ws/B
@@ -213,63 +156,44 @@
                           :ws/X {:x {:$in [120 130]}}}}
            (hp/propagate '{:ws/A {:abstract? true
                                   :spec-vars {:a "Integer"}
-                                  :constraints [["ac" (< a 200)]]
-                                  :refines-to {}}
+                                  :constraints [["ac" (< a 200)]]}
 
                            :ws/B {:spec-vars {:b "Integer"}
-                                  :constraints []
                                   :refines-to {:ws/A {:expr {:$type :ws/A
                                                              :a b}}}}
 
                            :ws/X {:abstract? true
                                   :spec-vars {:x "Integer"}
-                                  :constraints [["xc" (> x 100)]]
-                                  :refines-to {}}
+                                  :constraints [["xc" (> x 100)]]}
 
                            :ws/Y {:spec-vars {:y "Integer"}
-                                  :constraints []
                                   :refines-to {:ws/X {:expr {:$type :ws/X
                                                              :x y}}}}
 
                            :ws/Q {:spec-vars {:q "Integer"
                                               :p [:Maybe :ws/P]}
-                                  :constraints []
                                   :refines-to {:ws/Y {:expr {:$type :ws/Y
                                                              :y (if-value p
                                                                           200
                                                                           q)}}
                                                :ws/B {:expr {:$type :ws/B
                                                              :b q}}}}
-                           :ws/P {:spec-vars {}
-                                  :constraints []
-                                  :refines-to {}}}
+                           :ws/P {}}
 
                          {:$refines-to {:ws/A {:a {:$in [120 130]}}
                                         :ws/X {:x {:$in [120 130]}}}}))))
 
 (deftest test-top-level-refines-to-bound-multiple-no-match
   #_(is (= :contradiction
-           (try (hp/propagate '{:ws/A {:abstract? true
-                                       :spec-vars {}
-                                       :constraints []
-                                       :refines-to {}}
+           (try (hp/propagate '{:ws/A {:abstract? true}
 
-                                :ws/B {:spec-vars {}
-                                       :constraints []
-                                       :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                                :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                                :ws/C {:spec-vars {}
-                                       :constraints []
-                                       :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                                :ws/C {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                                :ws/X {:abstract? true
-                                       :spec-vars {}
-                                       :constraints []
-                                       :refines-to {}}
+                                :ws/X {:abstract? true}
 
-                                :ws/Y {:spec-vars {}
-                                       :constraints []
-                                       :refines-to {:ws/X {:expr {:$type :ws/X}}}}}
+                                :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}}
 
                               {:$refines-to {:ws/A {}
                                              :ws/X {}}})
@@ -295,25 +219,18 @@
             :$refines-to {:ws/A {:x {:$type [:Maybe :ws/X]
                                      :y {:$in [-1000 1000]}}}}})
         (hp/propagate '{:ws/A {:abstract? true
-                               :spec-vars {:x [:Maybe :ws/X]}
-                               :constraints []
-                               :refines-to {}}
+                               :spec-vars {:x [:Maybe :ws/X]}}
 
                         :ws/B {:spec-vars {:b "Integer"}
-                               :constraints []
                                :refines-to {:ws/A {:expr {:$type :ws/A
                                                           :x (when (> b 0)
                                                                {:$type :ws/A
                                                                 :y b})}}}}
 
                         :ws/P {:abstract? true
-                               :spec-vars {}
-                               :constraints []
                                :refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                        :ws/X {:spec-vars {:y "Integer"}
-                               :constraints []
-                               :refines-to {}}}
+                        :ws/X {:spec-vars {:y "Integer"}}}
 
                       {:$refines-to {:ws/A {}
                                      :ws/P {}}})))
@@ -322,15 +239,9 @@
   #_(is (= {:$in #:ws{:B {:$refines-to #:ws{:A {}}}
                       :C {:$refines-to #:ws{:A {}}}}
             :$refines-to #:ws{:A {}}}
-           (hp/propagate '{:ws/A
-                           {:spec-vars {}
-                            :constraints []
-                            :refines-to {}}
+           (hp/propagate '{:ws/A {}
 
-                           :ws/B
-                           {:spec-vars {}
-                            :constraints []
-                            :refines-to {:ws/A {:expr {:$type :ws/A}}}}}
+                           :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}}
 
                          {:$refines-to {:ws/A {}}}))))
 

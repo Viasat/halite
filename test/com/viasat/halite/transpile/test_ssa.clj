@@ -28,13 +28,11 @@
 
 (deftest test-spec-to-ssa
   (let [senv '{:ws/A
-               {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}
-                :constraints []
-                :refines-to {}}
+               {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}}
                :foo/Bar
-               {:spec-vars {:a "Integer", :b "Boolean"}, :constraints [], :refines-to {}}
+               {:spec-vars {:a "Integer", :b "Boolean"}}
                :ws/C
-               {:spec-vars {:cn [:Maybe "Integer"]} :constraints [] :refines-to {}}}]
+               {:spec-vars {:cn [:Maybe "Integer"]}}}]
     (are [constraints dgraph new-constraints]
          (= [dgraph new-constraints]
             (-> senv
@@ -449,9 +447,7 @@
                                             {:$type :ws/B
                                              :bn (+ 1 an)})}}}
                :ws/B
-               {:spec-vars {:bn "Integer"}
-                :constraints []
-                :refines-to {}}}
+               {:spec-vars {:bn "Integer"}}}
         spec (ssa/spec-to-ssa (halite-envs/spec-env senv) (:ws/A senv))]
     (is (= '{:spec-vars {:an "Integer"}
              :ssa-graph
@@ -491,8 +487,7 @@
   (let [senv (halite-envs/spec-env
               '{:ws/A
                 {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
-                 :constraints [["c1" (= s p)]]
-                 :refines-to {}}})
+                 :constraints [["c1" (= s p)]]}})
         sctx (ssa/build-spec-ctx senv :ws/A)
         a (:ws/A sctx)
         s-id (ssa/find-form (:ssa-graph a) 's)
@@ -543,13 +538,9 @@
 
 (deftest test-compute-guards
   (let [senv '{:ws/A
-               {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :b1 "Boolean", :b2 "Boolean"}
-                :constraints []
-                :refines-to {}}
+               {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :b1 "Boolean", :b2 "Boolean"}}
                :ws/Foo
-               {:spec-vars {:x "Integer", :y "Integer"}
-                :constraints []
-                :refines-to {}}}]
+               {:spec-vars {:x "Integer", :y "Integer"}}}]
     (are [constraints guards]
          (= guards
             (let [spec-info (-> senv
@@ -665,9 +656,7 @@
 
 (deftest test-spec-from-ssa
   (let [spec-info {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C
-                               :s "String"}
-                   :constraints []
-                   :refines-to {}}]
+                               :s "String"}}]
 
     (are [constraints dgraph new-constraint]
          (= [["$all" new-constraint]]
@@ -887,8 +876,7 @@
                 {:spec-vars {:p "Boolean", :q "Boolean"}
                  :constraints [["c1" (if p (< (div 10 0) 1) true)]
                                ["c2" (if q true (and (< 1 (div 10 0)) (< (div 10 0) 1)))]
-                               ["c3" (if (not q) (< 1 (div 10 0)) true)]]
-                 :refines-to {}}})
+                               ["c3" (if (not q) (< 1 (div 10 0)) true)]]}})
         sctx (ssa/build-spec-ctx senv :ws/A)]
     (is (= '[["$all" (and (if p (< (div 10 0) 1) true)
                           (if q true (let [v1 (div 10 0)] (and (< 1 v1) (< v1 1))))
@@ -904,8 +892,7 @@
                                ["a2" (if p (< (div 15 x) 10) true)]
                                ["a3" (if q (< 1 (div 15 x)) true)]
                                ["a3" (and (<= 0 x) (< x 10))]
-                               ["a4" (and (<= 0 y) (< y 10))]]
-                 :refines-to {}}})
+                               ["a4" (and (<= 0 y) (< y 10))]]}})
         senv' (-> senv (ssa/build-spec-ctx :ws/A) (ssa/build-spec-env))
         tenv (halite-envs/type-env {})
         env (halite-envs/env {})
@@ -920,7 +907,7 @@
 
 (deftest test-replace-in-expr
   (let [senv (halite-envs/spec-env
-              '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}})
+              '{:ws/A {:spec-vars {:an "Integer"}}})
         tenv (halite-envs/type-env '{x :Integer, y :Integer, p :Boolean})
         ctx {:senv senv, :tenv tenv, :env {}, :ssa-graph ssa/empty-ssa-graph :local-stack []}
         [ssa-graph1 orig-id] (ssa/form-to-ssa ctx '(let [foo (+ x (- 0 y))]

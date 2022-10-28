@@ -57,7 +57,7 @@
 (s/defschema ^:private FlattenedVars
   {::mandatory #{halite-types/BareKeyword}
    ::spec-id halite-types/NamespacedKeyword
-   ::refines-to (s/recursive #'FlattenedRefinementMap)
+   (s/optional-key ::refines-to) (s/recursive #'FlattenedRefinementMap)
    halite-types/BareKeyword (s/cond-pre FlattenedVar (s/recursive #'FlattenedVars))})
 
 ;; A FlattenedRefinement is like a FlattenedVar, but does not support a
@@ -349,8 +349,7 @@
   [flattened-vars sctx spec-bound]
   (->>
    {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
-    :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]
-    :refines-to {}}
+    :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]}
    (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
    (add-refinement-equality-constraints flattened-vars)))
 
@@ -400,7 +399,7 @@
                                     :else (s/eq :Unset))
   [choco-bounds :- prop-strings/SpecBound
    senv :- (s/protocol halite-envs/SpecEnv)
-   flattened-vars  :- FlattenedVars]
+   flattened-vars :- FlattenedVars]
   (let [spec-id (::spec-id flattened-vars)
         spec-vars (:spec-vars (halite-envs/lookup-spec senv spec-id))
         spec-type (case (some-> flattened-vars :$witness first choco-bounds)
@@ -426,8 +425,7 @@
                                 (-> (to-spec-bound choco-bounds
                                                    senv
                                                    (assoc flattened-vars
-                                                          ::spec-id spec-id
-                                                          ::refines-to {}))
+                                                          ::spec-id spec-id))
                                     (dissoc :$type))]))
                         (into {}))))))))
 

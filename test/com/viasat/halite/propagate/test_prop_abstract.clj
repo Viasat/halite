@@ -19,30 +19,25 @@
   '{:ws/W
     {:abstract? true
      :spec-vars {:wn "Integer"}
-     :constraints [["wn_range" (and (< 2 wn) (< wn 8))]]
-     :refines-to {}}
+     :constraints [["wn_range" (and (< 2 wn) (< wn 8))]]}
     :ws/A
     {:spec-vars {:a "Integer"}
      :constraints [["ca" (< a 6)]]
-     :refines-to
-     {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
+     :refines-to {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
     :ws/B
     {:spec-vars {:b "Integer"}
      :constraints [["cb" (< 5 b)]]
-     :refines-to
-     {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
+     :refines-to {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
     :ws/C
     {:spec-vars {:w :ws/W :cn "Integer"}
-     :constraints [["c1" (< cn (get (refine-to w :ws/W) :wn))]]
-     :refines-to {}}})
+     :constraints [["c1" (< cn (get (refine-to w :ws/W) :wn))]]}})
 
 (def optional-abstract-var-example
   (assoc
    simplest-abstract-var-example
    :ws/C
    '{:spec-vars {:w [:Maybe :ws/W] :cn "Integer"}
-     :constraints [["c1" (< cn (if-value w (get (refine-to w :ws/W) :wn) 10))]]
-     :refines-to {}}))
+     :constraints [["c1" (< cn (if-value w (get (refine-to w :ws/W) :wn) 10))]]}))
 
 (def lower-abstract-vars #'pa/lower-abstract-vars)
 
@@ -315,34 +310,25 @@
 
 (def nested-abstracts-example
   '{:ws/W {:abstract? true
-           :spec-vars {:wn "Integer"}
-           :constraints []
-           :refines-to {}}
+           :spec-vars {:wn "Integer"}}
 
     :ws/A {:spec-vars {:an "Integer"}
-           :constraints []
            :refines-to {:ws/W {:expr {:$type :ws/W :wn an}}}}
 
     :ws/B {:spec-vars {:bn "Integer"}
-           :constraints []
            :refines-to {:ws/W {:expr {:$type :ws/W :wn bn}}}}
 
     :ws/V {:abstract? true
-           :spec-vars {:vn "Integer"}
-           :constraints []
-           :refines-to {}}
+           :spec-vars {:vn "Integer"}}
 
     :ws/C {:spec-vars {:cw :ws/W :cn "Integer"}
            :constraints [["c1" (< 0 cn)]]
            :refines-to {:ws/V {:expr {:$type :ws/V
                                       :vn (+ cn (get (refine-to cw :ws/W) :wn))}}}}
     :ws/D {:spec-vars {:dn "Integer"}
-           :constraints []
            :refines-to {:ws/V {:expr {:$type :ws/V :vn dn}}}}
 
-    :ws/E {:spec-vars {:v :ws/V}
-           :constraints []
-           :refines-to {}}})
+    :ws/E {:spec-vars {:v :ws/V}}})
 
 (deftest test-lower-abstract-bounds-for-nested-abstracts
   (s/with-fn-validation
@@ -430,24 +416,19 @@
 
 (def abstract-refinement-chain-example
   '{:ws/W {:abstract? true
-           :spec-vars {:wn "Integer"}
-           :constraints []
-           :refines-to {}}
+           :spec-vars {:wn "Integer"}}
 
     :ws/A1 {:spec-vars {:a1n "Integer"}
-            :constraints []
             :refines-to {:ws/W {:expr {:$type :ws/W :wn (+ a1n 1)}}}}
 
     :ws/A2 {:abstract? true
             :spec-vars {:a2n "Integer"}
-            :constraints []
             :refines-to {:ws/A1 {:expr {:$type :ws/A1 :a1n (+ a2n 1)}}}}
 
     :ws/A3 {:spec-vars {:a3n "Integer"}
-            :constraints []
             :refines-to {:ws/A2 {:expr {:$type :ws/A2 :a2n (+ a3n 1)}}}}
 
-    :ws/B {:spec-vars {:w :ws/W} :constraints [] :refines-to {}}})
+    :ws/B {:spec-vars {:w :ws/W}}})
 
 (deftest test-abstract-refinement-chain
   (let [sctx (ssa/spec-map-to-ssa abstract-refinement-chain-example)]
@@ -503,9 +484,7 @@
               :spec-vars {:length "Integer"
                           :sum "Integer"}
               :constraints [["posLength" (<= 0 length)]]}
-    :ws/Empty {:spec-vars {}
-               :constraints []
-               :refines-to {:ws/List {:expr {:$type :ws/List :length 0 :sum 0}}}}
+    :ws/Empty {:refines-to {:ws/List {:expr {:$type :ws/List :length 0 :sum 0}}}}
     :ws/Node {:spec-vars {:head "Integer"
                           :tail :ws/List}
               :constraints [["shortList" (< (get (refine-to tail :ws/List) :length) 5)]]
@@ -513,20 +492,15 @@
                                              {:$type :ws/List
                                               :length (+ 1 (get t :length))
                                               :sum (+ head (get t :sum))})}}}
-    :ws/A {:spec-vars {:list :ws/List}
-           :constraints []
-           :refines-to {}}})
+    :ws/A {:spec-vars {:list :ws/List}}})
 
 (deftest test-tricky-inst-literal-simplification
   (let [sctx (ssa/spec-map-to-ssa
               '{:ws/A
                 {:spec-vars {:b1 [:Maybe :ws/B]}
-                 :constraints [["a2" (if-value b1 true false)]]
-                 :refines-to {}}
+                 :constraints [["a2" (if-value b1 true false)]]}
                 :ws/B
-                {:spec-vars {}
-                 :constraints []
-                 :refines-to {}}})]
+                {}})]
     (is (= {:$type :ws/A :b1 {:$type :ws/B}}
            (pa/propagate sctx {:$type :ws/A})))))
 

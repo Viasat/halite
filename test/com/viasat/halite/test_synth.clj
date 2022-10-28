@@ -205,12 +205,11 @@
          :spec/B {:refines-to {:spec/A {:name "as_A"
                                         :expr '(valid {:$type :spec/A})}}}
          :spec/C {:refines-to {:spec/B {:name "as_B"
-                                        :expr '{:$type :spec/B}}}}}
-        senv (update-vals spec-map #(merge {:spec-vars {}, :refines-to {}, :constraints []} %))]
+                                        :expr '{:$type :spec/B}}}}}]
 
     (is (= {:$type :spec/A}
            (spec-map-eval spec-map
-                          (partial halite-user-eval senv)
+                          (partial halite-user-eval spec-map)
                           '(refine-to {:$type :spec/C} :spec/A))))))
 
 (defn halite-eval [spec-map expr]

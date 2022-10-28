@@ -18,8 +18,7 @@
   '{:ws/Colored
     {:abstract? true
      :spec-vars {:color "String"}
-     :constraints [["validColors" (or (= color "red") (= color "green") (= color "blue"))]]
-     :refines-to {}}
+     :constraints [["validColors" (or (= color "red") (= color "green") (= color "blue"))]]}
 
     :ws/Car
     {:spec-vars {:horsePower "Integer"}

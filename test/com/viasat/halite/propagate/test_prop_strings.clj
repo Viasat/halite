@@ -14,7 +14,7 @@
 (use-fixtures :once schema.test/validate-schemas)
 
 (def simple-example
-  '{:spec-vars {:s1 "String" :s2 "String" :s3 "String"} :refines-to {}
+  '{:spec-vars {:s1 "String" :s2 "String" :s3 "String"}
     :constraints [["c1" (and (not= s1 "foo")
                              (= s1 s2)
                              (or (= s2 "foo") (= s2 "bar"))
@@ -54,7 +54,6 @@
 (deftest test-simplify-string-exprs
   ;; literal-literal string comparisons need to be evaluated
   (let [spec (->> '{:spec-vars {:p "Boolean"}
-                    :refines-to {}
                     :constraints [["c" (= "foo" (if p "foo" "bar"))]]}
                   (ssa/spec-to-ssa {})
                   (simplify-string-exprs))]
@@ -65,7 +64,7 @@
   (let [spec (->> '{:spec-vars {:s1 "String" :s2 [:Maybe "String"] :s3 [:Maybe "String"]}
                     :constraints [["c1" (= s1 "foo" s2)]
                                   ["c2" (not= s2 "bar" "baz" $no-value)]
-                                  ["c3" (not= s1 s2 s3)]] :refines-to {}}
+                                  ["c3" (not= s1 s2 s3)]]}
                   (ssa/spec-to-ssa {})
                   (simplify-string-exprs))]
     (is (= '(and (and (= s1 "foo") (= "foo" s2))
@@ -81,7 +80,6 @@
         lowered (lower-spec spec scg)]
     (is (= '{:spec-vars {:$s1 [:Maybe "Integer"] :$s2 [:Maybe "Integer"] :$s3 [:Maybe "Integer"]
                          :$s1=s2 "Boolean", :$s1=s3 "Boolean"}
-             :refines-to {}
              :constraints [["$all"
                             (and
                              ;; (not= s1 "foo")
@@ -92,7 +90,8 @@
                               (if-value $s2 (= $s2 1) false)
                               ;; (= s2 "bar")
                               (if-value $s2 (= $s2 0) false))
-                             (not $s1=s3))]]}
+                             (not $s1=s3))]]
+             :refines-to {}}
            (ssa/spec-from-ssa lowered)))))
 
 (def disjoint-string-bounds? #'prop-strings/disjoint-string-bounds?)
@@ -187,8 +186,7 @@
                   ["c3" (or (= "foo" s2)
                             (= "bar" s2)
                             (= "baz" s2))]
-                  ["c4" (and (<= 0 n) (<= n 10))]]
-    :refines-to {}})
+                  ["c4" (and (<= 0 n) (<= n 10))]]})
 
 (deftest test-propagate-mixed-constraints-example
   (let [spec (ssa/spec-to-ssa {} mixed-constraints-example)]
@@ -224,7 +222,6 @@
 
 (def simple-optional-string-var-example
   '{:spec-vars {:s1 [:Maybe "String"], :s2 "String"}
-    :refines-to {}
     :constraints [["c1" (= s2 (if-value s1 s1 "bar"))]
                   ["c2" (not= s2 "baz")]
                   ["c3" (or (= s1 "foo") (= $no-value s1))]]})
@@ -232,15 +229,13 @@
 (comment
   "simplifies to"
   {:spec-vars {:s1 [:Maybe "String"], :s2 "String"},
-   :refines-to {},
-   :constraints
-   [["$all"
-     (and
-      (if ($value? s1)
-        (= s2 ($value! s1))
-        (= s2 "bar"))
-      (not= s2 "baz")
-      (or (= s1 "foo") (= $no-value s1)))]]})
+   :constraints [["$all"
+                  (and
+                   (if ($value? s1)
+                     (= s2 ($value! s1))
+                     (= s2 "bar"))
+                   (not= s2 "baz")
+                   (or (= s1 "foo") (= $no-value s1)))]]})
 
 (deftest test-compute-string-comparison-graph-with-optional-string-vars
   (let [spec (simplify-string-exprs (ssa/spec-to-ssa {} simple-optional-string-var-example))
@@ -269,7 +264,6 @@
 
   ;; Edge cases!
   (let [spec (ssa/spec-to-ssa {} '{:spec-vars {:s "String" :s2 [:Maybe "String"]}
-                                   :refines-to {}
                                    :constraints [["c" (not= s $no-value)]]})
         scg (compute-string-comparison-graph spec)]
     ;; For mandatory string vars, comparison with $no-value should not
@@ -292,16 +286,15 @@
     (is (= '{:spec-vars
              {:$s1 [:Maybe "Integer"] :$s2 [:Maybe "Integer"]
               :$s1=s2 "Boolean"}
-             :refines-to {}
-             :constraints
-             [["$all" (let [v1 (if-value $s1 (= $s1 0) false)]
-                        (and
-                         (if (not v1)
-                           $s1=s2
-                           (if-value $s2 (= $s2 0) false))
-                         (not (if-value $s2 (= $s2 1) false))
-                         (or (if-value $s1 (= $s1 1) false)
-                             v1)))]]}
+             :constraints [["$all" (let [v1 (if-value $s1 (= $s1 0) false)]
+                                     (and
+                                      (if (not v1)
+                                        $s1=s2
+                                        (if-value $s2 (= $s2 0) false))
+                                      (not (if-value $s2 (= $s2 1) false))
+                                      (or (if-value $s1 (= $s1 1) false)
+                                          v1)))]]
+             :refines-to {}}
            (ssa/spec-from-ssa lowered)))))
 
 (def optional-string-vars-example
@@ -313,8 +306,7 @@
                   ["c3" (or (= "foo" s2)
                             (= "bar" s2)
                             (= "baz" s2))]
-                  ["c4" (and (<= 0 n) (<= n 10))]]
-    :refines-to {}})
+                  ["c4" (and (<= 0 n) (<= n 10))]]})
 
 (deftest test-lower-spec-bound-with-optional-string-vars
   (let [spec (simplify-string-exprs (ssa/spec-to-ssa {} simple-optional-string-var-example))
@@ -347,7 +339,7 @@
       {:$s1 {:$in #{0 1}}, :$s2 {:$in #{0 :Unset}}, :$s1=s2 {:$in #{true false}}}
       {:s1 {:$in #{:Unset "foo"}} :s2 :String}))
 
-  (let [spec (ssa/spec-to-ssa {} '{:spec-vars {:s1 "String" :s2 [:Maybe "String"]} :constraints [] :refines-to {}})
+  (let [spec (ssa/spec-to-ssa {} '{:spec-vars {:s1 "String" :s2 [:Maybe "String"]}})
         scg (compute-string-comparison-graph spec)]
     (is (= {:s1 :String :s2 {:$in #{:Unset :String}}}
            (raise-spec-bound {:$s1 :Unset :$s2 {:$in #{0 :Unset}}} scg {})))))

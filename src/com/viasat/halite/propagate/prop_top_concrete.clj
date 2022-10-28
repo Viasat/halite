@@ -39,10 +39,7 @@
   (-> sctx
       (assoc generated-spec-id
              (ssa/spec-to-ssa spec-env
-                              {:abstract? true
-                               :spec-vars {}
-                               :constraints []
-                               :refines-to {}}))
+                              {:abstract? true}))
       (update topmost-refines-to-spec-id
               (fn [spec]
                 (ssa/spec-to-ssa spec-env
