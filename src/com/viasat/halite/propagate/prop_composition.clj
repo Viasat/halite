@@ -395,7 +395,9 @@
               (vector? bound) (subvec bound 0 2)
               (set? bound) (disj bound :Unset)))})))))
 
-(s/defn ^:private to-spec-bound :- ConcreteSpecBound
+(s/defn ^:private to-spec-bound :- (s/conditional
+                                    map? ConcreteSpecBound
+                                    :else (s/eq :Unset))
   [choco-bounds :- prop-strings/SpecBound
    senv :- (s/protocol halite-envs/SpecEnv)
    flattened-vars  :- FlattenedVars]
