@@ -18,15 +18,15 @@
            {:spec-id :ws2/B$v1
             :variable-name :d}}
          (halite-type-check/find-field-accesses
-          (halite-envs/full-spec-map {:ws/A$v1 {:spec-vars {:x "Integer"
-                                                            :y "Boolean"
-                                                            :c :ws2/B$v1}}
-                                      :ws2/B$v1 {:spec-vars {:d :ws/D$v1}}
-                                      :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
-                                      :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}})
-          (halite-envs/full-spec-info {:spec-vars {:x "Integer"
-                                                   :y "Boolean"
-                                                   :c [:ws2/B$v1]}})
+          {:ws/A$v1 {:spec-vars {:x "Integer"
+                                 :y "Boolean"
+                                 :c :ws2/B$v1}}
+           :ws2/B$v1 {:spec-vars {:d :ws/D$v1}}
+           :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
+           :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}}
+          {:spec-vars {:x "Integer"
+                       :y "Boolean"
+                       :c [:ws2/B$v1]}}
           '(get-in c [0 :d :xss])))))
 
 ;; (run-tests)

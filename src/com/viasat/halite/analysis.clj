@@ -1099,7 +1099,6 @@
 (s/defn find-cycle-in-dependencies
   [spec-map :- halite-envs/SpecMap]
   (let [spec-map-dependencies (->> spec-map
-                                   halite-envs/full-spec-map
                                    get-spec-map-dependencies)]
     (if (empty? spec-map-dependencies)
       nil

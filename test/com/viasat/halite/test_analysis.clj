@@ -1256,13 +1256,13 @@
     (is (= {:spec/Path1 #{:spec/Destination}
             :spec/Path2 #{:spec/Destination}
             :spec/Start #{:spec/Path1 :spec/Path2}}
-           (#'halite-analysis/get-spec-map-dependencies (halite-envs/full-spec-map spec-map))))
+           (#'halite-analysis/get-spec-map-dependencies spec-map)))
     (is (nil? (halite-analysis/find-cycle-in-dependencies spec-map))))
   (let [spec-map {:spec/A {:spec-vars {:b :spec/B}}
                   :spec/B {:spec-vars {:a :spec/A}}}]
     (is (= {:spec/A #{:spec/B}
             :spec/B #{:spec/A}}
-           (#'halite-analysis/get-spec-map-dependencies (halite-envs/full-spec-map spec-map))))
+           (#'halite-analysis/get-spec-map-dependencies spec-map)))
     (is (= [:spec/A :spec/B :spec/A]
            (halite-analysis/find-cycle-in-dependencies spec-map)))))
 

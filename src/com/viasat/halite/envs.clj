@@ -257,25 +257,12 @@
            (into next-spec-ids (spec-refs spec-info)))))
       spec-map)))
 
-(s/defn full-spec-info :- SpecInfo
-  [spec-info :- SpecInfo]
-  (let [{:keys [spec-vars constraints refines-to]} spec-info]
-    (cond-> spec-info
-      (nil? spec-vars) (assoc :spec-vars {})
-      (nil? constraints) (assoc :constraints [])
-      (nil? refines-to) (assoc :refines-to {}))))
-
-(s/defn full-spec-map :- SpecMap
-  [spec-map :- SpecMap]
-  (-> spec-map
-      (update-vals full-spec-info)))
-
 ;; Ensure that a SpecMap can be used anywhere a SpecEnv can.
 (extend-type clojure.lang.IPersistentMap
   SpecEnv
   (lookup-spec* [spec-map spec-id]
     (when-let [spec (get spec-map spec-id)]
-      (full-spec-info spec))))
+      spec)))
 
 (defn init
   "Here to load the clojure map protocol extension above"
