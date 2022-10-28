@@ -58,12 +58,6 @@
 (s/defschema RefinesTo {halite-types/NamespacedKeyword Refinement})
 
 (s/defschema SpecInfo
-  {:spec-vars SpecVars
-   :constraints [NamedConstraint]
-   :refines-to RefinesTo
-   (s/optional-key :abstract?) s/Bool})
-
-(s/defschema PartialSpecInfo
   {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
    (s/optional-key :constraints) [NamedConstraint]
    (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
@@ -206,9 +200,6 @@
 ;; cycles), require that users provide a SpecMap instead of a SpecEnv. This way applications can
 ;; opt-in to the operations they want to use and deal with the implications of their choice
 
-(s/defschema PartialSpecMap
-  {halite-types/NamespacedKeyword PartialSpecInfo})
-
 (s/defschema SpecMap
   {halite-types/NamespacedKeyword SpecInfo})
 
@@ -267,7 +258,7 @@
       spec-map)))
 
 (s/defn full-spec-info :- SpecInfo
-  [spec-info :- PartialSpecInfo]
+  [spec-info :- SpecInfo]
   (let [{:keys [spec-vars constraints refines-to]} spec-info]
     (cond-> spec-info
       (nil? spec-vars) (assoc :spec-vars {})
@@ -275,7 +266,7 @@
       (nil? refines-to) (assoc :refines-to {}))))
 
 (s/defn full-spec-map :- SpecMap
-  [spec-map :- PartialSpecMap]
+  [spec-map :- SpecMap]
   (-> spec-map
       (update-vals full-spec-info)))
 

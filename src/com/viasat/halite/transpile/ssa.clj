@@ -110,9 +110,9 @@
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
   (assoc halite-envs/SpecInfo
          :ssa-graph SSAGraph
-         :constraints [[(s/one s/Str :cname) (s/one NodeId :node)]]
-         :refines-to {halite-types/NamespacedKeyword
-                      (assoc halite-envs/Refinement :expr NodeId)}))
+         (s/optional-key :constraints) [[(s/one s/Str :cname) (s/one NodeId :node)]]
+         (s/optional-key :refines-to) {halite-types/NamespacedKeyword
+                                       (assoc halite-envs/Refinement :expr NodeId)}))
 
 (s/defn contains-id? :- s/Bool
   [ssa-graph :- SSAGraph id]

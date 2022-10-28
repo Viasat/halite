@@ -1091,13 +1091,13 @@
          (reduce (partial merge-with into) {}))))
 
 (s/defn get-spec-map-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
-  [spec-map :- halite-envs/PartialSpecMap]
+  [spec-map :- halite-envs/SpecMap]
   (->> spec-map
        (map (fn [[k v]] (get-spec-dependencies spec-map k v)))
        (reduce (partial merge-with into) {})))
 
 (s/defn find-cycle-in-dependencies
-  [spec-map :- halite-envs/PartialSpecMap]
+  [spec-map :- halite-envs/SpecMap]
   (let [spec-map-dependencies (->> spec-map
                                    halite-envs/full-spec-map
                                    get-spec-map-dependencies)]
