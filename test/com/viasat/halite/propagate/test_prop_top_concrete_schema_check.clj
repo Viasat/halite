@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.propagate.test-prop-top-concrete
+(ns com.viasat.halite.propagate.test-prop-top-concrete-schema-check
   "This namespace exists to provide a test case for propagate that runs with schema validation on."
   (:require [com.viasat.halite.propagate :as hp]
             [schema.test :refer [validate-schemas]])
