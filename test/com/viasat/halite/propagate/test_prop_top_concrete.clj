@@ -47,13 +47,12 @@
                                       :ws/B {}}}))))
 
 (deftest test-refine-to-abstract-and-concrete
-  (is (thrown-with-msg? ExceptionInfo #"empty domain"
-                        ;; ideally this would be a constraint violation exception
-                        (hp/propagate '{:ws/A {}
-                                        :ws/X {}
-                                        :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}}
-                                      {:$refines-to {:ws/A {}
-                                                     :ws/X {}}})))
+  (is (= :Unset
+         (hp/propagate '{:ws/A {}
+                         :ws/X {}
+                         :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}}
+                       {:$refines-to {:ws/A {}
+                                      :ws/X {}}})))
 
   (is (= {:$type :ws/C
           :$refines-to {:ws/A {}
@@ -67,22 +66,21 @@
                                       :ws/X {}}}))))
 
 (deftest test-others
-  (is (thrown-with-msg? ExceptionInfo #"has empty domain"
-                        (hp/propagate '{:ws/P {:abstract? true}
-                                        :ws/X {:abstract? true}}
-                                      {:$refines-to {:ws/X {} :ws/P {}}})))
+  (is (= :Unset
+         (hp/propagate '{:ws/P {:abstract? true}
+                         :ws/X {:abstract? true}}
+                       {:$refines-to {:ws/X {} :ws/P {}}})))
 
-  (is (thrown-with-msg? ExceptionInfo #"empty domain"
-                        ;; ideally this would be a constraint violation exception
-                        (hp/propagate '{:ws/A {:abstract? true}
-                                        :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
-                                        :ws/C {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
-                                        :ws/D {:refines-to {:ws/C {:expr {:$type :ws/C}}}}
-                                        :ws/X {:abstract? true}
-                                        :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                                        :ws/Z {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                                        :ws/P {:abstract? true}}
-                                      {:$refines-to {:ws/X {} :ws/A {}}})))
+  (is (= :Unset
+         (hp/propagate '{:ws/A {:abstract? true}
+                         :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/C {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                         :ws/D {:refines-to {:ws/C {:expr {:$type :ws/C}}}}
+                         :ws/X {:abstract? true}
+                         :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                         :ws/Z {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                         :ws/P {:abstract? true}}
+                       {:$refines-to {:ws/X {} :ws/A {}}})))
 
   (is (= {:$type :ws/Q
           :$refines-to {:ws/A {}

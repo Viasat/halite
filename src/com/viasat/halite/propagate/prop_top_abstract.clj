@@ -23,7 +23,14 @@
   "Convert the resulting bound by lifting the bound on the fabricated spec's field to be the
   top-level result bound."
   [bound]
-  (generated-field-name bound))
+  (let [{:keys [$in] :as result-bound} (generated-field-name bound)
+        $in (dissoc $in :Unset)]
+    (condp = (count $in)
+      0 result-bound
+      1 (assoc (val (first $in))
+               :$type (key (first $in)))
+      (assoc result-bound
+             :$in $in))))
 
 (s/defn ^:private add-spec
   "Fabricate a new spec to hold a field of the required abstract type. Add it to the context."
@@ -31,7 +38,7 @@
   (assoc sctx
          generated-spec-id
          (ssa/spec-to-ssa (ssa/as-spec-env sctx)
-                          {:spec-vars {generated-field-name refines-to-spec-id}})))
+                          {:spec-vars {generated-field-name [:Maybe refines-to-spec-id]}})))
 
 (s/defn ^:private generate-spec-id
   "Generate a unique spec-id that will not collide with the current context."
