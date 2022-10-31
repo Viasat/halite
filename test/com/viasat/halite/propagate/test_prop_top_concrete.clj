@@ -67,7 +67,7 @@
                                       :ws/X {}}}))))
 
 (deftest test-others
-  (is (thrown-with-msg? ExceptionInfo #"No concrete specs refine to"
+  (is (thrown-with-msg? ExceptionInfo #"has empty domain"
                         (hp/propagate '{:ws/P {:abstract? true}
                                         :ws/X {:abstract? true}}
                                       {:$refines-to {:ws/X {} :ws/P {}}})))

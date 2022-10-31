@@ -524,14 +524,48 @@
                           (pa/propagate sctx {:$type :ws/C
                                               :b {;; omit the $type field
                                                   :$refines-to {:ws/A {}}
-                                   ;; with the :$if field, it cannot be promoted to a concrete bound
+                                                  ;; with the :$if field, it cannot be promoted to a concrete bound
                                                   :$if {}}})))
     (is (thrown-with-msg? ExceptionInfo #"Invalid bound for"
                           (pa/propagate sctx {:$type :ws/C
                                               :b {;; omit the $type field
                                                   :$refines-to {:ws/A {}}
-                                   ;; with the :$in field, it cannot be promoted to a concrete bound
+                                                  ;; with the :$in field, it cannot be promoted to a concrete bound
                                                   :$in {}}})))))
+
+(deftest test-no-concrete-spec-for-abstract-spec
+  (is (= {:$type :ws/A
+          :x {:$in {:Unset true
+                    :ws/Y {:$refines-to #:ws{:X {}}}}
+              :$refines-to #:ws{:X {}}}}
+         (pa/propagate (ssa/spec-map-to-ssa
+                        '{:ws/X {:abstract? true}
+                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                          :ws/A {:spec-vars {:x [:Maybe :ws/X]}}})
+                       {:$type :ws/A}))
+      "Base case where an optional field does have concrete specs to satisfy it")
+  (is (= {:$type :ws/A
+          :x :Unset}
+         (pa/propagate (ssa/spec-map-to-ssa
+                        '{:ws/X {:abstract? true}
+                          :ws/A {:spec-vars {:x [:Maybe :ws/X]}}})
+                       {:$type :ws/A}))
+      "Case where an optional field has no concrete specs to satisfy it")
+  (is (= {:$type :ws/A
+          :x {:$refines-to #:ws{:X {}}
+              :$type :ws/Y}}
+         (pa/propagate (ssa/spec-map-to-ssa
+                        '{:ws/X {:abstract? true}
+                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                          :ws/A {:spec-vars {:x :ws/X}}})
+                       {:$type :ws/A}))
+      "Case where a mandatory field does have concrete specs to satisfy it")
+  (is (thrown-with-msg? ExceptionInfo #"has empty domain"
+                        (pa/propagate (ssa/spec-map-to-ssa
+                                       '{:ws/X {:abstract? true}
+                                         :ws/A {:spec-vars {:x :ws/X}}})
+                                      {:$type :ws/A}))
+      "Case where a mandatory field has no concrete specs to satisfy it"))
 
 (comment "
 Stuff to do/remember regarding abstractness!

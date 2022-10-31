@@ -138,10 +138,7 @@
      (reduce-kv
       (fn [{:keys [spec-vars constraints refines-to] :as spec} var-kw var-type]
         (let [alts (alternatives (var-entry->spec-id senv [var-kw var-type]))
-              ;; TODO: Should this just produce an unsatisfiable spec, instead?
-              _ (when (empty? alts)
-                  (throw (ex-info (format "No values for variable %s: No concrete specs refine to %s" var-kw var-type)
-                                  {:spec-info spec :alternatives alternatives})))
+
               optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
 
               ;; add the discriminator var
@@ -154,12 +151,15 @@
                     spec alts)
 
               ;; the expression that this abstract var will be replaced with
-              lowered-expr (reduce
-                            (fn [expr i]
-                              (let [alt-var (symbol (str (name var-kw) "$" i))]
-                                (list 'if-value alt-var alt-var expr)))
-                            (if optional-var? '$no-value '(error "unreachable"))
-                            (reverse (sort (vals alts))))
+              lowered-expr (if (empty? alts)
+                             ;; there are no concrete specs for the abstract spec, if the field is optional this is the right value
+                             :Unset
+                             (reduce
+                              (fn [expr i]
+                                (let [alt-var (symbol (str (name var-kw) "$" i))]
+                                  (list 'if-value alt-var alt-var expr)))
+                              (if optional-var? '$no-value '(error "unreachable"))
+                              (reverse (sort (vals alts)))))
 
               ;; fold the lowered expression into the SSA graph
               ctx (ssa/make-ssa-ctx sctx spec)
