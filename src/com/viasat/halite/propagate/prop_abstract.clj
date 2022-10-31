@@ -268,30 +268,32 @@
      (filter #(abstract-var? senv %))
      (reduce
       (fn [spec-bound [var-kw var-type :as var-entry]]
-        (let [var-spec-id (var-entry->spec-id senv var-entry)
-              optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
-              alts (select-keys (alternatives var-spec-id)
-                                ;; find the spec-ids which have the prescribed refinement paths
-                                (seq (reduce
-                                      (fn [alts-set spec-id]
-                                        (set/intersection alts-set
-                                                          (conj (set (keys (alternatives spec-id)))
-                                                                spec-id)))
-                                      (set (keys (alternatives var-spec-id)))
-                                      (keys (:$refines-to (var-kw spec-bound))))))
-              var-bound (or (var-kw spec-bound) {:$if {}})]
-          (if (= :Unset var-bound)
-            (-> spec-bound (dissoc var-kw) (assoc (discriminator-var-kw var-kw) :Unset))
-            (let [var-bound (cond-> var-bound
-                              ;; TODO: intersect $refines-to bounds when present at both levels
-                              (= [:$refines-to] (keys var-bound)) (assoc :$if {}))]
-              (-> spec-bound
-                  ;; remove the abstract bound, if any
-                  (dissoc var-kw)
-                  ;; add in a bound for the discriminator
-                  (assoc (discriminator-var-kw var-kw) {:$in (cond-> (set (range (count alts))) optional-var? (conj :Unset))})
-                  ;; if an abstract bound was provided, lower it
-                  (cond->> var-bound (lower-abstract-var-bound senv alternatives var-kw optional-var? alts var-bound)))))))
+        (if (abstract-var? senv var-entry)
+          (let [var-spec-id (var-entry->spec-id senv var-entry)
+                optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
+                alts (select-keys (alternatives var-spec-id)
+                                  ;; find the spec-ids which have the prescribed refinement paths
+                                  (seq (reduce
+                                        (fn [alts-set spec-id]
+                                          (set/intersection alts-set
+                                                            (conj (set (keys (alternatives spec-id)))
+                                                                  spec-id)))
+                                        (set (keys (alternatives var-spec-id)))
+                                        (keys (:$refines-to (var-kw spec-bound))))))
+                var-bound (or (var-kw spec-bound) {:$if {}})]
+            (if (= :Unset var-bound)
+              (-> spec-bound (dissoc var-kw) (assoc (discriminator-var-kw var-kw) :Unset))
+              (let [var-bound (cond-> var-bound
+                                ;; TODO: intersect $refines-to bounds when present at both levels
+                                (= [:$refines-to] (keys var-bound)) (assoc :$if {}))]
+                (-> spec-bound
+                    ;; remove the abstract bound, if any
+                    (dissoc var-kw)
+                    ;; add in a bound for the discriminator
+                    (assoc (discriminator-var-kw var-kw) {:$in (cond-> (set (range (count alts))) optional-var? (conj :Unset))})
+                    ;; if an abstract bound was provided, lower it
+                    (cond->> var-bound (lower-abstract-var-bound senv alternatives var-kw optional-var? alts var-bound))))))
+          spec-bound))
       (promote-abstract-bounds-to-concrete-bounds-where-appropriate spec-bound senv spec-vars)))))
 
 (declare raise-abstract-bounds)
