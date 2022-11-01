@@ -130,7 +130,7 @@ Now confirm that an invalid solution fails. Notice that the error indicates that
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints rows, columns"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints columns, rows"
  :h-err/invalid-instance]
 ```
 

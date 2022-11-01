@@ -9775,7 +9775,43 @@
    :basic
    [(error {:$type :my/Spec$v1, :n 1, :p 1})
     [:throws
-     "h-err/no-matching-signature 0-0 : No matching signature for 'error'"]]))
+     "h-err/no-matching-signature 0-0 : No matching signature for 'error'"]])
+
+  (hc {:my/Spec$v1 {:constraints [["c9" '(if false
+                                           true
+                                           (error "f1"))]
+                                  ["c2" '(if false
+                                           true
+                                           (error "f2"))]]}}
+      [{:$type :my/Spec$v1}
+       [:Instance :my/Spec$v1]
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f2; f1\""]
+       "{$type: my/Spec$v1}"
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f2; f1\""]])
+  (hc {:my/Spec$v1 {:constraints [["c9" '(if false
+                                           true
+                                           (error "f2"))]
+                                  ["c2" '(if false
+                                           true
+                                           (error "f1"))]]}}
+      [{:$type :my/Spec$v1}
+       [:Instance :my/Spec$v1]
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; f2\""]
+       "{$type: my/Spec$v1}"
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; f2\""]])
+  (hc {:my/Spec$v1 {:constraints [["c1" 'false]
+                                  ["c9" '(if false
+                                           true
+                                           (error "f2"))]
+                                  ["c3" '(= (div 1 0) 1)]
+                                  ["c2" '(if false
+                                           true
+                                           (error "f1"))]]}}
+      [{:$type :my/Spec$v1}
+       [:Instance :my/Spec$v1]
+       [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints c1"]
+       "{$type: my/Spec$v1}"
+       [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints c1"]]))
 
 (deftest
   test-reserved-words

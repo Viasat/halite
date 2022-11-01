@@ -126,7 +126,7 @@ Now confirm that an invalid solution fails. Notice that the error indicates that
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints rows, columns"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints columns, rows"]
 ```
 
 Notice that we are still not detecting the following invalid solution. Specifically, while this solution meets the row and column requirements, it does not meet the quadrant requirement.

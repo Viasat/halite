@@ -5,6 +5,7 @@
   "Evaluator for halite"
   (:require [clojure.math.numeric-tower :refer [expt]]
             [clojure.set :as set]
+            [clojure.string :as string]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.base :as halite-base]
             [com.viasat.halite.types :as halite-types]
@@ -192,6 +193,25 @@
 
 (def ^:dynamic *instance-path-atom* nil)
 
+(defn remove-vals-from-map
+  "Remove entries from the map if applying f to the value produced false."
+  [m f]
+  (->> m
+       (remove (comp f second))
+       (apply concat)
+       (apply hash-map)))
+
+(defn no-empty
+  "Convert empty collection to nil"
+  [coll]
+  (when (seq coll)
+    coll))
+
+(defn no-nil
+  "Remove all nil values from the map"
+  [m]
+  (remove-vals-from-map m nil?))
+
 (s/defn validate-instance :- s/Any
   "Check that an instance satisfies all applicable constraints.
   Return the instance if so, throw an exception if not.
@@ -211,8 +231,13 @@
           spec-tenv (halite-envs/type-env-from-spec senv spec-info)
           env (halite-envs/env-from-inst spec-info inst)
           ctx {:senv senv, :env env}
-          satisfied? (fn [[cname expr]]
-                       (*eval-predicate-fn* ctx spec-tenv expr spec-id cname))]
+          constraint-f (fn [[cname expr :as constraint]]
+                         {:constraint constraint
+                          :result (try
+                                    (boolean (*eval-predicate-fn* ctx spec-tenv expr spec-id cname))
+                                    (catch ExceptionInfo ex
+                                      ;; handle this as data so that it produces all errors, not just the "first" one
+                                      ex))})]
 
       ;; check that all variables have values that are concrete and that conform to the
       ;; types declared in the parent resource spec
@@ -224,12 +249,34 @@
         (check-against-declared-type declared-type v))
 
       ;; check all constraints
-      (let [violated-constraints (->> spec-info :constraints (remove satisfied?) vec)]
-        (when (seq violated-constraints)
-          (throw-err (h-err/invalid-instance {:spec-id (symbol spec-id)
-                                              :violated-constraints (mapv (comp symbol first) violated-constraints)
-                                              :value inst
-                                              :halite-error :constraint-violation}))))
+      (let [constraint-results (->> spec-info
+                                    :constraints
+                                    ;; produce constraint results in consistent order regardless of
+                                    ;; order the constraints are defined in
+                                    (sort-by first)
+                                    (map constraint-f))
+            violated-constraints (->> constraint-results (filter (comp false? :result)) (mapv :constraint))
+            error-constraints (->> constraint-results (remove (comp boolean? :result)) (mapv :constraint))
+            constraint-errors (->> constraint-results (remove (comp boolean? :result)) (mapv :result))]
+        (when (and (empty? violated-constraints)
+                   (= 1 (count constraint-errors)))
+          (throw (first constraint-errors)))
+        (when (or (seq violated-constraints)
+                  (seq constraint-errors))
+          (throw-err ((if (seq violated-constraints)
+                        h-err/invalid-instance
+                        h-err/spec-threw)
+                      (no-nil {:spec-id (symbol spec-id)
+                               :violated-constraints (no-empty (mapv (comp symbol first) violated-constraints))
+                               :error-constraints (no-empty (mapv (comp symbol first) error-constraints))
+                               :constraint-errors (no-empty constraint-errors)
+                               :constraint-error-strs (no-empty (mapv (comp :spec-error-str ex-data) constraint-errors))
+                               :spec-error-str (when (empty? violated-constraints)
+                                                 (string/join "; "
+                                                              (no-empty (mapv (comp :spec-error-str ex-data) constraint-errors))))
+                               :value inst
+                               :halite-error (when (seq violated-constraints)
+                                               :constraint-violation)})))))
       ;; fully explore all active refinement paths, and store the results
       (let [result (with-meta
                      inst
