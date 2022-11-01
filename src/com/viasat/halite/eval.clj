@@ -135,7 +135,7 @@
    tenv :- (s/protocol halite-envs/TypeEnv)
    bool-expr
    spec-id :- halite-types/NamespacedKeyword
-   constraint-name :- (s/maybe String)]
+   constraint-name :- (s/maybe halite-base/ConstraintName)]
   (with-exception-data {:form bool-expr
                         :constraint-name constraint-name
                         :spec-id spec-id}
@@ -164,7 +164,7 @@
   (cond
     (or (halite-base/integer-or-long? v) (halite-base/fixed-decimal? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
-                   spec-info (or (halite-envs/lookup-spec senv spec-id)
+                   spec-info (or (halite-envs/system-lookup-spec senv spec-id)
                                  (h-err/resource-spec-not-found {:spec-id (symbol spec-id)}))]
                (and (not (:abstract? spec-info))
                     (every? (partial concrete? senv) (vals (dissoc v :$type)))))
@@ -227,7 +227,7 @@
                                                                        (mapv symbol))}))
               (swap! *instance-path-atom* conj spec-id))
           spec-id-0 spec-id
-          {:keys [spec-vars refines-to] :as spec-info} (halite-envs/lookup-spec senv spec-id)
+          {:keys [spec-vars refines-to] :as spec-info} (halite-envs/system-lookup-spec senv spec-id)
           spec-tenv (halite-envs/type-env-from-spec senv spec-info)
           env (halite-envs/env-from-inst spec-info inst)
           ctx {:senv senv, :env env}

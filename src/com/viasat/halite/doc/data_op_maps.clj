@@ -579,8 +579,8 @@
                                                              :my/Spec$v1 {:spec-vars {:n "Integer"
                                                                                       :o [:Maybe "Integer"]
                                                                                       :p "Integer"}
-                                                                          :constraints [["pc" '(> p 0)]
-                                                                                        ["pn" '(< n 0)]]}})
+                                                                          :constraints [[:pc '(> p 0)]
+                                                                                        [:pn '(< n 0)]]}})
                               :instance {:$type :my/Other$v1}
                               :expr-str "(if-value-let [x (when (> 2 1) 19)] (inc x) 0)"
                               :expr-str-j :auto
@@ -592,8 +592,8 @@
                                                              :my/Spec$v1 {:spec-vars {:n "Integer"
                                                                                       :o [:Maybe "Integer"]
                                                                                       :p "Integer"}
-                                                                          :constraints [["pc" '(> p 0)]
-                                                                                        ["pn" '(< n 0)]]}})
+                                                                          :constraints [[:pc '(> p 0)]
+                                                                                        [:pn '(< n 0)]]}})
                               :instance {:$type :my/Other$v1}
                               :expr-str "(if-value-let [x (when (> 1 2) 19)] (inc x) 0)"
                               :expr-str-j :auto
@@ -998,16 +998,16 @@
 
            :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
                                                            :n "Integer"}
-                                               :constraints [["cp" '(> p 0)]
-                                                             ["cn" '(< n 0)]]}}
+                                               :constraints [[:cp '(> p 0)]
+                                                             [:cn '(< n 0)]]}}
                        :expr-str "(valid {:$type :my/Spec$v1, :p 1, :n -1})"
                        :expr-str-j :auto
                        :result :auto
                        :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}
                       {:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
                                                            :n "Integer"}
-                                               :constraints [["cp" '(> p 0)]
-                                                             ["cn" '(< n 0)]]}}
+                                               :constraints [[:cp '(> p 0)]
+                                                             [:cn '(< n 0)]]}}
                        :expr-str "(valid {:$type :my/Spec$v1, :p 1, :n 1})"
                        :expr-str-j "valid {$type: my/Spec$v1, p: 1, n: 1}"
                        :result :auto
@@ -1021,16 +1021,16 @@
             :comment "Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value."
             :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
                                                             :n "Integer"}
-                                                :constraints [["cp" '(> p 0)]
-                                                              ["cn" '(< n 0)]]}}
+                                                :constraints [[:cp '(> p 0)]
+                                                              [:cn '(< n 0)]]}}
                         :expr-str "(valid? {:$type :my/Spec$v1, :p 1, :n -1})"
                         :expr-str-j :auto
                         :result :auto
                         :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}
                        {:spec-map {:my/Spec$v1 {:spec-vars {:p "Integer"
                                                             :n "Integer"}
-                                                :constraints [["cp" '(> p 0)]
-                                                              ["cn" '(< n 0)]]}}
+                                                :constraints [[:cp '(> p 0)]
+                                                              [:cn '(< n 0)]]}}
                         :expr-str "(valid? {:$type :my/Spec$v1, :p 1, :n 0})"
                         :expr-str-j :auto
                         :result :auto

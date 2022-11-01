@@ -19,6 +19,12 @@
 
 ;;;;
 
+(s/defschema UserConstraintName halite-types/BareKeyword)
+
+(s/defschema ConstraintName (s/conditional
+                             string? s/Str
+                             :else s/Keyword))
+
 (s/defschema Limits {(s/optional-key :string-literal-length) (s/maybe s/Int)
                      (s/optional-key :string-runtime-length) (s/maybe s/Int)
                      (s/optional-key :vector-literal-count) (s/maybe s/Int)

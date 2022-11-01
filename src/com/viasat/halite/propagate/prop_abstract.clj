@@ -106,7 +106,7 @@
 (defn- abstract-var?
   [senv var-entry]
   (if-let [spec-id (var-entry->spec-id senv var-entry)]
-    (true? (:abstract? (halite-envs/lookup-spec senv spec-id)))
+    (true? (:abstract? (halite-envs/system-lookup-spec senv spec-id)))
     false))
 
 (s/defn ^:private replace-all
@@ -262,7 +262,7 @@
    alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second) ; unwrap [:Maybe ..]
-        {:keys [spec-vars] :as spec} (halite-envs/lookup-spec senv spec-id)]
+        {:keys [spec-vars] :as spec} (halite-envs/system-lookup-spec senv spec-id)]
     (->>
      spec-vars
      (filter #(abstract-var? senv %))
@@ -328,7 +328,7 @@
   [spec-bound :- ConcreteSpecBound2, senv :- (s/protocol halite-envs/SpecEnv), alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second)
-        {:keys [spec-vars] :as spec} (halite-envs/lookup-spec senv spec-id)]
+        {:keys [spec-vars] :as spec} (halite-envs/system-lookup-spec senv spec-id)]
     (->>
      spec-vars
      (filter #(abstract-var? senv %))

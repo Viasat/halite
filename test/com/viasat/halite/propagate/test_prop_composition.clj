@@ -23,10 +23,10 @@
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
                  {:spec-vars {:x "Integer", :y "Integer", :b "Boolean"}
-                  :constraints [["c1" (let [delta (abs (- x y))]
-                                        (and (< 5 delta)
-                                             (< delta 10)))]
-                                ["c2" (= b (< x y))]]}})]
+                  :constraints [[:c1 (let [delta (abs (- x y))]
+                                       (and (< 5 delta)
+                                            (< delta 10)))]
+                                [:c2 (= b (< x y))]]}})]
 
     (is (= '{:spec-vars {:x "Integer", :y "Integer", :b "Boolean"}
              :constraints [["vars" (valid? {:$type :ws/A :x x :y y :b b})]]}
@@ -36,11 +36,11 @@
   (testing "simple composition"
     (let [specs (ssa/spec-map-to-ssa
                  '{:ws/A {:spec-vars {:x "Integer", :y "Integer"}
-                          :constraints [["pos" (and (< 0 x) (< 0 y))]
-                                        ["boundedSum" (< (+ x y) 20)]]}
+                          :constraints [[:pos (and (< 0 x) (< 0 y))]
+                                        [:boundedSum (< (+ x y) 20)]]}
                    :ws/B {:spec-vars {:a1 :ws/A, :a2 :ws/A}
-                          :constraints [["a1smaller" (and (< (get a1 :x) (get a2 :x))
-                                                          (< (get a1 :y) (get a2 :y)))]]}})]
+                          :constraints [[:a1smaller (and (< (get a1 :x) (get a2 :x))
+                                                         (< (get a1 :y) (get a2 :y)))]]}})]
       (is (= '{:spec-vars {:a1|x "Integer", :a1|y "Integer", :a2|x "Integer", :a2|y "Integer"}
                :constraints [["vars" (valid? {:$type :ws/B
                                               :a1 {:$type :ws/A :x a1|x :y a1|y}
@@ -50,12 +50,12 @@
 (deftest test-propagation-of-trivial-spec
   (let [specs (ssa/spec-map-to-ssa
                {:ws/A {:spec-vars {:x "Integer", :y "Integer", :oddSum "Boolean"}
-                       :constraints '[["pos" (and (< 0 x) (< 0 y))]
-                                      ["y is greater" (< x y)]
-                                      ["lines" (let [xysum (+ x y)]
-                                                 (or (= 42 xysum)
-                                                     (= 24 (+ 42 (- 0 xysum)))))]
-                                      ["oddSum" (= oddSum (= 1 (mod* (+ x y) 2)))]]}})
+                       :constraints '[[:pos (and (< 0 x) (< 0 y))]
+                                      [:y_is_greater (< x y)]
+                                      [:lines (let [xysum (+ x y)]
+                                                (or (= 42 xysum)
+                                                    (= 24 (+ 42 (- 0 xysum)))))]
+                                      [:oddSum (= oddSum (= 1 (mod* (+ x y) 2)))]]}})
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
          (= out (pc/propagate specs opts in))
@@ -71,11 +71,11 @@
 (deftest test-one-to-one-composition
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A {:spec-vars {:x "Integer", :y "Integer"}
-                        :constraints [["pos" (and (< 0 x) (< 0 y))]
-                                      ["boundedSum" (< (+ x y) 20)]]}
+                        :constraints [[:pos (and (< 0 x) (< 0 y))]
+                                      [:boundedSum (< (+ x y) 20)]]}
                  :ws/B {:spec-vars {:a1 :ws/A, :a2 :ws/A}
-                        :constraints [["a1smaller" (and (< (get a1 :x) (get a2 :x))
-                                                        (< (get a1 :y) (get a2 :y)))]]}})
+                        :constraints [[:a1smaller (and (< (get a1 :x) (get a2 :x))
+                                                       (< (get a1 :y) (get a2 :y)))]]}})
         opts {:default-int-bounds [-100 100]}]
 
     (are [in out]
@@ -105,17 +105,17 @@
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
                  {:spec-vars {:ax "Integer"}
-                  :constraints [["c1" (and (< 0 ax) (< ax 10))]]}
+                  :constraints [[:c1 (and (< 0 ax) (< ax 10))]]}
 
                  :ws/B
                  {:spec-vars {:by "Integer", :bz "Integer"}
-                  :constraints [["c2" (let [a {:$type :ws/A :ax (* 2 by)}
-                                            x (get {:$type :ws/A :ax (+ bz bz)} :ax)]
-                                        (= x (get {:$type :ws/C :cx (get a :ax)} :cx)))]]}
+                  :constraints [[:c2 (let [a {:$type :ws/A :ax (* 2 by)}
+                                           x (get {:$type :ws/A :ax (+ bz bz)} :ax)]
+                                       (= x (get {:$type :ws/C :cx (get a :ax)} :cx)))]]}
 
                  :ws/C
                  {:spec-vars {:cx "Integer"}
-                  :constraints [["c3" (= cx (get {:$type :ws/A :ax cx} :ax))]]}})
+                  :constraints [[:c3 (= cx (get {:$type :ws/A :ax cx} :ax))]]}})
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
          (= out (pc/propagate specs opts in))
@@ -128,22 +128,22 @@
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
                  {:spec-vars {:an "Integer"}
-                  :constraints [["a1" (<= an 6)]]
+                  :constraints [[:a1 (<= an 6)]]
                   :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
 
                  :ws/B
                  {:spec-vars {:bn "Integer"}
-                  :constraints [["b1" (< 0 bn)]]
+                  :constraints [[:b1 (< 0 bn)]]
                   :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
 
                  :ws/C
                  {:spec-vars {:cn "Integer"}
-                  :constraints [["c1" (= 0 (mod cn 2))]]}
+                  :constraints [[:c1 (= 0 (mod cn 2))]]}
 
                  :ws/D
                  {:spec-vars {:a :ws/A, :dm "Integer", :dn "Integer"}
-                  :constraints [["d1" (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))]
-                                ["d2" (= (+ 1 dn) (get (refine-to a :ws/B) :bn))]]}})]
+                  :constraints [[:d1 (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))]
+                                [:d2 (= (+ 1 dn) (get (refine-to a :ws/B) :bn))]]}})]
 
     (are [in out]
          (= out (pc/propagate specs in))
@@ -170,7 +170,7 @@
 (deftest test-spec-ify-bound-for-primitive-optionals
   (let [specs '{:ws/A
                 {:spec-vars {:an "Integer", :aw [:Maybe "Integer"], :p "Boolean"}
-                 :constraints [["a1" (= aw (when p an))]]
+                 :constraints [[:a1 (= aw (when p an))]]
                  :refines-to {}}}
         opts {:default-int-bounds [-10 10]}]
 
@@ -182,7 +182,7 @@
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
                  {:spec-vars {:an "Integer", :aw [:Maybe "Integer"], :p "Boolean"}
-                  :constraints [["a1" (= aw (when p an))]]
+                  :constraints [[:a1 (= aw (when p an))]]
                   :refines-to {}}})
         opts {:default-int-bounds [-10 10]}]
 
@@ -208,24 +208,24 @@
                  :ws/E {:spec-vars {:dx "Integer",
                                     :bw [:Maybe "Integer"],
                                     :cw [:Maybe "Integer"]},
-                        :constraints [["$all" (= (refine-to {:dx dx, :$type :ws/D} :ws/B)
-                                                 {:bw bw,
-                                                  :c2 (if-value cw
-                                                                {:cw cw, :$type :ws/C}
-                                                                $no-value),
-                                                  :$type :ws/B})]]}})]
+                        :constraints [[:$all (= (refine-to {:dx dx, :$type :ws/D} :ws/B)
+                                                {:bw bw,
+                                                 :c2 (if-value cw
+                                                               {:cw cw, :$type :ws/C}
+                                                               $no-value),
+                                                 :$type :ws/B})]]}})]
     (is (= {:$type :ws/E, :bw {:$in #{5 :Unset}}, :cw 6, :dx {:$in [-10 10]}}
            (pc/propagate specs {:default-int-bounds [-10 10]} {:$type :ws/E})))))
 
 (def nested-optionals-spec-env
   '{:ws/A {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :ap "Boolean"}
-           :constraints [["a1" (= b1 b2)]
-                         ["a2" (=> ap (if-value b1 true false))]]}
+           :constraints [[:a1 (= b1 b2)]
+                         [:a2 (=> ap (if-value b1 true false))]]}
     :ws/B {:spec-vars {:bx "Integer", :bw [:Maybe "Integer"], :bp "Boolean"
                        :c1 :ws/C
                        :c2 [:Maybe :ws/C]}
-           :constraints [["b1" (= bw (when bp bx))]
-                         ["b2" (< bx 15)]]}
+           :constraints [[:b1 (= bw (when bp bx))]
+                         [:b2 (< bx 15)]]}
     :ws/C {:spec-vars {:cx "Integer"
                        :cw [:Maybe "Integer"]}}
     :ws/D {:spec-vars {:dx "Integer"}
@@ -438,12 +438,12 @@
 (deftest test-lower-spec-bound-and-refines-to
   (s/with-fn-validation
     (let [specs '{:ws/A {:spec-vars {:an "Integer"}
-                         :constraints [["a1" (< 0 an)]]}
+                         :constraints [[:a1 (< 0 an)]]}
                   :ws/B {:spec-vars {:bn "Integer"}
-                         :constraints [["b1" (< bn 10)]]
+                         :constraints [[:b1 (< bn 10)]]
                          :refines-to {:ws/A {:expr {:$type :ws/A :an bn}}}}
                   :ws/C {:spec-vars {:b [:Maybe :ws/B] :cn "Integer"}
-                         :constraints [["c1" (if-value b (= cn (get (refine-to b :ws/A) :an)) true)]]}}
+                         :constraints [[:c1 (if-value b (= cn (get (refine-to b :ws/A) :an)) true)]]}}
           sctx (ssa/spec-map-to-ssa specs)]
       (are [in out]
            (= out (lower-spec-bound (flatten-vars sctx in) in))
@@ -624,10 +624,10 @@
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
                  {:spec-vars {:b1 :ws/B :b2 [:Maybe :ws/B]}
-                  :constraints [["a1" (= b1 b2)]]}
+                  :constraints [[:a1 (= b1 b2)]]}
                  :ws/B
                  {:spec-vars {:bx "Integer", :by [:Maybe "Integer"]}
-                  :constraints [["b1" (< 0 bx)]]}})
+                  :constraints [[:b1 (< 0 bx)]]}})
         opts {:default-int-bounds [-10 10]}]
 
     (is (= '{:spec-vars {:b1|bx "Integer"
@@ -657,8 +657,8 @@
                '{:my/A {:abstract? true
                         :spec-vars {:a1 [:Maybe "Integer"]
                                     :a2 [:Maybe "Integer"]}
-                        :constraints [["a1_pos" (if-value a1 (> a1 0) true)]
-                                      ["a2_pos" (if-value a2 (> a2 0) true)]]}
+                        :constraints [[:a1_pos (if-value a1 (> a1 0) true)]
+                                      [:a2_pos (if-value a2 (> a2 0) true)]]}
                  :my/B {:abstract? false
                         :spec-vars {:b "Integer"}
                         :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}})]
@@ -670,12 +670,12 @@
 (deftest test-propagate-with-errors
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A {:spec-vars {:an "Integer" :ap [:Maybe "Boolean"]}
-                        :constraints [["a1" (if (< an 10)
-                                              (if (< an 1)
-                                                (error "an is too small")
-                                                (if-value ap ap false))
-                                              (= ap (when (< an 20)
-                                                      (error "not big enough"))))]]}})]
+                        :constraints [[:a1 (if (< an 10)
+                                             (if (< an 1)
+                                               (error "an is too small")
+                                               (if-value ap ap false))
+                                             (= ap (when (< an 20)
+                                                     (error "not big enough"))))]]}})]
     (are [in out]
          (= out (pc/propagate specs in))
 
@@ -692,7 +692,7 @@
 (deftest test-basic-refines-to-bounds
   (let [specs (specs-to-ssa
                '{:my/A {:spec-vars {:a1 "Integer"}
-                        :constraints [["a1_pos" (< 0 a1)]]}
+                        :constraints [[:a1_pos (< 0 a1)]]}
                  :my/B {:spec-vars {:b1 "Integer"}
                         :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
                  :my/C {:spec-vars {:cb :my/B}}})]
@@ -722,7 +722,7 @@
 
 (deftest test-refines-to-bounds-with-optionals
   (let [env-map '{:my/A {:spec-vars {:a1 "Integer", :a2 [:Maybe "Integer"]}
-                         :constraints [["a1_pos" (< 0 a1)]]}
+                         :constraints [[:a1_pos (< 0 a1)]]}
                   :my/B {:spec-vars {:b1 "Integer"}
                          :refines-to {:my/A {:expr {:$type :my/A,
                                                     :a1 (+ 10 b1),
@@ -870,20 +870,20 @@
 (deftest test-semantics-preserving-instance-elimination
   (let [specs (specs-to-ssa
                '{:ws/A {:spec-vars {:an "Integer"}
-                        :constraints [["a1" (let [b {:$type :ws/B :bm (div 100 an) :bn an}]
-                                              (and (< -5 an) (< an 5)))]]}
+                        :constraints [[:a1 (let [b {:$type :ws/B :bm (div 100 an) :bn an}]
+                                             (and (< -5 an) (< an 5)))]]}
                  :ws/B {:spec-vars {:bm "Integer" :bn "Integer"}
-                        :constraints [["b1" (and (<= -3 bn) (<= bn 3))]]}})]
+                        :constraints [[:b1 (and (<= -3 bn) (<= bn 3))]]}})]
     (is (= {:$type :ws/A :an {:$in #{-3 -2 -1 1 2 3}}}
            (pc/propagate specs {:$type :ws/A :an {:$in (set (range -5 6))}})))))
 
 (deftest test-short-circuiting-ifs
   (let [specs (specs-to-ssa
                '{:ws/A {:spec-vars {:an "Integer" :ap "Boolean"}
-                        :constraints [["a1" (let [b (when ap {:$type :ws/B :bn an})]
-                                              (and (<= -3 an) (<= an 3)))]]}
+                        :constraints [[:a1 (let [b (when ap {:$type :ws/B :bn an})]
+                                             (and (<= -3 an) (<= an 3)))]]}
                  :ws/B {:spec-vars {:bn "Integer"}
-                        :constraints [["b1" (< (div 20 bn) 20)]]}})]
+                        :constraints [[:b1 (< (div 20 bn) 20)]]}})]
 
     (is (= {:$type :ws/A
             :an {:$in (set (range -3 4))}
@@ -904,7 +904,7 @@
   (let [specs (specs-to-ssa
                '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}
                  :ws/B {:spec-vars {:a :ws/A :bn "Integer" :p "Boolean"} :refines-to {}
-                        :constraints [["b1" (= a (if p {:$type :ws/A :an bn} {:$type :ws/A :an (+ bn 1)}))]]}})]
+                        :constraints [[:b1 (= a (if p {:$type :ws/A :an bn} {:$type :ws/A :an (+ bn 1)}))]]}})]
     (is (= '{:$type :ws/B
              :a {:$type :ws/A :an 3}
              :p {:$in #{true false}}
@@ -915,11 +915,11 @@
 
 (deftest test-abstract-type-instance-comparisons
   (let [specs (specs-to-ssa
-               '{:ws/A {:spec-vars {:an "Integer"} :constraints [] :refines-to {}}
-                 :ws/B {:spec-vars {:bn "Integer"} :constraints [] :refines-to {}}
-                 :ws/C {:spec-vars {:cn "Integer"} :constarints [] :refines-to {}}
+               '{:ws/A {:spec-vars {:an "Integer"}}
+                 :ws/B {:spec-vars {:bn "Integer"}}
+                 :ws/C {:spec-vars {:cn "Integer"}}
                  :ws/D {:spec-vars {:a :ws/A :b :ws/B :p "Boolean"}
-                        :constraints [["d1" (= a (if p a b))]]}})]
+                        :constraints [[:d1 (= a (if p a b))]]}})]
     (is (= '{:$type :ws/D :p true
              :a {:$type :ws/A :an {:$in [-1000 1000]}}
              :b {:$type :ws/B :bn {:$in [-1000 1000]}}}

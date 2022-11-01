@@ -6,6 +6,7 @@
   (:require [clojure.set :as set]
             [clojure.core.reducers :as r]
             [com.viasat.halite :as halite]
+            [com.viasat.halite.base :as halite-base]
             [com.viasat.halite.envs :as halite-envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa
@@ -148,7 +149,7 @@
           (throw ex))))))
 
 (s/defn add-constraint :- SpecInfo
-  [rule-name :- s/Str, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, spec-info :- SpecInfo, cname :- s/Str, expr]
+  [rule-name :- s/Str, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, spec-info :- SpecInfo, cname :- halite-base/ConstraintName, expr]
   (let [ctx (ssa/make-ssa-ctx sctx spec-info)
         [ssa-graph id] (ssa/form-to-ssa ctx expr)
         spec-info' (-> spec-info

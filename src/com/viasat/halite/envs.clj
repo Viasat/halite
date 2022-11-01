@@ -5,6 +5,7 @@
   "Halite spec, type, and eval environment abstractions."
   (:require [clojure.set :as set]
             [clojure.string :as str]
+            [com.viasat.halite.base :as halite-base]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as s]))
@@ -51,7 +52,10 @@
   (and (vector? var-type) (= :Maybe (first var-type))))
 
 (s/defschema NamedConstraint
-  [(s/one s/Str :name) (s/one s/Any :expr)])
+  [(s/one halite-base/ConstraintName :name) (s/one s/Any :expr)])
+
+(s/defschema UserNamedConstraint
+  [(s/one halite-base/UserConstraintName :name) (s/one s/Any :expr)])
 
 (s/defschema SpecVars {halite-types/BareKeyword VarType})
 
@@ -63,10 +67,22 @@
    (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
+(s/defschema UserSpecInfo
+  {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
+   (s/optional-key :constraints) [UserNamedConstraint]
+   (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
+   (s/optional-key :abstract?) s/Bool})
+
 (defprotocol SpecEnv
   (lookup-spec* [self spec-id]))
 
-(s/defn lookup-spec :- (s/maybe SpecInfo)
+(s/defn lookup-spec :- (s/maybe UserSpecInfo)
+  "Look up the spec with the given id in the given type environment, returning variable type information.
+  Returns nil when the spec is not found."
+  [senv :- (s/protocol SpecEnv), spec-id :- halite-types/NamespacedKeyword]
+  (lookup-spec* senv spec-id))
+
+(s/defn system-lookup-spec :- (s/maybe SpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
   [senv :- (s/protocol SpecEnv), spec-id :- halite-types/NamespacedKeyword]
@@ -77,6 +93,10 @@
   (lookup-spec* [self spec-id] (spec-info-map spec-id)))
 
 (s/defn spec-env :- (s/protocol SpecEnv)
+  [spec-info-map :- {halite-types/NamespacedKeyword UserSpecInfo}]
+  (->SpecEnvImpl spec-info-map))
+
+(s/defn system-spec-env :- (s/protocol SpecEnv)
   [spec-info-map :- {halite-types/NamespacedKeyword SpecInfo}]
   (->SpecEnvImpl spec-info-map))
 
@@ -148,7 +168,7 @@
       [:Set (halite-type-from-var-type senv (check-mandatory (first var-type)))]
 
       (halite-types/namespaced-keyword? var-type)
-      (if-let [spec-info (lookup-spec senv var-type)]
+      (if-let [spec-info (system-lookup-spec senv var-type)]
         (if (:abstract? spec-info)
           (halite-types/abstract-spec-type var-type)
           (halite-types/concrete-spec-type var-type))
@@ -251,7 +271,7 @@
     (if-let [[spec-id & next-spec-ids] next-spec-ids]
       (if (contains? spec-map spec-id)
         (recur spec-map next-spec-ids)
-        (let [spec-info (lookup-spec senv spec-id)]
+        (let [spec-info (system-lookup-spec senv spec-id)]
           (recur
            (assoc spec-map spec-id spec-info)
            (into next-spec-ids (spec-refs spec-info)))))

@@ -85,7 +85,7 @@ Similarly, each constraint by itself is a predicate and is combined in a conjunc
 ```clojure
 {:spec/X$v3 {:spec-vars {:x "String",
                          :y "Integer"},
-             :constraints [["valid_y" '(> y 0)]]}}
+             :constraints [[:valid_y '(> y 0)]]}}
 ```
 
 ```clojure
@@ -119,8 +119,8 @@ If there are multiple constraints, they are all logically combined into a single
 ```clojure
 {:spec/X$v5 {:spec-vars {:x "String",
                          :y "Integer"},
-             :constraints [["valid_x" '(contains? #{"bye" "hi"} x)]
-                           ["valid_y" '(> y 0)]]}}
+             :constraints [[:valid_x '(contains? #{"bye" "hi"} x)]
+                           [:valid_y '(> y 0)]]}}
 ```
 
 ```clojure
@@ -153,11 +153,11 @@ Finally, the refinements can also bring in additional constraints which are comb
 
 ```clojure
 {:spec/A {:spec-vars {:b "Integer"},
-          :constraints [["valid_b" '(< b 10)]]},
+          :constraints [[:valid_b '(< b 10)]]},
  :spec/X$v6 {:spec-vars {:x "String",
                          :y "Integer"},
-             :constraints [["valid_x" '(contains? #{"bye" "hi"} x)]
-                           ["valid_y" '(> y 0)]],
+             :constraints [[:valid_x '(contains? #{"bye" "hi"} x)]
+                           [:valid_y '(> y 0)]],
              :refines-to {:spec/A {:name "refine_to_A",
                                    :expr '{:$type :spec/A,
                                            :b y}}}}}
@@ -193,13 +193,13 @@ Implications of each additional refinement are combined into the single conujunc
 
 ```clojure
 {:spec/A {:spec-vars {:b "Integer"},
-          :constraints [["valid_b" '(< b 10)]]},
+          :constraints [[:valid_b '(< b 10)]]},
  :spec/P {:spec-vars {:q "String"},
-          :constraints [["valid_q" '(= q "hi")]]},
+          :constraints [[:valid_q '(= q "hi")]]},
  :spec/X$v7 {:spec-vars {:x "String",
                          :y "Integer"},
-             :constraints [["valid_x" '(contains? #{"bye" "hi"} x)]
-                           ["valid_y" '(> y 0)]],
+             :constraints [[:valid_x '(contains? #{"bye" "hi"} x)]
+                           [:valid_y '(> y 0)]],
              :refines-to {:spec/A {:name "refine_to_A",
                                    :expr '{:$type :spec/A,
                                            :b y}},

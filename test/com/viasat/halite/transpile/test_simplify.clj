@@ -17,7 +17,7 @@
          (= simplified
             (binding [ssa/*hide-non-halite-ops* false]
               (-> senv
-                  (update-in [:ws/A :constraints] conj ["c" expr])
+                  (update-in [:ws/A :constraints] conj [:c expr])
                   (halite-envs/spec-env)
                   (ssa/build-spec-ctx :ws/A)
                   (simplify)

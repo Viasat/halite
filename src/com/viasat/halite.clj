@@ -26,10 +26,10 @@
    tenv :- (s/protocol halite-envs/TypeEnv)
    bool-expr
    spec-id :- halite-types/NamespacedKeyword
-   constraint-name :- (s/maybe String)]
+   constraint-name :- (s/maybe halite-base/ConstraintName)]
   (with-exception-data {:form bool-expr
                         :spec-id spec-id
-                        :constraint-name constraint-name}
+                        :constraint-name (name constraint-name)}
     (halite-type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
   (halite-eval/eval-predicate ctx tenv bool-expr spec-id constraint-name))
 
@@ -176,7 +176,7 @@
 (potemkin/import-vars
  [halite-envs
   primitive-types
-  Refinement MandatoryVarType VarType NamedConstraint SpecVars RefinesTo SpecInfo
+  Refinement MandatoryVarType VarType NamedConstraint SpecVars RefinesTo UserSpecInfo
   halite-type-from-var-type
   SpecEnv lookup-spec spec-env
   TypeEnv type-env type-env-from-spec

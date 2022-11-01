@@ -5,6 +5,7 @@
   "Re-express halite specs in a minimal subset of halite, by compiling higher-level
   features down into lower-level features."
   (:require [clojure.set :as set]
+            [clojure.string :as string]
             [com.viasat.halite.envs :as halite-envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa
@@ -125,7 +126,7 @@
         (if (not= 1 (count arg-types))
           (= comparison-op 'not=)
           (let [arg-type (first arg-types)
-                var-kws (->> arg-type (halite-types/spec-id) (halite-envs/lookup-spec senv) :spec-vars keys sort)]
+                var-kws (->> arg-type (halite-types/spec-id) (halite-envs/system-lookup-spec senv) :spec-vars keys sort)]
             (->> var-kws
                  (map (fn [var-kw]
                         (apply list comparison-op
@@ -392,7 +393,8 @@
              (let [[ssa-graph id] (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph) (list 'valid? expr))
                    result (-> spec-info
                               (assoc :ssa-graph ssa-graph)
-                              (update :constraints conj [(str target-id) id]))]
+                              (update :constraints conj [(str target-id)
+                                                         id]))]
                (halite-rewriting/trace!
                 sctx
                 {:op :add-constraint
@@ -653,6 +655,7 @@
                   cid (ssa/negated ssa-graph' guard-id)
                   spec-info' (-> spec-info
                                  (assoc :ssa-graph ssa-graph')
+                                 ;; using the error message as a key for the constraint name seems dubious
                                  (update :constraints conj [message cid]))]
               (halite-rewriting/trace!
                sctx

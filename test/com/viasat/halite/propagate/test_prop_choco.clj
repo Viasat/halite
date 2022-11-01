@@ -10,9 +10,9 @@
   (let [spec (ssa/spec-to-ssa
               {}
               '{:spec-vars {:n "Integer" :m [:Maybe "Integer"] :p "Boolean"}
-                :constraints [["c1" (< 0 n)]
-                              ["c2" (if-value m (and (< 0 m) (< m n)) (not p))]
-                              ["c3" (< n (if p 10 15))]]})]
+                :constraints [[:c1 (< 0 n)]
+                              [:c2 (if-value m (and (< 0 m) (< m n)) (not p))]
+                              [:c3 (< n (if p 10 15))]]})]
     (are [in out]
          (= out (prop-choco/propagate spec in))
 

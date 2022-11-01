@@ -23,7 +23,7 @@
               (throw-err (h-err/missing-type-field {error-key inst})))
         _ (when-not (halite-types/namespaced-keyword? t)
             (throw-err (h-err/invalid-type-value {error-key inst})))
-        spec-info (or (halite-envs/lookup-spec (:senv ctx) t)
+        spec-info (or (halite-envs/system-lookup-spec (:senv ctx) t)
                       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol t)
                                                                  error-key inst})))
         field-types (:spec-vars spec-info)
@@ -155,7 +155,7 @@
     (and (halite-types/spec-type? subexpr-type)
          (halite-types/spec-id subexpr-type)
          (not (halite-types/needs-refinement? subexpr-type)))
-    (let [field-types (-> (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)
+    (let [field-types (-> (->> subexpr-type halite-types/spec-id (halite-envs/system-lookup-spec (:senv ctx)) :spec-vars)
                           (update-vals (partial halite-envs/halite-type-from-var-type (:senv ctx))))]
       (when-not (and (keyword? index) (halite-types/bare? index))
         (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
@@ -437,7 +437,7 @@
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'refine-to :expected-type-description (text "an instance"), :form expr, :actual s}))))
     (when-not (halite-types/namespaced-keyword? kw)
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'refine-to :expected-type-description (text "a spec id"), :form expr}))))
-    (when-not (halite-envs/lookup-spec (:senv ctx) kw)
+    (when-not (halite-envs/system-lookup-spec (:senv ctx) kw)
       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     (halite-types/concrete-spec-type kw)))
 
@@ -450,7 +450,7 @@
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'refines-to? :expected-type-description (text "an instance"), :form expr}))))
     (when-not (halite-types/namespaced-keyword? kw)
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'refines-to? :expected-type-description (text "a spec id"), :form expr}))))
-    (when-not (halite-envs/lookup-spec (:senv ctx) kw)
+    (when-not (halite-envs/system-lookup-spec (:senv ctx) kw)
       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     :Boolean))
 

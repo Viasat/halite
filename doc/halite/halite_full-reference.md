@@ -2806,7 +2806,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
-              :constraints [["cp" '(> p 0)] ["cn" '(< n 0)]]}}
+              :constraints [[:cp '(> p 0)] [:cn '(< n 0)]]}}
 ;--
 
 (valid {:$type :my/Spec$v1, :p 1, :n -1})
@@ -2822,7 +2822,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
-              :constraints [["cp" '(> p 0)] ["cn" '(< n 0)]]}}
+              :constraints [[:cp '(> p 0)] [:cn '(< n 0)]]}}
 ;--
 
 (valid {:$type :my/Spec$v1, :p 1, :n 1})
@@ -2861,7 +2861,7 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
-              :constraints [["cp" '(> p 0)] ["cn" '(< n 0)]]}}
+              :constraints [[:cp '(> p 0)] [:cn '(< n 0)]]}}
 ;--
 
 (valid? {:$type :my/Spec$v1, :p 1, :n -1})
@@ -2877,7 +2877,7 @@ true
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:n "Integer",
                           :p "Integer"},
-              :constraints [["cp" '(> p 0)] ["cn" '(< n 0)]]}}
+              :constraints [[:cp '(> p 0)] [:cn '(< n 0)]]}}
 ;--
 
 (valid? {:$type :my/Spec$v1, :p 1, :n 0})

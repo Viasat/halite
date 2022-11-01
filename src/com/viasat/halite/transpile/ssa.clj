@@ -7,6 +7,7 @@
   in compilers."
   (:require [clojure.set :as set]
             [clojure.pprint :as pp]
+            [com.viasat.halite.base :as halite-base]
             [com.viasat.halite.envs :as halite-envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
@@ -110,7 +111,7 @@
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
   (assoc halite-envs/SpecInfo
          :ssa-graph SSAGraph
-         (s/optional-key :constraints) [[(s/one s/Str :cname) (s/one NodeId :node)]]
+         (s/optional-key :constraints) [[(s/one halite-base/ConstraintName :cname) (s/one NodeId :node)]]
          (s/optional-key :refines-to) {halite-types/NamespacedKeyword
                                        (assoc halite-envs/Refinement :expr NodeId)}))
 
@@ -456,7 +457,7 @@
       (halite-types/spec-type? t)
       (let [spec-id (halite-types/spec-id t)
             var-kw var-kw-or-idx
-            vtype (or (->> spec-id (halite-envs/lookup-spec senv) :spec-vars var-kw)
+            vtype (or (->> spec-id (halite-envs/system-lookup-spec senv) :spec-vars var-kw)
                       (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
                                       {:form form, :var-kw var-kw, :spec-id spec-id})))
             htype (or (halite-envs/halite-type-from-var-type senv vtype)
@@ -477,7 +478,7 @@
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)]
-    (when (nil? (halite-envs/lookup-spec (:senv ctx) spec-id))
+    (when (nil? (halite-envs/system-lookup-spec (:senv ctx) spec-id))
       (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
                       {:form form :spec-id spec-id})))
     (ensure-node ssa-graph (list 'refine-to id spec-id) (halite-types/concrete-spec-type spec-id))))
@@ -648,7 +649,7 @@
     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                           {:form form}))))
 
-(s/defn constraint-to-ssa :- [(s/one SSAGraph :ssa-graph), [(s/one s/Str :cname) (s/one NodeId :form)]]
+(s/defn constraint-to-ssa :- [(s/one SSAGraph :ssa-graph), [(s/one halite-base/ConstraintName :cname) (s/one NodeId :form)]]
   "TODO: Refactor me as add-constraint, taking and returning SpecInfo."
   [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), ssa-graph :- SSAGraph, [cname constraint-form]]
   (let [[ssa-graph id] (form-to-ssa (init-ssa-ctx senv tenv ssa-graph) constraint-form)]
@@ -1033,7 +1034,7 @@
   ([spec-info :- SpecInfo {:keys [conjoin-constraints?] :or {conjoin-constraints? false}}]
    (let [{:keys [ssa-graph constraints refines-to spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
          scope (->> spec-vars keys (map symbol) set)
-         ssa-ctx (init-ssa-ctx (halite-envs/spec-env {}) (halite-envs/type-env {}) ssa-graph)
+         ssa-ctx (init-ssa-ctx (halite-envs/system-spec-env {}) (halite-envs/type-env {}) ssa-graph)
          constraints (if conjoin-constraints?
                        (let [[ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
                          [["$all" (form-from-ssa scope ssa-graph id)]])
@@ -1051,7 +1052,7 @@
 
 (s/defn build-spec-env :- (s/protocol halite-envs/SpecEnv)
   [sctx :- SpecCtx]
-  (-> sctx (update-vals spec-from-ssa) (halite-envs/spec-env)))
+  (-> sctx (update-vals spec-from-ssa) (halite-envs/system-spec-env)))
 
 (defn pprint-ssa-graph [ssa-graph]
   (pp/pprint (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph))))

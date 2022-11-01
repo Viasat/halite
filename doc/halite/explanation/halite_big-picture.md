@@ -10,7 +10,7 @@ Writing a spec is carving out a subset out of the universe of all possible value
 
 ```clojure
 {:spec/Ball {:spec-vars {:color "String"},
-             :constraints [["color_constraint"
+             :constraints [[:color_constraint
                             '(contains? #{"blue" "green" "red"} color)]]}}
 ```
 
@@ -32,7 +32,7 @@ If instead we defined this spec, then we are further constraining the set of val
 
 ```clojure
 {:spec/Ball {:spec-vars {:color "String"},
-             :constraints [["color_constraint"
+             :constraints [[:color_constraint
                             '(contains? #{"blue" "green" "red"} color)]]}}
 ```
 
@@ -75,7 +75,7 @@ However, it is possible to convert an instance of one spec into an instance of a
 
 ```clojure
 {:spec/Ball {:spec-vars {:color "String"},
-             :constraints [["color_constraint"
+             :constraints [[:color_constraint
                             '(contains? #{"blue" "green" "red"} color)]],
              :refines-to {:spec/Round {:name "refine_to_round",
                                        :expr '{:$type :spec/Round,

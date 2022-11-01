@@ -74,7 +74,7 @@
        (let [senv (ssa/as-spec-env sctx)
              refines-to-spec-ids (keys $refines-to)]
          (if (->> refines-to-spec-ids
-                  (some #(boolean (:abstract? (halite-envs/lookup-spec senv %)))))
+                  (some #(boolean (:abstract? (halite-envs/system-lookup-spec senv %)))))
            ;; there is an abstract spec in refines-to, so lower layers can deal with it
            (pass-through)
            ;; if the bound is an abstract bound only on concrete specs then perform the transformation to

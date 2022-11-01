@@ -343,7 +343,7 @@
                            :result :auto}
                           "So we can add a constraint to limit the values to what we expect."
                           {:spec-map {:spec/Shirt$v2 {:spec-vars {:size "String"}
-                                                      :constraints [["size_constraint" '(contains? #{"small" "medium" "large"} size)]]}}}
+                                                      :constraints [[:size_constraint '(contains? #{"small" "medium" "large"} size)]]}}}
                           "Now the shirt with the invalid size cannot be constructed."
                           {:code '{:$type :spec/Shirt$v2 :size "XL"}
                            :throws :auto}
@@ -456,7 +456,7 @@
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"}}}}
                           "This indicates that 'b' must be an integer, but it doesn't indicate what valid values are. The following spec includes a constraint that requires b to be greater than 100."
                           {:spec-map {:spec/A$v2 {:spec-vars {:b "Integer"}
-                                                  :constraints [["constrain_b" '(> b 100)]]}}}
+                                                  :constraints [[:constrain_b '(> b 100)]]}}}
 
                           "An attempt to make an instance that satisfies this constraint is successful"
                           {:code '{:$type :spec/A$v2 :b 200}
@@ -483,8 +483,8 @@
                :contents ["Multiple constraints can be defined on a spec. Each constraint must have a unique name within the context of a spec."
                           {:spec-map {:spec/A$v1 {:spec-vars {:b "Integer"
                                                               :c "Integer"}
-                                                  :constraints [["constrain_b" '(> b 100)]
-                                                                ["constrain_c" '(< c 20)]]}}}
+                                                  :constraints [[:constrain_b '(> b 100)]
+                                                                [:constrain_c '(< c 20)]]}}}
                           "An instance must satisfy all of the constraints to be valid"
                           {:code '{:$type :spec/A$v1 :b 101 :c 19}
                            :result :auto}
@@ -496,16 +496,16 @@
                            :throws :auto}
                           "Mutliple constraints can refer to the same variables."
                           {:spec-map {:spec/A$v2 {:spec-vars {:b "Integer"}
-                                                  :constraints [["constrain_b" '(> b 100)]
-                                                                ["constrain_b2" '(< b 110)]]}}}
+                                                  :constraints [[:constrain_b '(> b 100)]
+                                                                [:constrain_b2 '(< b 110)]]}}}
                           {:code '{:$type :spec/A$v2 :b 105}
                            :result :auto}
                           {:code '{:$type :spec/A$v2 :b 120}
                            :throws :auto}
                           "In general, constraint extpressions can be combined with a logical 'and'. This has the same meaning because all constraints are effectively 'anded' together to produce a single logical predicate to assess whether an instance is valid. So, decomposing constraints into separate constraints is largely a matter of organizing and naming the checks to suit the modelling exercise."
                           {:spec-map {:spec/A$v3 {:spec-vars {:b "Integer"}
-                                                  :constraints [["constrain_b" '(and (> b 100)
-                                                                                     (< b 110))]]}}}
+                                                  :constraints [[:constrain_b '(and (> b 100)
+                                                                                    (< b 110))]]}}}
                           {:code '{:$type :spec/A$v3 :b 105}
                            :result :auto}
                           {:code '{:$type :spec/A$v3 :b 120}
@@ -552,7 +552,7 @@
                           {:spec-map {:spec/Sum {:spec-vars {:x "Integer"
                                                              :y "Integer"
                                                              :sum "Integer"}
-                                                 :constraints [["constrain_sum" '(= sum (+ x y))]]}}}
+                                                 :constraints [[:constrain_sum '(= sum (+ x y))]]}}}
                           "The following will attempt to instantiate an instance of the spec and indicate whether the instance satisfied the constraint. In this case it does."
                           {:code '(valid? {:$type :spec/Sum :x 2 :y 3 :sum 5})
                            :result :auto}
@@ -688,7 +688,7 @@
 
                           "To guard instance construction."
                           {:spec-map {:spec/Q {:spec-vars {:a "Integer"}
-                                               :constraints [["c" '(> a 0)]]}}}
+                                               :constraints [[:c '(> a 0)]]}}}
                           {:code '(let [x 0]
                                     {:$type :spec/Q :a x})
                            :throws :auto}
@@ -829,7 +829,7 @@
                            :throws :auto}
 
                           "Generally, dependency cycles between specs are not allowed. The following spec-map is detected as invalid."
-                          {:spec-map {:spec/Self {:constraints [["example" '(= 1 (count [{:$type :spec/Self}]))]]}}
+                          {:spec-map {:spec/Self {:constraints [[:example '(= 1 (count [{:$type :spec/Self}]))]]}}
                            :throws :auto}
                           "Although this error can be detected in advance, if an attempt is made to use the spec, then a similar runtime error is produced."
                           {:code '{:$type :spec/Self}

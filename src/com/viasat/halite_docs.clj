@@ -40,7 +40,7 @@
 (comment
   ;; an example of evaluating a halite form in the context of a spec-map
   (let [r (halite-run/hc-body {:spec/A {:spec-vars {:x "Integer"}
-                                        :constraints [["c" '(> x 12)]]
+                                        :constraints [[:c '(> x 12)]]
                                         :refines-to {:spec/B {:name "r"
                                                               :expr '{:$type :spec/B
                                                                       :a (inc x)}}}}
