@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.doc.md-how-to
   (:require [clojure.string :as string]
-            [com.viasat.halite.doc.run :as halite-run]
+            [com.viasat.halite.doc.run :as doc-run]
             [com.viasat.halite.doc.utils :as utils]
             [com.viasat.jadeite :as jadeite])
   (:import [com.viasat.halite.doc.run HCInfo]))
@@ -20,8 +20,8 @@
                                                                            (str c "\n\n"))))
 
         (and (map c) (:spec-map c)) (let [spec-map-result (when (= :auto (:throws c))
-                                                            (let [^HCInfo i (binding [halite-run/*check-spec-map-for-cycles?* true]
-                                                                              (halite-run/hc-body
+                                                            (let [^HCInfo i (binding [doc-run/*check-spec-map-for-cycles?* true]
+                                                                              (doc-run/hc-body
                                                                                (:spec-map c)
                                                                                'true))
                                                                   h-result (.-h-result i)]
@@ -41,7 +41,7 @@
                                                    (spec-snippet-f lang (translate-spec-map-to-f lang (:spec-map c)
                                                                                                  spec-map-result)))))
         (and (map c) (:code c)) (let [h-expr (:code c)
-                                      ^HCInfo i (halite-run/hc-body
+                                      ^HCInfo i (doc-run/hc-body
                                                  spec-map
                                                  h-expr)
                                       {:keys [t h-result j-result j-expr]} {:t (.-t i)

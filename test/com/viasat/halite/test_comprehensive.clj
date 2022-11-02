@@ -6,7 +6,7 @@
             [clojure.test :refer :all]
             [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.doc.run :as halite-run]
+            [com.viasat.halite.doc.run :as doc-run]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.lint :as lint]
@@ -21,11 +21,11 @@
 (defmacro h
   [expr & args]
   (let [[expected-t result-expected j-expr-expected j-result-expected] args]
-    `(let [i# (halite-run/h* '~expr)]
+    `(let [i# (doc-run/h* '~expr)]
        (if (nil? (.-s i#))
          (do
            (is (= ~expected-t (.-t i#)))
-           (if (halite-run/is-harness-error? (.-t i#))
+           (if (doc-run/is-harness-error? (.-t i#))
              (list (quote ~'h)
                    (quote ~expr)
                    (.-t i#))
@@ -50,7 +50,7 @@
 (defn hf
   [expr & args]
   (let [[expected-t result-expected j-expr-expected j-result-expected] args]
-    (binding [base/*limits* halite-run/halite-limits
+    (binding [base/*limits* doc-run/halite-limits
               format-errors/*squash-throw-site* true]
       (let [senv {}
             tenv (envs/type-env {})
@@ -68,7 +68,7 @@
             h-result (try (halite/eval-expr senv tenv env expr)
                           (catch RuntimeException e
                             [:throws (.getMessage e)]))
-            h-result-type (halite-run/check-result-type senv tenv t h-result)
+            h-result-type (doc-run/check-result-type senv tenv t h-result)
             jh-expr (when (string? j-expr)
                       (try
                         (jadeite/to-halite j-expr)
@@ -79,7 +79,7 @@
                         (halite/eval-expr senv tenv env jh-expr)
                         (catch RuntimeException e
                           [:throws (.getMessage e)]))
-            jh-result-type (halite-run/check-result-type senv tenv t jh-result)
+            jh-result-type (doc-run/check-result-type senv tenv t jh-result)
             j-result (try
                        (jadeite/to-jadeite (halite/eval-expr senv tenv env jh-expr))
                        (catch RuntimeException e
@@ -87,7 +87,7 @@
         (if (nil? s)
           (do
             (is (= expected-t t))
-            (when-not (halite-run/is-harness-error? t)
+            (when-not (doc-run/is-harness-error? t)
               (is (= result-expected h-result))
               (when (string? j-expr)
                 (is (= result-expected jh-result)))
@@ -95,7 +95,7 @@
               (when (string? j-expr)
                 (is (= j-result-expected j-result))))
 
-            (if (halite-run/is-harness-error? t)
+            (if (doc-run/is-harness-error? t)
               (list 'hf
                     expr
                     t)
@@ -142,15 +142,15 @@
                    comment?)
         [expr & args] raw-args
         [expected-t result-expected j-expr-expected j-result-expected] args]
-    `(let [i# (halite-run/hc* ~(if (keyword? spec-map)
-                                 `(spec-map-map ~spec-map)
-                                 spec-map)
-                              '~expr
-                              false)]
+    `(let [i# (doc-run/hc* ~(if (keyword? spec-map)
+                              `(spec-map-map ~spec-map)
+                              spec-map)
+                           '~expr
+                           false)]
        (if (nil? (.-s i#))
          (do
            (is (= ~expected-t (.-t i#)))
-           (if (halite-run/is-harness-error? (.-t i#))
+           (if (doc-run/is-harness-error? (.-t i#))
              (vector (quote ~expr)
                      (.-t i#))
              (do
@@ -10229,7 +10229,7 @@
   ;; multi-line-strings
   (hf "a
 b" :String "a\nb" "\"a\\nb\"" "\"a\\nb\"")
-  (is (= "a\nb" (halite-run/j-eval "\"a
+  (is (= "a\nb" (doc-run/j-eval "\"a
 b\""))))
 
 (defn- update-expected-results []

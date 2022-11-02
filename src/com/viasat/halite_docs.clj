@@ -22,7 +22,7 @@
             [com.viasat.halite.doc.md-outline :refer [produce-outline]]
             [com.viasat.halite.doc.md-spec :as md-spec]
             [com.viasat.halite.doc.md-tag :as md-tag]
-            [com.viasat.halite.doc.run :as halite-run]
+            [com.viasat.halite.doc.run :as doc-run]
             [com.viasat.halite.doc.utils :as utils]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :as format-errors]
@@ -39,17 +39,17 @@
 
 (comment
   ;; an example of evaluating a halite form in the context of a spec-map
-  (let [r (halite-run/hc-body {:spec/A {:spec-vars {:x "Integer"}
-                                        :constraints {:c '(> x 12)}
-                                        :refines-to {:spec/B {:name "r"
-                                                              :expr '{:$type :spec/B
-                                                                      :a (inc x)}}}}
-                               :spec/B {:abstract? true
-                                        :spec-vars {:a "Integer"}
-                                        :constraints {}
-                                        :refines-to {}}}
-                              '(refine-to {:$type :spec/A
-                                           :x 100} :spec/B))]
+  (let [r (doc-run/hc-body {:spec/A {:spec-vars {:x "Integer"}
+                                     :constraints {:c '(> x 12)}
+                                     :refines-to {:spec/B {:name "r"
+                                                           :expr '{:$type :spec/B
+                                                                   :a (inc x)}}}}
+                            :spec/B {:abstract? true
+                                     :spec-vars {:a "Integer"}
+                                     :constraints {}
+                                     :refines-to {}}}
+                           '(refine-to {:$type :spec/A
+                                        :x 100} :spec/B))]
     (.-h-result r)))
 
 (defn- expand-example [[op m]]
@@ -60,7 +60,7 @@
                                        (let [{:keys [h-result j-result j-expr]}
                                              (if spec-map
                                                (let [h-expr (utils/read-edn expr-str)
-                                                     ^HCInfo i (halite-run/hc-body
+                                                     ^HCInfo i (doc-run/hc-body
                                                                 spec-map
                                                                 h-expr)]
                                                  {:h-result (.-h-result i)
@@ -69,7 +69,7 @@
                                                (if spec-map-f
                                                  (let [h-expr (utils/read-edn expr-str)
                                                        spec-map (spec-map-f h-expr)
-                                                       ^HCInfo i (halite-run/hc-body
+                                                       ^HCInfo i (doc-run/hc-body
                                                                   spec-map
                                                                   (list 'get
                                                                         (list 'refine-to instance :my/Result$v1)
@@ -77,7 +77,7 @@
                                                    {:h-result (.-h-result i)
                                                     :j-result (.-j-result i)
                                                     :j-expr (jadeite/to-jadeite h-expr)})
-                                                 (let [i (halite-run/h*
+                                                 (let [i (doc-run/h*
                                                           (utils/read-edn expr-str)
                                                           true)]
                                                    {:h-result (.-h-result i)
