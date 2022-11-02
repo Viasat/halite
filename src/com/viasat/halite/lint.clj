@@ -6,7 +6,7 @@
   undesireable for users, though legal and supported by the language."
   (:require [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.eval :as halite-eval]
+            [com.viasat.halite.eval :as eval]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.envs :as envs]
@@ -32,7 +32,7 @@
    form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
-        {:keys [signatures impl deprecated?] :as builtin} (get halite-eval/builtins op)
+        {:keys [signatures impl deprecated?] :as builtin} (get eval/builtins op)
         actual-types (map (partial type-check* ctx) args)]
     (doseq [[arg t] (map vector args actual-types)]
       (when (halite-types/nothing-like? t)

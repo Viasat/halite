@@ -6,7 +6,7 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.eval :as halite-eval]
+            [com.viasat.halite.eval :as eval]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
@@ -100,7 +100,7 @@
   [ctx :- TypeContext, form :- [(s/one halite-types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
-        {:keys [signatures impl] :as builtin} (get halite-eval/builtins op)
+        {:keys [signatures impl] :as builtin} (get eval/builtins op)
         actual-types (map (partial type-check* ctx) args)]
     (when (nil? builtin)
       (throw-err (h-err/unknown-function-or-operator {:op op

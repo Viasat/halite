@@ -5,7 +5,7 @@
   "halite type-of implementation, that determines the type of values"
   (:require [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.eval :as halite-eval]
+            [com.viasat.halite.eval :as eval]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.envs :as envs]
@@ -24,7 +24,7 @@
     (string? value) :String
     (= :Unset value) :Unset
     (map? value) (let [t (type-check/type-check-instance type-of* :value ctx value)]
-                   (halite-eval/validate-instance (:senv ctx) value)
+                   (eval/validate-instance (:senv ctx) value)
                    t)
     (coll? value) (type-check/type-check-coll type-of* :value ctx value)
     :else (throw-err (h-err/invalid-value {:value value}))))

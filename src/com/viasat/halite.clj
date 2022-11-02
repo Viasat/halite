@@ -11,7 +11,7 @@
             [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.type-of :as halite-type-of]
-            [com.viasat.halite.eval :as halite-eval]
+            [com.viasat.halite.eval :as eval]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.syntax-check :as halite-syntax-check]
@@ -22,7 +22,7 @@
 (set! *warn-on-reflection* true)
 
 (s/defn eval-predicate :- Boolean
-  [ctx :- halite-eval/EvalContext
+  [ctx :- eval/EvalContext
    tenv :- (s/protocol envs/TypeEnv)
    bool-expr
    spec-id :- halite-types/NamespacedKeyword
@@ -31,24 +31,24 @@
                         :spec-id spec-id
                         :constraint-name (name constraint-name)}
     (type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
-  (halite-eval/eval-predicate ctx tenv bool-expr spec-id constraint-name))
+  (eval/eval-predicate ctx tenv bool-expr spec-id constraint-name))
 
 (s/defn eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
-  [ctx :- halite-eval/EvalContext
+  [ctx :- eval/EvalContext
    tenv :- (s/protocol envs/TypeEnv)
    spec-id :- halite-types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
-  (if (contains? halite-eval/*refinements* spec-id)
-    (halite-eval/*refinements* spec-id) ;; cache hit
+  (if (contains? eval/*refinements* spec-id)
+    (eval/*refinements* spec-id) ;; cache hit
     (do
       (with-exception-data {:form expr
                             :spec-id spec-id
                             :refinement-name refinement-name}
         (type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr))
-      (halite-eval/eval-refinement ctx tenv spec-id expr refinement-name))))
+      (eval/eval-refinement ctx tenv spec-id expr refinement-name))))
 
 (s/defn ^:private load-env
   "Evaluate the contents of the env to get instances loaded with refinements."
@@ -59,7 +59,7 @@
     ;; to initialize refinements for all instances.
     (reduce
      (fn [env [k v]]
-       (envs/bind env k (halite-eval/eval-expr* {:env empty-env :senv senv} v)))
+       (envs/bind env k (eval/eval-expr* {:env empty-env :senv senv} v)))
      empty-env
      (envs/bindings env))))
 
@@ -78,15 +78,15 @@
       (let [declared-type (get (envs/scope tenv) sym)
             ;; it is not necessary to setup the eval bindings for the following because the
             ;; instances have already been processed by load-env at this point
-            value (halite-eval/eval-expr* {:env empty-env :senv senv} (get (envs/bindings env) sym))
+            value (eval/eval-expr* {:env empty-env :senv senv} (get (envs/bindings env) sym))
             actual-type (halite-type-of/type-of senv tenv value)]
         (when-not (halite-types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))))
 
 (defmacro optionally-with-eval-bindings [flag form]
   `(if ~flag
-     (binding [halite-eval/*eval-predicate-fn* eval-predicate
-               halite-eval/*eval-refinement-fn* eval-refinement]
+     (binding [eval/*eval-predicate-fn* eval-predicate
+               eval/*eval-refinement-fn* eval-refinement]
        ~form)
      ~form))
 
@@ -136,7 +136,7 @@
            (type-check-env senv tenv loaded-env))
          (optionally-with-eval-bindings
           type-check-spec-refinements-and-constraints?
-          (halite-eval/eval-expr* {:env loaded-env :senv senv} expr)))))))
+          (eval/eval-expr* {:env loaded-env :senv senv} expr)))))))
 
 (defn syntax-check
   ([expr]
