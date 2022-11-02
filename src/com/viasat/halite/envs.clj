@@ -6,7 +6,7 @@
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as s]))
 
@@ -30,7 +30,7 @@
    set? (s/constrained #{(s/recursive #'MandatoryVarType)}
                        #(= 1 (count %))
                        "exactly one inner type")
-   :else halite-types/NamespacedKeyword))
+   :else types/NamespacedKeyword))
 
 (defn maybe-type? [t]
   (and (vector? t) (= :Maybe (first t))))
@@ -54,22 +54,22 @@
 (s/defschema NamedConstraint
   [(s/one base/ConstraintName :name) (s/one s/Any :expr)])
 
-(s/defschema SpecVars {halite-types/BareKeyword VarType})
+(s/defschema SpecVars {types/BareKeyword VarType})
 
-(s/defschema RefinesTo {halite-types/NamespacedKeyword Refinement})
+(s/defschema RefinesTo {types/NamespacedKeyword Refinement})
 
 (s/defschema ConstraintMap {base/ConstraintName s/Any})
 
 (s/defschema SpecInfo
-  {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
+  {(s/optional-key :spec-vars) {types/BareKeyword VarType}
    (s/optional-key :constraints) ConstraintMap
-   (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
+   (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
 (s/defschema UserSpecInfo
-  {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
+  {(s/optional-key :spec-vars) {types/BareKeyword VarType}
    (s/optional-key :constraints) {base/UserConstraintName s/Any}
-   (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
+   (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
 (defprotocol SpecEnv
@@ -78,13 +78,13 @@
 (s/defn lookup-spec :- (s/maybe UserSpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
-  [senv :- (s/protocol SpecEnv), spec-id :- halite-types/NamespacedKeyword]
+  [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
   (lookup-spec* senv spec-id))
 
 (s/defn system-lookup-spec :- (s/maybe SpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
-  [senv :- (s/protocol SpecEnv), spec-id :- halite-types/NamespacedKeyword]
+  [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
   (lookup-spec* senv spec-id))
 
 (deftype SpecEnvImpl [spec-info-map]
@@ -92,39 +92,39 @@
   (lookup-spec* [self spec-id] (spec-info-map spec-id)))
 
 (s/defn spec-env :- (s/protocol SpecEnv)
-  [spec-info-map :- {halite-types/NamespacedKeyword UserSpecInfo}]
+  [spec-info-map :- {types/NamespacedKeyword UserSpecInfo}]
   (->SpecEnvImpl spec-info-map))
 
 (s/defn system-spec-env :- (s/protocol SpecEnv)
-  [spec-info-map :- {halite-types/NamespacedKeyword SpecInfo}]
+  [spec-info-map :- {types/NamespacedKeyword SpecInfo}]
   (->SpecEnvImpl spec-info-map))
 
 (defprotocol TypeEnv
   (scope* [self])
   (extend-scope* [self sym t]))
 
-(s/defn scope :- {halite-types/BareSymbol halite-types/HaliteType}
+(s/defn scope :- {types/BareSymbol types/HaliteType}
   "The scope of the current type environment."
   [tenv :- (s/protocol TypeEnv)]
   (scope* tenv))
 
 (s/defn extend-scope :- (s/protocol TypeEnv)
   "Produce a new type environment, extending the current scope by mapping the given symbol to the given type."
-  [tenv :- (s/protocol TypeEnv), sym :- halite-types/BareSymbol, t :- halite-types/HaliteType]
+  [tenv :- (s/protocol TypeEnv), sym :- types/BareSymbol, t :- types/HaliteType]
   (extend-scope* tenv sym t))
 
 (defprotocol Env
   (bindings* [self])
   (bind* [self sym value]))
 
-(s/defn bindings :- {halite-types/BareSymbol s/Any}
+(s/defn bindings :- {types/BareSymbol s/Any}
   "The bindings of the current environment."
   [env :- (s/protocol Env)]
   (bindings* env))
 
 (s/defn bind :- (s/protocol Env)
   "The environment produced by extending env with sym mapped to value."
-  [env :- (s/protocol Env), sym :- halite-types/BareSymbol, value :- s/Any]
+  [env :- (s/protocol Env), sym :- types/BareSymbol, value :- s/Any]
   (bind* env sym value))
 
 (deftype TypeEnvImpl [scope]
@@ -133,12 +133,12 @@
   (extend-scope* [self sym t] (TypeEnvImpl. (assoc scope sym t))))
 
 (s/defn type-env :- (s/protocol TypeEnv)
-  [scope :- {halite-types/BareSymbol halite-types/HaliteType}]
+  [scope :- {types/BareSymbol types/HaliteType}]
   (->TypeEnvImpl (merge '{;; for backwards compatibility
                           no-value :Unset}
                         scope)))
 
-(s/defn halite-type-from-var-type :- halite-types/HaliteType
+(s/defn halite-type-from-var-type :- types/HaliteType
   [senv :- (s/protocol SpecEnv)
    var-type :- VarType]
   (when (coll? var-type)
@@ -154,7 +154,7 @@
       (string? var-type)
       (cond
         (#{"Integer" "String" "Boolean"} var-type) (keyword var-type)
-        (str/starts-with? var-type "Decimal") (halite-types/decimal-type (Long/parseLong (subs var-type 7)))
+        (str/starts-with? var-type "Decimal") (types/decimal-type (Long/parseLong (subs var-type 7)))
         :default (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
 
       (optional-var-type? var-type)
@@ -166,11 +166,11 @@
       (set? var-type)
       [:Set (halite-type-from-var-type senv (check-mandatory (first var-type)))]
 
-      (halite-types/namespaced-keyword? var-type)
+      (types/namespaced-keyword? var-type)
       (if-let [spec-info (system-lookup-spec senv var-type)]
         (if (:abstract? spec-info)
-          (halite-types/abstract-spec-type var-type)
-          (halite-types/concrete-spec-type var-type))
+          (types/abstract-spec-type var-type)
+          (types/concrete-spec-type var-type))
         (throw (ex-info (format "Spec not found: %s" var-type) {:var-type var-type})))
 
       :else (throw (ex-info "Invalid spec variable type" {:var-type var-type})))))
@@ -191,7 +191,7 @@
   (bind* [self sym value] (EnvImpl. (assoc bindings sym value))))
 
 (s/defn env :- (s/protocol Env)
-  [bindings :- {halite-types/BareSymbol s/Any}]
+  [bindings :- {types/BareSymbol s/Any}]
   (->EnvImpl (merge '{;; for backwards compatibility
                       no-value :Unset} bindings)))
 
@@ -220,7 +220,7 @@
 ;; opt-in to the operations they want to use and deal with the implications of their choice
 
 (s/defschema SpecMap
-  {halite-types/NamespacedKeyword SpecInfo})
+  {types/NamespacedKeyword SpecInfo})
 
 (defn- spec-ref-from-type [htype]
   (cond
@@ -248,7 +248,7 @@
                     (apply set/union (map spec-refs-from-expr args))))
     :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
 
-(s/defn spec-refs :- #{halite-types/NamespacedKeyword}
+(s/defn spec-refs :- #{types/NamespacedKeyword}
   "The set of spec ids referenced by the given spec, as variable types or in constraint/refinement expressions."
   [{:keys [spec-vars refines-to constraints] :as spec-info} :- SpecInfo]
   (->> spec-vars
@@ -264,7 +264,7 @@
 
 (s/defn build-spec-map :- SpecMap
   "Return a map of spec-id to SpecInfo, for all specs in senv reachable from the identified root spec."
-  [senv :- (s/protocol SpecEnv), root-spec-id :- halite-types/NamespacedKeyword]
+  [senv :- (s/protocol SpecEnv), root-spec-id :- types/NamespacedKeyword]
   (loop [spec-map {}
          next-spec-ids [root-spec-id]]
     (if-let [[spec-id & next-spec-ids] next-spec-ids]

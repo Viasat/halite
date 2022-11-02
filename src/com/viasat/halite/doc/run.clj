@@ -5,7 +5,7 @@
   (:require [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.jadeite :as jadeite])
@@ -51,10 +51,10 @@
   (when-not (or (is-harness-error? result)
                 (is-harness-error? t))
     (if (= :Unset result)
-      (assert (halite-types/maybe-type? t))
+      (assert (types/maybe-type? t))
       (let [result-type (halite-lint/type-check-and-lint spec-map tenv result)]
         (when-not (is-harness-error? t)
-          (assert (halite-types/subtype? result-type t)))))))
+          (assert (types/subtype? result-type t)))))))
 
 (def halite-limits {:string-literal-length 1024
                     :string-runtime-length 1024

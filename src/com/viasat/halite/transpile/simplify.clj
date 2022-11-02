@@ -4,7 +4,7 @@
 (ns com.viasat.halite.transpile.simplify
   "Simplify halite specs by evaluating those parts of the spec
   that are statically evaluable."
-  (:require [com.viasat.halite.types :as halite-types]
+  (:require [com.viasat.halite.types :as types]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
@@ -110,14 +110,14 @@
 
 (s/defn simplify-statically-known-value?
   [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
-  (when (and (seq? form) (= '$value? (first form)) (not (halite-types/maybe-type? (second (ssa/deref-id ssa-graph (second form))))))
+  (when (and (seq? form) (= '$value? (first form)) (not (types/maybe-type? (second (ssa/deref-id ssa-graph (second form))))))
     true))
 
 (s/defn simplify-redundant-value!
   [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$value! (first form)))
     (let [[_ inner-htype] (ssa/deref-id ssa-graph (second form))]
-      (when-not (halite-types/maybe-type? inner-htype)
+      (when-not (types/maybe-type? inner-htype)
         (second form)))))
 
 (def ^:private comparison-fns

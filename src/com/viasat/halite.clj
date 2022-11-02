@@ -6,13 +6,13 @@
   not quite, a drop-in replacement for salt."
   (:require [clojure.set :as set]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.analysis :as halite-analysis]
+            [com.viasat.halite.analysis :as analysis]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.type-of :as halite-type-of]
             [com.viasat.halite.eval :as eval]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.syntax-check :as halite-syntax-check]
             [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
@@ -25,7 +25,7 @@
   [ctx :- eval/EvalContext
    tenv :- (s/protocol envs/TypeEnv)
    bool-expr
-   spec-id :- halite-types/NamespacedKeyword
+   spec-id :- types/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
   (with-exception-data {:form bool-expr
                         :spec-id spec-id
@@ -38,7 +38,7 @@
   or nil if the guards prevent this projection."
   [ctx :- eval/EvalContext
    tenv :- (s/protocol envs/TypeEnv)
-   spec-id :- halite-types/NamespacedKeyword
+   spec-id :- types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
   (if (contains? eval/*refinements* spec-id)
@@ -80,7 +80,7 @@
             ;; instances have already been processed by load-env at this point
             value (eval/eval-expr* {:env empty-env :senv senv} (get (envs/bindings env) sym))
             actual-type (halite-type-of/type-of senv tenv value)]
-        (when-not (halite-types/subtype? actual-type declared-type)
+        (when-not (types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))))
 
 (defmacro optionally-with-eval-bindings [flag form]
@@ -122,7 +122,7 @@
        (when check-for-spec-cycles?
          (when (not (map? senv))
            (throw-err (h-err/spec-map-needed {})))
-         (when-let [cycle (halite-analysis/find-cycle-in-dependencies senv)]
+         (when-let [cycle (analysis/find-cycle-in-dependencies senv)]
            (throw-err (h-err/spec-cycle {:cycle cycle}))))
        (when type-check-expr?
          ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
@@ -186,6 +186,6 @@
   maybe-type? no-maybe])
 
 (potemkin/import-vars
- [halite-types
+ [types
   HaliteType decimal-type vector-type set-type namespaced-keyword? abstract-spec-type concrete-spec-type
   nothing-like? join])

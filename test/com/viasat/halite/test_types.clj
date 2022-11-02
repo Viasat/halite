@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-types
-  (:require [com.viasat.halite.types :as halite-types]
+  (:require [com.viasat.halite.types :as types]
             [clojure.test :as t :refer [deftest is are]]
             [schema.core :as s]
             [schema.test :refer [validate-schemas]]
@@ -14,7 +14,7 @@
 
 (deftest type-ptn
   (let [T 'T]
-    (are [t tp] (= tp (into {} (halite-types/type-ptn t)))
+    (are [t tp] (= tp (into {} (types/type-ptn t)))
       :Integer                   {:maybe? false, :kind :Integer,  :arg nil, :r2 nil}
       [:Decimal 1]               {:maybe? false, :kind :Decimal,  :arg 1, :r2 nil}
       [:Set :Nothing]            {:maybe? false, :kind :Set,      :arg :Nothing, :r2 nil}
@@ -31,7 +31,7 @@
 
 (deftest type-ptn-round-trip
   (let [T 'T]
-    (are [t] (= t (halite-types/ptn-type (halite-types/type-ptn t)))
+    (are [t] (= t (types/ptn-type (types/type-ptn t)))
       :Integer
       [:Decimal 2]
       [:Maybe [:Decimal 2]]
@@ -52,7 +52,7 @@
 
 (deftest test-schema
   (are [t]
-       (nil? (s/check halite-types/HaliteType t))
+       (nil? (s/check types/HaliteType t))
     :Integer
     [:Decimal 1]
     [:Maybe [:Set :Nothing]]
@@ -62,14 +62,14 @@
 
 (deftest test-not-schema
   (are [t]
-       (boolean (s/check halite-types/HaliteType t))
+       (boolean (s/check types/HaliteType t))
     [:Decimal]
     [:Decimal "1"]
     [:Instance :Z #{:ws/B :ws/C}]
     [:Maybe [:PreInstance]]))
 
 #_(deftest type-nodename
-    (are [t tn] (= tn (halite-types/type-nodename t))
+    (are [t tn] (= tn (types/type-nodename t))
 
       [:Set :Nothing]                [:Set :Nothing]
       :Coll                    :Coll
@@ -79,7 +79,7 @@
       [:Maybe [:Set :Integer]] '[:Maybe [:Set T]]))
 
 (deftest proper-subtypes
-  (are [s t] (and (halite-types/subtype? s t) (not (halite-types/subtype? t s)))
+  (are [s t] (and (types/subtype? s t) (not (types/subtype? t s)))
     :Boolean [:Maybe :Boolean]
     [:Coll :Integer] [:Maybe [:Coll :Integer]]
     [:Instance :*] [:Maybe [:Instance :*]]
@@ -111,7 +111,7 @@
     [:Maybe :PreInstance] [:Maybe [:Instance :* #{:ws/A}]]))
 
 (deftest not-subtypes
-  (are [s t] (not (halite-types/subtype? s t))
+  (are [s t] (not (types/subtype? s t))
     :Unset :Integer
     :Unset [:Decimal 2]
     [:Decimal 1] [:Decimal 2]
@@ -126,7 +126,7 @@
     [:Maybe :PreInstance] :Boolean))
 
 (deftest meet
-  (are [a b m] (= m (halite-types/meet a b) (halite-types/meet b a))
+  (are [a b m] (= m (types/meet a b) (types/meet b a))
     :String :String :String
     [:Maybe :String] :String [:Maybe :String]
     :Integer :String :Value
@@ -173,7 +173,7 @@
     [:Maybe :PreInstance] [:Maybe [:Instance :ws/A]] [:Maybe [:Instance :ws/A]]))
 
 (deftest join
-  (are [a b m] (= m (halite-types/join a b) (halite-types/join b a))
+  (are [a b m] (= m (types/join a b) (types/join b a))
     :String :String :String
     [:Maybe :String] :String :String
     :Value [:Maybe [:Coll :Integer]] [:Coll :Integer]
@@ -221,7 +221,7 @@
   {:num-tests 1001
    :reporter-fn (fn [_])}
   (prop/for-all [t gen-type]
-                (= t (halite-types/ptn-type (halite-types/type-ptn t)))))
+                (= t (types/ptn-type (types/type-ptn t)))))
 
 (defspec prop-subtype-one-way
   {:num-tests 1002
@@ -229,16 +229,16 @@
   (prop/for-all [s gen-type
                  t gen-type]
                 (cond
-                  (halite-types/types-equivalent? s t) true
-                  (halite-types/subtype? s t) (not (halite-types/subtype? t s))
-                  (halite-types/subtype? t s) (not (halite-types/subtype? s t))
+                  (types/types-equivalent? s t) true
+                  (types/subtype? s t) (not (types/subtype? t s))
+                  (types/subtype? t s) (not (types/subtype? s t))
                   :else true)))
 
 (deftest test-types-equivalent?
-  (is (halite-types/types-equivalent?
+  (is (types/types-equivalent?
        [:Maybe [:Coll [:Instance :ws/B #{}]]]
        [:Maybe [:Coll [:Instance :ws/B #{:ws/A}]]]))
-  (is (halite-types/types-equivalent?
+  (is (types/types-equivalent?
        [:Instance :ws/B #{}]
        [:Instance :ws/B #{:ws/A}])))
 
@@ -247,38 +247,38 @@
    :reporter-fn (fn [_])}
   (prop/for-all [s gen-type
                  t gen-type]
-                (let [m (halite-types/meet s t)]
-                  (and (halite-types/subtype? s m)
-                       (halite-types/subtype? t m)))))
+                (let [m (types/meet s t)]
+                  (and (types/subtype? s m)
+                       (types/subtype? t m)))))
 
 (defn prop-meet-implication [s t o]
-  (let [m (halite-types/meet s t)]
+  (let [m (types/meet s t)]
     (cond
-      (and (halite-types/subtype? o s)
-           (halite-types/subtype? o t))
-      (halite-types/subtype? o m)
+      (and (types/subtype? o s)
+           (types/subtype? o t))
+      (types/subtype? o m)
 
-      (and (halite-types/subtype? s o)
-           (halite-types/subtype? t o))
-      (halite-types/subtype? m o)
+      (and (types/subtype? s o)
+           (types/subtype? t o))
+      (types/subtype? m o)
 
-      (halite-types/subtype? m o)
-      (and (halite-types/subtype? s o)
-           (halite-types/subtype? t o))
+      (types/subtype? m o)
+      (and (types/subtype? s o)
+           (types/subtype? t o))
 
-      (and (halite-types/subtype? s o)
-           (halite-types/subtype? o m))
-      (not (halite-types/subtype? t o))
+      (and (types/subtype? s o)
+           (types/subtype? o m))
+      (not (types/subtype? t o))
 
-      (and (halite-types/subtype? t o)
-           (halite-types/subtype? o m))
-      (not (halite-types/subtype? s o))
+      (and (types/subtype? t o)
+           (types/subtype? o m))
+      (not (types/subtype? s o))
 
       :else true)))
 
 (def *type-example-seq
   (delay
-   (->> @halite-types/*ptn-adjacent-sub
+   (->> @types/*ptn-adjacent-sub
         keys
         (mapcat #(case (:arg %)
                    T [(assoc % :arg :Integer) (assoc % :arg :String)]
@@ -287,7 +287,7 @@
                               [nil #{:ws/B}])
                    S [(assoc % :arg 1) (assoc % :arg 2)]
                    [%]))
-        (map halite-types/ptn-type))))
+        (map types/ptn-type))))
 
 (deftest test-shallow-exhaustive-meet-implication
   (doseq [s @*type-example-seq
@@ -299,7 +299,7 @@
   {:num-tests 1004
    :reporter-fn (fn [{:keys [type fail]}]
                   (when-let [[s t o] (and (= :shrunk type) fail)]
-                    (prn :s s :t t :o o :m (halite-types/meet s t))))}
+                    (prn :s s :t t :o o :m (types/meet s t))))}
   (prop/for-all [s gen-type
                  t gen-type
                  o gen-type]
@@ -311,37 +311,37 @@
   (prop/for-all [s gen-type
                  t gen-type]
                 (try
-                  (let [j (halite-types/join s t)]
-                    (and (halite-types/subtype? j s)
-                         (halite-types/subtype? j t)))
+                  (let [j (types/join s t)]
+                    (and (types/subtype? j s)
+                         (types/subtype? j t)))
                   (catch Exception ex false))))
 
 (defn prop-join-implication [s t o]
-  (let [j (halite-types/join s t)]
+  (let [j (types/join s t)]
     (cond
-      (and (halite-types/subtype? o s)
-           (halite-types/subtype? o t))
-      (halite-types/subtype? o j)
+      (and (types/subtype? o s)
+           (types/subtype? o t))
+      (types/subtype? o j)
 
-      (or (halite-types/subtype? s o)
-          (halite-types/subtype? t o))
-      (halite-types/subtype? j o)
+      (or (types/subtype? s o)
+          (types/subtype? t o))
+      (types/subtype? j o)
 
-      (and (halite-types/subtype? j o)
-           (halite-types/subtype? o s))
-      (not (halite-types/subtype? t o))
+      (and (types/subtype? j o)
+           (types/subtype? o s))
+      (not (types/subtype? t o))
 
-      (and (halite-types/subtype? j o)
-           (halite-types/subtype? o t))
-      (not (halite-types/subtype? s o))
+      (and (types/subtype? j o)
+           (types/subtype? o t))
+      (not (types/subtype? s o))
 
-      (halite-types/subtype? o s)
-      (and (not (halite-types/subtype? o t))
-           (not (halite-types/subtype? o j)))
+      (types/subtype? o s)
+      (and (not (types/subtype? o t))
+           (not (types/subtype? o j)))
 
-      (halite-types/subtype? o t)
-      (and (not (halite-types/subtype? o s))
-           (not (halite-types/subtype? o j)))
+      (types/subtype? o t)
+      (and (not (types/subtype? o s))
+           (not (types/subtype? o j)))
 
       :else true)))
 
@@ -349,7 +349,7 @@
   {:num-tests 1006
    :reporter-fn (fn [{:keys [type fail]}]
                   (when-let [[s t o] (and (= :shrunk type) fail)]
-                    (prn :s s :t t :o o :j (halite-types/join s t))))}
+                    (prn :s s :t t :o o :j (types/join s t))))}
   (prop/for-all [s gen-type
                  t gen-type
                  o gen-type]
@@ -364,239 +364,239 @@
 ;;;;
 
 (deftest test-refines-to
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}))
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/C}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/D}}))
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/D}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/C}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/C}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/D}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/D}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/C}}))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}}
-                                        {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}}
+                                 {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}}))
 
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
-                                             {:maybe? false :kind :Instance :arg :ws/B})))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/B}
-                                             {:maybe? false :kind :Instance :arg :ws/A})))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
+                                      {:maybe? false :kind :Instance :arg :ws/B})))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/B}
+                                      {:maybe? false :kind :Instance :arg :ws/A})))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
-                                        {:maybe? false :kind :Instance :arg :ws/A}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
+                                 {:maybe? false :kind :Instance :arg :ws/A}))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                             {:maybe? false :kind :Instance :arg :ws/A})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                      {:maybe? false :kind :Instance :arg :ws/A})))
 
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                             {:maybe? false :kind :Instance :arg :ws/A})))
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                      {:maybe? false :kind :Instance :arg :ws/A})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}
-                                        {:maybe? false :kind :Instance :arg :ws/A}))
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
-                                        {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}
+                                 {:maybe? false :kind :Instance :arg :ws/A}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
+                                 {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}
-                                             {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}
+                                      {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}})))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
-                                             {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
+                                      {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}})))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
-                                             {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
+                                      {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}})))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}
-                                             {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}
+                                      {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}})))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}))
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
-                                        {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}
-                                             {:maybe? false :kind :Instance :arg :ws/A})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
+                                 {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}}
+                                      {:maybe? false :kind :Instance :arg :ws/A})))
 
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
-                                             {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}}
-                                             {:maybe? false :kind :Instance :arg :ws/A})))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
+                                      {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}}
+                                      {:maybe? false :kind :Instance :arg :ws/A})))
 
     ;;;;
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
-                                        {:maybe? true :kind :Instance :arg :ws/A}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? true :kind :Instance :arg :ws/A}
-                                             {:maybe? false :kind :Instance :arg :ws/A})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A}
+                                 {:maybe? true :kind :Instance :arg :ws/A}))
+  (is (not (#'types/instance-subtype? {:maybe? true :kind :Instance :arg :ws/A}
+                                      {:maybe? false :kind :Instance :arg :ws/A})))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :*}
-                                        {:maybe? true :kind :Instance :arg :*}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? true :kind :Instance :arg :*}
-                                             {:maybe? false :kind :Instance :arg :*})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :*}
+                                 {:maybe? true :kind :Instance :arg :*}))
+  (is (not (#'types/instance-subtype? {:maybe? true :kind :Instance :arg :*}
+                                      {:maybe? false :kind :Instance :arg :*})))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                        {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-                                             {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                 {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}))
+  (is (not (#'types/instance-subtype? {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
+                                      {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}})))
 
-  (is (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
-                                        {:maybe? true :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}))
-  (is (not (#'halite-types/instance-subtype? {:maybe? true :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
-                                             {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}})))
+  (is (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
+                                 {:maybe? true :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}))
+  (is (not (#'types/instance-subtype? {:maybe? true :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
+                                      {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}})))
 
-  (is (not (#'halite-types/instance-subtype? {:maybe? true :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
-                                             {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}})))
-  (is (not (#'halite-types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
-                                             {:maybe? true :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}))))
+  (is (not (#'types/instance-subtype? {:maybe? true :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
+                                      {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}})))
+  (is (not (#'types/instance-subtype? {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
+                                      {:maybe? true :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}))))
 
 (deftest test-instance-meet
   (is (= {:maybe? false :kind :Instance :arg :ws/A}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :ws/A}
-                                       {:maybe? false :kind :Instance :arg :ws/A})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :ws/A}
+                                {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:maybe? false :kind :Instance :arg :*}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :ws/A}
-                                       {:maybe? false :kind :Instance :arg :ws/B})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :ws/A}
+                                {:maybe? false :kind :Instance :arg :ws/B})))
   (is (= {:maybe? false :kind :Instance :arg :*}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :ws/A}
-                                       {:maybe? false :kind :Instance :arg :KW})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :ws/A}
+                                {:maybe? false :kind :Instance :arg :KW})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}})))
   (is (= {:maybe? false :kind :Instance :arg :*}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? false :kind :Instance :arg :ws/A})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:maybe? false :kind :Instance :arg :ws/A})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B :ws/C}})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B :ws/C}})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/Z}})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/Z}})))
 
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B :ws/C}}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
-                                       {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
+                                {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
 
   (is (= {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? true :kind :Instance :arg :ws/A})))
+         (#'types/instance-meet {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? true :kind :Instance :arg :ws/A})))
   (is (= {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-meet {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? false :kind :Instance :arg :ws/A})))
+         (#'types/instance-meet {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-meet {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? true :kind :Instance :arg :ws/A})))
+         (#'types/instance-meet {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? true :kind :Instance :arg :ws/A})))
 
   (is (= {:kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-         (#'halite-types/instance-meet {:kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:kind :Instance :arg :ws/A :r2 #{:ws/B}})))
+         (#'types/instance-meet {:kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:kind :Instance :arg :ws/A :r2 #{:ws/B}})))
 
   (is (= {:kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-meet {:kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:kind :Instance :arg :ws/A}))))
+         (#'types/instance-meet {:kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:kind :Instance :arg :ws/A}))))
 
 (deftest test-instance-join
   (is (= {:maybe? false :kind :Instance :arg :ws/A}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :ws/A}
-                                       {:maybe? false :kind :Instance :arg :ws/A})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :ws/A}
+                                {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:kind :PreInstance}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :ws/A}
-                                       {:maybe? false :kind :Instance :arg :ws/B})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :ws/A}
+                                {:maybe? false :kind :Instance :arg :ws/B})))
   (is (= {:maybe? false :kind :Instance :arg :ws/A}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :ws/A}
-                                       {:maybe? false :kind :Instance :arg :*})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :ws/A}
+                                {:maybe? false :kind :Instance :arg :*})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? false :kind :Instance :arg :* :r2 #{:ws/B}})))
   (is (= {:maybe? false :kind :Instance :arg :ws/A}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? false :kind :Instance :arg :ws/A})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:maybe? false :kind :Instance :arg :ws/A})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B :ws/C}}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B :ws/C}})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B :ws/C}})))
   (is (= {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B}})))
   (is (= {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/B :ws/Z}}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
-                                       {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/Z}})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}}
+                                {:maybe? false :kind :Instance :arg :ws/C :r2 #{:ws/A :ws/Z}})))
   (is (= {:kind :PreInstance}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
-                                       {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
+                                {:maybe? false :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
 
   (is (= {:maybe? false :kind :Instance :arg :ws/A}
-         (#'halite-types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? true :kind :Instance :arg :ws/A})))
+         (#'types/instance-join {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? true :kind :Instance :arg :ws/A})))
   (is (= {:maybe? false :kind :Instance :arg :ws/A}
-         (#'halite-types/instance-join {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? false :kind :Instance :arg :ws/A})))
+         (#'types/instance-join {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= {:maybe? true :kind :Instance :arg :ws/A}
-         (#'halite-types/instance-join {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
-                                       {:maybe? true :kind :Instance :arg :ws/A})))
+         (#'types/instance-join {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}}
+                                {:maybe? true :kind :Instance :arg :ws/A})))
   (is (= {:kind :Unset}
-         (#'halite-types/instance-join {:maybe? true :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
-                                       {:maybe? true :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
+         (#'types/instance-join {:maybe? true :kind :Instance :arg :ws/A :r2 #{:ws/B :ws/C}}
+                                {:maybe? true :kind :Instance :arg :ws/B :r2 #{:ws/C}})))
   (is (= {:kind :Unset}
-         (#'halite-types/instance-join {:maybe? true :kind :Instance :arg :ws/A}
-                                       {:maybe? true :kind :Instance :arg :ws/B}))))
+         (#'types/instance-join {:maybe? true :kind :Instance :arg :ws/A}
+                                {:maybe? true :kind :Instance :arg :ws/B}))))
 
 (deftest test-instance-helpers
   (is (= [:ws/A false]
-         ((juxt #'halite-types/spec-id-ptn #'halite-types/needs-refinement?-ptn)
+         ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? true :kind :Instance :arg :ws/A})))
   (is (= [:ws/A false]
-         ((juxt #'halite-types/spec-id-ptn #'halite-types/needs-refinement?-ptn)
+         ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? false :kind :Instance :arg :ws/A})))
   (is (= [:ws/A true]
-         ((juxt #'halite-types/spec-id-ptn #'halite-types/needs-refinement?-ptn)
+         ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A}})))
   (is (= [:ws/A true]
-         ((juxt #'halite-types/spec-id-ptn #'halite-types/needs-refinement?-ptn)
+         ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A}})))
   (is (= [nil true]
-         ((juxt #'halite-types/spec-id-ptn #'halite-types/needs-refinement?-ptn)
+         ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? true :kind :Instance :arg :* :r2 #{:ws/A :ws/B}})))
   (is (= [nil true]
-         ((juxt #'halite-types/spec-id-ptn #'halite-types/needs-refinement?-ptn)
+         ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? false :kind :Instance :arg :* :r2 #{:ws/A :ws/B}})))
   (is (= [nil false]
-         ((juxt #'halite-types/spec-id-ptn #'halite-types/needs-refinement?-ptn)
+         ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? true :kind :Instance :arg :ws/A :r2 #{:ws/B}})))
   (is (= [nil false]
-         ((juxt #'halite-types/spec-id-ptn #'halite-types/needs-refinement?-ptn)
+         ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}))))
 
 ;; (time (t/run-tests))

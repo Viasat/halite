@@ -5,7 +5,7 @@
   (:require [clojure.string :as str]
             [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.lowering :as lowering]
@@ -39,14 +39,14 @@
 
 (declare Bound)
 
-(s/defschema UntypedSpecBound {halite-types/BareKeyword (s/recursive #'Bound)})
+(s/defschema UntypedSpecBound {types/BareKeyword (s/recursive #'Bound)})
 
 (s/defschema SpecIdToBound
-  {halite-types/NamespacedKeyword UntypedSpecBound})
+  {types/NamespacedKeyword UntypedSpecBound})
 
 (s/defschema SpecIdToBoundWithRefinesTo
-  {halite-types/NamespacedKeyword {(s/optional-key :$refines-to) SpecIdToBound
-                                   halite-types/BareKeyword (s/recursive #'Bound)}
+  {types/NamespacedKeyword {(s/optional-key :$refines-to) SpecIdToBound
+                            types/BareKeyword (s/recursive #'Bound)}
    (s/optional-key :Unset) s/Bool})
 
 (s/defschema AbstractSpecBound
@@ -61,10 +61,10 @@
 ;; type is an abstract spec, though the :$type actually identified in this
 ;; bounds will always be concrete.
 (s/defschema ConcreteSpecBound2
-  {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one halite-types/NamespacedKeyword :type)]
-                      halite-types/NamespacedKeyword)
+  {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one types/NamespacedKeyword :type)]
+                      types/NamespacedKeyword)
    (s/optional-key :$refines-to) SpecIdToBound
-   halite-types/BareKeyword (s/recursive #'Bound)})
+   types/BareKeyword (s/recursive #'Bound)})
 
 (s/defschema SpecBound
   (s/conditional
@@ -101,7 +101,7 @@
 (defn- discriminator-var-sym [var-kw] (symbol (discriminator-var-name var-kw)))
 
 (defn- var-entry->spec-id [senv [var-kw var-type]]
-  (->> var-type (envs/halite-type-from-var-type senv) halite-types/no-maybe halite-types/spec-id))
+  (->> var-type (envs/halite-type-from-var-type senv) types/no-maybe types/spec-id))
 
 (defn- abstract-var?
   [senv var-entry]

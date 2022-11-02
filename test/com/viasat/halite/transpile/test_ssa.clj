@@ -4,7 +4,6 @@
 (ns com.viasat.halite.transpile.test-ssa
   (:require [com.viasat.halite :as halite]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
             [schema.core :as s]

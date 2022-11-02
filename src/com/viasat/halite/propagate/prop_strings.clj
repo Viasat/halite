@@ -9,7 +9,7 @@
   variables that represent the results of comparisons."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.propagate.prop-choco :as prop-choco]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.ssa :as ssa]
@@ -38,7 +38,7 @@
   (s/cond-pre s/Str (s/enum :Unset :String) {:$in #{(s/cond-pre s/Str (s/enum :String :Unset))}}))
 
 (s/defschema SpecBound
-  {halite-types/BareKeyword AtomBound})
+  {types/BareKeyword AtomBound})
 
 ;;;;;;; String expression simplification ;;;;;;;;
 
@@ -70,8 +70,8 @@
 
 (s/defn ^:private string-compatible-type? :- s/Bool
   "Returns true if there exists an expression of type htype that could evaluate to a String, and false otherwise."
-  [htype :- halite-types/HaliteType]
-  (or (boolean (#{:Any :Value} htype)) (= :String (halite-types/no-maybe htype))))
+  [htype :- types/HaliteType]
+  (or (boolean (#{:Any :Value} htype)) (= :String (types/no-maybe htype))))
 
 (s/defn ^:private rewrite-string-valued-do-child
   [{:keys [sctx ctx] :as rctx} :- rewriting/RewriteFnCtx, id]
@@ -136,7 +136,7 @@
   [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (contains? #{'not= '=} (first form)))
     (let [arg-nodes (map #(ssa/deref-id ssa-graph %) (rest form))]
-      (when (true? (some #(= :String (halite-types/no-maybe %)) (map ssa/node-type arg-nodes)))
+      (when (true? (some #(= :String (types/no-maybe %)) (map ssa/node-type arg-nodes)))
         (let [args (map first arg-nodes)]
           (cond->>
            (->> (rest args)
@@ -173,14 +173,14 @@
 ;;;;;;;;;; String Comparison Graph ;;;;;;;;;;;;;;;;
 
 (defn- string-type? [var-type]
-  (= :String (->> var-type (envs/halite-type-from-var-type {}) halite-types/no-maybe)))
+  (= :String (->> var-type (envs/halite-type-from-var-type {}) types/no-maybe)))
 
 (defn- maybe-string-type?
   "Return true if var-type is [:Maybe \"String\"]"
   [var-type]
   (let [ht (envs/halite-type-from-var-type {} var-type)]
-    (and (halite-types/maybe-type? ht)
-         (= :String (halite-types/no-maybe ht)))))
+    (and (types/maybe-type? ht)
+         (= :String (types/no-maybe ht)))))
 
 (defn- get-alt-var [scg n]
   (:alt-var (loom-label/label scg n)))
@@ -224,7 +224,7 @@
         ;; ensure nodes for all string-valued expressions
         g (->> dgraph
                vals
-               (filter #(= :String (-> % ssa/node-type halite-types/no-maybe)))
+               (filter #(= :String (-> % ssa/node-type types/no-maybe)))
                (map ssa/node-form)
                ;; We don't need separate nodes for ($value! <sym>)
                (remove #(and (seq? %) (= '$value! (first %))))

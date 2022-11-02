@@ -5,7 +5,7 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.graph :as graph]
             [schema.core :as s])
@@ -266,7 +266,7 @@
     (base/fixed-decimal? expr) #{}
     (string? expr) #{}
     (symbol? expr) #{}
-    (keyword? expr) (if (halite-types/namespaced-keyword? expr)
+    (keyword? expr) (if (types/namespaced-keyword? expr)
                       #{expr}
                       #{})
     (map? expr) (->> (vals expr)
@@ -929,19 +929,19 @@
 
 ;;;;
 
-(s/defschema TailSpecRef {:tail halite-types/NamespacedKeyword})
+(s/defschema TailSpecRef {:tail types/NamespacedKeyword})
 
 (s/defschema SpecRef (s/conditional
                       map? TailSpecRef
-                      :else halite-types/NamespacedKeyword))
+                      :else types/NamespacedKeyword))
 
 (declare find-spec-refs)
 
 (s/defn ^:private wrap-tail :- TailSpecRef
-  [expr :- halite-types/NamespacedKeyword]
+  [expr :- types/NamespacedKeyword]
   {:tail expr})
 
-(s/defn ^:private unwrap-tail :- halite-types/NamespacedKeyword
+(s/defn ^:private unwrap-tail :- types/NamespacedKeyword
   [expr :- SpecRef]
   (if (and (map? expr)
            (= 1 (count expr))
@@ -949,7 +949,7 @@
     (:tail expr)
     expr))
 
-(s/defn ^:private unwrap-tail-set :- #{halite-types/NamespacedKeyword}
+(s/defn ^:private unwrap-tail-set :- #{types/NamespacedKeyword}
   [s :- (s/maybe #{SpecRef})]
   (->> s
        (map unwrap-tail)
@@ -1023,8 +1023,8 @@
          set)))
 
 (s/defn find-spec-refs :- (s/maybe #{(s/conditional
-                                      map? {:tail halite-types/NamespacedKeyword}
-                                      :else halite-types/NamespacedKeyword)})
+                                      map? {:tail types/NamespacedKeyword}
+                                      :else types/NamespacedKeyword)})
   "Return a set of spec-ids for specs that are referenced by the expr. If a spec-id is referenced in a
   tail position then wrap it in a map that indicates this."
   ([expr]
@@ -1036,7 +1036,7 @@
      (base/fixed-decimal? expr) #{}
      (string? expr) #{}
      (symbol? expr) (get context expr)
-     (keyword? expr) (if (halite-types/namespaced-keyword? expr)
+     (keyword? expr) (if (types/namespaced-keyword? expr)
                        #{(wrap-tail expr)}
                        #{})
      (map? expr) (into #{(first (find-spec-refs context (:$type expr)))}
@@ -1054,33 +1054,33 @@
 
 ;;;;
 
-(s/defn ^:private get-spec-var-dependencies :- (s/maybe {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}})
+(s/defn ^:private get-spec-var-dependencies :- (s/maybe {types/NamespacedKeyword #{types/NamespacedKeyword}})
   [spec-map :- envs/SpecMap
-   spec-id :- halite-types/NamespacedKeyword
+   spec-id :- types/NamespacedKeyword
    [_ var-type]]
   (let [ts (->> var-type
                 (envs/halite-type-from-var-type spec-map)
-                halite-types/innermost-types
-                (map halite-types/inner-spec-type)
+                types/innermost-types
+                (map types/inner-spec-type)
                 (remove nil?)
                 set)]
     (when-not (empty? ts)
       {spec-id ts})))
 
-(s/defn ^:private get-constraint-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
-  [spec-id :- halite-types/NamespacedKeyword
+(s/defn ^:private get-constraint-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
+  [spec-id :- types/NamespacedKeyword
    [_ expr]]
   {spec-id (unwrap-tail-set (find-spec-refs expr))})
 
-(s/defn ^:private get-refines-to-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
-  [spec-id :- halite-types/NamespacedKeyword
+(s/defn ^:private get-refines-to-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
+  [spec-id :- types/NamespacedKeyword
    [other-spec-id {:keys [expr]}]]
   (let [spec-refs (unwrap-tail-set (find-spec-refs expr))]
     {spec-id (into #{other-spec-id} spec-refs)}))
 
-(s/defn ^:private get-spec-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
+(s/defn ^:private get-spec-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
   [spec-map :- envs/SpecMap
-   spec-id :- halite-types/NamespacedKeyword
+   spec-id :- types/NamespacedKeyword
    spec-info :- envs/SpecInfo]
   (let [{:keys [spec-vars constraints refines-to]} spec-info]
     (->> [(map (partial get-spec-var-dependencies spec-map spec-id) spec-vars)
@@ -1090,7 +1090,7 @@
          (reduce into [])
          (reduce (partial merge-with into) {}))))
 
-(s/defn get-spec-map-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
+(s/defn get-spec-map-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
   [spec-map :- envs/SpecMap]
   (->> spec-map
        (map (fn [[k v]] (get-spec-dependencies spec-map k v)))

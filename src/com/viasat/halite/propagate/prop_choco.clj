@@ -7,7 +7,7 @@
   and no refinements."
   (:require [schema.core :as s]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.choco-clj-opt :as choco-clj]))
 
@@ -21,7 +21,7 @@
           [(s/one s/Int :lower) (s/one s/Int :upper) (s/optional (s/enum :Unset) :Unset)])}))
 
 (s/defschema SpecBound
-  {halite-types/BareKeyword AtomBound})
+  {types/BareKeyword AtomBound})
 
 (s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
   [var-type :- envs/VarType]
@@ -47,7 +47,7 @@
   [spec :- envs/SpecInfo]
   {:vars (-> spec :spec-vars (update-keys symbol) (update-vals to-choco-type))
    :optionals (->> spec :spec-vars
-                   (filter (comp halite-types/maybe-type?
+                   (filter (comp types/maybe-type?
                                  (partial envs/halite-type-from-var-type {})
                                  val))
                    (map (comp symbol key)) set)

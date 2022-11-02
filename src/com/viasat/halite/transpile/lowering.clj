@@ -6,7 +6,7 @@
   features down into lower-level features."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.transpile.ssa :as ssa
              :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
             [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as halite-rewriting]
@@ -107,8 +107,8 @@
           compatible? (->> (rest arg-types)
                            (interleave (butlast arg-types))
                            (partition 2)
-                           (every? #(or (halite-types/subtype? (first %) (second %))
-                                        (halite-types/subtype? (second %) (first %)))))]
+                           (every? #(or (types/subtype? (first %) (second %))
+                                        (types/subtype? (second %) (first %)))))]
       (when-not compatible?
         (= comparison-op 'not=)))))
 
@@ -121,11 +121,11 @@
           logical-op (if (= comparison-op '=) 'and 'or)
           arg-ids (rest form)
           arg-types (set (map (comp second (partial ssa/deref-id ssa-graph)) arg-ids))]
-      (when (every? halite-types/spec-type? arg-types)
+      (when (every? types/spec-type? arg-types)
         (if (not= 1 (count arg-types))
           (= comparison-op 'not=)
           (let [arg-type (first arg-types)
-                var-kws (->> arg-type (halite-types/spec-id) (envs/system-lookup-spec senv) :spec-vars keys sort)]
+                var-kws (->> arg-type (types/spec-id) (envs/system-lookup-spec senv) :spec-vars keys sort)]
             (->> var-kws
                  (map (fn [var-kw]
                         (apply list comparison-op
@@ -143,7 +143,7 @@
   (when (and (seq? form) (= 'get (first form)))
     (let [[_get arg-id var-kw] form
           [subform htype] (ssa/deref-id ssa-graph (second form))]
-      (when (and (seq? subform) (= 'if (first subform)) (halite-types/spec-type? htype))
+      (when (and (seq? subform) (= 'if (first subform)) (types/spec-type? htype))
         (let [[_if pred-id then-id else-id] subform
               then-node (ssa/deref-id ssa-graph then-id), then-type (ssa/node-type then-node)
               else-node (ssa/deref-id ssa-graph else-id), else-type (ssa/node-type else-node)]
@@ -161,7 +161,7 @@
 
 ;;;;;;;;; Lower valid? ;;;;;;;;;;;;;;;;;
 
-(s/defn ^:private deps-via-instance-literal :- #{halite-types/NamespacedKeyword}
+(s/defn ^:private deps-via-instance-literal :- #{types/NamespacedKeyword}
   [spec-info :- SpecInfo]
   (->> spec-info
        :ssa-graph
@@ -340,7 +340,7 @@
   [rgraph, {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (when-let [[_ expr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
     (let [[_ from-htype] (ssa/deref-id ssa-graph expr-id)]
-      (when-let [from-spec-id (halite-types/spec-id from-htype)]
+      (when-let [from-spec-id (types/spec-id from-htype)]
         (->> (loom.alg/shortest-path rgraph from-spec-id to-spec-id)
              (partition 2 1)
              (reduce (fn [out-form [from-spec-id to-spec-id]]
@@ -420,7 +420,7 @@
           args (map-indexed vector (mapv (partial ssa/deref-id ssa-graph) arg-ids))
           no-value-args (filter #(= :Unset (second (second %))) args)
           no-value-literal? #(= :Unset (first (second %)))
-          maybe-typed-args (filter #(and (halite-types/maybe-type? (second (second %))) (not= :Unset (second (second %)))) args)]
+          maybe-typed-args (filter #(and (types/maybe-type? (second (second %))) (not= :Unset (second (second %)))) args)]
       (when (and (seq no-value-args) (empty? maybe-typed-args))
         (make-do
          (->> args (remove no-value-literal?) (map (comp (partial nth arg-ids) first)))
@@ -443,7 +443,7 @@
 (s/defn lower-maybe-comparison-expr
   [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (let [opt-arg? (fn [[form htype]]
-                   (halite-types/maybe-type? htype))
+                   (types/maybe-type? htype))
         if-form? (fn [[form htype]]
                    (and (seq? form) (= 'if (first form))))]
     (when (and (seq? form) (contains? #{'= 'not=} (first form)))
@@ -541,7 +541,7 @@
                   rewrite-branch (fn [ssa-graph branch-id]
                                    (let [[_ branch-htype] (ssa/deref-id ssa-graph branch-id)]
                                      (cond
-                                       (halite-types/strict-maybe-type? branch-htype)
+                                       (types/strict-maybe-type? branch-htype)
                                        (let [[ssa-graph rewritten-then-id] (ssa/replace-in-expr ssa-graph then-id {nested-if-id branch-id})]
                                          (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph)
                                                           (list 'if (list '$value? branch-id)
@@ -707,11 +707,11 @@
 
 (s/defn ^:private instance-compatible-type? :- s/Bool
   "Returns true if there exists an expression of type htype that could evaluate to an instance, and false otherwise."
-  [htype :- halite-types/HaliteType]
+  [htype :- types/HaliteType]
   (or (boolean (#{:Any :Value} htype))
       (and (vector? htype) (= :Instance (first htype)))
-      (and (halite-types/maybe-type? htype)
-           (let [inner (halite-types/no-maybe htype)]
+      (and (types/maybe-type? htype)
+           (let [inner (types/no-maybe htype)]
              (and (vector? inner) (= :Instance (first inner)))))))
 
 (s/defn ^:private rewrite-instance-valued-do-child
@@ -796,7 +796,7 @@
   [{:keys [ctx] :as rctx} :- halite-rewriting/RewriteFnCtx, id]
   (let [{:keys [ssa-graph]} ctx
         node (ssa/deref-id ssa-graph id), form (ssa/node-form node), htype (ssa/node-type node)]
-    (when-not (halite-types/subtype? :Unset htype)
+    (when-not (types/subtype? :Unset htype)
       (throw (ex-info "BUG! Called rewrite-no-value-do-child with expr that could not possibly evaluate to $no-value"
                       {:ssa-graph ssa-graph :id id :form form :htype htype})))
 
@@ -808,10 +808,10 @@
                       (= 'if op) (let [[pred-id then-id else-id] args]
                                    (list 'if pred-id
                                          (cond->> then-id
-                                           (halite-types/maybe-type? (ssa/node-type (ssa/deref-id ssa-graph then-id)))
+                                           (types/maybe-type? (ssa/node-type (ssa/deref-id ssa-graph then-id)))
                                            (rewrite-no-value-do-child rctx))
                                          (cond->> else-id
-                                           (halite-types/maybe-type? (ssa/node-type (ssa/deref-id ssa-graph else-id)))
+                                           (types/maybe-type? (ssa/node-type (ssa/deref-id ssa-graph else-id)))
                                            (rewrite-no-value-do-child rctx))))
                       (= '$do! op) (apply list '$do! (mapv #(rewrite-no-value-do-child rctx %) args))
                       :else id))
@@ -822,10 +822,10 @@
   (let [ssa-graph (:ssa-graph (:ctx rctx))]
     (when (and (seq? form) (= '$do! (first form)))
       (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]
-        (when (some #(halite-types/subtype? :Unset %) child-htypes)
+        (when (some #(types/subtype? :Unset %) child-htypes)
           (make-do
            (mapv (fn [child htype]
                    (cond->> child
-                     (halite-types/maybe-type? htype) (rewrite-no-value-do-child rctx)))
+                     (types/maybe-type? htype) (rewrite-no-value-do-child rctx)))
                  (butlast (rest form)) child-htypes)
            (last form)))))))

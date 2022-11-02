@@ -5,7 +5,7 @@
   (:require [clojure.string :as str]
             [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.propagate.prop-strings :as prop-strings]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
             [com.viasat.halite.transpile.lowering :as lowering]
@@ -20,14 +20,14 @@
 (declare ConcreteBound)
 
 (s/defschema RefinementBound
-  {halite-types/NamespacedKeyword
-   {halite-types/BareKeyword (s/recursive #'ConcreteBound)}})
+  {types/NamespacedKeyword
+   {types/BareKeyword (s/recursive #'ConcreteBound)}})
 
 (s/defschema ConcreteSpecBound
-  {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one halite-types/NamespacedKeyword :type)]
-                      halite-types/NamespacedKeyword)
+  {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one types/NamespacedKeyword :type)]
+                      types/NamespacedKeyword)
    (s/optional-key :$refines-to) RefinementBound
-   halite-types/BareKeyword (s/recursive #'ConcreteBound)})
+   types/BareKeyword (s/recursive #'ConcreteBound)})
 
 (s/defschema AtomBound
   prop-strings/AtomBound)
@@ -43,7 +43,7 @@
 (s/defschema ^:private PrimitiveMaybeType [(s/one (s/enum :Maybe) :maybe) (s/one PrimitiveType :inner)])
 
 (s/defschema ^:private FlattenedVar
-  [(s/one halite-types/BareKeyword :var-kw)
+  [(s/one types/BareKeyword :var-kw)
    (s/one (s/cond-pre PrimitiveMaybeType PrimitiveType) :type)])
 
 (declare FlattenedRefinementMap)
@@ -55,31 +55,31 @@
 ;; with each ConcreteSpecBound's :$type the same as its corresponding FV's ::spec-id,
 ;; and every var of that Spec appearing as a key in the FV.
 (s/defschema ^:private FlattenedVars
-  {::mandatory #{halite-types/BareKeyword}
-   ::spec-id halite-types/NamespacedKeyword
+  {::mandatory #{types/BareKeyword}
+   ::spec-id types/NamespacedKeyword
    (s/optional-key ::refines-to) (s/recursive #'FlattenedRefinementMap)
-   halite-types/BareKeyword (s/cond-pre FlattenedVar (s/recursive #'FlattenedVars))})
+   types/BareKeyword (s/cond-pre FlattenedVar (s/recursive #'FlattenedVars))})
 
 ;; A FlattenedRefinement is like a FlattenedVar, but does not support a
 ;; ::refines-to map because the right place to put such a flattening would be in
 ;; the FlattenedVar that contains this FlattenedRefinement.
 (s/defschema ^:private FlattenedRefinement
-  {::mandatory #{halite-types/BareKeyword}
-   halite-types/BareKeyword (s/cond-pre FlattenedVar FlattenedVars)})
+  {::mandatory #{types/BareKeyword}
+   types/BareKeyword (s/cond-pre FlattenedVar FlattenedVars)})
 
 (s/defschema ^:private FlattenedRefinementMap
-  {halite-types/NamespacedKeyword FlattenedRefinement})
+  {types/NamespacedKeyword FlattenedRefinement})
 
 (defn- primitive-maybe-type?
   [htype]
   (or (#{:Integer :Boolean :String} htype)
-      (and (halite-types/maybe-type? htype) (vector? htype)
+      (and (types/maybe-type? htype) (vector? htype)
            (#{:Integer :Boolean :String} (second htype)))))
 
 (defn- spec-maybe-type?
   [htype]
-  (or (halite-types/spec-type? htype)
-      (halite-types/spec-type? (halite-types/no-maybe htype))))
+  (or (types/spec-type? htype)
+      (types/spec-type? (types/no-maybe htype))))
 
 (defn- unwrap-maybe [htype]
   (cond-> htype
@@ -92,7 +92,7 @@
   ([sctx :- ssa/SpecCtx, spec-bound :- ConcreteSpecBound]
    (flatten-vars sctx [] "" false spec-bound))
   ([sctx :- ssa/SpecCtx
-    parent-spec-ids :- [halite-types/NamespacedKeyword]
+    parent-spec-ids :- [types/NamespacedKeyword]
     prefix :- s/Str
     already-optional? :- s/Bool
     spec-bound :- ConcreteSpecBound]
@@ -105,7 +105,7 @@
          (let [htype (envs/halite-type-from-var-type senv vtype)]
            (cond
              (primitive-maybe-type? htype)
-             (let [actually-mandatory? (and already-optional? (not (halite-types/maybe-type? htype)))
+             (let [actually-mandatory? (and already-optional? (not (types/maybe-type? htype)))
                    prefixed-var-kw (keyword (str prefix (name var-kw)))]
                (-> vars
                    (assoc var-kw [prefixed-var-kw
@@ -115,10 +115,10 @@
                     actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
 
              (spec-maybe-type? htype)
-             (let [spec-id (halite-types/spec-id (unwrap-maybe htype))
+             (let [spec-id (types/spec-id (unwrap-maybe htype))
                    recur? (or (contains? spec-bound var-kw)
                               (every? #(not= % spec-id) parent-spec-ids))
-                   optional? (halite-types/maybe-type? htype)
+                   optional? (types/maybe-type? htype)
                    sub-bound (get spec-bound var-kw :Unset)
                    flattened-vars (when recur?
                                     (flatten-vars sctx
@@ -214,11 +214,11 @@
 
             (and (map? bound) (contains? bound :$type))
             (let [optional? (and (vector? (:$type bound)) (= :Maybe (first (:$type bound))))
-                  htype (halite-types/concrete-spec-type (cond-> (:$type bound) optional? (second)))]
+                  htype (types/concrete-spec-type (cond-> (:$type bound) optional? (second)))]
               (when-not composite-var?
                 (throw (ex-info (format "Invalid bound for %s, which is not composite" (name var-kw))
                                 {:var-kw var-kw :bound bound})))
-              (when (and (nil? witness-var) (halite-types/maybe-type? htype))
+              (when (and (nil? witness-var) (types/maybe-type? htype))
                 (throw (ex-info (format "Invalid bound for %s, which is not optional" (name var-kw))
                                 {:var-kw var-kw :bound bound})))
               (-> choco-bounds
@@ -241,7 +241,7 @@
                               (remove (comp mandatory-vars first second))
                               (filter (fn [[var-kw info]]
                                         (if (vector? info)
-                                          (halite-types/maybe-type? (envs/halite-type-from-var-type senv (second info)))
+                                          (types/maybe-type? (envs/halite-type-from-var-type senv (second info)))
                                           (contains? info :$witness))))
                               (sort-by first)
                               (map (fn [[opt-var-kw info]]
@@ -380,7 +380,7 @@
 
 (s/defn ^:private to-atom-bound :- AtomBound
   [choco-bounds :- prop-strings/SpecBound
-   var-type :- halite-types/HaliteType
+   var-type :- types/HaliteType
    [var-kw _] :- FlattenedVar]
   (let [bound (-> var-kw choco-bounds)]
     (simplify-atom-bound
@@ -388,7 +388,7 @@
        bound ;; simple value
        (let [bound (:$in bound)]
          {:$in
-          (if (halite-types/maybe-type? var-type)
+          (if (types/maybe-type? var-type)
             bound ;; leave any :Unset in the bounds
             (cond ;; remove any :Unset in the bounds
               (vector? bound) (subvec bound 0 2)
@@ -452,7 +452,7 @@
   (doseq [[spec-id {:keys [refines-to ssa-graph]}] sctx
           [to-id {:keys [expr]}] refines-to]
     (let [htype (->> expr (ssa/deref-id ssa-graph) ssa/node-type)]
-      (when (halite-types/maybe-type? htype)
+      (when (types/maybe-type? htype)
         (throw (ex-info (format "BUG! Refinement of %s to %s is optional, and propagate does not yet support optional refinements"
                                 spec-id to-id)
                         {:sctx sctx})))))

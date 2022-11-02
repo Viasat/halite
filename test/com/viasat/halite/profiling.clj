@@ -91,10 +91,10 @@
 (comment
 
   (require '[com.viasat.halite.transpile.ssa :as ssa]
-           '[com.viasat.halite.types :as halite-types])
+           '[com.viasat.halite.types :as types])
 
   (unprof-all-vars)
-  (run! prof-var [#'halite-types/meet
+  (run! prof-var [#'types/meet
 
                   #'ssa/find-form
                   #'ssa/form-to-ssa

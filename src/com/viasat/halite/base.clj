@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.base
   (:require [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [schema.core :as s]))
@@ -19,7 +19,7 @@
 
 ;;;;
 
-(s/defschema UserConstraintName halite-types/BareKeyword)
+(s/defschema UserConstraintName types/BareKeyword)
 
 (s/defschema ConstraintName (s/conditional
                              string? s/Str
@@ -83,17 +83,17 @@
 ;;
 
 (s/defn refines-to? :- Boolean
-  [inst spec-type :- halite-types/HaliteType]
-  (let [spec-id (halite-types/spec-id spec-type)]
+  [inst spec-type :- types/HaliteType]
+  (let [spec-id (types/spec-id spec-type)]
     (or (= spec-id (:$type inst))
         (boolean (get (:refinements (meta inst)) spec-id)))))
 
 ;;
 
 (s/defschema FnSignature
-  {:arg-types [halite-types/HaliteType]
-   (s/optional-key :variadic-tail) halite-types/HaliteType
-   :return-type halite-types/HaliteType})
+  {:arg-types [types/HaliteType]
+   (s/optional-key :variadic-tail) types/HaliteType
+   :return-type types/HaliteType})
 
 (s/defschema Builtin
   {:signatures (s/constrained [FnSignature] seq)

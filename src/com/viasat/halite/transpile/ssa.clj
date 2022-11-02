@@ -9,7 +9,7 @@
             [clojure.pprint :as pp]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
@@ -43,12 +43,12 @@
 
 (s/defschema SSAOp (apply s/enum (disj supported-halite-ops 'let)))
 
-(s/defschema SSALocalForm [(s/one (s/enum '$local) "op") (s/one s/Int "i") (s/one halite-types/HaliteType "type")])
+(s/defschema SSALocalForm [(s/one (s/enum '$local) "op") (s/one s/Int "i") (s/one types/HaliteType "type")])
 
 (s/defschema SSAForm
   (s/conditional
    ;; instance literals
-   map? {:$type halite-types/NamespacedKeyword
+   map? {:$type types/NamespacedKeyword
          s/Keyword NodeId}
    ;; vector literals
    vector? [NodeId]
@@ -59,13 +59,13 @@
    :else SSATerm))
 
 (s/defschema Node
-  [(s/one SSAForm :form) (s/one halite-types/HaliteType :type) (s/optional NodeId :negation)])
+  [(s/one SSAForm :form) (s/one types/HaliteType :type) (s/optional NodeId :negation)])
 
 (s/defn node-form :- SSAForm
   [node :- Node]
   (first node))
 
-(s/defn node-type :- halite-types/HaliteType
+(s/defn node-type :- types/HaliteType
   [node :- Node]
   (second node))
 
@@ -112,7 +112,7 @@
   (assoc envs/SpecInfo
          :ssa-graph SSAGraph
          (s/optional-key :constraints) {base/ConstraintName NodeId}
-         (s/optional-key :refines-to) {halite-types/NamespacedKeyword
+         (s/optional-key :refines-to) {types/NamespacedKeyword
                                        (assoc envs/Refinement :expr NodeId)}))
 
 (s/defn contains-id? :- s/Bool
@@ -244,7 +244,7 @@
 ;;;;;;;;;;;;;;;; Converting to SSA ;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/defn ^:private insert-node :- NodeInGraph
-  [ssa-graph :- SSAGraph, form :- SSAForm, htype :- halite-types/HaliteType]
+  [ssa-graph :- SSAGraph, form :- SSAForm, htype :- types/HaliteType]
   (let [id (symbol (str "$" (:next-id ssa-graph)))]
     [(-> ssa-graph
          (update :next-id inc)
@@ -306,7 +306,7 @@
         (insert-node-and-negation ssa-graph ssa-form)))))
 
 (s/defn ^:private ensure-node :- NodeInGraph
-  [ssa-graph :- SSAGraph, ssa-form :- SSAForm, htype :- halite-types/HaliteType]
+  [ssa-graph :- SSAGraph, ssa-form :- SSAForm, htype :- types/HaliteType]
   (if-let [id (find-form ssa-graph ssa-form)]
     (let [node (deref-id ssa-graph id)]
       (if (not= htype (node-type (deref-id ssa-graph id)))
@@ -344,7 +344,7 @@
   {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph :local-stack []})
 
 (s/defn ^:private push-local :- [(s/one SSACtx "ctx") (s/one NodeId "id")]
-  [{:keys [ssa-graph local-stack] :as ctx} :- SSACtx, htype :- halite-types/HaliteType]
+  [{:keys [ssa-graph local-stack] :as ctx} :- SSACtx, htype :- types/HaliteType]
   (let [[ssa-graph id] (ensure-node ssa-graph (list '$local (inc (count local-stack)) htype) htype)]
     [(-> ctx (assoc :ssa-graph ssa-graph) (update :local-stack conj id)) id]))
 
@@ -391,8 +391,8 @@
   (let [[ssa-graph pred-id] (form-to-ssa ctx pred)
         [ssa-graph then-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) then)
         [ssa-graph else-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) else)
-        htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
-                                 (node-type (deref-id ssa-graph else-id)))]
+        htype (types/meet (node-type (deref-id ssa-graph then-id))
+                          (node-type (deref-id ssa-graph else-id)))]
     (ensure-node ssa-graph (list 'if pred-id then-id else-id) htype)))
 
 (s/defn ^:private when-to-ssa :- NodeInGraph
@@ -400,7 +400,7 @@
   (let [[ssa-graph pred-id] (form-to-ssa ctx pred)
         [ssa-graph then-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) then)
         [_ then-type] (deref-id ssa-graph then-id)]
-    (ensure-node ssa-graph (list 'when pred-id then-id) (halite-types/meet then-type :Unset))))
+    (ensure-node ssa-graph (list 'when pred-id then-id) (types/meet then-type :Unset))))
 
 (s/defn ^:private if-value-to-ssa :- NodeInGraph
   [{:keys [ssa-graph] :as ctx} :- SSACtx, [_ var-sym then else :as form]]
@@ -417,7 +417,7 @@
           (update :env assoc var-sym no-value-id)
           (form-to-ssa else))
 
-      (not (halite-types/maybe-type? htype))
+      (not (types/maybe-type? htype))
       (let [[unguarded-form] (deref-id ssa-graph unguarded-id)
             ;; Unwrap $value! forms produced by containing if-value forms.
             ;; See com.viasat.halite.transpile.test-ssa/test-roundtripping-nested-if-values for details.
@@ -427,13 +427,13 @@
             [ssa-graph guard-id] (ensure-node ssa-graph (list '$value? unguarded-id) :Boolean)
             [ssa-graph then-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa then))
             [ssa-graph else-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa else))
-            htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
-                                     (node-type (deref-id ssa-graph else-id)))]
+            htype (types/meet (node-type (deref-id ssa-graph then-id))
+                              (node-type (deref-id ssa-graph else-id)))]
         (ensure-node ssa-graph (list 'if guard-id then-id else-id) htype))
 
       :else
       (let [[ssa-graph guard-id] (ensure-node ssa-graph (list '$value? unguarded-id) :Boolean)
-            inner-type (halite-types/no-maybe htype)
+            inner-type (types/no-maybe htype)
             [ssa-graph value-id] (ensure-node ssa-graph (list '$value! unguarded-id) inner-type)
             [ssa-graph then-id] (-> ctx
                                     (assoc :ssa-graph ssa-graph)
@@ -445,8 +445,8 @@
                                     (update :tenv envs/extend-scope var-sym :Unset)
                                     (update :env assoc var-sym no-value-id)
                                     (form-to-ssa (if (= else unguarded-id) no-value-id else)))
-            htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
-                                     (node-type (deref-id ssa-graph else-id)))]
+            htype (types/meet (node-type (deref-id ssa-graph then-id))
+                              (node-type (deref-id ssa-graph else-id)))]
         (ensure-node ssa-graph (list 'if guard-id then-id else-id) htype)))))
 
 (s/defn ^:private get-to-ssa :- NodeInGraph
@@ -454,8 +454,8 @@
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)
         t (->> id (deref-id ssa-graph) node-type)]
     (cond
-      (halite-types/spec-type? t)
-      (let [spec-id (halite-types/spec-id t)
+      (types/spec-type? t)
+      (let [spec-id (types/spec-id t)
             var-kw var-kw-or-idx
             vtype (or (->> spec-id (envs/system-lookup-spec senv) :spec-vars var-kw)
                       (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
@@ -465,11 +465,11 @@
                                       {:form form, :var-kw var-kw, :spec-id spec-id})))]
         (ensure-node ssa-graph (list 'get id var-kw) htype))
 
-      (halite-types/halite-vector-type? t)
+      (types/halite-vector-type? t)
       (let [[ssa-graph idx-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) var-kw-or-idx)
             _ (when (not= :Integer (node-type (deref-id ssa-graph idx-id)))
                 (throw (ex-info "BUG! 1st argument has vector type, 2nd is not of type :Integer" {:form form})))]
-        (ensure-node ssa-graph (list 'get id idx-id) (halite-types/elem-type t)))
+        (ensure-node ssa-graph (list 'get id idx-id) (types/elem-type t)))
 
       :else
       (throw (ex-info (format "BUG! get sub-expression has type %s, expected a spec type" t)
@@ -481,7 +481,7 @@
     (when (nil? (envs/system-lookup-spec (:senv ctx) spec-id))
       (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
                       {:form form :spec-id spec-id})))
-    (ensure-node ssa-graph (list 'refine-to id spec-id) (halite-types/concrete-spec-type spec-id))))
+    (ensure-node ssa-graph (list 'refine-to id spec-id) (types/concrete-spec-type spec-id))))
 
 (s/defn ^:private inst-literal-to-ssa :- NodeInGraph
   [ctx :- SSACtx, form]
@@ -492,7 +492,7 @@
                               [ssa-graph (assoc inst var-kw id)]))
                           [(:ssa-graph ctx) {:$type spec-id}]
                           (-> form (dissoc :$type) keys sort))]
-    (ensure-node ssa-graph inst (halite-types/concrete-spec-type spec-id))))
+    (ensure-node ssa-graph inst (types/concrete-spec-type spec-id))))
 
 (s/defn ^:private vec-literal-to-ssa :- NodeInGraph
   [ctx :- SSACtx, form]
@@ -506,9 +506,9 @@
                    (fn [& htypes]
                      (if (empty? htypes)
                        :Nothing
-                       (apply halite-types/meet htypes)))
+                       (apply types/meet htypes)))
                    (map second elem-info))]
-    (ensure-node ssa-graph (mapv first elem-info) (halite-types/vector-type elem-type))))
+    (ensure-node ssa-graph (mapv first elem-info) (types/vector-type elem-type))))
 
 (s/defn ^:private do!-to-ssa :- NodeInGraph
   [{:keys [ssa-graph] :as ctx} :- SSACtx, [_do & args :as form]]
@@ -527,7 +527,7 @@
     (when (= :Unset htype)
       (throw (ex-info "Invalid $value! form: type of inner expression is :Unset"
                       {:ssa-graph ssa-graph :form form :subform subform})))
-    (ensure-node ssa-graph (list '$value! arg-id) (halite-types/no-maybe htype))))
+    (ensure-node ssa-graph (list '$value! arg-id) (types/no-maybe htype))))
 
 (s/defn ^:private error-to-ssa :- NodeInGraph
   [{:keys [ssa-graph] :as ctx} :- SSACtx form]
@@ -544,7 +544,7 @@
   (let [[op [var-sym coll-expr] body] form
         [ssa-graph coll-id] (form-to-ssa ctx coll-expr)
         coll-type (->> coll-id (deref-id ssa-graph) node-type)
-        elem-type (halite-types/elem-type coll-type)
+        elem-type (types/elem-type coll-type)
         [ctx local-id] (push-local (assoc ctx :ssa-graph ssa-graph) elem-type)
         [ssa-graph body-id] (-> ctx
                                 (update :tenv envs/extend-scope var-sym elem-type)
@@ -552,7 +552,7 @@
                                 (form-to-ssa body))
         htype (if (= 'map op)
                 (let [body-type (->> body-id (deref-id ssa-graph) node-type)]
-                  (halite-types/change-elem-type coll-type body-type))
+                  (types/change-elem-type coll-type body-type))
                 :Boolean)]
     (ensure-node ssa-graph (list op local-id coll-id body-id) htype)))
 
@@ -562,9 +562,9 @@
         [ssa-graph a-id] (form-to-ssa ctx a)
         [ssa-graph b-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) b)
         [a-type b-type] (map #(node-type (deref-id ssa-graph %)) [a-id b-id])
-        htype (->> b-type halite-types/elem-type
-                   (halite-types/change-elem-type a-type)
-                   (halite-types/meet a-type))]
+        htype (->> b-type types/elem-type
+                   (types/change-elem-type a-type)
+                   (types/meet a-type))]
     (ensure-node ssa-graph (list 'concat a-id b-id) htype)))
 
 (s/defn ^:private conj-to-ssa :- NodeInGraph
@@ -576,10 +576,10 @@
                                         (fn [[ssa-graph elem-ids elem-type] elem]
                                           (let [[ssa-graph elem-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) elem)
                                                 t (node-type (deref-id ssa-graph coll-id))]
-                                            [ssa-graph (conj elem-ids elem-id) (halite-types/meet elem-type t)]))
-                                        [ssa-graph [] (halite-types/elem-type coll-type)]
+                                            [ssa-graph (conj elem-ids elem-id) (types/meet elem-type t)]))
+                                        [ssa-graph [] (types/elem-type coll-type)]
                                         elems)]
-    (ensure-node ssa-graph (apply list 'conj coll-id elem-ids) (halite-types/change-elem-type coll-type elem-type))))
+    (ensure-node ssa-graph (apply list 'conj coll-id elem-ids) (types/change-elem-type coll-type elem-type))))
 
 (s/defn replace-in-expr :- NodeInGraph
   [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
@@ -680,7 +680,7 @@
 
 (s/defschema SpecCtx
   "A map of spec ids to specs in SSA form."
-  {halite-types/NamespacedKeyword SpecInfo})
+  {types/NamespacedKeyword SpecInfo})
 
 (s/defn as-spec-env :- (s/protocol envs/SpecEnv)
   "Adapt a SpecCtx to a SpecEnv. WARNING! The resulting spec env does NOT return
@@ -694,7 +694,7 @@
 (s/defn build-spec-ctx :- SpecCtx
   "Starting from root-spec-id and looking up specs from senv, build and return a SpecContext
   containing the root spec and every spec transitively referenced from it, in SSA form."
-  [senv :- (s/protocol envs/SpecEnv), root-spec-id :- halite-types/NamespacedKeyword]
+  [senv :- (s/protocol envs/SpecEnv), root-spec-id :- types/NamespacedKeyword]
   (-> senv
       (envs/build-spec-map root-spec-id)
       (update-vals (partial spec-to-ssa senv))))

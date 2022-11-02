@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-analysis
-  (:require [com.viasat.halite.analysis :as halite-analysis]
+  (:require [com.viasat.halite.analysis :as analysis]
             [schema.core :as s]
             [schema.test :refer [validate-schemas]]
             [clojure.test :refer :all]))
@@ -12,29 +12,29 @@
 (clojure.test/use-fixtures :once validate-schemas)
 
 (deftest test-schema
-  (s/check halite-analysis/EnumConstraint {:enum #{100}})
-  (s/check halite-analysis/Range {:min 100
-                                  :min-inclusive true})
-  (s/check halite-analysis/Range {:max 100
-                                  :min-inclusive true})
-  (s/check halite-analysis/Range {:max 100
-                                  :max-inclusive true})
-  (s/check halite-analysis/Range {:min 1
-                                  :min-inclusive false
-                                  :max 100
-                                  :max-inclusive true})
-  (s/check halite-analysis/RangeConstraint {:ranges #{{:min 100
-                                                       :min-inclusive true}}})
+  (s/check analysis/EnumConstraint {:enum #{100}})
+  (s/check analysis/Range {:min 100
+                           :min-inclusive true})
+  (s/check analysis/Range {:max 100
+                           :min-inclusive true})
+  (s/check analysis/Range {:max 100
+                           :max-inclusive true})
+  (s/check analysis/Range {:min 1
+                           :min-inclusive false
+                           :max 100
+                           :max-inclusive true})
+  (s/check analysis/RangeConstraint {:ranges #{{:min 100
+                                                :min-inclusive true}}})
 
-  (s/check halite-analysis/CollectionConstraint {:coll-size 5})
-  (s/check halite-analysis/CollectionConstraint {:coll-elements {:enum #{1 2}}})
-  (s/check halite-analysis/CollectionConstraint {:coll-size 5
-                                                 :coll-elements {:enum #{1 2}}}))
+  (s/check analysis/CollectionConstraint {:coll-size 5})
+  (s/check analysis/CollectionConstraint {:coll-elements {:enum #{1 2}}})
+  (s/check analysis/CollectionConstraint {:coll-size 5
+                                          :coll-elements {:enum #{1 2}}}))
 
 (deftest test-gather-free-vars
   (are [v expected]
        (= expected
-          (halite-analysis/gather-free-vars v))
+          (analysis/gather-free-vars v))
     1
     #{}
 
@@ -87,7 +87,7 @@
 (deftest test-replace-free-vars
   (are [v var-map expected]
        (= expected
-          (halite-analysis/replace-free-vars var-map v))
+          (analysis/replace-free-vars var-map v))
     true
     {}
     true
@@ -236,12 +236,12 @@
 (deftest test-gather-tlfc
   (are [v x]
        (= x
-          [(halite-analysis/gather-tlfc v)
-           (halite-analysis/sort-tlfc (halite-analysis/gather-tlfc v))
-           (binding [halite-analysis/*max-enum-size* 2]
-             (halite-analysis/compute-tlfc-map v))
-           (binding [halite-analysis/*max-enum-size* 10]
-             (halite-analysis/compute-tlfc-map v))])
+          [(analysis/gather-tlfc v)
+           (analysis/sort-tlfc (analysis/gather-tlfc v))
+           (binding [analysis/*max-enum-size* 2]
+             (analysis/compute-tlfc-map v))
+           (binding [analysis/*max-enum-size* 10]
+             (analysis/compute-tlfc-map v))])
 
     true [true
           nil
@@ -1187,58 +1187,58 @@
 
 (deftest test-encode-fixed-decimals
   (is (= 100
-         (halite-analysis/encode-fixed-decimals #d "1.00")))
+         (analysis/encode-fixed-decimals #d "1.00")))
 
   (is (= '(let [x 100
                 y [21 0]
                 z #{1}]
             12)
-         (halite-analysis/encode-fixed-decimals '(let [x #d "1.00"
-                                                       y [#d "2.1" #d "0.0"]
-                                                       z #{#d "0.0001"}]
-                                                   #d "1.2")))))
+         (analysis/encode-fixed-decimals '(let [x #d "1.00"
+                                                y [#d "2.1" #d "0.0"]
+                                                z #{#d "0.0001"}]
+                                            #d "1.2")))))
 
 (deftest test-find-spec-refs
   (is (= #{}
-         (halite-analysis/find-spec-refs '1)))
+         (analysis/find-spec-refs '1)))
   (is (= #{{:tail :my/Spec}}
-         (halite-analysis/find-spec-refs '{:$type :my/Spec})))
+         (analysis/find-spec-refs '{:$type :my/Spec})))
   (is (= #{:my/Spec}
-         (halite-analysis/find-spec-refs '(= {:$type :my/Spec} {:$type :my/Spec}))))
+         (analysis/find-spec-refs '(= {:$type :my/Spec} {:$type :my/Spec}))))
   (is (= #{{:tail :my/Other} {:tail :my/Spec}}
-         (halite-analysis/find-spec-refs '{:$type :my/Spec
-                                           :a {:$type :my/Other}})))
+         (analysis/find-spec-refs '{:$type :my/Spec
+                                    :a {:$type :my/Other}})))
   (is (= #{:my/Other {:tail :my/Spec}}
-         (halite-analysis/find-spec-refs '{:$type :my/Spec
-                                           :a (= {:$type :my/Other}
-                                                 {:$type :my/Other})})))
+         (analysis/find-spec-refs '{:$type :my/Spec
+                                    :a (= {:$type :my/Other}
+                                          {:$type :my/Other})})))
   (is (= #{{:tail :my/Spec}}
-         (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
-                                            x))))
+         (analysis/find-spec-refs '(let [x {:$type :my/Spec}]
+                                     x))))
   (is (= #{:my/Spec {:tail :my/Other}}
-         (halite-analysis/find-spec-refs '(when {:$type :my/Spec} {:$type :my/Other}))))
+         (analysis/find-spec-refs '(when {:$type :my/Spec} {:$type :my/Other}))))
   (is (= #{{:tail :my/Spec} :my/Spec}
-         (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
-                                            (when x (if x x x))))))
+         (analysis/find-spec-refs '(let [x {:$type :my/Spec}]
+                                     (when x (if x x x))))))
   (is (= #{{:tail :my/Spec} :my/Spec}
-         (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
-                                            (when x (if x x (get x :a)))))))
+         (analysis/find-spec-refs '(let [x {:$type :my/Spec}]
+                                     (when x (if x x (get x :a)))))))
   (is (= #{{:tail :my/Spec} :my/Spec}
-         (halite-analysis/find-spec-refs '(let [x {:$type :my/Spec}]
-                                            (when x (if x x (get-in x [:a])))))))
+         (analysis/find-spec-refs '(let [x {:$type :my/Spec}]
+                                     (when x (if x x (get-in x [:a])))))))
   (is (= #{:my/Spec}
-         (halite-analysis/find-spec-refs '(any? [x [{:$type :my/Spec}]] true))))
+         (analysis/find-spec-refs '(any? [x [{:$type :my/Spec}]] true))))
   (is (= #{:my/Spec :my/Other}
-         (halite-analysis/find-spec-refs '(any? [x [{:$type :my/Spec}]] {:$type :my/Other}))))
+         (analysis/find-spec-refs '(any? [x [{:$type :my/Spec}]] {:$type :my/Other}))))
   (is (= #{:my/Spec :my/Other}
-         (halite-analysis/find-spec-refs '(refine-to {:$type :my/Spec} :my/Other))))
+         (analysis/find-spec-refs '(refine-to {:$type :my/Spec} :my/Other))))
   (is (= #{:my/Spec :my/Other}
-         (halite-analysis/find-spec-refs '(refine-to? {:$type :my/Spec} :my/Other))))
+         (analysis/find-spec-refs '(refine-to? {:$type :my/Spec} :my/Other))))
 
   (is (= #{{:tail :my/Spec} {:tail :my/Other}}
-         (halite-analysis/find-spec-refs '(if true {:$type :my/Spec} {:$type :my/Other}))))
+         (analysis/find-spec-refs '(if true {:$type :my/Spec} {:$type :my/Other}))))
   (is (= #{:my/Other}
-         (halite-analysis/find-spec-refs-but-tail :my/Spec '(if true {:$type :my/Spec} {:$type :my/Other})))))
+         (analysis/find-spec-refs-but-tail :my/Spec '(if true {:$type :my/Spec} {:$type :my/Other})))))
 
 (deftest test-cyclical-dependencies
   (let [spec-map {:spec/Destination {:spec-vars {:d "Integer"}}
@@ -1255,14 +1255,14 @@
     (is (= {:spec/Path1 #{:spec/Destination}
             :spec/Path2 #{:spec/Destination}
             :spec/Start #{:spec/Path1 :spec/Path2}}
-           (#'halite-analysis/get-spec-map-dependencies spec-map)))
-    (is (nil? (halite-analysis/find-cycle-in-dependencies spec-map))))
+           (#'analysis/get-spec-map-dependencies spec-map)))
+    (is (nil? (analysis/find-cycle-in-dependencies spec-map))))
   (let [spec-map {:spec/A {:spec-vars {:b :spec/B}}
                   :spec/B {:spec-vars {:a :spec/A}}}]
     (is (= {:spec/A #{:spec/B}
             :spec/B #{:spec/A}}
-           (#'halite-analysis/get-spec-map-dependencies spec-map)))
+           (#'analysis/get-spec-map-dependencies spec-map)))
     (is (= [:spec/A :spec/B :spec/A]
-           (halite-analysis/find-cycle-in-dependencies spec-map)))))
+           (analysis/find-cycle-in-dependencies spec-map)))))
 
 ;; (run-tests)

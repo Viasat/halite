@@ -7,14 +7,14 @@
             [com.viasat.halite.base :as base]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.type-check :as type-check]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
-(s/defn ^:private type-of* :- halite-types/HaliteType
+(s/defn ^:private type-of* :- types/HaliteType
   [ctx :- type-check/TypeContext
    value]
   (cond
@@ -29,7 +29,7 @@
     (coll? value) (type-check/type-check-coll type-of* :value ctx value)
     :else (throw-err (h-err/invalid-value {:value value}))))
 
-(s/defn type-of :- halite-types/HaliteType
+(s/defn type-of :- types/HaliteType
   "Return the type of the given runtime value, or throw an error if the value is invalid and cannot be typed.
   For instances, this function checks all applicable constraints. Any constraint violations result in a thrown exception."
   [senv :- (s/protocol envs/SpecEnv)

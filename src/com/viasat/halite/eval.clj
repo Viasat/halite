@@ -8,7 +8,7 @@
             [clojure.string :as string]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.types :as halite-types]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
@@ -29,35 +29,35 @@
    :signatures (base/make-signatures signatures)})
 
 (def ^:private decimal-sigs (mapcat (fn [s]
-                                      [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
-                                       (halite-types/decimal-type s)])
+                                      [[(types/decimal-type s) (types/decimal-type s) & (types/decimal-type s)]
+                                       (types/decimal-type s)])
                                     (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-single (mapcat (fn [s]
-                                             [[(halite-types/decimal-type s) :Integer & :Integer]
-                                              (halite-types/decimal-type s)])
+                                             [[(types/decimal-type s) :Integer & :Integer]
+                                              (types/decimal-type s)])
                                            (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-unary (mapcat (fn [s]
-                                            [[(halite-types/decimal-type s)]
-                                             (halite-types/decimal-type s)])
+                                            [[(types/decimal-type s)]
+                                             (types/decimal-type s)])
                                           (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-binary (mapcat (fn [s]
-                                             [[(halite-types/decimal-type s) :Integer]
-                                              (halite-types/decimal-type s)])
+                                             [[(types/decimal-type s) :Integer]
+                                              (types/decimal-type s)])
                                            (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-boolean (mapcat (fn [s]
-                                              [[(halite-types/decimal-type s) (halite-types/decimal-type s)]
+                                              [[(types/decimal-type s) (types/decimal-type s)]
                                                :Boolean])
                                             (range 1 (inc fixed-decimal/max-scale))))
 
 (def ^:private decimal-sigs-collections (mapcat (fn [s]
-                                                  [[(halite-types/set-type (halite-types/decimal-type s))]
-                                                   (halite-types/vector-type (halite-types/decimal-type s))
-                                                   [(halite-types/vector-type (halite-types/decimal-type s))]
-                                                   (halite-types/vector-type (halite-types/decimal-type s))])
+                                                  [[(types/set-type (types/decimal-type s))]
+                                                   (types/vector-type (types/decimal-type s))
+                                                   [(types/vector-type (types/decimal-type s))]
+                                                   (types/vector-type (types/decimal-type s))])
                                                 (range 1 (inc fixed-decimal/max-scale))))
 
 (defn handle-overflow [f]
@@ -75,7 +75,7 @@
      '<= (apply mk-builtin base/h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      '> (apply mk-builtin base/h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      '>= (apply mk-builtin base/h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     'count (mk-builtin count [(halite-types/coll-type :Value)] :Integer)
+     'count (mk-builtin count [(types/coll-type :Value)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
      'or (mk-builtin (fn [& args] (true? (some true? args)))
@@ -83,7 +83,7 @@
      'not (mk-builtin not [:Boolean] :Boolean)
      '=> (mk-builtin (fn [a b] (if a b true))
                      [:Boolean :Boolean] :Boolean)
-     'contains? (mk-builtin contains? [(halite-types/set-type :Value) :Value] :Boolean)
+     'contains? (mk-builtin contains? [(types/set-type :Value) :Value] :Boolean)
      'inc (mk-builtin (handle-overflow inc) [:Integer] :Integer)
      'dec (mk-builtin (handle-overflow dec)  [:Integer] :Integer)
      'div (apply mk-builtin (fn [num divisor]
@@ -104,21 +104,21 @@
                        [:Integer :Integer] :Integer)
      'abs (apply mk-builtin base/habs (into [[:Integer] :Integer] decimal-sigs-unary))
      'str (mk-builtin (comp (partial base/check-limit :string-runtime-length) str) [& :String] :String)
-     'subset? (mk-builtin set/subset? [(halite-types/set-type :Value) (halite-types/set-type :Value)] :Boolean)
+     'subset? (mk-builtin set/subset? [(types/set-type :Value) (types/set-type :Value)] :Boolean)
      'sort (apply mk-builtin (fn [expr]
                                ((if (and (pos? (count expr))
                                          (base/fixed-decimal? (first expr)))
                                   (comp vec (partial sort-by fixed-decimal/sort-key))
                                   (comp vec sort)) expr))
-                  (into [[halite-types/empty-set] halite-types/empty-vector
-                         [halite-types/empty-vector] halite-types/empty-vector
-                         [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
-                         [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer)]
+                  (into [[types/empty-set] types/empty-vector
+                         [types/empty-vector] types/empty-vector
+                         [(types/set-type :Integer)] (types/vector-type :Integer)
+                         [(types/vector-type :Integer)] (types/vector-type :Integer)]
                         decimal-sigs-collections))
      'range (mk-builtin (comp (partial base/check-limit :vector-runtime-count) vec range)
-                        [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
-                        [:Integer :Integer] (halite-types/vector-type :Integer)
-                        [:Integer] (halite-types/vector-type :Integer))
+                        [:Integer :Integer :Integer] (types/vector-type :Integer)
+                        [:Integer :Integer] (types/vector-type :Integer)
+                        [:Integer] (types/vector-type :Integer))
      'error (mk-builtin #(throw-err (h-err/spec-threw {:spec-error-str %}))
                         [:String] :Nothing)}))
 
@@ -134,7 +134,7 @@
   [ctx :- EvalContext
    tenv :- (s/protocol envs/TypeEnv)
    bool-expr
-   spec-id :- halite-types/NamespacedKeyword
+   spec-id :- types/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
   (with-exception-data {:form bool-expr
                         :constraint-name constraint-name
@@ -146,7 +146,7 @@
   or nil if the guards prevent this projection."
   [ctx :- EvalContext
    tenv :- (s/protocol envs/TypeEnv)
-   spec-id :- halite-types/NamespacedKeyword
+   spec-id :- types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
   (with-exception-data {:form expr
@@ -177,15 +177,15 @@
   during type checking when the spec foo/Bar is abstract. The type system ensures that v is some instance,
   but at runtime, we need to confirm that v actually refines to the expected type. This function does,
   and recursively deals with collection types."
-  [declared-type :- halite-types/HaliteType, v]
-  (let [declared-type (halite-types/no-maybe declared-type)]
+  [declared-type :- types/HaliteType, v]
+  (let [declared-type (types/no-maybe declared-type)]
     (cond
-      (halite-types/spec-id declared-type) (when-not (base/refines-to? v declared-type)
-                                             (throw-err (h-err/no-refinement-path
-                                                         {:type (symbol (:$type v))
-                                                          :value v
-                                                          :target-type (symbol (halite-types/spec-id declared-type))})))
-      :else (if-let [elem-type (halite-types/elem-type declared-type)]
+      (types/spec-id declared-type) (when-not (base/refines-to? v declared-type)
+                                      (throw-err (h-err/no-refinement-path
+                                                  {:type (symbol (:$type v))
+                                                   :value v
+                                                   :target-type (symbol (types/spec-id declared-type))})))
+      :else (if-let [elem-type (types/elem-type declared-type)]
               (dorun (map (partial check-against-declared-type elem-type) v))
               nil))))
 
@@ -461,7 +461,7 @@
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]
-                                   (base/refines-to? inst (halite-types/concrete-spec-type kw)))
+                                   (base/refines-to? inst (types/concrete-spec-type kw)))
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
                     'map (let [[coll result] (eval-comprehend ctx (rest expr))]
