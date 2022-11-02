@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-propagate
-  (:require [com.viasat.halite.propagate :as hp]
+  (:require [com.viasat.halite.propagate :as propagate]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [com.viasat.halite.transpile.simplify :as simplify]
@@ -28,7 +28,7 @@
 
 (deftest test-strings-and-abstract-specs-example
   (are [in out]
-       (= out (hp/propagate strings-and-abstract-specs-example in))
+       (= out (propagate/propagate strings-and-abstract-specs-example in))
 
     {:$type :ws/Car}
     {:$type :ws/Car,

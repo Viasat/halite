@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.propagate.test-prop-top-concrete-schema-check
   "This namespace exists to provide a test case for propagate that runs with schema validation on."
-  (:require [com.viasat.halite.propagate :as hp]
+  (:require [com.viasat.halite.propagate :as propagate]
             [schema.test :refer [validate-schemas]])
   (:use clojure.test))
 
@@ -13,8 +13,8 @@
   (is (= {:$in {:ws/A {:$refines-to {}}
                 :ws/B {:$refines-to {:ws/A {}}}}
           :$refines-to {}}
-         (hp/propagate '{:ws/A {}
-                         :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}}
-                       {:$refines-to {:ws/A {}}}))))
+         (propagate/propagate '{:ws/A {}
+                                :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}}
+                              {:$refines-to {:ws/A {}}}))))
 
 ;; (time (clojure.test/run-tests))
