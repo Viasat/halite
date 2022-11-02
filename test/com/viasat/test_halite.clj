@@ -8,10 +8,10 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [com.viasat.halite :as halite]
-            [com.viasat.halite.syntax-check :as halite-syntax-check]
+            [com.viasat.halite.syntax-check :as syntax-check]
             [com.viasat.halite.type-of :as halite-type-of]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.lint :as halite-lint]
+            [com.viasat.halite.lint :as lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
@@ -21,15 +21,15 @@
 (envs/init)
 
 (deftest test-halite-symbol-examples
-  (are [string] (re-matches halite-syntax-check/symbol-regex string)
+  (are [string] (re-matches syntax-check/symbol-regex string)
     "foo" "$foo" "!20<90" "-->*/*<--" "+" "</>" "a.b/c.d" "a.b" "True" "nilable" "nil/foo")
-  (are [string] (not (re-matches halite-syntax-check/symbol-regex string))
+  (are [string] (not (re-matches syntax-check/symbol-regex string))
     "72" "+8" "-9" "//" "/z" "foo/9" "-/1" "/" "foo//" "$//" "true" "false" "nil" "a/nil" ""))
 
 (defn halite-symbol-differs-from-clj-symbol [string]
   (let [obj (try (edn/read-string string) (catch Exception ex nil))
         clj-sym? (and (symbol? obj) (= (str obj) string))]
-    (if (re-matches halite-syntax-check/symbol-regex string)
+    (if (re-matches syntax-check/symbol-regex string)
       clj-sym?
       (or (not clj-sym?)
           ;; halite symbols disallow these chars that are legal in Clojure symbols:
@@ -118,7 +118,7 @@
     '(error (str "error" " message")) :Nothing)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (lint/type-check-and-lint senv tenv expr))
     '(error 10) #"No matching signature for 'error'"
     '(error (error "foo")) #"Disallowed.*expression"
     '(let [x (error "Fail")] "Dead code") #"Disallowed binding 'x' to :Nothing")
@@ -177,7 +177,7 @@
     '(abs -10) :Integer)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (lint/type-check-and-lint senv tenv expr))
 
     '(foo) #"Unknown function or operator: foo"
     '(+ 1 "two") #"No matching signature for '\+'"
@@ -289,7 +289,7 @@
       '(get-in c [:bs 2 :a :x]) :Integer)
 
     (are [expr err-msg]
-         (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (lint/type-check-and-lint senv tenv expr))
 
       'foo #"Undefined"
       '(get) #"Wrong number of arguments"
@@ -335,7 +335,7 @@
     '(= (when false 5) (when false "foo")) :Boolean)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (lint/type-check-and-lint senv tenv expr))
 
     '(= 1 "two") #"would always be false"
     '(= [] #{}) #"would always be false"
@@ -376,7 +376,7 @@
 
 (deftest let-tests
   (are [expr etype]
-       (= etype (halite-lint/type-check-and-lint senv tenv expr))
+       (= etype (lint/type-check-and-lint senv tenv expr))
 
     '(let [x (+ 1 2)
            y [x]]
@@ -387,7 +387,7 @@
        y) :Integer)
 
   (are [expr err-msg]
-       (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
+       (thrown-with-msg? ExceptionInfo err-msg (lint/type-check-and-lint senv tenv expr))
 
     '(let) #"Wrong number of arguments"
     '(let [x] x) #"must have an even number of forms"
@@ -411,7 +411,7 @@
                  (envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (envs/extend-scope 'x [:Maybe :Integer]))]
     (are [expr etype]
-         (= etype (halite-lint/type-check-and-lint senv tenv expr))
+         (= etype (lint/type-check-and-lint senv tenv expr))
 
       '$no-value :Unset
       'no-value :Unset
@@ -434,7 +434,7 @@
       '(if-value-let [y (get m :x)] y 5) :Integer)
 
     (are [expr err-msg]
-         (thrown-with-msg? ExceptionInfo err-msg (halite-lint/type-check-and-lint senv tenv expr))
+         (thrown-with-msg? ExceptionInfo err-msg (lint/type-check-and-lint senv tenv expr))
 
       '(let [x $no-value] (if-value x x 1)) #"Disallowed binding.*to :Unset"
       '(let [no-value $no-value] 2) #"Disallowed binding.*to :Unset"
@@ -1023,19 +1023,19 @@
   (test/testing "Initial scope may bind plain symbols"
     (let [tenv (-> tenv (envs/extend-scope 'that :Integer))
           env (-> empty-env (envs/bind 'that 71))]
-      (is (= :Integer (halite-lint/type-check-and-lint senv tenv '(+ that 25))))
+      (is (= :Integer (lint/type-check-and-lint senv tenv '(+ that 25))))
       (is (= 96 (halite/eval-expr senv tenv env '(+ that 25))))))
 
   (test/testing "Initial scope may bind external-reserved-words"
     (let [tenv (-> tenv (envs/extend-scope '$this :Integer))
           env (-> empty-env (envs/bind '$this 71))]
-      (is (= :Integer (halite-lint/type-check-and-lint senv tenv '(+ $this 25))))
+      (is (= :Integer (lint/type-check-and-lint senv tenv '(+ $this 25))))
       (is (= 96 (halite/eval-expr senv tenv env '(+ $this 25))))))
 
   (test/testing "Initial scope may not bind arbitrary $-words"
     (let [tenv (-> tenv (envs/extend-scope '$foo :Integer))]
       (is (thrown-with-msg? ExceptionInfo #"disallowed symbol.*[$]foo"
-                            (halite-lint/type-check-and-lint senv tenv '(+ $foo 25)))))))
+                            (lint/type-check-and-lint senv tenv '(+ $foo 25)))))))
 
 (deftest test-cycle-in-spec-deps
   (try (halite/eval-expr {:spec/Self {:constraints {:example '(= 1 (count [{:$type :spec/Self}]))}}}

@@ -8,7 +8,7 @@
             [com.viasat.halite.doc.run :as halite-run]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.lint :as halite-lint]
+            [com.viasat.halite.lint :as lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.jadeite :as jadeite]
             [schema.test :refer [validate-schemas]])
@@ -62,7 +62,7 @@
             j-expr (try (jadeite/to-jadeite expr)
                         (catch RuntimeException e
                           [:throws (.getMessage e)]))
-            t (try (halite-lint/type-check-and-lint senv tenv expr)
+            t (try (lint/type-check-and-lint senv tenv expr)
                    (catch RuntimeException e
                      [:throws (.getMessage e)]))
             h-result (try (halite/eval-expr senv tenv env expr)

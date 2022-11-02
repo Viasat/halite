@@ -8,13 +8,13 @@
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.analysis :as analysis]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.lint :as halite-lint]
+            [com.viasat.halite.lint :as lint]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.type-of :as halite-type-of]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.types :as types]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.syntax-check :as halite-syntax-check]
+            [com.viasat.halite.syntax-check :as syntax-check]
             [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
             [potemkin]
             [schema.core :as s]))
@@ -144,7 +144,7 @@
   ([expr options]
    (let [{:keys [limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
-       (halite-syntax-check/syntax-check expr)))))
+       (syntax-check/syntax-check expr)))))
 
 (defn type-check-and-lint
   ([senv tenv expr]
@@ -152,7 +152,7 @@
   ([senv tenv expr options]
    (let [{:keys [limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
-       (halite-lint/type-check-and-lint senv tenv expr)))))
+       (lint/type-check-and-lint senv tenv expr)))))
 
 ;;
 
@@ -161,7 +161,7 @@
   type-check type-check-spec type-check-refinement-expr])
 
 (potemkin/import-vars
- [halite-syntax-check
+ [syntax-check
   check-n])
 
 (potemkin/import-vars
