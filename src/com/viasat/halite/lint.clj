@@ -5,12 +5,12 @@
   "Analyize halite expressions to find patterns of usage unnecessary and
   undesireable for users, though legal and supported by the language."
   (:require [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.base :as halite-base]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.eval :as halite-eval]
             [com.viasat.halite.type-check :as halite-type-check]
             [com.viasat.halite.type-check :as halite-type-check]
             [com.viasat.halite.types :as halite-types]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.l-err :as l-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :as format-errors :refer [throw-err with-exception-data text]]
@@ -22,11 +22,11 @@
 
 (declare type-check*)
 
-(s/defschema ^:private TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
+(s/defschema ^:private TypeContext {:senv (s/protocol envs/SpecEnv) :tenv (s/protocol envs/TypeEnv)})
 
-(def lint-builtins-signatures {'and (halite-base/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
-                               'or (halite-base/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
-                               'str (halite-base/make-signatures [[:String :String :& :String] :String])})
+(def lint-builtins-signatures {'and (base/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
+                               'or (base/make-signatures [[:Boolean :Boolean :& :Boolean] :Boolean])
+                               'str (base/make-signatures [[:String :String :& :String] :String])})
 
 (s/defn ^:private type-check-fn-application :- halite-types/HaliteType
   [ctx :- TypeContext
@@ -56,7 +56,7 @@
    sym]
   (if (= '$no-value sym)
     :Unset
-    (let [t (get (halite-envs/scope (:tenv ctx)) sym)]
+    (let [t (get (envs/scope (:tenv ctx)) sym)]
       (when (and (= :Unset t)
                  (not (or (= 'no-value sym)
                           (= '$no-value sym))))
@@ -74,8 +74,8 @@
     (and (halite-types/spec-type? subexpr-type)
          (halite-types/spec-id subexpr-type)
          (not (halite-types/needs-refinement? subexpr-type)))
-    (let [field-types (-> (->> subexpr-type halite-types/spec-id (halite-envs/lookup-spec (:senv ctx)) :spec-vars)
-                          (update-vals (partial halite-envs/halite-type-from-var-type (:senv ctx))))]
+    (let [field-types (-> (->> subexpr-type halite-types/spec-id (envs/lookup-spec (:senv ctx)) :spec-vars)
+                          (update-vals (partial envs/halite-type-from-var-type (:senv ctx))))]
       (get field-types index))))
 
 (s/defn ^:private type-check-get :- halite-types/HaliteType
@@ -144,7 +144,7 @@
             (throw-err (l-err/cannot-bind-unset {:form expr :sym sym :body body})))
           (when (halite-types/nothing-like? t)
             (throw-err (l-err/cannot-bind-nothing {:form expr :sym sym :body body})))
-          (update ctx :tenv halite-envs/extend-scope sym t)))
+          (update ctx :tenv envs/extend-scope sym t)))
       ctx
       (partition 2 bindings))
      body)))
@@ -157,7 +157,7 @@
       (throw-err (l-err/binding-target-invalid-symbol {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
           et (halite-types/elem-type coll-type)
-          body-type (type-check* (update ctx :tenv halite-envs/extend-scope sym et) body)]
+          body-type (type-check* (update ctx :tenv envs/extend-scope sym et) body)]
       {:coll-type coll-type
        :body-type body-type})))
 
@@ -195,8 +195,8 @@
           coll-type (type-check* ctx coll)
           et (halite-types/elem-type coll-type)]
       (type-check* (update ctx :tenv #(-> %
-                                          (halite-envs/extend-scope acc init-type)
-                                          (halite-envs/extend-scope elem et)))
+                                          (envs/extend-scope acc init-type)
+                                          (envs/extend-scope elem et)))
                    body))))
 
 (s/defn ^:private type-check-if-value :- halite-types/HaliteType
@@ -207,11 +207,11 @@
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
-                       (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) unset-expr))]
+                       (type-check* (update ctx :tenv envs/extend-scope sym :Unset) unset-expr))]
       (when-not (halite-types/strict-maybe-type? sym-type)
         (throw-err (l-err/first-argument-not-optional {:op op :form sym :expected (halite-types/maybe-type :Any) :actual sym-type})))
       (let [inner-type (halite-types/no-maybe sym-type)
-            set-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) set-expr)]
+            set-type (type-check* (update ctx :tenv envs/extend-scope sym inner-type) set-expr)]
         (halite-types/meet set-type unset-type)))))
 
 (s/defn ^:private type-check-if-value-let :- halite-types/HaliteType
@@ -221,11 +221,11 @@
     (let [maybe-type (type-check* ctx maybe-expr)
           else-type (if (= 'when-value-let op)
                       :Unset
-                      (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) else-expr))]
+                      (type-check* (update ctx :tenv envs/extend-scope sym :Unset) else-expr))]
       (when-not (halite-types/strict-maybe-type? maybe-type)
         (throw-err (l-err/binding-expression-not-optional {:op op :form maybe-expr :expected (halite-types/maybe-type :Any) :actual maybe-type})))
       (let [inner-type (halite-types/no-maybe maybe-type)
-            then-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) then-expr)]
+            then-type (type-check* (update ctx :tenv envs/extend-scope sym inner-type) then-expr)]
         (halite-types/meet then-type else-type)))))
 
 (s/defn ^:private type-check-union :- halite-types/HaliteType
@@ -308,8 +308,8 @@
    expr]
   (cond
     (boolean? expr) :Boolean
-    (halite-base/integer-or-long? expr) :Integer
-    (halite-base/fixed-decimal? expr) (halite-type-check/type-check-fixed-decimal expr)
+    (base/integer-or-long? expr) :Integer
+    (base/fixed-decimal? expr) (halite-type-check/type-check-fixed-decimal expr)
     (string? expr) :String
     (symbol? expr) (type-check-symbol ctx expr)
     (map? expr) (halite-type-check/type-check-instance type-check* :form ctx expr)
@@ -349,16 +349,16 @@
 (s/defn lint!
   "Assumes type-checked halite. Return nil if no violations found, or throw the
   first linting rule violation found."
-  [senv :- (s/protocol halite-envs/SpecEnv)
-   tenv :- (s/protocol halite-envs/TypeEnv)
+  [senv :- (s/protocol envs/SpecEnv)
+   tenv :- (s/protocol envs/TypeEnv)
    expr :- s/Any]
   (some (fn [[sym t]]
           (when (and (re-find #"^[$]" (name sym))
-                     (not (contains? halite-base/reserved-words sym))
-                     (not (contains? halite-base/external-reserved-words sym)))
+                     (not (contains? base/reserved-words sym))
+                     (not (contains? base/external-reserved-words sym)))
             (throw (ex-info (str "Bug: type environment contains disallowed symbol: " sym)
                             {:sym sym :type t}))))
-        (halite-envs/scope tenv))
+        (envs/scope tenv))
   (type-check* {:senv senv :tenv tenv} expr)
   nil)
 
@@ -366,8 +366,8 @@
   "Convenience function to run `lint!` and also `halite-type-check/type-check` in the
   required order.  Returns the halite type of the expr if no lint violations
   found, otherwise throw the first linting rule violation found."
-  [senv :- (s/protocol halite-envs/SpecEnv)
-   tenv :- (s/protocol halite-envs/TypeEnv)
+  [senv :- (s/protocol envs/SpecEnv)
+   tenv :- (s/protocol envs/TypeEnv)
    expr :- s/Any]
   (let [t (halite-type-check/type-check senv tenv expr)]
     (lint! senv tenv expr)
@@ -376,8 +376,8 @@
 (s/defn lint :- halite-types/HaliteType
   "Assumes type-checked halite. Return nil if no violations found, or a seq of
   one or more linting rule violations."
-  [senv :- (s/protocol halite-envs/SpecEnv)
-   tenv :- (s/protocol halite-envs/TypeEnv)
+  [senv :- (s/protocol envs/SpecEnv)
+   tenv :- (s/protocol envs/TypeEnv)
    expr :- s/Any]
   (try
     (lint! senv tenv expr)

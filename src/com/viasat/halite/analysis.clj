@@ -3,8 +3,8 @@
 
 (ns com.viasat.halite.analysis
   (:require [clojure.set :as set]
-            [com.viasat.halite.base :as halite-base]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.base :as base]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.graph :as graph]
@@ -14,7 +14,7 @@
 
 (set! *warn-on-reflection* true)
 
-(halite-envs/init)
+(envs/init)
 
 (defn- third [s]
   (second (rest s)))
@@ -29,8 +29,8 @@
     coll))
 
 (def NumericValue (s/conditional
-                   halite-base/integer-or-long? Number
-                   halite-base/fixed-decimal? FixedDecimal))
+                   base/integer-or-long? Number
+                   base/fixed-decimal? FixedDecimal))
 
 (def MinRange {:min NumericValue
                :min-inclusive Boolean
@@ -157,8 +157,8 @@
   ([var-map context expr]
    (cond
      (boolean? expr) expr
-     (halite-base/integer-or-long? expr) expr
-     (halite-base/fixed-decimal? expr) expr
+     (base/integer-or-long? expr) expr
+     (base/fixed-decimal? expr) expr
      (string? expr) expr
      (symbol? expr) (if (context expr)
                       expr
@@ -209,8 +209,8 @@
   ([context expr]
    (cond
      (boolean? expr) #{}
-     (halite-base/integer-or-long? expr) #{}
-     (halite-base/fixed-decimal? expr) #{}
+     (base/integer-or-long? expr) #{}
+     (base/fixed-decimal? expr) #{}
      (string? expr) #{}
      (symbol? expr) (if (or (context expr)
                             (= \$ (first (name expr))) ;; halite reserved symbols start with \$
@@ -262,8 +262,8 @@
   [expr]
   (cond
     (boolean? expr) #{}
-    (halite-base/integer-or-long? expr) #{}
-    (halite-base/fixed-decimal? expr) #{}
+    (base/integer-or-long? expr) #{}
+    (base/fixed-decimal? expr) #{}
     (string? expr) #{}
     (symbol? expr) #{}
     (keyword? expr) (if (halite-types/namespaced-keyword? expr)
@@ -282,8 +282,8 @@
 (defn- simple-value-or-symbol? [expr]
   (or
    (boolean? expr)
-   (halite-base/integer-or-long? expr)
-   (halite-base/fixed-decimal? expr)
+   (base/integer-or-long? expr)
+   (base/fixed-decimal? expr)
    (string? expr)
    (symbol? expr)
    (map? expr)
@@ -358,16 +358,16 @@
 
 (defn- combine-mins [a b]
   (cond
-    (halite-base/h< (:min a) (:min b)) (merge a b)
-    (halite-base/h> (:min a) (:min b)) (merge b a)
+    (base/h< (:min a) (:min b)) (merge a b)
+    (base/h> (:min a) (:min b)) (merge b a)
     (= (:min a) (:min b)) (assoc (merge a b)
                                  :min-inclusive (and (:min-inclusive a)
                                                      (:min-inclusive b)))))
 
 (defn- combine-maxs [a b]
   (cond
-    (halite-base/h< (:max a) (:max b)) (merge b a)
-    (halite-base/h> (:max a) (:max b)) (merge a b)
+    (base/h< (:max a) (:max b)) (merge b a)
+    (base/h> (:max a) (:max b)) (merge a b)
     (= (:max a) (:max b)) (assoc (merge a b)
                                  :max-inclusive (and (:max-inclusive a)
                                                      (:max-inclusive b)))))
@@ -382,16 +382,16 @@
 
 (defn- combine-mins-or [a b]
   (cond
-    (halite-base/h< (get-min a) (get-min b)) (merge b a)
-    (halite-base/h> (get-min a) (get-min b)) (merge a b)
+    (base/h< (get-min a) (get-min b)) (merge b a)
+    (base/h> (get-min a) (get-min b)) (merge a b)
     (= (get-min a) (get-min b)) (assoc (merge a b)
                                        :min-inclusive (or (:min-inclusive a)
                                                           (:min-inclusive b)))))
 
 (defn- combine-maxs-or [a b]
   (cond
-    (halite-base/h< (get-max a) (get-max b)) (merge a b)
-    (halite-base/h> (get-max a) (get-max b)) (merge b a)
+    (base/h< (get-max a) (get-max b)) (merge a b)
+    (base/h> (get-max a) (get-max b)) (merge b a)
     (= (get-max a) (get-max b)) (assoc (merge a b)
                                        :max-inclusive (or (:max-inclusive a)
                                                           (:max-inclusive b)))))
@@ -495,12 +495,12 @@
   (let [{:keys [max max-inclusive min min-inclusive]} r]
     (fn [x]
       (and (cond
-             (and max max-inclusive) (halite-base/h<= x max)
-             max (halite-base/h< x max)
+             (and max max-inclusive) (base/h<= x max)
+             max (base/h< x max)
              :default true)
            (cond
-             (and min min-inclusive) (halite-base/h>= x min)
-             min (halite-base/h> x min)
+             (and min min-inclusive) (base/h>= x min)
+             min (base/h> x min)
              :default true)))))
 
 (defn- apply-ranges-to-enum
@@ -634,10 +634,10 @@
                   Long/MAX_VALUE)
         max-b (or (:max b)
                   Long/MAX_VALUE)]
-    (or (halite-base/h< min-a min-b max-a)
-        (halite-base/h< min-a max-b max-a)
-        (halite-base/h< min-b min-a max-b)
-        (halite-base/h< min-b max-a max-b))))
+    (or (base/h< min-a min-b max-a)
+        (base/h< min-a max-b max-a)
+        (base/h< min-b min-a max-b)
+        (base/h< min-b max-a max-b))))
 
 (defn- touch-min [a b]
   (= (:min a) (:min b)))
@@ -810,16 +810,16 @@
     (fixed-decimal/shift-scale f scale)))
 
 (s/defn ^:private range-size* [min max]
-  (if (halite-base/integer-or-long? min)
+  (if (base/integer-or-long? min)
     (- max min)
     (fixed-decimal-to-long (fixed-decimal/f- max min))))
 
 (s/defn ^:private range-size [r :- Range]
   (let [{:keys [min max min-inclusive max-inclusive]} r]
-    (when (or (and (halite-base/integer-or-long? min)
-                   (halite-base/integer-or-long? max))
-              (and (halite-base/fixed-decimal? min)
-                   (halite-base/fixed-decimal? max)
+    (when (or (and (base/integer-or-long? min)
+                   (base/integer-or-long? max))
+              (and (base/fixed-decimal? min)
+                   (base/fixed-decimal? max)
                    (= (fixed-decimal/get-scale min)
                       (fixed-decimal/get-scale max))))
       (clojure.core/max (let [{:keys [min max min-inclusive max-inclusive]} r]
@@ -840,7 +840,7 @@
 
 (s/defn ^:private enumerate-range [r :- Range]
   (let [{:keys [min max min-inclusive max-inclusive]} r]
-    (if (halite-base/integer-or-long? min)
+    (if (base/integer-or-long? min)
       (range (if min-inclusive
                min
                (inc min))
@@ -916,8 +916,8 @@
   [expr]
   (cond
     (boolean? expr) expr
-    (halite-base/integer-or-long? expr) expr
-    (halite-base/fixed-decimal? expr) (fixed-decimal-to-long expr)
+    (base/integer-or-long? expr) expr
+    (base/fixed-decimal? expr) (fixed-decimal-to-long expr)
     (string? expr) expr
     (symbol? expr) expr
     (keyword? expr) expr
@@ -1032,8 +1032,8 @@
   ([context expr]
    (cond
      (boolean? expr) #{}
-     (halite-base/integer-or-long? expr) #{}
-     (halite-base/fixed-decimal? expr) #{}
+     (base/integer-or-long? expr) #{}
+     (base/fixed-decimal? expr) #{}
      (string? expr) #{}
      (symbol? expr) (get context expr)
      (keyword? expr) (if (halite-types/namespaced-keyword? expr)
@@ -1055,11 +1055,11 @@
 ;;;;
 
 (s/defn ^:private get-spec-var-dependencies :- (s/maybe {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}})
-  [spec-map :- halite-envs/SpecMap
+  [spec-map :- envs/SpecMap
    spec-id :- halite-types/NamespacedKeyword
    [_ var-type]]
   (let [ts (->> var-type
-                (halite-envs/halite-type-from-var-type spec-map)
+                (envs/halite-type-from-var-type spec-map)
                 halite-types/innermost-types
                 (map halite-types/inner-spec-type)
                 (remove nil?)
@@ -1079,9 +1079,9 @@
     {spec-id (into #{other-spec-id} spec-refs)}))
 
 (s/defn ^:private get-spec-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
-  [spec-map :- halite-envs/SpecMap
+  [spec-map :- envs/SpecMap
    spec-id :- halite-types/NamespacedKeyword
-   spec-info :- halite-envs/SpecInfo]
+   spec-info :- envs/SpecInfo]
   (let [{:keys [spec-vars constraints refines-to]} spec-info]
     (->> [(map (partial get-spec-var-dependencies spec-map spec-id) spec-vars)
           (map (partial get-constraint-dependencies spec-id) constraints)
@@ -1091,13 +1091,13 @@
          (reduce (partial merge-with into) {}))))
 
 (s/defn get-spec-map-dependencies :- {halite-types/NamespacedKeyword #{halite-types/NamespacedKeyword}}
-  [spec-map :- halite-envs/SpecMap]
+  [spec-map :- envs/SpecMap]
   (->> spec-map
        (map (fn [[k v]] (get-spec-dependencies spec-map k v)))
        (reduce (partial merge-with into) {})))
 
 (s/defn find-cycle-in-dependencies
-  [spec-map :- halite-envs/SpecMap]
+  [spec-map :- envs/SpecMap]
   (let [spec-map-dependencies (->> spec-map
                                    get-spec-map-dependencies)]
     (if (empty? spec-map-dependencies)

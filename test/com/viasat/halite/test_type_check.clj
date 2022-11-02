@@ -2,8 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-type-check
-  (:require [com.viasat.halite.envs :as halite-envs]
-            [com.viasat.halite.type-check :as halite-type-check]
+  (:require [com.viasat.halite.type-check :as halite-type-check]
             [schema.core :as s]
             [schema.test :refer [validate-schemas]]
             [clojure.test :refer :all]))

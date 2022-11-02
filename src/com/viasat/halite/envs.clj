@@ -5,7 +5,7 @@
   "Halite spec, type, and eval environment abstractions."
   (:require [clojure.set :as set]
             [clojure.string :as str]
-            [com.viasat.halite.base :as halite-base]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as s]))
@@ -52,13 +52,13 @@
   (and (vector? var-type) (= :Maybe (first var-type))))
 
 (s/defschema NamedConstraint
-  [(s/one halite-base/ConstraintName :name) (s/one s/Any :expr)])
+  [(s/one base/ConstraintName :name) (s/one s/Any :expr)])
 
 (s/defschema SpecVars {halite-types/BareKeyword VarType})
 
 (s/defschema RefinesTo {halite-types/NamespacedKeyword Refinement})
 
-(s/defschema ConstraintMap {halite-base/ConstraintName s/Any})
+(s/defschema ConstraintMap {base/ConstraintName s/Any})
 
 (s/defschema SpecInfo
   {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
@@ -68,7 +68,7 @@
 
 (s/defschema UserSpecInfo
   {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
-   (s/optional-key :constraints) {halite-base/UserConstraintName s/Any}
+   (s/optional-key :constraints) {base/UserConstraintName s/Any}
    (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 

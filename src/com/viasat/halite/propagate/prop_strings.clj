@@ -8,7 +8,7 @@
   and then replace all string variables and string-related expressions with boolean
   variables that represent the results of comparisons."
   (:require [clojure.set :as set]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.propagate.prop-choco :as prop-choco]
             [com.viasat.halite.transpile.lowering :as lowering]
@@ -173,12 +173,12 @@
 ;;;;;;;;;; String Comparison Graph ;;;;;;;;;;;;;;;;
 
 (defn- string-type? [var-type]
-  (= :String (->> var-type (halite-envs/halite-type-from-var-type {}) halite-types/no-maybe)))
+  (= :String (->> var-type (envs/halite-type-from-var-type {}) halite-types/no-maybe)))
 
 (defn- maybe-string-type?
   "Return true if var-type is [:Maybe \"String\"]"
   [var-type]
-  (let [ht (halite-envs/halite-type-from-var-type {} var-type)]
+  (let [ht (envs/halite-type-from-var-type {} var-type)]
     (and (halite-types/maybe-type? ht)
          (= :String (halite-types/no-maybe ht)))))
 

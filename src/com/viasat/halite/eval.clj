@@ -7,9 +7,9 @@
             [clojure.set :as set]
             [clojure.string :as string]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.base :as halite-base]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.types :as halite-types]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
             [schema.core :as s])
@@ -21,12 +21,12 @@
 
 (def & :&)
 
-(s/defn ^:private mk-builtin :- halite-base/Builtin
+(s/defn ^:private mk-builtin :- base/Builtin
   [impl & signatures]
   (when (not= 0 (mod (count signatures) 2))
     (throw (ex-info "argument count must be a multiple of 2" {})))
   {:impl impl
-   :signatures (halite-base/make-signatures signatures)})
+   :signatures (base/make-signatures signatures)})
 
 (def ^:private decimal-sigs (mapcat (fn [s]
                                       [[(halite-types/decimal-type s) (halite-types/decimal-type s) & (halite-types/decimal-type s)]
@@ -68,13 +68,13 @@
 
 (def builtins
   (s/with-fn-validation
-    {'+ (apply mk-builtin (handle-overflow halite-base/h+) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
-     '- (apply mk-builtin (handle-overflow halite-base/h-) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
-     '* (apply mk-builtin (handle-overflow halite-base/h*) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
-     '< (apply mk-builtin halite-base/h< (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '<= (apply mk-builtin halite-base/h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '> (apply mk-builtin halite-base/h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
-     '>= (apply mk-builtin halite-base/h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+    {'+ (apply mk-builtin (handle-overflow base/h+) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
+     '- (apply mk-builtin (handle-overflow base/h-) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs))
+     '* (apply mk-builtin (handle-overflow base/h*) (into [[:Integer :Integer & :Integer] :Integer] decimal-sigs-single))
+     '< (apply mk-builtin base/h< (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '<= (apply mk-builtin base/h<= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '> (apply mk-builtin base/h> (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
+     '>= (apply mk-builtin base/h>= (into [[:Integer :Integer] :Boolean] decimal-sigs-boolean))
      'count (mk-builtin count [(halite-types/coll-type :Value)] :Integer)
      'and (mk-builtin (fn [& args] (every? true? args))
                       [:Boolean & :Boolean] :Boolean)
@@ -89,7 +89,7 @@
      'div (apply mk-builtin (fn [num divisor]
                               (when (= 0 divisor)
                                 (throw-err (h-err/divide-by-zero {:num num})))
-                              (halite-base/hquot num divisor)) (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
+                              (base/hquot num divisor)) (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
      'mod (mk-builtin (fn [num divisor]
                         (when (= 0 divisor)
                           (throw-err (h-err/divide-by-zero {:num num})))
@@ -102,12 +102,12 @@
                              (throw-err (h-err/overflow {})))
                            result))
                        [:Integer :Integer] :Integer)
-     'abs (apply mk-builtin halite-base/habs (into [[:Integer] :Integer] decimal-sigs-unary))
-     'str (mk-builtin (comp (partial halite-base/check-limit :string-runtime-length) str) [& :String] :String)
+     'abs (apply mk-builtin base/habs (into [[:Integer] :Integer] decimal-sigs-unary))
+     'str (mk-builtin (comp (partial base/check-limit :string-runtime-length) str) [& :String] :String)
      'subset? (mk-builtin set/subset? [(halite-types/set-type :Value) (halite-types/set-type :Value)] :Boolean)
      'sort (apply mk-builtin (fn [expr]
                                ((if (and (pos? (count expr))
-                                         (halite-base/fixed-decimal? (first expr)))
+                                         (base/fixed-decimal? (first expr)))
                                   (comp vec (partial sort-by fixed-decimal/sort-key))
                                   (comp vec sort)) expr))
                   (into [[halite-types/empty-set] halite-types/empty-vector
@@ -115,27 +115,27 @@
                          [(halite-types/set-type :Integer)] (halite-types/vector-type :Integer)
                          [(halite-types/vector-type :Integer)] (halite-types/vector-type :Integer)]
                         decimal-sigs-collections))
-     'range (mk-builtin (comp (partial halite-base/check-limit :vector-runtime-count) vec range)
+     'range (mk-builtin (comp (partial base/check-limit :vector-runtime-count) vec range)
                         [:Integer :Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer :Integer] (halite-types/vector-type :Integer)
                         [:Integer] (halite-types/vector-type :Integer))
      'error (mk-builtin #(throw-err (h-err/spec-threw {:spec-error-str %}))
                         [:String] :Nothing)}))
 
-(assert (= halite-base/builtin-symbols (set (keys builtins))))
+(assert (= base/builtin-symbols (set (keys builtins))))
 
 ;;
 
 (declare eval-expr*)
 
-(s/defschema EvalContext {:senv (s/protocol halite-envs/SpecEnv) :env (s/protocol halite-envs/Env)})
+(s/defschema EvalContext {:senv (s/protocol envs/SpecEnv) :env (s/protocol envs/Env)})
 
 (s/defn eval-predicate :- Boolean
   [ctx :- EvalContext
-   tenv :- (s/protocol halite-envs/TypeEnv)
+   tenv :- (s/protocol envs/TypeEnv)
    bool-expr
    spec-id :- halite-types/NamespacedKeyword
-   constraint-name :- (s/maybe halite-base/ConstraintName)]
+   constraint-name :- (s/maybe base/ConstraintName)]
   (with-exception-data {:form bool-expr
                         :constraint-name constraint-name
                         :spec-id spec-id}
@@ -145,7 +145,7 @@
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
   [ctx :- EvalContext
-   tenv :- (s/protocol halite-envs/TypeEnv)
+   tenv :- (s/protocol envs/TypeEnv)
    spec-id :- halite-types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
@@ -160,11 +160,11 @@
 
 (s/defn ^:private concrete? :- Boolean
   "Returns true if v is fully concrete (i.e. does not contain a value of an abstract specification), false otherwise."
-  [senv :- (s/protocol halite-envs/SpecEnv), v]
+  [senv :- (s/protocol envs/SpecEnv), v]
   (cond
-    (or (halite-base/integer-or-long? v) (halite-base/fixed-decimal? v) (boolean? v) (string? v)) true
+    (or (base/integer-or-long? v) (base/fixed-decimal? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
-                   spec-info (or (halite-envs/system-lookup-spec senv spec-id)
+                   spec-info (or (envs/system-lookup-spec senv spec-id)
                                  (h-err/resource-spec-not-found {:spec-id (symbol spec-id)}))]
                (and (not (:abstract? spec-info))
                     (every? (partial concrete? senv) (vals (dissoc v :$type)))))
@@ -180,7 +180,7 @@
   [declared-type :- halite-types/HaliteType, v]
   (let [declared-type (halite-types/no-maybe declared-type)]
     (cond
-      (halite-types/spec-id declared-type) (when-not (halite-base/refines-to? v declared-type)
+      (halite-types/spec-id declared-type) (when-not (base/refines-to? v declared-type)
                                              (throw-err (h-err/no-refinement-path
                                                          {:type (symbol (:$type v))
                                                           :value v
@@ -216,7 +216,7 @@
   "Check that an instance satisfies all applicable constraints.
   Return the instance if so, throw an exception if not.
   Assumes that the instance has been type-checked successfully against the given type environment."
-  [senv :- (s/protocol halite-envs/SpecEnv)
+  [senv :- (s/protocol envs/SpecEnv)
    inst :- s/Any]
   (binding [*instance-path-atom* (if *instance-path-atom*
                                    *instance-path-atom*
@@ -227,9 +227,9 @@
                                                                        (mapv symbol))}))
               (swap! *instance-path-atom* conj spec-id))
           spec-id-0 spec-id
-          {:keys [spec-vars refines-to] :as spec-info} (halite-envs/system-lookup-spec senv spec-id)
-          spec-tenv (halite-envs/type-env-from-spec senv spec-info)
-          env (halite-envs/env-from-inst spec-info inst)
+          {:keys [spec-vars refines-to] :as spec-info} (envs/system-lookup-spec senv spec-id)
+          spec-tenv (envs/type-env-from-spec senv spec-info)
+          env (envs/env-from-inst spec-info inst)
           ctx {:senv senv, :env env}
           constraint-f (fn [[cname expr :as constraint]]
                          {:constraint constraint
@@ -242,7 +242,7 @@
       ;; check that all variables have values that are concrete and that conform to the
       ;; types declared in the parent resource spec
       (doseq [[kw v] (dissoc inst :$type)
-              :let [declared-type (->> kw spec-vars (halite-envs/halite-type-from-var-type senv))]]
+              :let [declared-type (->> kw spec-vars (envs/halite-type-from-var-type senv))]]
         ;; TODO: consider letting instances of abstract spec contain abstract values
         (when-not (concrete? senv v)
           (throw-err (h-err/no-abstract {:value v})))
@@ -340,11 +340,11 @@
   (eval-expr*
    (reduce
     (fn [ctx [sym body]]
-      (when (halite-base/reserved-words sym)
+      (when (base/reserved-words sym)
         (throw-err (h-err/cannot-bind-reserved-word {:sym sym
                                                      :bindings bindings
                                                      :body body})))
-      (update ctx :env halite-envs/bind sym (eval-expr* ctx body)))
+      (update ctx :env envs/bind sym (eval-expr* ctx body)))
     ctx
     (partition 2 bindings))
    body))
@@ -364,7 +364,7 @@
   (let [[[sym maybe] then else] (rest expr)
         maybe-val (eval-expr* ctx maybe)]
     (if (not= :Unset maybe-val)
-      (eval-expr* (update ctx :env halite-envs/bind sym maybe-val) then)
+      (eval-expr* (update ctx :env envs/bind sym maybe-val) then)
       (if (= 4 (count expr))
         (eval-expr* ctx else)
         :Unset))))
@@ -372,7 +372,7 @@
 (s/defn ^:private eval-quantifier-bools :- [Boolean]
   [ctx :- EvalContext,
    [[sym coll] pred]]
-  (mapv #(eval-expr* (update ctx :env halite-envs/bind sym %) pred)
+  (mapv #(eval-expr* (update ctx :env envs/bind sym %) pred)
         (eval-expr* ctx coll)))
 
 (s/defn ^:private eval-comprehend :- [s/Any]
@@ -380,14 +380,14 @@
    [[sym coll] expr]]
   (let [coll-val (eval-expr* ctx coll)]
     [coll-val
-     (map #(eval-expr* (update ctx :env halite-envs/bind sym %) expr) coll-val)]))
+     (map #(eval-expr* (update ctx :env envs/bind sym %) expr) coll-val)]))
 
 (s/defn ^:private eval-reduce :- s/Any
   [ctx :- EvalContext,
    [op [acc init] [elem coll] body]]
   (reduce (fn [a b]
             (eval-expr* (update ctx :env
-                                #(-> % (halite-envs/bind acc a) (halite-envs/bind elem b)))
+                                #(-> % (envs/bind acc a) (envs/bind elem b)))
                         body))
           (eval-expr* ctx init)
           (eval-expr* ctx coll)))
@@ -407,22 +407,22 @@
       :else result)))
 
 (defn ^:private check-collection-runtime-count [x]
-  (halite-base/check-limit (if (set? x)
-                             :set-runtime-count
-                             :vector-runtime-count)
-                           x))
+  (base/check-limit (if (set? x)
+                      :set-runtime-count
+                      :vector-runtime-count)
+                    x))
 
 (s/defn eval-expr* :- s/Any
   [ctx :- EvalContext, expr]
   (let [eval-in-env (partial eval-expr* ctx)]
     (cond
       (or (boolean? expr)
-          (halite-base/integer-or-long? expr)
+          (base/integer-or-long? expr)
           (string? expr)) expr
-      (halite-base/fixed-decimal? expr) expr
+      (base/fixed-decimal? expr) expr
       (symbol? expr) (if (= '$no-value expr)
                        :Unset
-                       (let [b (halite-envs/bindings (:env ctx))]
+                       (let [b (envs/bindings (:env ctx))]
                          (if (contains? b expr)
                            (get b expr)
                            (throw-err (h-err/symbol-undefined {:form expr})))))
@@ -461,7 +461,7 @@
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]
-                                   (halite-base/refines-to? inst (halite-types/concrete-spec-type kw)))
+                                   (base/refines-to? inst (halite-types/concrete-spec-type kw)))
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
                     'map (let [[coll result] (eval-comprehend ctx (rest expr))]

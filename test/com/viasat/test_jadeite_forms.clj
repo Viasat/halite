@@ -3,7 +3,7 @@
 
 (ns com.viasat.test-jadeite-forms
   (:require [com.viasat.halite :as halite]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.jadeite :as jadeite]
             [clojure.test :refer :all])
   (:import (clojure.lang ExceptionInfo)))
@@ -17,7 +17,7 @@
            :ws/OhNo$v1 {:spec-vars {:true "Integer"
                                     :false "String"}}})
 
-(def tenv (halite-envs/type-env
+(def tenv (envs/type-env
            {'a [:Instance :ws/A$v1]
             'b [:Instance :ws/B$v1]
             'c [:Instance :ws/C$v1]
@@ -337,9 +337,9 @@ else {
       (try
         (let [jh (jadeite/to-halite jadeite)]
           (when-not (and
-                     (is (halite/type-check senv (halite-envs/type-env {}) jh))
+                     (is (halite/type-check senv (envs/type-env {}) jh))
                      (is (= expected-val
-                            (halite/eval-expr senv (halite-envs/type-env {}) (halite-envs/env {}) jh))))
+                            (halite/eval-expr senv (envs/type-env {}) (envs/env {}) jh))))
             (prn :halite jh)))
         (catch Exception ex
           (is (= :no-exception ex)))))))

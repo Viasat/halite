@@ -6,7 +6,7 @@
   Specifically: single specs with (possibly optional) boolean or integer variables,
   and no refinements."
   (:require [schema.core :as s]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.choco-clj-opt :as choco-clj]))
@@ -24,7 +24,7 @@
   {halite-types/BareKeyword AtomBound})
 
 (s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
-  [var-type :- halite-envs/VarType]
+  [var-type :- envs/VarType]
   (cond
     (or (= [:Maybe "Integer"] var-type) (= "Integer" var-type)) :Int
     (or (= [:Maybe "Boolean"] var-type) (= "Boolean" var-type)) :Bool
@@ -44,11 +44,11 @@
     :else form))
 
 (s/defn ^:private lower-spec :- choco-clj/ChocoSpec
-  [spec :- halite-envs/SpecInfo]
+  [spec :- envs/SpecInfo]
   {:vars (-> spec :spec-vars (update-keys symbol) (update-vals to-choco-type))
    :optionals (->> spec :spec-vars
                    (filter (comp halite-types/maybe-type?
-                                 (partial halite-envs/halite-type-from-var-type {})
+                                 (partial envs/halite-type-from-var-type {})
                                  val))
                    (map (comp symbol key)) set)
    :constraints (->> spec :constraints (map (comp error->unsatisfiable second)) set)})

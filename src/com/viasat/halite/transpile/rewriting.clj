@@ -6,8 +6,8 @@
   (:require [clojure.set :as set]
             [clojure.core.reducers :as r]
             [com.viasat.halite :as halite]
-            [com.viasat.halite.base :as halite-base]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.base :as base]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa
              :refer [SpecInfo SpecCtx SSACtx]]
@@ -149,7 +149,7 @@
           (throw ex))))))
 
 (s/defn add-constraint :- SpecInfo
-  [rule-name :- s/Str, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, spec-info :- SpecInfo, cname :- halite-base/ConstraintName, expr]
+  [rule-name :- s/Str, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword, spec-info :- SpecInfo, cname :- base/ConstraintName, expr]
   (let [ctx (ssa/make-ssa-ctx sctx spec-info)
         [ssa-graph id] (ssa/form-to-ssa ctx expr)
         spec-info' (-> spec-info
@@ -194,7 +194,7 @@
   [rules :- [RewriteRule], sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword]
   (let [spec-info (get sctx spec-id)
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
-        scope (->> tenv (halite-envs/scope) keys set)]
+        scope (->> tenv (envs/scope) keys set)]
     (fixpoint #(apply-to-reachable sctx ctx scope spec-id %
                                    (r/map second (:constraints %))
                                    rules)
@@ -212,7 +212,7 @@
 (s/defn rewrite-spec-constraints :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
-        scope (->> tenv (halite-envs/scope) keys set)]
+        scope (->> tenv (envs/scope) keys set)]
     (->> (:constraints spec-info)
          (reduce (fn [spec-info [cname cid]]
                    (apply-rule-to-id rule sctx ctx scope spec-id spec-info cid))
@@ -222,7 +222,7 @@
 (s/defn ^:private rewrite-ssa-graph :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- halite-types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
-        scope (->> tenv (halite-envs/scope) keys set)
+        scope (->> tenv (envs/scope) keys set)
         reachable? (ssa/reachable-nodes spec-info)]
     (reduce
      #(apply-rule-to-id rule sctx (assoc ctx :ssa-graph (:ssa-graph %1)) scope spec-id %1 %2)

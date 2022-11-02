@@ -5,7 +5,7 @@
   "Re-express halite specs in a minimal subset of halite, by compiling higher-level
   features down into lower-level features."
   (:require [clojure.set :as set]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa
              :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
@@ -125,7 +125,7 @@
         (if (not= 1 (count arg-types))
           (= comparison-op 'not=)
           (let [arg-type (first arg-types)
-                var-kws (->> arg-type (halite-types/spec-id) (halite-envs/system-lookup-spec senv) :spec-vars keys sort)]
+                var-kws (->> arg-type (halite-types/spec-id) (envs/system-lookup-spec senv) :spec-vars keys sort)]
             (->> var-kws
                  (map (fn [var-kw]
                         (apply list comparison-op
@@ -382,7 +382,7 @@
   [sctx :- SpecCtx
    [spec-id  {:keys [refines-to ssa-graph] :as spec-info}] :- [(s/one s/Keyword "spec-id") (s/one SpecInfo "spec-info")]]
   (let [ctx (make-ssa-ctx sctx spec-info)
-        scope (->> ctx :tenv (halite-envs/scope) keys set)]
+        scope (->> ctx :tenv (envs/scope) keys set)]
     [spec-id
      (->> refines-to
           (reduce

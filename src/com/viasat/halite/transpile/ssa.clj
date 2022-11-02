@@ -7,8 +7,8 @@
   in compilers."
   (:require [clojure.set :as set]
             [clojure.pprint :as pp]
-            [com.viasat.halite.base :as halite-base]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.base :as base]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
             [schema.core :as s]
@@ -109,11 +109,11 @@
 
 (s/defschema SpecInfo
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
-  (assoc halite-envs/SpecInfo
+  (assoc envs/SpecInfo
          :ssa-graph SSAGraph
-         (s/optional-key :constraints) {halite-base/ConstraintName NodeId}
+         (s/optional-key :constraints) {base/ConstraintName NodeId}
          (s/optional-key :refines-to) {halite-types/NamespacedKeyword
-                                       (assoc halite-envs/Refinement :expr NodeId)}))
+                                       (assoc envs/Refinement :expr NodeId)}))
 
 (s/defn contains-id? :- s/Bool
   [ssa-graph :- SSAGraph id]
@@ -333,14 +333,14 @@
 (declare form-to-ssa)
 
 (s/defschema SSACtx
-  {:senv (s/protocol halite-envs/SpecEnv)
-   :tenv (s/protocol halite-envs/TypeEnv)
+  {:senv (s/protocol envs/SpecEnv)
+   :tenv (s/protocol envs/TypeEnv)
    :env {s/Symbol NodeId}
    :ssa-graph SSAGraph
    :local-stack [NodeId]})
 
 (s/defn ^:private init-ssa-ctx :- SSACtx
-  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), ssa-graph :- SSAGraph]
+  [senv :- (s/protocol envs/SpecEnv), tenv :- (s/protocol envs/TypeEnv), ssa-graph :- SSAGraph]
   {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph :local-stack []})
 
 (s/defn ^:private push-local :- [(s/one SSACtx "ctx") (s/one NodeId "id")]
@@ -360,7 +360,7 @@
            (let [[ssa-graph id] (form-to-ssa ctx subexpr)
                  htype (node-type (deref-id ssa-graph id))]
              [(assoc ctx
-                     :tenv (halite-envs/extend-scope (:tenv ctx) var-sym htype)
+                     :tenv (envs/extend-scope (:tenv ctx) var-sym htype)
                      :env (assoc (:env ctx) var-sym id)
                      :ssa-graph ssa-graph)
               (conj bound-ids id)]))
@@ -382,7 +382,7 @@
     (contains? no-value-symbols form) (ensure-node ssa-graph :Unset :Unset)
     (contains-id? ssa-graph form) [ssa-graph form]
     (contains? env form) [ssa-graph (env form)]
-    :else (let [htype (or (get (halite-envs/scope tenv) form)
+    :else (let [htype (or (get (envs/scope tenv) form)
                           (throw (ex-info (format "BUG! Undefined: '%s'" form) {:tenv tenv :form form})))]
             (ensure-node ssa-graph form htype))))
 
@@ -413,7 +413,7 @@
       (= htype :Unset)
       (-> ctx
           (assoc :ssa-graph ssa-graph)
-          (cond-> (not (contains? no-value-symbols var-sym)) (update :tenv halite-envs/extend-scope var-sym :Unset))
+          (cond-> (not (contains? no-value-symbols var-sym)) (update :tenv envs/extend-scope var-sym :Unset))
           (update :env assoc var-sym no-value-id)
           (form-to-ssa else))
 
@@ -437,12 +437,12 @@
             [ssa-graph value-id] (ensure-node ssa-graph (list '$value! unguarded-id) inner-type)
             [ssa-graph then-id] (-> ctx
                                     (assoc :ssa-graph ssa-graph)
-                                    (update :tenv halite-envs/extend-scope var-sym inner-type)
+                                    (update :tenv envs/extend-scope var-sym inner-type)
                                     (update :env assoc var-sym value-id)
                                     (form-to-ssa (if (= then unguarded-id) value-id then)))
             [ssa-graph else-id] (-> ctx
                                     (assoc :ssa-graph ssa-graph)
-                                    (update :tenv halite-envs/extend-scope var-sym :Unset)
+                                    (update :tenv envs/extend-scope var-sym :Unset)
                                     (update :env assoc var-sym no-value-id)
                                     (form-to-ssa (if (= else unguarded-id) no-value-id else)))
             htype (halite-types/meet (node-type (deref-id ssa-graph then-id))
@@ -457,10 +457,10 @@
       (halite-types/spec-type? t)
       (let [spec-id (halite-types/spec-id t)
             var-kw var-kw-or-idx
-            vtype (or (->> spec-id (halite-envs/system-lookup-spec senv) :spec-vars var-kw)
+            vtype (or (->> spec-id (envs/system-lookup-spec senv) :spec-vars var-kw)
                       (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
                                       {:form form, :var-kw var-kw, :spec-id spec-id})))
-            htype (or (halite-envs/halite-type-from-var-type senv vtype)
+            htype (or (envs/halite-type-from-var-type senv vtype)
                       (throw (ex-info (format "BUG! Couldn't determine type of field '%s' of spec '%s'" var-kw spec-id)
                                       {:form form, :var-kw var-kw, :spec-id spec-id})))]
         (ensure-node ssa-graph (list 'get id var-kw) htype))
@@ -478,7 +478,7 @@
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)]
-    (when (nil? (halite-envs/system-lookup-spec (:senv ctx) spec-id))
+    (when (nil? (envs/system-lookup-spec (:senv ctx) spec-id))
       (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
                       {:form form :spec-id spec-id})))
     (ensure-node ssa-graph (list 'refine-to id spec-id) (halite-types/concrete-spec-type spec-id))))
@@ -547,7 +547,7 @@
         elem-type (halite-types/elem-type coll-type)
         [ctx local-id] (push-local (assoc ctx :ssa-graph ssa-graph) elem-type)
         [ssa-graph body-id] (-> ctx
-                                (update :tenv halite-envs/extend-scope var-sym elem-type)
+                                (update :tenv envs/extend-scope var-sym elem-type)
                                 (update :env assoc var-sym local-id)
                                 (form-to-ssa body))
         htype (if (= 'map op)
@@ -649,16 +649,16 @@
     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                           {:form form}))))
 
-(s/defn constraint-to-ssa :- [(s/one SSAGraph :ssa-graph), {halite-base/ConstraintName NodeId}]
+(s/defn constraint-to-ssa :- [(s/one SSAGraph :ssa-graph), {base/ConstraintName NodeId}]
   "TODO: Refactor me as add-constraint, taking and returning SpecInfo."
-  [senv :- (s/protocol halite-envs/SpecEnv), tenv :- (s/protocol halite-envs/TypeEnv), ssa-graph :- SSAGraph, [cname constraint-form]]
+  [senv :- (s/protocol envs/SpecEnv), tenv :- (s/protocol envs/TypeEnv), ssa-graph :- SSAGraph, [cname constraint-form]]
   (let [[ssa-graph id] (form-to-ssa (init-ssa-ctx senv tenv ssa-graph) constraint-form)]
     [ssa-graph {cname id}]))
 
 (s/defn spec-to-ssa :- SpecInfo
   "Convert a halite spec into an SSA-based representation."
-  [senv :- (s/protocol halite-envs/SpecEnv), spec-info :- halite-envs/SpecInfo]
-  (let [tenv (halite-envs/type-env-from-spec senv spec-info)
+  [senv :- (s/protocol envs/SpecEnv), spec-info :- envs/SpecInfo]
+  (let [tenv (envs/type-env-from-spec senv spec-info)
         [ssa-graph constraints]
         ,,(reduce
            (fn [[ssa-graph constraints] constraint]
@@ -682,25 +682,25 @@
   "A map of spec ids to specs in SSA form."
   {halite-types/NamespacedKeyword SpecInfo})
 
-(s/defn as-spec-env :- (s/protocol halite-envs/SpecEnv)
+(s/defn as-spec-env :- (s/protocol envs/SpecEnv)
   "Adapt a SpecCtx to a SpecEnv. WARNING! The resulting spec env does NOT return
   specs with meaningful constraints or refinements! Only the spec vars are correct.
   This function is a hack to allow using a spec context to construct type environments.
   It ought to be refactored away in favor of something less likely to lead to errors!"
   [sctx :- SpecCtx]
-  (reify halite-envs/SpecEnv
+  (reify envs/SpecEnv
     (lookup-spec* [self spec-id] (some-> sctx spec-id (dissoc :ssa-graph)))))
 
 (s/defn build-spec-ctx :- SpecCtx
   "Starting from root-spec-id and looking up specs from senv, build and return a SpecContext
   containing the root spec and every spec transitively referenced from it, in SSA form."
-  [senv :- (s/protocol halite-envs/SpecEnv), root-spec-id :- halite-types/NamespacedKeyword]
+  [senv :- (s/protocol envs/SpecEnv), root-spec-id :- halite-types/NamespacedKeyword]
   (-> senv
-      (halite-envs/build-spec-map root-spec-id)
+      (envs/build-spec-map root-spec-id)
       (update-vals (partial spec-to-ssa senv))))
 
 (s/defn spec-map-to-ssa :- SpecCtx
-  [spec-map :- halite-envs/SpecMap]
+  [spec-map :- envs/SpecMap]
   (update-vals spec-map (partial spec-to-ssa spec-map)))
 
 (s/defn replace-node :- SpecInfo
@@ -1028,14 +1028,14 @@
           (let-bindable-exprs ssa-graph ordering (compute-guards ssa-graph #{id}) scope #{})
           (normalize-vars scope)))))
 
-(s/defn spec-from-ssa :- halite-envs/SpecInfo
+(s/defn spec-from-ssa :- envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
   ([spec-info :- SpecInfo]
    (spec-from-ssa spec-info {:conjoin-constraints? true}))
   ([spec-info :- SpecInfo {:keys [conjoin-constraints?] :or {conjoin-constraints? false}}]
    (let [{:keys [ssa-graph constraints refines-to spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
          scope (->> spec-vars keys (map symbol) set)
-         ssa-ctx (init-ssa-ctx (halite-envs/system-spec-env {}) (halite-envs/type-env {}) ssa-graph)
+         ssa-ctx (init-ssa-ctx (envs/system-spec-env {}) (envs/type-env {}) ssa-graph)
          constraints (if conjoin-constraints?
                        (let [[ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
                          {"$all" (form-from-ssa scope ssa-graph id)})
@@ -1050,12 +1050,12 @@
 (s/defn make-ssa-ctx :- SSACtx
   [sctx :- SpecCtx, {:keys [ssa-graph] :as spec-info} :- SpecInfo]
   (let [senv (as-spec-env sctx)
-        tenv (halite-envs/type-env-from-spec senv (dissoc spec-info :ssa-graph))]
+        tenv (envs/type-env-from-spec senv (dissoc spec-info :ssa-graph))]
     {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph :local-stack []}))
 
-(s/defn build-spec-env :- (s/protocol halite-envs/SpecEnv)
+(s/defn build-spec-env :- (s/protocol envs/SpecEnv)
   [sctx :- SpecCtx]
-  (-> sctx (update-vals spec-from-ssa) (halite-envs/system-spec-env)))
+  (-> sctx (update-vals spec-from-ssa) (envs/system-spec-env)))
 
 (defn pprint-ssa-graph [ssa-graph]
   (pp/pprint (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph))))

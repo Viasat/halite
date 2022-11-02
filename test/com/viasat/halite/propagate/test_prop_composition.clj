@@ -2,8 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-composition
-  (:require [com.viasat.halite.envs :as halite-envs]
-            [com.viasat.halite.propagate.prop-composition :as pc]
+  (:require [com.viasat.halite.propagate.prop-composition :as pc]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [com.viasat.halite.transpile.simplify :as simplify]

@@ -5,17 +5,17 @@
   "halite type checker"
   (:require [clojure.set :as set]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.base :as halite-base]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.eval :as halite-eval]
             [com.viasat.halite.types :as halite-types]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :refer [throw-err text]]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
-(s/defschema TypeContext {:senv (s/protocol halite-envs/SpecEnv) :tenv (s/protocol halite-envs/TypeEnv)})
+(s/defschema TypeContext {:senv (s/protocol envs/SpecEnv) :tenv (s/protocol envs/TypeEnv)})
 
 (s/defn type-check-instance :- halite-types/HaliteType
   [check-fn :- clojure.lang.IFn, error-key :- s/Keyword, ctx :- TypeContext, inst :- {s/Keyword s/Any}]
@@ -23,13 +23,13 @@
               (throw-err (h-err/missing-type-field {error-key inst})))
         _ (when-not (halite-types/namespaced-keyword? t)
             (throw-err (h-err/invalid-type-value {error-key inst})))
-        spec-info (or (halite-envs/system-lookup-spec (:senv ctx) t)
+        spec-info (or (envs/system-lookup-spec (:senv ctx) t)
                       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol t)
                                                                  error-key inst})))
         field-types (:spec-vars spec-info)
         fields (set (keys field-types))
         required-fields (->> field-types
-                             (remove (comp halite-envs/optional-var-type? val))
+                             (remove (comp envs/optional-var-type? val))
                              keys
                              set)
         supplied-fields (disj (set (keys inst)) :$type)
@@ -45,7 +45,7 @@
 
     ;; type-check variable values
     (doseq [[field-kw field-val] (dissoc inst :$type)]
-      (let [field-type (halite-envs/halite-type-from-var-type (:senv ctx) (get field-types field-kw))
+      (let [field-type (envs/halite-type-from-var-type (:senv ctx) (get field-types field-kw))
             actual-type (check-fn ctx field-val)]
         (when-not (halite-types/subtype? actual-type field-type)
           (throw-err (h-err/field-value-of-wrong-type {error-key inst
@@ -86,7 +86,7 @@
 (declare type-check*)
 
 (s/defn matches-signature?
-  [sig :- halite-base/FnSignature, actual-types :- [halite-types/HaliteType]]
+  [sig :- base/FnSignature, actual-types :- [halite-types/HaliteType]]
   (let [{:keys [arg-types variadic-tail]} sig]
     (and
      (<= (count arg-types) (count actual-types))
@@ -118,7 +118,7 @@
   [ctx :- TypeContext, sym]
   (if (= '$no-value sym)
     :Unset
-    (or (get (halite-envs/scope (:tenv ctx)) sym)
+    (or (get (envs/scope (:tenv ctx)) sym)
         (throw-err (h-err/undefined-symbol {:form sym})))))
 
 (defn- arg-count-exactly
@@ -155,8 +155,8 @@
     (and (halite-types/spec-type? subexpr-type)
          (halite-types/spec-id subexpr-type)
          (not (halite-types/needs-refinement? subexpr-type)))
-    (let [field-types (-> (->> subexpr-type halite-types/spec-id (halite-envs/system-lookup-spec (:senv ctx)) :spec-vars)
-                          (update-vals (partial halite-envs/halite-type-from-var-type (:senv ctx))))]
+    (let [field-types (-> (->> subexpr-type halite-types/spec-id (envs/system-lookup-spec (:senv ctx)) :spec-vars)
+                          (update-vals (partial envs/halite-type-from-var-type (:senv ctx))))]
       (when-not (and (keyword? index) (halite-types/bare? index))
         (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
@@ -206,7 +206,7 @@
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'rescale :expected-type-description (text "a fixed point decimal") :expr expr}))))
     (when-not (= :Integer (second arg-types))
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'rescale :expected-type-description (text "an integer") :expr expr}))))
-    (when-not (halite-base/integer-or-long? scale)
+    (when-not (base/integer-or-long? scale)
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'rescale :expected-type-description (text "an integer literal") :expr expr}))))
     (when-not (and (>= scale 0)
                    (< scale (inc fixed-decimal/max-scale)))
@@ -244,10 +244,10 @@
       (fn [ctx [sym body]]
         (when-not (and (symbol? sym) (halite-types/bare? sym))
           (throw-err (h-err/let-needs-bare-symbol {:form expr})))
-        (when (halite-base/reserved-words sym)
+        (when (base/reserved-words sym)
           (throw-err (h-err/cannot-bind-reserved-word {:sym sym
                                                        :form expr})))
-        (update ctx :tenv halite-envs/extend-scope sym (type-check* ctx body)))
+        (update ctx :tenv envs/extend-scope sym (type-check* ctx body)))
       ctx
       (partition 2 bindings))
      body)))
@@ -265,7 +265,7 @@
           _ (when-not et
               (throw-err (h-err/comprehend-collection-invalid-type {:op op, :expr-type coll-type, :form expr
                                                                     :actual-type (or (halite-types/spec-id coll-type) coll-type)})))
-          body-type (type-check* (update ctx :tenv halite-envs/extend-scope sym et) body)]
+          body-type (type-check* (update ctx :tenv envs/extend-scope sym et) body)]
       {:coll-type coll-type
        :body-type body-type})))
 
@@ -317,8 +317,8 @@
       (when-not (halite-types/subtype? coll-type (halite-types/vector-type :Value))
         (throw-err (h-err/reduce-not-vector {:form expr, :actual-coll-type coll-type})))
       (type-check* (update ctx :tenv #(-> %
-                                          (halite-envs/extend-scope acc init-type)
-                                          (halite-envs/extend-scope elem et)))
+                                          (envs/extend-scope acc init-type)
+                                          (envs/extend-scope elem et)))
                    body))))
 
 (s/defn ^:private type-check-if-value :- halite-types/HaliteType
@@ -332,11 +332,11 @@
     (let [sym-type (type-check* ctx sym)
           unset-type (if (= 'when-value op)
                        :Unset
-                       (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) unset-expr))]
+                       (type-check* (update ctx :tenv envs/extend-scope sym :Unset) unset-expr))]
       (if (= :Unset sym-type)
         unset-type
         (let [inner-type (halite-types/no-maybe sym-type)
-              set-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) set-expr)]
+              set-type (type-check* (update ctx :tenv envs/extend-scope sym inner-type) set-expr)]
           (halite-types/meet set-type unset-type))))))
 
 (s/defn ^:private type-check-if-value-let :- halite-types/HaliteType
@@ -349,11 +349,11 @@
     (let [maybe-type (type-check* ctx maybe-expr)
           else-type (if (= 'when-value-let op)
                       :Unset
-                      (type-check* (update ctx :tenv halite-envs/extend-scope sym :Unset) else-expr))]
+                      (type-check* (update ctx :tenv envs/extend-scope sym :Unset) else-expr))]
       (if (= :Unset maybe-type)
         else-type
         (let [inner-type (halite-types/no-maybe maybe-type)
-              then-type (type-check* (update ctx :tenv halite-envs/extend-scope sym inner-type) then-expr)]
+              then-type (type-check* (update ctx :tenv envs/extend-scope sym inner-type) then-expr)]
           (halite-types/meet then-type else-type))))))
 
 (defn check-all-sets [[op :as expr] arg-types]
@@ -437,7 +437,7 @@
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'refine-to :expected-type-description (text "an instance"), :form expr, :actual s}))))
     (when-not (halite-types/namespaced-keyword? kw)
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'refine-to :expected-type-description (text "a spec id"), :form expr}))))
-    (when-not (halite-envs/system-lookup-spec (:senv ctx) kw)
+    (when-not (envs/system-lookup-spec (:senv ctx) kw)
       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     (halite-types/concrete-spec-type kw)))
 
@@ -450,7 +450,7 @@
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'refines-to? :expected-type-description (text "an instance"), :form expr}))))
     (when-not (halite-types/namespaced-keyword? kw)
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'refines-to? :expected-type-description (text "a spec id"), :form expr}))))
-    (when-not (halite-envs/system-lookup-spec (:senv ctx) kw)
+    (when-not (envs/system-lookup-spec (:senv ctx) kw)
       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     :Boolean))
 
@@ -477,8 +477,8 @@
    expr]
   (let [type (cond
                (boolean? expr) :Boolean
-               (halite-base/integer-or-long? expr) :Integer
-               (halite-base/fixed-decimal? expr) (type-check-fixed-decimal expr)
+               (base/integer-or-long? expr) :Integer
+               (base/fixed-decimal? expr) (type-check-fixed-decimal expr)
                (string? expr) :String
                (symbol? expr) (type-check-symbol ctx expr)
                (map? expr) (type-check-instance type-check* :form ctx expr)
@@ -524,7 +524,7 @@
 (s/defn type-check :- halite-types/HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
   or not well typed in the given typ environment."
-  [senv :- (s/protocol halite-envs/SpecEnv) tenv :- (s/protocol halite-envs/TypeEnv) expr :- s/Any]
+  [senv :- (s/protocol envs/SpecEnv) tenv :- (s/protocol envs/TypeEnv) expr :- s/Any]
   (type-check* {:senv senv :tenv tenv} expr))
 
 (s/defn type-check-constraint-expr
@@ -543,10 +543,10 @@
                                                        :actual-type t})))))
 
 (s/defn type-check-spec
-  [senv :- (s/protocol halite-envs/SpecEnv)
-   spec-info :- halite-envs/SpecInfo]
+  [senv :- (s/protocol envs/SpecEnv)
+   spec-info :- envs/SpecInfo]
   (let [{:keys [constraints refines-to]} spec-info
-        tenv (halite-envs/type-env-from-spec senv spec-info)]
+        tenv (envs/type-env-from-spec senv spec-info)]
     (doseq [[cname cexpr] constraints]
       (type-check-constraint-expr senv tenv cexpr))
     (doseq [[spec-id {:keys [expr name]}] refines-to]
@@ -560,6 +560,6 @@
                            (when-let [spec-id (com.viasat.halite.types/spec-id halite-type)]
                              (swap! lookups-atom conj {:spec-id spec-id
                                                        :variable-name index})))]
-      (let [tenv (halite-envs/type-env-from-spec senv spec-info)]
+      (let [tenv (envs/type-env-from-spec senv spec-info)]
         (type-check senv tenv expr))
       @lookups-atom)))

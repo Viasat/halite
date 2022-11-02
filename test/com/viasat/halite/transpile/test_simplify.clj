@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.transpile.test-simplify
-  (:require [com.viasat.halite.envs :as halite-envs]
+  (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.simplify :refer [simplify]]
             [schema.test])
@@ -18,7 +18,7 @@
             (binding [ssa/*hide-non-halite-ops* false]
               (-> senv
                   (update-in [:ws/A :constraints] assoc :c expr)
-                  (halite-envs/spec-env)
+                  (envs/spec-env)
                   (ssa/build-spec-ctx :ws/A)
                   (simplify)
                   :ws/A

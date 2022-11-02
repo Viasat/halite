@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.transpile.test-ssa
   (:require [com.viasat.halite :as halite]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
@@ -37,8 +37,8 @@
          (= [dgraph new-constraints]
             (-> senv
                 (assoc-in [:ws/A :constraints] (apply hash-map (mapcat identity (map-indexed #(vector (str "c" %1) %2) constraints))))
-                (halite-envs/system-spec-env)
-                (#(ssa/spec-to-ssa % (halite-envs/system-lookup-spec % :ws/A)))
+                (envs/system-spec-env)
+                (#(ssa/spec-to-ssa % (envs/system-lookup-spec % :ws/A)))
                 (#(vector (:dgraph (:ssa-graph %))
                           (map second (:constraints %))))))
 
@@ -448,7 +448,7 @@
                                              :bn (+ 1 an)})}}}
                :ws/B
                {:spec-vars {:bn "Integer"}}}
-        spec (ssa/spec-to-ssa (halite-envs/system-spec-env senv) (:ws/A senv))]
+        spec (ssa/spec-to-ssa (envs/system-spec-env senv) (:ws/A senv))]
     (is (= '{:spec-vars {:an "Integer"}
              :ssa-graph
              {:dgraph
@@ -485,7 +485,7 @@
            (ssa/spec-from-ssa spec)))))
 
 (deftest test-form-to-ssa-correctly-handles-node-references-in-if-value
-  (let [senv (halite-envs/system-spec-env
+  (let [senv (envs/system-spec-env
               '{:ws/A
                 {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
                  :constraints {"c1" (= s p)}}})
@@ -547,7 +547,7 @@
             (let [spec-info (-> senv
                                 (update-in [:ws/A :constraints] merge
                                            (apply hash-map (mapcat identity (map-indexed #(vector (str "c" %1) %2) constraints))))
-                                (halite-envs/system-spec-env)
+                                (envs/system-spec-env)
                                 (ssa/build-spec-ctx :ws/A)
                                 :ws/A)]
               (-> spec-info
@@ -872,7 +872,7 @@
       '(= 1 (map [v1 [x y]] (* v1 2))))))
 
 (deftest test-spec-from-ssa-preserves-guards
-  (let [senv (halite-envs/system-spec-env
+  (let [senv (envs/system-spec-env
               '{:ws/A
                 {:spec-vars {:p "Boolean", :q "Boolean"}
                  :constraints {"c1" (if p (< (div 10 0) 1) true)
@@ -882,11 +882,11 @@
     (is (= '{"$all" (and (if p (< (div 10 0) 1) true)
                          (if q true (let [v1 (div 10 0)] (and (< 1 v1) (< v1 1))))
                          (if (not q) (< 1 (div 10 0)) true))}
-           (-> sctx (ssa/build-spec-env) (halite-envs/system-lookup-spec :ws/A) :constraints)))))
+           (-> sctx (ssa/build-spec-env) (envs/system-lookup-spec :ws/A) :constraints)))))
 
 (deftest test-semantics-preservation
   ;; Test that this spec has the same interpretation after round-tripping through SSA representation.
-  (let [senv (halite-envs/system-spec-env
+  (let [senv (envs/system-spec-env
               {:ws/A
                '{:spec-vars {:x "Integer", :y "Integer", :p "Boolean", :q "Boolean"}
                  :constraints {"a1" (< x y)
@@ -895,8 +895,8 @@
                                "a4" (and (<= 0 x) (< x 10))
                                "a5" (and (<= 0 y) (< y 10))}}})
         senv' (-> senv (ssa/build-spec-ctx :ws/A) (ssa/build-spec-env))
-        tenv (halite-envs/type-env {})
-        env (halite-envs/env {})
+        tenv (envs/type-env {})
+        env (envs/env {})
         check (fn [senv inst]
                 (try (halite/eval-expr senv tenv env (list 'valid? inst))
                      (catch Exception ex
@@ -907,9 +907,9 @@
           (is (= (check senv inst) (check senv' inst))))))))
 
 (deftest test-replace-in-expr
-  (let [senv (halite-envs/system-spec-env
+  (let [senv (envs/system-spec-env
               '{:ws/A {:spec-vars {:an "Integer"}}})
-        tenv (halite-envs/type-env '{x :Integer, y :Integer, p :Boolean})
+        tenv (envs/type-env '{x :Integer, y :Integer, p :Boolean})
         ctx {:senv senv, :tenv tenv, :env {}, :ssa-graph ssa/empty-ssa-graph :local-stack []}
         [ssa-graph1 orig-id] (ssa/form-to-ssa ctx '(let [foo (+ x (- 0 y))]
                                                      (or p

@@ -5,7 +5,7 @@
   "Handle the case where a top-level abstract spec bound is used. Introduce a new spec which contains
   a field of the type of one of the abstract specs referenced in the bound. Does not handle the case
   where all of the specs in the :$refines-to field of the bound are concrete."
-  (:require [com.viasat.halite.envs :as halite-envs]
+  (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
@@ -67,7 +67,7 @@
        (let [senv (ssa/as-spec-env sctx)
              ;; choose an abstract spec to be the field type in the synthesized spec
              primary-refines-to-spec-id (->> (keys $refines-to)
-                                             (filter #(:abstract? (halite-envs/system-lookup-spec senv %)))
+                                             (filter #(:abstract? (envs/system-lookup-spec senv %)))
                                              first)
              generated-spec-id (generate-spec-id primary-refines-to-spec-id)]
          (translate-up (prop-abstract/propagate (add-spec generated-spec-id sctx primary-refines-to-spec-id)

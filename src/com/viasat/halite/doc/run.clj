@@ -3,8 +3,8 @@
 
 (ns com.viasat.halite.doc.run
   (:require [com.viasat.halite :as halite]
-            [com.viasat.halite.base :as halite-base]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.base :as base]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
@@ -25,21 +25,21 @@
 (defmacro h-eval [expr]
   ;; helper for debugging
   `(let [spec-map# {}
-         tenv# (halite-envs/type-env {})
-         env# (halite-envs/env {})]
+         tenv# (envs/type-env {})
+         env# (envs/env {})]
      (eval-h-expr spec-map# tenv# env# '~expr)))
 
 (defmacro h-lint [expr]
   ;; helper for debugging
   `(let [spec-map# {}
-         tenv# (halite-envs/type-env {})]
+         tenv# (envs/type-env {})]
      (halite-lint/type-check-and-lint spec-map# tenv# '~expr)))
 
 (defn j-eval [expr-str]
   ;; helper for debugging
   (let [spec-map {}
-        tenv (halite-envs/type-env {})
-        env (halite-envs/env {})
+        tenv (envs/type-env {})
+        env (envs/env {})
         expr (jadeite/to-halite expr-str)]
     (eval-h-expr spec-map tenv env expr)))
 
@@ -69,11 +69,11 @@
   ([expr]
    (h* expr false))
   ([expr separate-err-id?]
-   (binding [halite-base/*limits* halite-limits
+   (binding [base/*limits* halite-limits
              format-errors/*squash-throw-site* true]
      (let [spec-map {}
-           tenv (halite-envs/type-env {})
-           env (halite-envs/env {})
+           tenv (envs/type-env {})
+           env (envs/env {})
            j-expr (try (jadeite/to-jadeite expr)
                        (catch RuntimeException e
                          [:throws (.getMessage e)]))
@@ -114,8 +114,8 @@
 (defn ^HCInfo hc*
   [spec-map expr separate-err-id?]
   (binding [format-errors/*squash-throw-site* true]
-    (let [tenv (halite-envs/type-env {})
-          env (halite-envs/env {})
+    (let [tenv (envs/type-env {})
+          env (envs/env {})
           j-expr (try (jadeite/to-jadeite expr)
                       (catch RuntimeException e
                         [:throws (.getMessage e)]))

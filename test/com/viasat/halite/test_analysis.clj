@@ -3,7 +3,6 @@
 
 (ns com.viasat.halite.test-analysis
   (:require [com.viasat.halite.analysis :as halite-analysis]
-            [com.viasat.halite.envs :as halite-envs]
             [schema.core :as s]
             [schema.test :refer [validate-schemas]]
             [clojure.test :refer :all]))

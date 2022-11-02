@@ -7,13 +7,13 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.analysis :as halite-analysis]
-            [com.viasat.halite.base :as halite-base]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.type-check :as halite-type-check]
             [com.viasat.halite.type-of :as halite-type-of]
             [com.viasat.halite.eval :as halite-eval]
             [com.viasat.halite.types :as halite-types]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.syntax-check :as halite-syntax-check]
             [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
             [potemkin]
@@ -23,10 +23,10 @@
 
 (s/defn eval-predicate :- Boolean
   [ctx :- halite-eval/EvalContext
-   tenv :- (s/protocol halite-envs/TypeEnv)
+   tenv :- (s/protocol envs/TypeEnv)
    bool-expr
    spec-id :- halite-types/NamespacedKeyword
-   constraint-name :- (s/maybe halite-base/ConstraintName)]
+   constraint-name :- (s/maybe base/ConstraintName)]
   (with-exception-data {:form bool-expr
                         :spec-id spec-id
                         :constraint-name (name constraint-name)}
@@ -37,7 +37,7 @@
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
   [ctx :- halite-eval/EvalContext
-   tenv :- (s/protocol halite-envs/TypeEnv)
+   tenv :- (s/protocol envs/TypeEnv)
    spec-id :- halite-types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
@@ -52,33 +52,33 @@
 
 (s/defn ^:private load-env
   "Evaluate the contents of the env to get instances loaded with refinements."
-  [senv :- (s/protocol halite-envs/SpecEnv)
-   env :- (s/protocol halite-envs/Env)]
-  (let [empty-env (halite-envs/env {})]
+  [senv :- (s/protocol envs/SpecEnv)
+   env :- (s/protocol envs/Env)]
+  (let [empty-env (envs/env {})]
     ;; All runtime values are homoiconic. We eval them in an empty environment
     ;; to initialize refinements for all instances.
     (reduce
      (fn [env [k v]]
-       (halite-envs/bind env k (halite-eval/eval-expr* {:env empty-env :senv senv} v)))
+       (envs/bind env k (halite-eval/eval-expr* {:env empty-env :senv senv} v)))
      empty-env
-     (halite-envs/bindings env))))
+     (envs/bindings env))))
 
 (s/defn ^:private type-check-env
   "Type check the contents of the type environment."
-  [senv :- (s/protocol halite-envs/SpecEnv)
-   tenv :- (s/protocol halite-envs/TypeEnv)
-   env :- (s/protocol halite-envs/Env)]
-  (let [declared-symbols (set (keys (halite-envs/scope tenv)))
-        bound-symbols (set (keys (halite-envs/bindings env)))
+  [senv :- (s/protocol envs/SpecEnv)
+   tenv :- (s/protocol envs/TypeEnv)
+   env :- (s/protocol envs/Env)]
+  (let [declared-symbols (set (keys (envs/scope tenv)))
+        bound-symbols (set (keys (envs/bindings env)))
         unbound-symbols (set/difference declared-symbols bound-symbols)
-        empty-env (halite-envs/env {})]
+        empty-env (envs/env {})]
     (when (seq unbound-symbols)
       (throw-err (h-err/symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
     (doseq [sym declared-symbols]
-      (let [declared-type (get (halite-envs/scope tenv) sym)
+      (let [declared-type (get (envs/scope tenv) sym)
             ;; it is not necessary to setup the eval bindings for the following because the
             ;; instances have already been processed by load-env at this point
-            value (halite-eval/eval-expr* {:env empty-env :senv senv} (get (halite-envs/bindings env) sym))
+            value (halite-eval/eval-expr* {:env empty-env :senv senv} (get (envs/bindings env) sym))
             actual-type (halite-type-of/type-of senv tenv value)]
         (when-not (halite-types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))))
@@ -101,24 +101,24 @@
   type check the expression before evaluating it. Optionally type check any refinements or
   constraints involved with instance literals in the expr and env. By default all checks are
   performed."
-  ([senv :- (s/protocol halite-envs/SpecEnv)
-    tenv :- (s/protocol halite-envs/TypeEnv)
-    env :- (s/protocol halite-envs/Env)
+  ([senv :- (s/protocol envs/SpecEnv)
+    tenv :- (s/protocol envs/TypeEnv)
+    env :- (s/protocol envs/Env)
     expr]
    (eval-expr senv tenv env expr default-eval-expr-options))
 
-  ([senv :- (s/protocol halite-envs/SpecEnv)
-    tenv :- (s/protocol halite-envs/TypeEnv)
-    env :- (s/protocol halite-envs/Env)
+  ([senv :- (s/protocol envs/SpecEnv)
+    tenv :- (s/protocol envs/TypeEnv)
+    env :- (s/protocol envs/Env)
     expr
     options :- {(s/optional-key :type-check-expr?) Boolean
                 (s/optional-key :type-check-env?) Boolean
                 (s/optional-key :type-check-spec-refinements-and-constraints?) Boolean
                 (s/optional-key :check-for-spec-cycles?) Boolean
-                (s/optional-key :limits) halite-base/Limits}]
+                (s/optional-key :limits) base/Limits}]
    (let [{:keys [type-check-expr? type-check-env? type-check-spec-refinements-and-constraints? check-for-spec-cycles?
                  limits]} options]
-     (binding [halite-base/*limits* (or limits halite-base/*limits*)]
+     (binding [base/*limits* (or limits base/*limits*)]
        (when check-for-spec-cycles?
          (when (not (map? senv))
            (throw-err (h-err/spec-map-needed {})))
@@ -143,7 +143,7 @@
    (syntax-check expr {}))
   ([expr options]
    (let [{:keys [limits]} options]
-     (binding [halite-base/*limits* (or limits halite-base/*limits*)]
+     (binding [base/*limits* (or limits base/*limits*)]
        (halite-syntax-check/syntax-check expr)))))
 
 (defn type-check-and-lint
@@ -151,7 +151,7 @@
    (type-check-and-lint senv tenv expr))
   ([senv tenv expr options]
    (let [{:keys [limits]} options]
-     (binding [halite-base/*limits* (or limits halite-base/*limits*)]
+     (binding [base/*limits* (or limits base/*limits*)]
        (halite-lint/type-check-and-lint senv tenv expr)))))
 
 ;;
@@ -165,16 +165,16 @@
   check-n])
 
 (potemkin/import-vars
- [halite-base
+ [base
   integer-or-long? fixed-decimal? check-count
   Limits])
 
 (potemkin/import-vars
- [halite-base
+ [base
   h< h> h<= h>= h+ h-])
 
 (potemkin/import-vars
- [halite-envs
+ [envs
   primitive-types
   Refinement MandatoryVarType VarType SpecVars RefinesTo UserSpecInfo ConstraintMap
   halite-type-from-var-type

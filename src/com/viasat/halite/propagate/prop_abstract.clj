@@ -4,7 +4,7 @@
 (ns com.viasat.halite.propagate.prop-abstract
   (:require [clojure.string :as str]
             [clojure.set :as set]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.ssa :as ssa]
@@ -101,12 +101,12 @@
 (defn- discriminator-var-sym [var-kw] (symbol (discriminator-var-name var-kw)))
 
 (defn- var-entry->spec-id [senv [var-kw var-type]]
-  (->> var-type (halite-envs/halite-type-from-var-type senv) halite-types/no-maybe halite-types/spec-id))
+  (->> var-type (envs/halite-type-from-var-type senv) halite-types/no-maybe halite-types/spec-id))
 
 (defn- abstract-var?
   [senv var-entry]
   (if-let [spec-id (var-entry->spec-id senv var-entry)]
-    (true? (:abstract? (halite-envs/system-lookup-spec senv spec-id)))
+    (true? (:abstract? (envs/system-lookup-spec senv spec-id)))
     false))
 
 (s/defn ^:private replace-all
@@ -258,11 +258,11 @@
 
 (s/defn ^:private lower-abstract-bounds :- ConcreteSpecBound2
   [spec-bound :- SpecBound
-   senv :- (s/protocol halite-envs/SpecEnv)
+   senv :- (s/protocol envs/SpecEnv)
    alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second) ; unwrap [:Maybe ..]
-        {:keys [spec-vars] :as spec} (halite-envs/system-lookup-spec senv spec-id)]
+        {:keys [spec-vars] :as spec} (envs/system-lookup-spec senv spec-id)]
     (->>
      spec-vars
      (filter #(abstract-var? senv %))
@@ -325,10 +325,10 @@
       parent-bound)))
 
 (s/defn ^:private raise-abstract-bounds :- SpecBound
-  [spec-bound :- ConcreteSpecBound2, senv :- (s/protocol halite-envs/SpecEnv), alternatives]
+  [spec-bound :- ConcreteSpecBound2, senv :- (s/protocol envs/SpecEnv), alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second)
-        {:keys [spec-vars] :as spec} (halite-envs/system-lookup-spec senv spec-id)]
+        {:keys [spec-vars] :as spec} (envs/system-lookup-spec senv spec-id)]
     (->>
      spec-vars
      (filter #(abstract-var? senv %))

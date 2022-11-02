@@ -5,7 +5,6 @@
   "Simplify halite specs by evaluating those parts of the spec
   that are statically evaluable."
   (:require [com.viasat.halite.types :as halite-types]
-            [com.viasat.halite.envs :as halite-envs]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [fixpoint]]

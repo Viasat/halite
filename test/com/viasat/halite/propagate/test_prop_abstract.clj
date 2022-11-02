@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-abstract
-  (:require [com.viasat.halite.envs :as halite-envs]
+  (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as pa]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
@@ -90,7 +90,7 @@
 (deftest test-lower-abstract-bounds
   (s/with-fn-validation
     (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
-          senv (halite-envs/spec-env simplest-abstract-var-example)]
+          senv (envs/spec-env simplest-abstract-var-example)]
       (are [in out]
            (= out (lower-abstract-bounds in senv alts))
 
@@ -147,7 +147,7 @@
 (deftest test-lower-optional-abstract-bounds
   (s/with-fn-validation
     (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
-          senv (halite-envs/spec-env optional-abstract-var-example)]
+          senv (envs/spec-env optional-abstract-var-example)]
       (are [in out]
            (= out (lower-abstract-bounds in senv alts))
 
@@ -189,7 +189,7 @@
 (deftest test-raise-abstract-bounds
   (s/with-fn-validation
     (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
-          senv (halite-envs/spec-env simplest-abstract-var-example)]
+          senv (envs/spec-env simplest-abstract-var-example)]
       (are [in out]
            (= out (raise-abstract-bounds in senv alts))
 
@@ -226,7 +226,7 @@
 (deftest test-raise-optional-abstract-bounds
   (s/with-fn-validation
     (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
-          senv (halite-envs/spec-env optional-abstract-var-example)]
+          senv (envs/spec-env optional-abstract-var-example)]
       (are [in out]
            (= out (raise-abstract-bounds in senv alts))
 
@@ -333,7 +333,7 @@
 (deftest test-lower-abstract-bounds-for-nested-abstracts
   (s/with-fn-validation
     (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}
-          senv (halite-envs/spec-env nested-abstracts-example)]
+          senv (envs/spec-env nested-abstracts-example)]
       (are [in out]
            (= out (lower-abstract-bounds in senv alts))
 
@@ -363,7 +363,7 @@
 
 (deftest test-raise-nested-abstract-bounds
   (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}
-        senv (halite-envs/spec-env nested-abstracts-example)]
+        senv (envs/spec-env nested-abstracts-example)]
     (are [in out]
          (= out (raise-abstract-bounds in senv alts))
 

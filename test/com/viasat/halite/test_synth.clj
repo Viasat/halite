@@ -4,7 +4,7 @@
 (ns com.viasat.halite.test-synth
   (:require [com.viasat.halite.synth :refer [synth spec-map-eval] :as synth]
             [com.viasat.halite :as halite]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [clojure.test :as t :refer [deftest is]]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
@@ -195,8 +195,8 @@
 (defn halite-user-eval [spec-map $this expr]
   (let [spec-info (get spec-map (:$type $this))]
     (halite/eval-expr spec-map
-                      (halite-envs/type-env-from-spec spec-map spec-info)
-                      (halite-envs/env-from-inst spec-info $this)
+                      (envs/type-env-from-spec spec-map spec-info)
+                      (envs/env-from-inst spec-info $this)
                       expr)))
 
 (deftest test-halite-evaluator
@@ -214,8 +214,8 @@
 
 (defn halite-eval [spec-map expr]
   (halite/eval-expr spec-map
-                    (halite-envs/type-env {})
-                    (halite-envs/env {})
+                    (envs/type-env {})
+                    (envs/env {})
                     expr))
 
 (defmacro compare-to-halite [spec-map expr]

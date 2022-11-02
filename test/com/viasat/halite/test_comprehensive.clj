@@ -6,8 +6,8 @@
             [clojure.test :refer :all]
             [com.viasat.halite :as halite]
             [com.viasat.halite.doc.run :as halite-run]
-            [com.viasat.halite.base :as halite-base]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.base :as base]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lint :as halite-lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.jadeite :as jadeite]
@@ -50,11 +50,11 @@
 (defn hf
   [expr & args]
   (let [[expected-t result-expected j-expr-expected j-result-expected] args]
-    (binding [halite-base/*limits* halite-run/halite-limits
+    (binding [base/*limits* halite-run/halite-limits
               format-errors/*squash-throw-site* true]
       (let [senv {}
-            tenv (halite-envs/type-env {})
-            env (halite-envs/env {})
+            tenv (envs/type-env {})
+            env (envs/env {})
             s (try (halite/syntax-check expr)
                    nil
                    (catch RuntimeException e

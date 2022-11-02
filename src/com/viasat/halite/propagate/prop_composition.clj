@@ -4,7 +4,7 @@
 (ns com.viasat.halite.propagate.prop-composition
   (:require [clojure.string :as str]
             [clojure.set :as set]
-            [com.viasat.halite.envs :as halite-envs]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.propagate.prop-strings :as prop-strings]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
@@ -102,7 +102,7 @@
      (->
       (reduce
        (fn [vars [var-kw vtype]]
-         (let [htype (halite-envs/halite-type-from-var-type senv vtype)]
+         (let [htype (envs/halite-type-from-var-type senv vtype)]
            (cond
              (primitive-maybe-type? htype)
              (let [actually-mandatory? (and already-optional? (not (halite-types/maybe-type? htype)))
@@ -232,7 +232,7 @@
     (dissoc spec-bound :$type))))
 
 (s/defn ^:private optionality-constraint :- s/Any
-  [senv :- (s/protocol halite-envs/SpecEnv), flattened-vars :- FlattenedVars]
+  [senv :- (s/protocol envs/SpecEnv), flattened-vars :- FlattenedVars]
   (let [witness-var (->> flattened-vars :$witness first symbol)
         mandatory-vars (::mandatory flattened-vars)
         mandatory-clause (when (seq mandatory-vars)
@@ -241,7 +241,7 @@
                               (remove (comp mandatory-vars first second))
                               (filter (fn [[var-kw info]]
                                         (if (vector? info)
-                                          (halite-types/maybe-type? (halite-envs/halite-type-from-var-type senv (second info)))
+                                          (halite-types/maybe-type? (envs/halite-type-from-var-type senv (second info)))
                                           (contains? info :$witness))))
                               (sort-by first)
                               (map (fn [[opt-var-kw info]]
@@ -253,8 +253,8 @@
     (mk-junct 'and (cond->> optional-clauses
                      mandatory-clause (cons mandatory-clause)))))
 
-(s/defn ^:private optionality-constraints :- halite-envs/SpecInfo
-  [senv :- (s/protocol halite-envs/SpecEnv), flattened-vars :- FlattenedVars, spec-info :- halite-envs/SpecInfo]
+(s/defn ^:private optionality-constraints :- envs/SpecInfo
+  [senv :- (s/protocol envs/SpecEnv), flattened-vars :- FlattenedVars, spec-info :- envs/SpecInfo]
   (->> flattened-vars
        (filter (fn [[var-kw info]] (and (map? info) (contains? info :$witness))))
        (reduce
@@ -289,7 +289,7 @@
     (dissoc flattened-vars ::spec-id ::mandatory ::refines-to :$witness))
     $witness (guard-optional-instance-literal $witness mandatory)))
 
-(s/defn ^:private refinement-equality-constraints :- [halite-envs/NamedConstraint]
+(s/defn ^:private refinement-equality-constraints :- [envs/NamedConstraint]
   [constraint-name-prefix :- s/Str,
    flattened-vars :- FlattenedVars]
   (concat
@@ -340,9 +340,9 @@
                     (refinement-equality-constraints (str constraint-name-prefix "|" (name var-kw))
                                                      v)))))))
 
-(s/defn ^:private add-refinement-equality-constraints :- halite-envs/SpecInfo
+(s/defn ^:private add-refinement-equality-constraints :- envs/SpecInfo
   [flattened-vars :- FlattenedVars
-   spec-info :- halite-envs/SpecInfo]
+   spec-info :- envs/SpecInfo]
   (update spec-info :constraints into (refinement-equality-constraints "" flattened-vars)))
 
 (defn- spec-ify-bound*
@@ -353,7 +353,7 @@
    (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
    (add-refinement-equality-constraints flattened-vars)))
 
-(s/defn spec-ify-bound :- halite-envs/SpecInfo
+(s/defn spec-ify-bound :- envs/SpecInfo
   "Compile the spec-bound into a self-contained halite spec that explicitly states the constraints
   implied by the bound. The resulting spec is self-contained in the sense that:
     * it references no other specs, and
@@ -398,10 +398,10 @@
                                     map? ConcreteSpecBound
                                     :else (s/eq :Unset))
   [choco-bounds :- prop-strings/SpecBound
-   senv :- (s/protocol halite-envs/SpecEnv)
+   senv :- (s/protocol envs/SpecEnv)
    flattened-vars :- FlattenedVars]
   (let [spec-id (::spec-id flattened-vars)
-        spec-vars (:spec-vars (halite-envs/system-lookup-spec senv spec-id))
+        spec-vars (:spec-vars (envs/system-lookup-spec senv spec-id))
         spec-type (case (some-> flattened-vars :$witness first choco-bounds)
                     false :Unset
                     (nil true) spec-id
@@ -412,7 +412,7 @@
       (-> {:$type spec-type}
           (into (->> (dissoc flattened-vars ::mandatory :$witness ::spec-id ::refines-to)
                      (map (fn [[k v]]
-                            (let [htype (halite-envs/halite-type-from-var-type
+                            (let [htype (envs/halite-type-from-var-type
                                          senv (get spec-vars k))]
                               [k (if (spec-maybe-type? htype)
                                    (to-spec-bound choco-bounds senv v)

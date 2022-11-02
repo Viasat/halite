@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-envs
-  (:require [com.viasat.halite.envs :as halite-envs])
+  (:require [com.viasat.halite.envs :as envs])
   (:import [clojure.lang ExceptionInfo])
   (:use [clojure.test]))
 
@@ -10,7 +10,7 @@
   (let [senv {:ws/A {:abstract? true}
               :ws/B {}}]
     (are [vtype htype]
-         (= htype (halite-envs/halite-type-from-var-type senv vtype))
+         (= htype (envs/halite-type-from-var-type senv vtype))
 
       "Integer" :Integer
       "String" :String
@@ -28,7 +28,7 @@
 
     (are [invalid-type msg]
          (thrown-with-msg? ExceptionInfo msg
-                           (halite-envs/halite-type-from-var-type senv invalid-type))
+                           (envs/halite-type-from-var-type senv invalid-type))
 
       "Foo" #"Unrecognized primitive type"
       :ws/C #"Spec not found"
@@ -56,8 +56,8 @@
            as [:Maybe [:Set [:Instance :* #{:ws/A}]]]
            bs [:Vec [:Instance :ws/B]]}
          (->> :ws/C
-              (halite-envs/lookup-spec senv)
-              (halite-envs/type-env-from-spec senv)
-              (halite-envs/scope))))))
+              (envs/lookup-spec senv)
+              (envs/type-env-from-spec senv)
+              (envs/scope))))))
 
 ;; (run-tests)

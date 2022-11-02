@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.syntax-check
   "Syntax checker for halite"
-  (:require [com.viasat.halite.base :as halite-base]
+  (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [schema.core :as s]))
@@ -56,12 +56,12 @@
   ([expr]
    (syntax-check 0 expr))
   ([depth expr]
-   (check-n "expression nesting" (get halite-base/*limits* :expression-nesting-depth) depth {})
+   (check-n "expression nesting" (get base/*limits* :expression-nesting-depth) depth {})
    (cond
      (boolean? expr) true
-     (halite-base/integer-or-long? expr) true
-     (halite-base/fixed-decimal? expr) true
-     (string? expr) (do (halite-base/check-limit :string-literal-length expr) true)
+     (base/integer-or-long? expr) true
+     (base/fixed-decimal? expr) true
+     (string? expr) (do (base/check-limit :string-literal-length expr) true)
      (symbol? expr) (do (check-symbol-string expr) true)
      (keyword? expr) (do (check-symbol-string expr) true)
 
@@ -101,18 +101,18 @@
                           'when
                           'when-value
                           'when-value-let} (first expr))
-                       (halite-base/builtin-symbols (first expr))
+                       (base/builtin-symbols (first expr))
                        (throw-err (h-err/unknown-function-or-operator {:op (first expr)
                                                                        :expr expr})))
-                   (halite-base/check-limit :list-literal-count expr)
+                   (base/check-limit :list-literal-count expr)
                    (->> (rest expr)
                         (map (partial syntax-check (inc depth)))
                         dorun)
                    true)
      (or (vector? expr)
-         (set? expr)) (do (halite-base/check-limit (cond
-                                                     (vector? expr) :vector-literal-count
-                                                     (set? expr) :set-literal-count)
-                                                   expr)
+         (set? expr)) (do (base/check-limit (cond
+                                              (vector? expr) :vector-literal-count
+                                              (set? expr) :set-literal-count)
+                                            expr)
                           (->> (map (partial syntax-check (inc depth)) expr) dorun))
      :else (throw-err (h-err/syntax-error {:form expr :form-class (class expr)})))))
