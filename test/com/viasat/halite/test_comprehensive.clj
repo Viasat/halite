@@ -5,11 +5,11 @@
   (:require [clojure.string :as string]
             [clojure.test :refer :all]
             [com.viasat.halite :as halite]
-            [com.viasat.halite.doc.run :as halite-run]
             [com.viasat.halite.base :as base]
+            [com.viasat.halite.doc.run :as halite-run]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.lint :as lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
+            [com.viasat.halite.lint :as lint]
             [com.viasat.jadeite :as jadeite]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))

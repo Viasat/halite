@@ -5,9 +5,9 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.graph :as graph]
+            [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]
            [com.viasat.halite.lib.fixed_decimal FixedDecimal]))

@@ -5,17 +5,17 @@
   "Expression language for resource spec constraints and refinements that is almost, but
   not quite, a drop-in replacement for salt."
   (:require [clojure.set :as set]
-            [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.analysis :as analysis]
             [com.viasat.halite.base :as base]
+            [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.eval :as eval]
+            [com.viasat.halite.h-err :as h-err]
+            [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
             [com.viasat.halite.lint :as lint]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.type-of :as type-of]
-            [com.viasat.halite.eval :as eval]
             [com.viasat.halite.types :as types]
-            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.syntax-check :as syntax-check]
-            [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
             [potemkin]
             [schema.core :as s]))
 

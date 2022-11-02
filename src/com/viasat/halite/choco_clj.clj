@@ -5,12 +5,12 @@
   (:require [clojure.set :as set]
             [schema.core :as s])
   (:import [org.chocosolver.solver Model Solver]
-           [org.chocosolver.solver.variables Variable BoolVar IntVar]
            [org.chocosolver.solver.constraints Propagator Constraint]
            [org.chocosolver.solver.constraints.extension Tuples]
            [org.chocosolver.solver.expression.discrete.arithmetic ArExpression ArExpression$IntPrimitive]
            [org.chocosolver.solver.expression.discrete.relational ReExpression]
            [org.chocosolver.solver.propagation PropagationEngine]
+           [org.chocosolver.solver.variables Variable BoolVar IntVar]
            [org.chocosolver.util ESat]
            [org.chocosolver.util.tools VariableUtils]))
 

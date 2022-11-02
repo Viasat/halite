@@ -6,8 +6,7 @@
   together with functions that define the subtype
   relation and compute meets and joins."
   (:require [clojure.set :as set]
-            [schema.core :as s]
-            [schema.core :as schema]))
+            [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
@@ -434,12 +433,12 @@
 
 (s/defn concrete-spec-type :- HaliteType
   "Construct a type representing concrete instances of the given spec-id"
-  [spec-id :- schema/Keyword]
+  [spec-id :- s/Keyword]
   [:Instance spec-id])
 
 (s/defn abstract-spec-type :- HaliteType
   "Construct a type representing concrete instances that are to be refined to the given spec-id"
-  [spec-id :- schema/Keyword]
+  [spec-id :- s/Keyword]
   [:Instance :* #{spec-id}])
 
 (s/defn instance-type :- HaliteType

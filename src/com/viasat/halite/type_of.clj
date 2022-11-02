@@ -3,13 +3,13 @@
 
 (ns com.viasat.halite.type-of
   "halite type-of implementation, that determines the type of values"
-  (:require [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.base :as base]
+  (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.eval :as eval]
+            [com.viasat.halite.h-err :as h-err]
+            [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
-            [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)

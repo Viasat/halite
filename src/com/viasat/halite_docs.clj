@@ -3,9 +3,9 @@
 
 (ns com.viasat.halite-docs
   (:require [cheshire.core :as json]
+            [clojure.java.io :as io]
             [clojure.pprint :as pprint]
             [clojure.string :as string]
-            [clojure.java.io :as io]
             [com.viasat.halite.doc.bnf-diagrams :as bnf-diagrams]
             [com.viasat.halite.doc.data-basic-bnf :refer [basic-bnf-vector]]
             [com.viasat.halite.doc.data-err-maps :as err-maps]
@@ -15,7 +15,6 @@
             [com.viasat.halite.doc.data-spec-bnf :as data-spec-bnf]
             [com.viasat.halite.doc.data-tag-def-map :refer [tag-def-map]]
             [com.viasat.halite.doc.data-tutorial :refer [tutorials]]
-            [com.viasat.halite.doc.run :as halite-run]
             [com.viasat.halite.doc.md-basic :as md-basic]
             [com.viasat.halite.doc.md-err :as md-err]
             [com.viasat.halite.doc.md-full :as md-full]
@@ -23,6 +22,7 @@
             [com.viasat.halite.doc.md-outline :refer [produce-outline]]
             [com.viasat.halite.doc.md-spec :as md-spec]
             [com.viasat.halite.doc.md-tag :as md-tag]
+            [com.viasat.halite.doc.run :as halite-run]
             [com.viasat.halite.doc.utils :as utils]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :as format-errors]

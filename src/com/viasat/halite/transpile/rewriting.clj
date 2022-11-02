@@ -8,10 +8,9 @@
             [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as types]
-            [com.viasat.halite.transpile.ssa :as ssa
-             :refer [SpecInfo SpecCtx SSACtx]]
+            [com.viasat.halite.transpile.ssa :as ssa :refer [SpecInfo SpecCtx SSACtx]]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
+            [com.viasat.halite.types :as types]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 

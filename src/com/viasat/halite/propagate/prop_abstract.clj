@@ -2,20 +2,20 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.prop-abstract
-  (:require [clojure.string :as str]
-            [clojure.set :as set]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
+            [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
-            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.lowering :as lowering]
-            [com.viasat.halite.transpile.util :refer [fixpoint mk-junct]]
-            [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
             [com.viasat.halite.transpile.rewriting :as rewriting]
-            [loom.graph :as loom-graph]
+            [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
+            [com.viasat.halite.transpile.ssa :as ssa]
+            [com.viasat.halite.transpile.util :refer [fixpoint mk-junct]]
+            [com.viasat.halite.types :as types]
             [loom.derived :as loom-derived]
-            [schema.core :as s]
-            [com.viasat.halite.choco-clj-opt :as choco-clj]))
+            [loom.graph :as loom-graph]
+            [schema.core :as s]))
 
 ;;;;;;;;;;;; Abstractness ;;;;;;;;;;;;
 

@@ -3,8 +3,8 @@
 
 (ns com.viasat.halite.doc.md-spec
   (:require [clojure.string :as string]
-            [com.viasat.halite.doc.utils :as utils]
-            [com.viasat.halite.doc.md-basic :as md-basic]))
+            [com.viasat.halite.doc.md-basic :as md-basic]
+            [com.viasat.halite.doc.utils :as utils]))
 
 (defn spec-md [{:keys [generate-hdr-f embed-bnf-f]}]
   (->> [(generate-hdr-f "Specification Syntax Reference" "halite_spec-syntax-reference" nil "Specification syntax reference.")

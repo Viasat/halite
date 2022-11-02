@@ -5,12 +5,12 @@
   "Rewrite halite specs such that their expressions are stored in a single directed graph
   that is reminiscent of the single static assignment (SSA) representation often used
   in compilers."
-  (:require [clojure.set :as set]
-            [clojure.pprint :as pp]
+  (:require [clojure.pprint :as pp]
+            [clojure.set :as set]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
+            [com.viasat.halite.types :as types]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 

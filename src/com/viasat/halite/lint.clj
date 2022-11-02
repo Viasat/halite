@@ -4,17 +4,17 @@
 (ns com.viasat.halite.lint
   "Analyize halite expressions to find patterns of usage unnecessary and
   undesireable for users, though legal and supported by the language."
-  (:require [com.viasat.halite.h-err :as h-err]
+  (:require [clojure.string :as string]
+            [clojure.set :as set]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.eval :as eval]
-            [com.viasat.halite.type-check :as type-check]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.eval :as eval]
+            [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.l-err :as l-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :as format-errors :refer [throw-err with-exception-data text]]
-            [clojure.string :as string]
-            [clojure.set :as set]
+            [com.viasat.halite.type-check :as type-check]
+            [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)

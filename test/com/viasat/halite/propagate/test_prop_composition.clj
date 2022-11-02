@@ -2,15 +2,15 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-composition
-  (:require [com.viasat.halite.propagate.prop-composition :as pc]
+  (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
+            [com.viasat.halite.propagate.prop-composition :as pc]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
-            [schema.test]
-            [com.viasat.halite.choco-clj-opt :as choco-clj])
+            [schema.test])
   (:use clojure.test))
 
 ;; Prismatic schema validation is too slow to leave on by default for these tests.

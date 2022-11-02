@@ -3,9 +3,9 @@
 
 (ns com.viasat.halite.base
   (:require [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :refer [throw-err]]
+            [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)

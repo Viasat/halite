@@ -6,8 +6,8 @@
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
+            [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)

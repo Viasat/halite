@@ -2,8 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.lib.test-fixed-decimal
-  (:require [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [clojure.test :refer :all])
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal])
   (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)

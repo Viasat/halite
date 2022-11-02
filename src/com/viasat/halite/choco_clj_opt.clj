@@ -4,8 +4,8 @@
 (ns com.viasat.halite.choco-clj-opt
   "An extended Choco front-end that simulates 'optional' variables, whose domains may be
   empty in a solution."
-  (:require [schema.core :as s]
-            [com.viasat.halite.choco-clj :as choco-clj])
+  (:require [com.viasat.halite.choco-clj :as choco-clj]
+            [schema.core :as s])
   (:import [org.chocosolver.solver.exception ContradictionException]))
 
 (s/defschema ChocoVarType choco-clj/ChocoVarType)

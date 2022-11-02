@@ -2,13 +2,13 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-types
-  (:require [com.viasat.halite.types :as types]
-            [clojure.test :as t :refer [deftest is are]]
-            [schema.core :as s]
-            [schema.test :refer [validate-schemas]]
+  (:require [clojure.test :as t :refer [deftest is are]]
+            [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [clojure.test.check.clojure-test :refer [defspec]]))
+            [com.viasat.halite.types :as types]
+            [schema.core :as s]
+            [schema.test :refer [validate-schemas]]))
 
 (clojure.test/use-fixtures :once validate-schemas)
 

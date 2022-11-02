@@ -2,8 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.lib.test-graph
-  (:require [com.viasat.halite.lib.graph :as graph]
-            [clojure.test :refer :all]))
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.lib.graph :as graph]))
 
 (deftest test-detect-cycle
   ;; test helper functions

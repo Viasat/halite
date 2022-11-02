@@ -2,9 +2,9 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.doc.bnf-diagrams
-  (:require [clojure.string :as string]
-            [com.viasat.halite.doc.utils :as utils]
-            [clojure.java.io :as io])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as string]
+            [com.viasat.halite.doc.utils :as utils])
   (:import [net.nextencia.rrdiagram.grammar.model GrammarToRRDiagram BNFToGrammar]
            [net.nextencia.rrdiagram.grammar.rrdiagram RRDiagramToSVG]))
 

@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-abstract
-  (:require [com.viasat.halite.envs :as envs]
+  (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as pa]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
@@ -10,8 +11,7 @@
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
-            [schema.test]
-            [com.viasat.halite.choco-clj-opt :as choco-clj])
+            [schema.test])
   (:use clojure.test)
   (:import [clojure.lang ExceptionInfo]))
 

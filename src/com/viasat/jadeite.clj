@@ -6,9 +6,9 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [instaparse.core :as insta]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]))
+            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
+            [instaparse.core :as insta]))
 
 (set! *warn-on-reflection* true)
 

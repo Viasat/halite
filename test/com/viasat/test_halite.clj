@@ -8,11 +8,11 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [com.viasat.halite :as halite]
+            [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.lib.format-errors :as format-errors]
+            [com.viasat.halite.lint :as lint]
             [com.viasat.halite.syntax-check :as syntax-check]
             [com.viasat.halite.type-of :as type-of]
-            [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.lint :as lint]
-            [com.viasat.halite.lib.format-errors :as format-errors]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 

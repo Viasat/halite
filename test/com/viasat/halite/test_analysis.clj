@@ -2,10 +2,10 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-analysis
-  (:require [com.viasat.halite.analysis :as analysis]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.analysis :as analysis]
             [schema.core :as s]
-            [schema.test :refer [validate-schemas]]
-            [clojure.test :refer :all]))
+            [schema.test :refer [validate-schemas]]))
 
 (set! *warn-on-reflection* true)
 

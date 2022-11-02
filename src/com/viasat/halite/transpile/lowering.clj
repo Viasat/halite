@@ -6,12 +6,11 @@
   features down into lower-level features."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as types]
-            [com.viasat.halite.transpile.ssa :as ssa
-             :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
             [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as halite-rewriting]
             [com.viasat.halite.transpile.simplify :refer [simplify always-evaluates?]]
+            [com.viasat.halite.transpile.ssa :as ssa :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
             [com.viasat.halite.transpile.util :refer [fixpoint mk-junct make-do]]
+            [com.viasat.halite.types :as types]
             [loom.alg]
             [loom.graph]
             [schema.core :as s]))

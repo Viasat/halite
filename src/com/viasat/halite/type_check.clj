@@ -4,13 +4,13 @@
 (ns com.viasat.halite.type-check
   "halite type checker"
   (:require [clojure.set :as set]
-            [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.eval :as eval]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.eval :as eval]
+            [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :refer [throw-err text]]
+            [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)

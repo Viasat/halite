@@ -2,10 +2,10 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-synth
-  (:require [com.viasat.halite.synth :refer [synth spec-map-eval] :as synth]
+  (:require [clojure.test :as t :refer [deftest is]]
             [com.viasat.halite :as halite]
             [com.viasat.halite.envs :as envs]
-            [clojure.test :as t :refer [deftest is]]
+            [com.viasat.halite.synth :refer [synth spec-map-eval] :as synth]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 

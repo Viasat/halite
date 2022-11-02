@@ -4,9 +4,9 @@
 (ns com.viasat.halite.synth
   (:require [clojure.set :as set :refer [subset?]]
             [clojure.walk :refer [postwalk]]
-            [schema.core :as s]
             [loom.alg]
-            [loom.graph]))
+            [loom.graph]
+            [schema.core :as s]))
 
 ;; user-eval
 ;; - will be given a Clojure map (a candidate instance) and only and exactly the

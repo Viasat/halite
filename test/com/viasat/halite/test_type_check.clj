@@ -2,10 +2,10 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-type-check
-  (:require [com.viasat.halite.type-check :as type-check]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.type-check :as type-check]
             [schema.core :as s]
-            [schema.test :refer [validate-schemas]]
-            [clojure.test :refer :all]))
+            [schema.test :refer [validate-schemas]]))
 
 (set! *warn-on-reflection* true)
 

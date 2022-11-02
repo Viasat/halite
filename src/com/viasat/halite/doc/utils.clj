@@ -7,8 +7,8 @@
             [clojure.java.io :as io]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.jadeite :as jadeite]
-            [zprint.core :as zprint]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [zprint.core :as zprint]))
 
 (defn spit-dir
   ([filename txt]

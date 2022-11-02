@@ -2,10 +2,10 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.test-jadeite-forms
-  (:require [com.viasat.halite :as halite]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite :as halite]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.jadeite :as jadeite]
-            [clojure.test :refer :all])
+            [com.viasat.jadeite :as jadeite])
   (:import (clojure.lang ExceptionInfo)))
 
 (def senv {:ws/A$v1 {:spec-vars {:x "Integer"

@@ -2,10 +2,10 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.doc.md-how-to
-  (:require [com.viasat.halite.doc.utils :as utils]
+  (:require [clojure.string :as string]
             [com.viasat.halite.doc.run :as halite-run]
-            [com.viasat.jadeite :as jadeite]
-            [clojure.string :as string])
+            [com.viasat.halite.doc.utils :as utils]
+            [com.viasat.jadeite :as jadeite])
   (:import [com.viasat.halite.doc.run HCInfo]))
 
 (defn how-to-contents [{:keys [code-snippet-f spec-snippet-f translate-spec-map-to-f]} lang how-to specs-only?]

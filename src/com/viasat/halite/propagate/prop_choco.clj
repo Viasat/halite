@@ -5,11 +5,11 @@
   "Handles propagation for single specs that can be directly mapped to com.viasat.halite.choco-clj-opt.
   Specifically: single specs with (possibly optional) boolean or integer variables,
   and no refinements."
-  (:require [schema.core :as s]
+  (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.choco-clj-opt :as choco-clj]))
+            [com.viasat.halite.types :as types]
+            [schema.core :as s]))
 
 (s/defschema AtomBound
   (s/cond-pre

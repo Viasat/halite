@@ -8,8 +8,8 @@
   this layer is not needed."
   (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
-            [com.viasat.halite.propagate.prop-top-abstract :as prop-top-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
+            [com.viasat.halite.propagate.prop-top-abstract :as prop-top-abstract]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
             [loom.alg]
             [schema.core :as s]))

@@ -2,8 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-choco-clj-opt
-  (:require [schema.test]
-            [com.viasat.halite.choco-clj-opt :as cco])
+  (:require [com.viasat.halite.choco-clj-opt :as cco]
+            [schema.test])
   (:use clojure.test))
 
 (use-fixtures :once schema.test/validate-schemas)

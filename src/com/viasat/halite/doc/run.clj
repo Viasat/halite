@@ -5,9 +5,9 @@
   (:require [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as types]
-            [com.viasat.halite.lint :as lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
+            [com.viasat.halite.lint :as lint]
+            [com.viasat.halite.types :as types]
             [com.viasat.jadeite :as jadeite])
   (:import [clojure.lang ExceptionInfo]))
 

@@ -9,17 +9,17 @@
   variables that represent the results of comparisons."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.propagate.prop-choco :as prop-choco]
             [com.viasat.halite.transpile.lowering :as lowering]
-            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.rewriting :as rewriting]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.util :as util]
+            [com.viasat.halite.types :as types]
             [loom.alg :as loom-alg]
+            [loom.derived :as loom-derived]
             [loom.graph :as loom-graph]
             [loom.label :as loom-label]
-            [loom.derived :as loom-derived]
             [schema.core :as s])
   (:import [org.chocosolver.solver.exception ContradictionException]))
 

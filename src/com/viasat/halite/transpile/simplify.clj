@@ -4,10 +4,10 @@
 (ns com.viasat.halite.transpile.simplify
   "Simplify halite specs by evaluating those parts of the spec
   that are statically evaluable."
-  (:require [com.viasat.halite.types :as types]
-            [com.viasat.halite.transpile.rewriting :as rewriting]
+  (:require [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
+            [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
 (defn- deref-form [ssa-graph id]
