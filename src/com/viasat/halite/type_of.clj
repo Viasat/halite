@@ -6,7 +6,7 @@
   (:require [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.eval :as halite-eval]
-            [com.viasat.halite.type-check :as halite-type-check]
+            [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.format-errors :refer [throw-err]]
@@ -15,18 +15,18 @@
 (set! *warn-on-reflection* true)
 
 (s/defn ^:private type-of* :- halite-types/HaliteType
-  [ctx :- halite-type-check/TypeContext
+  [ctx :- type-check/TypeContext
    value]
   (cond
     (boolean? value) :Boolean
     (base/integer-or-long? value) :Integer
-    (base/fixed-decimal? value) (halite-type-check/type-check-fixed-decimal value)
+    (base/fixed-decimal? value) (type-check/type-check-fixed-decimal value)
     (string? value) :String
     (= :Unset value) :Unset
-    (map? value) (let [t (halite-type-check/type-check-instance type-of* :value ctx value)]
+    (map? value) (let [t (type-check/type-check-instance type-of* :value ctx value)]
                    (halite-eval/validate-instance (:senv ctx) value)
                    t)
-    (coll? value) (halite-type-check/type-check-coll type-of* :value ctx value)
+    (coll? value) (type-check/type-check-coll type-of* :value ctx value)
     :else (throw-err (h-err/invalid-value {:value value}))))
 
 (s/defn type-of :- halite-types/HaliteType

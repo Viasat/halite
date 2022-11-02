@@ -4,7 +4,7 @@
 (ns com.viasat.halite-analysis
   "Public API for analyzing halite expressions"
   (:require [com.viasat.halite.analysis :as analysis]
-            [com.viasat.halite.type-check :as halite-type-check]
+            [com.viasat.halite.type-check :as type-check]
             [potemkin]))
 
 (set! *warn-on-reflection* true)
@@ -15,5 +15,5 @@
   replace-free-vars make-fixed-decimal-string encode-fixed-decimals])
 
 (potemkin/import-vars
- [halite-type-check
+ [type-check
   find-field-accesses])

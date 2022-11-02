@@ -7,8 +7,7 @@
   (:require [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.eval :as halite-eval]
-            [com.viasat.halite.type-check :as halite-type-check]
-            [com.viasat.halite.type-check :as halite-type-check]
+            [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.l-err :as l-err]
@@ -41,14 +40,14 @@
                                               :nothing-arg arg}))))
     ;; linter has tighter signature requirements on some builtin functions
     (when-let [lint-signatures (get lint-builtins-signatures op)]
-      (when-not (some #(halite-type-check/matches-signature? % actual-types) lint-signatures)
+      (when-not (some #(type-check/matches-signature? % actual-types) lint-signatures)
         (throw-err (h-err/no-matching-signature {:form form
                                                  :op (name op)
                                                  :actual-types actual-types
                                                  :signatures lint-signatures}))))
     (loop [[sig & more] signatures]
       (cond
-        (halite-type-check/matches-signature? sig actual-types) (:return-type sig)
+        (type-check/matches-signature? sig actual-types) (:return-type sig)
         :else (recur more)))))
 
 (s/defn ^:private type-check-symbol :- halite-types/HaliteType
@@ -232,14 +231,14 @@
   [ctx :- TypeContext
    expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
-    (halite-type-check/check-all-sets expr arg-types)
+    (type-check/check-all-sets expr arg-types)
     (reduce halite-types/meet halite-types/empty-set arg-types)))
 
 (s/defn ^:private type-check-intersection :- halite-types/HaliteType
   [ctx :- TypeContext
    expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
-    (halite-type-check/check-all-sets expr arg-types)
+    (type-check/check-all-sets expr arg-types)
     (if (empty? arg-types)
       halite-types/empty-set
       (reduce halite-types/join arg-types))))
@@ -248,7 +247,7 @@
   [ctx :- TypeContext
    expr :- s/Any]
   (let [arg-types (mapv (partial type-check* ctx) (rest expr))]
-    (halite-type-check/check-all-sets expr arg-types)
+    (type-check/check-all-sets expr arg-types)
     (first arg-types)))
 
 (s/defn ^:private type-check-first :- halite-types/HaliteType
@@ -309,10 +308,10 @@
   (cond
     (boolean? expr) :Boolean
     (base/integer-or-long? expr) :Integer
-    (base/fixed-decimal? expr) (halite-type-check/type-check-fixed-decimal expr)
+    (base/fixed-decimal? expr) (type-check/type-check-fixed-decimal expr)
     (string? expr) :String
     (symbol? expr) (type-check-symbol ctx expr)
-    (map? expr) (halite-type-check/type-check-instance type-check* :form ctx expr)
+    (map? expr) (type-check/type-check-instance type-check* :form ctx expr)
     (seq? expr) (condp = (first expr)
                   'get (type-check-get ctx expr)
                   'get-in (type-check-get-in ctx expr)
@@ -344,7 +343,7 @@
                   'sort-by (type-check-sort-by ctx expr)
                   'reduce (type-check-reduce ctx expr)
                   (type-check-fn-application ctx expr))
-    (coll? expr) (halite-type-check/type-check-coll type-check* :form ctx expr)))
+    (coll? expr) (type-check/type-check-coll type-check* :form ctx expr)))
 
 (s/defn lint!
   "Assumes type-checked halite. Return nil if no violations found, or throw the
@@ -363,13 +362,13 @@
   nil)
 
 (s/defn type-check-and-lint
-  "Convenience function to run `lint!` and also `halite-type-check/type-check` in the
+  "Convenience function to run `lint!` and also `type-check/type-check` in the
   required order.  Returns the halite type of the expr if no lint violations
   found, otherwise throw the first linting rule violation found."
   [senv :- (s/protocol envs/SpecEnv)
    tenv :- (s/protocol envs/TypeEnv)
    expr :- s/Any]
-  (let [t (halite-type-check/type-check senv tenv expr)]
+  (let [t (type-check/type-check senv tenv expr)]
     (lint! senv tenv expr)
     t))
 

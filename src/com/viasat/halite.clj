@@ -9,7 +9,7 @@
             [com.viasat.halite.analysis :as halite-analysis]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.lint :as halite-lint]
-            [com.viasat.halite.type-check :as halite-type-check]
+            [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.type-of :as halite-type-of]
             [com.viasat.halite.eval :as halite-eval]
             [com.viasat.halite.types :as halite-types]
@@ -30,7 +30,7 @@
   (with-exception-data {:form bool-expr
                         :spec-id spec-id
                         :constraint-name (name constraint-name)}
-    (halite-type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
+    (type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
   (halite-eval/eval-predicate ctx tenv bool-expr spec-id constraint-name))
 
 (s/defn eval-refinement :- (s/maybe s/Any)
@@ -47,7 +47,7 @@
       (with-exception-data {:form expr
                             :spec-id spec-id
                             :refinement-name refinement-name}
-        (halite-type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr))
+        (type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr))
       (halite-eval/eval-refinement ctx tenv spec-id expr refinement-name))))
 
 (s/defn ^:private load-env
@@ -127,7 +127,7 @@
        (when type-check-expr?
          ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
          ;; evaluator
-         (halite-type-check/type-check senv tenv expr))
+         (type-check/type-check senv tenv expr))
        (let [loaded-env (optionally-with-eval-bindings
                          type-check-spec-refinements-and-constraints?
                          (load-env senv env))]
@@ -157,7 +157,7 @@
 ;;
 
 (potemkin/import-vars
- [halite-type-check
+ [type-check
   type-check type-check-spec type-check-refinement-expr])
 
 (potemkin/import-vars

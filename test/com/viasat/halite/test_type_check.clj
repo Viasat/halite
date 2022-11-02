@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-type-check
-  (:require [com.viasat.halite.type-check :as halite-type-check]
+  (:require [com.viasat.halite.type-check :as type-check]
             [schema.core :as s]
             [schema.test :refer [validate-schemas]]
             [clojure.test :refer :all]))
@@ -16,7 +16,7 @@
             :variable-name :xss}
            {:spec-id :ws2/B$v1
             :variable-name :d}}
-         (halite-type-check/find-field-accesses
+         (type-check/find-field-accesses
           {:ws/A$v1 {:spec-vars {:x "Integer"
                                  :y "Boolean"
                                  :c :ws2/B$v1}}
