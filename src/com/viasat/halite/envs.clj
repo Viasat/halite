@@ -68,7 +68,7 @@
 
 (s/defschema UserSpecInfo
   {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
-   (s/optional-key :constraints) {halite-base/ConstraintName s/Any}
+   (s/optional-key :constraints) {halite-base/UserConstraintName s/Any}
    (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
