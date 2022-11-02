@@ -10,7 +10,7 @@
             [com.viasat.halite.base :as base]
             [com.viasat.halite.lint :as lint]
             [com.viasat.halite.type-check :as type-check]
-            [com.viasat.halite.type-of :as halite-type-of]
+            [com.viasat.halite.type-of :as type-of]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.types :as types]
             [com.viasat.halite.envs :as envs]
@@ -79,7 +79,7 @@
             ;; it is not necessary to setup the eval bindings for the following because the
             ;; instances have already been processed by load-env at this point
             value (eval/eval-expr* {:env empty-env :senv senv} (get (envs/bindings env) sym))
-            actual-type (halite-type-of/type-of senv tenv value)]
+            actual-type (type-of/type-of senv tenv value)]
         (when-not (types/subtype? actual-type declared-type)
           (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))))
 

@@ -9,7 +9,7 @@
             [clojure.test.check.properties :as prop]
             [com.viasat.halite :as halite]
             [com.viasat.halite.syntax-check :as syntax-check]
-            [com.viasat.halite.type-of :as halite-type-of]
+            [com.viasat.halite.type-of :as type-of]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lint :as lint]
             [com.viasat.halite.lib.format-errors :as format-errors]
@@ -667,7 +667,7 @@
          (thrown-with-msg? ExceptionInfo err-msg
                            (halite/optionally-with-eval-bindings
                             true
-                            (halite-type-of/type-of senv tenv expr)))
+                            (type-of/type-of senv tenv expr)))
 
       {:$type :ws/E$v1, :y true} #"Invalid instance"
       {:$type :ws/Invalid$v1} #"No matching signature")
