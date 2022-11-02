@@ -654,7 +654,7 @@
                   spec-info' (-> spec-info
                                  (assoc :ssa-graph ssa-graph')
                                  ;; using the error message as a key for the constraint name seems dubious
-                                 ;; TODO: deal with collisions since message is the key in the constraint map
+                                 ;; TODO: deal with collisions since message is the key in the constraint map?
                                  (update :constraints assoc message cid))]
               (halite-rewriting/trace!
                sctx
