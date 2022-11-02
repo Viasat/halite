@@ -176,7 +176,7 @@
 (potemkin/import-vars
  [halite-envs
   primitive-types
-  Refinement MandatoryVarType VarType NamedConstraint SpecVars RefinesTo UserSpecInfo
+  Refinement MandatoryVarType VarType SpecVars RefinesTo UserSpecInfo ConstraintMap
   halite-type-from-var-type
   SpecEnv lookup-spec spec-env
   TypeEnv type-env type-env-from-spec

@@ -110,13 +110,13 @@
 (def spec-map-map {:basic {:my/Spec$v1 {:spec-vars {:n "Integer"
                                                     :o [:Maybe "Integer"]
                                                     :p "Integer"}
-                                        :constraints [[:pc '(> p 0)]
-                                                      [:pn '(< n 0)]]}}
+                                        :constraints {:pc '(> p 0)
+                                                      :pn '(< n 0)}}}
                    :basic-2 {:spec/A$v1 {:spec-vars {:n "Integer"
                                                      :o [:Maybe "Integer"]
                                                      :p "Integer"}
-                                         :constraints [[:pc '(> p 0)]
-                                                       [:pn '(< n 0)]]
+                                         :constraints {:pc '(> p 0)
+                                                       :pn '(< n 0)}
                                          :refines-to {:spec/B$v1 {:name "spec/A$v1/as_b"
                                                                   :expr '{:$type :spec/B$v1
                                                                           :x (* 10 p)
@@ -126,9 +126,9 @@
                                          :spec-vars {:x "Integer"
                                                      :y "Integer"
                                                      :z [:Maybe "Integer"]}
-                                         :constraints [[:px '(< x 100)]
-                                                       [:py '(> y -100)]
-                                                       [:pz '(not= z 0)]]}
+                                         :constraints {:px '(< x 100)
+                                                       :py '(> y -100)
+                                                       :pz '(not= z 0)}}
                              :spec/C$v1 {}
                              :spec/D$v1 {:spec-vars {:ao [:Maybe :spec/A$v1]
                                                      :co [:Maybe :spec/C$v1]}}
@@ -7168,8 +7168,8 @@
                  :spec-vars {:n "Integer"
                              :o [:Maybe "Integer"]
                              :p "Integer"}
-                 :constraints [[:pc '(> p 0)]
-                               [:pn '(< n 0)]]}}
+                 :constraints {:pc '(> p 0)
+                               :pn '(< n 0)}}}
    [{:$type :my/Spec$v1, :p 1, :n -1}
     [:Instance :my/Spec$v1]
     {:$type :my/Spec$v1, :p 1, :n -1}
@@ -8504,7 +8504,7 @@
 (deftest
   test-exception-handling-instances-vs-refinements
   (let
-   [ws {:spec/Inc$v1 {:constraints [[:main '(= (inc x) y)]]
+   [ws {:spec/Inc$v1 {:constraints {:main '(= (inc x) y)}
                       :spec-vars {:x "Integer", :y "Integer"}}}]
     (hc
      ws
@@ -8533,7 +8533,7 @@
       "(valid? {$type: spec/Inc$v1, x: 1, y: 1})"
       "false"])
     (hc
-     {:spec/Inc$v1 {:constraints [[:main '(= (inc x) y)]],
+     {:spec/Inc$v1 {:constraints {:main '(= (inc x) y)},
                     :refines-to {:spec/BigInc$v1 {:expr '(when
                                                           (>= x 100)
                                                            {:$type :spec/BigInc$v1,
@@ -8548,7 +8548,7 @@
       "(valid {$type: spec/Inc$v1, x: 1, y: 1})"
       "Unset"]))
   (let
-   [ws {:spec/Ratio$v1 {:constraints [[:main '(= r (div x y))]],
+   [ws {:spec/Ratio$v1 {:constraints {:main '(= r (div x y))},
                         :spec-vars {:r "Integer", :x "Integer", :y "Integer"}}}]
     (hc
      ws
@@ -8583,7 +8583,7 @@
       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]]))
   (let
    [ws {:spec/BigInc$v1 {:spec-vars {:x "Integer", :y "Integer"}},
-        :spec/Inc$v1 {:constraints [[:main '(= (inc x) y)]],
+        :spec/Inc$v1 {:constraints {:main '(= (inc x) y)},
                       :refines-to {:spec/BigInc$v1 {:expr '(when
                                                             (>= x 100)
                                                              {:$type :spec/BigInc$v1,
@@ -9777,36 +9777,36 @@
     [:throws
      "h-err/no-matching-signature 0-0 : No matching signature for 'error'"]])
 
-  (hc {:my/Spec$v1 {:constraints [[:c9 '(if false
-                                          true
-                                          (error "f1"))]
-                                  [:c2 '(if false
-                                          true
-                                          (error "f2"))]]}}
+  (hc {:my/Spec$v1 {:constraints {:c9 '(if false
+                                         true
+                                         (error "f1"))
+                                  :c2 '(if false
+                                         true
+                                         (error "f2"))}}}
       [{:$type :my/Spec$v1}
        [:Instance :my/Spec$v1]
        [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f2; f1\""]
        "{$type: my/Spec$v1}"
        [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f2; f1\""]])
-  (hc {:my/Spec$v1 {:constraints [[:c9 '(if false
-                                          true
-                                          (error "f2"))]
-                                  [:c2 '(if false
-                                          true
-                                          (error "f1"))]]}}
+  (hc {:my/Spec$v1 {:constraints {:c9 '(if false
+                                         true
+                                         (error "f2"))
+                                  :c2 '(if false
+                                         true
+                                         (error "f1"))}}}
       [{:$type :my/Spec$v1}
        [:Instance :my/Spec$v1]
        [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; f2\""]
        "{$type: my/Spec$v1}"
        [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; f2\""]])
-  (hc {:my/Spec$v1 {:constraints [[:c1 'false]
-                                  [:c9 '(if false
-                                          true
-                                          (error "f2"))]
-                                  [:c3 '(= (div 1 0) 1)]
-                                  [:c2 '(if false
-                                          true
-                                          (error "f1"))]]}}
+  (hc {:my/Spec$v1 {:constraints {:c1 'false
+                                  :c9 '(if false
+                                         true
+                                         (error "f2"))
+                                  :c3 '(= (div 1 0) 1)
+                                  :c2 '(if false
+                                         true
+                                         (error "f1"))}}}
       [{:$type :my/Spec$v1}
        [:Instance :my/Spec$v1]
        [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints c1"]

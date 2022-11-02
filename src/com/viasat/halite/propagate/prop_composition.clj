@@ -349,7 +349,7 @@
   [flattened-vars sctx spec-bound]
   (->>
    {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
-    :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]}
+    :constraints {"vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))}}
    (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
    (add-refinement-equality-constraints flattened-vars)))
 
@@ -441,7 +441,7 @@
    (fn [sctx [spec-id spec-info]]
      (assoc sctx spec-id
             (cond-> spec-info
-              (not= :$propagate/Bounds spec-id) (assoc :constraints []))))
+              (not= :$propagate/Bounds spec-id) (assoc :constraints {}))))
    {}
    sctx))
 
@@ -471,7 +471,7 @@
          (disallow-optional-refinements)
          (lowering/lower-refinement-constraints)
          ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
-         ;; Conseqeuntly, no rewrite rules should introduce new when forms!
+         ;; Consequently, no rewrite rules should introduce new when forms!
          (lowering/lower-when)
          (lowering/eliminate-runtime-constraint-violations)
          (lowering/lower-valid?)

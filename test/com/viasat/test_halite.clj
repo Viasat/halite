@@ -651,8 +651,8 @@
   (let [senv (merge senv
                     {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
                                            :y "Boolean"}
-                               :constraints [[:x-if-y '(=> y (if-value x true false))]]}
-                     :ws/Invalid$v1 {:constraints [[:broken '(or (+ 1 2) true)]]}})]
+                               :constraints {:x-if-y '(=> y (if-value x true false))}}
+                     :ws/Invalid$v1 {:constraints {:broken '(or (+ 1 2) true)}}})]
     ;; type-check cannot detect constraint violations, because that would often involve
     ;; actually evaluating forms
     (are [expr etype]
@@ -688,13 +688,13 @@
                      :refines-to {:ws/B {:expr '{:$type :ws/B :x x}}
                                   :ws/C {:inverted? true :expr '{:$type :ws/C :x x}}}}
               :ws/B {:spec-vars {:x "Integer"}
-                     :constraints '[[:posX (< 0 x)]]
+                     :constraints '{:posX (< 0 x)}
                      :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 x)}}}}
               :ws/C {:spec-vars {:x "Integer"}
-                     :constraints '[[:boundedX (< x 10)]]
+                     :constraints '{:boundedX (< x 10)}
                      :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 (* 2 x))}}}}
               :ws/D {:spec-vars {:x "Integer"}
-                     :constraints '[[:xIsOdd (= 1 (mod x 2))]]}
+                     :constraints '{:xIsOdd (= 1 (mod x 2))}}
               :ws/E {}}]
 
     (let [invalid-a {:$type :ws/A :x -10}
@@ -738,7 +738,7 @@
 
 (deftest test-refinement-with-guards
   (let [senv {:ws/A {:spec-vars {:x "Integer"}
-                     :constraints '[[:posX (< 0 x)]]}
+                     :constraints '{:posX (< 0 x)}}
               :ws/B {:spec-vars {:y "Integer"}
                      :refines-to {:ws/A {:expr '(if (< 0 y) ; A passthru
                                                   {:$type :ws/A, :x y}
@@ -763,8 +763,8 @@
 (deftest test-instance-type
   (let [senv {:ws/A {:spec-vars {:x "Integer"}
                      :abstract? true
-                     :constraints '[[:posX (< 0 x)]
-                                    [:boundedX (< x 10)]]}
+                     :constraints '{:posX (< 0 x)
+                                    :boundedX (< x 10)}}
               :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A :x 5}}}}
               :ws/A2 {:spec-vars {:a "Integer"
                                   :b "Integer"}
@@ -811,8 +811,8 @@
 (deftest test-refines-to?
   (let [senv {:ws/A {:spec-vars {:x "Integer"}
                      :abstract? true
-                     :constraints '[[:posX (< 0 x)]
-                                    [:boundedX (< x 10)]]}
+                     :constraints '{:posX (< 0 x)
+                                    :boundedX (< x 10)}}
               :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
               :ws/A2 {:spec-vars {:a "Integer"
                                   :b "Integer"}
@@ -852,12 +852,12 @@
 
 (deftest test-valid
   (let [senv '{:ws/A {:spec-vars {:x "Integer", :y "Integer"}
-                      :constraints [[:xLTy (< x y)]]
+                      :constraints {:xLTy (< x y)}
                       :refines-to {:ws/B {:expr {:$type :ws/B :z (+ x y)}}}}
                :ws/B {:spec-vars {:z "Integer"}
-                      :constraints [[:posZ (< 0 z)]]}
+                      :constraints {:posZ (< 0 z)}}
                :ws/C {:spec-vars {:a :ws/A}
-                      :constraints [[:maxSum (< (+ (get a :x) (get a :y)) 10)]]}}]
+                      :constraints {:maxSum (< (+ (get a :x) (get a :y)) 10)}}}]
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
 
@@ -892,15 +892,15 @@
 
 (deftest abstract-specs
   (let [senv {:ws/A {:spec-vars {:x "Integer"}
-                     :constraints '[[:posX (< 0 x)]
-                                    [:boundedX (< x 10)]]
+                     :constraints '{:posX (< 0 x)
+                                    :boundedX (< x 10)}
                      :abstract? true}
               :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A, :x 6}}}}
               :ws/A2 {:spec-vars {:a "Integer"
                                   :b "Integer"}
                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}
-                     :constraints '[[:notFive (not= 5 (get (refine-to a :ws/A) :x))]]}
+                     :constraints '{:notFive (not= 5 (get (refine-to a :ws/A) :x))}}
               :ws/C {:spec-vars {:as [:ws/A]}}
               :ws/D {}
               :ws/Z {:abstract? true}
@@ -908,11 +908,11 @@
               :ws/Invalid {:spec-vars {:a :ws/A
                                        :z :ws/Z}
                            ;; a is typed as :Instance, so (get a :x) doesn't type check
-                           :constraints '[[:notFive (not= 5 (get
-                                                             (first (sort-by [x (intersection #{a}
-                                                                                              #{z})]
-                                                                             1))
-                                                             :x))]]}}
+                           :constraints '{:notFive (not= 5 (get
+                                                            (first (sort-by [x (intersection #{a}
+                                                                                             #{z})]
+                                                                            1))
+                                                            :x))}}}
         tenv2 (-> tenv
                   (halite-envs/extend-scope 'ax [:Instance :* #{:ws/A}])
                   (halite-envs/extend-scope 'ay [:Instance :* #{:ws/A}])
@@ -1000,9 +1000,9 @@
 
                 :ws/JsonObj
                 {:spec-vars {:entries #{:ws/JsonObjEntry}}
-                 :constraints [[:uniqueKeys true
-                                ;; TODO: each key shows up once
-                                #_(= (count entries) (count (for [entry entries] (get* entry :key))))]]
+                 :constraints {:uniqueKeys true
+                               ;; TODO: each key shows up once
+                               #_(= (count entries) (count (for [entry entries] (get* entry :key))))}
                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}}]
 
       (are [v expected]
@@ -1038,7 +1038,7 @@
                             (halite-lint/type-check-and-lint senv tenv '(+ $foo 25)))))))
 
 (deftest test-cycle-in-spec-deps
-  (try (halite/eval-expr {:spec/Self {:constraints [[:example '(= 1 (count [{:$type :spec/Self}]))]]}}
+  (try (halite/eval-expr {:spec/Self {:constraints {:example '(= 1 (count [{:$type :spec/Self}]))}}}
                          tenv
                          empty-env
                          'true)

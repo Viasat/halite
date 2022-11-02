@@ -36,7 +36,7 @@
     (are [constraints dgraph new-constraints]
          (= [dgraph new-constraints]
             (-> senv
-                (assoc-in [:ws/A :constraints] (map-indexed #(vector (str "c" %1) %2) constraints))
+                (assoc-in [:ws/A :constraints] (apply hash-map (mapcat identity (map-indexed #(vector (str "c" %1) %2) constraints))))
                 (halite-envs/system-spec-env)
                 (#(ssa/spec-to-ssa % (halite-envs/system-lookup-spec % :ws/A)))
                 (#(vector (:dgraph (:ssa-graph %))
@@ -442,7 +442,7 @@
 (deftest test-spec-to-ssa-with-refinements
   (let [senv '{:ws/A
                {:spec-vars {:an "Integer"}
-                :constraints [["a1" (< 0 (+ 1 an))]]
+                :constraints {"a1" (< 0 (+ 1 an))}
                 :refines-to {:ws/B {:expr (when (< an 10)
                                             {:$type :ws/B
                                              :bn (+ 1 an)})}}}
@@ -476,18 +476,19 @@
                (+ $2 $3) $4,
                (< $1 $4) $5,
                (< $3 $7) $8}}
-             :constraints [["a1" $5]]
+             :constraints {"a1" $5}
              :refines-to {:ws/B {:expr $11}}}
            spec))
 
-    (is (= (assoc-in (:ws/A senv) [:constraints 0 0] "$all")
+    (is (= (-> (:ws/A senv)
+               (update :constraints #(-> % (dissoc "a1") (assoc "$all" (get % "a1")))))
            (ssa/spec-from-ssa spec)))))
 
 (deftest test-form-to-ssa-correctly-handles-node-references-in-if-value
   (let [senv (halite-envs/system-spec-env
               '{:ws/A
                 {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
-                 :constraints [["c1" (= s p)]]}})
+                 :constraints {"c1" (= s p)}}})
         sctx (ssa/build-spec-ctx senv :ws/A)
         a (:ws/A sctx)
         s-id (ssa/find-form (:ssa-graph a) 's)
@@ -544,8 +545,8 @@
     (are [constraints guards]
          (= guards
             (let [spec-info (-> senv
-                                (update-in [:ws/A :constraints] into
-                                           (map-indexed #(vector (str "c" %1) %2) constraints))
+                                (update-in [:ws/A :constraints] merge
+                                           (apply hash-map (mapcat identity (map-indexed #(vector (str "c" %1) %2) constraints))))
                                 (halite-envs/system-spec-env)
                                 (ssa/build-spec-ctx :ws/A)
                                 :ws/A)]
@@ -659,10 +660,10 @@
                                :s "String"}}]
 
     (are [constraints dgraph new-constraint]
-         (= [["$all" new-constraint]]
+         (= {"$all" new-constraint}
             (-> spec-info
                 (assoc :ssa-graph (ssa/make-ssa-graph dgraph)
-                       :constraints (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
+                       :constraints (apply hash-map (mapcat identity (map-indexed #(vector (str "c" %1) %2) constraints))))
                 (ssa/spec-from-ssa)
                 :constraints))
 
@@ -874,13 +875,13 @@
   (let [senv (halite-envs/system-spec-env
               '{:ws/A
                 {:spec-vars {:p "Boolean", :q "Boolean"}
-                 :constraints [["c1" (if p (< (div 10 0) 1) true)]
-                               ["c2" (if q true (and (< 1 (div 10 0)) (< (div 10 0) 1)))]
-                               ["c3" (if (not q) (< 1 (div 10 0)) true)]]}})
+                 :constraints {"c1" (if p (< (div 10 0) 1) true)
+                               "c2" (if q true (and (< 1 (div 10 0)) (< (div 10 0) 1)))
+                               "c3" (if (not q) (< 1 (div 10 0)) true)}}})
         sctx (ssa/build-spec-ctx senv :ws/A)]
-    (is (= '[["$all" (and (if p (< (div 10 0) 1) true)
-                          (if q true (let [v1 (div 10 0)] (and (< 1 v1) (< v1 1))))
-                          (if (not q) (< 1 (div 10 0)) true))]]
+    (is (= '{"$all" (and (if p (< (div 10 0) 1) true)
+                         (if q true (let [v1 (div 10 0)] (and (< 1 v1) (< v1 1))))
+                         (if (not q) (< 1 (div 10 0)) true))}
            (-> sctx (ssa/build-spec-env) (halite-envs/system-lookup-spec :ws/A) :constraints)))))
 
 (deftest test-semantics-preservation
@@ -888,11 +889,11 @@
   (let [senv (halite-envs/system-spec-env
               {:ws/A
                '{:spec-vars {:x "Integer", :y "Integer", :p "Boolean", :q "Boolean"}
-                 :constraints [["a1" (< x y)]
-                               ["a2" (if p (< (div 15 x) 10) true)]
-                               ["a3" (if q (< 1 (div 15 x)) true)]
-                               ["a3" (and (<= 0 x) (< x 10))]
-                               ["a4" (and (<= 0 y) (< y 10))]]}})
+                 :constraints {"a1" (< x y)
+                               "a2" (if p (< (div 15 x) 10) true)
+                               "a3" (if q (< 1 (div 15 x)) true)
+                               "a4" (and (<= 0 x) (< x 10))
+                               "a5" (and (<= 0 y) (< y 10))}}})
         senv' (-> senv (ssa/build-spec-ctx :ws/A) (ssa/build-spec-env))
         tenv (halite-envs/type-env {})
         env (halite-envs/env {})
@@ -931,7 +932,7 @@
 
 (deftest test-roundtripping-nested-if-values
   (let [spec '{:spec-vars {:n [:Maybe "Integer"]}
-               :constraints [["$all" (if-value n (if-value n n 0) 1)]]
+               :constraints {"$all" (if-value n (if-value n n 0) 1)}
                :refines-to {}}]
     ;; Round-tripping through SSA shouldn't introduce let bindings for nested, redundant if-value expressions.
     ;; Not only does it hurt readability, it actually causes propagate failures (because choco-clj's rules on
@@ -942,6 +943,8 @@
 
 (deftest test-roundtripping-when-value
   (let [spec '{:spec-vars {:n [:Maybe "Integer"]}
-               :constraints [["$all" (when-value n (+ n 1))]]
+               :constraints {"$all" (when-value n (+ n 1))}
                :refines-to {}}]
     (is (= spec (ssa/spec-from-ssa (ssa/spec-to-ssa {} spec))))))
+
+;; (run-tests)

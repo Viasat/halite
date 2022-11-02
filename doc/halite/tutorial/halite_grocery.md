@@ -11,8 +11,8 @@ The following is a full model for the grocery delivery business.
 ```clojure
 {:tutorials.grocery/Country$v1
    {:spec-vars {:name "String"},
-    :constraints [[:name_constraint
-                   '(contains? #{"Canada" "Mexico" "US"} name)]]},
+    :constraints {:name_constraint '(contains? #{"Canada" "Mexico" "US"}
+                                               name)}},
  :tutorials.grocery/DiscountedPrescriptionPerk$v1
    {:spec-vars {:prescriptionID "String"},
     :refines-to {:tutorials.grocery/Perk$v1
@@ -31,7 +31,7 @@ The following is a full model for the grocery delivery business.
                             :usesPerMonth 2}}}},
  :tutorials.grocery/FreeDeliveryPerk$v1
    {:spec-vars {:usesPerMonth "Integer"},
-    :constraints [[:usesPerMonth_limit '(< usesPerMonth 20)]],
+    :constraints {:usesPerMonth_limit '(< usesPerMonth 20)},
     :refines-to {:tutorials.grocery/Perk$v1
                    {:name "refine_to_Perk",
                     :expr '{:$type :tutorials.grocery/Perk$v1,
@@ -45,18 +45,18 @@ The following is a full model for the grocery delivery business.
                 :perks #{:tutorials.grocery/Perk$v1},
                 :subscriberCountry :tutorials.grocery/Country$v1},
     :constraints
-      [[:feePerMonth_limit
-        '(and (< #d "5.99" feePerMonth) (< feePerMonth #d "12.99"))]
-       [:perk_limit '(<= (count perks) 2)]
-       [:perk_sum
-        '(let [perkInstances
-                 (sort-by
-                   [pi (map [p perks] (refine-to p :tutorials.grocery/Perk$v1))]
-                   (get pi :perkId))]
-           (< (reduce [a #d "0.00"]
-                [pi perkInstances]
-                (+ a (get pi :feePerMonth)))
-              #d "6.00"))]],
+      {:feePerMonth_limit '(and (< #d "5.99" feePerMonth)
+                                (< feePerMonth #d "12.99")),
+       :perk_limit '(<= (count perks) 2),
+       :perk_sum '(let [perkInstances
+                          (sort-by [pi
+                                    (map [p perks]
+                                      (refine-to p :tutorials.grocery/Perk$v1))]
+                                   (get pi :perkId))]
+                    (< (reduce [a #d "0.00"]
+                         [pi perkInstances]
+                         (+ a (get pi :feePerMonth)))
+                       #d "6.00"))},
     :refines-to
       {:tutorials.grocery/GroceryStoreSubscription$v1
          {:name "refine_to_Store",
@@ -76,28 +76,27 @@ The following is a full model for the grocery delivery business.
                 :perkIds ["Integer"],
                 :storeCountry :tutorials.grocery/Country$v1},
     :constraints
-      [[:valid_stores '(or (= name "Acme Foods") (= name "Good Foods"))]
-       [:storeCountryServed
-        '(or (and (= name "Acme Foods")
-                  (contains? #{"Canada" "US" "Costa Rica"}
-                             (get storeCountry :name)))
-             (and (= name "Good Foods")
-                  (contains? #{"Mexico" "US"} (get storeCountry :name))))]]},
+      {:storeCountryServed '(or (and (= name "Acme Foods")
+                                     (contains? #{"Canada" "US" "Costa Rica"}
+                                                (get storeCountry :name)))
+                                (and (= name "Good Foods")
+                                     (contains? #{"Mexico" "US"}
+                                                (get storeCountry :name)))),
+       :valid_stores '(or (= name "Acme Foods") (= name "Good Foods"))}},
  :tutorials.grocery/Perk$v1
    {:abstract? true,
     :spec-vars {:feePerMonth "Decimal2",
                 :feePerUse "Decimal2",
                 :perkId "Integer",
                 :usesPerMonth [:Maybe "Integer"]},
-    :constraints [[:feePerMonth_limit
-                   '(and (<= #d "0.00" feePerMonth)
-                         (<= feePerMonth #d "199.99"))]
-                  [:feePerUse_limit
-                   '(and (<= #d "0.00" feePerUse) (<= feePerUse #d "14.99"))]
-                  [:usesPerMonth_limit
-                   '(if-value usesPerMonth
-                              (and (<= 0 usesPerMonth) (<= usesPerMonth 999))
-                              true)]]}}
+    :constraints {:feePerMonth_limit '(and (<= #d "0.00" feePerMonth)
+                                           (<= feePerMonth #d "199.99")),
+                  :feePerUse_limit '(and (<= #d "0.00" feePerUse)
+                                         (<= feePerUse #d "14.99")),
+                  :usesPerMonth_limit '(if-value usesPerMonth
+                                                 (and (<= 0 usesPerMonth)
+                                                      (<= usesPerMonth 999))
+                                                 true)}}}
 ```
 
 Taking it one part at a time. Consider first the country model. This is modeling the countries where the company is operating. This is a valid country instance.

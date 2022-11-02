@@ -15,7 +15,10 @@ Multiple constraints can be defined on a spec. Each constraint must have a uniqu
       "b" : "Integer",
       "c" : "Integer"
     },
-    "constraints" : [ [ "constrain_b", "(b > 100)" ], [ "constrain_c", "(c < 20)" ] ]
+    "constraints" : {
+      "constrain_b" : "(b > 100)",
+      "constrain_c" : "(c < 20)"
+    }
   }
 }
 ```
@@ -56,7 +59,10 @@ Mutliple constraints can refer to the same variables.
     "spec-vars" : {
       "b" : "Integer"
     },
-    "constraints" : [ [ "constrain_b", "(b > 100)" ], [ "constrain_b2", "(b < 110)" ] ]
+    "constraints" : {
+      "constrain_b" : "(b > 100)",
+      "constrain_b2" : "(b < 110)"
+    }
   }
 }
 ```
@@ -85,7 +91,9 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
     "spec-vars" : {
       "b" : "Integer"
     },
-    "constraints" : [ [ "constrain_b", "((b > 100) && (b < 110))" ] ]
+    "constraints" : {
+      "constrain_b" : "((b > 100) && (b < 110))"
+    }
   }
 }
 ```

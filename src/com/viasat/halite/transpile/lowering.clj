@@ -5,7 +5,6 @@
   "Re-express halite specs in a minimal subset of halite, by compiling higher-level
   features down into lower-level features."
   (:require [clojure.set :as set]
-            [clojure.string :as string]
             [com.viasat.halite.envs :as halite-envs]
             [com.viasat.halite.types :as halite-types]
             [com.viasat.halite.transpile.ssa :as ssa
@@ -393,8 +392,7 @@
              (let [[ssa-graph id] (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph) (list 'valid? expr))
                    result (-> spec-info
                               (assoc :ssa-graph ssa-graph)
-                              (update :constraints conj [(str target-id)
-                                                         id]))]
+                              (update :constraints assoc (str target-id) id))]
                (halite-rewriting/trace!
                 sctx
                 {:op :add-constraint
@@ -656,7 +654,8 @@
                   spec-info' (-> spec-info
                                  (assoc :ssa-graph ssa-graph')
                                  ;; using the error message as a key for the constraint name seems dubious
-                                 (update :constraints conj [message cid]))]
+                                 ;; TODO: deal with collisions since message is the key in the constraint map
+                                 (update :constraints assoc message cid))]
               (halite-rewriting/trace!
                sctx
                {:op :add-constraint

@@ -141,7 +141,9 @@ Generally, dependency cycles between specs are not allowed. The following spec-m
 ```java
 {
   "spec/Self" : {
-    "constraints" : [ [ "example", "(1 == [{$type: spec/Self}].count())" ] ]
+    "constraints" : {
+      "example" : "(1 == [{$type: spec/Self}].count())"
+    }
   }
 }
 

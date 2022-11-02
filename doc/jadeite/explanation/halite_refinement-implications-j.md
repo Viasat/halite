@@ -15,7 +15,9 @@ One spec can be defined to be a refinement of another spec. First consider a squ
       "width" : "Integer",
       "height" : "Integer"
     },
-    "constraints" : [ [ "square", "(width == height)" ] ]
+    "constraints" : {
+      "square" : "(width == height)"
+    }
   }
 }
 ```
@@ -45,7 +47,9 @@ Now consider a new spec, 'spec/Box', and we define that it refines to 'spec/Squa
       "width" : "Integer",
       "height" : "Integer"
     },
-    "constraints" : [ [ "square", "(width == height)" ] ]
+    "constraints" : {
+      "square" : "(width == height)"
+    }
   },
   "spec/Box$v1" : {
     "spec-vars" : {
@@ -93,7 +97,9 @@ If this was not the intent, and rather the intent was to indicate that some inst
       "width" : "Integer",
       "height" : "Integer"
     },
-    "constraints" : [ [ "square", "(width == height)" ] ]
+    "constraints" : {
+      "square" : "(width == height)"
+    }
   },
   "spec/Box$v2" : {
     "spec-vars" : {
@@ -149,7 +155,9 @@ Another way of defining the refinement is to declare it to be 'inverted?'. What 
       "width" : "Integer",
       "height" : "Integer"
     },
-    "constraints" : [ [ "square", "(width == height)" ] ]
+    "constraints" : {
+      "square" : "(width == height)"
+    }
   },
   "spec/Box$v3" : {
     "spec-vars" : {

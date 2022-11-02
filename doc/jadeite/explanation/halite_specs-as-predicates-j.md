@@ -90,7 +90,9 @@ Similarly, each constraint by itself is a predicate and is combined in a conjunc
       "x" : "String",
       "y" : "Integer"
     },
-    "constraints" : [ [ "valid_y", "(y > 0)" ] ]
+    "constraints" : {
+      "valid_y" : "(y > 0)"
+    }
   }
 }
 ```
@@ -122,7 +124,10 @@ If there are multiple constraints, they are all logically combined into a single
       "x" : "String",
       "y" : "Integer"
     },
-    "constraints" : [ [ "valid_x", "#{\"bye\", \"hi\"}.contains?(x)" ], [ "valid_y", "(y > 0)" ] ]
+    "constraints" : {
+      "valid_x" : "#{\"bye\", \"hi\"}.contains?(x)",
+      "valid_y" : "(y > 0)"
+    }
   }
 }
 ```
@@ -153,14 +158,19 @@ Finally, the refinements can also bring in additional constraints which are comb
     "spec-vars" : {
       "b" : "Integer"
     },
-    "constraints" : [ [ "valid_b", "(b < 10)" ] ]
+    "constraints" : {
+      "valid_b" : "(b < 10)"
+    }
   },
   "spec/X$v6" : {
     "spec-vars" : {
       "x" : "String",
       "y" : "Integer"
     },
-    "constraints" : [ [ "valid_x", "#{\"bye\", \"hi\"}.contains?(x)" ], [ "valid_y", "(y > 0)" ] ],
+    "constraints" : {
+      "valid_x" : "#{\"bye\", \"hi\"}.contains?(x)",
+      "valid_y" : "(y > 0)"
+    },
     "refines-to" : {
       "spec/A" : {
         "name" : "refine_to_A",
@@ -197,20 +207,27 @@ Implications of each additional refinement are combined into the single conujunc
     "spec-vars" : {
       "b" : "Integer"
     },
-    "constraints" : [ [ "valid_b", "(b < 10)" ] ]
+    "constraints" : {
+      "valid_b" : "(b < 10)"
+    }
   },
   "spec/P" : {
     "spec-vars" : {
       "q" : "String"
     },
-    "constraints" : [ [ "valid_q", "(q == \"hi\")" ] ]
+    "constraints" : {
+      "valid_q" : "(q == \"hi\")"
+    }
   },
   "spec/X$v7" : {
     "spec-vars" : {
       "x" : "String",
       "y" : "Integer"
     },
-    "constraints" : [ [ "valid_x", "#{\"bye\", \"hi\"}.contains?(x)" ], [ "valid_y", "(y > 0)" ] ],
+    "constraints" : {
+      "valid_x" : "#{\"bye\", \"hi\"}.contains?(x)",
+      "valid_y" : "(y > 0)"
+    },
     "refines-to" : {
       "spec/A" : {
         "name" : "refine_to_A",

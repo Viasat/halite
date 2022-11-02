@@ -58,7 +58,9 @@ To guard instance construction.
     "spec-vars" : {
       "a" : "Integer"
     },
-    "constraints" : [ [ "c", "(a > 0)" ] ]
+    "constraints" : {
+      "c" : "(a > 0)"
+    }
   }
 }
 ```

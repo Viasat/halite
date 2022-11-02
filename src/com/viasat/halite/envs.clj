@@ -54,22 +54,21 @@
 (s/defschema NamedConstraint
   [(s/one halite-base/ConstraintName :name) (s/one s/Any :expr)])
 
-(s/defschema UserNamedConstraint
-  [(s/one halite-base/UserConstraintName :name) (s/one s/Any :expr)])
-
 (s/defschema SpecVars {halite-types/BareKeyword VarType})
 
 (s/defschema RefinesTo {halite-types/NamespacedKeyword Refinement})
 
+(s/defschema ConstraintMap {halite-base/ConstraintName s/Any})
+
 (s/defschema SpecInfo
   {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
-   (s/optional-key :constraints) [NamedConstraint]
+   (s/optional-key :constraints) ConstraintMap
    (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
 (s/defschema UserSpecInfo
   {(s/optional-key :spec-vars) {halite-types/BareKeyword VarType}
-   (s/optional-key :constraints) [UserNamedConstraint]
+   (s/optional-key :constraints) {halite-base/ConstraintName s/Any}
    (s/optional-key :refines-to) {halite-types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 

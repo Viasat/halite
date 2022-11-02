@@ -14,7 +14,9 @@ The following is a full model for the grocery delivery business.
     "spec-vars" : {
       "name" : "String"
     },
-    "constraints" : [ [ "name_constraint", "#{\"Canada\", \"Mexico\", \"US\"}.contains?(name)" ] ]
+    "constraints" : {
+      "name_constraint" : "#{\"Canada\", \"Mexico\", \"US\"}.contains?(name)"
+    }
   },
   "tutorials.grocery/Perk$v1" : {
     "abstract?" : true,
@@ -24,13 +26,19 @@ The following is a full model for the grocery delivery business.
       "feePerUse" : "Decimal2",
       "usesPerMonth" : [ "Maybe", "Integer" ]
     },
-    "constraints" : [ [ "feePerMonth_limit", "((#d \"0.00\" <= feePerMonth) && (feePerMonth <= #d \"199.99\"))" ], [ "feePerUse_limit", "((#d \"0.00\" <= feePerUse) && (feePerUse <= #d \"14.99\"))" ], [ "usesPerMonth_limit", "(ifValue(usesPerMonth) {((0 <= usesPerMonth) && (usesPerMonth <= 999))} else {true})" ] ]
+    "constraints" : {
+      "feePerMonth_limit" : "((#d \"0.00\" <= feePerMonth) && (feePerMonth <= #d \"199.99\"))",
+      "feePerUse_limit" : "((#d \"0.00\" <= feePerUse) && (feePerUse <= #d \"14.99\"))",
+      "usesPerMonth_limit" : "(ifValue(usesPerMonth) {((0 <= usesPerMonth) && (usesPerMonth <= 999))} else {true})"
+    }
   },
   "tutorials.grocery/FreeDeliveryPerk$v1" : {
     "spec-vars" : {
       "usesPerMonth" : "Integer"
     },
-    "constraints" : [ [ "usesPerMonth_limit", "(usesPerMonth < 20)" ] ],
+    "constraints" : {
+      "usesPerMonth_limit" : "(usesPerMonth < 20)"
+    },
     "refines-to" : {
       "tutorials.grocery/Perk$v1" : {
         "name" : "refine_to_Perk",
@@ -64,7 +72,11 @@ The following is a full model for the grocery delivery business.
       "perks" : [ "tutorials.grocery/Perk$v1" ],
       "subscriberCountry" : "tutorials.grocery/Country$v1"
     },
-    "constraints" : [ [ "feePerMonth_limit", "((#d \"5.99\" < feePerMonth) && (feePerMonth < #d \"12.99\"))" ], [ "perk_limit", "(perks.count() <= 2)" ], [ "perk_sum", "({ perkInstances = sortBy(pi in map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 ))pi.perkId; ((reduce( a = #d \"0.00\"; pi in perkInstances ) { (a + pi.feePerMonth) }) < #d \"6.00\") })" ] ],
+    "constraints" : {
+      "feePerMonth_limit" : "((#d \"5.99\" < feePerMonth) && (feePerMonth < #d \"12.99\"))",
+      "perk_limit" : "(perks.count() <= 2)",
+      "perk_sum" : "({ perkInstances = sortBy(pi in map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 ))pi.perkId; ((reduce( a = #d \"0.00\"; pi in perkInstances ) { (a + pi.feePerMonth) }) < #d \"6.00\") })"
+    },
     "refines-to" : {
       "tutorials.grocery/GroceryStoreSubscription$v1" : {
         "name" : "refine_to_Store",
@@ -79,7 +91,10 @@ The following is a full model for the grocery delivery business.
       "storeCountry" : "tutorials.grocery/Country$v1",
       "perkIds" : [ "Integer" ]
     },
-    "constraints" : [ [ "valid_stores", "((name == \"Acme Foods\") || (name == \"Good Foods\"))" ], [ "storeCountryServed", "(((name == \"Acme Foods\") && #{\"Canada\", \"Costa Rica\", \"US\"}.contains?(storeCountry.name)) || ((name == \"Good Foods\") && #{\"Mexico\", \"US\"}.contains?(storeCountry.name)))" ] ]
+    "constraints" : {
+      "valid_stores" : "((name == \"Acme Foods\") || (name == \"Good Foods\"))",
+      "storeCountryServed" : "(((name == \"Acme Foods\") && #{\"Canada\", \"Costa Rica\", \"US\"}.contains?(storeCountry.name)) || ((name == \"Good Foods\") && #{\"Mexico\", \"US\"}.contains?(storeCountry.name)))"
+    }
   }
 }
 ```

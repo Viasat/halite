@@ -10,14 +10,14 @@
                     :op-ref ['valid? 'refine-to]
                     :contents ["Writing a spec is carving out a subset out of the universe of all possible values and giving them a name."
                                {:spec-map {:spec/Ball {:spec-vars {:color "String"}
-                                                       :constraints [[:color_constraint '(contains? #{"red" "blue" "green"} color)]]}}}
+                                                       :constraints {:color_constraint '(contains? #{"red" "blue" "green"} color)}}}}
                                "Instances of specs are represented as maps. Depending on programming languages, maps are also known as associative arrays or dictionarys."
                                "The spec gives a name to the set of values which are maps that contain a type field with a value of 'spec/Ball' and which have a 'color' field with a string value. For example, this set includes the following specific instances."
                                {:code '{:$type :spec/Ball :color "red"}}
                                {:code '{:$type :spec/Ball :color "blue"}}
                                "If instead we defined this spec, then we are further constraining the set of values in the 'spec/Ball' set. Specifically, this means that any instance which is otherwise a valid 'spec/Ball', but does not have one of these three prescribed colors is not a valid 'spec/Ball'."
                                {:spec-map {:spec/Ball {:spec-vars {:color "String"}
-                                                       :constraints [[:color_constraint '(contains? #{"red" "blue" "green"} color)]]}}}
+                                                       :constraints {:color_constraint '(contains? #{"red" "blue" "green"} color)}}}}
                                "The following is not a valid 'spec/Ball' and in fact it is not a valid value at all in the universe of all possible values. This is because every map with a type of 'spec/Ball' must satisfy the 'spec/Ball' spec in order to be a valid value."
                                {:code '{:$type :spec/Ball :color "yellow"}
                                 :throws :auto}
@@ -30,7 +30,7 @@
                                "However, it is possible to convert an instance of one spec into an instance of another spec. This is referred to as 'refinement'. Specs can include refinement expressions indicating how to convert them."
                                {:spec-map {:spec/Round {:spec-vars {:radius "Integer"}}
                                            :spec/Ball {:spec-vars {:color "String"}
-                                                       :constraints [[:color_constraint '(contains? #{"red" "blue" "green"} color)]]
+                                                       :constraints {:color_constraint '(contains? #{"red" "blue" "green"} color)}
                                                        :refines-to {:spec/Round {:name "refine_to_round"
                                                                                  :expr '{:$type :spec/Round
                                                                                          :radius 5}}}}}}
@@ -153,7 +153,7 @@
                     :contents ["One spec can be defined to be a refinement of another spec. First consider a square which has a width and height. The constraint, which makes it a square, requires these two values to be equal."
                                {:spec-map {:spec/Square {:spec-vars {:width "Integer"
                                                                      :height "Integer"}
-                                                         :constraints [[:square '(= width height)]]}}}
+                                                         :constraints {:square '(= width height)}}}}
                                "So the following is a valid spec/Square"
                                {:code '{:$type :spec/Square :width 5 :height 5}}
                                "While the following is not a valid spec/Square"
@@ -162,7 +162,7 @@
                                "Now consider a new spec, 'spec/Box', and we define that it refines to 'spec/Square'."
                                {:spec-map {:spec/Square {:spec-vars {:width "Integer"
                                                                      :height "Integer"}
-                                                         :constraints [[:square '(= width height)]]}
+                                                         :constraints {:square '(= width height)}}
                                            :spec/Box$v1 {:spec-vars {:width "Integer"
                                                                      :length "Integer"}
                                                          :refines-to {:spec/Square {:name "refine_to_square"
@@ -179,7 +179,7 @@
                                "If this was not the intent, and rather the intent was to indicate that some instances of 'spec/Box' can be converted into 'spec/Square' instances then the refinement would be defined as:"
                                {:spec-map {:spec/Square {:spec-vars {:width "Integer"
                                                                      :height "Integer"}
-                                                         :constraints [[:square '(= width height)]]}
+                                                         :constraints {:square '(= width height)}}
                                            :spec/Box$v2 {:spec-vars {:width "Integer"
                                                                      :length "Integer"}
                                                          :refines-to {:spec/Square {:name "refine_to_square"
@@ -199,7 +199,7 @@
                                "Another way of defining the refinement is to declare it to be 'inverted?'. What this means is that the refinement will be applied where possible, and where it results in a contradiction then a runtime error is produced."
                                {:spec-map {:spec/Square {:spec-vars {:width "Integer"
                                                                      :height "Integer"}
-                                                         :constraints [[:square '(= width height)]]}
+                                                         :constraints {:square '(= width height)}}
                                            :spec/Box$v3 {:spec-vars {:width "Integer"
                                                                      :length "Integer"}
                                                          :refines-to {:spec/Square {:name "refine_to_square"
@@ -249,7 +249,7 @@
                                "Similarly, each constraint by itself is a predicate and is combined in a conjunction with all of the spec variable type checks."
                                {:spec-map {:spec/X$v3 {:spec-vars {:x "String"
                                                                    :y "Integer"}
-                                                       :constraints [[:valid_y '(> y 0)]]}}}
+                                                       :constraints {:valid_y '(> y 0)}}}}
                                {:code '{:$type :spec/X$v3 :x "hi" :y 100}
                                 :result :auto}
                                "So if any of the types are wrong or if the constraint is violated then an error is produced."
@@ -258,8 +258,8 @@
                                "If there are multiple constraints, they are all logically combined into a single conjunction for the spec."
                                {:spec-map {:spec/X$v5 {:spec-vars {:x "String"
                                                                    :y "Integer"}
-                                                       :constraints [[:valid_x '(contains? #{"hi" "bye"} x)]
-                                                                     [:valid_y '(> y 0)]]}}}
+                                                       :constraints {:valid_x '(contains? #{"hi" "bye"} x)
+                                                                     :valid_y '(> y 0)}}}}
                                {:code '{:$type :spec/X$v5 :x "hi" :y 100}
                                 :result :auto}
                                "Again, violating any one constraint causes an error to be produced."
@@ -267,11 +267,11 @@
                                 :throws :auto}
                                "Finally, the refinements can also bring in additional constraints which are combined into the overall conjunction for the spec."
                                {:spec-map {:spec/A {:spec-vars {:b "Integer"}
-                                                    :constraints [[:valid_b '(< b 10)]]}
+                                                    :constraints {:valid_b '(< b 10)}}
                                            :spec/X$v6 {:spec-vars {:x "String"
                                                                    :y "Integer"}
-                                                       :constraints [[:valid_x '(contains? #{"hi" "bye"} x)]
-                                                                     [:valid_y '(> y 0)]]
+                                                       :constraints {:valid_x '(contains? #{"hi" "bye"} x)
+                                                                     :valid_y '(> y 0)}
                                                        :refines-to {:spec/A {:name "refine_to_A"
                                                                              :expr '{:$type :spec/A
                                                                                      :b y}}}}}}
@@ -282,13 +282,13 @@
                                 :throws :auto}
                                "Implications of each additional refinement are combined into the single conujunction for this spec."
                                {:spec-map {:spec/A {:spec-vars {:b "Integer"}
-                                                    :constraints [[:valid_b '(< b 10)]]}
+                                                    :constraints {:valid_b '(< b 10)}}
                                            :spec/P {:spec-vars {:q "String"}
-                                                    :constraints [[:valid_q '(= q "hi")]]}
+                                                    :constraints {:valid_q '(= q "hi")}}
                                            :spec/X$v7 {:spec-vars {:x "String"
                                                                    :y "Integer"}
-                                                       :constraints [[:valid_x '(contains? #{"hi" "bye"} x)]
-                                                                     [:valid_y '(> y 0)]]
+                                                       :constraints {:valid_x '(contains? #{"hi" "bye"} x)
+                                                                     :valid_y '(> y 0)}
                                                        :refines-to {:spec/A {:name "refine_to_A"
                                                                              :expr '{:$type :spec/A
                                                                                      :b y}}

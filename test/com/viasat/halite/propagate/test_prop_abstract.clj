@@ -19,25 +19,25 @@
   '{:ws/W
     {:abstract? true
      :spec-vars {:wn "Integer"}
-     :constraints [[:wn_range (and (< 2 wn) (< wn 8))]]}
+     :constraints {:wn_range (and (< 2 wn) (< wn 8))}}
     :ws/A
     {:spec-vars {:a "Integer"}
-     :constraints [[:ca (< a 6)]]
+     :constraints {:ca (< a 6)}
      :refines-to {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
     :ws/B
     {:spec-vars {:b "Integer"}
-     :constraints [[:cb (< 5 b)]]
+     :constraints {:cb (< 5 b)}
      :refines-to {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
     :ws/C
     {:spec-vars {:w :ws/W :cn "Integer"}
-     :constraints [[:c1 (< cn (get (refine-to w :ws/W) :wn))]]}})
+     :constraints {:c1 (< cn (get (refine-to w :ws/W) :wn))}}})
 
 (def optional-abstract-var-example
   (assoc
    simplest-abstract-var-example
    :ws/C
    '{:spec-vars {:w [:Maybe :ws/W] :cn "Integer"}
-     :constraints [[:c1 (< cn (if-value w (get (refine-to w :ws/W) :wn) 10))]]}))
+     :constraints {:c1 (< cn (if-value w (get (refine-to w :ws/W) :wn) 10))}}))
 
 (def lower-abstract-vars #'pa/lower-abstract-vars)
 
@@ -53,9 +53,9 @@
                 :w$1 [:Maybe :ws/B]
                 :cn "Integer"}
                :constraints
-               [[:c1 (< cn (get (refine-to (if-value w$0 w$0 (if-value w$1 w$1 (error "unreachable"))) :ws/W) :wn))]
-                ["w$0" (= (= w$type 0) (if-value w$0 true false))]
-                ["w$1" (= (= w$type 1) (if-value w$1 true false))]]
+               {:c1 (< cn (get (refine-to (if-value w$0 w$0 (if-value w$1 w$1 (error "unreachable"))) :ws/W) :wn))
+                "w$0" (= (= w$type 0) (if-value w$0 true false))
+                "w$1" (= (= w$type 1) (if-value w$1 true false))}
                :refines-to {}}
              (-> sctx
                  (lower-abstract-vars alts :ws/C c)
@@ -75,10 +75,10 @@
                 :w$1 [:Maybe :ws/B]
                 :cn "Integer"}
                :constraints
-               [[:c1 (let [v1 (if-value w$0 w$0 (when-value w$1 w$1))]
-                       (< cn (if-value v1 (get (refine-to v1 :ws/W) :wn) 10)))]
-                ["w$0" (= (= w$type 0) (if-value w$0 true false))]
-                ["w$1" (= (= w$type 1) (if-value w$1 true false))]]
+               {:c1 (let [v1 (if-value w$0 w$0 (when-value w$1 w$1))]
+                      (< cn (if-value v1 (get (refine-to v1 :ws/W) :wn) 10)))
+                "w$0" (= (= w$type 0) (if-value w$0 true false))
+                "w$1" (= (= w$type 1) (if-value w$1 true false))}
                :refines-to {}}
              (-> sctx
                  (lower-abstract-vars alts :ws/C c)
@@ -322,7 +322,7 @@
            :spec-vars {:vn "Integer"}}
 
     :ws/C {:spec-vars {:cw :ws/W :cn "Integer"}
-           :constraints [[:c1 (< 0 cn)]]
+           :constraints {:c1 (< 0 cn)}
            :refines-to {:ws/V {:expr {:$type :ws/V
                                       :vn (+ cn (get (refine-to cw :ws/W) :wn))}}}}
     :ws/D {:spec-vars {:dn "Integer"}
@@ -483,11 +483,11 @@
   '{:ws/List {:abstract? true
               :spec-vars {:length "Integer"
                           :sum "Integer"}
-              :constraints [[:posLength (<= 0 length)]]}
+              :constraints {:posLength (<= 0 length)}}
     :ws/Empty {:refines-to {:ws/List {:expr {:$type :ws/List :length 0 :sum 0}}}}
     :ws/Node {:spec-vars {:head "Integer"
                           :tail :ws/List}
-              :constraints [[:shortList (< (get (refine-to tail :ws/List) :length) 5)]]
+              :constraints {:shortList (< (get (refine-to tail :ws/List) :length) 5)}
               :refines-to {:ws/List {:expr (let [t (refine-to tail :ws/List)]
                                              {:$type :ws/List
                                               :length (+ 1 (get t :length))
@@ -498,7 +498,7 @@
   (let [sctx (ssa/spec-map-to-ssa
               '{:ws/A
                 {:spec-vars {:b1 [:Maybe :ws/B]}
-                 :constraints [[:a2 (if-value b1 true false)]]}
+                 :constraints {:a2 (if-value b1 true false)}}
                 :ws/B
                 {}})]
     (is (= {:$type :ws/A :b1 {:$type :ws/B}}
