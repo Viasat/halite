@@ -265,7 +265,6 @@
         {:keys [spec-vars] :as spec} (envs/system-lookup-spec senv spec-id)]
     (->>
      spec-vars
-     (filter #(abstract-var? senv %))
      (reduce
       (fn [spec-bound [var-kw var-type :as var-entry]]
         (if (abstract-var? senv var-entry)
