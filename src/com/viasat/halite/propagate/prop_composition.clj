@@ -76,11 +76,6 @@
       (and (types/maybe-type? htype) (vector? htype)
            (#{:Integer :Boolean :String} (second htype)))))
 
-(defn- spec-maybe-type?
-  [htype]
-  (or (types/spec-type? htype)
-      (types/spec-type? (types/no-maybe htype))))
-
 (defn- unwrap-maybe [htype]
   (cond-> htype
     (and (vector? htype) (= :Maybe (first htype))) second))
@@ -114,7 +109,7 @@
                    (cond->
                     actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
 
-             (spec-maybe-type? htype)
+             (types/spec-maybe-type? htype)
              (let [spec-id (types/spec-id (unwrap-maybe htype))
                    recur? (or (contains? spec-bound var-kw)
                               (every? #(not= % spec-id) parent-spec-ids))
@@ -414,7 +409,7 @@
                      (map (fn [[k v]]
                             (let [htype (envs/halite-type-from-var-type
                                          senv (get spec-vars k))]
-                              [k (if (spec-maybe-type? htype)
+                              [k (if (types/spec-maybe-type? htype)
                                    (to-spec-bound choco-bounds senv v)
                                    (to-atom-bound choco-bounds htype v))])))))
           (cond-> refine-to-pairs

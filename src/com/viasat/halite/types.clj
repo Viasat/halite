@@ -460,6 +460,11 @@
     t
     [:Maybe t]))
 
+(defn spec-maybe-type?
+  [t]
+  (or (spec-type? t)
+      (spec-type? (no-maybe t))))
+
 (s/defn vector-type :- HaliteType
   "Construct a type representing vectors of the given type."
   [elem-type :- HaliteType]
