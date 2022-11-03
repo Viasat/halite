@@ -216,17 +216,19 @@
 
 (declare lower-abstract-bounds)
 
-(defn- lower-abstract-var-bound
+(s/defn ^:private lower-abstract-var-bound
   "Takes an AbstractSpecBound and converts it into bounds on new variables in the parent bound.
   $if and $type fields are normalized into $in values. Lifts all of the $in values into the parent-bound as different alternatives."
-  [senv alternatives var-kw optional-var? alts-for-spec {:keys [$if $in $type $refines-to] :as abstract-bound} parent-bound]
+  [senv
+   parent-spec-ids :- [types/NamespacedKeyword]
+   alternatives var-kw optional-var? alts-for-spec {:keys [$if $in $type $refines-to] :as abstract-bound} parent-bound]
   (cond
     $if (let [b {:$in (merge (zipmap (keys alts-for-spec) (repeat {})) $if)}
               b (cond-> b $refines-to (assoc :$refines-to $refines-to))
               b (cond-> b (and optional-var? (not (false? (:Unset $if)))) (assoc-in [:$in :Unset] true))]
-          (recur senv alternatives var-kw optional-var? alts-for-spec b parent-bound))
+          (recur senv parent-spec-ids alternatives var-kw optional-var? alts-for-spec b parent-bound))
     $type (let [b {:$in {$type (dissoc abstract-bound :$type)}}]
-            (recur senv alternatives var-kw optional-var? alts-for-spec b parent-bound))
+            (recur senv parent-spec-ids alternatives var-kw optional-var? alts-for-spec b parent-bound))
     $in (let [unset? (true? (:Unset $in))
               alt-ids (->> (dissoc $in :Unset) keys (map alts-for-spec) set)]
           (reduce-kv
@@ -234,6 +236,7 @@
              (let [i (alts-for-spec spec-id)]
                (assoc parent-bound (keyword (str (name var-kw) "$" i))
                       (lower-abstract-bounds
+                       parent-spec-ids
                        (cond-> (assoc spec-bound :$type [:Maybe spec-id])
                          $refines-to (assoc :$refines-to $refines-to))
                        senv alternatives))))
@@ -260,8 +263,12 @@
                      spec-bound)))
                spec-bound)))
 
+(defn- recursive-parentage? [parent-spec-ids spec-id]
+  (some #(= % spec-id) parent-spec-ids))
+
 (s/defn ^:private lower-abstract-bounds :- ConcreteSpecBound2
-  [spec-bound :- SpecBound
+  [parent-spec-ids :- [types/NamespacedKeyword]
+   spec-bound :- SpecBound
    senv :- (s/protocol envs/SpecEnv)
    alternatives]
   (let [spec-id (:$type spec-bound)
@@ -271,43 +278,50 @@
      spec-vars
      (reduce
       (fn [spec-bound [var-kw var-type :as var-entry]]
-        (if (abstract-var? senv var-entry)
-          (let [var-spec-id (var-entry->spec-id senv var-entry)
-                optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
-                alts (select-keys (alternatives var-spec-id)
-                                  ;; find the spec-ids which have the prescribed refinement paths
-                                  (seq (reduce
-                                        (fn [alts-set spec-id]
-                                          (set/intersection alts-set
-                                                            (conj (set (keys (alternatives spec-id)))
-                                                                  spec-id)))
-                                        (set (keys (alternatives var-spec-id)))
-                                        (keys (:$refines-to (var-kw spec-bound))))))
-                var-bound (or (var-kw spec-bound)
-                              ;; TODO: check for recursion
-                              {:$if {}})]
-            (if (= :Unset var-bound)
-              (-> spec-bound (dissoc var-kw) (assoc (discriminator-var-kw var-kw) :Unset))
-              (let [var-bound (cond-> var-bound
-                                ;; TODO: intersect $refines-to bounds when present at both levels
-                                (= [:$refines-to] (keys var-bound)) (assoc :$if {}))]
-                (-> spec-bound
-                    ;; remove the abstract bound, if any
-                    (dissoc var-kw)
-                    ;; add in a bound for the discriminator
-                    (assoc (discriminator-var-kw var-kw) {:$in (cond-> (set (range (count alts))) optional-var? (conj :Unset))})
-                    ;; if an abstract bound was provided, lower it
-                    (cond->> var-bound (lower-abstract-var-bound senv alternatives var-kw optional-var? alts var-bound))))))
-          ;; produce a concrete spec if none is in the spec-bound {:$type x}
-          ;; then call lower-abstract-bounds on that
-          (if-let [var-spec-id (var-entry->spec-id senv var-entry)]
-            (assoc spec-bound
-                   var-kw (lower-abstract-bounds (or (var-kw spec-bound)
-                                                     ;; TODO: check for recursion
-                                                     {:$type var-spec-id})
-                                                 senv
-                                                 alternatives))
-            spec-bound)))
+        (let [recur? (or (var-kw spec-bound)
+                         (not (recursive-parentage? parent-spec-ids spec-id)))]
+          ;; handle abstract var
+          (if (abstract-var? senv var-entry)
+            (let [var-spec-id (var-entry->spec-id senv var-entry)
+                  optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
+                  alts (select-keys (alternatives var-spec-id)
+                                    ;; find the spec-ids which have the prescribed refinement paths
+                                    (seq (reduce
+                                          (fn [alts-set spec-id]
+                                            (set/intersection alts-set
+                                                              (conj (set (keys (alternatives spec-id)))
+                                                                    spec-id)))
+                                          (set (keys (alternatives var-spec-id)))
+                                          (keys (:$refines-to (var-kw spec-bound))))))
+                  var-bound (or (var-kw spec-bound)
+                                (when recur? {:$if {}}))]
+              (if (= :Unset var-bound)
+                (-> spec-bound (dissoc var-kw) (assoc (discriminator-var-kw var-kw) :Unset))
+                (let [var-bound (cond-> var-bound
+                                  ;; TODO: intersect $refines-to bounds when present at both levels
+                                  (= [:$refines-to] (keys var-bound)) (assoc :$if {}))]
+                  (-> spec-bound
+                      ;; remove the abstract bound, if any
+                      (dissoc var-kw)
+                      ;; add in a bound for the discriminator
+                      (assoc (discriminator-var-kw var-kw) {:$in (cond-> (set (range (count alts))) optional-var? (conj :Unset))})
+                      ;; if an abstract bound was provided, lower it
+                      (cond->> var-bound (lower-abstract-var-bound senv
+                                                                   (conj parent-spec-ids spec-id)
+                                                                   alternatives var-kw optional-var? alts var-bound))))))
+            ;; handle concrete var
+            (if-let [var-spec-id (var-entry->spec-id senv var-entry)]
+              (let [var-bound (or (var-kw spec-bound)
+                                  (when recur?
+                                    {:$type var-spec-id}))]
+                (if var-bound
+                  (assoc spec-bound
+                         var-kw (lower-abstract-bounds (conj parent-spec-ids spec-id)
+                                                       var-bound
+                                                       senv
+                                                       alternatives))
+                  spec-bound))
+              spec-bound))))
       (promote-abstract-bounds-to-concrete-bounds-where-appropriate spec-bound senv spec-vars)))))
 
 (declare raise-abstract-bounds)
@@ -377,5 +391,5 @@
                        (keys sctx))
          senv (ssa/as-spec-env sctx)]
      (-> (reduce-kv (fn [acc spec-id spec] (lower-abstract-vars acc alternatives spec-id spec)) sctx sctx)
-         (prop-composition/propagate opts (lower-abstract-bounds initial-bound senv alternatives))
+         (prop-composition/propagate opts (lower-abstract-bounds [] initial-bound senv alternatives))
          (raise-abstract-bounds senv alternatives)))))

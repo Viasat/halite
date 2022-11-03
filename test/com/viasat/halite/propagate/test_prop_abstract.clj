@@ -92,7 +92,7 @@
     (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
           senv (envs/spec-env simplest-abstract-var-example)]
       (are [in out]
-           (= out (lower-abstract-bounds in senv alts))
+           (= out (lower-abstract-bounds [] in senv alts))
 
         ;; enumerate the discriminator's domain
         {:$type :ws/C}
@@ -144,12 +144,27 @@
         ;;  :w$1 {:$type [:Maybe :ws/B] :$refines-to {:ws/W {:wn {:$in #{1 2 3}}}}}}
         ))))
 
+(deftest test-lower-abstract-bounds-recursive
+  (s/with-fn-validation
+    (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
+          senv (envs/spec-env simplest-abstract-var-example)]
+      (are [in out]
+           (= out (lower-abstract-bounds
+                   [:ws/C] ;; having the spec id in the parent-spec-ids, will cause the lowering to not be performed
+                   in senv alts))
+
+        {:$type :ws/C}
+        {:$type :ws/C :w$type {:$in #{0 1}}}
+
+        {:$type :ws/C :cn {:$in [0 5]}}
+        {:$type :ws/C :cn {:$in [0 5]} :w$type {:$in #{0 1}}}))))
+
 (deftest test-lower-optional-abstract-bounds
   (s/with-fn-validation
     (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
           senv (envs/spec-env optional-abstract-var-example)]
       (are [in out]
-           (= out (lower-abstract-bounds in senv alts))
+           (= out (lower-abstract-bounds [] in senv alts))
 
         ;; discriminator's domain includes :Unset
         {:$type :ws/C}
@@ -335,7 +350,7 @@
     (let [alts {:ws/W {:ws/A 0 :ws/B 1}, :ws/V {:ws/C 0 :ws/D 1}}
           senv (envs/spec-env nested-abstracts-example)]
       (are [in out]
-           (= out (lower-abstract-bounds in senv alts))
+           (= out (lower-abstract-bounds [] in senv alts))
 
         {:$type :ws/E}
         {:$type :ws/E
@@ -593,10 +608,20 @@
                         :a {:$type :ws/A}}))))
 
 (deftest test-recursive-structure
-  ;; TODO: currently blows the stack
-  #_(pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:spec-vars {:value "Integer"
-                                                                :next [:Maybe :spec/Cell]}}})
-                  {:$type :spec/Cell}))
+  ;; TODO: currently produces NPE in prop-composition
+  #_(do
+      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:spec-vars {:value "Integer"
+                                                                  :next [:Maybe :spec/Cell]}}})
+                    {:$type :spec/Cell})
+      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:spec-vars {:value "Integer"
+                                                                  :next [:Maybe :spec/Cell]}}})
+                    {:$type :spec/Cell
+                     :next {:$type :spec/Cell}})
+      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:spec-vars {:value "Integer"
+                                                                  :next [:Maybe :spec/Cell]}}})
+                    {:$type :spec/Cell
+                     :next {:$type :spec/Cell
+                            :next {:$type :spec/Cell}}})))
 
 (comment "
 Stuff to do/remember regarding abstractness!
