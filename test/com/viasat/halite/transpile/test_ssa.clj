@@ -946,4 +946,10 @@
                :refines-to {}}]
     (is (= spec (ssa/spec-from-ssa (ssa/spec-to-ssa {} spec))))))
 
+(deftest test-as-spec-env
+  (is (nil?
+       (envs/system-lookup-spec (ssa/as-spec-env {}) :ws/A)))
+  (is (= {}
+         (envs/system-lookup-spec (ssa/as-spec-env {:ws/A {:ssa-graph ssa/empty-ssa-graph}}) :ws/A))))
+
 ;; (run-tests)

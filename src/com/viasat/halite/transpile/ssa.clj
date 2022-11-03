@@ -689,7 +689,8 @@
   It ought to be refactored away in favor of something less likely to lead to errors!"
   [sctx :- SpecCtx]
   (reify envs/SpecEnv
-    (lookup-spec* [self spec-id] (some-> sctx spec-id (dissoc :ssa-graph)))))
+    (lookup-spec* [self spec-id] (when spec-id
+                                   (some-> sctx spec-id (dissoc :ssa-graph))))))
 
 (s/defn build-spec-ctx :- SpecCtx
   "Starting from root-spec-id and looking up specs from senv, build and return a SpecContext
