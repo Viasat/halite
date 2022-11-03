@@ -567,6 +567,26 @@
                                       {:$type :ws/A}))
       "Case where a mandatory field has no concrete specs to satisfy it"))
 
+(deftest test-concrete-above-abstract
+  (is (= {:$type :ws/P
+          :a {:$type :ws/A
+              :x {:$refines-to {:ws/X {}}
+                  :$in {:Unset true
+                        :ws/Y {:$refines-to {:ws/X {}}}}}}}
+         (pa/propagate (ssa/spec-map-to-ssa
+                        '{:ws/X {:abstract? true}
+                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                          :ws/A {:spec-vars {:x [:Maybe :ws/X]}}
+                          :ws/P {:spec-vars {:a :ws/A}}})
+                       {:$type :ws/P
+                        :a {:$type :ws/A}}))))
+
+(deftest test-recursive-structure
+  ;; TODO: currently blows the stack
+  #_(pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:spec-vars {:value "Integer"
+                                                                :next [:Maybe :spec/Cell]}}})
+                  {:$type :spec/Cell}))
+
 (comment "
 Stuff to do/remember regarding abstractness!
 
