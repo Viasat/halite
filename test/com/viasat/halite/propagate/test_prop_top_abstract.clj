@@ -8,9 +8,9 @@
            [org.chocosolver.solver.exception ContradictionException]))
 
 (deftest test-top-level-refines-to-bound
-  (is (= {:$in #:ws{:B {:$refines-to #:ws{:A {}}}
-                    :C {:$refines-to #:ws{:A {}}}}
-          :$refines-to #:ws{:A {}}}
+  (is (= {:$in {:ws/B {:$refines-to {:ws/A {}}}
+                :ws/C {:$refines-to {:ws/A {}}}}
+          :$refines-to {:ws/A {}}}
          (propagate/propagate '{:ws/A {:abstract? true}
 
                                 :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}

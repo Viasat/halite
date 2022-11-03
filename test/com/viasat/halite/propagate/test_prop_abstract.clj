@@ -578,6 +578,17 @@
                           :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
                           :ws/A {:spec-vars {:x [:Maybe :ws/X]}}
                           :ws/P {:spec-vars {:a :ws/A}}})
+                       {:$type :ws/P})))
+  (is (= {:$type :ws/P
+          :a {:$type :ws/A
+              :x {:$refines-to {:ws/X {}}
+                  :$in {:Unset true
+                        :ws/Y {:$refines-to {:ws/X {}}}}}}}
+         (pa/propagate (ssa/spec-map-to-ssa
+                        '{:ws/X {:abstract? true}
+                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                          :ws/A {:spec-vars {:x [:Maybe :ws/X]}}
+                          :ws/P {:spec-vars {:a :ws/A}}})
                        {:$type :ws/P
                         :a {:$type :ws/A}}))))
 
