@@ -134,7 +134,7 @@
   alternatives for an abstract variable."
   [sctx alternatives spec-id {:keys [spec-vars] :as spec}]
   (let [senv (ssa/as-spec-env sctx)]
-    (assoc
+    (ssa/add-spec-to-context
      sctx
      spec-id
      (reduce-kv

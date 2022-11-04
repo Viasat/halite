@@ -35,10 +35,10 @@
 (s/defn ^:private add-spec
   "Fabricate a new spec to hold a field of the required abstract type. Add it to the context."
   [generated-spec-id sctx refines-to-spec-id]
-  (assoc sctx
-         generated-spec-id
-         (ssa/spec-to-ssa (ssa/as-spec-env sctx)
-                          {:spec-vars {generated-field-name [:Maybe refines-to-spec-id]}})))
+  (ssa/add-spec-to-context sctx
+                           generated-spec-id
+                           (ssa/spec-to-ssa (ssa/as-spec-env sctx)
+                                            {:spec-vars {generated-field-name [:Maybe refines-to-spec-id]}})))
 
 (s/defn ^:private generate-spec-id
   "Generate a unique spec-id that will not collide with the current context."

@@ -692,6 +692,15 @@
     (lookup-spec* [self spec-id] (when spec-id
                                    (some-> sctx spec-id (dissoc :ssa-graph))))))
 
+(s/defn add-spec-to-context :- SpecCtx
+  [sctx :- SpecCtx
+   spec-id :- types/NamespacedKeyword
+   spec-info :- SpecInfo]
+  (let [;; TODO: once we switch over to use halite types this can be turned on
+        ;; spec-info (envs/to-halite-spec (as-spec-env sctx) spec-info)
+        ]
+    (assoc sctx spec-id spec-info)))
+
 (s/defn build-spec-ctx :- SpecCtx
   "Starting from root-spec-id and looking up specs from senv, build and return a SpecContext
   containing the root spec and every spec transitively referenced from it, in SSA form."

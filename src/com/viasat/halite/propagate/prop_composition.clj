@@ -434,9 +434,9 @@
   [sctx]
   (reduce
    (fn [sctx [spec-id spec-info]]
-     (assoc sctx spec-id
-            (cond-> spec-info
-              (not= :$propagate/Bounds spec-id) (assoc :constraints {}))))
+     (ssa/add-spec-to-context sctx spec-id
+                              (cond-> spec-info
+                                (not= :$propagate/Bounds spec-id) (assoc :constraints {}))))
    {}
    sctx))
 
@@ -462,7 +462,7 @@
          lowered-bounds (lower-spec-bound flattened-vars initial-bound)
          spec-ified-bound (spec-ify-bound* flattened-vars sctx initial-bound)]
      (-> sctx
-         (assoc :$propagate/Bounds (ssa/spec-to-ssa (ssa/as-spec-env sctx) spec-ified-bound))
+         (ssa/add-spec-to-context :$propagate/Bounds (ssa/spec-to-ssa (ssa/as-spec-env sctx) spec-ified-bound))
          (disallow-optional-refinements)
          (lowering/lower-refinement-constraints)
          ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.

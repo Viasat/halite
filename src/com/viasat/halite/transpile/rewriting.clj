@@ -241,7 +241,7 @@
   [rule :- RewriteRule, sctx :- SpecCtx]
   (reduce-kv
    (fn [m spec-id spec-info]
-     (assoc m spec-id (rewrite-spec rule sctx spec-id spec-info)))
+     (ssa/add-spec-to-context m spec-id (rewrite-spec rule sctx spec-id spec-info)))
    sctx
    sctx))
 
@@ -262,7 +262,7 @@
          (remove #(= :nothing %))
          (reduce
           (fn [sctx spec-id]
-            (assoc sctx spec-id (rewrite-spec rule sctx spec-id (sctx spec-id))))
+            (ssa/add-spec-to-context sctx spec-id (rewrite-spec rule sctx spec-id (sctx spec-id))))
           sctx))))
 
 (defmacro rule [rewrite-fn-sym]
