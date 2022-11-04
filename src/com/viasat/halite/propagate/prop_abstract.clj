@@ -100,8 +100,17 @@
 (defn- discriminator-var-kw [var-kw] (keyword (discriminator-var-name var-kw)))
 (defn- discriminator-var-sym [var-kw] (symbol (discriminator-var-name var-kw)))
 
-(defn- var-entry->spec-id [senv [var-kw var-type]]
+(defn- old-var-entry->spec-id [senv [var-kw var-type]]
   (->> var-type (envs/halite-type-from-var-type senv) types/no-maybe types/spec-id))
+
+(defn- old-abstract-var?
+  [senv var-entry]
+  (if-let [spec-id (old-var-entry->spec-id senv var-entry)]
+    (true? (:abstract? (envs/system-lookup-spec senv spec-id)))
+    false))
+
+(defn- var-entry->spec-id [senv [var-kw var-type]]
+  (->> var-type types/no-maybe types/spec-id))
 
 (defn- abstract-var?
   [senv var-entry]
@@ -139,7 +148,7 @@
      spec-id
      (reduce-kv
       (fn [{:keys [spec-vars constraints refines-to] :as spec} var-kw var-type]
-        (let [alts (alternatives (var-entry->spec-id senv [var-kw var-type]))
+        (let [alts (alternatives (old-var-entry->spec-id senv [var-kw var-type]))
 
               optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
 
@@ -192,7 +201,7 @@
               spec (update spec :spec-vars dissoc var-kw)]
           spec))
       spec
-      (filter (partial abstract-var? senv) spec-vars)))))
+      (filter (partial old-abstract-var? senv) spec-vars)))))
 
 (defn- invert-adj [adj-lists]
   (reduce-kv
@@ -251,10 +260,8 @@
   [spec-bound senv spec-vars]
   (->> spec-vars
        (remove #(abstract-var? senv %))
-       (reduce (fn [spec-bound [var-kw var-type :as var-entry]]
-                 (let [var-spec-id (if (and (vector? var-type) (= :Maybe (first var-type)))
-                                     (second var-type)
-                                     var-type)
+       (reduce (fn [spec-bound [var-kw var-type]]
+                 (let [var-spec-id (-> var-type types/no-maybe types/inner-spec-type)
                        var-bound (var-kw spec-bound)]
                    (if (and var-bound
                             (abstract-spec-bound? var-bound)
@@ -273,7 +280,7 @@
    alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second) ; unwrap [:Maybe ..]
-        {:keys [spec-vars] :as spec} (envs/system-lookup-spec senv spec-id)]
+        {:keys [spec-vars]} (envs/halite-lookup-spec senv spec-id)]
     (->>
      spec-vars
      (reduce
@@ -283,7 +290,7 @@
           ;; handle abstract var
           (if (abstract-var? senv var-entry)
             (let [var-spec-id (var-entry->spec-id senv var-entry)
-                  optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
+                  optional-var? (types/maybe-type? var-type)
                   alts (select-keys (alternatives var-spec-id)
                                     ;; find the spec-ids which have the prescribed refinement paths
                                     (seq (reduce
@@ -356,11 +363,11 @@
   [spec-bound :- ConcreteSpecBound2, senv :- (s/protocol envs/SpecEnv), alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second)
-        {:keys [spec-vars] :as spec} (envs/system-lookup-spec senv spec-id)]
+        {:keys [spec-vars]} (envs/halite-lookup-spec senv spec-id)]
     (->>
      spec-vars
      (reduce
-      (fn [spec-bound [var-kw var-type :as var-entry]]
+      (fn [spec-bound [var-kw _ :as var-entry]]
         (if (abstract-var? senv var-entry)
           (let [var-spec-id (var-entry->spec-id senv var-entry)
                 alts (alternatives var-spec-id)]
