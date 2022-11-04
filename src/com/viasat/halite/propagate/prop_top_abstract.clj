@@ -67,7 +67,7 @@
        (let [senv (ssa/as-spec-env sctx)
              ;; choose an abstract spec to be the field type in the synthesized spec
              primary-refines-to-spec-id (->> (keys $refines-to)
-                                             (filter #(:abstract? (envs/system-lookup-spec senv %)))
+                                             (filter #(:abstract? (envs/halite-lookup-spec senv %)))
                                              first)
              generated-spec-id (generate-spec-id primary-refines-to-spec-id)]
          (translate-up (prop-abstract/propagate (add-spec generated-spec-id sctx primary-refines-to-spec-id)

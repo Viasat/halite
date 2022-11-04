@@ -106,7 +106,7 @@
 (defn- abstract-var?
   [senv var-entry]
   (if-let [spec-id (var-entry->spec-id senv var-entry)]
-    (true? (:abstract? (envs/system-lookup-spec senv spec-id)))
+    (true? (:abstract? (envs/halite-lookup-spec senv spec-id)))
     false))
 
 (s/defn ^:private replace-all

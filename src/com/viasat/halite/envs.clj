@@ -60,6 +60,12 @@
 
 (s/defschema ConstraintMap {base/ConstraintName s/Any})
 
+(s/defschema HaliteSpecInfo
+  {(s/optional-key :spec-vars) {types/BareKeyword types/HaliteType}
+   (s/optional-key :constraints) ConstraintMap
+   (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
+   (s/optional-key :abstract?) s/Bool})
+
 (s/defschema SpecInfo
   {(s/optional-key :spec-vars) {types/BareKeyword VarType}
    (s/optional-key :constraints) ConstraintMap
@@ -68,12 +74,6 @@
 
 (s/defschema UserSpecInfo
   {(s/optional-key :spec-vars) {types/BareKeyword VarType}
-   (s/optional-key :constraints) {base/UserConstraintName s/Any}
-   (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
-   (s/optional-key :abstract?) s/Bool})
-
-(s/defschema HaliteSpecInfo
-  {(s/optional-key :spec-vars) {types/BareKeyword types/HaliteType}
    (s/optional-key :constraints) {base/UserConstraintName s/Any}
    (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
@@ -189,13 +189,23 @@
 
       :else (throw (ex-info "Invalid spec variable type" {:var-type var-type})))))
 
-(s/defn to-halite-spec :- HaliteSpecInfo
+(s/defn to-halite-spec :- (s/maybe HaliteSpecInfo)
   "Create specs with halite types from specs with var types"
   [senv :- (s/protocol SpecEnv)
-   spec-info :- UserSpecInfo]
-  (if (seq (:spec-vars spec-info))
-    (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
-    spec-info))
+   spec-info :- (s/maybe SpecInfo)]
+  (when spec-info
+    (if (seq (:spec-vars spec-info))
+      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
+      spec-info)))
+
+(s/defn system-to-halite-spec :- (s/maybe HaliteSpecInfo)
+  "Create specs with halite types from specs with var types"
+  [senv :- (s/protocol SpecEnv)
+   spec-info :- (s/maybe SpecInfo)]
+  (when spec-info
+    (if (seq (:spec-vars spec-info))
+      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
+      spec-info)))
 
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
