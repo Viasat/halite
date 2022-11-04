@@ -60,4 +60,31 @@
               (envs/type-env-from-spec senv)
               (envs/scope))))))
 
+(deftest test-to-halite-spec
+  (is (nil?
+       (envs/to-halite-spec {}
+                            nil)))
+  (is (= {:abstract? true
+          :spec-vars {:x [:Maybe [:Vec :Integer]]}}
+         (envs/to-halite-spec {}
+                              {:abstract? true
+                               :spec-vars {:x [:Maybe ["Integer"]]}})))
+  (is (= {:abstract? true
+          :spec-vars {:x [:Instance :ws/X]}}
+         (envs/to-halite-spec {:ws/X {}}
+                              {:abstract? true
+                               :spec-vars {:x :ws/X}})))
+  (is (= {:spec-vars {:x [:Instance :* #{:ws/X}]}
+          :constraints {:x 'true}}
+         (envs/to-halite-spec {:ws/X {:abstract? true}}
+                              {:spec-vars {:x :ws/X}
+                               :constraints {:x 'true}})))
+  (is (= {:abstract? true
+          :constraints {:x 'true}
+          :refines-to {:ws/A {:expr '{:$type :ws/A}}}}
+         (envs/to-halite-spec {}
+                              {:abstract? true
+                               :constraints {:x 'true}
+                               :refines-to {:ws/A {:expr '{:$type :ws/A}}}}))))
+
 ;; (run-tests)

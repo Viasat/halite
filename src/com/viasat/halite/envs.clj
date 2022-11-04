@@ -72,6 +72,12 @@
    (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
+(s/defschema HaliteSpecInfo
+  {(s/optional-key :spec-vars) {types/BareKeyword types/HaliteType}
+   (s/optional-key :constraints) {base/UserConstraintName s/Any}
+   (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
+   (s/optional-key :abstract?) s/Bool})
+
 (defprotocol SpecEnv
   (lookup-spec* [self spec-id]))
 
@@ -86,6 +92,14 @@
   Returns nil when the spec is not found."
   [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
   (lookup-spec* senv spec-id))
+
+(declare to-halite-spec)
+
+(s/defn halite-lookup-spec :- (s/maybe HaliteSpecInfo)
+  "Look up the spec with the given id in the given type environment, returning variable type information.
+  Returns nil when the spec is not found."
+  [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
+  (to-halite-spec senv (lookup-spec* senv spec-id)))
 
 (deftype SpecEnvImpl [spec-info-map]
   SpecEnv
@@ -174,6 +188,14 @@
         (throw (ex-info (format "Spec not found: %s" var-type) {:var-type var-type})))
 
       :else (throw (ex-info "Invalid spec variable type" {:var-type var-type})))))
+
+(s/defn to-halite-spec :- HaliteSpecInfo
+  "Create specs with halite types from specs with var types"
+  [senv :- (s/protocol SpecEnv)
+   spec-info :- UserSpecInfo]
+  (if (seq (:spec-vars spec-info))
+    (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
+    spec-info))
 
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
@@ -282,6 +304,14 @@
   (lookup-spec* [spec-map spec-id]
     (when-let [spec (get spec-map spec-id)]
       spec)))
+
+(s/defn to-halite-spec-env :- (s/protocol SpecEnv)
+  "If the spec env is a map object, then update the values to use halite types. If it is not a map
+  then rely on the lookup function to perform the conversion."
+  [senv :- (s/protocol SpecEnv)]
+  (if (map? senv)
+    (update-vals senv (partial to-halite-spec senv))
+    senv))
 
 (defn init
   "Here to load the clojure map protocol extension above"
