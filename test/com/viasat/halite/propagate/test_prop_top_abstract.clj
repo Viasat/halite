@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.propagate.test-prop-abstract
+(ns com.viasat.halite.propagate.test-prop-top-abstract
   (:require [com.viasat.halite.propagate :as propagate])
   (:use clojure.test)
   (:import [clojure.lang ExceptionInfo]
