@@ -5,11 +5,11 @@
   "Functions to facilitate rewriting of halite specs."
   (:require [clojure.set :as set]
             [clojure.core.reducers :as r]
-            [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecInfo SpecCtx SSACtx]]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
+            [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
@@ -44,14 +44,14 @@
             (throw (ex-info (format "Found type error %s %s" stage rule) {} ex)))]
       (try
         (binding [ssa/*hide-non-halite-ops* true]
-          (halite/type-check-spec senv (ssa/spec-from-ssa spec-info))
+          (type-check/halite-type-check-spec senv (ssa/spec-from-ssa spec-info))
           (when verbose? (println "ok before" rule)))
         (catch Exception ex
           (report-err "before" ex)))
 
       (try
         (binding [ssa/*hide-non-halite-ops* true]
-          (halite/type-check-spec senv (ssa/spec-from-ssa spec-info')))
+          (type-check/halite-type-check-spec senv (ssa/spec-from-ssa spec-info')))
         (when verbose? (println "ok after" rule))
         (catch Exception ex
           (report-err "after" ex))))))

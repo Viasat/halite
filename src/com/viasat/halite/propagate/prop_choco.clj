@@ -24,11 +24,19 @@
   {types/BareKeyword AtomBound})
 
 (s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
-  [var-type :- envs/VarType]
-  (cond
-    (or (= [:Maybe "Integer"] var-type) (= "Integer" var-type)) :Int
-    (or (= [:Maybe "Boolean"] var-type) (= "Boolean" var-type)) :Bool
-    :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type}))))
+  [var-type
+   ;; TODO: add this schema check back in
+   ;; :- types/HaliteType
+   ]
+  (if (s/check types/HaliteType var-type)
+    (cond
+      (or (= [:Maybe "Integer"] var-type) (= "Integer" var-type)) :Int
+      (or (= [:Maybe "Boolean"] var-type) (= "Boolean" var-type)) :Bool
+      :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type})))
+    (cond
+      (= :Integer (types/no-maybe var-type)) :Int
+      (= :Boolean (types/no-maybe var-type)) :Bool
+      :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type})))))
 
 (defn- error->unsatisfiable
   [form]
@@ -44,11 +52,11 @@
     :else form))
 
 (s/defn ^:private lower-spec :- choco-clj/ChocoSpec
-  [spec :- envs/SpecInfo]
+  [spec :- envs/HaliteSpecInfo]
   {:vars (-> spec :spec-vars (update-keys symbol) (update-vals to-choco-type))
    :optionals (->> spec :spec-vars
                    (filter (comp types/maybe-type?
-                                 (partial envs/halite-type-from-var-type {})
+                                 (partial envs/halite-type-from-var-type-if-needed {})
                                  val))
                    (map (comp symbol key)) set)
    :constraints (->> spec :constraints (map (comp error->unsatisfiable second)) set)})

@@ -100,15 +100,6 @@
 (defn- discriminator-var-kw [var-kw] (keyword (discriminator-var-name var-kw)))
 (defn- discriminator-var-sym [var-kw] (symbol (discriminator-var-name var-kw)))
 
-(defn- old-var-entry->spec-id [senv [var-kw var-type]]
-  (->> var-type (envs/halite-type-from-var-type senv) types/no-maybe types/spec-id))
-
-(defn- old-abstract-var?
-  [senv var-entry]
-  (if-let [spec-id (old-var-entry->spec-id senv var-entry)]
-    (true? (:abstract? (envs/system-lookup-spec senv spec-id)))
-    false))
-
 (defn- var-entry->spec-id [senv [var-kw var-type]]
   (->> var-type types/no-maybe types/spec-id))
 
@@ -141,24 +132,26 @@
 (defn- lower-abstract-vars
   "Modifies (?) a spec in the context to have additional variables to represent the concrete
   alternatives for an abstract variable."
-  [sctx alternatives spec-id {:keys [spec-vars] :as spec}]
-  (let [senv (ssa/as-spec-env sctx)]
+  [sctx alternatives spec-id spec]
+  (let [senv (ssa/as-spec-env sctx)
+        ;; TODO: remove this once the specs are flowing through in halite form
+        {:keys [spec-vars] :as spec} (envs/to-halite-spec+ senv spec)]
     (ssa/add-spec-to-context
      sctx
      spec-id
      (reduce-kv
       (fn [{:keys [spec-vars constraints refines-to] :as spec} var-kw var-type]
-        (let [alts (alternatives (old-var-entry->spec-id senv [var-kw var-type]))
+        (let [alts (alternatives (var-entry->spec-id senv [var-kw var-type]))
 
-              optional-var? (and (vector? var-type) (= :Maybe (first var-type)))
+              optional-var? (types/maybe-type? var-type)
 
               ;; add the discriminator var
-              spec (assoc-in spec [:spec-vars (discriminator-var-kw var-kw)] (cond->> "Integer" optional-var? (vector :Maybe)))
+              spec (assoc-in spec [:spec-vars (discriminator-var-kw var-kw)] (cond->> :Integer optional-var? types/maybe-type))
 
               ;; add the alt vars
               spec (reduce-kv
                     (fn [spec alt-spec-id i]
-                      (assoc-in spec [:spec-vars (keyword (str (name var-kw) "$" i))] [:Maybe alt-spec-id]))
+                      (assoc-in spec [:spec-vars (keyword (str (name var-kw) "$" i))] (-> alt-spec-id types/concrete-spec-type types/maybe-type)))
                     spec alts)
 
               ;; the expression that this abstract var will be replaced with
@@ -201,7 +194,7 @@
               spec (update spec :spec-vars dissoc var-kw)]
           spec))
       spec
-      (filter (partial old-abstract-var? senv) spec-vars)))))
+      (filter (partial abstract-var? senv) spec-vars)))))
 
 (defn- invert-adj [adj-lists]
   (reduce-kv

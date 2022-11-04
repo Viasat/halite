@@ -109,7 +109,7 @@
 
 (s/defschema SpecInfo
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
-  (assoc envs/SpecInfo
+  (assoc envs/HaliteSpecInfo
          :ssa-graph SSAGraph
          (s/optional-key :constraints) {base/ConstraintName NodeId}
          (s/optional-key :refines-to) {types/NamespacedKeyword
@@ -457,11 +457,8 @@
       (types/spec-type? t)
       (let [spec-id (types/spec-id t)
             var-kw var-kw-or-idx
-            vtype (or (->> spec-id (envs/system-lookup-spec senv) :spec-vars var-kw)
+            htype (or (->> spec-id (envs/halite-lookup-spec senv) :spec-vars var-kw)
                       (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
-                                      {:form form, :var-kw var-kw, :spec-id spec-id})))
-            htype (or (envs/halite-type-from-var-type senv vtype)
-                      (throw (ex-info (format "BUG! Couldn't determine type of field '%s' of spec '%s'" var-kw spec-id)
                                       {:form form, :var-kw var-kw, :spec-id spec-id})))]
         (ensure-node ssa-graph (list 'get id var-kw) htype))
 
@@ -478,7 +475,7 @@
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)]
-    (when (nil? (envs/system-lookup-spec (:senv ctx) spec-id))
+    (when (nil? (envs/halite-lookup-spec (:senv ctx) spec-id))
       (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
                       {:form form :spec-id spec-id})))
     (ensure-node ssa-graph (list 'refine-to id spec-id) (types/concrete-spec-type spec-id))))
@@ -657,7 +654,7 @@
 
 (s/defn spec-to-ssa :- SpecInfo
   "Convert a halite spec into an SSA-based representation."
-  [senv :- (s/protocol envs/SpecEnv), spec-info :- envs/SpecInfo]
+  [senv :- (s/protocol envs/SpecEnv), spec-info :- envs/HaliteSpecInfo]
   (let [tenv (envs/type-env-from-spec senv spec-info)
         [ssa-graph constraints]
         ,,(reduce
@@ -710,7 +707,7 @@
       (update-vals (partial spec-to-ssa senv))))
 
 (s/defn spec-map-to-ssa :- SpecCtx
-  [spec-map :- envs/SpecMap]
+  [spec-map :- envs/HaliteSpecMap]
   (update-vals spec-map (partial spec-to-ssa spec-map)))
 
 (s/defn replace-node :- SpecInfo
@@ -1038,7 +1035,7 @@
           (let-bindable-exprs ssa-graph ordering (compute-guards ssa-graph #{id}) scope #{})
           (normalize-vars scope)))))
 
-(s/defn spec-from-ssa :- envs/SpecInfo
+(s/defn spec-from-ssa :- envs/HaliteSpecInfo
   "Convert an SSA spec back into a regular halite spec."
   ([spec-info :- SpecInfo]
    (spec-from-ssa spec-info {:conjoin-constraints? true}))

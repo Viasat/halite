@@ -173,12 +173,12 @@
 ;;;;;;;;;; String Comparison Graph ;;;;;;;;;;;;;;;;
 
 (defn- string-type? [var-type]
-  (= :String (->> var-type (envs/halite-type-from-var-type {}) types/no-maybe)))
+  (= :String (->> var-type (envs/halite-type-from-var-type-if-needed {}) types/no-maybe)))
 
 (defn- maybe-string-type?
   "Return true if var-type is [:Maybe \"String\"]"
   [var-type]
-  (let [ht (envs/halite-type-from-var-type {} var-type)]
+  (let [ht (envs/halite-type-from-var-type-if-needed {} var-type)]
     (and (types/maybe-type? ht)
          (= :String (types/no-maybe ht)))))
 
@@ -288,7 +288,7 @@
 (defn- alt-var-decls [scg]
   (-> (loom-graph/nodes scg)
       (->> (filter symbol?) (map #(keyword (get-alt-var scg %))))
-      (zipmap (repeat [:Maybe "Integer"]))))
+      (zipmap (repeat (types/maybe-type :Integer)))))
 
 (defn- comp-var-decls [scg]
   (-> scg
@@ -297,7 +297,7 @@
        (map last)
        (filter symbol?)
        (map keyword))
-      (zipmap (repeat "Boolean"))))
+      (zipmap (repeat :Boolean))))
 
 (s/defn ^:private replace-string-comparison-with-var
   [scg {{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]

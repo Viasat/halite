@@ -44,14 +44,14 @@
 (deftest test-lower-abstract-vars
   (s/with-fn-validation
     (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
-          specs simplest-abstract-var-example
+          specs (envs/to-halite-spec-env simplest-abstract-var-example)
           sctx (update-vals specs #(ssa/spec-to-ssa specs %))
           c (:ws/C sctx)]
       (is (= '{:spec-vars
-               {:w$type "Integer"
-                :w$0 [:Maybe :ws/A]
-                :w$1 [:Maybe :ws/B]
-                :cn "Integer"}
+               {:w$type :Integer
+                :w$0 [:Maybe [:Instance :ws/A]]
+                :w$1 [:Maybe [:Instance :ws/B]]
+                :cn :Integer}
                :constraints
                {:c1 (< cn (get (refine-to (if-value w$0 w$0 (if-value w$1 w$1 (error "unreachable"))) :ws/W) :wn))
                 "w$0" (= (= w$type 0) (if-value w$0 true false))
@@ -65,15 +65,15 @@
 (deftest test-lower-optional-abstract-vars
   (s/with-fn-validation
     (let [alts {:ws/W {:ws/A 0, :ws/B 1}}
-          specs optional-abstract-var-example
+          specs (envs/to-halite-spec-env optional-abstract-var-example)
           sctx (update-vals specs #(ssa/spec-to-ssa specs %))
           c (:ws/C sctx)]
 
       (is (= '{:spec-vars
-               {:w$type [:Maybe "Integer"]
-                :w$0 [:Maybe :ws/A]
-                :w$1 [:Maybe :ws/B]
-                :cn "Integer"}
+               {:w$type [:Maybe :Integer]
+                :w$0 [:Maybe [:Instance :ws/A]]
+                :w$1 [:Maybe [:Instance :ws/B]]
+                :cn :Integer}
                :constraints
                {:c1 (let [v1 (if-value w$0 w$0 (when-value w$1 w$1))]
                       (< cn (if-value v1 (get (refine-to v1 :ws/W) :wn) 10)))

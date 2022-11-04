@@ -110,7 +110,7 @@
   (->SpecEnvImpl spec-info-map))
 
 (s/defn system-spec-env :- (s/protocol SpecEnv)
-  [spec-info-map :- {types/NamespacedKeyword SpecInfo}]
+  [spec-info-map :- {types/NamespacedKeyword HaliteSpecInfo}]
   (->SpecEnvImpl spec-info-map))
 
 (defprotocol TypeEnv
@@ -189,32 +189,52 @@
 
       :else (throw (ex-info "Invalid spec variable type" {:var-type var-type})))))
 
+(s/defn halite-type-from-var-type-if-needed :- types/HaliteType
+  [senv :- (s/protocol SpecEnv)
+   var-type :- s/Any]
+  ;; TODO: remove this once we are swtiched over to use halite types pervasively
+  (if (nil? (s/check types/HaliteType var-type))
+    var-type
+    (halite-type-from-var-type senv var-type)))
+
 (s/defn to-halite-spec :- (s/maybe HaliteSpecInfo)
   "Create specs with halite types from specs with var types"
   [senv :- (s/protocol SpecEnv)
-   spec-info :- (s/maybe SpecInfo)]
+   spec-info :- s/Any]
   (when spec-info
     (if (seq (:spec-vars spec-info))
-      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
+      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type-if-needed senv))
       spec-info)))
 
-(s/defn system-to-halite-spec :- (s/maybe HaliteSpecInfo)
-  "Create specs with halite types from specs with var types"
+(s/defn to-halite-spec+
+  "Allows extra fields, e.g. that ssa adds into spec-infos"
   [senv :- (s/protocol SpecEnv)
-   spec-info :- (s/maybe SpecInfo)]
+   spec-info :- s/Any]
   (when spec-info
     (if (seq (:spec-vars spec-info))
-      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
+      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type-if-needed senv))
       spec-info)))
 
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
+  "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
+  are the variables of the given resource spec."
+  [senv :- (s/protocol SpecEnv), spec
+   ;; TODO: turn this schema check back on
+   ;; :- SpecInfo
+   ]
+  (-> spec
+      :spec-vars
+      (update-keys symbol)
+      (update-vals (partial halite-type-from-var-type-if-needed senv))
+      (type-env)))
+
+(s/defn halite-type-env-from-spec :- (s/protocol TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
   [senv :- (s/protocol SpecEnv), spec :- SpecInfo]
   (-> spec
       :spec-vars
       (update-keys symbol)
-      (update-vals (partial halite-type-from-var-type senv))
       (type-env)))
 
 (deftype EnvImpl [bindings]
@@ -254,6 +274,9 @@
 (s/defschema SpecMap
   {types/NamespacedKeyword SpecInfo})
 
+(s/defschema HaliteSpecMap
+  {types/NamespacedKeyword HaliteSpecInfo})
+
 (defn- spec-ref-from-type [htype]
   (cond
     (and (keyword? htype) (namespace htype)) htype
@@ -282,7 +305,7 @@
 
 (s/defn spec-refs :- #{types/NamespacedKeyword}
   "The set of spec ids referenced by the given spec, as variable types or in constraint/refinement expressions."
-  [{:keys [spec-vars refines-to constraints] :as spec-info} :- SpecInfo]
+  [{:keys [spec-vars refines-to constraints] :as spec-info} :- HaliteSpecInfo]
   (->> spec-vars
        vals
        (map spec-ref-from-type)
@@ -294,7 +317,7 @@
        (set/union
         (->> refines-to vals (map (comp spec-refs-from-expr :expr)) (apply set/union)))))
 
-(s/defn build-spec-map :- SpecMap
+(s/defn build-spec-map :- HaliteSpecMap
   "Return a map of spec-id to SpecInfo, for all specs in senv reachable from the identified root spec."
   [senv :- (s/protocol SpecEnv), root-spec-id :- types/NamespacedKeyword]
   (loop [spec-map {}
@@ -302,7 +325,7 @@
     (if-let [[spec-id & next-spec-ids] next-spec-ids]
       (if (contains? spec-map spec-id)
         (recur spec-map next-spec-ids)
-        (let [spec-info (system-lookup-spec senv spec-id)]
+        (let [spec-info (halite-lookup-spec senv spec-id)]
           (recur
            (assoc spec-map spec-id spec-info)
            (into next-spec-ids (spec-refs spec-info)))))

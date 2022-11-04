@@ -9,6 +9,7 @@
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
+            [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
 (def ^:private generated-field-name :$x)
@@ -38,7 +39,7 @@
   (ssa/add-spec-to-context sctx
                            generated-spec-id
                            (ssa/spec-to-ssa (ssa/as-spec-env sctx)
-                                            {:spec-vars {generated-field-name [:Maybe refines-to-spec-id]}})))
+                                            {:spec-vars {generated-field-name (-> refines-to-spec-id types/concrete-spec-type types/maybe-type)}})))
 
 (s/defn ^:private generate-spec-id
   "Generate a unique spec-id that will not collide with the current context."

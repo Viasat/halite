@@ -39,7 +39,7 @@
 
 ;;;;;;;;; Bound Spec-ification ;;;;;;;;;;;;;;;;
 
-(s/defschema ^:private PrimitiveType (s/enum "Boolean" "Integer"))
+(s/defschema ^:private PrimitiveType (s/enum :Boolean :Integer))
 (s/defschema ^:private PrimitiveMaybeType [(s/one (s/enum :Maybe) :maybe) (s/one PrimitiveType :inner)])
 
 (s/defschema ^:private FlattenedVar
@@ -97,7 +97,7 @@
      (->
       (reduce
        (fn [vars [var-kw vtype]]
-         (let [htype (envs/halite-type-from-var-type senv vtype)]
+         (let [htype (envs/halite-type-from-var-type-if-needed senv vtype)]
            (cond
              (primitive-maybe-type? htype)
              (let [actually-mandatory? (and already-optional? (not (types/maybe-type? htype)))
@@ -126,7 +126,7 @@
 
                  (not optional?) (update ::mandatory into (::mandatory flattened-vars))
 
-                 optional? (assoc-in [var-kw :$witness] [(keyword (str prefix (name var-kw) "?")) "Boolean"])))
+                 optional? (assoc-in [var-kw :$witness] [(keyword (str prefix (name var-kw) "?")) :Boolean])))
 
              :else (throw (ex-info (format "BUG! Variables of type '%s' not supported yet" htype)
                                    {:var-kw var-kw :type htype})))))
@@ -236,7 +236,7 @@
                               (remove (comp mandatory-vars first second))
                               (filter (fn [[var-kw info]]
                                         (if (vector? info)
-                                          (types/maybe-type? (envs/halite-type-from-var-type senv (second info)))
+                                          (types/maybe-type? (envs/halite-type-from-var-type-if-needed senv (second info)))
                                           (contains? info :$witness))))
                               (sort-by first)
                               (map (fn [[opt-var-kw info]]
@@ -248,8 +248,8 @@
     (mk-junct 'and (cond->> optional-clauses
                      mandatory-clause (cons mandatory-clause)))))
 
-(s/defn ^:private optionality-constraints :- envs/SpecInfo
-  [senv :- (s/protocol envs/SpecEnv), flattened-vars :- FlattenedVars, spec-info :- envs/SpecInfo]
+(s/defn ^:private optionality-constraints :- envs/HaliteSpecInfo
+  [senv :- (s/protocol envs/SpecEnv), flattened-vars :- FlattenedVars, spec-info :- envs/HaliteSpecInfo]
   (->> flattened-vars
        (filter (fn [[var-kw info]] (and (map? info) (contains? info :$witness))))
        (reduce
@@ -335,9 +335,9 @@
                     (refinement-equality-constraints (str constraint-name-prefix "|" (name var-kw))
                                                      v)))))))
 
-(s/defn ^:private add-refinement-equality-constraints :- envs/SpecInfo
+(s/defn ^:private add-refinement-equality-constraints :- envs/HaliteSpecInfo
   [flattened-vars :- FlattenedVars
-   spec-info :- envs/SpecInfo]
+   spec-info :- envs/HaliteSpecInfo]
   (update spec-info :constraints into (refinement-equality-constraints "" flattened-vars)))
 
 (defn- spec-ify-bound*
@@ -396,7 +396,7 @@
    senv :- (s/protocol envs/SpecEnv)
    flattened-vars :- FlattenedVars]
   (let [spec-id (::spec-id flattened-vars)
-        spec-vars (:spec-vars (envs/system-lookup-spec senv spec-id))
+        spec-vars (:spec-vars (envs/halite-lookup-spec senv spec-id))
         spec-type (case (some-> flattened-vars :$witness first choco-bounds)
                     false :Unset
                     (nil true) spec-id
@@ -407,8 +407,7 @@
       (-> {:$type spec-type}
           (into (->> (dissoc flattened-vars ::mandatory :$witness ::spec-id ::refines-to)
                      (map (fn [[k v]]
-                            (let [htype (envs/halite-type-from-var-type
-                                         senv (get spec-vars k))]
+                            (let [htype (get spec-vars k)]
                               [k (if (types/spec-maybe-type? htype)
                                    (to-spec-bound choco-bounds senv v)
                                    (to-atom-bound choco-bounds htype v))])))))
