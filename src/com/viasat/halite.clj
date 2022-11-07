@@ -168,7 +168,7 @@
 (defn type-check-spec
   [senv spec-info]
   (let [senv (envs/to-halite-spec-env senv)
-        spec-info (envs/to-halite-spec spec-info)]
+        spec-info (envs/to-halite-spec senv spec-info)]
     (type-check/type-check-spec senv spec-info)))
 
 (defn type-check-refinement-expr
@@ -182,6 +182,15 @@
   [senv :- (s/protocol envs/SpecEnv)
    spec-id :- types/NamespacedKeyword]
   (envs/lookup-spec* senv spec-id))
+
+(s/defn type-env-from-spec :- (s/protocol envs/TypeEnv)
+  "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
+  are the variables of the given resource spec."
+  [senv :- (s/protocol envs/SpecEnv)
+   spec :- envs/UserSpecInfo]
+  (let [senv (envs/to-halite-spec-env senv)
+        spec (envs/to-halite-spec senv spec)]
+    (envs/type-env-from-spec senv spec)))
 
 ;;
 
@@ -204,7 +213,7 @@
   Refinement MandatoryVarType VarType SpecVars RefinesTo UserSpecInfo ConstraintMap
   halite-type-from-var-type
   SpecEnv spec-env
-  TypeEnv type-env type-env-from-spec
+  TypeEnv type-env
   Env env env-from-inst
   SpecMap
   ;; more advanced

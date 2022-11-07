@@ -553,7 +553,10 @@
 
 ;;
 
-(s/defn find-field-accesses [senv spec-info expr]
+(s/defn find-field-accesses
+  [senv :- (s/protocol envs/SpecEnv)
+   spec-info :- envs/HaliteSpecInfo
+   expr]
   (let [lookups-atom (atom #{})]
     (binding [*lookup-f* (fn [halite-type index]
                            (when-let [spec-id (types/spec-id halite-type)]

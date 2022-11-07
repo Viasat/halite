@@ -203,14 +203,11 @@
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
-  [senv :- (s/protocol SpecEnv), spec
-   ;; TODO: turn this schema check back on
-   ;; :- SpecInfo
-   ]
+  [senv :- (s/protocol SpecEnv)
+   spec :- HaliteSpecInfo]
   (-> spec
       :spec-vars
       (update-keys symbol)
-      (update-vals (partial halite-type-from-var-type-if-needed senv))
       (type-env)))
 
 (deftype EnvImpl [bindings]
