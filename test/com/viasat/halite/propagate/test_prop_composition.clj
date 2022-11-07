@@ -241,7 +241,7 @@
 (def flatten-vars #'pc/flatten-vars)
 
 (deftest test-flatten-vars-for-nested-optionals
-  (let [sctx (ssa/spec-map-to-ssa (var-type/to-halite-spec-env nested-optionals-spec-env))]
+  (let [sctx (ssa/spec-map-to-ssa nested-optionals-spec-env)]
     (are [bound expected]
          (= expected (flatten-vars sctx bound))
 
@@ -400,7 +400,7 @@
 (def lower-spec-bound #'pc/lower-spec-bound)
 
 (deftest test-lower-spec-bound-for-nested-optionals
-  (let [sctx (ssa/spec-map-to-ssa (var-type/to-halite-spec-env nested-optionals-spec-env))]
+  (let [sctx (ssa/spec-map-to-ssa nested-optionals-spec-env)]
     (s/with-fn-validation
       (are [bound lowered]
            (= lowered (lower-spec-bound (flatten-vars sctx bound) bound))
@@ -438,13 +438,13 @@
 
 (deftest test-lower-spec-bound-and-refines-to
   (s/with-fn-validation
-    (let [specs (var-type/to-halite-spec-env '{:ws/A {:spec-vars {:an :Integer}
-                                                      :constraints {:a1 (< 0 an)}}
-                                               :ws/B {:spec-vars {:bn :Integer}
-                                                      :constraints {:b1 (< bn 10)}
-                                                      :refines-to {:ws/A {:expr {:$type :ws/A :an bn}}}}
-                                               :ws/C {:spec-vars {:b [:Maybe [:Instance :ws/B]] :cn :Integer}
-                                                      :constraints {:c1 (if-value b (= cn (get (refine-to b :ws/A) :an)) true)}}})
+    (let [specs '{:ws/A {:spec-vars {:an :Integer}
+                         :constraints {:a1 (< 0 an)}}
+                  :ws/B {:spec-vars {:bn :Integer}
+                         :constraints {:b1 (< bn 10)}
+                         :refines-to {:ws/A {:expr {:$type :ws/A :an bn}}}}
+                  :ws/C {:spec-vars {:b [:Maybe [:Instance :ws/B]] :cn :Integer}
+                         :constraints {:c1 (if-value b (= cn (get (refine-to b :ws/A) :an)) true)}}}
           sctx (ssa/spec-map-to-ssa specs)]
       (are [in out]
            (= out (lower-spec-bound (flatten-vars sctx in) in))
@@ -818,7 +818,7 @@
                   :my/B {:refines-to {:my/C {:expr {:$type :my/C
                                                     :cn 5}}}}
                   :my/C {:spec-vars {:cn :Integer}}}
-        specs (specs-to-ssa (var-type/to-halite-spec-env env-map))]
+        specs (specs-to-ssa env-map)]
 
     (is (= '{:spec-vars {:ab|>my$C|cn [:Maybe :Integer], :ab? :Boolean},
              :constraints {"vars" (valid? {:$type :my/A, :ab (when ab? {:$type :my/B})})

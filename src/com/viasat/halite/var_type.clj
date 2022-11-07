@@ -4,7 +4,7 @@
 (ns com.viasat.halite.var-type
   "User interface types"
   (:require [clojure.set :as set]
-            [clojure.string :as str]
+            [clojure.string :as string]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
@@ -83,7 +83,7 @@
       (string? var-type)
       (cond
         (#{"Integer" "String" "Boolean"} var-type) (keyword var-type)
-        (str/starts-with? var-type "Decimal") (types/decimal-type (Long/parseLong (subs var-type 7)))
+        (string/starts-with? var-type "Decimal") (types/decimal-type (Long/parseLong (subs var-type 7)))
         :default (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
 
       (optional-var-type? var-type)
@@ -105,22 +105,13 @@
 
       :else (throw (ex-info "Invalid spec variable type" {:var-type var-type})))))
 
-(s/defn halite-type-from-var-type-if-needed :- types/HaliteType
-  [senv :- (s/protocol envs/SpecEnv)
-   var-type :- s/Any]
-
-  ;; TODO: remove this once we are swtiched over to use halite types pervasively
-  (if (nil? (s/check types/HaliteType var-type))
-    var-type
-    (halite-type-from-var-type senv var-type)))
-
 (s/defn to-halite-spec :- (s/maybe envs/SpecInfo)
   "Create specs with halite types from specs with var types"
   [senv :- (s/protocol envs/SpecEnv)
    spec-info :- s/Any]
   (when spec-info
     (if (seq (:spec-vars spec-info))
-      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type-if-needed senv))
+      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
       spec-info)))
 
 (s/defn to-halite-spec-env :- (s/protocol envs/SpecEnv)

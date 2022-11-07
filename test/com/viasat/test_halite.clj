@@ -49,12 +49,12 @@
   (prop/for-all [s gen/string-ascii]
                 (halite-symbol-differs-from-clj-symbol s)))
 
-(def senv (var-type/to-halite-spec-env {:ws/A$v1 {:spec-vars {:x "Integer"
-                                                              :y "Boolean"
-                                                              :c :ws2/B$v1}}
-                                        :ws2/B$v1 {:spec-vars {:s "String"}}
-                                        :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
-                                        :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}}))
+(def senv {:ws/A$v1 {:spec-vars {:x "Integer"
+                                 :y "Boolean"
+                                 :c :ws2/B$v1}}
+           :ws2/B$v1 {:spec-vars {:s "String"}}
+           :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
+           :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}})
 
 (def tenv (envs/type-env {}))
 
@@ -407,7 +407,7 @@
     '(let [x "foo", y (let [x 1] (+ x 2))] y) 3))
 
 (deftest maybe-tests
-  (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
+  (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
         tenv (-> tenv
                  (envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (envs/extend-scope 'x [:Maybe :Integer]))]
@@ -650,10 +650,10 @@
 
 (deftest test-constraint-validation
   (let [senv (merge senv
-                    (var-type/to-halite-spec-env {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
-                                                                        :y "Boolean"}
-                                                            :constraints {:x-if-y '(=> y (if-value x true false))}}
-                                                  :ws/Invalid$v1 {:constraints {:broken '(or (+ 1 2) true)}}}))]
+                    {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
+                                           :y "Boolean"}
+                               :constraints {:x-if-y '(=> y (if-value x true false))}}
+                     :ws/Invalid$v1 {:constraints {:broken '(or (+ 1 2) true)}}})]
     ;; type-check cannot detect constraint violations, because that would often involve
     ;; actually evaluating forms
     (are [expr etype]
@@ -668,7 +668,7 @@
          (thrown-with-msg? ExceptionInfo err-msg
                            (halite/optionally-with-eval-bindings
                             true
-                            (type-of/type-of senv tenv expr)))
+                            (type-of/type-of (var-type/to-halite-spec-env senv) tenv expr)))
 
       {:$type :ws/E$v1, :y true} #"Invalid instance"
       {:$type :ws/Invalid$v1} #"No matching signature")

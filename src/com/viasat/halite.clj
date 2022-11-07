@@ -22,20 +22,19 @@
 
 (set! *warn-on-reflection* true)
 
-(s/defn eval-predicate :- Boolean
+(s/defn ^:private eval-predicate :- Boolean
   [ctx :- eval/EvalContext
    tenv :- (s/protocol envs/TypeEnv)
    bool-expr
    spec-id :- types/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
-  (let [ctx (update ctx :senv var-type/to-halite-spec-env)]
-    (with-exception-data {:form bool-expr
-                          :spec-id spec-id
-                          :constraint-name (name constraint-name)}
-      (type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
-    (eval/eval-predicate ctx tenv bool-expr spec-id constraint-name)))
+  (with-exception-data {:form bool-expr
+                        :spec-id spec-id
+                        :constraint-name (name constraint-name)}
+    (type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
+  (eval/eval-predicate ctx tenv bool-expr spec-id constraint-name))
 
-(s/defn eval-refinement :- (s/maybe s/Any)
+(s/defn ^:private eval-refinement :- (s/maybe s/Any)
   "Returns an instance of type spec-id, projected from the instance vars in ctx,
   or nil if the guards prevent this projection."
   [ctx :- eval/EvalContext
@@ -43,22 +42,20 @@
    spec-id :- types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
-  (let [ctx (update ctx :senv var-type/to-halite-spec-env)]
-    (if (contains? eval/*refinements* spec-id)
-      (eval/*refinements* spec-id) ;; cache hit
-      (do
-        (with-exception-data {:form expr
-                              :spec-id spec-id
-                              :refinement-name refinement-name}
-          (type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr))
-        (eval/eval-refinement ctx tenv spec-id expr refinement-name)))))
+  (if (contains? eval/*refinements* spec-id)
+    (eval/*refinements* spec-id) ;; cache hit
+    (do
+      (with-exception-data {:form expr
+                            :spec-id spec-id
+                            :refinement-name refinement-name}
+        (type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr))
+      (eval/eval-refinement ctx tenv spec-id expr refinement-name))))
 
 (s/defn ^:private load-env
   "Evaluate the contents of the env to get instances loaded with refinements."
   [senv :- (s/protocol envs/SpecEnv)
    env :- (s/protocol envs/Env)]
-  (let [senv (var-type/to-halite-spec-env senv)
-        empty-env (envs/env {})]
+  (let [empty-env (envs/env {})]
     ;; All runtime values are homoiconic. We eval them in an empty environment
     ;; to initialize refinements for all instances.
     (reduce
@@ -72,8 +69,7 @@
   [senv :- (s/protocol envs/SpecEnv)
    tenv :- (s/protocol envs/TypeEnv)
    env :- (s/protocol envs/Env)]
-  (let [senv (var-type/to-halite-spec-env senv)
-        declared-symbols (set (keys (envs/scope tenv)))
+  (let [declared-symbols (set (keys (envs/scope tenv)))
         bound-symbols (set (keys (envs/bindings env)))
         unbound-symbols (set/difference declared-symbols bound-symbols)
         empty-env (envs/env {})]
@@ -90,8 +86,8 @@
 
 (defmacro optionally-with-eval-bindings [flag form]
   `(if ~flag
-     (binding [eval/*eval-predicate-fn* eval-predicate
-               eval/*eval-refinement-fn* eval-refinement]
+     (binding [eval/*eval-predicate-fn* #'eval-predicate
+               eval/*eval-refinement-fn* #'eval-refinement]
        ~form)
      ~form))
 
