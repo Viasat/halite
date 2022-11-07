@@ -66,12 +66,6 @@
    (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
-(s/defschema SpecInfo
-  {(s/optional-key :spec-vars) {types/BareKeyword VarType}
-   (s/optional-key :constraints) ConstraintMap
-   (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
-   (s/optional-key :abstract?) s/Bool})
-
 (s/defschema UserSpecInfo
   {(s/optional-key :spec-vars) {types/BareKeyword VarType}
    (s/optional-key :constraints) {base/UserConstraintName s/Any}
@@ -81,13 +75,7 @@
 (defprotocol SpecEnv
   (lookup-spec* [self spec-id]))
 
-(s/defn lookup-spec :- (s/maybe UserSpecInfo)
-  "Look up the spec with the given id in the given type environment, returning variable type information.
-  Returns nil when the spec is not found."
-  [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
-  (lookup-spec* senv spec-id))
-
-(s/defn system-lookup-spec :- (s/maybe HaliteSpecInfo)
+(s/defn lookup-spec :- (s/maybe HaliteSpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
   [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
@@ -238,15 +226,6 @@
       (update-vals (partial halite-type-from-var-type-if-needed senv))
       (type-env)))
 
-(s/defn halite-type-env-from-spec :- (s/protocol TypeEnv)
-  "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
-  are the variables of the given resource spec."
-  [senv :- (s/protocol SpecEnv), spec :- SpecInfo]
-  (-> spec
-      :spec-vars
-      (update-keys symbol)
-      (type-env)))
-
 (deftype EnvImpl [bindings]
   Env
   (bindings* [self] bindings)
@@ -282,7 +261,7 @@
 ;; opt-in to the operations they want to use and deal with the implications of their choice
 
 (s/defschema SpecMap
-  {types/NamespacedKeyword SpecInfo})
+  {types/NamespacedKeyword UserSpecInfo})
 
 (s/defschema HaliteSpecMap
   {types/NamespacedKeyword HaliteSpecInfo})

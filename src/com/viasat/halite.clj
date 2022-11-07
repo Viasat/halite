@@ -176,6 +176,13 @@
   (let [senv (envs/to-halite-spec-env senv)]
     (apply type-check/type-check-refinement-expr senv args)))
 
+(s/defn lookup-spec :- (s/maybe envs/UserSpecInfo)
+  "Look up the spec with the given id in the given type environment, returning variable type information.
+  Returns nil when the spec is not found."
+  [senv :- (s/protocol envs/SpecEnv)
+   spec-id :- types/NamespacedKeyword]
+  (envs/lookup-spec* senv spec-id))
+
 ;;
 
 (potemkin/import-vars
@@ -196,7 +203,7 @@
   primitive-types
   Refinement MandatoryVarType VarType SpecVars RefinesTo UserSpecInfo ConstraintMap
   halite-type-from-var-type
-  SpecEnv lookup-spec spec-env
+  SpecEnv spec-env
   TypeEnv type-env type-env-from-spec
   Env env env-from-inst
   SpecMap

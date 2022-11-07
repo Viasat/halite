@@ -1120,7 +1120,6 @@
            pprint-spec (fn [sctx spec-id]
                          (binding [ssa/*hide-non-halite-ops* false]
                            (clojure.pprint/pprint (ssa/spec-from-ssa (get sctx spec-id)))))]
-       ;;(clojure.pprint/pprint (envs/lookup-spec (ssa/build-spec-env sctx') :ws/A))
        (reset! *results* {:checked 0 :failed 0 :failures [] :valid 0 :invalid 0 :runtime-error 0})
        (doseq [a (take num-to-check (shuffle a-seq))]
          (let [r1 (check-a senv a)

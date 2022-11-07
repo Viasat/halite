@@ -43,12 +43,12 @@
       :foo #"Invalid spec variable type")))
 
 (deftest test-type-env-from-spec
-  (let [senv {:ws/A {:abstract? true}
-              :ws/B {}
-              :ws/C {:spec-vars {:x "Integer"
-                                 :w [:Maybe "Integer"]
-                                 :as [:Maybe #{:ws/A}]
-                                 :bs [:ws/B]}}}]
+  (let [senv (envs/to-halite-spec-env {:ws/A {:abstract? true}
+                                       :ws/B {}
+                                       :ws/C {:spec-vars {:x "Integer"
+                                                          :w [:Maybe "Integer"]
+                                                          :as [:Maybe #{:ws/A}]
+                                                          :bs [:ws/B]}}})]
     (is (=
          '{no-value :Unset
            x :Integer

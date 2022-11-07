@@ -164,7 +164,7 @@
   (cond
     (or (base/integer-or-long? v) (base/fixed-decimal? v) (boolean? v) (string? v)) true
     (map? v) (let [spec-id (:$type v)
-                   spec-info (or (envs/system-lookup-spec senv spec-id)
+                   spec-info (or (envs/lookup-spec senv spec-id)
                                  (h-err/resource-spec-not-found {:spec-id (symbol spec-id)}))]
                (and (not (:abstract? spec-info))
                     (every? (partial concrete? senv) (vals (dissoc v :$type)))))
@@ -227,7 +227,7 @@
                                                                        (mapv symbol))}))
               (swap! *instance-path-atom* conj spec-id))
           spec-id-0 spec-id
-          {:keys [spec-vars refines-to] :as spec-info} (envs/system-lookup-spec senv spec-id)
+          {:keys [spec-vars refines-to] :as spec-info} (envs/lookup-spec senv spec-id)
           spec-tenv (envs/type-env-from-spec senv spec-info)
           env (envs/env-from-inst spec-info inst)
           ctx {:senv senv, :env env}
