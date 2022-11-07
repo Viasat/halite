@@ -173,14 +173,13 @@
 ;;;;;;;;;; String Comparison Graph ;;;;;;;;;;;;;;;;
 
 (defn- string-type? [var-type]
-  (= :String (->> var-type (envs/halite-type-from-var-type-if-needed {}) types/no-maybe)))
+  (= :String (->> var-type types/no-maybe)))
 
 (defn- maybe-string-type?
-  "Return true if var-type is [:Maybe \"String\"]"
-  [var-type]
-  (let [ht (envs/halite-type-from-var-type-if-needed {} var-type)]
-    (and (types/maybe-type? ht)
-         (= :String (types/no-maybe ht)))))
+  "Return true if ht is [:Maybe \"String\"]"
+  [ht]
+  (and (types/maybe-type? ht)
+       (= :String (types/no-maybe ht))))
 
 (defn- get-alt-var [scg n]
   (:alt-var (loom-label/label scg n)))

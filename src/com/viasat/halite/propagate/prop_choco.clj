@@ -56,7 +56,6 @@
   {:vars (-> spec :spec-vars (update-keys symbol) (update-vals to-choco-type))
    :optionals (->> spec :spec-vars
                    (filter (comp types/maybe-type?
-                                 (partial envs/halite-type-from-var-type-if-needed {})
                                  val))
                    (map (comp symbol key)) set)
    :constraints (->> spec :constraints (map (comp error->unsatisfiable second)) set)})

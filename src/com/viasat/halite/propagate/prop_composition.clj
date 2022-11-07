@@ -96,40 +96,39 @@
          senv (ssa/as-spec-env sctx)]
      (->
       (reduce
-       (fn [vars [var-kw vtype]]
-         (let [htype (envs/halite-type-from-var-type-if-needed senv vtype)]
-           (cond
-             (primitive-maybe-type? htype)
-             (let [actually-mandatory? (and already-optional? (not (types/maybe-type? htype)))
-                   prefixed-var-kw (keyword (str prefix (name var-kw)))]
-               (-> vars
-                   (assoc var-kw [prefixed-var-kw
-                                  (cond->> vtype
-                                    actually-mandatory? (vector :Maybe))])
-                   (cond->
-                    actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
+       (fn [vars [var-kw htype]]
+         (cond
+           (primitive-maybe-type? htype)
+           (let [actually-mandatory? (and already-optional? (not (types/maybe-type? htype)))
+                 prefixed-var-kw (keyword (str prefix (name var-kw)))]
+             (-> vars
+                 (assoc var-kw [prefixed-var-kw
+                                (cond->> htype
+                                  actually-mandatory? types/maybe-type)])
+                 (cond->
+                  actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
 
-             (types/spec-maybe-type? htype)
-             (let [spec-id (types/spec-id (unwrap-maybe htype))
-                   recur? (or (contains? spec-bound var-kw)
-                              (every? #(not= % spec-id) parent-spec-ids))
-                   optional? (types/maybe-type? htype)
-                   sub-bound (get spec-bound var-kw :Unset)
-                   flattened-vars (when recur?
-                                    (flatten-vars sctx
-                                                  (conj parent-spec-ids (unwrap-maybe (:$type spec-bound)))
-                                                  (str prefix (name var-kw) "|")
-                                                  (or already-optional? optional?)
-                                                  (if (not= :Unset sub-bound) sub-bound {:$type spec-id})))]
-               (cond-> vars
-                 recur? (assoc var-kw flattened-vars)
+           (types/spec-maybe-type? htype)
+           (let [spec-id (types/spec-id (unwrap-maybe htype))
+                 recur? (or (contains? spec-bound var-kw)
+                            (every? #(not= % spec-id) parent-spec-ids))
+                 optional? (types/maybe-type? htype)
+                 sub-bound (get spec-bound var-kw :Unset)
+                 flattened-vars (when recur?
+                                  (flatten-vars sctx
+                                                (conj parent-spec-ids (unwrap-maybe (:$type spec-bound)))
+                                                (str prefix (name var-kw) "|")
+                                                (or already-optional? optional?)
+                                                (if (not= :Unset sub-bound) sub-bound {:$type spec-id})))]
+             (cond-> vars
+               recur? (assoc var-kw flattened-vars)
 
-                 (not optional?) (update ::mandatory into (::mandatory flattened-vars))
+               (not optional?) (update ::mandatory into (::mandatory flattened-vars))
 
-                 optional? (assoc-in [var-kw :$witness] [(keyword (str prefix (name var-kw) "?")) :Boolean])))
+               optional? (assoc-in [var-kw :$witness] [(keyword (str prefix (name var-kw) "?")) :Boolean])))
 
-             :else (throw (ex-info (format "BUG! Variables of type '%s' not supported yet" htype)
-                                   {:var-kw var-kw :type htype})))))
+           :else (throw (ex-info (format "BUG! Variables of type '%s' not supported yet" htype)
+                                 {:var-kw var-kw :type htype}))))
        {::mandatory #{} ::spec-id spec-id}
        (->> spec-id sctx :spec-vars))
       (assoc ::refines-to (->> (tree-seq (constantly true) #(map spec-refinements (keys %)) (spec-refinements spec-id))
@@ -236,7 +235,7 @@
                               (remove (comp mandatory-vars first second))
                               (filter (fn [[var-kw info]]
                                         (if (vector? info)
-                                          (types/maybe-type? (envs/halite-type-from-var-type-if-needed senv (second info)))
+                                          (types/maybe-type? (second info))
                                           (contains? info :$witness))))
                               (sort-by first)
                               (map (fn [[opt-var-kw info]]

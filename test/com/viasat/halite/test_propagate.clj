@@ -16,11 +16,11 @@
 (def strings-and-abstract-specs-example
   '{:ws/Colored
     {:abstract? true
-     :spec-vars {:color "String"}
+     :spec-vars {:color :String}
      :constraints {:validColors (or (= color "red") (= color "green") (= color "blue"))}}
 
     :ws/Car
-    {:spec-vars {:horsePower "Integer"}
+    {:spec-vars {:horsePower :Integer}
      :constraints {:validHorsePowers (and (<= 120 horsePower) (<= horsePower 300))}
      :refines-to {:ws/Colored
                   {:expr {:$type :ws/Colored
@@ -43,3 +43,5 @@
     {:$type :ws/Car :horsePower 140}
     {:$type :ws/Car, :horsePower 140
      :$refines-to {:ws/Colored {:color "blue"}}}))
+
+;; (run-tests)

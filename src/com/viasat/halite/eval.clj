@@ -242,7 +242,7 @@
       ;; check that all variables have values that are concrete and that conform to the
       ;; types declared in the parent resource spec
       (doseq [[kw v] (dissoc inst :$type)
-              :let [declared-type (->> kw spec-vars (envs/halite-type-from-var-type-if-needed senv))]]
+              :let [declared-type (kw spec-vars)]]
         ;; TODO: consider letting instances of abstract spec contain abstract values
         (when-not (concrete? senv v)
           (throw-err (h-err/no-abstract {:value v})))

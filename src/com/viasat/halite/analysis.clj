@@ -1059,7 +1059,6 @@
    spec-id :- types/NamespacedKeyword
    [_ var-type]]
   (let [ts (->> var-type
-                (envs/halite-type-from-var-type-if-needed spec-map)
                 types/innermost-types
                 (map types/inner-spec-type)
                 (remove nil?)

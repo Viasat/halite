@@ -134,8 +134,7 @@
   alternatives for an abstract variable."
   [sctx alternatives spec-id spec]
   (let [senv (ssa/as-spec-env sctx)
-        ;; TODO: remove this once the specs are flowing through in halite form
-        {:keys [spec-vars] :as spec} (envs/to-halite-spec+ senv spec)]
+        {:keys [spec-vars]} spec]
     (ssa/add-spec-to-context
      sctx
      spec-id

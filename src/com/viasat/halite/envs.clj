@@ -200,15 +200,6 @@
       (update spec-info :spec-vars update-vals (partial halite-type-from-var-type-if-needed senv))
       spec-info)))
 
-(s/defn to-halite-spec+
-  "Allows extra fields, e.g. that ssa adds into spec-infos"
-  [senv :- (s/protocol SpecEnv)
-   spec-info :- s/Any]
-  (when spec-info
-    (if (seq (:spec-vars spec-info))
-      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type-if-needed senv))
-      spec-info)))
-
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
