@@ -27,9 +27,7 @@
    bool-expr
    spec-id :- types/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
-  (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-        ;; ctx (update ctx :senv envs/to-halite-spec-env)
-        ]
+  (let [ctx (update ctx :senv envs/to-halite-spec-env)]
     (with-exception-data {:form bool-expr
                           :spec-id spec-id
                           :constraint-name (name constraint-name)}
@@ -44,9 +42,7 @@
    spec-id :- types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
-  (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-        ;; ctx (update ctx :senv envs/to-halite-spec-env)
-        ]
+  (let [ctx (update ctx :senv envs/to-halite-spec-env)]
     (if (contains? eval/*refinements* spec-id)
       (eval/*refinements* spec-id) ;; cache hit
       (do
@@ -60,8 +56,7 @@
   "Evaluate the contents of the env to get instances loaded with refinements."
   [senv :- (s/protocol envs/SpecEnv)
    env :- (s/protocol envs/Env)]
-  (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-        ;; senv (envs/to-halite-spec-env senv)
+  (let [senv (envs/to-halite-spec-env senv)
         empty-env (envs/env {})]
     ;; All runtime values are homoiconic. We eval them in an empty environment
     ;; to initialize refinements for all instances.
@@ -76,8 +71,7 @@
   [senv :- (s/protocol envs/SpecEnv)
    tenv :- (s/protocol envs/TypeEnv)
    env :- (s/protocol envs/Env)]
-  (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-        ;; senv (envs/to-halite-spec-env senv)
+  (let [senv (envs/to-halite-spec-env senv)
         declared-symbols (set (keys (envs/scope tenv)))
         bound-symbols (set (keys (envs/bindings env)))
         unbound-symbols (set/difference declared-symbols bound-symbols)
@@ -126,8 +120,7 @@
                 (s/optional-key :type-check-spec-refinements-and-constraints?) Boolean
                 (s/optional-key :check-for-spec-cycles?) Boolean
                 (s/optional-key :limits) base/Limits}]
-   (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-         ;; senv (envs/to-halite-spec-env senv)
+   (let [senv (envs/to-halite-spec-env senv)
          {:keys [type-check-expr? type-check-env? type-check-spec-refinements-and-constraints? check-for-spec-cycles?
                  limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
@@ -162,31 +155,24 @@
   ([senv tenv expr]
    (type-check-and-lint senv tenv expr))
   ([senv tenv expr options]
-   (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-         ;; senv (envs/to-halite-spec-env senv)
+   (let [senv (envs/to-halite-spec-env senv)
          {:keys [limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
        (lint/type-check-and-lint senv tenv expr)))))
 
 (defn type-check
   [senv & args]
-  (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-        ;; senv (envs/to-halite-spec-env senv)
-        ]
+  (let [senv (envs/to-halite-spec-env senv)]
     (apply type-check/type-check senv args)))
 
 (defn type-check-spec
   [senv & args]
-  (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-        ;; senv (envs/to-halite-spec-env senv)
-        ]
+  (let [senv (envs/to-halite-spec-env senv)]
     (apply type-check/type-check-spec senv args)))
 
 (defn type-check-refinement-expr
   [senv & args]
-  (let [;; TODO: turn this on, once halite can deal with HaliteSpecInfo objects
-        ;; senv (envs/to-halite-spec-env senv)
-        ]
+  (let [senv (envs/to-halite-spec-env senv)]
     (apply type-check/type-check-refinement-expr senv args)))
 
 ;;

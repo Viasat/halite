@@ -114,7 +114,8 @@
 (defn ^HCInfo hc*
   [spec-map expr separate-err-id?]
   (binding [format-errors/*squash-throw-site* true]
-    (let [tenv (envs/type-env {})
+    (let [spec-map (envs/to-halite-spec-env spec-map)
+          tenv (envs/type-env {})
           env (envs/env {})
           j-expr (try (jadeite/to-jadeite expr)
                       (catch RuntimeException e

@@ -48,12 +48,12 @@
   (prop/for-all [s gen/string-ascii]
                 (halite-symbol-differs-from-clj-symbol s)))
 
-(def senv {:ws/A$v1 {:spec-vars {:x "Integer"
-                                 :y "Boolean"
-                                 :c :ws2/B$v1}}
-           :ws2/B$v1 {:spec-vars {:s "String"}}
-           :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
-           :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}})
+(def senv (envs/to-halite-spec-env {:ws/A$v1 {:spec-vars {:x "Integer"
+                                                          :y "Boolean"
+                                                          :c :ws2/B$v1}}
+                                    :ws2/B$v1 {:spec-vars {:s "String"}}
+                                    :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
+                                    :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}}))
 
 (def tenv (envs/type-env {}))
 
@@ -406,7 +406,7 @@
     '(let [x "foo", y (let [x 1] (+ x 2))] y) 3))
 
 (deftest maybe-tests
-  (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
+  (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
         tenv (-> tenv
                  (envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (envs/extend-scope 'x [:Maybe :Integer]))]
@@ -649,10 +649,10 @@
 
 (deftest test-constraint-validation
   (let [senv (merge senv
-                    {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
-                                           :y "Boolean"}
-                               :constraints {:x-if-y '(=> y (if-value x true false))}}
-                     :ws/Invalid$v1 {:constraints {:broken '(or (+ 1 2) true)}}})]
+                    (envs/to-halite-spec-env {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
+                                                                    :y "Boolean"}
+                                                        :constraints {:x-if-y '(=> y (if-value x true false))}}
+                                              :ws/Invalid$v1 {:constraints {:broken '(or (+ 1 2) true)}}}))]
     ;; type-check cannot detect constraint violations, because that would often involve
     ;; actually evaluating forms
     (are [expr etype]

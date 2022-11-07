@@ -87,7 +87,7 @@
   [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
   (lookup-spec* senv spec-id))
 
-(s/defn system-lookup-spec :- (s/maybe SpecInfo)
+(s/defn system-lookup-spec :- (s/maybe HaliteSpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
   [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
@@ -181,7 +181,8 @@
       [:Set (halite-type-from-var-type senv (check-mandatory (first var-type)))]
 
       (types/namespaced-keyword? var-type)
-      (if-let [spec-info (system-lookup-spec senv var-type)]
+      (if-let [;; this is bypassing the schema check because we may be in the process of converting the spec env to the internal format
+               spec-info (lookup-spec* senv var-type)]
         (if (:abstract? spec-info)
           (types/abstract-spec-type var-type)
           (types/concrete-spec-type var-type))
@@ -192,6 +193,7 @@
 (s/defn halite-type-from-var-type-if-needed :- types/HaliteType
   [senv :- (s/protocol SpecEnv)
    var-type :- s/Any]
+
   ;; TODO: remove this once we are swtiched over to use halite types pervasively
   (if (nil? (s/check types/HaliteType var-type))
     var-type
@@ -248,7 +250,7 @@
                       no-value :Unset} bindings)))
 
 (s/defn env-from-inst :- (s/protocol Env)
-  [spec-info :- SpecInfo, inst]
+  [spec-info :- HaliteSpecInfo, inst]
   (env
    (reduce
     (fn [m kw]
@@ -344,7 +346,9 @@
   [senv :- (s/protocol SpecEnv)]
   (if (map? senv)
     (update-vals senv (partial to-halite-spec senv))
-    senv))
+    (reify SpecEnv
+      (lookup-spec* [_ spec-id]
+        (to-halite-spec senv (lookup-spec* senv spec-id))))))
 
 (defn init
   "Here to load the clojure map protocol extension above"

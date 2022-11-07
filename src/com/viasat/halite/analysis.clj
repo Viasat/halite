@@ -1055,7 +1055,7 @@
 ;;;;
 
 (s/defn ^:private get-spec-var-dependencies :- (s/maybe {types/NamespacedKeyword #{types/NamespacedKeyword}})
-  [spec-map :- envs/SpecMap
+  [spec-map :- envs/HaliteSpecMap
    spec-id :- types/NamespacedKeyword
    [_ var-type]]
   (let [ts (->> var-type
@@ -1079,9 +1079,9 @@
     {spec-id (into #{other-spec-id} spec-refs)}))
 
 (s/defn ^:private get-spec-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
-  [spec-map :- envs/SpecMap
+  [spec-map :- envs/HaliteSpecMap
    spec-id :- types/NamespacedKeyword
-   spec-info :- envs/SpecInfo]
+   spec-info :- envs/HaliteSpecInfo]
   (let [{:keys [spec-vars constraints refines-to]} spec-info]
     (->> [(map (partial get-spec-var-dependencies spec-map spec-id) spec-vars)
           (map (partial get-constraint-dependencies spec-id) constraints)
@@ -1091,13 +1091,13 @@
          (reduce (partial merge-with into) {}))))
 
 (s/defn get-spec-map-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
-  [spec-map :- envs/SpecMap]
+  [spec-map :- envs/HaliteSpecMap]
   (->> spec-map
        (map (fn [[k v]] (get-spec-dependencies spec-map k v)))
        (reduce (partial merge-with into) {})))
 
 (s/defn find-cycle-in-dependencies
-  [spec-map :- envs/SpecMap]
+  [spec-map :- envs/HaliteSpecMap]
   (let [spec-map-dependencies (->> spec-map
                                    get-spec-map-dependencies)]
     (if (empty? spec-map-dependencies)
