@@ -348,7 +348,7 @@
    (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
    (add-refinement-equality-constraints flattened-vars)))
 
-(s/defn spec-ify-bound :- envs/SpecInfo
+(s/defn spec-ify-bound :- envs/HaliteSpecInfo
   "Compile the spec-bound into a self-contained halite spec that explicitly states the constraints
   implied by the bound. The resulting spec is self-contained in the sense that:
     * it references no other specs, and
