@@ -543,16 +543,6 @@
 
 (s/defn type-check-spec
   [senv :- (s/protocol envs/SpecEnv)
-   spec-info :- envs/SpecInfo]
-  (let [{:keys [constraints refines-to]} spec-info
-        tenv (envs/type-env-from-spec senv spec-info)]
-    (doseq [[cname cexpr] constraints]
-      (type-check-constraint-expr senv tenv cexpr))
-    (doseq [[spec-id {:keys [expr name]}] refines-to]
-      (type-check-refinement-expr senv tenv spec-id expr))))
-
-(s/defn halite-type-check-spec
-  [senv :- (s/protocol envs/SpecEnv)
    spec-info :- envs/HaliteSpecInfo]
   (let [{:keys [constraints refines-to]} spec-info
         tenv (envs/type-env-from-spec senv spec-info)]

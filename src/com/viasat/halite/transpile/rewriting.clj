@@ -44,14 +44,14 @@
             (throw (ex-info (format "Found type error %s %s" stage rule) {} ex)))]
       (try
         (binding [ssa/*hide-non-halite-ops* true]
-          (type-check/halite-type-check-spec senv (ssa/spec-from-ssa spec-info))
+          (type-check/type-check-spec senv (ssa/spec-from-ssa spec-info))
           (when verbose? (println "ok before" rule)))
         (catch Exception ex
           (report-err "before" ex)))
 
       (try
         (binding [ssa/*hide-non-halite-ops* true]
-          (type-check/halite-type-check-spec senv (ssa/spec-from-ssa spec-info')))
+          (type-check/type-check-spec senv (ssa/spec-from-ssa spec-info')))
         (when verbose? (println "ok after" rule))
         (catch Exception ex
           (report-err "after" ex))))))

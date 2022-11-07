@@ -166,9 +166,10 @@
     (apply type-check/type-check senv args)))
 
 (defn type-check-spec
-  [senv & args]
-  (let [senv (envs/to-halite-spec-env senv)]
-    (apply type-check/type-check-spec senv args)))
+  [senv spec-info]
+  (let [senv (envs/to-halite-spec-env senv)
+        spec-info (envs/to-halite-spec spec-info)]
+    (type-check/type-check-spec senv spec-info)))
 
 (defn type-check-refinement-expr
   [senv & args]
