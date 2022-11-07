@@ -23,7 +23,7 @@
               (throw-err (h-err/missing-type-field {error-key inst})))
         _ (when-not (types/namespaced-keyword? t)
             (throw-err (h-err/invalid-type-value {error-key inst})))
-        spec-info (or (envs/halite-lookup-spec (:senv ctx) t)
+        spec-info (or (envs/lookup-spec (:senv ctx) t)
                       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol t)
                                                                  error-key inst})))
         field-types (:spec-vars spec-info)
@@ -155,7 +155,7 @@
     (and (types/spec-type? subexpr-type)
          (types/spec-id subexpr-type)
          (not (types/needs-refinement? subexpr-type)))
-    (let [field-types (->> subexpr-type types/spec-id (envs/halite-lookup-spec (:senv ctx)) :spec-vars)]
+    (let [field-types (->> subexpr-type types/spec-id (envs/lookup-spec (:senv ctx)) :spec-vars)]
       (when-not (and (keyword? index) (types/bare? index))
         (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
@@ -436,7 +436,7 @@
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'refine-to :expected-type-description (text "an instance"), :form expr, :actual s}))))
     (when-not (types/namespaced-keyword? kw)
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'refine-to :expected-type-description (text "a spec id"), :form expr}))))
-    (when-not (envs/halite-lookup-spec (:senv ctx) kw)
+    (when-not (envs/lookup-spec (:senv ctx) kw)
       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     (types/concrete-spec-type kw)))
 
@@ -449,7 +449,7 @@
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'refines-to? :expected-type-description (text "an instance"), :form expr}))))
     (when-not (types/namespaced-keyword? kw)
       (throw-err (h-err/arg-type-mismatch (add-position 1 {:op 'refines-to? :expected-type-description (text "a spec id"), :form expr}))))
-    (when-not (envs/halite-lookup-spec (:senv ctx) kw)
+    (when-not (envs/lookup-spec (:senv ctx) kw)
       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol kw) :form expr})))
     :Boolean))
 

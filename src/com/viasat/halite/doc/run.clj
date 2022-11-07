@@ -114,8 +114,7 @@
 (defn ^HCInfo hc*
   [spec-map expr separate-err-id?]
   (binding [format-errors/*squash-throw-site* true]
-    (let [spec-map (envs/to-halite-spec-env spec-map)
-          tenv (envs/type-env {})
+    (let [tenv (envs/type-env {})
           env (envs/env {})
           j-expr (try (jadeite/to-jadeite expr)
                       (catch RuntimeException e
@@ -124,7 +123,7 @@
                  nil
                  (catch RuntimeException e
                    [:syntax-check-throws (.getMessage e)]))
-          t (try (lint/type-check-and-lint spec-map tenv expr)
+          t (try (halite/type-check-and-lint spec-map tenv expr)
                  (catch RuntimeException e
                    [:throws (.getMessage e)]))
           h-result (try (eval-h-expr spec-map tenv env expr)

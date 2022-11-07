@@ -16,6 +16,7 @@
             [com.viasat.halite.type-of :as type-of]
             [com.viasat.halite.types :as types]
             [com.viasat.halite.syntax-check :as syntax-check]
+            [com.viasat.halite.var-type :as var-type]
             [potemkin]
             [schema.core :as s]))
 
@@ -27,7 +28,7 @@
    bool-expr
    spec-id :- types/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
-  (let [ctx (update ctx :senv envs/to-halite-spec-env)]
+  (let [ctx (update ctx :senv var-type/to-halite-spec-env)]
     (with-exception-data {:form bool-expr
                           :spec-id spec-id
                           :constraint-name (name constraint-name)}
@@ -42,7 +43,7 @@
    spec-id :- types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
-  (let [ctx (update ctx :senv envs/to-halite-spec-env)]
+  (let [ctx (update ctx :senv var-type/to-halite-spec-env)]
     (if (contains? eval/*refinements* spec-id)
       (eval/*refinements* spec-id) ;; cache hit
       (do
@@ -56,7 +57,7 @@
   "Evaluate the contents of the env to get instances loaded with refinements."
   [senv :- (s/protocol envs/SpecEnv)
    env :- (s/protocol envs/Env)]
-  (let [senv (envs/to-halite-spec-env senv)
+  (let [senv (var-type/to-halite-spec-env senv)
         empty-env (envs/env {})]
     ;; All runtime values are homoiconic. We eval them in an empty environment
     ;; to initialize refinements for all instances.
@@ -71,7 +72,7 @@
   [senv :- (s/protocol envs/SpecEnv)
    tenv :- (s/protocol envs/TypeEnv)
    env :- (s/protocol envs/Env)]
-  (let [senv (envs/to-halite-spec-env senv)
+  (let [senv (var-type/to-halite-spec-env senv)
         declared-symbols (set (keys (envs/scope tenv)))
         bound-symbols (set (keys (envs/bindings env)))
         unbound-symbols (set/difference declared-symbols bound-symbols)
@@ -120,7 +121,7 @@
                 (s/optional-key :type-check-spec-refinements-and-constraints?) Boolean
                 (s/optional-key :check-for-spec-cycles?) Boolean
                 (s/optional-key :limits) base/Limits}]
-   (let [senv (envs/to-halite-spec-env senv)
+   (let [senv (var-type/to-halite-spec-env senv)
          {:keys [type-check-expr? type-check-env? type-check-spec-refinements-and-constraints? check-for-spec-cycles?
                  limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
@@ -153,30 +154,30 @@
 
 (defn type-check-and-lint
   ([senv tenv expr]
-   (type-check-and-lint senv tenv expr))
+   (type-check-and-lint senv tenv expr default-eval-expr-options))
   ([senv tenv expr options]
-   (let [senv (envs/to-halite-spec-env senv)
+   (let [senv (var-type/to-halite-spec-env senv)
          {:keys [limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
        (lint/type-check-and-lint senv tenv expr)))))
 
 (defn type-check
   [senv & args]
-  (let [senv (envs/to-halite-spec-env senv)]
+  (let [senv (var-type/to-halite-spec-env senv)]
     (apply type-check/type-check senv args)))
 
 (defn type-check-spec
   [senv spec-info]
-  (let [senv (envs/to-halite-spec-env senv)
-        spec-info (envs/to-halite-spec senv spec-info)]
+  (let [senv (var-type/to-halite-spec-env senv)
+        spec-info (var-type/to-halite-spec senv spec-info)]
     (type-check/type-check-spec senv spec-info)))
 
 (defn type-check-refinement-expr
   [senv & args]
-  (let [senv (envs/to-halite-spec-env senv)]
+  (let [senv (var-type/to-halite-spec-env senv)]
     (apply type-check/type-check-refinement-expr senv args)))
 
-(s/defn lookup-spec :- (s/maybe envs/UserSpecInfo)
+(s/defn lookup-spec :- (s/maybe var-type/UserSpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
   [senv :- (s/protocol envs/SpecEnv)
@@ -187,9 +188,9 @@
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
   [senv :- (s/protocol envs/SpecEnv)
-   spec :- envs/UserSpecInfo]
-  (let [senv (envs/to-halite-spec-env senv)
-        spec (envs/to-halite-spec senv spec)]
+   spec :- var-type/UserSpecInfo]
+  (let [senv (var-type/to-halite-spec-env senv)
+        spec (var-type/to-halite-spec senv spec)]
     (envs/type-env-from-spec senv spec)))
 
 ;;
@@ -209,17 +210,20 @@
 
 (potemkin/import-vars
  [envs
-  primitive-types
-  Refinement MandatoryVarType VarType SpecVars RefinesTo UserSpecInfo ConstraintMap
-  halite-type-from-var-type
+  Refinement RefinesTo ConstraintMap
   SpecEnv spec-env
   TypeEnv type-env
-  Env env env-from-inst
-  SpecMap
-  ;; more advanced
-  maybe-type? no-maybe])
+  Env env env-from-inst])
 
 (potemkin/import-vars
  [types
   HaliteType decimal-type vector-type set-type namespaced-keyword? abstract-spec-type concrete-spec-type
   nothing-like? join])
+
+(potemkin/import-vars
+ [var-type
+  primitive-types
+  halite-type-from-var-type
+  MandatoryVarType VarType SpecVars UserSpecInfo SpecMap
+  ;; more advanced
+  maybe-type? no-maybe])

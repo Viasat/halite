@@ -124,7 +124,7 @@
         (if (not= 1 (count arg-types))
           (= comparison-op 'not=)
           (let [arg-type (first arg-types)
-                var-kws (->> arg-type (types/spec-id) (envs/halite-lookup-spec senv) :spec-vars keys sort)]
+                var-kws (->> arg-type (types/spec-id) (envs/lookup-spec senv) :spec-vars keys sort)]
             (->> var-kws
                  (map (fn [var-kw]
                         (apply list comparison-op

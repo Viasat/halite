@@ -5,6 +5,7 @@
   (:require [clojure.test :refer :all]
             [com.viasat.halite.analysis :as analysis]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.var-type :as var-type]
             [schema.core :as s]
             [schema.test :refer [validate-schemas]]))
 
@@ -1242,24 +1243,24 @@
          (analysis/find-spec-refs-but-tail :my/Spec '(if true {:$type :my/Spec} {:$type :my/Other})))))
 
 (deftest test-cyclical-dependencies
-  (let [spec-map (envs/to-halite-spec-env {:spec/Destination {:spec-vars {:d "Integer"}}
-                                           :spec/Path1 {:refines-to {:spec/Destination {:name "refine_to_Destination"
-                                                                                        :expr '{:$type :spec/Destination
-                                                                                                :d 1}}}}
-                                           :spec/Path2 {:refines-to {:spec/Destination {:name "refine_to_Destination"
-                                                                                        :expr '{:$type :spec/Destination
-                                                                                                :d 2}}}}
-                                           :spec/Start {:refines-to {:spec/Path1 {:name "refine_to_Path1"
-                                                                                  :expr '{:$type :spec/Path1}}
-                                                                     :spec/Path2 {:name "refine_to_Path2"
-                                                                                  :expr '{:$type :spec/Path2}}}}})]
+  (let [spec-map (var-type/to-halite-spec-env {:spec/Destination {:spec-vars {:d "Integer"}}
+                                               :spec/Path1 {:refines-to {:spec/Destination {:name "refine_to_Destination"
+                                                                                            :expr '{:$type :spec/Destination
+                                                                                                    :d 1}}}}
+                                               :spec/Path2 {:refines-to {:spec/Destination {:name "refine_to_Destination"
+                                                                                            :expr '{:$type :spec/Destination
+                                                                                                    :d 2}}}}
+                                               :spec/Start {:refines-to {:spec/Path1 {:name "refine_to_Path1"
+                                                                                      :expr '{:$type :spec/Path1}}
+                                                                         :spec/Path2 {:name "refine_to_Path2"
+                                                                                      :expr '{:$type :spec/Path2}}}}})]
     (is (= {:spec/Path1 #{:spec/Destination}
             :spec/Path2 #{:spec/Destination}
             :spec/Start #{:spec/Path1 :spec/Path2}}
            (#'analysis/get-spec-map-dependencies spec-map)))
     (is (nil? (analysis/find-cycle-in-dependencies spec-map))))
-  (let [spec-map (envs/to-halite-spec-env {:spec/A {:spec-vars {:b :spec/B}}
-                                           :spec/B {:spec-vars {:a :spec/A}}})]
+  (let [spec-map (var-type/to-halite-spec-env {:spec/A {:spec-vars {:b :spec/B}}
+                                               :spec/B {:spec-vars {:a :spec/A}}})]
     (is (= {:spec/A #{:spec/B}
             :spec/B #{:spec/A}}
            (#'analysis/get-spec-map-dependencies spec-map)))

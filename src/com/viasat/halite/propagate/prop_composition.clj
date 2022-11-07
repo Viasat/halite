@@ -395,7 +395,7 @@
    senv :- (s/protocol envs/SpecEnv)
    flattened-vars :- FlattenedVars]
   (let [spec-id (::spec-id flattened-vars)
-        spec-vars (:spec-vars (envs/halite-lookup-spec senv spec-id))
+        spec-vars (:spec-vars (envs/lookup-spec senv spec-id))
         spec-type (case (some-> flattened-vars :$witness first choco-bounds)
                     false :Unset
                     (nil true) spec-id

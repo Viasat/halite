@@ -19,8 +19,8 @@
          (type-check/find-field-accesses
           {:ws/A$v1 {:spec-vars {:x :Integer
                                  :y :Boolean
-                                 :c :ws2/B$v1}}
-           :ws2/B$v1 {:spec-vars {:d :ws/D$v1}}
+                                 :c [:Instance :ws2/B$v1]}}
+           :ws2/B$v1 {:spec-vars {:d [:Instance :ws/D$v1]}}
            :ws/C$v1 {:spec-vars {:xs [:Vec :Integer]}}
            :ws/D$v1 {:spec-vars {:xss [:Vec [:Vec :Integer]]}}}
           {:spec-vars {:x :Integer

@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-envs
-  (:require [com.viasat.halite.envs :as envs])
+  (:require [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.var-type :as var-type])
   (:import [clojure.lang ExceptionInfo])
   (:use [clojure.test]))
 
@@ -10,7 +11,7 @@
   (let [senv {:ws/A {:abstract? true}
               :ws/B {}}]
     (are [vtype htype]
-         (= htype (envs/halite-type-from-var-type senv vtype))
+         (= htype (var-type/halite-type-from-var-type senv vtype))
 
       "Integer" :Integer
       "String" :String
@@ -28,7 +29,7 @@
 
     (are [invalid-type msg]
          (thrown-with-msg? ExceptionInfo msg
-                           (envs/halite-type-from-var-type senv invalid-type))
+                           (var-type/halite-type-from-var-type senv invalid-type))
 
       "Foo" #"Unrecognized primitive type"
       :ws/C #"Spec not found"
@@ -43,12 +44,12 @@
       :foo #"Invalid spec variable type")))
 
 (deftest test-type-env-from-spec
-  (let [senv (envs/to-halite-spec-env {:ws/A {:abstract? true}
-                                       :ws/B {}
-                                       :ws/C {:spec-vars {:x "Integer"
-                                                          :w [:Maybe "Integer"]
-                                                          :as [:Maybe #{:ws/A}]
-                                                          :bs [:ws/B]}}})]
+  (let [senv (var-type/to-halite-spec-env {:ws/A {:abstract? true}
+                                           :ws/B {}
+                                           :ws/C {:spec-vars {:x "Integer"
+                                                              :w [:Maybe "Integer"]
+                                                              :as [:Maybe #{:ws/A}]
+                                                              :bs [:ws/B]}}})]
     (is (=
          '{no-value :Unset
            x :Integer
@@ -62,29 +63,29 @@
 
 (deftest test-to-halite-spec
   (is (nil?
-       (envs/to-halite-spec {}
-                            nil)))
+       (var-type/to-halite-spec {}
+                                nil)))
   (is (= {:abstract? true
           :spec-vars {:x [:Maybe [:Vec :Integer]]}}
-         (envs/to-halite-spec {}
-                              {:abstract? true
-                               :spec-vars {:x [:Maybe ["Integer"]]}})))
+         (var-type/to-halite-spec {}
+                                  {:abstract? true
+                                   :spec-vars {:x [:Maybe ["Integer"]]}})))
   (is (= {:abstract? true
           :spec-vars {:x [:Instance :ws/X]}}
-         (envs/to-halite-spec {:ws/X {}}
-                              {:abstract? true
-                               :spec-vars {:x :ws/X}})))
+         (var-type/to-halite-spec {:ws/X {}}
+                                  {:abstract? true
+                                   :spec-vars {:x :ws/X}})))
   (is (= {:spec-vars {:x [:Instance :* #{:ws/X}]}
           :constraints {:x 'true}}
-         (envs/to-halite-spec {:ws/X {:abstract? true}}
-                              {:spec-vars {:x :ws/X}
-                               :constraints {:x 'true}})))
+         (var-type/to-halite-spec {:ws/X {:abstract? true}}
+                                  {:spec-vars {:x :ws/X}
+                                   :constraints {:x 'true}})))
   (is (= {:abstract? true
           :constraints {:x 'true}
           :refines-to {:ws/A {:expr '{:$type :ws/A}}}}
-         (envs/to-halite-spec {}
-                              {:abstract? true
-                               :constraints {:x 'true}
-                               :refines-to {:ws/A {:expr '{:$type :ws/A}}}}))))
+         (var-type/to-halite-spec {}
+                                  {:abstract? true
+                                   :constraints {:x 'true}
+                                   :refines-to {:ws/A {:expr '{:$type :ws/A}}}}))))
 
 ;; (run-tests)

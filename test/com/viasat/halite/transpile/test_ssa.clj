@@ -6,6 +6,7 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
+            [com.viasat.halite.var-type :as var-type]
             [schema.core :as s]
             [schema.test])
   (:use clojure.test))
@@ -26,7 +27,7 @@
     (is (= false (ssa/cycle? non-cycle-graph)))))
 
 (deftest test-spec-to-ssa
-  (let [senv (envs/to-halite-spec-env
+  (let [senv (var-type/to-halite-spec-env
               '{:ws/A
                 {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}}
                 :foo/Bar
@@ -38,7 +39,7 @@
             (-> senv
                 (assoc-in [:ws/A :constraints] (apply hash-map (mapcat identity (map-indexed #(vector (str "c" %1) %2) constraints))))
                 (envs/spec-env)
-                (#(ssa/spec-to-ssa % (envs/halite-lookup-spec % :ws/A)))
+                (#(ssa/spec-to-ssa % (envs/lookup-spec % :ws/A)))
                 (#(vector (:dgraph (:ssa-graph %))
                           (map second (:constraints %))))))
 
@@ -440,7 +441,7 @@
       '[$9])))
 
 (deftest test-spec-to-ssa-with-refinements
-  (let [senv (envs/to-halite-spec-env
+  (let [senv (var-type/to-halite-spec-env
               '{:ws/A
                 {:spec-vars {:an "Integer"}
                  :constraints {"a1" (< 0 (+ 1 an))}
@@ -487,7 +488,7 @@
 
 (deftest test-form-to-ssa-correctly-handles-node-references-in-if-value
   (let [senv (envs/spec-env
-              (envs/to-halite-spec-env
+              (var-type/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
                   :constraints {"c1" (= s p)}}}))
@@ -540,7 +541,7 @@
                true)))))))
 
 (deftest test-compute-guards
-  (let [senv (envs/to-halite-spec-env
+  (let [senv (var-type/to-halite-spec-env
               '{:ws/A
                 {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :b1 "Boolean", :b2 "Boolean"}}
                 :ws/Foo
@@ -876,7 +877,7 @@
 
 (deftest test-spec-from-ssa-preserves-guards
   (let [senv (envs/spec-env
-              (envs/to-halite-spec-env
+              (var-type/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:p "Boolean", :q "Boolean"}
                   :constraints {"c1" (if p (< (div 10 0) 1) true)
@@ -886,12 +887,12 @@
     (is (= '{"$all" (and (if p (< (div 10 0) 1) true)
                          (if q true (let [v1 (div 10 0)] (and (< 1 v1) (< v1 1))))
                          (if (not q) (< 1 (div 10 0)) true))}
-           (-> sctx (ssa/build-spec-env) (envs/halite-lookup-spec :ws/A) :constraints)))))
+           (-> sctx (ssa/build-spec-env) (envs/lookup-spec :ws/A) :constraints)))))
 
 (deftest test-semantics-preservation
   ;; Test that this spec has the same interpretation after round-tripping through SSA representation.
   (let [senv (envs/spec-env
-              (envs/to-halite-spec-env
+              (var-type/to-halite-spec-env
                {:ws/A
                 '{:spec-vars {:x "Integer", :y "Integer", :p "Boolean", :q "Boolean"}
                   :constraints {"a1" (< x y)
@@ -954,8 +955,8 @@
 
 (deftest test-as-spec-env
   (is (nil?
-       (envs/halite-lookup-spec (ssa/as-spec-env {}) :ws/A)))
+       (envs/lookup-spec (ssa/as-spec-env {}) :ws/A)))
   (is (= {}
-         (envs/halite-lookup-spec (ssa/as-spec-env {:ws/A {:ssa-graph ssa/empty-ssa-graph}}) :ws/A))))
+         (envs/lookup-spec (ssa/as-spec-env {:ws/A {:ssa-graph ssa/empty-ssa-graph}}) :ws/A))))
 
 ;; (run-tests)

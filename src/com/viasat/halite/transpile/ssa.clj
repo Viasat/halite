@@ -457,7 +457,7 @@
       (types/spec-type? t)
       (let [spec-id (types/spec-id t)
             var-kw var-kw-or-idx
-            htype (or (->> spec-id (envs/halite-lookup-spec senv) :spec-vars var-kw)
+            htype (or (->> spec-id (envs/lookup-spec senv) :spec-vars var-kw)
                       (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
                                       {:form form, :var-kw var-kw, :spec-id spec-id})))]
         (ensure-node ssa-graph (list 'get id var-kw) htype))
@@ -475,7 +475,7 @@
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)]
-    (when (nil? (envs/halite-lookup-spec (:senv ctx) spec-id))
+    (when (nil? (envs/lookup-spec (:senv ctx) spec-id))
       (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
                       {:form form :spec-id spec-id})))
     (ensure-node ssa-graph (list 'refine-to id spec-id) (types/concrete-spec-type spec-id))))

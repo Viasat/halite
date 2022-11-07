@@ -3,12 +3,26 @@
 
 (ns com.viasat.halite-propagate
   "Public API for propagate"
-  (:require [com.viasat.halite.propagate :as propagate]
-            [potemkin]))
+  (:require [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.propagate :as propagate]
+            [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
+            [com.viasat.halite.var-type :as var-type]
+            [potemkin]
+            [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
+(s/defn propagate :- propagate/SpecBound
+  ([senv :- (s/protocol envs/SpecEnv)
+    initial-bound :- propagate/SpecBound]
+   (propagate senv propagate/default-options initial-bound))
+  ([senv :- (s/protocol envs/SpecEnv)
+    opts :- prop-abstract/Opts
+    initial-bound :- propagate/SpecBound]
+   (let [senv (var-type/to-halite-spec-env senv)]
+     (propagate/propagate senv opts initial-bound))))
+
 (potemkin/import-vars
  [propagate
-  default-options propagate])
+  default-options])
 
