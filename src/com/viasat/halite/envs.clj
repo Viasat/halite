@@ -4,9 +4,7 @@
 (ns com.viasat.halite.envs
   "Halite spec, type, and eval environment abstractions."
   (:require [clojure.set :as set]
-            [clojure.string :as str]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
 

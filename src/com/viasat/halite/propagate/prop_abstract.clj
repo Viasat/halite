@@ -3,7 +3,6 @@
 
 (ns com.viasat.halite.propagate.prop-abstract
   (:require [clojure.set :as set]
-            [clojure.string :as str]
             [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
