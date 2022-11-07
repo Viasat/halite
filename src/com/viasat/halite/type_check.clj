@@ -543,7 +543,7 @@
 
 (s/defn type-check-spec
   [senv :- (s/protocol envs/SpecEnv)
-   spec-info :- envs/HaliteSpecInfo]
+   spec-info :- envs/SpecInfo]
   (let [{:keys [constraints refines-to]} spec-info
         tenv (envs/type-env-from-spec senv spec-info)]
     (doseq [[cname cexpr] constraints]
@@ -555,7 +555,7 @@
 
 (s/defn find-field-accesses
   [senv :- (s/protocol envs/SpecEnv)
-   spec-info :- envs/HaliteSpecInfo
+   spec-info :- envs/SpecInfo
    expr]
   (let [lookups-atom (atom #{})]
     (binding [*lookup-f* (fn [halite-type index]

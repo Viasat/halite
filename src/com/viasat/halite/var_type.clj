@@ -47,14 +47,14 @@
   [var-type :- VarType]
   (and (vector? var-type) (= :Maybe (first var-type))))
 
-(s/defschema SpecVars {types/BareKeyword VarType})
+(s/defschema UserSpecVars {types/BareKeyword VarType})
 
 (s/defschema UserSpecInfo
-  (assoc envs/HaliteSpecInfo
+  (assoc envs/SpecInfo
          (s/optional-key :spec-vars) {types/BareKeyword VarType}
          (s/optional-key :constraints) {base/UserConstraintName s/Any}))
 
-(s/defschema SpecMap
+(s/defschema UserSpecMap
   {types/NamespacedKeyword UserSpecInfo})
 
 ;;
@@ -114,7 +114,7 @@
     var-type
     (halite-type-from-var-type senv var-type)))
 
-(s/defn to-halite-spec :- (s/maybe envs/HaliteSpecInfo)
+(s/defn to-halite-spec :- (s/maybe envs/SpecInfo)
   "Create specs with halite types from specs with var types"
   [senv :- (s/protocol envs/SpecEnv)
    spec-info :- s/Any]

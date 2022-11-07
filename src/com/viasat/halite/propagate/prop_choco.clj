@@ -52,7 +52,7 @@
     :else form))
 
 (s/defn ^:private lower-spec :- choco-clj/ChocoSpec
-  [spec :- envs/HaliteSpecInfo]
+  [spec :- envs/SpecInfo]
   {:vars (-> spec :spec-vars (update-keys symbol) (update-vals to-choco-type))
    :optionals (->> spec :spec-vars
                    (filter (comp types/maybe-type?

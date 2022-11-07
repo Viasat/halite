@@ -224,6 +224,6 @@
  [var-type
   primitive-types
   halite-type-from-var-type
-  MandatoryVarType VarType SpecVars UserSpecInfo SpecMap
+  MandatoryVarType VarType UserSpecVars UserSpecInfo UserSpecMap
   ;; more advanced
   maybe-type? no-maybe])

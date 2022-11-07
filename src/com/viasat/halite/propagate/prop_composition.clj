@@ -247,8 +247,8 @@
     (mk-junct 'and (cond->> optional-clauses
                      mandatory-clause (cons mandatory-clause)))))
 
-(s/defn ^:private optionality-constraints :- envs/HaliteSpecInfo
-  [senv :- (s/protocol envs/SpecEnv), flattened-vars :- FlattenedVars, spec-info :- envs/HaliteSpecInfo]
+(s/defn ^:private optionality-constraints :- envs/SpecInfo
+  [senv :- (s/protocol envs/SpecEnv), flattened-vars :- FlattenedVars, spec-info :- envs/SpecInfo]
   (->> flattened-vars
        (filter (fn [[var-kw info]] (and (map? info) (contains? info :$witness))))
        (reduce
@@ -334,9 +334,9 @@
                     (refinement-equality-constraints (str constraint-name-prefix "|" (name var-kw))
                                                      v)))))))
 
-(s/defn ^:private add-refinement-equality-constraints :- envs/HaliteSpecInfo
+(s/defn ^:private add-refinement-equality-constraints :- envs/SpecInfo
   [flattened-vars :- FlattenedVars
-   spec-info :- envs/HaliteSpecInfo]
+   spec-info :- envs/SpecInfo]
   (update spec-info :constraints into (refinement-equality-constraints "" flattened-vars)))
 
 (defn- spec-ify-bound*
@@ -347,7 +347,7 @@
    (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
    (add-refinement-equality-constraints flattened-vars)))
 
-(s/defn spec-ify-bound :- envs/HaliteSpecInfo
+(s/defn spec-ify-bound :- envs/SpecInfo
   "Compile the spec-bound into a self-contained halite spec that explicitly states the constraints
   implied by the bound. The resulting spec is self-contained in the sense that:
     * it references no other specs, and

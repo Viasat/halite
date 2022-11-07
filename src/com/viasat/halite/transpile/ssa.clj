@@ -109,7 +109,7 @@
 
 (s/defschema SpecInfo
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
-  (assoc envs/HaliteSpecInfo
+  (assoc envs/SpecInfo
          :ssa-graph SSAGraph
          (s/optional-key :constraints) {base/ConstraintName NodeId}
          (s/optional-key :refines-to) {types/NamespacedKeyword
@@ -654,7 +654,7 @@
 
 (s/defn spec-to-ssa :- SpecInfo
   "Convert a halite spec into an SSA-based representation."
-  [senv :- (s/protocol envs/SpecEnv), spec-info :- envs/HaliteSpecInfo]
+  [senv :- (s/protocol envs/SpecEnv), spec-info :- envs/SpecInfo]
   (let [tenv (envs/type-env-from-spec senv spec-info)
         [ssa-graph constraints]
         ,,(reduce
@@ -704,7 +704,7 @@
       (update-vals (partial spec-to-ssa senv))))
 
 (s/defn spec-map-to-ssa :- SpecCtx
-  [spec-map :- envs/HaliteSpecMap]
+  [spec-map :- envs/SpecMap]
   (update-vals spec-map (partial spec-to-ssa spec-map)))
 
 (s/defn replace-node :- SpecInfo
@@ -1032,7 +1032,7 @@
           (let-bindable-exprs ssa-graph ordering (compute-guards ssa-graph #{id}) scope #{})
           (normalize-vars scope)))))
 
-(s/defn spec-from-ssa :- envs/HaliteSpecInfo
+(s/defn spec-from-ssa :- envs/SpecInfo
   "Convert an SSA spec back into a regular halite spec."
   ([spec-info :- SpecInfo]
    (spec-from-ssa spec-info {:conjoin-constraints? true}))

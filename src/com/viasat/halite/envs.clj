@@ -24,7 +24,7 @@
 
 (s/defschema ConstraintMap {base/ConstraintName s/Any})
 
-(s/defschema HaliteSpecInfo
+(s/defschema SpecInfo
   {(s/optional-key :spec-vars) {types/BareKeyword types/HaliteType}
    (s/optional-key :constraints) ConstraintMap
    (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
@@ -33,7 +33,7 @@
 (defprotocol SpecEnv
   (lookup-spec* [self spec-id]))
 
-(s/defn lookup-spec :- (s/maybe HaliteSpecInfo)
+(s/defn lookup-spec :- (s/maybe SpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
   [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
@@ -44,7 +44,7 @@
   (lookup-spec* [self spec-id] (spec-info-map spec-id)))
 
 (s/defn spec-env :- (s/protocol SpecEnv)
-  [spec-info-map :- {types/NamespacedKeyword HaliteSpecInfo}]
+  [spec-info-map :- {types/NamespacedKeyword SpecInfo}]
   (->SpecEnvImpl spec-info-map))
 
 (defprotocol TypeEnv
@@ -90,7 +90,7 @@
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
   [senv :- (s/protocol SpecEnv)
-   spec :- HaliteSpecInfo]
+   spec :- SpecInfo]
   (-> spec
       :spec-vars
       (update-keys symbol)
@@ -107,7 +107,7 @@
                       no-value :Unset} bindings)))
 
 (s/defn env-from-inst :- (s/protocol Env)
-  [spec-info :- HaliteSpecInfo, inst]
+  [spec-info :- SpecInfo, inst]
   (env
    (reduce
     (fn [m kw]
@@ -130,8 +130,8 @@
 ;; cycles), require that users provide a SpecMap instead of a SpecEnv. This way applications can
 ;; opt-in to the operations they want to use and deal with the implications of their choice
 
-(s/defschema HaliteSpecMap
-  {types/NamespacedKeyword HaliteSpecInfo})
+(s/defschema SpecMap
+  {types/NamespacedKeyword SpecInfo})
 
 (defn- spec-ref-from-type [htype]
   (cond
@@ -161,7 +161,7 @@
 
 (s/defn spec-refs :- #{types/NamespacedKeyword}
   "The set of spec ids referenced by the given spec, as variable types or in constraint/refinement expressions."
-  [{:keys [spec-vars refines-to constraints] :as spec-info} :- HaliteSpecInfo]
+  [{:keys [spec-vars refines-to constraints] :as spec-info} :- SpecInfo]
   (->> spec-vars
        vals
        (map spec-ref-from-type)
@@ -173,7 +173,7 @@
        (set/union
         (->> refines-to vals (map (comp spec-refs-from-expr :expr)) (apply set/union)))))
 
-(s/defn build-spec-map :- HaliteSpecMap
+(s/defn build-spec-map :- SpecMap
   "Return a map of spec-id to SpecInfo, for all specs in senv reachable from the identified root spec."
   [senv :- (s/protocol SpecEnv), root-spec-id :- types/NamespacedKeyword]
   (loop [spec-map {}
