@@ -24,19 +24,11 @@
   {types/BareKeyword AtomBound})
 
 (s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
-  [var-type
-   ;; TODO: add this schema check back in
-   ;; :- types/HaliteType
-   ]
-  (if (s/check types/HaliteType var-type)
-    (cond
-      (or (= [:Maybe "Integer"] var-type) (= "Integer" var-type)) :Int
-      (or (= [:Maybe "Boolean"] var-type) (= "Boolean" var-type)) :Bool
-      :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type})))
-    (cond
-      (= :Integer (types/no-maybe var-type)) :Int
-      (= :Boolean (types/no-maybe var-type)) :Bool
-      :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type})))))
+  [var-type :- types/HaliteType]
+  (cond
+    (= :Integer (types/no-maybe var-type)) :Int
+    (= :Boolean (types/no-maybe var-type)) :Bool
+    :else (throw (ex-info (format "BUG! Can't convert '%s' to choco var type" var-type) {:var-type var-type}))))
 
 (defn- error->unsatisfiable
   [form]
