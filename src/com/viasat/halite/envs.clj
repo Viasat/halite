@@ -93,6 +93,14 @@
   [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
   (lookup-spec* senv spec-id))
 
+(s/defn lookup-spec-abstract? :- (s/maybe Boolean)
+  "Lookup whether the given spec is abstract. Produce nil if the spec does not exist. This function
+  avoids enforcing a schema on the spec specifically so that it can be used when the spec
+  environment is being converted between formats."
+  [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
+  (when-let [spec (lookup-spec* senv spec-id)]
+    (boolean (:abstract? spec))))
+
 (declare to-halite-spec)
 
 (s/defn halite-lookup-spec :- (s/maybe HaliteSpecInfo)
@@ -181,12 +189,12 @@
       [:Set (halite-type-from-var-type senv (check-mandatory (first var-type)))]
 
       (types/namespaced-keyword? var-type)
-      (if-let [;; this is bypassing the schema check because we may be in the process of converting the spec env to the internal format
-               spec-info (lookup-spec* senv var-type)]
-        (if (:abstract? spec-info)
-          (types/abstract-spec-type var-type)
-          (types/concrete-spec-type var-type))
-        (throw (ex-info (format "Spec not found: %s" var-type) {:var-type var-type})))
+      (let [abstract? (lookup-spec-abstract? senv var-type)]
+        (if (nil? abstract?)
+          (throw (ex-info (format "Spec not found: %s" var-type) {:var-type var-type}))
+          (if abstract?
+            (types/abstract-spec-type var-type)
+            (types/concrete-spec-type var-type))))
 
       :else (throw (ex-info "Invalid spec variable type" {:var-type var-type})))))
 
