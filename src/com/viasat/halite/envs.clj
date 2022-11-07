@@ -102,10 +102,6 @@
   (lookup-spec* [self spec-id] (spec-info-map spec-id)))
 
 (s/defn spec-env :- (s/protocol SpecEnv)
-  [spec-info-map :- {types/NamespacedKeyword UserSpecInfo}]
-  (->SpecEnvImpl spec-info-map))
-
-(s/defn system-spec-env :- (s/protocol SpecEnv)
   [spec-info-map :- {types/NamespacedKeyword HaliteSpecInfo}]
   (->SpecEnvImpl spec-info-map))
 

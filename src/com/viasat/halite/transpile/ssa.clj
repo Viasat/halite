@@ -1042,7 +1042,7 @@
   ([spec-info :- SpecInfo {:keys [conjoin-constraints?] :or {conjoin-constraints? false}}]
    (let [{:keys [ssa-graph constraints refines-to spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
          scope (->> spec-vars keys (map symbol) set)
-         ssa-ctx (init-ssa-ctx (envs/system-spec-env {}) (envs/type-env {}) ssa-graph)
+         ssa-ctx (init-ssa-ctx (envs/spec-env {}) (envs/type-env {}) ssa-graph)
          constraints (if conjoin-constraints?
                        (let [[ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
                          {"$all" (form-from-ssa scope ssa-graph id)})
@@ -1062,7 +1062,7 @@
 
 (s/defn build-spec-env :- (s/protocol envs/SpecEnv)
   [sctx :- SpecCtx]
-  (-> sctx (update-vals spec-from-ssa) (envs/system-spec-env)))
+  (-> sctx (update-vals spec-from-ssa) (envs/spec-env)))
 
 (defn pprint-ssa-graph [ssa-graph]
   (pp/pprint (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph))))

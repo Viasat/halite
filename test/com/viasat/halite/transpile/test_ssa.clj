@@ -37,7 +37,7 @@
          (= [dgraph new-constraints]
             (-> senv
                 (assoc-in [:ws/A :constraints] (apply hash-map (mapcat identity (map-indexed #(vector (str "c" %1) %2) constraints))))
-                (envs/system-spec-env)
+                (envs/spec-env)
                 (#(ssa/spec-to-ssa % (envs/halite-lookup-spec % :ws/A)))
                 (#(vector (:dgraph (:ssa-graph %))
                           (map second (:constraints %))))))
@@ -449,7 +449,7 @@
                                               :bn (+ 1 an)})}}}
                 :ws/B
                 {:spec-vars {:bn "Integer"}}})
-        spec (ssa/spec-to-ssa (envs/system-spec-env senv) (:ws/A senv))]
+        spec (ssa/spec-to-ssa (envs/spec-env senv) (:ws/A senv))]
     (is (= '{:spec-vars {:an :Integer}
              :ssa-graph
              {:dgraph
@@ -486,7 +486,7 @@
            (ssa/spec-from-ssa spec)))))
 
 (deftest test-form-to-ssa-correctly-handles-node-references-in-if-value
-  (let [senv (envs/system-spec-env
+  (let [senv (envs/spec-env
               (envs/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
@@ -550,7 +550,7 @@
             (let [spec-info (-> senv
                                 (update-in [:ws/A :constraints] merge
                                            (apply hash-map (mapcat identity (map-indexed #(vector (str "c" %1) %2) constraints))))
-                                (envs/system-spec-env)
+                                (envs/spec-env)
                                 (ssa/build-spec-ctx :ws/A)
                                 :ws/A)]
               (-> spec-info
@@ -875,7 +875,7 @@
       '(= 1 (map [v1 [x y]] (* v1 2))))))
 
 (deftest test-spec-from-ssa-preserves-guards
-  (let [senv (envs/system-spec-env
+  (let [senv (envs/spec-env
               (envs/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:p "Boolean", :q "Boolean"}
@@ -890,7 +890,7 @@
 
 (deftest test-semantics-preservation
   ;; Test that this spec has the same interpretation after round-tripping through SSA representation.
-  (let [senv (envs/system-spec-env
+  (let [senv (envs/spec-env
               (envs/to-halite-spec-env
                {:ws/A
                 '{:spec-vars {:x "Integer", :y "Integer", :p "Boolean", :q "Boolean"}
@@ -912,7 +912,7 @@
           (is (= (check senv inst) (check senv' inst))))))))
 
 (deftest test-replace-in-expr
-  (let [senv (envs/system-spec-env
+  (let [senv (envs/spec-env
               '{:ws/A {:spec-vars {:an :Integer}}})
         tenv (envs/type-env '{x :Integer, y :Integer, p :Boolean})
         ctx {:senv senv, :tenv tenv, :env {}, :ssa-graph ssa/empty-ssa-graph :local-stack []}

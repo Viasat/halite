@@ -16,27 +16,27 @@
   (:import [clojure.lang ExceptionInfo]))
 
 (def simplest-abstract-var-example
-  '{:ws/W
-    {:abstract? true
-     :spec-vars {:wn "Integer"}
-     :constraints {:wn_range (and (< 2 wn) (< wn 8))}}
-    :ws/A
-    {:spec-vars {:a "Integer"}
-     :constraints {:ca (< a 6)}
-     :refines-to {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
-    :ws/B
-    {:spec-vars {:b "Integer"}
-     :constraints {:cb (< 5 b)}
-     :refines-to {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
-    :ws/C
-    {:spec-vars {:w :ws/W :cn "Integer"}
-     :constraints {:c1 (< cn (get (refine-to w :ws/W) :wn))}}})
+  (envs/to-halite-spec-env '{:ws/W
+                             {:abstract? true
+                              :spec-vars {:wn "Integer"}
+                              :constraints {:wn_range (and (< 2 wn) (< wn 8))}}
+                             :ws/A
+                             {:spec-vars {:a "Integer"}
+                              :constraints {:ca (< a 6)}
+                              :refines-to {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
+                             :ws/B
+                             {:spec-vars {:b "Integer"}
+                              :constraints {:cb (< 5 b)}
+                              :refines-to {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
+                             :ws/C
+                             {:spec-vars {:w :ws/W :cn "Integer"}
+                              :constraints {:c1 (< cn (get (refine-to w :ws/W) :wn))}}}))
 
 (def optional-abstract-var-example
   (assoc
    simplest-abstract-var-example
    :ws/C
-   '{:spec-vars {:w [:Maybe :ws/W] :cn "Integer"}
+   '{:spec-vars {:w [:Maybe [:Instance :ws/W]] :cn :Integer}
      :constraints {:c1 (< cn (if-value w (get (refine-to w :ws/W) :wn) 10))}}))
 
 (def lower-abstract-vars #'pa/lower-abstract-vars)
@@ -324,26 +324,26 @@
            :$refines-to {:ws/W {:wn {:$in [3 6]}}}}})))
 
 (def nested-abstracts-example
-  '{:ws/W {:abstract? true
-           :spec-vars {:wn "Integer"}}
+  (envs/to-halite-spec-env '{:ws/W {:abstract? true
+                                    :spec-vars {:wn "Integer"}}
 
-    :ws/A {:spec-vars {:an "Integer"}
-           :refines-to {:ws/W {:expr {:$type :ws/W :wn an}}}}
+                             :ws/A {:spec-vars {:an "Integer"}
+                                    :refines-to {:ws/W {:expr {:$type :ws/W :wn an}}}}
 
-    :ws/B {:spec-vars {:bn "Integer"}
-           :refines-to {:ws/W {:expr {:$type :ws/W :wn bn}}}}
+                             :ws/B {:spec-vars {:bn "Integer"}
+                                    :refines-to {:ws/W {:expr {:$type :ws/W :wn bn}}}}
 
-    :ws/V {:abstract? true
-           :spec-vars {:vn "Integer"}}
+                             :ws/V {:abstract? true
+                                    :spec-vars {:vn "Integer"}}
 
-    :ws/C {:spec-vars {:cw :ws/W :cn "Integer"}
-           :constraints {:c1 (< 0 cn)}
-           :refines-to {:ws/V {:expr {:$type :ws/V
-                                      :vn (+ cn (get (refine-to cw :ws/W) :wn))}}}}
-    :ws/D {:spec-vars {:dn "Integer"}
-           :refines-to {:ws/V {:expr {:$type :ws/V :vn dn}}}}
+                             :ws/C {:spec-vars {:cw :ws/W :cn "Integer"}
+                                    :constraints {:c1 (< 0 cn)}
+                                    :refines-to {:ws/V {:expr {:$type :ws/V
+                                                               :vn (+ cn (get (refine-to cw :ws/W) :wn))}}}}
+                             :ws/D {:spec-vars {:dn "Integer"}
+                                    :refines-to {:ws/V {:expr {:$type :ws/V :vn dn}}}}
 
-    :ws/E {:spec-vars {:v :ws/V}}})
+                             :ws/E {:spec-vars {:v :ws/V}}}))
 
 (deftest test-lower-abstract-bounds-for-nested-abstracts
   (s/with-fn-validation

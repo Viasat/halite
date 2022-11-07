@@ -12,7 +12,7 @@
 
 (deftest test-simplify
   (let [senv '{:ws/A
-               {:spec-vars {:an "Integer", :ap "Boolean"}}}]
+               {:spec-vars {:an :Integer, :ap :Boolean}}}]
     (are [expr simplified]
          (= simplified
             (binding [ssa/*hide-non-halite-ops* false]
@@ -60,3 +60,5 @@
 
       '(if ($value? no-value) 3 4) 4
       '(if ($value? an) (+ an 1) 12) '(+ an 1))))
+
+;; (run-tests)
