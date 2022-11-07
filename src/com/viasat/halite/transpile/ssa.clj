@@ -693,10 +693,7 @@
   [sctx :- SpecCtx
    spec-id :- types/NamespacedKeyword
    spec-info :- SpecInfo]
-  (let [;; TODO: once we switch over to use halite types this can be turned on
-        ;; spec-info (envs/to-halite-spec (as-spec-env sctx) spec-info)
-        ]
-    (assoc sctx spec-id spec-info)))
+  (assoc sctx spec-id spec-info))
 
 (s/defn build-spec-ctx :- SpecCtx
   "Starting from root-spec-id and looking up specs from senv, build and return a SpecContext
