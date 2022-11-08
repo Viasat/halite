@@ -199,7 +199,7 @@
                           "A spec can have multiple fields"
                           {:spec-map {:spec/Dog$v4 {:spec-vars {:name :String
                                                                 :age :Integer
-                                                                :colors [:String]}}}}
+                                                                :colors [:Vec :String]}}}}
                           {:code '{:$type :spec/Dog$v4, :name "Rex", :age 3, :colors ["brown" "white"]}}]
                :how-to-ref [:instance/compose-instances
                             :instance/string-enum]}

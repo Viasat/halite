@@ -15,40 +15,34 @@
 
 (def primitive-types [:String :Integer :Boolean])
 
-(s/defschema DecimalScale
-  (s/constrained s/Int
-                 #(<= 1 % fixed-decimal/max-scale)
-                 "valid decimal scale"))
+(s/defschema VarTypeAtom
+  "Type atoms are always unqualified keywords."
+  (apply s/enum primitive-types))
 
-(s/defschema DecimalVarType [(s/one (s/eq :Decimal) :decimal) (s/one DecimalScale :scale)])
-
-(s/defschema MandatoryVarType
+(s/defschema VarInnerType
   (s/conditional
-   #(or (string? %)
-        (and (keyword? %) (types/bare? %))) (apply s/enum primitive-types)
-   types/decimal-type? DecimalVarType
-   vector? (s/constrained [(s/recursive #'MandatoryVarType)]
-                          #(= 1 (count %))
-                          "exactly one inner type")
-   set? (s/constrained #{(s/recursive #'MandatoryVarType)}
-                       #(= 1 (count %))
-                       "exactly one inner type")
+   #(and (vector? %) (= :Decimal (first %))) types/Decimal
+   vector? [(s/one (s/enum :Set :Vec) "coll-kind")
+            (s/one (s/recursive #'VarInnerType) "elem-type")]
+   #(and (keyword? %) (types/bare? %)) VarTypeAtom
    :else types/NamespacedKeyword))
 
+(s/defschema VarType
+  (s/conditional
+   #(and (vector? %) (= :Maybe (first %))) [(s/one (s/eq :Maybe) "maybe-keyword")
+                                            (s/one VarInnerType "inner-type")]
+   :else VarInnerType))
+
+;;
+
 (defn maybe-type? [t]
-  (and (vector? t) (= :Maybe (first t))))
+  (and (vector? t)
+       (= :Maybe (first t))))
 
 (defn no-maybe [t]
   (if (maybe-type? t)
     (second t)
     t))
-
-(s/defschema VarType
-  (s/conditional
-   maybe-type?
-   [(s/one (s/enum :Maybe) :maybe) (s/one MandatoryVarType :inner)]
-
-   :else MandatoryVarType))
 
 (s/defn optional-var-type? :- s/Bool
   [var-type :- VarType]
@@ -77,12 +71,6 @@
 (s/defn halite-type-from-var-type :- types/HaliteType
   [senv :- (s/protocol envs/SpecEnv)
    var-type :- VarType]
-  (when (coll? var-type)
-    (let [n (if (and (vector? var-type) (= :Maybe (first var-type))) 2 1)]
-      (when (and (not= n (count var-type))
-                 (not (types/decimal-type? var-type)))
-        (throw (ex-info "Must contain exactly one inner type"
-                        {:var-type var-type})))))
   (let [check-mandatory #(if (optional-var-type? %)
                            (throw (ex-info "Set and vector types cannot have optional inner types"
                                            {:var-type %}))
@@ -96,14 +84,14 @@
       (types/decimal-type? var-type)
       var-type
 
-      (optional-var-type? var-type)
+      (and (optional-var-type? var-type)
+           (= 2 (count var-type)))
       [:Maybe (halite-type-from-var-type senv (second var-type))]
 
-      (vector? var-type)
-      [:Vec (halite-type-from-var-type senv (check-mandatory (first var-type)))]
-
-      (set? var-type)
-      [:Set (halite-type-from-var-type senv (check-mandatory (first var-type)))]
+      (and (vector? var-type)
+           (= 2 (count var-type))
+           (#{:Vec :Set} (first var-type))) (let [[coll-type inner-type] var-type]
+                                              [coll-type (halite-type-from-var-type senv (check-mandatory inner-type))])
 
       (types/namespaced-keyword? var-type)
       (let [abstract? (lookup-spec-abstract? senv var-type)]

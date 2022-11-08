@@ -53,8 +53,8 @@
                                  :y :Boolean
                                  :c :ws2/B$v1}}
            :ws2/B$v1 {:spec-vars {:s :String}}
-           :ws/C$v1 {:spec-vars {:xs [:Integer]}}
-           :ws/D$v1 {:spec-vars {:xss [[:Integer]]}}})
+           :ws/C$v1 {:spec-vars {:xs [:Vec :Integer]}}
+           :ws/D$v1 {:spec-vars {:xss [:Vec [:Vec :Integer]]}}})
 
 (def tenv (halite/type-env {}))
 
@@ -272,7 +272,7 @@
 (deftest get-type-checking-tests
   (let [senv {:ws/A$v1 {:spec-vars {:x :Integer}}
               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
-              :ws/C$v1 {:spec-vars {:bs [:ws/B$v1]}}}
+              :ws/C$v1 {:spec-vars {:bs [:Vec :ws/B$v1]}}}
         tenv (halite/type-env
               {'a [:Instance :ws/A$v1]
                'b [:Instance :ws/B$v1]
@@ -311,7 +311,7 @@
                      (range 5))}
         senv {:ws/A$v1 {:spec-vars {:x :Integer}}
               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
-              :ws/C$v1 {:spec-vars {:bs [:ws/B$v1]}}}
+              :ws/C$v1 {:spec-vars {:bs [:Vec :ws/B$v1]}}}
         tenv (halite/type-env {'c [:Instance :ws/C$v1]})
         env (halite/env {'c c})]
     (are [expr v]
@@ -771,7 +771,7 @@
                                   :b :Integer}
                       :refines-to {:ws/A {:expr '{:$type :ws/A :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}}
-              :ws/C {:spec-vars {:as [:ws/A]}}
+              :ws/C {:spec-vars {:as [:Vec :ws/A]}}
               :ws/D {}}
         tenv2 (-> tenv
                   (envs/extend-scope 'ax [:Instance :* #{:ws/A2}])
@@ -819,7 +819,7 @@
                                   :b :Integer}
                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}}
-              :ws/C {:spec-vars {:as [:ws/A]}}
+              :ws/C {:spec-vars {:as [:Vec :ws/A]}}
               :ws/D {}}
         tenv2 (-> tenv
                   (envs/extend-scope 'ax [:Instance :* #{:ws/A}])
@@ -902,7 +902,7 @@
                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}
                      :constraints '{:notFive (not= 5 (get (refine-to a :ws/A) :x))}}
-              :ws/C {:spec-vars {:as [:ws/A]}}
+              :ws/C {:spec-vars {:as [:Vec :ws/A]}}
               :ws/D {}
               :ws/Z {:abstract? true}
               :ws/Z1 {:refines-to {:ws/Z {:expr '{:$type :ws/Z}}}}
@@ -993,14 +993,14 @@
                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                 :ws/JsonVec
-                {:spec-vars {:entries [:ws/JsonVal]}
+                {:spec-vars {:entries [:Vec :ws/JsonVal]}
                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                 :ws/JsonObjEntry
                 {:spec-vars {:key :String, :val :ws/JsonVal}}
 
                 :ws/JsonObj
-                {:spec-vars {:entries #{:ws/JsonObjEntry}}
+                {:spec-vars {:entries [:Set :ws/JsonObjEntry]}
                  :constraints {:uniqueKeys true
                                ;; TODO: each key shows up once
                                #_(= (count entries) (count (for [entry entries] (get* entry :key))))}

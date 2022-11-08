@@ -69,7 +69,7 @@ The following is a full model for the grocery delivery business.
     "spec-vars" : {
       "deliveriesPerMonth" : "Integer",
       "feePerMonth" : [ "Decimal", 2 ],
-      "perks" : [ "tutorials.grocery/Perk$v1" ],
+      "perks" : [ "Set", "tutorials.grocery/Perk$v1" ],
       "subscriberCountry" : "tutorials.grocery/Country$v1"
     },
     "constraints" : {
@@ -89,7 +89,7 @@ The following is a full model for the grocery delivery business.
     "spec-vars" : {
       "name" : "String",
       "storeCountry" : "tutorials.grocery/Country$v1",
-      "perkIds" : [ "Integer" ]
+      "perkIds" : [ "Vec", "Integer" ]
     },
     "constraints" : {
       "valid_stores" : "((name == \"Acme Foods\") || (name == \"Good Foods\"))",

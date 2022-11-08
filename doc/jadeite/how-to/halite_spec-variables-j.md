@@ -46,7 +46,7 @@ A spec can have multiple fields
     "spec-vars" : {
       "name" : "String",
       "age" : "Integer",
-      "colors" : [ "String" ]
+      "colors" : [ "Vec", "String" ]
     }
   }
 }

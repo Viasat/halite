@@ -18,7 +18,7 @@ We can write a specification that contains a value of this form.
 {
   "spec/Sudoku$v1" : {
     "spec-vars" : {
-      "solution" : [ [ "Integer" ] ]
+      "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     }
   }
 }
@@ -36,7 +36,7 @@ In order to be a valid solution, certain properties must be met: each row, colum
 {
   "spec/Sudoku$v2" : {
     "spec-vars" : {
-      "solution" : [ [ "Integer" ] ]
+      "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
     "constraints" : {
       "row_1" : "(#{}.concat(solution[0]) == #{1, 2, 3, 4})",
@@ -74,7 +74,7 @@ Rather than expressing each row constraint separately, they can be captured in a
 {
   "spec/Sudoku$v3" : {
     "spec-vars" : {
-      "solution" : [ [ "Integer" ] ]
+      "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
     "constraints" : {
       "rows" : "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})"
@@ -109,7 +109,7 @@ But, we are only checking rows, let's also check columns.
 {
   "spec/Sudoku$v4" : {
     "spec-vars" : {
-      "solution" : [ [ "Integer" ] ]
+      "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
     "constraints" : {
       "rows" : "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})",
@@ -155,7 +155,7 @@ Let's add the quadrant checks.
 {
   "spec/Sudoku$v5" : {
     "spec-vars" : {
-      "solution" : [ [ "Integer" ] ]
+      "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
     "constraints" : {
       "rows" : "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})",
@@ -195,7 +195,7 @@ Let's combine the quadrant checks into one.
 {
   "spec/Sudoku$v6" : {
     "spec-vars" : {
-      "solution" : [ [ "Integer" ] ]
+      "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
     "constraints" : {
       "rows" : "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})",
@@ -232,7 +232,7 @@ As an exercise, we can convert the logic of the constraints. Instead of checking
 {
   "spec/Sudoku$v7" : {
     "spec-vars" : {
-      "solution" : [ [ "Integer" ] ]
+      "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
     "constraints" : {
       "rows" : "!any?(r in solution)(#{}.concat(r) != #{1, 2, 3, 4})",

@@ -15,7 +15,7 @@ Say we want to represent a sudoku solution as a two dimensional vector of intege
 We can write a specification that contains a value of this form.
 
 ```clojure
-{:spec/Sudoku$v1 {:spec-vars {:solution [[:Integer]]}}}
+{:spec/Sudoku$v1 {:spec-vars {:solution [:Vec [:Vec :Integer]]}}}
 ```
 
 An instance of this spec can be constructed as:
@@ -28,7 +28,7 @@ An instance of this spec can be constructed as:
 In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, & 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row.
 
 ```clojure
-{:spec/Sudoku$v2 {:spec-vars {:solution [[:Integer]]},
+{:spec/Sudoku$v2 {:spec-vars {:solution [:Vec [:Vec :Integer]]},
                   :constraints
                     {:row_1 '(= (concat #{} (get solution 0)) #{1 4 3 2}),
                      :row_2 '(= (concat #{} (get solution 1)) #{1 4 3 2}),
@@ -64,7 +64,7 @@ However, this attempt to create an instance fails. It tells us specifically whic
 Rather than expressing each row constraint separately, they can be captured in a single constraint expression.
 
 ```clojure
-{:spec/Sudoku$v3 {:spec-vars {:solution [[:Integer]]},
+{:spec/Sudoku$v3 {:spec-vars {:solution [:Vec [:Vec :Integer]]},
                   :constraints {:rows '(every? [r solution]
                                                (= (concat #{} r) #{1 4 3 2}))}}}
 ```
@@ -98,7 +98,7 @@ But, we are only checking rows, let's also check columns.
 
 ```clojure
 {:spec/Sudoku$v4
-   {:spec-vars {:solution [[:Integer]]},
+   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
     :constraints
       {:columns '(every? [i [0 1 2 3]]
                          (= #{(get-in solution [3 i]) (get-in solution [1 i])
@@ -148,7 +148,7 @@ Let's add the quadrant checks.
 
 ```clojure
 {:spec/Sudoku$v5
-   {:spec-vars {:solution [[:Integer]]},
+   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
     :constraints
       {:columns '(every? [i [0 1 2 3]]
                          (= #{(get-in solution [3 i]) (get-in solution [1 i])
@@ -198,7 +198,7 @@ Let's combine the quadrant checks into one.
 
 ```clojure
 {:spec/Sudoku$v6
-   {:spec-vars {:solution [[:Integer]]},
+   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
     :constraints
       {:columns '(every? [i [0 1 2 3]]
                          (= #{(get-in solution [3 i]) (get-in solution [1 i])
@@ -244,7 +244,7 @@ As an exercise, we can convert the logic of the constraints. Instead of checking
 
 ```clojure
 {:spec/Sudoku$v7
-   {:spec-vars {:solution [[:Integer]]},
+   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
     :constraints
       {:columns '(not (any?
                         [i [0 1 2 3]]

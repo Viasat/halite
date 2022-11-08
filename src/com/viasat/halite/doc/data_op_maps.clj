@@ -537,7 +537,7 @@
                         :result :auto}
                        {:spec-map {:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1
                                                             :y :Integer}}
-                                   :my/SubSpec$v1 {:spec-vars {:a [:Integer]
+                                   :my/SubSpec$v1 {:spec-vars {:a [:Vec :Integer]
                                                                :b :Integer}}}
                         :instance {:$type :my/Other$v1}
                         :expr-str "(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])"

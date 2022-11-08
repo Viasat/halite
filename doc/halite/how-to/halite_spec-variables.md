@@ -36,7 +36,7 @@ A spec can have multiple fields
 ```clojure
 {:spec/Dog$v4 {:spec-vars {:name :String,
                            :age :Integer,
-                           :colors [:String]}}}
+                           :colors [:Vec :String]}}}
 ```
 
 ```clojure

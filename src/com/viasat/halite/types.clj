@@ -6,6 +6,7 @@
   together with functions that define the subtype
   relation and compute meets and joins."
   (:require [clojure.set :as set]
+            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -123,6 +124,15 @@
 
 (declare maybe-type?)
 
+(s/defschema DecimalScale
+  (s/constrained s/Int
+                 #(<= 1 % fixed-decimal/max-scale)
+                 "valid decimal scale"))
+
+(s/defschema Decimal
+  [(s/one (s/eq :Decimal) "decimal-keyword")
+   (s/one DecimalScale "decimal-scale")])
+
 (s/defschema InnerType
   (s/conditional
    #(and (vector? %) (= :Instance (first %))) [(s/one (s/eq :Instance) "instance-keyword")
@@ -130,8 +140,7 @@
                                                                   NamespacedKeyword)
                                                       "instance-type")
                                                (s/optional #{NamespacedKeyword} "refines-to-set")]
-   #(and (vector? %) (= :Decimal (first %))) [(s/one (s/eq :Decimal) "decimal-keyword")
-                                              (s/one s/Int "decimal-scale")]
+   #(and (vector? %) (= :Decimal (first %))) Decimal
    vector? [(s/one (s/enum :Set :Vec :Coll) "coll-kind")
             (s/one (s/recursive #'InnerType) "elem-type")]
    :else TypeAtom))

@@ -19,14 +19,14 @@
       :Boolean :Boolean
       :ws/A [:Instance :* #{:ws/A}]
       :ws/B [:Instance :ws/B]
-      [:ws/A] [:Vec [:Instance :* #{:ws/A}]]
-      [:ws/B] [:Vec [:Instance :ws/B]]
-      #{:ws/A} [:Set [:Instance :* #{:ws/A}]]
-      #{:ws/B} [:Set [:Instance :ws/B]]
+      [:Vec :ws/A] [:Vec [:Instance :* #{:ws/A}]]
+      [:Vec :ws/B] [:Vec [:Instance :ws/B]]
+      [:Set :ws/A] [:Set [:Instance :* #{:ws/A}]]
+      [:Set :ws/B] [:Set [:Instance :ws/B]]
       [:Maybe :Integer] [:Maybe :Integer]
       [:Maybe :ws/A] [:Maybe [:Instance :* #{:ws/A}]]
       [:Maybe :ws/B] [:Maybe [:Instance :ws/B]]
-      [:Maybe [:ws/A]] [:Maybe [:Vec [:Instance :* #{:ws/A}]]])
+      [:Maybe [:Vec :ws/A]] [:Maybe [:Vec [:Instance :* #{:ws/A}]]])
 
     (are [invalid-type msg]
          (thrown-with-msg? ExceptionInfo msg
@@ -35,22 +35,22 @@
       "Foo" #"Invalid spec variable type"
       :foo #"Unrecognized primitive type"
       :ws/C #"Spec not found"
-      [] #"exactly one inner type"
-      [:Integer :String] #"exactly one inner type"
-      #{} #"exactly one inner type"
-      #{:Integer :String} #"exactly one inner type"
-      [[:Maybe :Integer]] #"cannot have optional inner type"
-      #{[:Maybe :Integer]} #"cannot have optional inner type"
-      [:Maybe :Integer :ws/A] #"exactly one inner type"
-      [:Maybe] #"exactly one inner type")))
+      [] #"Invalid spec variable type"
+      [:Integer :String] #"Invalid spec variable type"
+      #{} #"Invalid spec variable type"
+      #{:Integer :String} #"Invalid spec variable type"
+      [[:Maybe :Integer]] #"Invalid spec variable type"
+      #{[:Maybe :Integer]} #"Invalid spec variable type"
+      [:Maybe :Integer :ws/A] #"Invalid spec variable type"
+      [:Maybe] #"Invalid spec variable type")))
 
 (deftest test-type-env-from-spec
   (let [senv (var-type/to-halite-spec-env {:ws/A {:abstract? true}
                                            :ws/B {}
                                            :ws/C {:spec-vars {:x :Integer
                                                               :w [:Maybe :Integer]
-                                                              :as [:Maybe #{:ws/A}]
-                                                              :bs [:ws/B]}}})]
+                                                              :as [:Maybe [:Set :ws/A]]
+                                                              :bs [:Vec :ws/B]}}})]
     (is (=
          '{no-value :Unset
            x :Integer
@@ -70,7 +70,7 @@
           :spec-vars {:x [:Maybe [:Vec :Integer]]}}
          (var-type/to-halite-spec {}
                                   {:abstract? true
-                                   :spec-vars {:x [:Maybe [:Integer]]}})))
+                                   :spec-vars {:x [:Maybe [:Vec :Integer]]}})))
   (is (= {:abstract? true
           :spec-vars {:x [:Instance :ws/X]}}
          (var-type/to-halite-spec {:ws/X {}}

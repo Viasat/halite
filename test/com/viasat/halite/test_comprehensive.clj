@@ -9875,23 +9875,23 @@
     "{$type: spec/T$v1, n: 1}.n"
     "1"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Vec :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 1])
     :Integer
     20
     "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[1]"
     "20"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Vec :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [1 :ns])
     [:throws "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Vec :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:q 1])
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Vec :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 100])
     :Integer
     [:throws
@@ -9900,7 +9900,7 @@
     [:throws
      "h-err/index-out-of-bounds 0-0 : Index out of bounds, 100, for vector of length 3"]])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Vec :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns :x])
     [:throws "h-err/invalid-vector-index 0-0 : Index must be an integer when target is a vector"]])
   (hc
@@ -9911,7 +9911,7 @@
     "[{$type: my/Spec$v1, n: -3, p: 2}][0].o"
     "Unset"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Integer]],
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Vec :Integer]],
                             :x :Integer,
                             :y [:Maybe :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:y])
@@ -9920,7 +9920,7 @@
     "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.y"
     "Unset"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Integer]],
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Vec :Integer]],
                             :x :Integer,
                             :y [:Maybe :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:x])
@@ -9929,14 +9929,14 @@
     "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.x"
     "9"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Integer]],
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Vec :Integer]],
                             :x :Integer,
                             :y [:Maybe :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:q])
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Integer]],
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Vec :Integer]],
                             :x :Integer,
                             :y [:Maybe :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:ns 0])

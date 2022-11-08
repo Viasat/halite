@@ -1523,7 +1523,7 @@ The first path element in the path is looked up in the initial target. If there 
 ;-- context --
 {:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1,
                           :y :Integer}},
- :my/SubSpec$v1 {:spec-vars {:a [:Integer],
+ :my/SubSpec$v1 {:spec-vars {:a [:Vec :Integer],
                              :b :Integer}}}
 ;--
 

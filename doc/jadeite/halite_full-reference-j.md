@@ -1164,7 +1164,7 @@ The first path element in the path is looked up in the initial target. If there 
   },
   "my/SubSpec$v1" : {
     "spec-vars" : {
-      "a" : [ "Integer" ],
+      "a" : [ "Vec", "Integer" ],
       "b" : "Integer"
     }
   }

@@ -197,6 +197,26 @@
    inst]
   (envs/env-from-spec-var-keys (keys (:spec-vars spec-info)) inst))
 
+(s/defn vector-type :- var-type/VarType
+  "Construct a type representing vectors of the given type."
+  [elem-type :- var-type/VarType]
+  [:Vec elem-type])
+
+(s/defn set-type :- var-type/VarType
+  "Construct a type representing sets of the given type."
+  [elem-type :- var-type/VarType]
+  [:Set elem-type])
+
+(s/defn halite-vector-type :- types/HaliteType
+  "Construct a type representing vectors of the given type."
+  [elem-type :- types/HaliteType]
+  (types/vector-type elem-type))
+
+(s/defn halite-set-type :- types/HaliteType
+  "Construct a type representing sets of the given type."
+  [elem-type :- types/HaliteType]
+  (types/set-type elem-type))
+
 ;;
 
 (potemkin/import-vars
@@ -221,13 +241,14 @@
 
 (potemkin/import-vars
  [types
-  HaliteType decimal-type decimal-type? decimal-scale vector-type set-type namespaced-keyword? abstract-spec-type concrete-spec-type
+  HaliteType decimal-type decimal-type? decimal-scale namespaced-keyword? abstract-spec-type concrete-spec-type
+  halite-set-type? halite-vector-type? elem-type
   nothing-like? join])
 
 (potemkin/import-vars
  [var-type
   primitive-types
   halite-type-from-var-type
-  MandatoryVarType VarType UserSpecVars UserSpecInfo UserSpecMap
+  VarType UserSpecVars UserSpecInfo UserSpecMap
   ;; more advanced
   maybe-type? no-maybe])

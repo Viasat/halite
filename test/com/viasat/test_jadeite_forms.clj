@@ -11,8 +11,8 @@
                                  :y :Boolean
                                  :c :ws2/B$v1}}
            :ws2/B$v1 {:spec-vars {:s :String}}
-           :ws/C$v1 {:spec-vars {:xs [:Integer]}}
-           :ws/D$v1 {:spec-vars {:xss [[:Integer]]}}
+           :ws/C$v1 {:spec-vars {:xs [:Vec :Integer]}}
+           :ws/D$v1 {:spec-vars {:xss [:Vec [:Vec :Integer]]}}
            :ws/OhNo$v1 {:spec-vars {:true :Integer
                                     :false :String}}})
 
