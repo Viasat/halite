@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-envs
-  (:require [com.viasat.halite.envs :as envs]
+  (:require [com.viasat.halite :as halite]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.var-type :as var-type])
   (:import [clojure.lang ExceptionInfo])
   (:use [clojure.test]))
@@ -58,8 +59,8 @@
            bs [:Vec [:Instance :ws/B]]}
          (->> :ws/C
               (envs/lookup-spec senv)
-              (envs/type-env-from-spec senv)
-              (envs/scope))))))
+              envs/type-env-from-spec
+              envs/scope)))))
 
 (deftest test-to-halite-spec
   (is (nil?
@@ -87,5 +88,16 @@
                                   {:abstract? true
                                    :constraints {:x 'true}
                                    :refines-to {:ws/A {:expr '{:$type :ws/A}}}}))))
+
+(deftest test-to-halite-tenv
+  (let [tenv (var-type/to-halite-type-env (halite/spec-env {})
+                                          (halite/type-env {}))]
+    (is (= '{no-value :Unset}
+           (envs/scope* tenv))))
+  (let [tenv (var-type/to-halite-type-env (halite/spec-env {})
+                                          (halite/type-env {:x "Integer"}))]
+    (is (= '{:x :Integer
+             no-value :Unset}
+           (envs/scope* tenv)))))
 
 ;; (run-tests)

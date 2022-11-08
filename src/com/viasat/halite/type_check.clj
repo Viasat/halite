@@ -545,7 +545,7 @@
   [senv :- (s/protocol envs/SpecEnv)
    spec-info :- envs/SpecInfo]
   (let [{:keys [constraints refines-to]} spec-info
-        tenv (envs/type-env-from-spec senv spec-info)]
+        tenv (envs/type-env-from-spec spec-info)]
     (doseq [[cname cexpr] constraints]
       (type-check-constraint-expr senv tenv cexpr))
     (doseq [[spec-id {:keys [expr name]}] refines-to]
@@ -562,6 +562,6 @@
                            (when-let [spec-id (types/spec-id halite-type)]
                              (swap! lookups-atom conj {:spec-id spec-id
                                                        :variable-name index})))]
-      (let [tenv (envs/type-env-from-spec senv spec-info)]
+      (let [tenv (envs/type-env-from-spec spec-info)]
         (type-check senv tenv expr))
       @lookups-atom)))

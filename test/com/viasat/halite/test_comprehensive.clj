@@ -7,7 +7,6 @@
             [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.doc.run :as doc-run]
-            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.lint :as lint]
             [com.viasat.jadeite :as jadeite]
@@ -53,8 +52,8 @@
     (binding [base/*limits* doc-run/halite-limits
               format-errors/*squash-throw-site* true]
       (let [senv {}
-            tenv (envs/type-env {})
-            env (envs/env {})
+            tenv (halite/type-env {})
+            env (halite/env {})
             s (try (halite/syntax-check expr)
                    nil
                    (catch RuntimeException e

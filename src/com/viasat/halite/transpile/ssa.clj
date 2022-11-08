@@ -655,7 +655,7 @@
 (s/defn spec-to-ssa :- SpecInfo
   "Convert a halite spec into an SSA-based representation."
   [senv :- (s/protocol envs/SpecEnv), spec-info :- envs/SpecInfo]
-  (let [tenv (envs/type-env-from-spec senv spec-info)
+  (let [tenv (envs/type-env-from-spec spec-info)
         [ssa-graph constraints]
         ,,(reduce
            (fn [[ssa-graph constraints] constraint]
@@ -1054,7 +1054,7 @@
 (s/defn make-ssa-ctx :- SSACtx
   [sctx :- SpecCtx, {:keys [ssa-graph] :as spec-info} :- SpecInfo]
   (let [senv (as-spec-env sctx)
-        tenv (envs/type-env-from-spec senv (dissoc spec-info :ssa-graph))]
+        tenv (envs/type-env-from-spec (dissoc spec-info :ssa-graph))]
     {:senv senv :tenv tenv :env {} :ssa-graph ssa-graph :local-stack []}))
 
 (s/defn build-spec-env :- (s/protocol envs/SpecEnv)

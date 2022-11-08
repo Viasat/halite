@@ -87,12 +87,11 @@
 (s/defn type-env-from-spec :- (s/protocol TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
-  [senv :- (s/protocol SpecEnv)
-   spec :- SpecInfo]
+  [spec :- SpecInfo]
   (-> spec
       :spec-vars
       (update-keys symbol)
-      (type-env)))
+      type-env))
 
 (deftype EnvImpl [bindings]
   Env
@@ -104,14 +103,19 @@
   (->EnvImpl (merge '{;; for backwards compatibility
                       no-value :Unset} bindings)))
 
-(s/defn env-from-inst :- (s/protocol Env)
-  [spec-info :- SpecInfo, inst]
+(s/defn env-from-spec-var-keys :- (s/protocol Env)
+  [spec-var-keys :- [types/BareKeyword]
+   inst]
   (env
    (reduce
     (fn [m kw]
       (assoc m (symbol kw) (if (contains? inst kw) (kw inst) :Unset)))
     {}
-    (keys (:spec-vars spec-info)))))
+    spec-var-keys)))
+
+(s/defn env-from-inst :- (s/protocol Env)
+  [spec-info :- SpecInfo, inst]
+  (env-from-spec-var-keys (keys (:spec-vars spec-info)) inst))
 
 ;;;;;; Spec Maps ;;;;;;;;;;;;
 

@@ -114,6 +114,12 @@
       (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
       spec-info)))
 
+(s/defn halite-spec-env :- (s/protocol envs/SpecEnv)
+  [spec-info-map :- {types/NamespacedKeyword UserSpecInfo}]
+  (-> spec-info-map
+      (update-vals (partial to-halite-spec spec-info-map))
+      envs/->SpecEnvImpl))
+
 (s/defn to-halite-spec-env :- (s/protocol envs/SpecEnv)
   "If the spec env is a map object, then update the values to use halite types. If it is not a map
   then rely on the lookup function to perform the conversion."
@@ -123,3 +129,10 @@
     (reify envs/SpecEnv
       (lookup-spec* [_ spec-id]
         (to-halite-spec senv (envs/lookup-spec* senv spec-id))))))
+
+(s/defn to-halite-type-env :- (s/protocol envs/TypeEnv)
+  [senv :- (s/protocol envs/SpecEnv)
+   tenv :- (s/protocol envs/TypeEnv)]
+  (-> (envs/scope* tenv)
+      (update-vals (partial halite-type-from-var-type senv))
+      envs/type-env))

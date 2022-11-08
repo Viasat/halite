@@ -228,7 +228,7 @@
               (swap! *instance-path-atom* conj spec-id))
           spec-id-0 spec-id
           {:keys [spec-vars refines-to] :as spec-info} (envs/lookup-spec senv spec-id)
-          spec-tenv (envs/type-env-from-spec senv spec-info)
+          spec-tenv (envs/type-env-from-spec spec-info)
           env (envs/env-from-inst spec-info inst)
           ctx {:senv senv, :env env}
           constraint-f (fn [[cname expr :as constraint]]

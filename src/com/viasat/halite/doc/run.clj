@@ -4,7 +4,6 @@
 (ns com.viasat.halite.doc.run
   (:require [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.lint :as lint]
             [com.viasat.halite.types :as types]
@@ -25,21 +24,21 @@
 (defmacro h-eval [expr]
   ;; helper for debugging
   `(let [spec-map# {}
-         tenv# (envs/type-env {})
-         env# (envs/env {})]
+         tenv# (halite/type-env {})
+         env# (halite/env {})]
      (eval-h-expr spec-map# tenv# env# '~expr)))
 
 (defmacro h-lint [expr]
   ;; helper for debugging
   `(let [spec-map# {}
-         tenv# (envs/type-env {})]
+         tenv# (halite/type-env {})]
      (lint/type-check-and-lint spec-map# tenv# '~expr)))
 
 (defn j-eval [expr-str]
   ;; helper for debugging
   (let [spec-map {}
-        tenv (envs/type-env {})
-        env (envs/env {})
+        tenv (halite/type-env {})
+        env (halite/env {})
         expr (jadeite/to-halite expr-str)]
     (eval-h-expr spec-map tenv env expr)))
 
@@ -72,8 +71,8 @@
    (binding [base/*limits* halite-limits
              format-errors/*squash-throw-site* true]
      (let [spec-map {}
-           tenv (envs/type-env {})
-           env (envs/env {})
+           tenv (halite/type-env {})
+           env (halite/env {})
            j-expr (try (jadeite/to-jadeite expr)
                        (catch RuntimeException e
                          [:throws (.getMessage e)]))
@@ -114,8 +113,8 @@
 (defn ^HCInfo hc*
   [spec-map expr separate-err-id?]
   (binding [format-errors/*squash-throw-site* true]
-    (let [tenv (envs/type-env {})
-          env (envs/env {})
+    (let [tenv (halite/type-env {})
+          env (halite/env {})
           j-expr (try (jadeite/to-jadeite expr)
                       (catch RuntimeException e
                         [:throws (.getMessage e)]))

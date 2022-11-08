@@ -4,7 +4,6 @@
 (ns com.viasat.test-jadeite-forms
   (:require [clojure.test :refer :all]
             [com.viasat.halite :as halite]
-            [com.viasat.halite.envs :as envs]
             [com.viasat.jadeite :as jadeite])
   (:import (clojure.lang ExceptionInfo)))
 
@@ -17,20 +16,20 @@
            :ws/OhNo$v1 {:spec-vars {:true "Integer"
                                     :false "String"}}})
 
-(def tenv (envs/type-env
-           {'a [:Instance :ws/A$v1]
-            'b [:Instance :ws/B$v1]
-            'c [:Instance :ws/C$v1]
-            'ohno [:Instance :ws/OhNo$v1]
-            'xb :Boolean
-            'i :Integer
-            'mi [:Maybe :Integer]
-            'j :Integer
-            'if :String
-            'reduce :String
-            'str :Integer
-            'xs [:Vec :String]
-            'iset [:Set :Integer]}))
+(def tenv (halite/type-env
+           {'a :ws/A$v1
+            'b :ws2/B$v1
+            'c :ws/C$v1
+            'ohno :ws/OhNo$v1
+            'xb "Boolean"
+            'i "Integer"
+            'mi [:Maybe "Integer"]
+            'j "Integer"
+            'if "String"
+            'reduce "String"
+            'str "Integer"
+            'xs ["String"]
+            'iset #{"Integer"}}))
 
 (def halite-jadeite-pairs
   '[(a "a")
@@ -337,9 +336,9 @@ else {
       (try
         (let [jh (jadeite/to-halite jadeite)]
           (when-not (and
-                     (is (halite/type-check senv (envs/type-env {}) jh))
+                     (is (halite/type-check senv (halite/type-env {}) jh))
                      (is (= expected-val
-                            (halite/eval-expr senv (envs/type-env {}) (envs/env {}) jh))))
+                            (halite/eval-expr senv (halite/type-env {}) (halite/env {}) jh))))
             (prn :halite jh)))
         (catch Exception ex
           (is (= :no-exception ex)))))))
