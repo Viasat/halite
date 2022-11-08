@@ -17,19 +17,19 @@
                                     :false "String"}}})
 
 (def tenv (halite/type-env
-           {'a :ws/A$v1
-            'b :ws2/B$v1
-            'c :ws/C$v1
-            'ohno :ws/OhNo$v1
-            'xb "Boolean"
-            'i "Integer"
-            'mi [:Maybe "Integer"]
-            'j "Integer"
-            'if "String"
-            'reduce "String"
-            'str "Integer"
-            'xs ["String"]
-            'iset #{"Integer"}}))
+           {'a [:Instance :ws/A$v1]
+            'b [:Instance :ws/B$v1]
+            'c [:Instance :ws/C$v1]
+            'ohno [:Instance :ws/OhNo$v1]
+            'xb :Boolean
+            'i :Integer
+            'mi [:Maybe :Integer]
+            'j :Integer
+            'if :String
+            'reduce :String
+            'str :Integer
+            'xs [:Vec :String]
+            'iset [:Set :Integer]}))
 
 (def halite-jadeite-pairs
   '[(a "a")

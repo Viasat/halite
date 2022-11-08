@@ -118,7 +118,6 @@
                 (s/optional-key :check-for-spec-cycles?) Boolean
                 (s/optional-key :limits) base/Limits}]
    (let [senv (var-type/to-halite-spec-env senv)
-         tenv (var-type/to-halite-type-env senv tenv)
          {:keys [type-check-expr? type-check-env? type-check-spec-refinements-and-constraints? check-for-spec-cycles?
                  limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
@@ -154,16 +153,14 @@
    (type-check-and-lint senv tenv expr default-eval-expr-options))
   ([senv tenv expr options]
    (let [senv (var-type/to-halite-spec-env senv)
-         tenv (var-type/to-halite-type-env senv tenv)
          {:keys [limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
        (lint/type-check-and-lint senv tenv expr)))))
 
 (defn type-check
-  [senv tenv & args]
-  (let [senv (var-type/to-halite-spec-env senv)
-        tenv (var-type/to-halite-type-env senv tenv)]
-    (apply type-check/type-check senv tenv args)))
+  [senv & args]
+  (let [senv (var-type/to-halite-spec-env senv)]
+    (apply type-check/type-check senv args)))
 
 (defn type-check-spec
   [senv spec-info]
@@ -172,10 +169,9 @@
     (type-check/type-check-spec senv spec-info)))
 
 (defn type-check-refinement-expr
-  [senv tenv & args]
-  (let [senv (var-type/to-halite-spec-env senv)
-        tenv (var-type/to-halite-type-env senv tenv)]
-    (apply type-check/type-check-refinement-expr senv tenv args)))
+  [senv & args]
+  (let [senv (var-type/to-halite-spec-env senv)]
+    (apply type-check/type-check-refinement-expr senv args)))
 
 (s/defn lookup-spec :- (s/maybe var-type/UserSpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
@@ -188,25 +184,13 @@
   [spec-info-map :- {types/NamespacedKeyword var-type/UserSpecInfo}]
   (var-type/halite-spec-env spec-info-map))
 
-(s/defn type-env :- (s/protocol envs/TypeEnv)
-  [scope :- {types/BareSymbol var-type/VarType}]
-  (envs/->TypeEnvImpl scope))
-
-(s/defn extend-scope :- (s/protocol envs/TypeEnv)
-  "Produce a new type environment, extending the current scope by mapping the given symbol to the given type."
-  [tenv :- (s/protocol envs/TypeEnv)
-   sym :- types/BareSymbol
-   t :- var-type/VarType]
-  (envs/extend-scope* tenv sym t))
-
 (s/defn type-env-from-spec :- (s/protocol envs/TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
-  [spec :- var-type/UserSpecInfo]
-  (-> spec
-      :spec-vars
-      (update-keys symbol)
-      type-env))
+  [senv :- (s/protocol envs/SpecEnv)
+   spec :- var-type/UserSpecInfo]
+  (let [spec (var-type/to-halite-spec senv spec)]
+    (envs/type-env-from-spec spec)))
 
 (s/defn env-from-inst :- (s/protocol envs/Env)
   [spec-info :- var-type/UserSpecInfo
@@ -232,7 +216,7 @@
  [envs
   Refinement RefinesTo ConstraintMap
   SpecEnv
-  TypeEnv
+  TypeEnv type-env extend-scope
   Env env env-from-inst])
 
 (potemkin/import-vars

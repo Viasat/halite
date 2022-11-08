@@ -274,10 +274,10 @@
               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
               :ws/C$v1 {:spec-vars {:bs [:ws/B$v1]}}}
         tenv (halite/type-env
-              {'a :ws/A$v1
-               'b :ws/B$v1
-               'c :ws/C$v1
-               'xs ["String"]})]
+              {'a [:Instance :ws/A$v1]
+               'b [:Instance :ws/B$v1]
+               'c [:Instance :ws/C$v1]
+               'xs [:Vec :String]})]
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
 
@@ -312,7 +312,7 @@
         senv {:ws/A$v1 {:spec-vars {:x "Integer"}}
               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
               :ws/C$v1 {:spec-vars {:bs [:ws/B$v1]}}}
-        tenv (halite/type-env {'c :ws/C$v1})
+        tenv (halite/type-env {'c [:Instance :ws/C$v1]})
         env (halite/env {'c c})]
     (are [expr v]
          (= v (halite/eval-expr senv tenv env expr))
@@ -409,8 +409,8 @@
 (deftest maybe-tests
   (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
         tenv (-> tenv
-                 (halite/extend-scope 'm :ws/Maybe$v1)
-                 (halite/extend-scope 'x [:Maybe "Integer"]))]
+                 (envs/extend-scope 'm [:Instance :ws/Maybe$v1])
+                 (envs/extend-scope 'x [:Maybe :Integer]))]
     (are [expr etype]
          (= etype (halite/type-check-and-lint senv tenv expr))
 
@@ -480,7 +480,7 @@
   ;;    We want `no-value` to represent the absence of a value, and you
   ;;    can't put a value you don't have in a collection!
   ;; 2) [:Maybe [:Maybe <T>]] is not a valid type!
-  (let [tenv (halite/extend-scope tenv 'x [:Maybe "Integer"])]
+  (let [tenv (envs/extend-scope tenv 'x [:Maybe :Integer])]
     (are [expr err-msg]
          (thrown-with-msg? ExceptionInfo err-msg (halite/type-check senv tenv expr))
 
@@ -491,9 +491,9 @@
 (deftest when-tests
   (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
         tenv (-> tenv
-                 (halite/extend-scope 'm :ws/Maybe$v1)
-                 (halite/extend-scope 'x [:Maybe "Integer"])
-                 (halite/extend-scope 'b "Boolean"))]
+                 (envs/extend-scope 'm [:Instance :ws/Maybe$v1])
+                 (envs/extend-scope 'x [:Maybe :Integer])
+                 (envs/extend-scope 'b :Boolean))]
     (are [expr etype]
          (= etype (halite/type-check senv tenv expr))
 
@@ -712,7 +712,7 @@
       (is (thrown-with-msg?
            ExceptionInfo #"Invalid instance"
            (halite/eval-expr senv
-                             (halite/extend-scope tenv 'a :ws/A)
+                             (envs/extend-scope tenv 'a [:Instance :ws/A])
                              (envs/bind empty-env 'a invalid-a)
                              'a)))
 
@@ -774,14 +774,12 @@
               :ws/C {:spec-vars {:as [:ws/A]}}
               :ws/D {}}
         tenv2 (-> tenv
-                  (halite/extend-scope 'ax :ws/A2)
-                  (halite/extend-scope 'ay :ws/A1)
-                  (halite/extend-scope 'az :ws/A)
-                  (halite/extend-scope 'b1 :ws/B))
+                  (envs/extend-scope 'ax [:Instance :* #{:ws/A2}])
+                  (envs/extend-scope 'ay [:Instance :* #{:ws/A1}])
+                  (envs/extend-scope 'b1 [:Instance :ws/B]))
         env2 (-> empty-env
                  (envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
                  (envs/bind 'ay {:$type :ws/A1})
-                 (envs/bind 'az {:$type :ws/A1})
                  (envs/bind 'b1 {:$type :ws/B :a {:$type :ws/A1}}))]
 
     (are [expr etype]
@@ -792,8 +790,7 @@
       {:$type :ws/B :a {:$type :ws/A1}} [:Instance :ws/B]
       {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} [:Instance :ws/B]
       '(get {:$type :ws/B :a {:$type :ws/A2 :a 1 :b 2}} :a) [:Instance :* #{:ws/A}]
-      'ax [:Instance :ws/A2]
-      'az [:Instance :* #{:ws/A}]
+      'ax [:Instance :* #{:ws/A2}]
       '(= ax ay) :Boolean
       '(= b1 ax) :Boolean
       {:$type :ws/B :a {:$type :ws/D}} [:Instance :ws/B]
@@ -825,9 +822,9 @@
               :ws/C {:spec-vars {:as [:ws/A]}}
               :ws/D {}}
         tenv2 (-> tenv
-                  (halite/extend-scope 'ax :ws/A)
-                  (halite/extend-scope 'ay :ws/A)
-                  (halite/extend-scope 'b1 :ws/B))
+                  (envs/extend-scope 'ax [:Instance :* #{:ws/A}])
+                  (envs/extend-scope 'ay [:Instance :* #{:ws/A}])
+                  (envs/extend-scope 'b1 [:Instance :ws/B]))
         env2 (-> empty-env
                  (envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
                  (envs/bind 'ay {:$type :ws/A1})
@@ -918,10 +915,10 @@
                                                                             1))
                                                             :x))}}}
         tenv2 (-> tenv
-                  (halite/extend-scope 'ax :ws/A)
-                  (halite/extend-scope 'ay :ws/A)
-                  (halite/extend-scope 'b1 :ws/B)
-                  (halite/extend-scope 'c :ws/C))
+                  (envs/extend-scope 'ax [:Instance :* #{:ws/A}])
+                  (envs/extend-scope 'ay [:Instance :* #{:ws/A}])
+                  (envs/extend-scope 'b1 [:Instance :ws/B])
+                  (envs/extend-scope 'c [:Instance :ws/C]))
         env2 (-> empty-env
                  (envs/bind 'ax {:$type :ws/A2 :a 3 :b 4})
                  (envs/bind 'ay {:$type :ws/A1})
@@ -1025,19 +1022,19 @@
 
 (deftest test-embedding-env
   (test/testing "Initial scope may bind plain symbols"
-    (let [tenv (-> tenv (halite/extend-scope 'that "Integer"))
+    (let [tenv (-> tenv (envs/extend-scope 'that :Integer))
           env (-> empty-env (envs/bind 'that 71))]
       (is (= :Integer (halite/type-check-and-lint senv tenv '(+ that 25))))
       (is (= 96 (halite/eval-expr senv tenv env '(+ that 25))))))
 
   (test/testing "Initial scope may bind external-reserved-words"
-    (let [tenv (-> tenv (halite/extend-scope '$this "Integer"))
+    (let [tenv (-> tenv (envs/extend-scope '$this :Integer))
           env (-> empty-env (envs/bind '$this 71))]
       (is (= :Integer (halite/type-check-and-lint senv tenv '(+ $this 25))))
       (is (= 96 (halite/eval-expr senv tenv env '(+ $this 25))))))
 
   (test/testing "Initial scope may not bind arbitrary $-words"
-    (let [tenv (-> tenv (halite/extend-scope '$foo "Integer"))]
+    (let [tenv (-> tenv (envs/extend-scope '$foo :Integer))]
       (is (thrown-with-msg? ExceptionInfo #"disallowed symbol.*[$]foo"
                             (halite/type-check-and-lint senv tenv '(+ $foo 25)))))))
 

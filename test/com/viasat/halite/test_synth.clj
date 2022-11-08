@@ -194,7 +194,7 @@
 (defn halite-user-eval [spec-map $this expr]
   (let [spec-info (get spec-map (:$type $this))]
     (halite/eval-expr spec-map
-                      (halite/type-env-from-spec spec-info)
+                      (halite/type-env-from-spec spec-map spec-info)
                       (halite/env-from-inst spec-info $this)
                       expr)))
 

@@ -89,15 +89,4 @@
                                    :constraints {:x 'true}
                                    :refines-to {:ws/A {:expr '{:$type :ws/A}}}}))))
 
-(deftest test-to-halite-tenv
-  (let [tenv (var-type/to-halite-type-env (halite/spec-env {})
-                                          (halite/type-env {}))]
-    (is (= '{no-value :Unset}
-           (envs/scope* tenv))))
-  (let [tenv (var-type/to-halite-type-env (halite/spec-env {})
-                                          (halite/type-env {:x "Integer"}))]
-    (is (= '{:x :Integer
-             no-value :Unset}
-           (envs/scope* tenv)))))
-
 ;; (run-tests)

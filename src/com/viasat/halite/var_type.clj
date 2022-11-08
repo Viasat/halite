@@ -129,10 +129,3 @@
     (reify envs/SpecEnv
       (lookup-spec* [_ spec-id]
         (to-halite-spec senv (envs/lookup-spec* senv spec-id))))))
-
-(s/defn to-halite-type-env :- (s/protocol envs/TypeEnv)
-  [senv :- (s/protocol envs/SpecEnv)
-   tenv :- (s/protocol envs/TypeEnv)]
-  (-> (envs/scope* tenv)
-      (update-vals (partial halite-type-from-var-type senv))
-      envs/type-env))
