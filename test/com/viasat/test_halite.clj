@@ -13,7 +13,7 @@
             [com.viasat.halite.lint :as lint]
             [com.viasat.halite.syntax-check :as syntax-check]
             [com.viasat.halite.type-of :as type-of]
-            [com.viasat.halite.var-type :as var-type]
+            [com.viasat.halite.var-types :as var-types]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 
@@ -668,7 +668,7 @@
          (thrown-with-msg? ExceptionInfo err-msg
                            (halite/optionally-with-eval-bindings
                             true
-                            (type-of/type-of (var-type/to-halite-spec-env senv) tenv expr)))
+                            (type-of/type-of (var-types/to-halite-spec-env senv) tenv expr)))
 
       {:$type :ws/E$v1, :y true} #"Invalid instance"
       {:$type :ws/Invalid$v1} #"No matching signature")

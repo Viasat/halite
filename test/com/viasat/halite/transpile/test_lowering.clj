@@ -9,7 +9,7 @@
             [com.viasat.halite.transpile.simplify :refer [simplify]]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
-            [com.viasat.halite.var-type :as var-type]
+            [com.viasat.halite.var-types :as var-types]
             [schema.core :as s]
             [schema.test])
   (:use clojure.test))
@@ -84,7 +84,7 @@
 
 (deftest test-lower-instance-comparisons
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer}
                   :constraints {"a1" (let [b {:$type :ws/B :bn 12 :bb true}]
@@ -109,7 +109,7 @@
            (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints)))))
 
 (deftest test-lower-comparisons-with-incompatible-types
-  (let [senv (var-type/to-halite-spec-env
+  (let [senv (var-types/to-halite-spec-env
               '{:ws/A {:spec-vars {:an :Integer}}
                 :ws/B {:spec-vars {:bn :Integer}}
                 :ws/C {:spec-vars {:a :ws/A :b :ws/B :ma [:Maybe :ws/A] :mb [:Maybe :ws/B]}}})]
@@ -133,7 +133,7 @@
 
 (deftest test-lower-instance-comparisons-for-composition
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:b1 :ws/B, :b2 :ws/B}
                   :constraints {"a1" (not= b1 b2)}}
@@ -175,17 +175,17 @@
     '{a b, b a}, '(let [a b, b 1, c 2] (+ a b c)) '(let [a$1 a, b$1 1, c 2] (+ a$1 b$1 c))))
 
 (deftest test-validity-guard
-  (let [senv (var-type/to-halite-spec-env '{:ws/A
-                                            {:spec-vars {:an :Integer :b :ws/B}}
-                                            :ws/B
-                                            {:spec-vars {:bn :Integer :bw [:Maybe :Integer] :c [:Maybe :ws/C]}
-                                             :constraints {"b1" (not= bn bw)}}
-                                            :ws/C
-                                            {:spec-vars {:cn :Integer}
-                                             :constraints {"c1" (< 12 cn)}}
-                                            :ws/D
-                                            {:spec-vars {:dn [:Maybe :Integer]}
-                                             :constraints {"d1" (if-value dn (< 0 dn) true)}}})]
+  (let [senv (var-types/to-halite-spec-env '{:ws/A
+                                             {:spec-vars {:an :Integer :b :ws/B}}
+                                             :ws/B
+                                             {:spec-vars {:bn :Integer :bw [:Maybe :Integer] :c [:Maybe :ws/C]}
+                                              :constraints {"b1" (not= bn bw)}}
+                                             :ws/C
+                                             {:spec-vars {:cn :Integer}
+                                              :constraints {"c1" (< 12 cn)}}
+                                             :ws/D
+                                             {:spec-vars {:dn [:Maybe :Integer]}
+                                              :constraints {"d1" (if-value dn (< 0 dn) true)}}})]
     (are [in out]
          (= out
             (let [sctx (-> senv
@@ -221,7 +221,7 @@
 (def lower-valid? #'lowering/lower-valid?)
 
 (deftest test-lower-valid?
-  (let [senv (var-type/to-halite-spec-env
+  (let [senv (var-types/to-halite-spec-env
               '{:ws/A
                 {:spec-vars {:an :Integer}}
                 :ws/B
@@ -299,7 +299,7 @@
 
 (deftest test-push-gets-into-ifs
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:ab :Boolean}
                   :constraints {"a1" (not= 1 (get (if ab {:$type :ws/B :bn 2} {:$type :ws/B :bn 1}) :bn))}}
@@ -313,11 +313,11 @@
 
 (deftest test-push-gets-into-nested-ifs
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env '{:ws/A
-                                             {:spec-vars {:b1 :ws/B, :b2 :ws/B, :b3 :ws/B, :b4 :ws/B, :a :Boolean, :b :Boolean}
-                                              :constraints {"a1" (= 12 (get (if a (if b b1 b2) (if b b3 b4)) :n))}}
-                                             :ws/B
-                                             {:spec-vars {:n :Integer}}}))
+              (var-types/to-halite-spec-env '{:ws/A
+                                              {:spec-vars {:b1 :ws/B, :b2 :ws/B, :b3 :ws/B, :b4 :ws/B, :a :Boolean, :b :Boolean}
+                                               :constraints {"a1" (= 12 (get (if a (if b b1 b2) (if b b3 b4)) :n))}}
+                                              :ws/B
+                                              {:spec-vars {:n :Integer}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
     (is (= '{"$all" (= 12 (if a (if b (get b1 :n) (get b2 :n)) (if b (get b3 :n) (get b4 :n))))}
            (->> sctx (fixpoint push-gets-into-ifs)
@@ -325,7 +325,7 @@
 
 (deftest test-push-gets-into-ifs-ignores-nothing-branches
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A {:spec-vars {:b :ws/B :ap :Boolean}
                         :constraints {"a1" (get (if ap b (error "nope")) :bp)}}
                  :ws/B {:spec-vars {:bp :Boolean}}}))]
@@ -341,7 +341,7 @@
 
 (deftest test-cancel-get-of-instance-literal
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer :b :ws/B}
                   :constraints {"a1" (< an (get (get {:$type :ws/B :c {:$type :ws/C :cn (get {:$type :ws/C :cn (+ 1 an)} :cn)}} :c) :cn))
@@ -362,7 +362,7 @@
 
 (deftest test-eliminate-runtime-constraint-violations
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer}
                   :constraints {"a1" (< an 10)
@@ -390,7 +390,7 @@
 
 (deftest test-eliminate-runtime-constraint-violations-and-if-value
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:ap [:Maybe :Boolean]}
                   :constraints {"a1" (let [b {:$type :ws/B :bp ap}]
@@ -411,7 +411,7 @@
 
 (deftest test-lower-refinement-constraints
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer}
                   :constraints {"a1" (< an 10)}
@@ -447,7 +447,7 @@
 
 (deftest test-lower-refine-to
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer}
                   :constraints {"a1" (< an 10)}
@@ -491,7 +491,7 @@
 
 (deftest test-lower-refine-to-ignores-unknown-instance-type
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/W {:spec-vars {:wn :Integer}}
                  :ws/A {:refines-to {:ws/W {:expr {:$type :ws/W :wn 1}}}}
                  :ws/B {:refines-to {:ws/W {:expr {:$type :ws/W :wn 2}}}}
@@ -507,7 +507,7 @@
 
 (deftest test-push-refine-to-into-if
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/W {:spec-vars {:wn :Integer}}
                  :ws/A {:refines-to {:ws/W {:expr {:$type :ws/W :wn 1}}}}
                  :ws/B {:refines-to {:ws/W {:expr {:$type :ws/W :wn 2}}}}
@@ -616,7 +616,7 @@
 
 (deftest test-push-comparisons-into-nonprimitive-ifs
   (binding [ssa/*hide-non-halite-ops* false]
-    (let [senv (var-type/to-halite-spec-env
+    (let [senv (var-types/to-halite-spec-env
                 '{:ws/A
                   {:spec-vars {:v [:Maybe :Integer], :w [:Maybe :Integer], :x :Integer, :p :Boolean}}})]
       (are [expr lowered]
@@ -671,7 +671,7 @@
 
 (deftest test-push-if-value-into-if
   (binding [ssa/*hide-non-halite-ops* false]
-    (let [senv (var-type/to-halite-spec-env
+    (let [senv (var-types/to-halite-spec-env
                 '{:ws/A
                   {:spec-vars {:v [:Maybe :Integer], :w [:Maybe :Integer], :x :Integer, :p :Boolean}}
                   :ws/B
@@ -735,7 +735,7 @@
 (deftest test-lowering-when-example
   (binding [ssa/*hide-non-halite-ops* true]
     (let [senv (envs/spec-env
-                (var-type/to-halite-spec-env
+                (var-types/to-halite-spec-env
                  '{:ws/A
                    {:spec-vars {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
                     :constraints {"a1" (= aw (when p an))}}}))
@@ -756,7 +756,7 @@
 (deftest test-lowering-nested-optionals
   (schema.core/without-fn-validation
    (let [senv (envs/spec-env
-               (var-type/to-halite-spec-env
+               (var-types/to-halite-spec-env
                 '{:ws/A
                   {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :ap :Boolean}
                    :constraints [["a1" (= b1 b2)]
@@ -842,7 +842,7 @@
   ;; The 'features' that interact here: valid? and instance literals w/ unassigned variables.
   (rewriting/with-tracing [traces]
     (let [senv (envs/spec-env
-                (var-type/to-halite-spec-env
+                (var-types/to-halite-spec-env
                  '{:my/A {:abstract? true
                           :spec-vars {:a1 [:Maybe :Integer]
                                       :a2 [:Maybe :Integer]}
@@ -864,13 +864,13 @@
 
 (deftest test-eliminate-error-forms
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env '{:ws/A {:spec-vars {:an :Integer :ap [:Maybe :Boolean]}
-                                                    :constraints {"a1" (if (< an 10)
-                                                                         (if (< an 1)
-                                                                           (error "an is too small")
-                                                                           (if-value ap ap false))
-                                                                         (= ap (when (< an 20)
-                                                                                 (error "not big enough"))))}}}))]
+              (var-types/to-halite-spec-env '{:ws/A {:spec-vars {:an :Integer :ap [:Maybe :Boolean]}
+                                                     :constraints {"a1" (if (< an 10)
+                                                                          (if (< an 1)
+                                                                            (error "an is too small")
+                                                                            (if-value ap ap false))
+                                                                          (= ap (when (< an 20)
+                                                                                  (error "not big enough"))))}}}))]
     (is (= '{:spec-vars {:an :Integer :ap [:Maybe :Boolean]}
              :constraints {"$all"
                            (let [v1 (< an 10)]
@@ -888,7 +888,7 @@
                :ws/A
                (ssa/spec-from-ssa)))))
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A {:spec-vars {:an :Integer :ap :Boolean}
                         :constraints {"a1" (if ap
                                              (if (< an 10)
@@ -955,7 +955,7 @@
 (def rewrite-instance-valued-do-child #'lowering/rewrite-instance-valued-do-child)
 
 (deftest test-rewrite-instance-valued-do-child
-  (let [senv (var-type/to-halite-spec-env
+  (let [senv (var-types/to-halite-spec-env
               '{:ws/A
                 {:spec-vars {:ap :Boolean, :ab :ws/B, :an :Integer, :ad :ws/D}}
                 :ws/B
@@ -1008,8 +1008,8 @@
 (def rewrite-no-value-do-child #'lowering/rewrite-no-value-do-child)
 
 (deftest test-rewrite-no-value-do-child
-  (let [senv (var-type/to-halite-spec-env '{:ws/A
-                                            {:spec-vars {:aw [:Maybe :Integer] :ap :Boolean :an :Integer}}})]
+  (let [senv (var-types/to-halite-spec-env '{:ws/A
+                                             {:spec-vars {:aw [:Maybe :Integer] :ap :Boolean :an :Integer}}})]
     (are [in out]
          (= out
             (let [sctx (-> senv
@@ -1034,7 +1034,7 @@
 
 (deftest test-eliminate-unused-instance-valued-exprs-in-dos
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:ap :Boolean, :ab :ws/B, :an :Integer, :ad :ws/D}
                   :constraints {"a1" (let [b (if ap
@@ -1067,7 +1067,7 @@
   (schema.core/without-fn-validation
    (binding [ssa/*hide-non-halite-ops* true]
      (let [senv (envs/spec-env
-                 (var-type/to-halite-spec-env
+                 (var-types/to-halite-spec-env
                   '{:ws/A
                     {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :aw [:Maybe :Integer], :x :Integer, :p :Boolean}
                      :constraints {"a1" (not= (if p b1 b2)

@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.var-type
+(ns com.viasat.halite.var-types
   "User interface types"
   (:require [clojure.set :as set]
             [clojure.string :as string]

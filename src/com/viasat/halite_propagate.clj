@@ -6,7 +6,7 @@
   (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate :as propagate]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
-            [com.viasat.halite.var-type :as var-type]
+            [com.viasat.halite.var-types :as var-types]
             [potemkin]
             [schema.core :as s]))
 
@@ -19,7 +19,7 @@
   ([senv :- (s/protocol envs/SpecEnv)
     opts :- prop-abstract/Opts
     initial-bound :- propagate/SpecBound]
-   (let [senv (var-type/to-halite-spec-env senv)]
+   (let [senv (var-types/to-halite-spec-env senv)]
      (propagate/propagate senv opts initial-bound))))
 
 (potemkin/import-vars

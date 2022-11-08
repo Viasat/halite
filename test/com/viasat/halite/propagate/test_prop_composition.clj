@@ -10,7 +10,6 @@
             [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
-            [com.viasat.halite.var-type :as var-type]
             [schema.core :as s]
             [schema.test])
   (:use clojure.test))

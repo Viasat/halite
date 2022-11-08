@@ -16,7 +16,7 @@
             [com.viasat.halite.type-of :as type-of]
             [com.viasat.halite.types :as types]
             [com.viasat.halite.syntax-check :as syntax-check]
-            [com.viasat.halite.var-type :as var-type]
+            [com.viasat.halite.var-types :as var-types]
             [potemkin]
             [schema.core :as s]))
 
@@ -117,7 +117,7 @@
                 (s/optional-key :type-check-spec-refinements-and-constraints?) Boolean
                 (s/optional-key :check-for-spec-cycles?) Boolean
                 (s/optional-key :limits) base/Limits}]
-   (let [senv (var-type/to-halite-spec-env senv)
+   (let [senv (var-types/to-halite-spec-env senv)
          {:keys [type-check-expr? type-check-env? type-check-spec-refinements-and-constraints? check-for-spec-cycles?
                  limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
@@ -152,28 +152,28 @@
   ([senv tenv expr]
    (type-check-and-lint senv tenv expr default-eval-expr-options))
   ([senv tenv expr options]
-   (let [senv (var-type/to-halite-spec-env senv)
+   (let [senv (var-types/to-halite-spec-env senv)
          {:keys [limits]} options]
      (binding [base/*limits* (or limits base/*limits*)]
        (lint/type-check-and-lint senv tenv expr)))))
 
 (defn type-check
   [senv & args]
-  (let [senv (var-type/to-halite-spec-env senv)]
+  (let [senv (var-types/to-halite-spec-env senv)]
     (apply type-check/type-check senv args)))
 
 (defn type-check-spec
   [senv spec-info]
-  (let [senv (var-type/to-halite-spec-env senv)
-        spec-info (var-type/to-halite-spec senv spec-info)]
+  (let [senv (var-types/to-halite-spec-env senv)
+        spec-info (var-types/to-halite-spec senv spec-info)]
     (type-check/type-check-spec senv spec-info)))
 
 (defn type-check-refinement-expr
   [senv & args]
-  (let [senv (var-type/to-halite-spec-env senv)]
+  (let [senv (var-types/to-halite-spec-env senv)]
     (apply type-check/type-check-refinement-expr senv args)))
 
-(s/defn lookup-spec :- (s/maybe var-type/UserSpecInfo)
+(s/defn lookup-spec :- (s/maybe var-types/UserSpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
   [senv :- (s/protocol envs/SpecEnv)
@@ -181,30 +181,30 @@
   (envs/lookup-spec* senv spec-id))
 
 (s/defn spec-env :- (s/protocol envs/SpecEnv)
-  [spec-info-map :- {types/NamespacedKeyword var-type/UserSpecInfo}]
-  (var-type/halite-spec-env spec-info-map))
+  [spec-info-map :- {types/NamespacedKeyword var-types/UserSpecInfo}]
+  (var-types/halite-spec-env spec-info-map))
 
 (s/defn type-env-from-spec :- (s/protocol envs/TypeEnv)
   "Return a type environment where spec lookups are delegated to tenv, but the in-scope symbols
   are the variables of the given resource spec."
   [senv :- (s/protocol envs/SpecEnv)
-   spec :- var-type/UserSpecInfo]
-  (let [spec (var-type/to-halite-spec senv spec)]
+   spec :- var-types/UserSpecInfo]
+  (let [spec (var-types/to-halite-spec senv spec)]
     (envs/type-env-from-spec spec)))
 
 (s/defn env-from-inst :- (s/protocol envs/Env)
-  [spec-info :- var-type/UserSpecInfo
+  [spec-info :- var-types/UserSpecInfo
    inst]
   (envs/env-from-spec-var-keys (keys (:spec-vars spec-info)) inst))
 
-(s/defn vector-type :- var-type/VarType
+(s/defn vector-type :- var-types/VarType
   "Construct a type representing vectors of the given type."
-  [elem-type :- var-type/VarType]
+  [elem-type :- var-types/VarType]
   [:Vec elem-type])
 
-(s/defn set-type :- var-type/VarType
+(s/defn set-type :- var-types/VarType
   "Construct a type representing sets of the given type."
-  [elem-type :- var-type/VarType]
+  [elem-type :- var-types/VarType]
   [:Set elem-type])
 
 (s/defn halite-vector-type :- types/HaliteType
@@ -246,7 +246,7 @@
   nothing-like? join])
 
 (potemkin/import-vars
- [var-type
+ [var-types
   primitive-types
   halite-type-from-var-type
   VarType UserSpecVars UserSpecInfo UserSpecMap

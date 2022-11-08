@@ -6,7 +6,7 @@
   (:require [com.viasat.halite.analysis :as analysis]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.type-check :as type-check]
-            [com.viasat.halite.var-type :as var-type]
+            [com.viasat.halite.var-types :as var-types]
             [potemkin]
             [schema.core :as s]))
 
@@ -14,10 +14,10 @@
 
 (s/defn find-field-accesses
   [senv :- (s/protocol envs/SpecEnv)
-   spec-info :- var-type/UserSpecInfo
+   spec-info :- var-types/UserSpecInfo
    expr]
-  (let [senv (var-type/to-halite-spec-env senv)
-        spec-info (var-type/to-halite-spec senv spec-info)]
+  (let [senv (var-types/to-halite-spec-env senv)
+        spec-info (var-types/to-halite-spec senv spec-info)]
     (type-check/find-field-accesses senv spec-info expr)))
 
 (potemkin/import-vars

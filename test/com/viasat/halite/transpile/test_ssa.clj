@@ -6,7 +6,7 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
-            [com.viasat.halite.var-type :as var-type]
+            [com.viasat.halite.var-types :as var-types]
             [schema.core :as s]
             [schema.test])
   (:use clojure.test))
@@ -27,7 +27,7 @@
     (is (= false (ssa/cycle? non-cycle-graph)))))
 
 (deftest test-spec-to-ssa
-  (let [senv (var-type/to-halite-spec-env
+  (let [senv (var-types/to-halite-spec-env
               '{:ws/A
                 {:spec-vars {:v [:Maybe :Integer], :w [:Maybe :Integer], :x :Integer, :y :Integer, :z :Integer, :b :Boolean, :c :ws/C}}
                 :foo/Bar
@@ -441,7 +441,7 @@
       '[$9])))
 
 (deftest test-spec-to-ssa-with-refinements
-  (let [senv (var-type/to-halite-spec-env
+  (let [senv (var-types/to-halite-spec-env
               '{:ws/A
                 {:spec-vars {:an :Integer}
                  :constraints {"a1" (< 0 (+ 1 an))}
@@ -488,7 +488,7 @@
 
 (deftest test-form-to-ssa-correctly-handles-node-references-in-if-value
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:s [:Maybe :Boolean] :p [:Maybe :Boolean]}
                   :constraints {"c1" (= s p)}}}))
@@ -541,7 +541,7 @@
                true)))))))
 
 (deftest test-compute-guards
-  (let [senv (var-type/to-halite-spec-env
+  (let [senv (var-types/to-halite-spec-env
               '{:ws/A
                 {:spec-vars {:v [:Maybe :Integer], :w [:Maybe :Integer], :x :Integer, :y :Integer, :b1 :Boolean, :b2 :Boolean}}
                 :ws/Foo
@@ -877,7 +877,7 @@
 
 (deftest test-spec-from-ssa-preserves-guards
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:p :Boolean, :q :Boolean}
                   :constraints {"c1" (if p (< (div 10 0) 1) true)
@@ -892,7 +892,7 @@
 (deftest test-semantics-preservation
   ;; Test that this spec has the same interpretation after round-tripping through SSA representation.
   (let [senv (envs/spec-env
-              (var-type/to-halite-spec-env
+              (var-types/to-halite-spec-env
                {:ws/A
                 '{:spec-vars {:x :Integer, :y :Integer, :p :Boolean, :q :Boolean}
                   :constraints {"a1" (< x y)
