@@ -22,8 +22,8 @@ The following is a full model for the grocery delivery business.
     "abstract?" : true,
     "spec-vars" : {
       "perkId" : "Integer",
-      "feePerMonth" : "Decimal2",
-      "feePerUse" : "Decimal2",
+      "feePerMonth" : [ "Decimal", 2 ],
+      "feePerUse" : [ "Decimal", 2 ],
       "usesPerMonth" : [ "Maybe", "Integer" ]
     },
     "constraints" : {
@@ -68,7 +68,7 @@ The following is a full model for the grocery delivery business.
   "tutorials.grocery/GroceryService$v1" : {
     "spec-vars" : {
       "deliveriesPerMonth" : "Integer",
-      "feePerMonth" : "Decimal2",
+      "feePerMonth" : [ "Decimal", 2 ],
       "perks" : [ "tutorials.grocery/Perk$v1" ],
       "subscriberCountry" : "tutorials.grocery/Country$v1"
     },

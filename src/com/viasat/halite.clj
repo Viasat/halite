@@ -221,7 +221,7 @@
 
 (potemkin/import-vars
  [types
-  HaliteType decimal-type vector-type set-type namespaced-keyword? abstract-spec-type concrete-spec-type
+  HaliteType decimal-type decimal-type? decimal-scale vector-type set-type namespaced-keyword? abstract-spec-type concrete-spec-type
   nothing-like? join])
 
 (potemkin/import-vars

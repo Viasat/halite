@@ -32,7 +32,7 @@
          (thrown-with-msg? ExceptionInfo msg
                            (var-type/halite-type-from-var-type senv invalid-type))
 
-      "Foo" #"Unrecognized primitive type"
+      "Foo" #"Invalid spec variable type"
       :foo #"Unrecognized primitive type"
       :ws/C #"Spec not found"
       [] #"exactly one inner type"

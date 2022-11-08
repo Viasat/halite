@@ -243,8 +243,8 @@
 
                                         :tutorials.grocery/Perk$v1 {:abstract? true
                                                                     :spec-vars {:perkId :Integer
-                                                                                :feePerMonth "Decimal2"
-                                                                                :feePerUse "Decimal2"
+                                                                                :feePerMonth [:Decimal 2]
+                                                                                :feePerUse [:Decimal 2]
                                                                                 :usesPerMonth [:Maybe :Integer]}
                                                                     :constraints {:feePerMonth_limit '(and (<= #d "0.00" feePerMonth)
                                                                                                            (<= feePerMonth #d "199.99"))
@@ -276,7 +276,7 @@
                                                                                                                                       :usesPerMonth 2}}}}
 
                                         :tutorials.grocery/GroceryService$v1 {:spec-vars {:deliveriesPerMonth :Integer
-                                                                                          :feePerMonth "Decimal2"
+                                                                                          :feePerMonth [:Decimal 2]
                                                                                           :perks #{:tutorials.grocery/Perk$v1}
                                                                                           :subscriberCountry :tutorials.grocery/Country$v1}
                                                                               :constraints {:feePerMonth_limit '(and (< #d "5.99" feePerMonth)

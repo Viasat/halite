@@ -520,5 +520,9 @@
   (and (vector? t)
        (= :Decimal (first t))))
 
+(s/defn decimal-scale [t]
+  (when (decimal-type? t)
+    (second t)))
+
 (s/defn nothing-like? [t]
   (#{:Nothing :PreInstance} t))

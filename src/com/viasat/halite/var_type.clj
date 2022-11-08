@@ -13,13 +13,20 @@
 
 (set! *warn-on-reflection* true)
 
-(def primitive-types (into [:String :Integer :Boolean]
-                           (map #(str "Decimal" %) (range 1 (inc fixed-decimal/max-scale)))))
+(def primitive-types [:String :Integer :Boolean])
+
+(s/defschema DecimalScale
+  (s/constrained s/Int
+                 #(<= 1 % fixed-decimal/max-scale)
+                 "valid decimal scale"))
+
+(s/defschema DecimalVarType [(s/one (s/eq :Decimal) :decimal) (s/one DecimalScale :scale)])
 
 (s/defschema MandatoryVarType
   (s/conditional
    #(or (string? %)
         (and (keyword? %) (types/bare? %))) (apply s/enum primitive-types)
+   types/decimal-type? DecimalVarType
    vector? (s/constrained [(s/recursive #'MandatoryVarType)]
                           #(= 1 (count %))
                           "exactly one inner type")
@@ -72,7 +79,8 @@
    var-type :- VarType]
   (when (coll? var-type)
     (let [n (if (and (vector? var-type) (= :Maybe (first var-type))) 2 1)]
-      (when (not= n (count var-type))
+      (when (and (not= n (count var-type))
+                 (not (types/decimal-type? var-type)))
         (throw (ex-info "Must contain exactly one inner type"
                         {:var-type var-type})))))
   (let [check-mandatory #(if (optional-var-type? %)
@@ -80,12 +88,13 @@
                                            {:var-type %}))
                            %)]
     (cond
-      (or (string? var-type)
-          (and (keyword? var-type) (types/bare? var-type)))
+      (and (keyword? var-type) (types/bare? var-type))
       (cond
         (#{:Integer :String :Boolean} var-type) (keyword var-type)
-        (string/starts-with? var-type "Decimal") (types/decimal-type (Long/parseLong (subs var-type 7)))
         :default (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
+
+      (types/decimal-type? var-type)
+      var-type
 
       (optional-var-type? var-type)
       [:Maybe (halite-type-from-var-type senv (second var-type))]
