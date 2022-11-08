@@ -9,14 +9,14 @@
                     :basic-ref ['spec-map 'instance]
                     :op-ref ['valid? 'refine-to]
                     :contents ["Writing a spec is carving out a subset out of the universe of all possible values and giving them a name."
-                               {:spec-map {:spec/Ball {:spec-vars {:color "String"}
+                               {:spec-map {:spec/Ball {:spec-vars {:color :String}
                                                        :constraints {:color_constraint '(contains? #{"red" "blue" "green"} color)}}}}
                                "Instances of specs are represented as maps. Depending on programming languages, maps are also known as associative arrays or dictionarys."
                                "The spec gives a name to the set of values which are maps that contain a type field with a value of 'spec/Ball' and which have a 'color' field with a string value. For example, this set includes the following specific instances."
                                {:code '{:$type :spec/Ball :color "red"}}
                                {:code '{:$type :spec/Ball :color "blue"}}
                                "If instead we defined this spec, then we are further constraining the set of values in the 'spec/Ball' set. Specifically, this means that any instance which is otherwise a valid 'spec/Ball', but does not have one of these three prescribed colors is not a valid 'spec/Ball'."
-                               {:spec-map {:spec/Ball {:spec-vars {:color "String"}
+                               {:spec-map {:spec/Ball {:spec-vars {:color :String}
                                                        :constraints {:color_constraint '(contains? #{"red" "blue" "green"} color)}}}}
                                "The following is not a valid 'spec/Ball' and in fact it is not a valid value at all in the universe of all possible values. This is because every map with a type of 'spec/Ball' must satisfy the 'spec/Ball' spec in order to be a valid value."
                                {:code '{:$type :spec/Ball :color "yellow"}
@@ -28,8 +28,8 @@
                                 :result :auto}
                                "A spec context defines all of the specs that are in play when evaluating expressions. By definition, these specs define disjoint sets of valid instance values. There is never any overlap in the instances that are valid for any two different specs."
                                "However, it is possible to convert an instance of one spec into an instance of another spec. This is referred to as 'refinement'. Specs can include refinement expressions indicating how to convert them."
-                               {:spec-map {:spec/Round {:spec-vars {:radius "Integer"}}
-                                           :spec/Ball {:spec-vars {:color "String"}
+                               {:spec-map {:spec/Round {:spec-vars {:radius :Integer}}
+                                           :spec/Ball {:spec-vars {:color :String}
                                                        :constraints {:color_constraint '(contains? #{"red" "blue" "green"} color)}
                                                        :refines-to {:spec/Round {:name "refine_to_round"
                                                                                  :expr '{:$type :spec/Round
@@ -48,16 +48,16 @@
                     :op-ref ['refine-to]
                     :contents ["Say we have an abstract concept of squareness."
                                {:spec-map {:spec/Square {:abstract? true
-                                                         :spec-vars {:width "Integer"
-                                                                     :height "Integer"}}}}
+                                                         :spec-vars {:width :Integer
+                                                                     :height :Integer}}}}
                                "The spec can be instantiated in a standalone fashion."
                                {:code '{:$type :spec/Square :width 5 :height 5}}
                                "However, this spec cannot be instantiated in the context of another instance. So consider the following two specs, where a concrete spec uses an abstract spec in composition."
                                {:spec-map {:spec/Square {:abstract? true
-                                                         :spec-vars {:width "Integer"
-                                                                     :height "Integer"}}
+                                                         :spec-vars {:width :Integer
+                                                                     :height :Integer}}
                                            :spec/Painting {:spec-vars {:square :spec/Square
-                                                                       :painter "String"}}}}
+                                                                       :painter :String}}}}
                                "The instance of the abstract spec cannot be used in the construction of the painting instance."
                                {:code '{:$type :spec/Painting
                                         :square {:$type :spec/Square :width 5 :height 5}
@@ -65,11 +65,11 @@
                                 :throws :auto}
                                "To create an instance of the composite painting spec, we need to define an additional spec which refines to the abstract spec, square."
                                {:spec-map {:spec/Square {:abstract? true
-                                                         :spec-vars {:width "Integer"
-                                                                     :height "Integer"}}
+                                                         :spec-vars {:width :Integer
+                                                                     :height :Integer}}
                                            :spec/Painting {:spec-vars {:square :spec/Square
-                                                                       :painter "String"}}
-                                           :spec/Canvas {:spec-vars {:size "String"}
+                                                                       :painter :String}}
+                                           :spec/Canvas {:spec-vars {:size :String}
                                                          :refines-to {:spec/Square {:name "refine_to_square"
                                                                                     :expr '(if (= "small" size)
                                                                                              {:$type :spec/Square
@@ -92,10 +92,10 @@
                                "An abstract spec is a spec that can be used to define some constraints on the value in a composite spec without indicating precisely what type of instance is used in the composition. In this example, the painting spec is defined to include a square without any reference to the canvas."
                                "Consider another spec context, where an alternate spec is defined that refines to square."
                                {:spec-map {:spec/Square {:abstract? true
-                                                         :spec-vars {:width "Integer"
-                                                                     :height "Integer"}}
+                                                         :spec-vars {:width :Integer
+                                                                     :height :Integer}}
                                            :spec/Painting {:spec-vars {:square :spec/Square
-                                                                       :painter "String"}}
+                                                                       :painter :String}}
                                            :spec/Wall {:refines-to {:spec/Square {:name "refine_to_square"
                                                                                   :expr '{:$type :spec/Square
                                                                                           :width 100
@@ -119,16 +119,16 @@
                     :basic-ref ['spec-map 'instance]
                     :contents ["Say we have an abstract car."
                                {:spec-map {:spec/Car {:abstract? true
-                                                      :spec-vars {:make "String"
-                                                                  :year "Integer"}}
+                                                      :spec-vars {:make :String
+                                                                  :year :Integer}}
                                            :spec/Ford {:abstract? false
-                                                       :spec-vars {:year "Integer"}
+                                                       :spec-vars {:year :Integer}
                                                        :refines-to {:spec/Car {:name "as_car"
                                                                                :expr '{:$type :spec/Car
                                                                                        :make "Ford"
                                                                                        :year year}}}}
                                            :spec/Chevy {:abstract? false
-                                                        :spec-vars {:year "Integer"}
+                                                        :spec-vars {:year :Integer}
                                                         :refines-to {:spec/Car {:name "as_car"
                                                                                 :expr '{:$type :spec/Car
                                                                                         :make "Chevy"
@@ -151,8 +151,8 @@
                     :basic-ref ['spec-map 'instance]
                     :op-ref ['refine-to 'valid? 'refines-to?]
                     :contents ["One spec can be defined to be a refinement of another spec. First consider a square which has a width and height. The constraint, which makes it a square, requires these two values to be equal."
-                               {:spec-map {:spec/Square {:spec-vars {:width "Integer"
-                                                                     :height "Integer"}
+                               {:spec-map {:spec/Square {:spec-vars {:width :Integer
+                                                                     :height :Integer}
                                                          :constraints {:square '(= width height)}}}}
                                "So the following is a valid spec/Square"
                                {:code '{:$type :spec/Square :width 5 :height 5}}
@@ -160,11 +160,11 @@
                                {:code '{:$type :spec/Square :width 5 :height 6}
                                 :throws :auto}
                                "Now consider a new spec, 'spec/Box', and we define that it refines to 'spec/Square'."
-                               {:spec-map {:spec/Square {:spec-vars {:width "Integer"
-                                                                     :height "Integer"}
+                               {:spec-map {:spec/Square {:spec-vars {:width :Integer
+                                                                     :height :Integer}
                                                          :constraints {:square '(= width height)}}
-                                           :spec/Box$v1 {:spec-vars {:width "Integer"
-                                                                     :length "Integer"}
+                                           :spec/Box$v1 {:spec-vars {:width :Integer
+                                                                     :length :Integer}
                                                          :refines-to {:spec/Square {:name "refine_to_square"
                                                                                     :expr '{:$type :spec/Square
                                                                                             :width width
@@ -177,11 +177,11 @@
                                 :throws :auto}
                                "It is not possible to construct an instance of 'spec/Box' which is not a 'spec/Square' because we have said that all instances of 'spec/Box' can be translated into a 'spec/Square', and more speficically into a valid instance of 'spec/Square, which is the only kind of instance that the system recognizes."
                                "If this was not the intent, and rather the intent was to indicate that some instances of 'spec/Box' can be converted into 'spec/Square' instances then the refinement would be defined as:"
-                               {:spec-map {:spec/Square {:spec-vars {:width "Integer"
-                                                                     :height "Integer"}
+                               {:spec-map {:spec/Square {:spec-vars {:width :Integer
+                                                                     :height :Integer}
                                                          :constraints {:square '(= width height)}}
-                                           :spec/Box$v2 {:spec-vars {:width "Integer"
-                                                                     :length "Integer"}
+                                           :spec/Box$v2 {:spec-vars {:width :Integer
+                                                                     :length :Integer}
                                                          :refines-to {:spec/Square {:name "refine_to_square"
                                                                                     :expr '(when (= width length)
                                                                                              {:$type :spec/Square
@@ -197,11 +197,11 @@
                                {:code '(refines-to? {:$type :spec/Box$v2 :width 5 :length 6} :spec/Square)
                                 :result :auto}
                                "Another way of defining the refinement is to declare it to be 'inverted?'. What this means is that the refinement will be applied where possible, and where it results in a contradiction then a runtime error is produced."
-                               {:spec-map {:spec/Square {:spec-vars {:width "Integer"
-                                                                     :height "Integer"}
+                               {:spec-map {:spec/Square {:spec-vars {:width :Integer
+                                                                     :height :Integer}
                                                          :constraints {:square '(= width height)}}
-                                           :spec/Box$v3 {:spec-vars {:width "Integer"
-                                                                     :length "Integer"}
+                                           :spec/Box$v3 {:spec-vars {:width :Integer
+                                                                     :length :Integer}
                                                          :refines-to {:spec/Square {:name "refine_to_square"
                                                                                     :expr '{:$type :spec/Square
                                                                                             :width width
@@ -227,7 +227,7 @@
                     :basic-ref ['instance 'spec-map]
                     :op-ref ['valid?]
                     :contents ["The type indications of spec variables can be considered as predicates."
-                               {:spec-map {:spec/X$v1 {:spec-vars {:x "String"}}}}
+                               {:spec-map {:spec/X$v1 {:spec-vars {:x :String}}}}
                                "If an instance is made with the correct type for a field value, then the predicate produces 'true'."
                                {:code '{:$type :spec/X$v1 :x "hi"}
                                 :result :auto}
@@ -235,8 +235,8 @@
                                {:code '{:$type :spec/X$v1 :x 25}
                                 :throws :auto}
                                "If a specification defines multiple spec vars then the result is a logical conjunct."
-                               {:spec-map {:spec/X$v2 {:spec-vars {:x "String"
-                                                                   :y "Integer"}}}}
+                               {:spec-map {:spec/X$v2 {:spec-vars {:x :String
+                                                                   :y :Integer}}}}
                                "All of the fields must be of the correct type. This is a conjunct: the field x must be a string and the field y must be an integer"
                                {:code '{:$type :spec/X$v2 :x "hi" :y 100}
                                 :result :auto}
@@ -247,8 +247,8 @@
                                {:code '{:$type :spec/X$v2 :x 5 :y 100}
                                 :throws :auto}
                                "Similarly, each constraint by itself is a predicate and is combined in a conjunction with all of the spec variable type checks."
-                               {:spec-map {:spec/X$v3 {:spec-vars {:x "String"
-                                                                   :y "Integer"}
+                               {:spec-map {:spec/X$v3 {:spec-vars {:x :String
+                                                                   :y :Integer}
                                                        :constraints {:valid_y '(> y 0)}}}}
                                {:code '{:$type :spec/X$v3 :x "hi" :y 100}
                                 :result :auto}
@@ -256,8 +256,8 @@
                                {:code '{:$type :spec/X$v3 :x "hi" :y -1}
                                 :throws :auto}
                                "If there are multiple constraints, they are all logically combined into a single conjunction for the spec."
-                               {:spec-map {:spec/X$v5 {:spec-vars {:x "String"
-                                                                   :y "Integer"}
+                               {:spec-map {:spec/X$v5 {:spec-vars {:x :String
+                                                                   :y :Integer}
                                                        :constraints {:valid_x '(contains? #{"hi" "bye"} x)
                                                                      :valid_y '(> y 0)}}}}
                                {:code '{:$type :spec/X$v5 :x "hi" :y 100}
@@ -266,10 +266,10 @@
                                {:code '{:$type :spec/X$v5 :x "hello" :y 100}
                                 :throws :auto}
                                "Finally, the refinements can also bring in additional constraints which are combined into the overall conjunction for the spec."
-                               {:spec-map {:spec/A {:spec-vars {:b "Integer"}
+                               {:spec-map {:spec/A {:spec-vars {:b :Integer}
                                                     :constraints {:valid_b '(< b 10)}}
-                                           :spec/X$v6 {:spec-vars {:x "String"
-                                                                   :y "Integer"}
+                                           :spec/X$v6 {:spec-vars {:x :String
+                                                                   :y :Integer}
                                                        :constraints {:valid_x '(contains? #{"hi" "bye"} x)
                                                                      :valid_y '(> y 0)}
                                                        :refines-to {:spec/A {:name "refine_to_A"
@@ -281,12 +281,12 @@
                                {:code '{:$type :spec/X$v6 :x "hi" :y 12}
                                 :throws :auto}
                                "Implications of each additional refinement are combined into the single conujunction for this spec."
-                               {:spec-map {:spec/A {:spec-vars {:b "Integer"}
+                               {:spec-map {:spec/A {:spec-vars {:b :Integer}
                                                     :constraints {:valid_b '(< b 10)}}
-                                           :spec/P {:spec-vars {:q "String"}
+                                           :spec/P {:spec-vars {:q :String}
                                                     :constraints {:valid_q '(= q "hi")}}
-                                           :spec/X$v7 {:spec-vars {:x "String"
-                                                                   :y "Integer"}
+                                           :spec/X$v7 {:spec-vars {:x :String
+                                                                   :y :Integer}
                                                        :constraints {:valid_x '(contains? #{"hi" "bye"} x)
                                                                      :valid_y '(> y 0)}
                                                        :refines-to {:spec/A {:name "refine_to_A"
@@ -343,8 +343,8 @@
                                                                                :expr '{:$type :spec/Ford
                                                                                        :model "Mustang"
                                                                                        :year 2000}}}}
-                                           :spec/Ford {:spec-vars {:model "String"
-                                                                   :year "Integer"}}}}
+                                           :spec/Ford {:spec-vars {:model :String
+                                                                   :year :Integer}}}}
                                "In this example a highly abstract instance, just called a car, is converted into a concrete instance that has more detailed information."
                                {:code '(refine-to {:$type :spec/Car} :spec/Ford)
                                 :result :auto}]
@@ -380,7 +380,7 @@
                                 :result :auto}
                                "But, ideally users will not use '$no-value' explicitly."
                                "An 'unset' value is expected to come into play via an optional field."
-                               {:spec-map {:spec/A {:spec-vars {:b [:Maybe "Integer"]}}}}
+                               {:spec-map {:spec/A {:spec-vars {:b [:Maybe :Integer]}}}}
                                {:code '(get {:$type :spec/A} :b)
                                 :result :auto}
                                "The 'unset' value cannot be used in most operations."
@@ -430,8 +430,8 @@
                                                              (inc x))})
                                 :result :auto}
                                "The 'when-value' and 'if-value' operators are useful from within the context of a spec."
-                               {:spec-map {:spec/X {:spec-vars {:y [:Maybe "Integer"]
-                                                                :z [:Maybe "Integer"]}
+                               {:spec-map {:spec/X {:spec-vars {:y [:Maybe :Integer]
+                                                                :z [:Maybe :Integer]}
                                                     :refines-to {:spec/P {:name "refine_to_P"
                                                                           :expr '{:$type :spec/P
                                                                                   :q (when-value y
@@ -439,8 +439,8 @@
                                                                                   :r (if-value z
                                                                                                z
                                                                                                0)}}}}
-                                           :spec/P {:spec-vars {:q [:Maybe "Integer"]
-                                                                :r "Integer"}}}}
+                                           :spec/P {:spec-vars {:q [:Maybe :Integer]
+                                                                :r :Integer}}}}
                                {:code '(refine-to {:$type :spec/X :y 10 :z 20} :spec/P)
                                 :result :auto}
                                {:code '(refine-to {:$type :spec/X} :spec/P)

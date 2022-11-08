@@ -106,14 +106,14 @@
                     j-result)))
           (list 'hf expr s))))))
 
-(def spec-map-map {:basic {:my/Spec$v1 {:spec-vars {:n "Integer"
-                                                    :o [:Maybe "Integer"]
-                                                    :p "Integer"}
+(def spec-map-map {:basic {:my/Spec$v1 {:spec-vars {:n :Integer
+                                                    :o [:Maybe :Integer]
+                                                    :p :Integer}
                                         :constraints {:pc '(> p 0)
                                                       :pn '(< n 0)}}}
-                   :basic-2 {:spec/A$v1 {:spec-vars {:n "Integer"
-                                                     :o [:Maybe "Integer"]
-                                                     :p "Integer"}
+                   :basic-2 {:spec/A$v1 {:spec-vars {:n :Integer
+                                                     :o [:Maybe :Integer]
+                                                     :p :Integer}
                                          :constraints {:pc '(> p 0)
                                                        :pn '(< n 0)}
                                          :refines-to {:spec/B$v1 {:name "spec/A$v1/as_b"
@@ -122,9 +122,9 @@
                                                                           :y n
                                                                           :z o}}}}
                              :spec/B$v1 {:abstract? true
-                                         :spec-vars {:x "Integer"
-                                                     :y "Integer"
-                                                     :z [:Maybe "Integer"]}
+                                         :spec-vars {:x :Integer
+                                                     :y :Integer
+                                                     :z [:Maybe :Integer]}
                                          :constraints {:px '(< x 100)
                                                        :py '(> y -100)
                                                        :pz '(not= z 0)}}
@@ -7164,9 +7164,9 @@
      "h-err/field-value-of-wrong-type 0-0 : Value of 'p' has wrong type"]])
   (hc
    {:my/Spec$v1 {:abstract? true
-                 :spec-vars {:n "Integer"
-                             :o [:Maybe "Integer"]
-                             :p "Integer"}
+                 :spec-vars {:n :Integer
+                             :o [:Maybe :Integer]
+                             :p :Integer}
                  :constraints {:pc '(> p 0)
                                :pn '(< n 0)}}}
    [{:$type :my/Spec$v1, :p 1, :n -1}
@@ -7904,14 +7904,14 @@
 (deftest
   test-instantiate-use
   (hc
-   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
+   {:spec/T$v1 {:spec-vars {:n :Integer}}}
    [(get {:$type :spec/T$v1, :n 1} :n)
     :Integer
     1
     "{$type: spec/T$v1, n: 1}.n"
     "1"])
   (hc
-   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
+   {:spec/T$v1 {:spec-vars {:n :Integer}}}
    [(valid {:$type :spec/T$v1, :n 1})
     [:Maybe [:Instance :spec/T$v1]]
     {:$type :spec/T$v1, :n 1}
@@ -7919,7 +7919,7 @@
     "{$type: spec/T$v1, n: 1}"])
 
   (hc
-   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
+   {:spec/T$v1 {:spec-vars {:n :Integer}}}
    [(valid? {:$type :spec/T$v1, :n 1})
     :Boolean
     true
@@ -7927,7 +7927,7 @@
     "true"])
 
   (hc
-   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
+   {:spec/T$v1 {:spec-vars {:n :Integer}}}
    [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1)
     [:Instance :spec/T$v1]
     {:$type :spec/T$v1, :n 1}
@@ -7936,7 +7936,7 @@
 
   (hc
    {:spec/T$v1 {:abstract? true
-                :spec-vars {:n "Integer"}}}
+                :spec-vars {:n :Integer}}}
    [(get {:$type :spec/T$v1, :n 1} :n)
     :Integer
     1
@@ -7944,14 +7944,14 @@
     "1"])
   (hc
    {:spec/T$v1 {:abstract? true
-                :spec-vars {:n "Integer"}}}
+                :spec-vars {:n :Integer}}}
    [(valid {:$type :spec/T$v1, :n 1})
     [:Maybe [:Instance :spec/T$v1]]
     {:$type :spec/T$v1, :n 1}
     "(valid {$type: spec/T$v1, n: 1})"
     "{$type: spec/T$v1, n: 1}"])
   (hc
-   {:spec/T$v1 {:abstract? true, :spec-vars {:n "Integer"}}}
+   {:spec/T$v1 {:abstract? true, :spec-vars {:n :Integer}}}
    [(valid? {:$type :spec/T$v1, :n 1})
     :Boolean
     true
@@ -7959,7 +7959,7 @@
     "true"])
   (hc
    {:spec/T$v1 {:abstract? true
-                :spec-vars {:n "Integer"}}}
+                :spec-vars {:n :Integer}}}
    [(refine-to {:$type :spec/T$v1, :n 1} :spec/T$v1)
     [:Instance :spec/T$v1]
     {:$type :spec/T$v1, :n 1}
@@ -7969,7 +7969,7 @@
 (deftest
   test-component-use
   (hc
-   {:spec/T$v1 {:spec-vars {:n "Integer"}}
+   {:spec/T$v1 {:spec-vars {:n :Integer}}
     :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(get {:$type :spec/V$v1, :t {:$type :spec/T$v1, :n 1}} :t)
     [:Instance :spec/T$v1]
@@ -7980,7 +7980,7 @@
    {:spec/C$v1 {:refines-to {:spec/T$v1 {:name "spec/C$v1/as_T"
                                          :expr '{:$type :spec/T$v1
                                                  :n 1}}}}
-    :spec/T$v1 {:spec-vars {:n "Integer"}}
+    :spec/T$v1 {:spec-vars {:n :Integer}}
     :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:throws
@@ -7991,7 +7991,7 @@
                                          :expr '{:$type :spec/T$v1
                                                  :n 1}}}}
     :spec/T$v1 {:abstract? true
-                :spec-vars {:n "Integer"}}
+                :spec-vars {:n :Integer}}
     :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
@@ -8005,7 +8005,7 @@
                                          :expr '{:$type :spec/T$v1
                                                  :n 1}}}}
     :spec/T$v1 {:abstract? true
-                :spec-vars {:n "Integer"}}
+                :spec-vars {:n :Integer}}
     :spec/V$v1 {:spec-vars {:t :spec/T$v1}}}
    [(get {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :t)
     [:Instance :* #{:spec/T$v1}]
@@ -8504,7 +8504,7 @@
   test-exception-handling-instances-vs-refinements
   (let
    [ws {:spec/Inc$v1 {:constraints {:main '(= (inc x) y)}
-                      :spec-vars {:x "Integer", :y "Integer"}}}]
+                      :spec-vars {:x :Integer, :y :Integer}}}]
     (hc
      ws
      "Instance literal that meets all the constraints produces an instance"
@@ -8539,7 +8539,7 @@
                                                             :x x,
                                                             :y y}),
                                                   :name "spec/Inc$v1/as_big_inc"}},
-                    :spec-vars {:x "Integer", :y "Integer"}}}
+                    :spec-vars {:x :Integer, :y :Integer}}}
      "valid` catches the constraint violations to produce a `Maybe`"
      [(valid {:$type :spec/Inc$v1, :x 1, :y 1})
       [:Maybe [:Instance :spec/Inc$v1]]
@@ -8548,7 +8548,7 @@
       "Unset"]))
   (let
    [ws {:spec/Ratio$v1 {:constraints {:main '(= r (div x y))},
-                        :spec-vars {:r "Integer", :x "Integer", :y "Integer"}}}]
+                        :spec-vars {:r :Integer, :x :Integer, :y :Integer}}}]
     (hc
      ws
      [{:$type :spec/Ratio$v1, :x 6, :y 3, :r 2}
@@ -8581,7 +8581,7 @@
       "(valid {$type: spec/Ratio$v1, r: 8, x: 6, y: 0})"
       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]]))
   (let
-   [ws {:spec/BigInc$v1 {:spec-vars {:x "Integer", :y "Integer"}},
+   [ws {:spec/BigInc$v1 {:spec-vars {:x :Integer, :y :Integer}},
         :spec/Inc$v1 {:constraints {:main '(= (inc x) y)},
                       :refines-to {:spec/BigInc$v1 {:expr '(when
                                                             (>= x 100)
@@ -8589,7 +8589,7 @@
                                                               :x x,
                                                               :y y}),
                                                     :name "spec/Inc$v1/as_big_inc"}},
-                      :spec-vars {:x "Integer", :y "Integer"}},
+                      :spec-vars {:x :Integer, :y :Integer}},
         :spec/Meatball$v1 {}}]
     (hc
      ws
@@ -8673,7 +8673,7 @@
    (map (inc x) [x []])
    [:throws "h-err/undefined-symbol 0-0 : Undefined: 'x'"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}}
    [(map [x {:$type :spec/A$v1, :x 1}] true)
     [:throws
      "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'map', not :spec/A$v1"]])
@@ -8738,22 +8738,22 @@
    [:throws
     "h-err/unknown-type-collection 0-0 : Collections must contain values of a single known type"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}
-    :spec/B$v1 {:spec-vars {:x "String"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}
+    :spec/B$v1 {:spec-vars {:x :String}}}
    [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] x)
     [:Vec [:Instance :*]]
     [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]
     "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x"
     "[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :String}}}
    [(map
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
      (get x :x))
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :String}}}
    [(map
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
      (get (refine-to x :spec/A$v1) :x))
@@ -8764,7 +8764,7 @@
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :String}}}
    [(map
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]]
      (valid x))
@@ -8796,21 +8796,21 @@
    "map(x in #{\"a\", \"b\", \"c\"})x"
    "#{\"a\", \"b\", \"c\"}")
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :String}}}
    [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] x)
     [:Set [:Instance :*]]
     #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}
     "map(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}})x"
     "#{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}}"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :String}}}
    [(map
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}]
      (valid x))
     [:throws
      "h-err/arg-type-mismatch 0-0 : Argument to 'valid' must be an instance of known type"]])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "String"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :String}}}
    [(map
      [x #{[{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]}]
      (count x))
@@ -8846,7 +8846,7 @@
    [:throws
     "h-err/not-boolean-body 0-0 : Body expression in 'filter' must be boolean"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}}
    [(filter [x {:$type :spec/A$v1, :x 1}] true)
     [:throws
      "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'filter', not :spec/A$v1"]])
@@ -8906,14 +8906,14 @@
    "filter(x in [true, false, false, true])!x"
    "[false, false]")
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}}
    [(filter
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}]
      (valid x))
     [:throws
      "h-err/not-boolean-body 0-0 : Body expression in 'filter' must be boolean"]])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}}
    [(filter
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}]
      (valid? x))
@@ -8922,7 +8922,7 @@
     "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}})(valid? x)"
     "#{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}}"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]]
      (> (get x :x) 1))
@@ -8931,7 +8931,7 @@
     "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])(x.x > 1)"
     "[{$type: spec/A$v1, x: 2}]"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]]
      (refines-to? x :spec/A$v1))
@@ -8940,7 +8940,7 @@
     "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])x.refinesTo?( spec/A$v1 )"
     "[{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}]"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :Integer}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]]
      (refines-to? x :spec/A$v1))
@@ -8949,14 +8949,14 @@
     "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])x.refinesTo?( spec/A$v1 )"
     "[{$type: spec/A$v1, x: 1}]"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :Integer}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]]
      (> (get x :x) 1))
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :Integer}}}
    [(filter
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}]]
      (let
@@ -8970,7 +8970,7 @@
     "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])({ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) })"
     "[{$type: spec/A$v1, x: 1}]"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}, :spec/B$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}, :spec/B$v1 {:spec-vars {:x :Integer}}}
    [(filter
      [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x 2}}]
      (let
@@ -9115,12 +9115,12 @@
    [:syntax-check-throws
     "h-err/invalid-symbol-char 0-0 : The symbol contains invalid characters: ☺"])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}}
    [(reduce [a 0] [x {:$type :spec/A$v1, :x 1}] a)
     [:throws
      "h-err/reduce-not-vector 0-0 : Second binding expression to 'reduce' must be a vector."]])
   (hc
-   {:spec/A$v1 {:spec-vars {:x "Integer"}}}
+   {:spec/A$v1 {:spec-vars {:x :Integer}}}
    [(reduce
      [a 10]
      [x [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]]
@@ -9868,30 +9868,30 @@
    [:throws
     "h-err/get-in-path-must-be-vector-literal 0-0 : The path parameter in 'get-in' must be a vector literal: (get-in [10 20 30] x)"])
   (hc
-   {:spec/T$v1 {:spec-vars {:n "Integer"}}}
+   {:spec/T$v1 {:spec-vars {:n :Integer}}}
    [(get-in {:$type :spec/T$v1, :n 1} [:n])
     :Integer
     1
     "{$type: spec/T$v1, n: 1}.n"
     "1"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 1])
     :Integer
     20
     "{$type: spec/T$v1, ns: [10, 20, 30]}.ns[1]"
     "20"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [1 :ns])
     [:throws "h-err/invalid-instance-index 0-0 : Index must be a variable name (as a keyword) when target is an instance"]])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:q 1])
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns 100])
     :Integer
     [:throws
@@ -9900,7 +9900,7 @@
     [:throws
      "h-err/index-out-of-bounds 0-0 : Index out of bounds, 100, for vector of length 3"]])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns ["Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30]} [:ns :x])
     [:throws "h-err/invalid-vector-index 0-0 : Index must be an integer when target is a vector"]])
   (hc
@@ -9911,34 +9911,34 @@
     "[{$type: my/Spec$v1, n: -3, p: 2}][0].o"
     "Unset"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Maybe ["Integer"]],
-                            :x "Integer",
-                            :y [:Maybe "Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Integer]],
+                            :x :Integer,
+                            :y [:Maybe :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:y])
     [:Maybe :Integer]
     :Unset
     "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.y"
     "Unset"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Maybe ["Integer"]],
-                            :x "Integer",
-                            :y [:Maybe "Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Integer]],
+                            :x :Integer,
+                            :y [:Maybe :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:x])
     :Integer
     9
     "{$type: spec/T$v1, ns: [10, 20, 30], x: 9}.x"
     "9"])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Maybe ["Integer"]],
-                            :x "Integer",
-                            :y [:Maybe "Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Integer]],
+                            :x :Integer,
+                            :y [:Maybe :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:q])
     [:throws
      "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: q"]])
   (hc
-   {:spec/T$v1 {:spec-vars {:ns [:Maybe ["Integer"]],
-                            :x "Integer",
-                            :y [:Maybe "Integer"]}}}
+   {:spec/T$v1 {:spec-vars {:ns [:Maybe [:Integer]],
+                            :x :Integer,
+                            :y [:Maybe :Integer]}}}
    [(get-in {:$type :spec/T$v1, :ns [10 20 30], :x 9} [:ns 0])
     [:throws
      "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]]))
@@ -10003,12 +10003,12 @@
     (h :a [:throws "h-err/syntax-error 0-0 : Syntax error"])
     (h :my/Spec$v1 [:throws "h-err/syntax-error 0-0 : Syntax error"])
     (hc
-     {:spec/T$v1 {:spec-vars {:1 "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:1 :Integer}}}
      [(get {:$type :spec/T$v1, :1 10} :1)
       [:syntax-check-throws
        "h-err/invalid-keyword-char 0-0 : The keyword contains invalid characters: :1"]])
     (hc
-     {:spec/T$v1 {:spec-vars {:☺ "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:☺ :Integer}}}
      [(get {:$type :spec/T$v1, :☺ 10} :☺)
       [:syntax-check-throws "h-err/invalid-keyword-char 0-0 : The keyword contains invalid characters: :☺"]])
     (h
@@ -10016,51 +10016,51 @@
      [:syntax-check-throws
       "h-err/invalid-keyword-char 0-0 : The keyword contains invalid characters: :☺"])
     (hc
-     {:spec/T$v1 {:spec-vars {:x "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:x :Integer}}}
      [(get {:$type :spec/T$v1, :x 10} :☺)
       [:throws
        "h-err/field-name-not-in-spec 0-0 : Variables not defined on spec: ☺"]])
     (hc
-     {:spec/T$v1 {:spec-vars {:a1 "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:a1 :Integer}}}
      [(get {:$type :spec/T$v1, :a1 10} :a1)
       :Integer
       10
       "{$type: spec/T$v1, a1: 10}.a1"
       "10"])
     (hc
-     {:spec/T$v1 {:spec-vars {:a- "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:a- :Integer}}}
      [(get {:$type :spec/T$v1, :a-1 10} :a-1)
       [:throws "h-err/missing-required-vars 0-0 : Missing required variables: a-"]])
     (hc
-     {:spec/T$v1 {:spec-vars {:a_1 "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:a_1 :Integer}}}
      [(get {:$type :spec/T$v1, :a_1 10} :a_1)
       :Integer
       10
       "{$type: spec/T$v1, 'a_1': 10}.'a_1'"
       "10"])
     (hc
-     {:spec/T$v1 {:spec-vars {:_1 "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:_1 :Integer}}}
      [(get {:$type :spec/T$v1, :_1 10} :_1)
       :Integer
       10
       "{$type: spec/T$v1, '_1': 10}.'_1'"
       "10"])
     (hc
-     {:spec/T$v1 {:spec-vars {:a$1 "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:a$1 :Integer}}}
      [(get {:$type :spec/T$v1, :a$1 10} :a$1)
       :Integer
       10
       "{$type: spec/T$v1, 'a$1': 10}.'a$1'"
       "10"])
     (hc
-     {:spec/T$v1 {:spec-vars {:$1 "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:$1 :Integer}}}
      [(get {:$type :spec/T$v1, :$1 10} :$1)
       :Integer
       10
       "{$type: spec/T$v1, '$1': 10}.'$1'"
       "10"])
     (hc
-     {:spec/T$v1 {:spec-vars {:a111111111111111111111111111111111111111111111111111111111111111111111111111111111111 "Integer"}}}
+     {:spec/T$v1 {:spec-vars {:a111111111111111111111111111111111111111111111111111111111111111111111111111111111111 :Integer}}}
      [(get
        {:$type :spec/T$v1,
         :a111111111111111111111111111111111111111111111111111111111111111111111111111111111111
@@ -10127,7 +10127,7 @@
 
 (deftest test-recursive-refinement
   (hc
-   {:spec/Mirror {:spec-vars {:x "Integer"}
+   {:spec/Mirror {:spec-vars {:x :Integer}
                   :refines-to {:spec/Mirror {:name "refine_to_Mirror"
                                              :expr '(when (> x 0)
                                                       {:$type :spec/Mirror
@@ -10139,7 +10139,7 @@
     [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
 
   (hc
-   {:spec/Mirror {:spec-vars {:x "Integer"}
+   {:spec/Mirror {:spec-vars {:x :Integer}
                   :refines-to {:spec/Mirror {:name "refine_to_Mirror"
                                              :expr '(when (> x 0)
                                                       {:$type :spec/Mirror
@@ -10151,12 +10151,12 @@
     [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
 
   (hc
-   {:spec/A {:spec-vars {:x "Integer"}
+   {:spec/A {:spec-vars {:x :Integer}
              :refines-to {:spec/B {:name "as_B"
                                    :expr '(when (> x 0)
                                             {:$type :spec/B
                                              :y (dec x)})}}}
-    :spec/B {:spec-vars {:y "Integer"}
+    :spec/B {:spec-vars {:y :Integer}
              :refines-to {:spec/A {:name "as_A"
                                    :expr '{:$type :spec/A
                                            :x y}}}}}
@@ -10167,12 +10167,12 @@
     "{$type: spec/A, x: 1}"])
 
   (hc
-   {:spec/A {:spec-vars {:x "Integer"}
+   {:spec/A {:spec-vars {:x :Integer}
              :refines-to {:spec/B {:name "as_B"
                                    :expr '(when (> x 0)
                                             {:$type :spec/B
                                              :y (dec x)})}}}
-    :spec/B {:spec-vars {:y "Integer"}
+    :spec/B {:spec-vars {:y :Integer}
              :refines-to {:spec/A {:name "as_A"
                                    :expr '{:$type :spec/A
                                            :x y}}}}}
@@ -10183,12 +10183,12 @@
     "{$type: spec/A, x: 0}"])
 
   (hc
-   {:spec/A {:spec-vars {:x "Integer"}
+   {:spec/A {:spec-vars {:x :Integer}
              :refines-to {:spec/B {:name "as_B"
                                    :expr '(when (> x 0)
                                             {:$type :spec/B
                                              :y (dec x)})}}}
-    :spec/B {:spec-vars {:y "Integer"}
+    :spec/B {:spec-vars {:y :Integer}
              :refines-to {:spec/A {:name "as_A"
                                    :expr '{:$type :spec/A
                                            :x y}}}}}

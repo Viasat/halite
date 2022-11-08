@@ -9,7 +9,7 @@ Specs are a general mechanism for modelling whatever is of interest.
 Writing a spec is carving out a subset out of the universe of all possible values and giving them a name.
 
 ```clojure
-{:spec/Ball {:spec-vars {:color "String"},
+{:spec/Ball {:spec-vars {:color :String},
              :constraints {:color_constraint '(contains? #{"blue" "green" "red"}
                                                          color)}}}
 ```
@@ -31,7 +31,7 @@ The spec gives a name to the set of values which are maps that contain a type fi
 If instead we defined this spec, then we are further constraining the set of values in the 'spec/Ball' set. Specifically, this means that any instance which is otherwise a valid 'spec/Ball', but does not have one of these three prescribed colors is not a valid 'spec/Ball'.
 
 ```clojure
-{:spec/Ball {:spec-vars {:color "String"},
+{:spec/Ball {:spec-vars {:color :String},
              :constraints {:color_constraint '(contains? #{"blue" "green" "red"}
                                                          color)}}}
 ```
@@ -74,13 +74,13 @@ A spec context defines all of the specs that are in play when evaluating express
 However, it is possible to convert an instance of one spec into an instance of another spec. This is referred to as 'refinement'. Specs can include refinement expressions indicating how to convert them.
 
 ```clojure
-{:spec/Ball {:spec-vars {:color "String"},
+{:spec/Ball {:spec-vars {:color :String},
              :constraints {:color_constraint '(contains? #{"blue" "green" "red"}
                                                          color)},
              :refines-to {:spec/Round {:name "refine_to_round",
                                        :expr '{:$type :spec/Round,
                                                :radius 5}}}},
- :spec/Round {:spec-vars {:radius "Integer"}}}
+ :spec/Round {:spec-vars {:radius :Integer}}}
 ```
 
 The following shows how to invoke refinements.

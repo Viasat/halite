@@ -29,11 +29,11 @@
 (deftest test-spec-to-ssa
   (let [senv (var-type/to-halite-spec-env
               '{:ws/A
-                {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :z "Integer", :b "Boolean", :c :ws/C}}
+                {:spec-vars {:v [:Maybe :Integer], :w [:Maybe :Integer], :x :Integer, :y :Integer, :z :Integer, :b :Boolean, :c :ws/C}}
                 :foo/Bar
-                {:spec-vars {:a "Integer", :b "Boolean"}}
+                {:spec-vars {:a :Integer, :b :Boolean}}
                 :ws/C
-                {:spec-vars {:cn [:Maybe "Integer"]}}})]
+                {:spec-vars {:cn [:Maybe :Integer]}}})]
     (are [constraints dgraph new-constraints]
          (= [dgraph new-constraints]
             (-> senv
@@ -443,13 +443,13 @@
 (deftest test-spec-to-ssa-with-refinements
   (let [senv (var-type/to-halite-spec-env
               '{:ws/A
-                {:spec-vars {:an "Integer"}
+                {:spec-vars {:an :Integer}
                  :constraints {"a1" (< 0 (+ 1 an))}
                  :refines-to {:ws/B {:expr (when (< an 10)
                                              {:$type :ws/B
                                               :bn (+ 1 an)})}}}
                 :ws/B
-                {:spec-vars {:bn "Integer"}}})
+                {:spec-vars {:bn :Integer}}})
         spec (ssa/spec-to-ssa (envs/spec-env senv) (:ws/A senv))]
     (is (= '{:spec-vars {:an :Integer}
              :ssa-graph
@@ -490,7 +490,7 @@
   (let [senv (envs/spec-env
               (var-type/to-halite-spec-env
                '{:ws/A
-                 {:spec-vars {:s [:Maybe "Boolean"] :p [:Maybe "Boolean"]}
+                 {:spec-vars {:s [:Maybe :Boolean] :p [:Maybe :Boolean]}
                   :constraints {"c1" (= s p)}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)
         a (:ws/A sctx)
@@ -543,9 +543,9 @@
 (deftest test-compute-guards
   (let [senv (var-type/to-halite-spec-env
               '{:ws/A
-                {:spec-vars {:v [:Maybe "Integer"], :w [:Maybe "Integer"], :x "Integer", :y "Integer", :b1 "Boolean", :b2 "Boolean"}}
+                {:spec-vars {:v [:Maybe :Integer], :w [:Maybe :Integer], :x :Integer, :y :Integer, :b1 :Boolean, :b2 :Boolean}}
                 :ws/Foo
-                {:spec-vars {:x "Integer", :y "Integer"}}})]
+                {:spec-vars {:x :Integer, :y :Integer}}})]
     (are [constraints guards]
          (= guards
             (let [spec-info (-> senv
@@ -879,7 +879,7 @@
   (let [senv (envs/spec-env
               (var-type/to-halite-spec-env
                '{:ws/A
-                 {:spec-vars {:p "Boolean", :q "Boolean"}
+                 {:spec-vars {:p :Boolean, :q :Boolean}
                   :constraints {"c1" (if p (< (div 10 0) 1) true)
                                 "c2" (if q true (and (< 1 (div 10 0)) (< (div 10 0) 1)))
                                 "c3" (if (not q) (< 1 (div 10 0)) true)}}}))
@@ -894,7 +894,7 @@
   (let [senv (envs/spec-env
               (var-type/to-halite-spec-env
                {:ws/A
-                '{:spec-vars {:x "Integer", :y "Integer", :p "Boolean", :q "Boolean"}
+                '{:spec-vars {:x :Integer, :y :Integer, :p :Boolean, :q :Boolean}
                   :constraints {"a1" (< x y)
                                 "a2" (if p (< (div 15 x) 10) true)
                                 "a3" (if q (< 1 (div 15 x)) true)

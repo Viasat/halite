@@ -9,8 +9,8 @@ Specs can be defined as refining other specs. When this is done what constraints
 One spec can be defined to be a refinement of another spec. First consider a square which has a width and height. The constraint, which makes it a square, requires these two values to be equal.
 
 ```clojure
-{:spec/Square {:spec-vars {:height "Integer",
-                           :width "Integer"},
+{:spec/Square {:spec-vars {:height :Integer,
+                           :width :Integer},
                :constraints {:square '(= width height)}}}
 ```
 
@@ -39,14 +39,14 @@ While the following is not a valid spec/Square
 Now consider a new spec, 'spec/Box', and we define that it refines to 'spec/Square'.
 
 ```clojure
-{:spec/Box$v1 {:spec-vars {:length "Integer",
-                           :width "Integer"},
+{:spec/Box$v1 {:spec-vars {:length :Integer,
+                           :width :Integer},
                :refines-to {:spec/Square {:name "refine_to_square",
                                           :expr '{:$type :spec/Square,
                                                   :width width,
                                                   :height length}}}},
- :spec/Square {:spec-vars {:height "Integer",
-                           :width "Integer"},
+ :spec/Square {:spec-vars {:height :Integer,
+                           :width :Integer},
                :constraints {:square '(= width height)}}}
 ```
 
@@ -84,15 +84,15 @@ It is not possible to construct an instance of 'spec/Box' which is not a 'spec/S
 If this was not the intent, and rather the intent was to indicate that some instances of 'spec/Box' can be converted into 'spec/Square' instances then the refinement would be defined as:
 
 ```clojure
-{:spec/Box$v2 {:spec-vars {:length "Integer",
-                           :width "Integer"},
+{:spec/Box$v2 {:spec-vars {:length :Integer,
+                           :width :Integer},
                :refines-to {:spec/Square {:name "refine_to_square",
                                           :expr '(when (= width length)
                                                    {:$type :spec/Square,
                                                     :width width,
                                                     :height length})}}},
- :spec/Square {:spec-vars {:height "Integer",
-                           :width "Integer"},
+ :spec/Square {:spec-vars {:height :Integer,
+                           :width :Integer},
                :constraints {:square '(= width height)}}}
 ```
 
@@ -141,15 +141,15 @@ false
 Another way of defining the refinement is to declare it to be 'inverted?'. What this means is that the refinement will be applied where possible, and where it results in a contradiction then a runtime error is produced.
 
 ```clojure
-{:spec/Box$v3 {:spec-vars {:length "Integer",
-                           :width "Integer"},
+{:spec/Box$v3 {:spec-vars {:length :Integer,
+                           :width :Integer},
                :refines-to {:spec/Square {:name "refine_to_square",
                                           :expr '{:$type :spec/Square,
                                                   :width width,
                                                   :height length},
                                           :inverted? true}}},
- :spec/Square {:spec-vars {:height "Integer",
-                           :width "Integer"},
+ :spec/Square {:spec-vars {:height :Integer,
+                           :width :Integer},
                :constraints {:square '(= width height)}}}
 ```
 

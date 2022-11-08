@@ -21,7 +21,7 @@ But, ideally users will not use '$no-value' explicitly.
 An 'unset' value is expected to come into play via an optional field.
 
 ```clojure
-{:spec/A {:spec-vars {:b [:Maybe "Integer"]}}}
+{:spec/A {:spec-vars {:b [:Maybe :Integer]}}}
 ```
 
 ```clojure
@@ -168,10 +168,10 @@ If a potentially 'unset' value needs to be fabricated then the 'when' operators 
 The 'when-value' and 'if-value' operators are useful from within the context of a spec.
 
 ```clojure
-{:spec/P {:spec-vars {:q [:Maybe "Integer"],
-                      :r "Integer"}},
- :spec/X {:spec-vars {:y [:Maybe "Integer"],
-                      :z [:Maybe "Integer"]},
+{:spec/P {:spec-vars {:q [:Maybe :Integer],
+                      :r :Integer}},
+ :spec/X {:spec-vars {:y [:Maybe :Integer],
+                      :z [:Maybe :Integer]},
           :refines-to {:spec/P {:name "refine_to_P",
                                 :expr '{:$type :spec/P,
                                         :q (when-value y (inc y)),

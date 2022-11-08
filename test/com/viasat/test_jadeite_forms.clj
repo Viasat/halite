@@ -7,14 +7,14 @@
             [com.viasat.jadeite :as jadeite])
   (:import (clojure.lang ExceptionInfo)))
 
-(def senv {:ws/A$v1 {:spec-vars {:x "Integer"
-                                 :y "Boolean"
+(def senv {:ws/A$v1 {:spec-vars {:x :Integer
+                                 :y :Boolean
                                  :c :ws2/B$v1}}
-           :ws2/B$v1 {:spec-vars {:s "String"}}
-           :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
-           :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}
-           :ws/OhNo$v1 {:spec-vars {:true "Integer"
-                                    :false "String"}}})
+           :ws2/B$v1 {:spec-vars {:s :String}}
+           :ws/C$v1 {:spec-vars {:xs [:Integer]}}
+           :ws/D$v1 {:spec-vars {:xss [[:Integer]]}}
+           :ws/OhNo$v1 {:spec-vars {:true :Integer
+                                    :false :String}}})
 
 (def tenv (halite/type-env
            {'a [:Instance :ws/A$v1]

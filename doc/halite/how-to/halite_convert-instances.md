@@ -9,8 +9,8 @@ How to convert an instance from one spec type to another.
 An expression can convert an instance of one type to the instance of another type. Assume there are these two specs.
 
 ```clojure
-{:spec/A$v1 {:spec-vars {:b "Integer"}},
- :spec/X$v1 {:spec-vars {:y "Integer"}}}
+{:spec/A$v1 {:spec-vars {:b :Integer}},
+ :spec/X$v1 {:spec-vars {:y :Integer}}}
 ```
 
 The following expression converts an instance of the first spec into an instance of the second.
@@ -30,11 +30,11 @@ The following expression converts an instance of the first spec into an instance
 This work, but the language has a built-in idea of 'refinements' that allow such conversion functions to be expressed in a way that the system understands.
 
 ```clojure
-{:spec/A$v2 {:spec-vars {:b "Integer"},
+{:spec/A$v2 {:spec-vars {:b :Integer},
              :refines-to {:spec/X$v2 {:name "refine_to_X",
                                       :expr '{:$type :spec/X$v2,
                                               :y b}}}},
- :spec/X$v2 {:spec-vars {:y "Integer"}}}
+ :spec/X$v2 {:spec-vars {:y :Integer}}}
 ```
 
 The refinement can be invoked as follows:

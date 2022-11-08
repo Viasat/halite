@@ -9,7 +9,7 @@ How to model an enumeration as a string
 Say we want to model a shirt size and the valid values are "small", "medium", and "large". We can start by modeling the size as a string.
 
 ```clojure
-{:spec/Shirt$v1 {:spec-vars {:size "String"}}}
+{:spec/Shirt$v1 {:spec-vars {:size :String}}}
 ```
 
 This is a start, but it allows invalid size values.
@@ -27,7 +27,7 @@ This is a start, but it allows invalid size values.
 So we can add a constraint to limit the values to what we expect.
 
 ```clojure
-{:spec/Shirt$v2 {:spec-vars {:size "String"},
+{:spec/Shirt$v2 {:spec-vars {:size :String},
                  :constraints {:size_constraint '(contains? #{"small" "medium"
                                                               "large"}
                                                             size)}}}

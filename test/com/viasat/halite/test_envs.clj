@@ -14,16 +14,16 @@
     (are [vtype htype]
          (= htype (var-type/halite-type-from-var-type senv vtype))
 
-      "Integer" :Integer
-      "String" :String
-      "Boolean" :Boolean
+      :Integer :Integer
+      :String :String
+      :Boolean :Boolean
       :ws/A [:Instance :* #{:ws/A}]
       :ws/B [:Instance :ws/B]
       [:ws/A] [:Vec [:Instance :* #{:ws/A}]]
       [:ws/B] [:Vec [:Instance :ws/B]]
       #{:ws/A} [:Set [:Instance :* #{:ws/A}]]
       #{:ws/B} [:Set [:Instance :ws/B]]
-      [:Maybe "Integer"] [:Maybe :Integer]
+      [:Maybe :Integer] [:Maybe :Integer]
       [:Maybe :ws/A] [:Maybe [:Instance :* #{:ws/A}]]
       [:Maybe :ws/B] [:Maybe [:Instance :ws/B]]
       [:Maybe [:ws/A]] [:Maybe [:Vec [:Instance :* #{:ws/A}]]])
@@ -33,22 +33,22 @@
                            (var-type/halite-type-from-var-type senv invalid-type))
 
       "Foo" #"Unrecognized primitive type"
+      :foo #"Unrecognized primitive type"
       :ws/C #"Spec not found"
       [] #"exactly one inner type"
-      ["Integer" "String"] #"exactly one inner type"
+      [:Integer :String] #"exactly one inner type"
       #{} #"exactly one inner type"
-      #{"Integer" "String"} #"exactly one inner type"
-      [[:Maybe "Integer"]] #"cannot have optional inner type"
-      #{[:Maybe "Integer"]} #"cannot have optional inner type"
-      [:Maybe "Integer" :ws/A] #"exactly one inner type"
-      [:Maybe] #"exactly one inner type"
-      :foo #"Invalid spec variable type")))
+      #{:Integer :String} #"exactly one inner type"
+      [[:Maybe :Integer]] #"cannot have optional inner type"
+      #{[:Maybe :Integer]} #"cannot have optional inner type"
+      [:Maybe :Integer :ws/A] #"exactly one inner type"
+      [:Maybe] #"exactly one inner type")))
 
 (deftest test-type-env-from-spec
   (let [senv (var-type/to-halite-spec-env {:ws/A {:abstract? true}
                                            :ws/B {}
-                                           :ws/C {:spec-vars {:x "Integer"
-                                                              :w [:Maybe "Integer"]
+                                           :ws/C {:spec-vars {:x :Integer
+                                                              :w [:Maybe :Integer]
                                                               :as [:Maybe #{:ws/A}]
                                                               :bs [:ws/B]}}})]
     (is (=
@@ -70,7 +70,7 @@
           :spec-vars {:x [:Maybe [:Vec :Integer]]}}
          (var-type/to-halite-spec {}
                                   {:abstract? true
-                                   :spec-vars {:x [:Maybe ["Integer"]]}})))
+                                   :spec-vars {:x [:Maybe [:Integer]]}})))
   (is (= {:abstract? true
           :spec-vars {:x [:Instance :ws/X]}}
          (var-type/to-halite-spec {:ws/X {}}

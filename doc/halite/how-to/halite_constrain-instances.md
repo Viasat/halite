@@ -9,13 +9,13 @@ How to constrain the possible values for instance fields
 As a starting point specs specify the fields that make up instances.
 
 ```clojure
-{:spec/A$v1 {:spec-vars {:b "Integer"}}}
+{:spec/A$v1 {:spec-vars {:b :Integer}}}
 ```
 
 This indicates that 'b' must be an integer, but it doesn't indicate what valid values are. The following spec includes a constraint that requires b to be greater than 100.
 
 ```clojure
-{:spec/A$v2 {:spec-vars {:b "Integer"},
+{:spec/A$v2 {:spec-vars {:b :Integer},
              :constraints {:constrain_b '(> b 100)}}}
 ```
 
@@ -47,8 +47,8 @@ However, an attempt to make an instance that violates this constraint fails.
 Constraints can be arbitrary expressions that refer to multiple fields.
 
 ```clojure
-{:spec/A$v3 {:spec-vars {:b "Integer",
-                         :c "Integer"},
+{:spec/A$v3 {:spec-vars {:b :Integer,
+                         :c :Integer},
              :constraints {:constrain_b_c '(< (+ b c) 10)}}}
 ```
 

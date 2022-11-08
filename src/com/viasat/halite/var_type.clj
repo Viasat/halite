@@ -13,13 +13,13 @@
 
 (set! *warn-on-reflection* true)
 
-(def primitive-types (into ["String" "Integer"
-                            "Boolean"]
+(def primitive-types (into [:String :Integer :Boolean]
                            (map #(str "Decimal" %) (range 1 (inc fixed-decimal/max-scale)))))
 
 (s/defschema MandatoryVarType
   (s/conditional
-   string? (apply s/enum primitive-types)
+   #(or (string? %)
+        (and (keyword? %) (types/bare? %))) (apply s/enum primitive-types)
    vector? (s/constrained [(s/recursive #'MandatoryVarType)]
                           #(= 1 (count %))
                           "exactly one inner type")
@@ -80,9 +80,10 @@
                                            {:var-type %}))
                            %)]
     (cond
-      (string? var-type)
+      (or (string? var-type)
+          (and (keyword? var-type) (types/bare? var-type)))
       (cond
-        (#{"Integer" "String" "Boolean"} var-type) (keyword var-type)
+        (#{:Integer :String :Boolean} var-type) (keyword var-type)
         (string/starts-with? var-type "Decimal") (types/decimal-type (Long/parseLong (subs var-type 7)))
         :default (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
 

@@ -10,11 +10,11 @@ The following is a full model for the grocery delivery business.
 
 ```clojure
 {:tutorials.grocery/Country$v1
-   {:spec-vars {:name "String"},
+   {:spec-vars {:name :String},
     :constraints {:name_constraint '(contains? #{"Canada" "Mexico" "US"}
                                                name)}},
  :tutorials.grocery/DiscountedPrescriptionPerk$v1
-   {:spec-vars {:prescriptionID "String"},
+   {:spec-vars {:prescriptionID :String},
     :refines-to {:tutorials.grocery/Perk$v1
                    {:name "refine_to_Perk",
                     :expr '{:$type :tutorials.grocery/Perk$v1,
@@ -30,7 +30,7 @@ The following is a full model for the grocery delivery business.
                             :feePerUse #d "1.99",
                             :usesPerMonth 2}}}},
  :tutorials.grocery/FreeDeliveryPerk$v1
-   {:spec-vars {:usesPerMonth "Integer"},
+   {:spec-vars {:usesPerMonth :Integer},
     :constraints {:usesPerMonth_limit '(< usesPerMonth 20)},
     :refines-to {:tutorials.grocery/Perk$v1
                    {:name "refine_to_Perk",
@@ -40,7 +40,7 @@ The following is a full model for the grocery delivery business.
                             :feePerUse #d "0.00",
                             :usesPerMonth usesPerMonth}}}},
  :tutorials.grocery/GroceryService$v1
-   {:spec-vars {:deliveriesPerMonth "Integer",
+   {:spec-vars {:deliveriesPerMonth :Integer,
                 :feePerMonth "Decimal2",
                 :perks #{:tutorials.grocery/Perk$v1},
                 :subscriberCountry :tutorials.grocery/Country$v1},
@@ -72,8 +72,8 @@ The following is a full model for the grocery delivery business.
                       (get p :perkId))},
           :inverted? true}}},
  :tutorials.grocery/GroceryStoreSubscription$v1
-   {:spec-vars {:name "String",
-                :perkIds ["Integer"],
+   {:spec-vars {:name :String,
+                :perkIds [:Integer],
                 :storeCountry :tutorials.grocery/Country$v1},
     :constraints
       {:storeCountryServed '(or (and (= name "Acme Foods")
@@ -87,8 +87,8 @@ The following is a full model for the grocery delivery business.
    {:abstract? true,
     :spec-vars {:feePerMonth "Decimal2",
                 :feePerUse "Decimal2",
-                :perkId "Integer",
-                :usesPerMonth [:Maybe "Integer"]},
+                :perkId :Integer,
+                :usesPerMonth [:Maybe :Integer]},
     :constraints {:feePerMonth_limit '(and (<= #d "0.00" feePerMonth)
                                            (<= feePerMonth #d "199.99")),
                   :feePerUse_limit '(and (<= #d "0.00" feePerUse)

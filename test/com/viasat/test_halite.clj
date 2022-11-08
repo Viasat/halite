@@ -49,12 +49,12 @@
   (prop/for-all [s gen/string-ascii]
                 (halite-symbol-differs-from-clj-symbol s)))
 
-(def senv {:ws/A$v1 {:spec-vars {:x "Integer"
-                                 :y "Boolean"
+(def senv {:ws/A$v1 {:spec-vars {:x :Integer
+                                 :y :Boolean
                                  :c :ws2/B$v1}}
-           :ws2/B$v1 {:spec-vars {:s "String"}}
-           :ws/C$v1 {:spec-vars {:xs ["Integer"]}}
-           :ws/D$v1 {:spec-vars {:xss [["Integer"]]}}})
+           :ws2/B$v1 {:spec-vars {:s :String}}
+           :ws/C$v1 {:spec-vars {:xs [:Integer]}}
+           :ws/D$v1 {:spec-vars {:xss [[:Integer]]}}})
 
 (def tenv (halite/type-env {}))
 
@@ -270,7 +270,7 @@
     '(abs -10) 10))
 
 (deftest get-type-checking-tests
-  (let [senv {:ws/A$v1 {:spec-vars {:x "Integer"}}
+  (let [senv {:ws/A$v1 {:spec-vars {:x :Integer}}
               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
               :ws/C$v1 {:spec-vars {:bs [:ws/B$v1]}}}
         tenv (halite/type-env
@@ -309,7 +309,7 @@
                         :a {:$type :ws/A$v1
                             :x x}})
                      (range 5))}
-        senv {:ws/A$v1 {:spec-vars {:x "Integer"}}
+        senv {:ws/A$v1 {:spec-vars {:x :Integer}}
               :ws/B$v1 {:spec-vars {:a :ws/A$v1}}
               :ws/C$v1 {:spec-vars {:bs [:ws/B$v1]}}}
         tenv (halite/type-env {'c [:Instance :ws/C$v1]})
@@ -407,7 +407,7 @@
     '(let [x "foo", y (let [x 1] (+ x 2))] y) 3))
 
 (deftest maybe-tests
-  (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
+  (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
         tenv (-> tenv
                  (envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (envs/extend-scope 'x [:Maybe :Integer]))]
@@ -489,7 +489,7 @@
       '(conj [] x) #"Cannot conj possibly unset value to vector")))
 
 (deftest when-tests
-  (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe "Integer"]}})
+  (let [senv (assoc-in senv [:ws/Maybe$v1] {:spec-vars {:x [:Maybe :Integer]}})
         tenv (-> tenv
                  (envs/extend-scope 'm [:Instance :ws/Maybe$v1])
                  (envs/extend-scope 'x [:Maybe :Integer])
@@ -650,8 +650,8 @@
 
 (deftest test-constraint-validation
   (let [senv (merge senv
-                    {:ws/E$v1 {:spec-vars {:x [:Maybe "Integer"]
-                                           :y "Boolean"}
+                    {:ws/E$v1 {:spec-vars {:x [:Maybe :Integer]
+                                           :y :Boolean}
                                :constraints {:x-if-y '(=> y (if-value x true false))}}
                      :ws/Invalid$v1 {:constraints {:broken '(or (+ 1 2) true)}}})]
     ;; type-check cannot detect constraint violations, because that would often involve
@@ -685,16 +685,16 @@
       {:$type :ws/Invalid$v1} #"No matching signature")))
 
 (deftest test-refinement-validation
-  (let [senv {:ws/A {:spec-vars {:x "Integer"}
+  (let [senv {:ws/A {:spec-vars {:x :Integer}
                      :refines-to {:ws/B {:expr '{:$type :ws/B :x x}}
                                   :ws/C {:inverted? true :expr '{:$type :ws/C :x x}}}}
-              :ws/B {:spec-vars {:x "Integer"}
+              :ws/B {:spec-vars {:x :Integer}
                      :constraints '{:posX (< 0 x)}
                      :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 x)}}}}
-              :ws/C {:spec-vars {:x "Integer"}
+              :ws/C {:spec-vars {:x :Integer}
                      :constraints '{:boundedX (< x 10)}
                      :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 (* 2 x))}}}}
-              :ws/D {:spec-vars {:x "Integer"}
+              :ws/D {:spec-vars {:x :Integer}
                      :constraints '{:xIsOdd (= 1 (mod x 2))}}
               :ws/E {}}]
 
@@ -738,9 +738,9 @@
       (is (= {:$type :ws/E} (halite/eval-expr senv tenv empty-env '(refine-to {:$type :ws/E} :ws/E)))))))
 
 (deftest test-refinement-with-guards
-  (let [senv {:ws/A {:spec-vars {:x "Integer"}
+  (let [senv {:ws/A {:spec-vars {:x :Integer}
                      :constraints '{:posX (< 0 x)}}
-              :ws/B {:spec-vars {:y "Integer"}
+              :ws/B {:spec-vars {:y :Integer}
                      :refines-to {:ws/A {:expr '(if (< 0 y) ; A passthru
                                                   {:$type :ws/A, :x y}
                                                   (when (< y 0) ; A via negation
@@ -762,13 +762,13 @@
                            '(refine-to {:$type :ws/B, :y 0} :ws/A))))))
 
 (deftest test-instance-type
-  (let [senv {:ws/A {:spec-vars {:x "Integer"}
+  (let [senv {:ws/A {:spec-vars {:x :Integer}
                      :abstract? true
                      :constraints '{:posX (< 0 x)
                                     :boundedX (< x 10)}}
               :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A :x 5}}}}
-              :ws/A2 {:spec-vars {:a "Integer"
-                                  :b "Integer"}
+              :ws/A2 {:spec-vars {:a :Integer
+                                  :b :Integer}
                       :refines-to {:ws/A {:expr '{:$type :ws/A :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}}
               :ws/C {:spec-vars {:as [:ws/A]}}
@@ -810,13 +810,13 @@
       '(refine-to (get {:$type :ws/B :a {:$type :ws/D}} :a) :ws/A) #"No active refinement path from 'ws/D' to 'ws/A'")))
 
 (deftest test-refines-to?
-  (let [senv {:ws/A {:spec-vars {:x "Integer"}
+  (let [senv {:ws/A {:spec-vars {:x :Integer}
                      :abstract? true
                      :constraints '{:posX (< 0 x)
                                     :boundedX (< x 10)}}
               :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A, :x 5}}}}
-              :ws/A2 {:spec-vars {:a "Integer"
-                                  :b "Integer"}
+              :ws/A2 {:spec-vars {:a :Integer
+                                  :b :Integer}
                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}}
               :ws/C {:spec-vars {:as [:ws/A]}}
@@ -852,10 +852,10 @@
       '(refines-to? ax :ws/A1) false)))
 
 (deftest test-valid
-  (let [senv '{:ws/A {:spec-vars {:x "Integer", :y "Integer"}
+  (let [senv '{:ws/A {:spec-vars {:x :Integer, :y :Integer}
                       :constraints {:xLTy (< x y)}
                       :refines-to {:ws/B {:expr {:$type :ws/B :z (+ x y)}}}}
-               :ws/B {:spec-vars {:z "Integer"}
+               :ws/B {:spec-vars {:z :Integer}
                       :constraints {:posZ (< 0 z)}}
                :ws/C {:spec-vars {:a :ws/A}
                       :constraints {:maxSum (< (+ (get a :x) (get a :y)) 10)}}}]
@@ -892,13 +892,13 @@
 ;;'(valid (when (< 2 1) {:$type :ws/A :x 1 :y 2})) :Unset
 
 (deftest abstract-specs
-  (let [senv {:ws/A {:spec-vars {:x "Integer"}
+  (let [senv {:ws/A {:spec-vars {:x :Integer}
                      :constraints '{:posX (< 0 x)
                                     :boundedX (< x 10)}
                      :abstract? true}
               :ws/A1 {:refines-to {:ws/A {:expr '{:$type :ws/A, :x 6}}}}
-              :ws/A2 {:spec-vars {:a "Integer"
-                                  :b "Integer"}
+              :ws/A2 {:spec-vars {:a :Integer
+                                  :b :Integer}
                       :refines-to {:ws/A {:expr '{:$type :ws/A, :x (+ a b)}}}}
               :ws/B {:spec-vars {:a :ws/A}
                      :constraints '{:notFive (not= 5 (get (refine-to a :ws/A) :x))}}
@@ -981,15 +981,15 @@
                 {:abstract? true}
 
                 :ws/JsonStr
-                {:spec-vars {:s "String"}
+                {:spec-vars {:s :String}
                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                 :ws/JsonBool
-                {:spec-vars {:b "Boolean"}
+                {:spec-vars {:b :Boolean}
                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                 :ws/JsonInt
-                {:spec-vars {:n "Integer"}
+                {:spec-vars {:n :Integer}
                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                 :ws/JsonVec
@@ -997,7 +997,7 @@
                  :refines-to {:ws/JsonVal {:expr {:$type :ws/JsonVal}}}}
 
                 :ws/JsonObjEntry
-                {:spec-vars {:key "String", :val :ws/JsonVal}}
+                {:spec-vars {:key :String, :val :ws/JsonVal}}
 
                 :ws/JsonObj
                 {:spec-vars {:entries #{:ws/JsonObjEntry}}

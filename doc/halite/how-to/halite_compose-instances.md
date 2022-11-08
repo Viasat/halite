@@ -10,7 +10,7 @@ A spec variable can be of the type of another spec
 
 ```clojure
 {:spec/A$v1 {:spec-vars {:b :spec/B$v1}},
- :spec/B$v1 {:spec-vars {:c "Integer"}}}
+ :spec/B$v1 {:spec-vars {:c :Integer}}}
 ```
 
 Composite instances are created by nesting the instances at construction time.

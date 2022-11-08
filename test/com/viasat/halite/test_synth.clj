@@ -92,11 +92,11 @@
 (deftest test-transitive-refinements-with-invalid-inverted-step
   (let [spec-map
         {:spec/Object {}
-         :spec/Falsey {:spec-vars {:f "Boolean"}
+         :spec/Falsey {:spec-vars {:f :Boolean}
                        :constraints {:cf '(not f)}
                        :refines-to {:spec/Object {:name "as_Object"
                                                   :expr '{:$type :spec/Object}}}}
-         :spec/Truthy {:spec-vars {:t "Boolean"}
+         :spec/Truthy {:spec-vars {:t :Boolean}
                        :constraints {:ct 't}
                        :refines-to {:spec/Falsey {:name "as_Falsey"
                                                   :expr '{:$type :spec/Falsey
@@ -143,7 +143,7 @@
                                   (= #{:$type :x} (set (keys $this)))
                                   (and (user-eval $this '(> x 12)))))
                    :refine-fns {}}}
-         (synth {:spec/A {:spec-vars {:x "Integer"}
+         (synth {:spec/A {:spec-vars {:x :Integer}
                           :constraints {:c '(> x 12)}}})))
   (is (= {:spec/A {:valid?-fn '(fn [$this]
                                  (and
@@ -153,12 +153,12 @@
                                   (and (user-eval $this '(> x 12))
                                        (user-eval $this '(< x 24)))))
                    :refine-fns {}}}
-         (synth {:spec/A {:spec-vars {:x "Integer"}
+         (synth {:spec/A {:spec-vars {:x :Integer}
                           :constraints {:c '(> x 12)
                                         :c2 '(< x 24)}}}))))
 
 (deftest test-optional-field
-  (let [spec-map {:spec/A {:spec-vars {:x [:Maybe "Integer"]}}}]
+  (let [spec-map {:spec/A {:spec-vars {:x [:Maybe :Integer]}}}]
     (is (= {:spec/A {:valid?-fn '(fn [$this]
                                    (and
                                     (map? $this)
@@ -174,8 +174,8 @@
     (is (nil?
          (spec-map-eval spec-map '(valid {:$type :spec/A :x 1 :y 0})))))
 
-  (let [spec-map {:spec/A {:spec-vars {:x [:Maybe "Integer"]
-                                       :y "Integer"}}}]
+  (let [spec-map {:spec/A {:spec-vars {:x [:Maybe :Integer]
+                                       :y :Integer}}}]
     (is (= {:spec/A {:valid?-fn '(fn [$this]
                                    (and
                                     (map? $this)
@@ -226,15 +226,15 @@
                  [:throws])))))
 
 (deftest test-against-halite
-  (let [spec-map {:spec/A {:spec-vars {:a "Boolean"}
+  (let [spec-map {:spec/A {:spec-vars {:a :Boolean}
                            :constraints {:ca 'a}}
-                  :spec/B {:spec-vars {:b "Boolean"
-                                       :c "Boolean"}
+                  :spec/B {:spec-vars {:b :Boolean
+                                       :c :Boolean}
                            :refines-to {:spec/A {:name "as_A"
                                                  :expr '{:$type :spec/A
                                                          :a (and b c)}}}}
-                  :spec/C {:spec-vars {:b "Boolean"
-                                       :c "Boolean"}
+                  :spec/C {:spec-vars {:b :Boolean
+                                       :c :Boolean}
                            :refines-to {:spec/A {:name "as_A"
                                                  :expr '{:$type :spec/A
                                                          :a (and b c)}

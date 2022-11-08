@@ -21,7 +21,7 @@ Instances of this spec could be created as:
 It is more interesting to define data fields on specs that define the structure of instances of the spec
 
 ```clojure
-{:spec/Dog$v2 {:spec-vars {:age "Integer"}}}
+{:spec/Dog$v2 {:spec-vars {:age :Integer}}}
 ```
 
 This spec can be instantiated as:
@@ -34,9 +34,9 @@ This spec can be instantiated as:
 A spec can have multiple fields
 
 ```clojure
-{:spec/Dog$v4 {:spec-vars {:name "String",
-                           :age "Integer",
-                           :colors ["String"]}}}
+{:spec/Dog$v4 {:spec-vars {:name :String,
+                           :age :Integer,
+                           :colors [:String]}}}
 ```
 
 ```clojure

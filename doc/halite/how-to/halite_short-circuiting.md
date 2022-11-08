@@ -60,7 +60,7 @@ To guard index out of bounds.
 To guard instance construction.
 
 ```clojure
-{:spec/Q {:spec-vars {:a "Integer"},
+{:spec/Q {:spec-vars {:a :Integer},
           :constraints {:c '(> a 0)}}}
 ```
 
@@ -141,12 +141,12 @@ This example can be refined slightly to avoid duplicating the construction.
 To guard refinements.
 
 ```clojure
-{:spec/P {:spec-vars {:p "Integer"},
+{:spec/P {:spec-vars {:p :Integer},
           :refines-to {:spec/Q {:name "refine_to_Q",
                                 :expr '(when (> p 0)
                                          {:$type :spec/Q,
                                           :q p})}}},
- :spec/Q {:spec-vars {:q "Integer"}}}
+ :spec/Q {:spec-vars {:q :Integer}}}
 ```
 
 ```clojure

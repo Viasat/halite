@@ -228,7 +228,7 @@
 
 (comment
   "simplifies to"
-  {:spec-vars {:s1 [:Maybe "String"], :s2 "String"},
+  {:spec-vars {:s1 [:Maybe :String], :s2 :String},
    :constraints [["$all"
                   (and
                    (if ($value? s1)

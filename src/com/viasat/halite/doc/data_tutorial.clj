@@ -15,7 +15,7 @@
                                      [4 3 2 1]
                                      [2 1 4 3]]}
                             "We can write a specification that contains a value of this form."
-                            {:spec-map {:spec/Sudoku$v1 {:spec-vars {:solution [["Integer"]]}}}}
+                            {:spec-map {:spec/Sudoku$v1 {:spec-vars {:solution [[:Integer]]}}}}
                             "An instance of this spec can be constructed as:"
                             {:code '{:$type :spec/Sudoku$v1
                                      :solution [[1 2 3 4]
@@ -23,7 +23,7 @@
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}}
                             "In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, & 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row."
-                            {:spec-map {:spec/Sudoku$v2 {:spec-vars {:solution [["Integer"]]}
+                            {:spec-map {:spec/Sudoku$v2 {:spec-vars {:solution [[:Integer]]}
                                                          :constraints {:row_1 '(= (concat #{} (get solution 0))
                                                                                   #{1 2 3 4})
                                                                        :row_2 '(= (concat #{} (get solution 1))
@@ -47,7 +47,7 @@
                                                 [2 1 4 3]]}
                              :throws :auto}
                             "Rather than expressing each row constraint separately, they can be captured in a single constraint expression."
-                            {:spec-map {:spec/Sudoku$v3 {:spec-vars {:solution [["Integer"]]}
+                            {:spec-map {:spec/Sudoku$v3 {:spec-vars {:solution [[:Integer]]}
                                                          :constraints {:rows '(every? [r solution]
                                                                                       (= (concat #{} r)
                                                                                          #{1 2 3 4}))}}}}
@@ -66,7 +66,7 @@
                                                 [2 1 4 3]]}
                              :throws :auto}
                             "But, we are only checking rows, let's also check columns."
-                            {:spec-map {:spec/Sudoku$v4 {:spec-vars {:solution [["Integer"]]}
+                            {:spec-map {:spec/Sudoku$v4 {:spec-vars {:solution [[:Integer]]}
                                                          :constraints {:rows '(every? [r solution]
                                                                                       (= (concat #{} r)
                                                                                          #{1 2 3 4}))
@@ -98,7 +98,7 @@
                                                 [2 3 4 1]]}
                              :result :auto}
                             "Let's add the quadrant checks."
-                            {:spec-map {:spec/Sudoku$v5 {:spec-vars {:solution [["Integer"]]}
+                            {:spec-map {:spec/Sudoku$v5 {:spec-vars {:solution [[:Integer]]}
                                                          :constraints {:rows '(every? [r solution]
                                                                                       (= (concat #{} r)
                                                                                          #{1 2 3 4}))
@@ -143,7 +143,7 @@
                                                 [2 1 4 3]]}
                              :result :auto}
                             "Let's combine the quadrant checks into one."
-                            {:spec-map {:spec/Sudoku$v6 {:spec-vars {:solution [["Integer"]]}
+                            {:spec-map {:spec/Sudoku$v6 {:spec-vars {:solution [[:Integer]]}
                                                          :constraints {:rows '(every? [r solution]
                                                                                       (= (concat #{} r)
                                                                                          #{1 2 3 4}))
@@ -176,7 +176,7 @@
                                                 [2 3 4 1]]}
                              :throws :auto}
                             "As an exercise, we can convert the logic of the constraints. Instead of checking that each row, column, and quadrant has the expected elements, we can write the constraints to ensure there are not any rows, columns, or quadrants that do not have the expected elements. The double negative logic is confusing, but this shows other available logical operations."
-                            {:spec-map {:spec/Sudoku$v7 {:spec-vars {:solution [["Integer"]]}
+                            {:spec-map {:spec/Sudoku$v7 {:spec-vars {:solution [[:Integer]]}
                                                          :constraints {:rows '(not (any? [r solution]
                                                                                          (not= (concat #{} r)
                                                                                                #{1 2 3 4})))
@@ -238,14 +238,14 @@
                  :explanation-ref [:tutorials.grocery/specs-as-predicates :tutorials.grocery/refinements-as-functions]
                  :contents ["The following is a full model for the grocery delivery business."
 
-                            {:spec-map {:tutorials.grocery/Country$v1 {:spec-vars {:name "String"}
+                            {:spec-map {:tutorials.grocery/Country$v1 {:spec-vars {:name :String}
                                                                        :constraints {:name_constraint '(contains? #{"Canada" "Mexico" "US"} name)}}
 
                                         :tutorials.grocery/Perk$v1 {:abstract? true
-                                                                    :spec-vars {:perkId "Integer"
+                                                                    :spec-vars {:perkId :Integer
                                                                                 :feePerMonth "Decimal2"
                                                                                 :feePerUse "Decimal2"
-                                                                                :usesPerMonth [:Maybe "Integer"]}
+                                                                                :usesPerMonth [:Maybe :Integer]}
                                                                     :constraints {:feePerMonth_limit '(and (<= #d "0.00" feePerMonth)
                                                                                                            (<= feePerMonth #d "199.99"))
                                                                                   :feePerUse_limit '(and (<= #d "0.00" feePerUse)
@@ -254,7 +254,7 @@
                                                                                                                  (and (<= 0 usesPerMonth)
                                                                                                                       (<= usesPerMonth 999))
                                                                                                                  true)}}
-                                        :tutorials.grocery/FreeDeliveryPerk$v1 {:spec-vars {:usesPerMonth "Integer"}
+                                        :tutorials.grocery/FreeDeliveryPerk$v1 {:spec-vars {:usesPerMonth :Integer}
                                                                                 :constraints {:usesPerMonth_limit '(< usesPerMonth 20)}
                                                                                 :refines-to {:tutorials.grocery/Perk$v1 {:name "refine_to_Perk"
                                                                                                                          :expr '{:$type :tutorials.grocery/Perk$v1
@@ -262,7 +262,7 @@
                                                                                                                                  :feePerMonth #d "2.99"
                                                                                                                                  :feePerUse #d "0.00"
                                                                                                                                  :usesPerMonth usesPerMonth}}}}
-                                        :tutorials.grocery/DiscountedPrescriptionPerk$v1 {:spec-vars {:prescriptionID "String"}
+                                        :tutorials.grocery/DiscountedPrescriptionPerk$v1 {:spec-vars {:prescriptionID :String}
                                                                                           :refines-to {:tutorials.grocery/Perk$v1 {:name "refine_to_Perk"
                                                                                                                                    :expr '{:$type :tutorials.grocery/Perk$v1
                                                                                                                                            :perkId 102
@@ -275,7 +275,7 @@
                                                                                                                                       :feePerUse #d "1.99"
                                                                                                                                       :usesPerMonth 2}}}}
 
-                                        :tutorials.grocery/GroceryService$v1 {:spec-vars {:deliveriesPerMonth "Integer"
+                                        :tutorials.grocery/GroceryService$v1 {:spec-vars {:deliveriesPerMonth :Integer
                                                                                           :feePerMonth "Decimal2"
                                                                                           :perks #{:tutorials.grocery/Perk$v1}
                                                                                           :subscriberCountry :tutorials.grocery/Country$v1}
@@ -297,9 +297,9 @@
                                                                                                                                                                              (get pi :perkId))]
                                                                                                                                                                  (get p :perkId))}
                                                                                                                                            :inverted? true}}}
-                                        :tutorials.grocery/GroceryStoreSubscription$v1 {:spec-vars {:name "String"
+                                        :tutorials.grocery/GroceryStoreSubscription$v1 {:spec-vars {:name :String
                                                                                                     :storeCountry :tutorials.grocery/Country$v1
-                                                                                                    :perkIds ["Integer"]}
+                                                                                                    :perkIds [:Integer]}
                                                                                         :constraints {:valid_stores '(or (= name "Acme Foods")
                                                                                                                          (= name "Good Foods"))
                                                                                                       :storeCountryServed '(or (and (= name "Acme Foods")
