@@ -15,6 +15,8 @@
 
 (def primitive-types [:String :Integer :Boolean])
 
+(def primitive-types-set (set primitive-types))
+
 (s/defschema VarTypeAtom
   "Type atoms are always unqualified keywords."
   (apply s/enum primitive-types))
@@ -37,16 +39,42 @@
 
 (defn maybe-type? [t]
   (and (vector? t)
-       (= :Maybe (first t))))
+       (= :Maybe (first t))
+       (= 2 (count t))))
 
 (defn no-maybe [t]
   (if (maybe-type? t)
     (second t)
     t))
 
-(s/defn optional-var-type? :- s/Bool
-  [var-type :- VarType]
-  (and (vector? var-type) (= :Maybe (first var-type))))
+(s/defn maybe-type :- VarType
+  "Construct a type representing values that are 'maybe' of the given type."
+  [t :- VarType]
+  (if (maybe-type? t)
+    t
+    [:Maybe t]))
+
+(s/defn elem-type :- (s/maybe VarType)
+  "Return the type of the element in the collection type given, if it is known.
+  Otherwise, or if the given type is not a collection, return nil."
+  [t]
+  (when (and (vector? t)
+             (= 2 (count t)))
+    (let [[x y] t]
+      (when (or (= :Set x) (= :Vec x))
+        y))))
+
+(s/defn change-elem-type :- types/HaliteType
+  "Construct a type value that is like coll-type, except it contains new-element-type."
+  [coll-type :- VarType
+   new-elem-type :- types/HaliteType]
+  (assoc coll-type 1 new-elem-type))
+
+(defn bare-keyword? [x]
+  (and (keyword? x)
+       (types/bare? x)))
+
+;;
 
 (s/defschema UserSpecVars {types/BareKeyword VarType})
 
@@ -71,27 +99,24 @@
 (s/defn halite-type-from-var-type :- types/HaliteType
   [senv :- (s/protocol envs/SpecEnv)
    var-type :- VarType]
-  (let [check-mandatory #(if (optional-var-type? %)
+  (let [check-mandatory #(if (maybe-type? %)
                            (throw (ex-info "Set and vector types cannot have optional inner types"
                                            {:var-type %}))
                            %)]
     (cond
-      (and (keyword? var-type) (types/bare? var-type))
+      (bare-keyword? var-type)
       (cond
-        (#{:Integer :String :Boolean} var-type) (keyword var-type)
+        (primitive-types-set var-type) var-type
         :default (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
 
       (types/decimal-type? var-type)
       var-type
 
-      (and (optional-var-type? var-type)
-           (= 2 (count var-type)))
-      [:Maybe (halite-type-from-var-type senv (second var-type))]
+      (maybe-type? var-type)
+      (types/maybe-type (halite-type-from-var-type senv (no-maybe var-type)))
 
-      (and (vector? var-type)
-           (= 2 (count var-type))
-           (#{:Vec :Set} (first var-type))) (let [[coll-type inner-type] var-type]
-                                              [coll-type (halite-type-from-var-type senv (check-mandatory inner-type))])
+      (elem-type var-type)
+      (change-elem-type var-type (halite-type-from-var-type senv (check-mandatory (elem-type var-type))))
 
       (types/namespaced-keyword? var-type)
       (let [abstract? (lookup-spec-abstract? senv var-type)]
