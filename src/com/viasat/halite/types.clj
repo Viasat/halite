@@ -91,13 +91,22 @@
 
 ;;;;
 
-(s/defn bare? :- s/Bool
+(s/defn ^:private bare? :- s/Bool
   "true if the symbol or keyword lacks a namespace component, false otherwise"
-  [sym-or-kw :- (s/cond-pre s/Keyword s/Symbol)] (nil? (namespace sym-or-kw)))
+  [sym-or-kw :- (s/cond-pre s/Keyword s/Symbol)]
+  (nil? (namespace sym-or-kw)))
 
-(def namespaced?
+(def ^:private namespaced?
   "true if the symbol or keyword has a namespace component, false otherwise"
   (complement bare?))
+
+(defn bare-keyword? [x]
+  (and (keyword? x)
+       (bare? x)))
+
+(defn bare-symbol? [x]
+  (and (symbol? x)
+       (bare? x)))
 
 (s/defschema BareKeyword (s/constrained s/Keyword bare?))
 (s/defschema NamespacedKeyword (s/constrained s/Keyword namespaced?))

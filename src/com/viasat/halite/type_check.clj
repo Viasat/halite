@@ -156,7 +156,7 @@
          (types/spec-id subexpr-type)
          (not (types/needs-refinement? subexpr-type)))
     (let [field-types (->> subexpr-type types/spec-id (envs/lookup-spec (:senv ctx)) :spec-vars)]
-      (when-not (and (keyword? index) (types/bare? index))
+      (when-not (types/bare-keyword? index)
         (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)
         (throw-err (h-err/field-name-not-in-spec {:form form, :index-form index, :spec-id (symbol (types/spec-id subexpr-type)) :invalid-vars [(symbol index)]})))
@@ -241,7 +241,7 @@
     (type-check*
      (reduce
       (fn [ctx [sym body]]
-        (when-not (and (symbol? sym) (types/bare? sym))
+        (when-not (types/bare-symbol? sym)
           (throw-err (h-err/let-needs-bare-symbol {:form expr})))
         (when (base/reserved-words sym)
           (throw-err (h-err/cannot-bind-reserved-word {:sym sym
@@ -257,7 +257,7 @@
   (let [[op [sym expr :as bindings] body] expr]
     (when-not (= 2 (count bindings))
       (throw-err (h-err/comprehend-binding-wrong-count {:op op :form expr})))
-    (when-not (and (symbol? sym) (types/bare? sym))
+    (when-not (types/bare-symbol? sym)
       (throw-err (h-err/binding-target-must-be-bare-symbol {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
           et (types/elem-type coll-type)
@@ -304,9 +304,9 @@
   [ctx :- TypeContext, expr]
   (arg-count-exactly 3 expr)
   (let [[op [acc init] [elem coll] body] expr]
-    (when-not (and (symbol? acc) (types/bare? acc))
+    (when-not (types/bare-symbol? acc)
       (throw-err (h-err/accumulator-target-must-be-bare-symbol {:op op, :accumulator acc, :form expr})))
-    (when-not (and (symbol? elem) (types/bare? elem))
+    (when-not (types/bare-symbol? elem)
       (throw-err (h-err/element-binding-target-must-be-bare-symbol {:op op, :form expr, :element elem})))
     (when (= acc elem)
       (throw-err (h-err/element-accumulator-same-symbol {:form expr, :accumulator acc, :element elem})))
@@ -325,7 +325,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (let [[op sym set-expr unset-expr] expr]
     (arg-count-exactly (if (= 'when-value op) 2 3) expr)
-    (when-not (and (symbol? sym) (types/bare? sym))
+    (when-not (types/bare-symbol? sym)
       (throw-err (h-err/if-value-must-be-bare-symbol {:op op
                                                       :form expr})))
     (let [sym-type (type-check* ctx sym)
@@ -342,7 +342,7 @@
   [ctx :- TypeContext, expr :- s/Any]
   (let [[op [sym maybe-expr] then-expr else-expr] expr]
     (arg-count-exactly (if (= 'when-value-let op) 2 3) expr)
-    (when-not (and (symbol? sym) (types/bare? sym))
+    (when-not (types/bare-symbol? sym)
       (throw-err (h-err/binding-target-must-be-bare-symbol {:op op
                                                             :sym sym})))
     (let [maybe-type (type-check* ctx maybe-expr)

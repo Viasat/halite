@@ -26,7 +26,7 @@
    #(and (vector? %) (= :Decimal (first %))) types/Decimal
    vector? [(s/one (s/enum :Set :Vec) "coll-kind")
             (s/one (s/recursive #'VarInnerType) "elem-type")]
-   #(and (keyword? %) (types/bare? %)) VarTypeAtom
+   types/bare-keyword? VarTypeAtom
    :else types/NamespacedKeyword))
 
 (s/defschema VarType
@@ -70,10 +70,6 @@
    new-elem-type :- types/HaliteType]
   (assoc coll-type 1 new-elem-type))
 
-(defn bare-keyword? [x]
-  (and (keyword? x)
-       (types/bare? x)))
-
 ;;
 
 (s/defschema UserSpecVars {types/BareKeyword VarType})
@@ -104,7 +100,7 @@
                                            {:var-type %}))
                            %)]
     (cond
-      (bare-keyword? var-type)
+      (types/bare-keyword? var-type)
       (cond
         (primitive-types-set var-type) var-type
         :default (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
