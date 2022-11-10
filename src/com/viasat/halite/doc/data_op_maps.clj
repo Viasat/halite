@@ -1086,7 +1086,7 @@
                                                                             :spec-vars {:y [:Maybe :Integer]}}
                                                                :my/Result$v1 {:spec-vars {:x [:Maybe :Integer]}}})
                                 :instance {:$type :my/Spec$v1, :y 1}
-                                :expr-str "(when-value-let [x (wxohen-value y (+ y 2))] (inc x))"
+                                :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
                                 :result :auto
                                 :doc "In the context of an instance with an optional field, y, when the field is set to the value of '1'."}

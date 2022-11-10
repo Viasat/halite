@@ -3300,7 +3300,7 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 (whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})
 
 //-- result --
-h-err/unknown-function-or-operator
+4
 ```
 
 </td></tr><tr><td colspan="5">

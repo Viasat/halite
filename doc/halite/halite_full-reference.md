@@ -3000,10 +3000,10 @@ If the binding value is a 'value' then evaluate the second argument with the sym
 
 ```clojure
 ;-- In the context of an instance with an optional field, y, when the field is set to the value of '1'.
-(when-value-let [x (wxohen-value y (+ y 2))] (inc x))
+(when-value-let [x (when-value y (+ y 2))] (inc x))
 
 ;-- result --
-h-err/unknown-function-or-operator
+4
 ```
 
 </td></tr><tr><td colspan="5">
