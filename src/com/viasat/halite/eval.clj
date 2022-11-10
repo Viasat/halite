@@ -282,34 +282,53 @@
                                                         (not (seq constraint-errors)))
                                                :constraint-violation)})))))
       ;; fully explore all active refinement paths, and store the results
-      (let [result (with-meta
-                     inst
-                     {:refinements
-                      (->> refines-to
-                           (sort-by first)
-                           (reduce
-                            (fn [transitive-refinements [spec-id {:keys [expr inverted? name]}]]
-                              (binding [*refinements* transitive-refinements]
-                                (let [inst (try
-                                             (*eval-refinement-fn* ctx spec-tenv spec-id expr name)
-                                             (catch ExceptionInfo ex
-                                               (if inverted?
-                                                 ex
-                                                 (throw ex))))]
-                                  (when (not= :Unset inst)
-                                    (when (not (empty? (set/intersection (set (keys transitive-refinements))
-                                                                         (conj (set (keys (:refinements (meta inst)))) spec-id))))
-                                      (throw-err (h-err/refinement-diamond {:spec-id (symbol spec-id-0)
-                                                                            :current-refinements (mapv symbol (keys transitive-refinements))
-                                                                            :additional-refinements (mapv symbol (keys (:refinements (meta inst))))
-                                                                            :referred-spec-id (symbol spec-id)}))))
-                                  (cond-> transitive-refinements
-                                    (not= :Unset inst) (->
-                                                        (merge (:refinements (meta inst)))
-                                                        (assoc spec-id inst))))))
-                            {}))})]
+      (let [{:keys [transitive-refinements exs]} (->> refines-to
+                                                      (sort-by first)
+                                                      (reduce
+                                                       (fn [{:keys [transitive-refinements exs]} [refines-to-spec-id {:keys [expr inverted? name]}]]
+                                                         (binding [*refinements* transitive-refinements]
+                                                           (let [{:keys [inst ex]} (try
+                                                                                     {:inst (*eval-refinement-fn* ctx spec-tenv refines-to-spec-id expr name)}
+                                                                                     (catch ExceptionInfo ex
+                                                                                       (if inverted?
+                                                                                         {:inst ex}
+                                                                                         {:ex {:refines-to-spec-id refines-to-spec-id
+                                                                                               :result ex}})))]
+                                                             (when (not= :Unset inst)
+                                                               (when (not (empty? (set/intersection (set (keys transitive-refinements))
+                                                                                                    (conj (set (keys (:refinements (meta inst)))) refines-to-spec-id))))
+                                                                 (throw-err (h-err/refinement-diamond {:spec-id (symbol spec-id-0)
+                                                                                                       :current-refinements (mapv symbol (keys transitive-refinements))
+                                                                                                       :additional-refinements (mapv symbol (keys (:refinements (meta inst))))
+                                                                                                       :referred-spec-id (symbol refines-to-spec-id)}))))
+                                                             {:transitive-refinements (cond-> transitive-refinements
+                                                                                        (not= :Unset inst) (->
+                                                                                                            (merge (:refinements (meta inst)))
+                                                                                                            (assoc refines-to-spec-id inst)))
+                                                              :exs (if ex
+                                                                     (conj exs ex)
+                                                                     exs)})))
+                                                       {:transitive-refinements {}
+                                                        :exs #{}}))]
+        (when (seq exs)
+          (when (= 1 (count exs))
+            (throw (->> exs first :result)))
+          (let [exs (->> exs
+                         (sort-by :refines-to-spec-id))
+                error-constraints (->> exs (mapv :refines-to-spec-id))
+                constraint-errors (->> exs (mapv :result))
+                constraint-error-strs (mapv (comp #(or (:spec-error-str %) (:message-template %)) ex-data) constraint-errors)]
+            (throw-err (h-err/spec-threw
+                        {:spec-id (symbol spec-id)
+                         :error-constraints (mapv symbol error-constraints)
+                         :constraint-errors constraint-errors
+                         :constraint-error-strs constraint-error-strs
+                         :spec-error-str (string/join "; " constraint-error-strs)
+                         :value inst}))))
         (swap! *instance-path-atom* rest)
-        result))))
+        (with-meta
+          inst
+          {:refinements transitive-refinements})))))
 
 (declare eval-expr*)
 

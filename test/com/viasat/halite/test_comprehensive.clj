@@ -10321,6 +10321,65 @@
        :spec/B {:spec-vars {:x :Integer}
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
+                                              :x (div 1 0)}}}}}
+      [{:$type :spec/B, :x 0}
+       [:Instance :spec/B]
+       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+       "{$type: spec/B, x: 0}"
+       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/X {}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x (div 1 0)}}
+                             :spec/X {:name "rx"
+                                      :expr '(error "fail")}}}}
+      [{:$type :spec/B, :x 0}
+       [:Instance :spec/B]
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Cannot divide by zero; fail\""]
+       "{$type: spec/B, x: 0}"
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Cannot divide by zero; fail\""]])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/X {}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x (div 1 0)}
+                                      :inverted? true}
+                             :spec/X {:name "rx"
+                                      :expr '(error "fail")
+                                      :inverted? true}}}}
+      [(refine-to {:$type :spec/B, :x 0} :spec/X)
+       [:Instance :spec/X]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/spec-threw 0-0 : Spec threw error: \\\"fail\\\"\""]
+       "{$type: spec/B, x: 0}.refineTo( spec/X )"
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/spec-threw 0-0 : Spec threw error: \\\"fail\\\"\""]])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/X {}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/X {:name "rx"
+                                      :expr '(error "fail")}
+                             :spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x (div 1 0)}}}}}
+      [{:$type :spec/B, :x 0}
+       [:Instance :spec/B]
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Cannot divide by zero; fail\""]
+       "{$type: spec/B, x: 0}"
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Cannot divide by zero; fail\""]])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
                                               :x (div 1 0)}
                                       :inverted? true}}}}
       [(refines-to? {:$type :spec/B, :x 0} :spec/A)
