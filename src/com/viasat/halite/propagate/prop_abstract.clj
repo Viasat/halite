@@ -6,6 +6,7 @@
             [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
+            [com.viasat.halite.propagate.bound-union :refer [union-bounds]]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
@@ -335,7 +336,7 @@
                           (cond-> (dissoc parent-bound alt-var-kw)
                             (not= :Unset alt-bound)
                             (-> (assoc-in [var-kw :$in spec-id] (-> alt-bound (raise-abstract-bounds senv alternatives) (dissoc :$type)))
-                                (update-in [var-kw :$refines-to] prop-composition/union-refines-to-bounds (:$refines-to alt-bound))))))
+                                (update-in [var-kw :$refines-to] union-refines-to-bounds (:$refines-to alt-bound))))))
                       (-> parent-bound
                           (assoc var-kw (if (= :Unset (discrim-kw parent-bound))
                                           :Unset
