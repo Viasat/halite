@@ -251,4 +251,6 @@
     (compare-to-halite spec-map '{:$type :spec/C :b true :c true})
     (compare-to-halite spec-map '(refine-to {:$type :spec/C :b true :c true} :spec/A))))
 
+;; TODO: test whether errors in inverted refinements are handled properly by refines-to?
+
 ;; (t/run-tests)
