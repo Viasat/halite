@@ -6,7 +6,7 @@
             [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
-            [com.viasat.halite.propagate.bound-union :refer [union-bounds]]
+            [com.viasat.halite.propagate.bound-union :refer [union-refines-to-bounds]]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
