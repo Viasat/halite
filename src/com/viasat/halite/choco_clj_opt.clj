@@ -8,6 +8,8 @@
             [schema.core :as s])
   (:import [org.chocosolver.solver.exception ContradictionException]))
 
+(set! *warn-on-reflection* true)
+
 (s/defschema ChocoVarType choco-clj/ChocoVarType)
 
 (s/defschema ChocoSpec

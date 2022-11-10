@@ -23,6 +23,8 @@
             [schema.core :as s])
   (:import [org.chocosolver.solver.exception ContradictionException]))
 
+(set! *warn-on-reflection* true)
+
 ;;;;; Bounds, extended with Strings ;;;;;
 (s/defschema AtomBound
   (s/cond-pre

@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.doc.data-spec-bnf)
 
+(set! *warn-on-reflection* true)
+
 (def type-bnf-vector
   ['fixed-decimal-scale {:bnf "0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18"}
    'fixed-decimal-type {:bnf "'[' ':Decimal' fixed-decimal-scale ']'"}

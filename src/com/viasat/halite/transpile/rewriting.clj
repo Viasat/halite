@@ -14,6 +14,8 @@
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 
+(set! *warn-on-reflection* true)
+
 (def ^:dynamic *rewrite-traces* nil)
 
 (defmacro with-tracing

@@ -9,6 +9,8 @@
             [com.viasat.halite.transpile.ssa :as ssa]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (def Bound prop-abstract/Bound)
 
 (def SpecBound prop-abstract/SpecBound)

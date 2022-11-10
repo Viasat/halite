@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.doc.data-tag-def-map)
 
+(set! *warn-on-reflection* true)
+
 (def tag-def-map {:boolean-op {:label "Boolean operations"
                                :doc "Operations that operate on boolean values."
                                :type 'boolean

@@ -10,6 +10,8 @@
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (defn- deref-form [ssa-graph id]
   #_(when (ssa/contains-id? ssa-graph id)
       (first (ssa/deref-id ssa-graph id)))

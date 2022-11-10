@@ -7,6 +7,8 @@
             [com.viasat.halite.doc.utils :as utils]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (s/defn full-intro
   [lang
    get-svg-link]

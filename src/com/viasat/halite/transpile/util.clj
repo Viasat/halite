@@ -5,6 +5,8 @@
   "Simple, self-contained utility functions for manipulating halite expressions."
   (:require [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (s/defn mk-junct :- s/Any
   [op :- (s/enum 'and 'or), clauses :- [s/Any]]
   (condp = (count clauses)

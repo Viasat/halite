@@ -16,6 +16,8 @@
             [loom.graph :as loom-graph]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (declare ConcreteBound)
 
 (s/defschema RefinementBound

@@ -7,6 +7,8 @@
              :refer [ConcreteBound RefinementBound]]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (defn- int-bound? [bound]
   (or (int? bound)
       (and (map? bound)

@@ -4,6 +4,8 @@
 (ns com.viasat.halite.doc.md-err
   (:require [com.viasat.halite.doc.utils :as utils]))
 
+(set! *warn-on-reflection* true)
+
 (defn err-md [lang {:keys [prefix get-link-f]} err-id err]
   (->> ["### "
         "<a name=\"" (utils/safe-op-anchor err-id) "\"></a>"

@@ -14,6 +14,8 @@
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 
+(set! *warn-on-reflection* true)
+
 (def ^:private renamed-ops
   ;; TODO: When we support vectors, we'll need to remove this as an alias and have separate implementations, since get* is 1-based for vectors.
   '{mod* mod, get* get, if-value- if-value})

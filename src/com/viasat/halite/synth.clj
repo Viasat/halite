@@ -8,6 +8,8 @@
             [loom.graph]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 ;; user-eval
 ;; - will be given a Clojure map (a candidate instance) and only and exactly the
 ;;   expressions given as refinements and constraints in the specs.

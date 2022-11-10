@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.doc.data-explanation)
 
+(set! *warn-on-reflection* true)
+
 (def explanations {:spec/big-picture
                    {:label "Specs are about modeling things"
                     :desc "Specs are a general mechanism for modelling whatever is of interest."

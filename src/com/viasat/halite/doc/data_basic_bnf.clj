@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.doc.data-basic-bnf)
 
+(set! *warn-on-reflection* true)
+
 (def basic-bnf-vector
   ['non-numeric-character {:bnf "'A-Z' | 'a-z' | '*' | '!' | '$' | '=' | '<' | '>' | '_' | '.' | '?'"}
    'plus-minus-character {:bnf "'+' | '-'"}

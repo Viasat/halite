@@ -14,6 +14,8 @@
             [loom.alg]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (s/defn ^:private translate-down
   "Convert a top-level bound by expanding it to reference the generated spec."
   [generated-spec-id bound]

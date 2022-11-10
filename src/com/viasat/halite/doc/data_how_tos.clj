@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.doc.data-how-tos)
 
+(set! *warn-on-reflection* true)
+
 (def how-tos {:collections/transform
               {:label "Transform a collection"
                :desc "Consider that you have a collection of values and need to produce a collection of new values derived from the first."

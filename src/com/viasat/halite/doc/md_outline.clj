@@ -4,6 +4,8 @@
 (ns com.viasat.halite.doc.md-outline
   (:require [com.viasat.halite.doc.utils :as utils]))
 
+(set! *warn-on-reflection* true)
+
 (defn produce-outline [{:keys [tutorials how-tos explanations tag-def-map
                                tutorial-filename how-to-filename explanation-filename]}
                        {:keys [prefix generate-hdr-f get-link-f]}]

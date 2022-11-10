@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.doc.data-op-maps)
 
+(set! *warn-on-reflection* true)
+
 (defn make-spec-map-fn [spec-map]
   (fn [expr]
     (let [first-pair (first spec-map)

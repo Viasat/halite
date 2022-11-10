@@ -12,6 +12,8 @@
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (def ^:private generated-field-name :$x)
 
 (s/defn ^:private translate-down

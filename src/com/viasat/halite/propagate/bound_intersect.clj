@@ -9,6 +9,8 @@
             [com.viasat.halite.propagate.prop-strings :as prop-strings]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (defn remove-vals-from-map
   "Remove entries from the map if applying f to the value produced false."
   [m f]

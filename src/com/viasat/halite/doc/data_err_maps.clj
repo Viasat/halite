@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.doc.data-err-maps)
 
+(set! *warn-on-reflection* true)
+
 (def err-maps
   {'h-err/abs-failure {:doc "The way the number space is divided the value of zero comes out of the positive number space. This means there is one more negative number than there are positive numbers. So there is one negative number whose absolute value cannot be represented. That negative number is the most negative value."}
    'h-err/accumulator-target-must-be-bare-symbol {:doc "In 'reduce', it is necesary to define a symbol to reference the accumulated value of the reduction. This symbol must not include a namespace."

@@ -8,6 +8,8 @@
   (:import [net.nextencia.rrdiagram.grammar.model GrammarToRRDiagram BNFToGrammar]
            [net.nextencia.rrdiagram.grammar.rrdiagram RRDiagramToSVG]))
 
+(set! *warn-on-reflection* true)
+
 (defn adjust-connector-style
   "RRDiagramToSVG provides an interface for setting on connector path strokes
   only their color, nothing else. So to adjust width, we have to apply unstable

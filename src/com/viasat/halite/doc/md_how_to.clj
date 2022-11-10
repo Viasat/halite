@@ -8,6 +8,8 @@
             [com.viasat.jadeite :as jadeite])
   (:import [com.viasat.halite.doc.run HCInfo]))
 
+(set! *warn-on-reflection* true)
+
 (defn how-to-contents [{:keys [code-snippet-f spec-snippet-f translate-spec-map-to-f]} lang how-to specs-only?]
   (loop [[c & more-c] (:contents how-to)
          spec-map nil

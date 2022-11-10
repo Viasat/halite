@@ -15,6 +15,8 @@
             [loom.graph]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 ;;;;;;;;; Bubble up and Flatten $do! ;;;;;;;;;;;;
 
 ;; We don't generally want to have to invent rewrite rules for

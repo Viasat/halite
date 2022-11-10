@@ -11,6 +11,8 @@
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (s/defschema AtomBound
   (s/cond-pre
    s/Int

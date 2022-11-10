@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.doc.data-tutorial)
 
+(set! *warn-on-reflection* true)
+
 (def tutorials {:spec/sudoku
                 {:label "Model a sudokuo puzzle"
                  :desc "Consider how to use specs to model a sudoku game."

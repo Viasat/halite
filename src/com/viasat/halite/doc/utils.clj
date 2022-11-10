@@ -10,6 +10,8 @@
             [schema.core :as s]
             [zprint.core :as zprint]))
 
+(set! *warn-on-reflection* true)
+
 (defn spit-dir
   ([filename txt]
    (spit-dir filename txt false))

@@ -4,6 +4,8 @@
 (ns com.viasat.halite.doc.md-tag
   (:require [com.viasat.halite.doc.utils :as utils]))
 
+(set! *warn-on-reflection* true)
+
 (defn tag-md [{:keys [lang op-maps op-maps-j tag-map tag-map-j]} {:keys [prefix get-link-f get-svg-link-f get-reference-links-f]} tag-name tag]
   (->> [(:doc tag) "\n\n"
         (when-let [[link-md] (get-reference-links-f lang prefix "" tag)]

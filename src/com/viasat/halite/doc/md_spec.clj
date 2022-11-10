@@ -6,6 +6,8 @@
             [com.viasat.halite.doc.md-basic :as md-basic]
             [com.viasat.halite.doc.utils :as utils]))
 
+(set! *warn-on-reflection* true)
+
 (defn spec-md [{:keys [generate-hdr-f embed-bnf-f]}]
   (->> [(generate-hdr-f "Specification Syntax Reference" "halite_spec-syntax-reference" nil "Specification syntax reference.")
         "A spec-map is a data structure used to define specs that are in context for evaluating some expressions.\n\n"

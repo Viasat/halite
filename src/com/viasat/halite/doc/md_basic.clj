@@ -6,6 +6,8 @@
             [com.viasat.halite.doc.utils :as utils]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 (defn tags-md-block
   "Return markdown string with links to all the tags given as keywords"
   [{:keys [lang tag-def-map]} {:keys [prefix get-link-f]} tags]
