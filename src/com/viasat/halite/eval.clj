@@ -171,6 +171,8 @@
     (coll? v) (every? (partial concrete? senv) v)
     :else (throw (ex-info (format "BUG! Not a value: %s" (pr-str v)) {:value v}))))
 
+(declare refines-to?)
+
 (s/defn ^:private check-against-declared-type
   "Runtime check that v conforms to the given type, which is the type of v as declared in a resource spec.
   This function supports the semantics of abstract specs. A declared type of :foo/Bar is replaced by :Instance
@@ -178,9 +180,10 @@
   but at runtime, we need to confirm that v actually refines to the expected type. This function does,
   and recursively deals with collection types."
   [declared-type :- types/HaliteType, v]
+  ;; TODO: could this just call refine-to?
   (let [declared-type (types/no-maybe declared-type)]
     (cond
-      (types/spec-id declared-type) (when-not (base/refines-to? v declared-type)
+      (types/spec-id declared-type) (when-not (refines-to? v declared-type)
                                       (throw-err (h-err/no-refinement-path
                                                   {:type (symbol (:$type v))
                                                    :value v
@@ -275,7 +278,8 @@
                                                  (string/join "; "
                                                               (no-empty (mapv (comp :spec-error-str ex-data) constraint-errors))))
                                :value inst
-                               :halite-error (when (seq violated-constraints)
+                               :halite-error (when (and (seq violated-constraints)
+                                                        (not (seq constraint-errors)))
                                                :constraint-violation)})))))
       ;; fully explore all active refinement paths, and store the results
       (let [result (with-meta
@@ -289,7 +293,7 @@
                                 (let [inst (try
                                              (*eval-refinement-fn* ctx spec-tenv spec-id expr name)
                                              (catch ExceptionInfo ex
-                                               (if (and inverted? (= :constraint-violation (:halite-error (ex-data ex))))
+                                               (if inverted?
                                                  ex
                                                  (throw ex))))]
                                   (when (not= :Unset inst)
@@ -406,6 +410,17 @@
       (nil? result) (throw-err (h-err/no-refinement-path {:type (symbol (:$type inst)), :value inst, :target-type (symbol t), :form expr}))
       :else result)))
 
+(s/defn ^:private refines-to? :- Boolean
+  [inst
+   spec-type :- types/HaliteType]
+  (let [t (types/spec-id spec-type)
+        result (cond-> inst
+                 (not= t (:$type inst)) (-> meta :refinements t))]
+    (cond
+      (instance? Exception result) false
+      (nil? result) false
+      :else true)))
+
 (defn ^:private check-collection-runtime-count [x]
   (base/check-limit (if (set? x)
                       :set-runtime-count
@@ -461,7 +476,7 @@
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]
-                                   (base/refines-to? inst (types/concrete-spec-type kw)))
+                                   (refines-to? inst (types/concrete-spec-type kw)))
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
                     'map (let [[coll result] (eval-comprehend ctx (rest expr))]

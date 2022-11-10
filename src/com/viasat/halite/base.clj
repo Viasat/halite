@@ -82,12 +82,6 @@
 
 ;;
 
-(s/defn refines-to? :- Boolean
-  [inst spec-type :- types/HaliteType]
-  (let [spec-id (types/spec-id spec-type)]
-    (or (= spec-id (:$type inst))
-        (boolean (get (:refinements (meta inst)) spec-id)))))
-
 ;;
 
 (s/defschema FnSignature

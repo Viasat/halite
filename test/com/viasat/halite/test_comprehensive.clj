@@ -10217,6 +10217,187 @@
        "{$type: spec/A}"
        [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]]))
 
+(deftest test-refinement-errors
+  ;; guard error
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '(when (> 0 (div 1 0))
+                                               {:$type :spec/A
+                                                :x 1})
+                                      ;; :inverted? true
+                                      }}}}
+      [{:$type :spec/B, :x 0}
+       [:Instance :spec/B]
+       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
+       "{$type: spec/B, x: 0}"
+       [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '(when (> (get {:$type :spec/A
+                                                            :x 0} :x) -1)
+                                               {:$type :spec/A
+                                                :x 5})}}}}
+      [(valid {:$type :spec/B, :x 0})
+       [:Maybe [:Instance :spec/B]]
+       :Unset
+       "(valid {$type: spec/B, x: 0})"
+       "Unset"])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '(when (> (get {:$type :spec/A
+                                                            :x 0} :x) -1)
+                                               {:$type :spec/A
+                                                :x 5})
+                                      :inverted? true}}}}
+      [(valid {:$type :spec/B, :x 0})
+       [:Maybe [:Instance :spec/B]]
+       {:$type :spec/B, :x 0}
+       "(valid {$type: spec/B, x: 0})"
+       "{$type: spec/B, x: 0}"])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '(when false {:$type :spec/A
+                                                          :x (error "fail")})
+                                      :inverted? true}}}}
+      [{:$type :spec/B, :x 0}
+       [:Instance :spec/B]
+       {:$type :spec/B, :x 0}
+       "{$type: spec/B, x: 0}"
+       "{$type: spec/B, x: 0}"])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '(when false {:$type :spec/A
+                                                          :x (error "fail")})
+                                      :inverted? true}}}}
+      [(refine-to {:$type :spec/B, :x 0} :spec/A)
+       [:Instance :spec/A]
+       [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/A'"]
+       "{$type: spec/B, x: 0}.refineTo( spec/A )"
+       [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/A'"]])
+
+  ;; error - instantiate
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x (div 1 0)}
+                                      :inverted? true}}}}
+      [{:$type :spec/B, :x 0}
+       [:Instance :spec/B]
+       {:$type :spec/B, :x 0}
+       "{$type: spec/B, x: 0}"
+       "{$type: spec/B, x: 0}"])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x (div 1 0)}
+                                      :inverted? true}}}}
+      [(refine-to {:$type :spec/B, :x 0} :spec/A)
+       [:Instance :spec/A]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/divide-by-zero 0-0 : Cannot divide by zero\""]
+       "{$type: spec/B, x: 0}.refineTo( spec/A )"
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/divide-by-zero 0-0 : Cannot divide by zero\""]])
+
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x (div 1 0)}
+                                      :inverted? true}}}}
+      [(refines-to? {:$type :spec/B, :x 0} :spec/A)
+       :Boolean
+       false
+       "{$type: spec/B, x: 0}.refinesTo?( spec/A )"
+       "false"])
+
+  ;; constraint violation - refines-to?
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x x}
+                                      :inverted? true}}}}
+      [(valid (refine-to {:$type :spec/B, :x 0} :spec/A))
+       [:Maybe [:Instance :spec/A]]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]
+       "(valid {$type: spec/B, x: 0}.refineTo( spec/A ))"
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]])
+
+  ;; constraint violation - refines-to?
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x x}
+                                      :inverted? true}}}}
+      [(refines-to? {:$type :spec/B, :x 0} :spec/A)
+       :Boolean
+       false
+       "{$type: spec/B, x: 0}.refinesTo?( spec/A )"
+       "false"])
+
+  ;; constraint violation - refine-to
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x x}
+                                      :inverted? true}}}}
+      [(refine-to {:$type :spec/B, :x 0} :spec/A)
+       [:Instance :spec/A]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]
+       "{$type: spec/B, x: 0}.refineTo( spec/A )"
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]])
+
+;; constraint violation - instantiate
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x x}
+                                      :inverted? true}}}}
+      [{:$type :spec/B, :x 0}
+       [:Instance :spec/B]
+       {:$type :spec/B, :x 0}
+       "{$type: spec/B, x: 0}" "{$type: spec/B, x: 0}"])
+
+  ;; all good
+  (hc {:spec/A {:spec-vars {:x :Integer}
+                :constraints {:x '(> x 0)}}
+       :spec/B {:spec-vars {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x x}
+                                      :inverted? true}}}}
+      [{:$type :spec/B, :x 1}
+       [:Instance :spec/B]
+       {:$type :spec/B, :x 1}
+       "{$type: spec/B, x: 1}"
+       "{$type: spec/B, x: 1}"]))
+
 ;; deftest-end
 
 (deftest test-symbol-with-forms-that-clojure-cannot-read
