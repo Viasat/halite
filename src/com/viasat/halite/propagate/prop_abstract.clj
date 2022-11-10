@@ -5,6 +5,7 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.propagate.prop-refine :as prop-refine]
             [com.viasat.halite.propagate.bound-union :refer [union-refines-to-bounds]]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.lowering :as lowering]
@@ -88,15 +89,15 @@
 
 (s/defschema Bound
   (s/conditional
-   :$type prop-composition/ConcreteBound
+   :$type prop-refine/ConcreteBound
    #(or (not (map? %))
         (and (contains? % :$in)
-             (not (map? (:$in %))))) prop-composition/AtomBound
+             (not (map? (:$in %))))) prop-refine/AtomBound
    :else AbstractSpecBound))
 
-(def Opts prop-composition/Opts)
+(def Opts prop-refine/Opts)
 
-(def default-options prop-composition/default-options)
+(def default-options prop-refine/default-options)
 
 (defn- discriminator-var-name [var-kw] (str (name var-kw) "$type"))
 (defn- discriminator-var-kw [var-kw] (keyword (discriminator-var-name var-kw)))
@@ -384,8 +385,8 @@
 
 (s/defn propagate :- SpecBound
   ([sctx :- ssa/SpecCtx, initial-bound :- SpecBound]
-   (propagate sctx prop-composition/default-options initial-bound))
-  ([sctx :- ssa/SpecCtx, opts :- prop-composition/Opts, initial-bound :- SpecBound]
+   (propagate sctx prop-refine/default-options initial-bound))
+  ([sctx :- ssa/SpecCtx, opts :- prop-refine/Opts, initial-bound :- SpecBound]
    (let [abstract? #(-> % sctx :abstract? true?)
          refn-graph (spec-context-to-inverted-refinement-graph sctx)
          alternatives (reduce
@@ -401,5 +402,5 @@
                        (keys sctx))
          senv (ssa/as-spec-env sctx)]
      (-> (reduce-kv (fn [acc spec-id spec] (lower-abstract-vars acc alternatives spec-id spec)) sctx sctx)
-         (prop-composition/propagate opts (lower-abstract-bounds [] initial-bound senv alternatives))
+         (prop-refine/propagate opts (lower-abstract-bounds [] initial-bound senv alternatives))
          (raise-abstract-bounds senv alternatives)))))
