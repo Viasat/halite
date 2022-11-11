@@ -10384,9 +10384,9 @@
                                       :inverted? true}}}}
       [(refines-to? {:$type :spec/B, :x 0} :spec/A)
        :Boolean
-       false
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/divide-by-zero 0-0 : Cannot divide by zero\""]
        "{$type: spec/B, x: 0}.refinesTo?( spec/A )"
-       "false"])
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/divide-by-zero 0-0 : Cannot divide by zero\""]])
 
   ;; constraint violation - refines-to?
   (hc {:spec/A {:spec-vars {:x :Integer}
@@ -10412,9 +10412,9 @@
                                       :inverted? true}}}}
       [(refines-to? {:$type :spec/B, :x 0} :spec/A)
        :Boolean
-       false
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]
        "{$type: spec/B, x: 0}.refinesTo?( spec/A )"
-       "false"])
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]])
 
   ;; constraint violation - refine-to
   (hc {:spec/A {:spec-vars {:x :Integer}

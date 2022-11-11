@@ -415,6 +415,13 @@
           (eval-expr* ctx init)
           (eval-expr* ctx coll)))
 
+(defn- make-refinement-error
+  [inst expr result]
+  (no-nil {:type (symbol (:$type inst))
+           :instance inst
+           :underlying-error-message (.getMessage ^Exception result)
+           :form expr}))
+
 (s/defn ^:private eval-refine-to :- s/Any
   [ctx :- EvalContext, expr]
   (let [[subexp t] (rest expr)
@@ -422,10 +429,7 @@
         result (cond-> inst
                  (not= t (:$type inst)) (-> meta :refinements t))]
     (cond
-      (instance? Exception result) (throw-err (h-err/refinement-error {:type (symbol (:$type inst))
-                                                                       :instance inst
-                                                                       :underlying-error-message (.getMessage ^Exception result)
-                                                                       :form expr}))
+      (instance? Exception result) (throw-err (h-err/refinement-error (make-refinement-error inst expr result)))
       (nil? result) (throw-err (h-err/no-refinement-path {:type (symbol (:$type inst)), :value inst, :target-type (symbol t), :form expr}))
       :else result)))
 
@@ -436,7 +440,7 @@
         result (cond-> inst
                  (not= t (:$type inst)) (-> meta :refinements t))]
     (cond
-      (instance? Exception result) false
+      (instance? Exception result) (throw-err (h-err/refinement-error (make-refinement-error inst nil result)))
       (nil? result) false
       :else true)))
 
@@ -460,11 +464,12 @@
                          (if (contains? b expr)
                            (get b expr)
                            (throw-err (h-err/symbol-undefined {:form expr})))))
-      (map? expr) (->> (dissoc expr :$type)
-                       (map (fn [[k v]] [k (eval-in-env v)]))
-                       (remove (fn [[k v]] (= :Unset v)))
-                       (into (select-keys expr [:$type]))
-                       (validate-instance (:senv ctx)))
+      (map? expr) (with-exception-data {:form expr}
+                    (->> (dissoc expr :$type)
+                         (map (fn [[k v]] [k (eval-in-env v)]))
+                         (remove (fn [[k v]] (= :Unset v)))
+                         (into (select-keys expr [:$type]))
+                         (validate-instance (:senv ctx))))
       (seq? expr) (condp = (first expr)
                     'get (eval-get ctx expr)
                     'get-in (eval-get-in ctx expr)
@@ -495,7 +500,8 @@
                     'refine-to (eval-refine-to ctx expr)
                     'refines-to? (let [[subexpr kw] (rest expr)
                                        inst (eval-in-env subexpr)]
-                                   (refines-to? inst (types/concrete-spec-type kw)))
+                                   (with-exception-data {:form expr}
+                                     (refines-to? inst (types/concrete-spec-type kw))))
                     'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                     'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
                     'map (let [[coll result] (eval-comprehend ctx (rest expr))]
