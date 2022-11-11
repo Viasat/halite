@@ -17,6 +17,7 @@
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic *rewrite-traces* nil)
+(def ^:dynamic *typecheck-trace* true)
 
 (defmacro with-tracing
   [[traces-sym] & body]
@@ -27,7 +28,7 @@
 (defn print-trace-item [{:keys [rule op pruned-ids id id' spec-info spec-info' total-ms]}]
   (binding [ssa/*hide-non-halite-ops* false, ssa/*elide-top-level-bindings* true]
     (let [form (some->> id (ssa/form-from-ssa spec-info))
-          form' (ssa/form-from-ssa spec-info' id')
+          form' (some->> id' (ssa/form-from-ssa spec-info'))
           time-str (str total-ms "ms")]
       (println (format "%s:  %s\n %s|->%s%s"
                        rule form time-str (apply str (repeat (dec (- (count rule) (count time-str))) \space)) form')))))
@@ -39,6 +40,7 @@
     (let [report-err
           (fn [stage ex]
             (reset! type-error-item item)
+            (println (format "Found type error %s %s" stage rule))
             (binding [ssa/*hide-non-halite-ops* true]
               (-> (ssa/spec-from-ssa spec-info) :constraints first second clojure.pprint/pprint)
               (print-trace-item item)
@@ -63,16 +65,33 @@
      (let [senv# (ssa/as-spec-env ~sctx)
            item# ~item-form
            spec-id# (:spec-id item#)]
-       (swap! *rewrite-traces*
-              (fn [traces#]
-                (if (contains? traces# spec-id#)
-                  (update traces# spec-id# conj item#)
-                  (assoc traces# spec-id# [item#]))))
+       (swap! *rewrite-traces* update spec-id# (fnil conj []) item#)
        (when-let [dgraph# (:dgraph' item#)]
          (when (ssa/cycle? dgraph#)
            (throw (ex-info (format "BUG! Cycle detected after %s %s" (:op item#) (:rule item#))
                            {:item item#}))))
-       (type-check-trace-item senv# item#))))
+       (when *typecheck-trace*
+         (type-check-trace-item senv# item#)))))
+
+(defn squash-trace* [sctx' start-nanos item subtrace]
+  (let [total-ms (/ (- (System/nanoTime) start-nanos) 1000000.0)]
+    (->> subtrace
+         (run! (fn [[spec-id trace-vec]]
+                 (trace! sctx' (merge
+                                {:op :rewrite
+                                 :rule "squashed"
+                                 :total-ms total-ms}
+                                (select-keys (peek trace-vec) [:spec-id :spec-info'])
+                                item)))))))
+
+(defmacro squash-trace! [item-form & body]
+  `(let [start-nanos# (System/nanoTime)
+         subtrace# (atom {})
+         sctx'# (binding [*rewrite-traces* subtrace#
+                          *typecheck-trace* false]
+                  ~@body)]
+     (squash-trace* sctx'# start-nanos# ~item-form @subtrace#)
+     sctx'#))
 
 (defn print-trace-summary [trace]
   (doseq [item trace]
