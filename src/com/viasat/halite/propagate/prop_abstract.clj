@@ -118,9 +118,9 @@
      (fn [{:keys [ssa-graph] :as spec} [cname cid]]
        (let [[ssa-graph cid'] (ssa/replace-in-expr ssa-graph cid replacements)]
          (-> spec
-             (update :constraints assoc cname cid')
+             (update :constraints conj [cname cid'])
              (assoc :ssa-graph ssa-graph))))
-     (assoc spec :constraints {})
+     (assoc spec :constraints [])
      constraints)
     (reduce-kv
      (fn [{:keys [ssa-graph] :as spec} spec-id {:keys [expr]}]

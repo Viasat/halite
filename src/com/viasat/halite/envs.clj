@@ -20,11 +20,12 @@
 
 (s/defschema RefinesTo {types/NamespacedKeyword Refinement})
 
-(s/defschema ConstraintMap {base/ConstraintName s/Any})
+(s/defschema Constraint {:name base/ConstraintName
+                         :expr s/Any})
 
 (s/defschema SpecInfo
   {(s/optional-key :spec-vars) {types/BareKeyword types/HaliteType}
-   (s/optional-key :constraints) ConstraintMap
+   (s/optional-key :constraints) [NamedConstraint]
    (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 

@@ -344,7 +344,7 @@
   [flattened-vars sctx spec-bound]
   (->>
    {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
-    :constraints {"vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))}}
+    :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]}
    (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
    (add-refinement-equality-constraints flattened-vars)))
 
@@ -435,7 +435,7 @@
    (fn [sctx [spec-id spec-info]]
      (ssa/add-spec-to-context sctx spec-id
                               (cond-> spec-info
-                                (not= :$propagate/Bounds spec-id) (assoc :constraints {}))))
+                                (not= :$propagate/Bounds spec-id) (assoc :constraints []))))
    {}
    sctx))
 

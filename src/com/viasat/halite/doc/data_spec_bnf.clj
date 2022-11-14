@@ -15,12 +15,12 @@
 (def spec-var-map-bnf-pair
   ['spec-var-map {:bnf "'{' {bare-keyword maybe-type} '}'"}])
 
-(def constraints-bnf-pair
-  ['constraint-map {:bnf "'{' {bare-keyword:name  halite-expr} '}'"}])
+(def constraint-set-bnf
+  ['constraint-set {:bnf " '#{' { '{' ':name' string ':expr' halite-expr '}' } '}'"}])
 
 (def refinement-map-bnf-pair
   ['refinement-map {:bnf " '{' {namespaced-keyword:spec-id '{' ':name' string ':expr' halite-expr [':inverted?' boolean] '}' } '}'"}])
 
 (def spec-map-bnf-pair
-  ['spec-map {:bnf "'{' {namespaced-keyword:spec-id '{' { (':abstract?' boolean) | (':spec-vars' spec-var-map) |  (':constraints' constraint-map) | (':refines-to' refinement-map) } '}'} '}'"}])
+  ['spec-map {:bnf "'{' {namespaced-keyword:spec-id '{' { (':abstract?' boolean) | (':spec-vars' spec-var-map) |  (':constraints' constraint-set) | (':refines-to' refinement-map) } '}'} '}'"}])
 

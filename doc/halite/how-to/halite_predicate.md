@@ -12,7 +12,8 @@ The following specification uses a constraint to capture a predicate that checks
 {:spec/Sum {:spec-vars {:sum :Integer,
                         :x :Integer,
                         :y :Integer},
-            :constraints {:constrain_sum '(= sum (+ x y))}}}
+            :constraints #{'{:name "constrain_sum",
+                             :expr (= sum (+ x y))}}}}
 ```
 
 The following will attempt to instantiate an instance of the spec and indicate whether the instance satisfied the constraint. In this case it does.

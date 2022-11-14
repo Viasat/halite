@@ -38,12 +38,7 @@ In order to be a valid solution, certain properties must be met: each row, colum
     "spec-vars" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : {
-      "row_1" : "(#{}.concat(solution[0]) == #{1, 2, 3, 4})",
-      "row_2" : "(#{}.concat(solution[1]) == #{1, 2, 3, 4})",
-      "row_3" : "(#{}.concat(solution[2]) == #{1, 2, 3, 4})",
-      "row_4" : "(#{}.concat(solution[3]) == #{1, 2, 3, 4})"
-    }
+    "constraints" : [ "{expr: (#{}.concat(solution[2]) == #{1, 2, 3, 4}), name: \"row_3\"}", "{expr: (#{}.concat(solution[0]) == #{1, 2, 3, 4}), name: \"row_1\"}", "{expr: (#{}.concat(solution[3]) == #{1, 2, 3, 4}), name: \"row_4\"}", "{expr: (#{}.concat(solution[1]) == #{1, 2, 3, 4}), name: \"row_2\"}" ]
   }
 }
 ```
@@ -76,9 +71,7 @@ Rather than expressing each row constraint separately, they can be captured in a
     "spec-vars" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : {
-      "rows" : "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})"
-    }
+    "constraints" : [ "{expr: every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4}), name: \"rows\"}" ]
   }
 }
 ```
@@ -111,10 +104,7 @@ But, we are only checking rows, let's also check columns.
     "spec-vars" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : {
-      "rows" : "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})",
-      "columns" : "every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})"
-    }
+    "constraints" : [ "{expr: every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4}), name: \"rows\"}", "{expr: every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4}), name: \"columns\"}" ]
   }
 }
 ```
@@ -157,14 +147,7 @@ Let's add the quadrant checks.
     "spec-vars" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : {
-      "rows" : "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})",
-      "columns" : "every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})",
-      "quadrant_1" : "(#{solution[0][0], solution[0][1], solution[1][0], solution[1][1]} == #{1, 2, 3, 4})",
-      "quadrant_2" : "(#{solution[0][2], solution[0][3], solution[1][2], solution[1][3]} == #{1, 2, 3, 4})",
-      "quadrant_3" : "(#{solution[2][0], solution[2][1], solution[3][0], solution[3][1]} == #{1, 2, 3, 4})",
-      "quadrant_4" : "(#{solution[2][2], solution[2][3], solution[3][2], solution[3][3]} == #{1, 2, 3, 4})"
-    }
+    "constraints" : [ "{expr: (#{solution[0][0], solution[0][1], solution[1][0], solution[1][1]} == #{1, 2, 3, 4}), name: \"quadrant_1\"}", "{expr: (#{solution[2][2], solution[2][3], solution[3][2], solution[3][3]} == #{1, 2, 3, 4}), name: \"quadrant_4\"}", "{expr: every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4}), name: \"rows\"}", "{expr: (#{solution[0][2], solution[0][3], solution[1][2], solution[1][3]} == #{1, 2, 3, 4}), name: \"quadrant_2\"}", "{expr: every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4}), name: \"columns\"}", "{expr: (#{solution[2][0], solution[2][1], solution[3][0], solution[3][1]} == #{1, 2, 3, 4}), name: \"quadrant_3\"}" ]
   }
 }
 ```
@@ -197,11 +180,7 @@ Let's combine the quadrant checks into one.
     "spec-vars" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : {
-      "rows" : "every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})",
-      "columns" : "every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})",
-      "quadrants" : "every?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} == #{1, 2, 3, 4}) })"
-    }
+    "constraints" : [ "{expr: every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4}), name: \"rows\"}", "{expr: every?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} == #{1, 2, 3, 4}) }), name: \"quadrants\"}", "{expr: every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4}), name: \"columns\"}" ]
   }
 }
 ```
@@ -234,11 +213,7 @@ As an exercise, we can convert the logic of the constraints. Instead of checking
     "spec-vars" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : {
-      "rows" : "!any?(r in solution)(#{}.concat(r) != #{1, 2, 3, 4})",
-      "columns" : "!any?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} != #{1, 2, 3, 4})",
-      "quadrants" : "!any?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} != #{1, 2, 3, 4}) })"
-    }
+    "constraints" : [ "{expr: !any?(r in solution)(#{}.concat(r) != #{1, 2, 3, 4}), name: \"rows\"}", "{expr: !any?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} != #{1, 2, 3, 4}) }), name: \"quadrants\"}", "{expr: !any?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} != #{1, 2, 3, 4}), name: \"columns\"}" ]
   }
 }
 ```

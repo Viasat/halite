@@ -36,9 +36,7 @@ So we can add a constraint to limit the values to what we expect.
     "spec-vars" : {
       "size" : "String"
     },
-    "constraints" : {
-      "size_constraint" : "#{\"large\", \"medium\", \"small\"}.contains?(size)"
-    }
+    "constraints" : [ "{expr: #{\"large\", \"medium\", \"small\"}.contains?(size), name: \"size_constraint\"}" ]
   }
 }
 ```

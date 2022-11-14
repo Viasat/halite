@@ -10,8 +10,9 @@ Writing a spec is carving out a subset out of the universe of all possible value
 
 ```clojure
 {:spec/Ball {:spec-vars {:color :String},
-             :constraints {:color_constraint '(contains? #{"blue" "green" "red"}
-                                                         color)}}}
+             :constraints #{'{:name "color_constraint",
+                              :expr (contains? #{"blue" "green" "red"}
+                                               color)}}}}
 ```
 
 Instances of specs are represented as maps. Depending on programming languages, maps are also known as associative arrays or dictionarys.
@@ -32,8 +33,9 @@ If instead we defined this spec, then we are further constraining the set of val
 
 ```clojure
 {:spec/Ball {:spec-vars {:color :String},
-             :constraints {:color_constraint '(contains? #{"blue" "green" "red"}
-                                                         color)}}}
+             :constraints #{'{:name "color_constraint",
+                              :expr (contains? #{"blue" "green" "red"}
+                                               color)}}}}
 ```
 
 The following is not a valid 'spec/Ball' and in fact it is not a valid value at all in the universe of all possible values. This is because every map with a type of 'spec/Ball' must satisfy the 'spec/Ball' spec in order to be a valid value.
@@ -75,8 +77,8 @@ However, it is possible to convert an instance of one spec into an instance of a
 
 ```clojure
 {:spec/Ball {:spec-vars {:color :String},
-             :constraints {:color_constraint '(contains? #{"blue" "green" "red"}
-                                                         color)},
+             :constraints #{'{:name "color_constraint",
+                              :expr (contains? #{"blue" "green" "red"} color)}},
              :refines-to {:spec/Round {:name "refine_to_round",
                                        :expr '{:$type :spec/Round,
                                                :radius 5}}}},

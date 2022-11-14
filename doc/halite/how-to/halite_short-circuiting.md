@@ -61,7 +61,8 @@ To guard instance construction.
 
 ```clojure
 {:spec/Q {:spec-vars {:a :Integer},
-          :constraints {:c '(> a 0)}}}
+          :constraints #{'{:name "c",
+                           :expr (> a 0)}}}}
 ```
 
 ```clojure

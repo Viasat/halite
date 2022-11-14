@@ -77,16 +77,17 @@
                                    {:abstract? true
                                     :spec-vars {:x :ws/X}})))
   (is (= {:spec-vars {:x [:Instance :* #{:ws/X}]}
-          :constraints {:x 'true}}
+          :constraints [["x" 'true]]}
          (var-types/to-halite-spec {:ws/X {:abstract? true}}
                                    {:spec-vars {:x :ws/X}
-                                    :constraints {:x 'true}})))
+                                    :constraints #{{:name "x"
+                                                    :expr 'true}}})))
   (is (= {:abstract? true
-          :constraints {:x 'true}
+          :constraints [["x" 'true]]
           :refines-to {:ws/A {:expr '{:$type :ws/A}}}}
          (var-types/to-halite-spec {}
                                    {:abstract? true
-                                    :constraints {:x 'true}
+                                    :constraints #{{:name "x" :expr 'true}}
                                     :refines-to {:ws/A {:expr '{:$type :ws/A}}}}))))
 
 ;; (run-tests)

@@ -3075,10 +3075,7 @@ This operation can be thought of as producing an instance if it is valid. This c
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : {
-      "cp" : "(p > 0)",
-      "cn" : "(n < 0)"
-    }
+    "constraints" : [ "{expr: (n < 0), name: \"cn\"}", "{expr: (p > 0), name: \"cp\"}" ]
   }
 }
 //
@@ -3100,10 +3097,7 @@ This operation can be thought of as producing an instance if it is valid. This c
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : {
-      "cp" : "(p > 0)",
-      "cn" : "(n < 0)"
-    }
+    "constraints" : [ "{expr: (n < 0), name: \"cn\"}", "{expr: (p > 0), name: \"cp\"}" ]
   }
 }
 //
@@ -3148,10 +3142,7 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : {
-      "cp" : "(p > 0)",
-      "cn" : "(n < 0)"
-    }
+    "constraints" : [ "{expr: (n < 0), name: \"cn\"}", "{expr: (p > 0), name: \"cp\"}" ]
   }
 }
 //
@@ -3173,10 +3164,7 @@ true
       "p" : "Integer",
       "n" : "Integer"
     },
-    "constraints" : {
-      "cp" : "(p > 0)",
-      "cn" : "(n < 0)"
-    }
+    "constraints" : [ "{expr: (n < 0), name: \"cn\"}", "{expr: (p > 0), name: \"cp\"}" ]
   }
 }
 //

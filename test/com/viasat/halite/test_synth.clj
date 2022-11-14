@@ -93,11 +93,11 @@
   (let [spec-map
         {:spec/Object {}
          :spec/Falsey {:spec-vars {:f :Boolean}
-                       :constraints {:cf '(not f)}
+                       :constraints #{{:name "cf" :expr '(not f)}}
                        :refines-to {:spec/Object {:name "as_Object"
                                                   :expr '{:$type :spec/Object}}}}
          :spec/Truthy {:spec-vars {:t :Boolean}
-                       :constraints {:ct 't}
+                       :constraints #{{:name "ct" :expr 't}}
                        :refines-to {:spec/Falsey {:name "as_Falsey"
                                                   :expr '{:$type :spec/Falsey
                                                           :f t}
@@ -144,7 +144,7 @@
                                   (and (user-eval $this '(> x 12)))))
                    :refine-fns {}}}
          (synth {:spec/A {:spec-vars {:x :Integer}
-                          :constraints {:c '(> x 12)}}})))
+                          :constraints #{{:name "c" :expr '(> x 12)}}}})))
   (is (= {:spec/A {:valid?-fn '(fn [$this]
                                  (and
                                   (map? $this)
@@ -154,8 +154,8 @@
                                        (user-eval $this '(< x 24)))))
                    :refine-fns {}}}
          (synth {:spec/A {:spec-vars {:x :Integer}
-                          :constraints {:c '(> x 12)
-                                        :c2 '(< x 24)}}}))))
+                          :constraints #{{:name "c" :expr '(> x 12)}
+                                         {:name "c2" :expr '(< x 24)}}}}))))
 
 (deftest test-optional-field
   (let [spec-map {:spec/A {:spec-vars {:x [:Maybe :Integer]}}}]
@@ -227,7 +227,7 @@
 
 (deftest test-against-halite
   (let [spec-map {:spec/A {:spec-vars {:a :Boolean}
-                           :constraints {:ca 'a}}
+                           :constraints #{{:name "ca" :expr 'a}}}
                   :spec/B {:spec-vars {:b :Boolean
                                        :c :Boolean}
                            :refines-to {:spec/A {:name "as_A"

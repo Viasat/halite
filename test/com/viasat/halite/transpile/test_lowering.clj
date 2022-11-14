@@ -87,25 +87,26 @@
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer}
-                  :constraints {"a1" (let [b {:$type :ws/B :bn 12 :bb true}]
-                                       (and
-                                        (= b {:$type :ws/B :bn an :bb true})
-                                        (not= {:$type :ws/B :bn 4 :bb false} b)
-                                        (= an 45)))}}
+                  :constraints #{{:name "a1"
+                                  :expr (let [b {:$type :ws/B :bn 12 :bb true}]
+                                          (and
+                                           (= b {:$type :ws/B :bn an :bb true})
+                                           (not= {:$type :ws/B :bn 4 :bb false} b)
+                                           (= an 45)))}}}
                  :ws/B
                  {:spec-vars {:bn :Integer :bb :Boolean}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
-    (is (= '{"$all" (let [v1 {:$type :ws/B :bn 12 :bb true}
-                          v2 (get v1 :bb)
-                          v3 {:$type :ws/B :bn an :bb true}
-                          v4 {:$type :ws/B :bn 4 :bb false}
-                          v5 (get v1 :bn)]
-                      (and
-                       (and (= v2 (get v3 :bb))
-                            (= v5 (get v3 :bn)))
-                       (or (not= (get v4 :bb) v2)
-                           (not= (get v4 :bn) v5))
-                       (= an 45)))}
+    (is (= '[["$all" (let [v1 {:$type :ws/B :bn 12 :bb true}
+                           v2 (get v1 :bb)
+                           v3 {:$type :ws/B :bn an :bb true}
+                           v4 {:$type :ws/B :bn 4 :bb false}
+                           v5 (get v1 :bn)]
+                       (and
+                        (and (= v2 (get v3 :bb))
+                             (= v5 (get v3 :bn)))
+                        (or (not= (get v4 :bb) v2)
+                            (not= (get v4 :bn) v5))
+                        (= an 45)))]]
            (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints)))))
 
 (deftest test-lower-comparisons-with-incompatible-types
@@ -115,13 +116,13 @@
                 :ws/C {:spec-vars {:a :ws/A :b :ws/B :ma [:Maybe :ws/A] :mb [:Maybe :ws/B]}}})]
     (are [in out]
          (= out (-> senv
-                    (update-in [:ws/C :constraints] assoc "c1" in)
+                    (update-in [:ws/C :constraints] conj ["c1" in])
                     envs/spec-env
                     (ssa/build-spec-ctx :ws/C)
                     (rewriting/rewrite-sctx lowering/lower-comparison-exprs-with-incompatible-types)
                     :ws/C
                     ssa/spec-from-ssa
-                    :constraints first val))
+                    :constraints first second))
 
       '(= 1 true) false
       '(not= 1 true) true
@@ -136,30 +137,30 @@
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:b1 :ws/B, :b2 :ws/B}
-                  :constraints {"a1" (not= b1 b2)}}
+                  :constraints #{{:name "a1" :expr (not= b1 b2)}}}
                  :ws/B
                  {:spec-vars {:c1 :ws/C, :c2 :ws/C}}
                  :ws/C
                  {:spec-vars {:x :Integer :y :Integer}}
                  :ws/D
                  {:spec-vars {:b1 :ws/B, :b2 [:Maybe :ws/B]}
-                  :constraints {"d1" (= b1 b2)}}}))
+                  :constraints #{{:name "d1" :expr (= b1 b2)}}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
-    (is (= '{"$all" (let [v1 (get b1 :c2)
-                          v2 (get b2 :c2)
-                          v3 (get b2 :c1)
-                          v4 (get b1 :c1)]
-                      (or
+    (is (= '[["$all" (let [v1 (get b1 :c2)
+                           v2 (get b2 :c2)
+                           v3 (get b2 :c1)
+                           v4 (get b1 :c1)]
                        (or
-                        (not= (get v4 :x) (get v3 :x))
-                        (not= (get v4 :y) (get v3 :y)))
-                       (or
-                        (not= (get v1 :x) (get v2 :x))
-                        (not= (get v1 :y) (get v2 :y)))))}
+                        (or
+                         (not= (get v4 :x) (get v3 :x))
+                         (not= (get v4 :y) (get v3 :y)))
+                        (or
+                         (not= (get v1 :x) (get v2 :x))
+                         (not= (get v1 :y) (get v2 :y)))))]]
            (->> sctx
                 (fixpoint lower-instance-comparisons)
                 :ws/A ssa/spec-from-ssa :constraints)))
-    (is (= '{"$all" (= b1 b2)}
+    (is (= '[["$all" (= b1 b2)]]
            (->> (ssa/build-spec-ctx senv :ws/D)
                 (fixpoint lower-instance-comparisons)
                 :ws/D ssa/spec-from-ssa :constraints)))))
@@ -179,17 +180,18 @@
                                              {:spec-vars {:an :Integer :b :ws/B}}
                                              :ws/B
                                              {:spec-vars {:bn :Integer :bw [:Maybe :Integer] :c [:Maybe :ws/C]}
-                                              :constraints {"b1" (not= bn bw)}}
+                                              :constraints #{{:name "b1" :expr (not= bn bw)}}}
                                              :ws/C
                                              {:spec-vars {:cn :Integer}
-                                              :constraints {"c1" (< 12 cn)}}
+                                              :constraints #{{:name "c1" :expr (< 12 cn)}}}
                                              :ws/D
                                              {:spec-vars {:dn [:Maybe :Integer]}
-                                              :constraints {"d1" (if-value dn (< 0 dn) true)}}})]
+                                              :constraints #{{:name "d1" :expr (if-value dn (< 0 dn) true)}}}})]
+
     (are [in out]
          (= out
             (let [sctx (-> senv
-                           (update-in [:ws/A :constraints] assoc "c" in)
+                           (update-in [:ws/A :constraints] conj ["c" in])
                            (envs/spec-env)
                            (ssa/build-spec-ctx :ws/A))]
               (lowering/validity-guard
@@ -197,7 +199,7 @@
                (ssa/make-ssa-ctx sctx (:ws/A sctx))
                (->> (get-in sctx [:ws/A :constraints])
                     first
-                    val))))
+                    second))))
 
       true true
       42 true
@@ -226,72 +228,72 @@
                 {:spec-vars {:an :Integer}}
                 :ws/B
                 {:spec-vars {:bn :Integer, :bp :Boolean}
-                 :constraints {"b1" (<= bn 10)
-                               "b2" (=> bp (<= 0 bn))}}
+                 :constraints #{{:name "b1" :expr (<= bn 10)}
+                                {:name "b2" :expr (=> bp (<= 0 bn))}}}
                 :ws/C
                 {:spec-vars {:b :ws/B}
-                 :constraints {"c1" (not= (get* b :bn) 4)}}})]
+                 :constraints #{{:name "c1" :expr (not= (get* b :bn) 4)}}}})]
     (are [expr lowered-expr]
          (= lowered-expr
             (binding [ssa/*hide-non-halite-ops* false]
               (-> senv
-                  (update-in [:ws/A :constraints] assoc "c" expr)
+                  (update-in [:ws/A :constraints] conj ["c" expr])
                   (envs/spec-env)
                   (ssa/build-spec-ctx :ws/A)
                   (lower-valid?)
                   :ws/A
                   (ssa/spec-from-ssa)
                   :constraints
-                  first val)))
+                  first second)))
 
       true true
 
       '(valid? {:$type :ws/B :bn 1 :bp (= $no-value (when (= an 1) 42))})
-      '(and (<= 1 10) (=> (= $no-value (when (= an 1) 42)) (<= 0 1)))
+      '(and (=> (= $no-value (when (= an 1) 42)) (<= 0 1)) (<= 1 10))
 
       '(valid? {:$type :ws/B :bn 1 :bp true})
-      '(and (<= 1 10) (=> true (<= 0 1)))
+      '(and (=> true (<= 0 1)) (<= 1 10))
       ;; -----------
       '(and (valid? {:$type :ws/B :bn an :bp false})
             (valid? {:$type :ws/B :bn 12 :bp (= an 1)}))
       '(and
-        (and (<= an 10) (=> false (<= 0 an)))
-        (and (<= 12 10) (=> (= an 1) (<= 0 12))))
+        (and (=> false (<= 0 an)) (<= an 10))
+        (and (=> (= an 1) (<= 0 12)) (<= 12 10)))
       ;; -----------
       '(if (valid? {:$type :ws/B :bn an :bp false})
          {:$type :ws/B :bn an, :bp true}
          {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)})
-      '(if (and (<= an 10) (=> false (<= 0 an)))
+      '(if (and (=> false (<= 0 an)) (<= an 10))
          {:$type :ws/B :bn an, :bp true}
          {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)})
       ;; -----------
       '(if (valid? {:$type :ws/B :bn an :bp false})
          (valid? {:$type :ws/B :bn an, :bp true})
          (valid? {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
-      '(let [v1 (<= 0 an), v2 (<= an 10)]
-         (if (and v2 (=> false v1))
-           (and v2 (=> true v1))
+      '(let [v1 (<= 0 an) v2 (<= an 10)]
+         (if (and (=> false v1) v2)
+           (and (=> true v1) v2)
            (let [v3 (+ 1 an)]
-             (and (<= v3 10) (=> (< 5 an) (<= 0 v3))))))
+             (and (=> (< 5 an) (<= 0 v3)) (<= v3 10)))))
       ;; -----------
       '(valid? (if (valid? {:$type :ws/B :bn an :bp false})
                  {:$type :ws/B :bn an, :bp true}
                  {:$type :ws/B :bn (+ 1 an) :bp (< 5 an)}))
-      '(let [v1 (<= 0 an), v2 (<= an 10)]
-         (if (and v2 (=> false v1))
-           (and v2 (=> true v1))
+      '(let [v1 (<= an 10) v2 (<= 0 an)]
+         (if (and (=> false v2) v1)
+           (and (=> true v2) v1)
            (let [v3 (+ 1 an)]
-             (and (<= v3 10) (=> (< 5 an) (<= 0 v3))))))
+             (and (=> (< 5 an) (<= 0 v3)) (<= v3 10)))))
       ;; -----------
       '(valid? {:$type :ws/C :b {:$type :ws/B :bn an :bp (< an 15)}})
       '(let [v1 (< an 15)]
-         (if (and (<= an 10) (=> v1 (<= 0 an)))
+         (if (and (=> v1 (<= 0 an)) (<= an 10))
            (not= (get {:$type :ws/B, :bn an, :bp v1} :bn) 4)
            false))
       ;; -----------
       '(valid? (get {:$type :ws/C :b {:$type :ws/B :bn an :bp (< an 15)}} :b))
       '(let [v1 (< an 15)]
-         (if (and (<= an 10) (=> v1 (<= 0 an)))
+         (if (and (=> v1 (<= 0 an)) (<= an 10))
            (not= (get {:$type :ws/B, :bn an, :bp v1} :bn) 4)
            false)))))
 
@@ -302,24 +304,24 @@
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:ab :Boolean}
-                  :constraints {"a1" (not= 1 (get (if ab {:$type :ws/B :bn 2} {:$type :ws/B :bn 1}) :bn))}}
+                  :constraints #{{:name "a1" :expr (not= 1 (get (if ab {:$type :ws/B :bn 2} {:$type :ws/B :bn 1}) :bn))}}}
                  :ws/B
                  {:spec-vars {:bn :Integer}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
-    (is (= '{"$all" (not= 1 (if ab
-                              (get {:$type :ws/B :bn 2} :bn)
-                              (get {:$type :ws/B :bn 1} :bn)))}
+    (is (= '[["$all" (not= 1 (if ab
+                               (get {:$type :ws/B :bn 2} :bn)
+                               (get {:$type :ws/B :bn 1} :bn)))]]
            (-> sctx push-gets-into-ifs :ws/A ssa/spec-from-ssa :constraints)))))
 
 (deftest test-push-gets-into-nested-ifs
   (let [senv (envs/spec-env
               (var-types/to-halite-spec-env '{:ws/A
                                               {:spec-vars {:b1 :ws/B, :b2 :ws/B, :b3 :ws/B, :b4 :ws/B, :a :Boolean, :b :Boolean}
-                                               :constraints {"a1" (= 12 (get (if a (if b b1 b2) (if b b3 b4)) :n))}}
+                                               :constraints #{{:name "a1" :expr (= 12 (get (if a (if b b1 b2) (if b b3 b4)) :n))}}}
                                               :ws/B
                                               {:spec-vars {:n :Integer}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
-    (is (= '{"$all" (= 12 (if a (if b (get b1 :n) (get b2 :n)) (if b (get b3 :n) (get b4 :n))))}
+    (is (= '[["$all" (= 12 (if a (if b (get b1 :n) (get b2 :n)) (if b (get b3 :n) (get b4 :n))))]]
            (->> sctx (fixpoint push-gets-into-ifs)
                 :ws/A ssa/spec-from-ssa :constraints)))))
 
@@ -327,7 +329,7 @@
   (let [senv (envs/spec-env
               (var-types/to-halite-spec-env
                '{:ws/A {:spec-vars {:b :ws/B :ap :Boolean}
-                        :constraints {"a1" (get (if ap b (error "nope")) :bp)}}
+                        :constraints #{{:name "a1" :expr (get (if ap b (error "nope")) :bp)}}}
                  :ws/B {:spec-vars {:bp :Boolean}}}))]
     (is (= '(if ap (get b :bp) (error "nope"))
            (-> senv
@@ -335,7 +337,7 @@
                push-gets-into-ifs
                :ws/A
                ssa/spec-from-ssa
-               :constraints first val)))))
+               :constraints first second)))))
 
 (def cancel-get-of-instance-literal #'lowering/cancel-get-of-instance-literal)
 
@@ -344,20 +346,20 @@
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer :b :ws/B}
-                  :constraints {"a1" (< an (get (get {:$type :ws/B :c {:$type :ws/C :cn (get {:$type :ws/C :cn (+ 1 an)} :cn)}} :c) :cn))
-                                "a2" (= (get (get b :c) :cn)
-                                        (get {:$type :ws/C :cn 12} :cn))
-                                "a3" (let [cmn (get {:$type :ws/C, :cn 8} :cmn)]
-                                       (if-value cmn (< cmn 3) false))}}
+                  :constraints #{{:name "a1" :expr (< an (get (get {:$type :ws/B :c {:$type :ws/C :cn (get {:$type :ws/C :cn (+ 1 an)} :cn)}} :c) :cn))}
+                                 {:name "a2" :expr (= (get (get b :c) :cn)
+                                                      (get {:$type :ws/C :cn 12} :cn))}
+                                 {:name "a3" :expr (let [cmn (get {:$type :ws/C, :cn 8} :cmn)]
+                                                     (if-value cmn (< cmn 3) false))}}}
                  :ws/B
                  {:spec-vars {:c :ws/C}}
                  :ws/C
                  {:spec-vars {:cn :Integer, :cmn [:Maybe :Integer]}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
-    (is (= '{"$all" (and
-                     (< an (+ 1 an))
-                     (= (get (get b :c) :cn) 12)
-                     (let [v1 $no-value] (if-value v1 (< v1 3) false)))}
+    (is (= '[["$all" (and
+                      (= (get (get b :c) :cn) 12)
+                      (let [v1 $no-value] (if-value v1 (< v1 3) false))
+                      (< an (+ 1 an)))]]
            (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A ssa/spec-from-ssa :constraints)))))
 
 (deftest test-eliminate-runtime-constraint-violations
@@ -365,39 +367,39 @@
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer}
-                  :constraints {"a1" (< an 10)
-                                "a2" (< an (get {:$type :ws/B :bn (+ 1 an)} :bn))}}
+                  :constraints #{{:name "a1" :expr (< an 10)}
+                                 {:name "a2" :expr (< an (get {:$type :ws/B :bn (+ 1 an)} :bn))}}}
                  :ws/B
                  {:spec-vars {:bn :Integer}
-                  :constraints {"b1" (< 0 (get {:$type :ws/C :cn bn} :cn))}}
+                  :constraints #{{:name "b1" :expr (< 0 (get {:$type :ws/C :cn bn} :cn))}}}
                  :ws/C
                  {:spec-vars {:cn :Integer}
-                  :constraints {"c1" (= 0 (mod cn 2))}}}))
+                  :constraints #{{:name "c1" :expr (= 0 (mod cn 2))}}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
     (is (= '(let [v1 (+ 1 an)]
-              (and (< an 10)
-                   (if (if (= 0 (mod v1 2))
+              (and (if (if (= 0 (mod v1 2))
                          (< 0 (get {:$type :ws/C, :cn v1} :cn))
                          false)
                      (< an (get {:$type :ws/B, :bn v1} :bn))
-                     false)))
+                     false)
+                   (< an 10)))
            (-> sctx
                (lowering/eliminate-runtime-constraint-violations)
                (simplify)
                :ws/A
                (ssa/spec-from-ssa)
-               :constraints first val)))))
+               :constraints first second)))))
 
 (deftest test-eliminate-runtime-constraint-violations-and-if-value
   (let [senv (envs/spec-env
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:ap [:Maybe :Boolean]}
-                  :constraints {"a1" (let [b {:$type :ws/B :bp ap}]
-                                       true)}}
+                  :constraints #{{:name "a1" :expr (let [b {:$type :ws/B :bp ap}]
+                                                     true)}}}
                  :ws/B
                  {:spec-vars {:bp [:Maybe :Boolean]}
-                  :constraints {"bp" (if-value bp (if bp false true) true)}}}))
+                  :constraints #{{:name "bp" :expr (if-value bp (if bp false true) true)}}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
     (is (= '(if (if-value ap (if ap false true) true) (let [v1 {:$type :ws/B, :bp ap}] true) false)
            (rewriting/with-tracing [traces]
@@ -405,7 +407,7 @@
                  (lowering/eliminate-runtime-constraint-violations)
                  :ws/A
                  (ssa/spec-from-ssa)
-                 :constraints first val))))))
+                 :constraints first second))))))
 
 (def lower-refinement-constraints #'lowering/lower-refinement-constraints)
 
@@ -414,15 +416,15 @@
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer}
-                  :constraints {"a1" (< an 10)}
+                  :constraints #{{:name "a1" :expr (< an 10)}}
                   :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
                  :ws/B
                  {:spec-vars {:bn :Integer}
-                  :constraints {"b1" (< 0 bn)}
+                  :constraints #{{:name "b1" :expr (< 0 bn)}}
                   :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
                  :ws/C
                  {:spec-vars {:cn :Integer}
-                  :constraints {"c1" (= 0 (mod cn 2))}}}))
+                  :constraints #{{:name "c1" :expr (= 0 (mod cn 2))}}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
 
     (is (= '(and (< an 10)
@@ -431,7 +433,7 @@
                (lower-refinement-constraints)
                :ws/A
                (ssa/spec-from-ssa)
-               :constraints first val)))
+               :constraints first second)))
 
     (is (= '(let [v1 (+ 1 an)]
               (and (< an 10)
@@ -441,7 +443,7 @@
                (lowering/lower)
                :ws/A
                (ssa/spec-from-ssa)
-               :constraints first val)))))
+               :constraints first second)))))
 
 (def lower-refine-to #'lowering/lower-refine-to)
 
@@ -450,20 +452,20 @@
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:an :Integer}
-                  :constraints {"a1" (< an 10)}
+                  :constraints #{{:name "a1" :expr (< an 10)}}
                   :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
                  :ws/B
                  {:spec-vars {:bn :Integer}
-                  :constraints {"b1" (< 0 bn)}
+                  :constraints #{{:name "b1" :expr (< 0 bn)}}
                   :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
                  :ws/C
                  {:spec-vars {:cn :Integer}
-                  :constraints {"c1" (= 0 (mod cn 2))}}
+                  :constraints #{{:name "c1" :expr (= 0 (mod cn 2))}}}
                  :ws/D
                  {:spec-vars {:dm :Integer, :dn :Integer}
-                  :constraints {"d1" (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))
-                                "d2" (= dn (get (refine-to {:$type :ws/B :bn dn} :ws/B) :bn))
-                                "d3" (not= 72 (get {:$type :ws/A :an dn} :an))}}}))
+                  :constraints #{{:name "d1" :expr (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))}
+                                 {:name "d2" :expr (= dn (get (refine-to {:$type :ws/B :bn dn} :ws/B) :bn))}
+                                 {:name "d3" :expr (not= 72 (get {:$type :ws/A :an dn} :an))}}}}))
         sctx (ssa/build-spec-ctx senv :ws/D)]
     (is (= '(let [v1 (get {:$type :ws/A, :an dn} :an)
                   v2 (get {:$type :ws/B, :bn (+ 1 v1)} :bn)]
@@ -475,7 +477,7 @@
                (lower-refine-to)
                :ws/D
                (ssa/spec-from-ssa)
-               :constraints first val)))
+               :constraints first second)))
 
     (is (= '(let [v1 (get {:$type :ws/A, :an dn} :an)
                   v2 (get {:$type :ws/B, :bn (+ 1 v1)} :bn)]
@@ -487,7 +489,7 @@
                (lowering/lower)
                :ws/D
                (ssa/spec-from-ssa)
-               :constraints first val)))))
+               :constraints first second)))))
 
 (deftest test-lower-refine-to-ignores-unknown-instance-type
   (let [senv (envs/spec-env
@@ -496,14 +498,14 @@
                  :ws/A {:refines-to {:ws/W {:expr {:$type :ws/W :wn 1}}}}
                  :ws/B {:refines-to {:ws/W {:expr {:$type :ws/W :wn 2}}}}
                  :ws/C {:spec-vars {:a :ws/A :b :ws/B :p :Boolean}
-                        :constraints {"c1" (< 0 (get (refine-to (if p a b) :ws/W) :wn))}}}))]
+                        :constraints #{{:name "c1" :expr (< 0 (get (refine-to (if p a b) :ws/W) :wn))}}}}))]
     (is (= '(< 0 (get (refine-to (if p a b) :ws/W) :wn))
            (-> senv
                (ssa/build-spec-ctx :ws/C)
                lower-refine-to
                :ws/C
                ssa/spec-from-ssa
-               :constraints first val)))))
+               :constraints first second)))))
 
 (deftest test-push-refine-to-into-if
   (let [senv (envs/spec-env
@@ -512,14 +514,14 @@
                  :ws/A {:refines-to {:ws/W {:expr {:$type :ws/W :wn 1}}}}
                  :ws/B {:refines-to {:ws/W {:expr {:$type :ws/W :wn 2}}}}
                  :ws/C {:spec-vars {:a :ws/A :b :ws/B :p :Boolean}
-                        :constraints {"c1" (< 0 (get (refine-to (if p a b) :ws/W) :wn))}}}))]
+                        :constraints #{{:name "c1" :expr (< 0 (get (refine-to (if p a b) :ws/W) :wn))}}}}))]
     (is (= '(< 0 (get (if p (refine-to a :ws/W) (refine-to b :ws/W)) :wn))
            (-> senv
                (ssa/build-spec-ctx :ws/C)
                (rewriting/rewrite-sctx lowering/push-refine-to-into-if)
                :ws/C
                ssa/spec-from-ssa
-               :constraints first val)))))
+               :constraints first second)))))
 
 (def lower-no-value-comparison-expr #'lowering/lower-no-value-comparison-expr)
 
@@ -555,12 +557,12 @@
          (= lowered
             (let [[ssa-graph cid] (ssa/form-to-ssa ctx expr)]
               (-> sctx
-                  (update :ws/A assoc :ssa-graph ssa-graph :constraints {"c" cid})
+                  (update :ws/A assoc :ssa-graph ssa-graph :constraints [["c" cid]])
                   (lower-maybe-comparisons)
                   :ws/A
                   (#(binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa %)))
                   :constraints
-                  first val)))
+                  first second)))
 
       '(= v x)                '($do! x (if ($value? v) (= ($value! v) x) false))
       '(= x v y)              '($do! x y (if ($value? v) (= ($value! v) x y) false))
@@ -604,12 +606,12 @@
                    false
                    true)))
              (-> sctx
-                 (update :ws/A assoc :ssa-graph ssa-graph :constraints {"c" cid})
+                 (update :ws/A assoc :ssa-graph ssa-graph :constraints [["c" cid]])
                  (->> (fixpoint lower-maybe-comparisons))
                  :ws/A
                  (#(binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa %)))
                  :constraints
-                 first val))))
+                 first second))))
 
     ;; TODO: Add tests of semantics preservation!
     ))
@@ -622,13 +624,13 @@
       (are [expr lowered]
            (= lowered
               (-> senv
-                  (update-in [:ws/A :constraints] assoc "c" expr)
+                  (update-in [:ws/A :constraints] conj ["c" expr])
                   (envs/spec-env)
                   (ssa/build-spec-ctx :ws/A)
                   (rewriting/rewrite-sctx lowering/push-comparison-into-nonprimitive-if-in-expr)
                   :ws/A
                   (ssa/spec-from-ssa)
-                  :constraints first val))
+                  :constraints first second))
 
         '(= x (if p v w))
         '(if p (= x v) (= x w))
@@ -659,13 +661,13 @@
                     (= w (+ 1 ($value! v)))
                     (= w w)))
                (-> senv
-                   (update-in [:ws/A :constraints] assoc "c" expr)
+                   (update-in [:ws/A :constraints] conj ["c" expr])
                    (envs/spec-env)
                    (ssa/build-spec-ctx :ws/A)
                    (->> (fixpoint #(rewriting/rewrite-sctx % lowering/push-comparison-into-nonprimitive-if-in-expr)))
                    :ws/A
                    (ssa/spec-from-ssa)
-                   :constraints first val)))))))
+                   :constraints first second)))))))
 
 (def push-if-value-into-if #'lowering/push-if-value-into-if)
 
@@ -680,13 +682,13 @@
       (are [expr lowered]
            (= lowered
               (-> senv
-                  (update-in [:ws/A :constraints] assoc "c" expr)
+                  (update-in [:ws/A :constraints] conj ["c" expr])
                   (envs/spec-env)
                   (ssa/build-spec-ctx :ws/A)
                   (push-if-value-into-if)
                   :ws/A
                   (ssa/spec-from-ssa)
-                  :constraints first val))
+                  :constraints first second))
 
         '(let [n (if p x v)]
            (if-value n
@@ -738,7 +740,7 @@
                 (var-types/to-halite-spec-env
                  '{:ws/A
                    {:spec-vars {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
-                    :constraints {"a1" (= aw (when p an))}}}))
+                    :constraints #{{:name "a1" :expr (= aw (when p an))}}}}))
           sctx (ssa/build-spec-ctx senv :ws/A)]
       (is (= '(if p
                 (if-value aw
@@ -751,7 +753,7 @@
                  (lowering/lower)
                  :ws/A
                  (ssa/spec-from-ssa)
-                 :constraints first val))))))
+                 :constraints first second))))))
 
 (deftest test-lowering-nested-optionals
   (schema.core/without-fn-validation
@@ -759,11 +761,11 @@
                (var-types/to-halite-spec-env
                 '{:ws/A
                   {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :ap :Boolean}
-                   :constraints [["a1" (= b1 b2)]
-                                 ["a2" (=> ap (if-value b1 true false))]]}
+                   :constraints #{{:name "a1" :expr (= b1 b2)}
+                                  {:name "a2" :expr (=> ap (if-value b1 true false))}}}
                   :ws/B
                   {:spec-vars {:bx :Integer, :bw [:Maybe :Integer], :bp :Boolean, :c1 :ws/C, :c2 [:Maybe :ws/C]}
-                   :constraints [["b1" (= bw (when bp bx))]]}
+                   :constraints #{{:name "b1" :expr (= bw (when bp bx))}}}
                   :ws/C
                   {:spec-vars {:cx :Integer
                                :cw [:Maybe :Integer]}}
@@ -778,40 +780,63 @@
                                               :c2 {:$type :ws/C :cx dx :cw 12}}}}}}))]
      ;; TODO: Turn this into a property-based test. It's not useful like this.
      (is (= '{:spec-vars {:ap :Boolean, :b1 [:Maybe [:Instance :ws/B]], :b2 [:Maybe [:Instance :ws/B]]}
-              :constraints {"$all"
-                            (and
-                             (if-value b1
-                                       (if-value b2
-                                                 (let [v1 (get b2 :c2)
-                                                       v2 (get b2 :bw)
-                                                       v3 (get b2 :c1)
-                                                       v4 (get v3 :cw)
-                                                       v5 (get b1 :c1)]
-                                                   (and
-                                                    (= (get b2 :bp) (get b1 :bp))
-                                                    (if-value v2
-                                                              (let [v6 (get b1 :bw)] (if-value v6 (= v6 v2) false))
-                                                              (let [v6 (get b1 :bw)] (if-value v6 false true)))
-                                                    (= (get b2 :bx) (get b1 :bx))
-                                                    (and
-                                                     (if-value v4
-                                                               (let [v6 (get v5 :cw)] (if-value v6 (= v6 v4) false))
-                                                               (let [v6 (get v5 :cw)] (if-value v6 false true)))
-                                                     (= (get v3 :cx) (get v5 :cx)))
-                                                    (if-value v1
-                                                              (let [v6 (get b1 :c2)]
-                                                                (if-value v6
-                                                                          (let [v7 (get v6 :cw)]
-                                                                            (and
-                                                                             (if-value v7
-                                                                                       (let [v8 (get v1 :cw)] (if-value v8 (= v8 v7) false))
-                                                                                       (let [v8 (get v1 :cw)] (if-value v8 false true)))
-                                                                             (= (get v6 :cx) (get v1 :cx))))
-                                                                          false))
-                                                              (let [v6 (get b1 :c2)] (if-value v6 false true)))))
-                                                 false)
-                                       (if-value b2 false true))
-                             (=> ap (if-value b1 true false)))}
+              :constraints [["$all"
+                             (and
+                              (=> ap (if-value b1 true false))
+                              (if-value
+                               b1
+                               (if-value
+                                b2
+                                (let
+                                 [v1
+                                  (get b2 :c2)
+                                  v2
+                                  (get b2 :bw)
+                                  v3
+                                  (get b2 :c1)
+                                  v4
+                                  (get v3 :cw)
+                                  v5
+                                  (get b1 :c1)]
+                                  (and
+                                   (= (get b2 :bp) (get b1 :bp))
+                                   (if-value
+                                    v2
+                                    (let
+                                     [v6 (get b1 :bw)]
+                                      (if-value v6 (= v6 v2) false))
+                                    (let [v6 (get b1 :bw)] (if-value v6 false true)))
+                                   (= (get b2 :bx) (get b1 :bx))
+                                   (and
+                                    (if-value
+                                     v4
+                                     (let
+                                      [v6 (get v5 :cw)]
+                                       (if-value v6 (= v6 v4) false))
+                                     (let [v6 (get v5 :cw)] (if-value v6 false true)))
+                                    (= (get v3 :cx) (get v5 :cx)))
+                                   (if-value
+                                    v1
+                                    (let
+                                     [v6 (get b1 :c2)]
+                                      (if-value
+                                       v6
+                                       (let
+                                        [v7 (get v6 :cw)]
+                                         (and
+                                          (if-value
+                                           v7
+                                           (let
+                                            [v8 (get v1 :cw)]
+                                             (if-value v8 (= v8 v7) false))
+                                           (let
+                                            [v8 (get v1 :cw)]
+                                             (if-value v8 false true)))
+                                          (= (get v6 :cx) (get v1 :cx))))
+                                       false))
+                                    (let [v6 (get b1 :c2)] (if-value v6 false true)))))
+                                false)
+                               (if-value b2 false true)))]]
               :refines-to {}}
             (-> senv
                 (ssa/build-spec-ctx :ws/A)
@@ -820,12 +845,12 @@
                 (ssa/spec-from-ssa))))
 
      (is (= '{:spec-vars {:dx :Integer}
-              :constraints {"$all"
-                            (let [v1 {:$type :ws/C, :cw dx, :cx dx}
-                                  v2 {:$type :ws/C, :cw 12, :cx dx}]
-                              (if (= 0 (mod dx 2))
-                                (let [v3 (div dx 2)] false)
-                                true))},
+              :constraints [["$all"
+                             (let [v1 {:$type :ws/C, :cw dx, :cx dx}
+                                   v2 {:$type :ws/C, :cw 12, :cx dx}]
+                               (if (= 0 (mod dx 2))
+                                 (let [v3 (div dx 2)] false)
+                                 true))]],
               :refines-to {:ws/B {:expr {:$type :ws/B,
                                          :bp false,
                                          :bw (if (= 0 (mod dx 2)) (div dx 2) $no-value),
@@ -846,14 +871,14 @@
                  '{:my/A {:abstract? true
                           :spec-vars {:a1 [:Maybe :Integer]
                                       :a2 [:Maybe :Integer]}
-                          :constraints {"a1_pos" (if-value a1 (> a1 0) true)
-                                        "a2_pos" (if-value a2 (> a2 0) true)}}
+                          :constraints #{{:name "a1_pos" :expr (if-value a1 (> a1 0) true)}
+                                         {:name "a2_pos" :expr (if-value a2 (> a2 0) true)}}}
                    :my/B {:abstract? false
                           :spec-vars {:b [:Maybe :Integer]}
                           :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}}))
           sctx (ssa/build-spec-ctx senv :my/B)]
       (is (= '{:abstract? false,
-               :constraints {"$all" (if-value b (< 0 b) true)},
+               :constraints [["$all" (if-value b (< 0 b) true)]]
                :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}},
                :spec-vars {:b [:Maybe :Integer]}}
              (-> senv
@@ -865,21 +890,21 @@
 (deftest test-eliminate-error-forms
   (let [senv (envs/spec-env
               (var-types/to-halite-spec-env '{:ws/A {:spec-vars {:an :Integer :ap [:Maybe :Boolean]}
-                                                     :constraints {"a1" (if (< an 10)
-                                                                          (if (< an 1)
-                                                                            (error "an is too small")
-                                                                            (if-value ap ap false))
-                                                                          (= ap (when (< an 20)
-                                                                                  (error "not big enough"))))}}}))]
+                                                     :constraints #{{:name "a1" :expr (if (< an 10)
+                                                                                        (if (< an 1)
+                                                                                          (error "an is too small")
+                                                                                          (if-value ap ap false))
+                                                                                        (= ap (when (< an 20)
+                                                                                                (error "not big enough"))))}}}}))]
     (is (= '{:spec-vars {:an :Integer :ap [:Maybe :Boolean]}
-             :constraints {"$all"
-                           (let [v1 (< an 10)]
-                             (and
-                              (if v1
-                                (if-value ap ap false)
-                                (= ap $no-value))
-                              (not (and (<= 10 an) (< an 20)))
-                              (not (and (< an 1) v1))))}
+             :constraints [["$all"
+                            (let [v1 (< an 10)]
+                              (and
+                               (if v1
+                                 (if-value ap ap false)
+                                 (= ap $no-value))
+                               (not (and (<= 10 an) (< an 20)))
+                               (not (and (< an 1) v1))))]]
              :refines-to {}}
            (-> senv
                (ssa/build-spec-ctx :ws/A)
@@ -890,11 +915,11 @@
   (let [senv (envs/spec-env
               (var-types/to-halite-spec-env
                '{:ws/A {:spec-vars {:an :Integer :ap :Boolean}
-                        :constraints {"a1" (if ap
-                                             (if (< an 10)
-                                               (error "too small")
-                                               (not (= 42 (+ 1 (* an (error "too big"))))))
-                                             (= an 42))}}}))]
+                        :constraints #{{:name "a1" :expr (if ap
+                                                           (if (< an 10)
+                                                             (error "too small")
+                                                             (not (= 42 (+ 1 (* an (error "too big"))))))
+                                                           (= an 42))}}}}))]
     (is (= '(and (= an 42)
                  (not (and (<= 10 an) ap))
                  (not (and (< an 10) ap)))
@@ -905,7 +930,7 @@
                :ws/A
                (ssa/spec-from-ssa)
                :constraints
-               first val)))))
+               first second)))))
 
 (deftest test-eliminate-error-forms-same-message
   ;; TODO: these tests appear to show a bug in the lowering logic
@@ -967,13 +992,13 @@
     (are [in out]
          (= out
             (let [sctx (-> senv
-                           (update-in [:ws/A :constraints] assoc "a1" (list '$do! in 'ap))
+                           (update-in [:ws/A :constraints] conj ["a1" (list '$do! in 'ap)])
                            envs/spec-env
                            (ssa/build-spec-ctx :ws/A))
                   ctx (ssa/make-ssa-ctx sctx (:ws/A sctx))
                   do-id (->> (get-in sctx [:ws/A :constraints])
                              first
-                             val)
+                             second)
                   do-form (-> sctx :ws/A :ssa-graph (ssa/deref-id do-id) ssa/node-form)
                   child-id (second do-form)]
               (rewrite-instance-valued-do-child {:sctx sctx :ctx ctx} child-id)))
@@ -1013,13 +1038,13 @@
     (are [in out]
          (= out
             (let [sctx (-> senv
-                           (update-in [:ws/A :constraints] assoc "a1" (list '$do! in 'true))
+                           (update-in [:ws/A :constraints] conj ["a1" (list '$do! in 'true)])
                            envs/spec-env
                            (ssa/build-spec-ctx :ws/A))
                   ctx (ssa/make-ssa-ctx sctx (:ws/A sctx))
                   do-id (->> (get-in sctx [:ws/A :constraints])
                              first
-                             val)
+                             second)
                   do-form (-> sctx :ws/A :ssa-graph (ssa/deref-id do-id) ssa/node-form)
                   child-id (second do-form)]
              ;;(ssa/pprint-ssa-graph (:ssa-graph ctx))
@@ -1037,10 +1062,10 @@
               (var-types/to-halite-spec-env
                '{:ws/A
                  {:spec-vars {:ap :Boolean, :ab :ws/B, :an :Integer, :ad :ws/D}
-                  :constraints {"a1" (let [b (if ap
-                                               {:$type :ws/B :bn (+ 1 an)}
-                                               {:$type :ws/B :bn (+ 2 an)})]
-                                       true)}}
+                  :constraints #{{:name "a1" :expr (let [b (if ap
+                                                             {:$type :ws/B :bn (+ 1 an)}
+                                                             {:$type :ws/B :bn (+ 2 an)})]
+                                                     true)}}}
                  :ws/B
                  {:spec-vars {:bn [:Maybe :Integer] :bp [:Maybe :Boolean]}}
                  :ws/C
@@ -1058,7 +1083,7 @@
                (lowering/eliminate-unused-instance-valued-exprs-in-dos)
                :ws/A
                (ssa/spec-from-ssa)
-               :constraints first val)))))
+               :constraints first second)))))
 
 (defonce ^:dynamic *results* (atom nil))
 (defonce ^:dynamic *trace* (atom nil))
@@ -1070,21 +1095,21 @@
                  (var-types/to-halite-spec-env
                   '{:ws/A
                     {:spec-vars {:b1 [:Maybe :ws/B], :b2 [:Maybe :ws/B], :aw [:Maybe :Integer], :x :Integer, :p :Boolean}
-                     :constraints {"a1" (not= (if p b1 b2)
-                                              (if-value aw
-                                                        {:$type :ws/B :bw aw :bx (+ aw 1)}
-                                                        (get {:$type :ws/C :b3 b1 :cw x} :b3)))}}
+                     :constraints #{{:name "a1" :expr (not= (if p b1 b2)
+                                                            (if-value aw
+                                                                      {:$type :ws/B :bw aw :bx (+ aw 1)}
+                                                                      (get {:$type :ws/C :b3 b1 :cw x} :b3)))}}}
                     :ws/B
                     {:spec-vars {:bv [:Maybe :Integer], :bw [:Maybe :Integer], :bx :Integer}}
                     :ws/C
                     {:spec-vars {:b3 [:Maybe :ws/B], :cw :Integer}
-                     :constraints {"c1" (= (< 0 cw) (if-value b3 true false))
-                                   "c2" (if-value b3
-                                                  (let [bw (get b3 :bw)]
-                                                    (if-value bw
-                                                              (< cw bw)
-                                                              false))
-                                                  true)}}}))
+                     :constraints #{{:name "c1" :expr (= (< 0 cw) (if-value b3 true false))}
+                                    {:name "c2" :expr (if-value b3
+                                                                (let [bw (get b3 :bw)]
+                                                                  (if-value bw
+                                                                            (< cw bw)
+                                                                            false))
+                                                                true)}}}}))
            sctx (ssa/build-spec-ctx senv :ws/A)
            sctx' (rewriting/with-tracing [traces]
                    (let [result (lowering/lower sctx)]

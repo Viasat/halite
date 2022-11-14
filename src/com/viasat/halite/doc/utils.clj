@@ -92,7 +92,7 @@
       (update-vals (fn [spec]
                      (cond-> spec
                        (:constraints spec)
-                       (update :constraints update-vals f)
+                       (update :constraints #(set (map f %)))
                        (:refines-to spec)
                        (update :refines-to update-vals (fn [refinement]
                                                          (update refinement :expr f))))))))

@@ -21,9 +21,7 @@
 
 (s/defschema UserConstraintName types/BareKeyword)
 
-(s/defschema ConstraintName (s/conditional
-                             string? s/Str
-                             :else s/Keyword))
+(def ConstraintName s/Str)
 
 (s/defschema Limits {(s/optional-key :string-literal-length) (s/maybe s/Int)
                      (s/optional-key :string-runtime-length) (s/maybe s/Int)

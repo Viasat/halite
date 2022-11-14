@@ -58,7 +58,8 @@
              ~@(if (:constraints spec)
                  `[(and
                     ~@(->> (:constraints spec)
-                           (map (fn [[_ expr]]
+                           (sort-by :name)
+                           (map (fn [{:keys [expr]}]
                                   `(user-eval $this '~expr)))))]
                  [])
 

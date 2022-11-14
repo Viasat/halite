@@ -234,7 +234,7 @@
 
 (potemkin/import-vars
  [envs
-  Refinement RefinesTo ConstraintMap
+  Refinement RefinesTo Constraint
   SpecEnv
   TypeEnv type-env extend-scope
   Env env env-from-inst])

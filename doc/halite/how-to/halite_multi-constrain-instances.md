@@ -11,8 +11,10 @@ Multiple constraints can be defined on a spec. Each constraint must have a uniqu
 ```clojure
 {:spec/A$v1 {:spec-vars {:b :Integer,
                          :c :Integer},
-             :constraints {:constrain_b '(> b 100),
-                           :constrain_c '(< c 20)}}}
+             :constraints #{'{:name "constrain_b",
+                              :expr (> b 100)}
+                            '{:name "constrain_c",
+                              :expr (< c 20)}}}}
 ```
 
 An instance must satisfy all of the constraints to be valid
@@ -59,8 +61,10 @@ Mutliple constraints can refer to the same variables.
 
 ```clojure
 {:spec/A$v2 {:spec-vars {:b :Integer},
-             :constraints {:constrain_b '(> b 100),
-                           :constrain_b2 '(< b 110)}}}
+             :constraints #{'{:name "constrain_b",
+                              :expr (> b 100)}
+                            '{:name "constrain_b2",
+                              :expr (< b 110)}}}}
 ```
 
 ```clojure
@@ -88,7 +92,8 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 
 ```clojure
 {:spec/A$v3 {:spec-vars {:b :Integer},
-             :constraints {:constrain_b '(and (> b 100) (< b 110))}}}
+             :constraints #{'{:name "constrain_b",
+                              :expr (and (> b 100) (< b 110))}}}}
 ```
 
 ```clojure

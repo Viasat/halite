@@ -113,7 +113,7 @@
   "A halite spec, but with all expressions encoded in a single SSA directed graph."
   (assoc envs/SpecInfo
          :ssa-graph SSAGraph
-         (s/optional-key :constraints) {base/ConstraintName NodeId}
+         (s/optional-key :constraints) [[(s/one base/ConstraintName :cname) (s/one NodeId :node)]]
          (s/optional-key :refines-to) {types/NamespacedKeyword
                                        (assoc envs/Refinement :expr NodeId)}))
 
@@ -648,11 +648,11 @@
     :else (throw (ex-info "BUG! Unsupported feature in halite->choco-clj transpilation"
                           {:form form}))))
 
-(s/defn constraint-to-ssa :- [(s/one SSAGraph :ssa-graph), {base/ConstraintName NodeId}]
+(s/defn constraint-to-ssa :- [(s/one SSAGraph :ssa-graph), [(s/one base/ConstraintName :cname) (s/one NodeId :form)]]
   "TODO: Refactor me as add-constraint, taking and returning SpecInfo."
   [senv :- (s/protocol envs/SpecEnv), tenv :- (s/protocol envs/TypeEnv), ssa-graph :- SSAGraph, [cname constraint-form]]
   (let [[ssa-graph id] (form-to-ssa (init-ssa-ctx senv tenv ssa-graph) constraint-form)]
-    [ssa-graph {cname id}]))
+    [ssa-graph [cname id]]))
 
 (s/defn spec-to-ssa :- SpecInfo
   "Convert a halite spec into an SSA-based representation."
@@ -662,8 +662,8 @@
         ,,(reduce
            (fn [[ssa-graph constraints] constraint]
              (let [[ssa-graph constraint] (constraint-to-ssa senv tenv ssa-graph constraint)]
-               [ssa-graph (merge constraints constraint)]))
-           [empty-ssa-graph {}]
+               [ssa-graph (conj constraints constraint)]))
+           [empty-ssa-graph []]
            (:constraints spec-info))
         [ssa-graph refines-to]
         ,,(reduce
@@ -740,8 +740,7 @@
                   {:dgraph (persistent! dgraph)
                    :form-ids (persistent! form-ids)
                    :next-id (:next-id ssa-graph)}))
-   :constraints (update-vals constraints (fn [cid]
-                                           (if (= cid node-id) replacement-id cid)))
+   :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints)
    :refines-to (update-vals refines-to
                             (fn [r] (update r :expr #(if (= % node-id) replacement-id %))))))
 
@@ -1044,10 +1043,10 @@
          ssa-ctx (init-ssa-ctx (envs/spec-env {}) (envs/type-env {}) ssa-graph)
          constraints (if conjoin-constraints?
                        (let [[ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
-                         {"$all" (form-from-ssa scope ssa-graph id)})
-                       (update-vals constraints
-                                    (fn [cid]
-                                      (form-from-ssa scope (:ssa-graph ssa-ctx) cid))))]
+                         [["$all" (form-from-ssa scope ssa-graph id)]])
+                       (->> constraints
+                            (mapv (fn [[cname cid]]
+                                    [cname (form-from-ssa scope (:ssa-graph ssa-ctx) cid)]))))]
      (-> spec-info
          (dissoc :ssa-graph)
          (assoc :constraints constraints)

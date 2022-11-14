@@ -393,7 +393,7 @@
              (let [[ssa-graph id] (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph) (list 'valid? expr))
                    result (-> spec-info
                               (assoc :ssa-graph ssa-graph)
-                              (update :constraints assoc (str target-id) id))]
+                              (update :constraints conj [(str target-id) id]))]
                (halite-rewriting/trace!
                 sctx
                 {:op :add-constraint
@@ -654,9 +654,7 @@
                   cid (ssa/negated ssa-graph' guard-id)
                   spec-info' (-> spec-info
                                  (assoc :ssa-graph ssa-graph')
-                                 ;; using the error message as a key for the constraint name seems dubious
-                                 ;; TODO: deal with collisions since message is the key in the constraint map?
-                                 (update :constraints assoc message cid))]
+                                 (update :constraints conj [message cid]))]
               (halite-rewriting/trace!
                sctx
                {:op :add-constraint

@@ -90,9 +90,7 @@ Similarly, each constraint by itself is a predicate and is combined in a conjunc
       "x" : "String",
       "y" : "Integer"
     },
-    "constraints" : {
-      "valid_y" : "(y > 0)"
-    }
+    "constraints" : [ "{expr: (y > 0), name: \"valid_y\"}" ]
   }
 }
 ```
@@ -124,10 +122,7 @@ If there are multiple constraints, they are all logically combined into a single
       "x" : "String",
       "y" : "Integer"
     },
-    "constraints" : {
-      "valid_x" : "#{\"bye\", \"hi\"}.contains?(x)",
-      "valid_y" : "(y > 0)"
-    }
+    "constraints" : [ "{expr: (y > 0), name: \"valid_y\"}", "{expr: #{\"bye\", \"hi\"}.contains?(x), name: \"valid_x\"}" ]
   }
 }
 ```
@@ -158,19 +153,14 @@ Finally, the refinements can also bring in additional constraints which are comb
     "spec-vars" : {
       "b" : "Integer"
     },
-    "constraints" : {
-      "valid_b" : "(b < 10)"
-    }
+    "constraints" : [ "{expr: (b < 10), name: \"valid_b\"}" ]
   },
   "spec/X$v6" : {
     "spec-vars" : {
       "x" : "String",
       "y" : "Integer"
     },
-    "constraints" : {
-      "valid_x" : "#{\"bye\", \"hi\"}.contains?(x)",
-      "valid_y" : "(y > 0)"
-    },
+    "constraints" : [ "{expr: (y > 0), name: \"valid_y\"}", "{expr: #{\"bye\", \"hi\"}.contains?(x), name: \"valid_x\"}" ],
     "refines-to" : {
       "spec/A" : {
         "name" : "refine_to_A",
@@ -207,27 +197,20 @@ Implications of each additional refinement are combined into the single conujunc
     "spec-vars" : {
       "b" : "Integer"
     },
-    "constraints" : {
-      "valid_b" : "(b < 10)"
-    }
+    "constraints" : [ "{expr: (b < 10), name: \"valid_b\"}" ]
   },
   "spec/P" : {
     "spec-vars" : {
       "q" : "String"
     },
-    "constraints" : {
-      "valid_q" : "(q == \"hi\")"
-    }
+    "constraints" : [ "{expr: (q == \"hi\"), name: \"valid_q\"}" ]
   },
   "spec/X$v7" : {
     "spec-vars" : {
       "x" : "String",
       "y" : "Integer"
     },
-    "constraints" : {
-      "valid_x" : "#{\"bye\", \"hi\"}.contains?(x)",
-      "valid_y" : "(y > 0)"
-    },
+    "constraints" : [ "{expr: (y > 0), name: \"valid_y\"}", "{expr: #{\"bye\", \"hi\"}.contains?(x), name: \"valid_x\"}" ],
     "refines-to" : {
       "spec/A" : {
         "name" : "refine_to_A",

@@ -16,9 +16,7 @@ The following specification uses a constraint to capture a predicate that checks
       "y" : "Integer",
       "sum" : "Integer"
     },
-    "constraints" : {
-      "constrain_sum" : "(sum == (x + y))"
-    }
+    "constraints" : [ "{expr: (sum == (x + y)), name: \"constrain_sum\"}" ]
   }
 }
 ```

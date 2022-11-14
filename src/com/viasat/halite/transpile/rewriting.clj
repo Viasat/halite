@@ -40,7 +40,7 @@
           (fn [stage ex]
             (reset! type-error-item item)
             (binding [ssa/*hide-non-halite-ops* true]
-              (-> (ssa/spec-from-ssa spec-info)  :constraints first second clojure.pprint/pprint)
+              (-> (ssa/spec-from-ssa spec-info) :constraints first second clojure.pprint/pprint)
               (print-trace-item item)
               (-> (ssa/spec-from-ssa spec-info') :constraints first second clojure.pprint/pprint))
             (throw (ex-info (format "Found type error %s %s" stage rule) {} ex)))]
@@ -117,7 +117,7 @@
               spec-info' #_(-> (assoc spec-info :ssa-graph ssa-graph') (ssa/replace-node id id'))
               (cond-> (assoc spec-info :ssa-graph ssa-graph')
                 (= :all nodes) (ssa/replace-node id id')
-                (= :constraints nodes) (update :constraints update-vals (fn [cid] (if (= cid id) id' cid))))
+                (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))
               end-nanos (System/nanoTime)
               rule-ms (/ (- rule-nanos start-nanos) 1000000.0)
               graph-ms (/ (- end-nanos rule-nanos) 1000000.0)

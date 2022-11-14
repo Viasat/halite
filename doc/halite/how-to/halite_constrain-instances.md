@@ -16,7 +16,8 @@ This indicates that 'b' must be an integer, but it doesn't indicate what valid v
 
 ```clojure
 {:spec/A$v2 {:spec-vars {:b :Integer},
-             :constraints {:constrain_b '(> b 100)}}}
+             :constraints #{'{:name "constrain_b",
+                              :expr (> b 100)}}}}
 ```
 
 An attempt to make an instance that satisfies this constraint is successful
@@ -49,7 +50,8 @@ Constraints can be arbitrary expressions that refer to multiple fields.
 ```clojure
 {:spec/A$v3 {:spec-vars {:b :Integer,
                          :c :Integer},
-             :constraints {:constrain_b_c '(< (+ b c) 10)}}}
+             :constraints #{'{:name "constrain_b_c",
+                              :expr (< (+ b c) 10)}}}}
 ```
 
 In this example, the sum of 'a' and 'b' must be less than 10
