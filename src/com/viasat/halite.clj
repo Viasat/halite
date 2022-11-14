@@ -207,6 +207,22 @@
   [elem-type :- var-types/VarType]
   [:Set elem-type])
 
+(s/defn vector-type? :- Boolean
+  [t :- var-types/VarType]
+  (->> t
+       var-types/no-maybe
+       (#(and (vector? %)
+              (= (first %) :Vec)))
+       boolean))
+
+(s/defn set-type? :- Boolean
+  [t :- var-types/VarType]
+  (->> t
+       var-types/no-maybe
+       (#(and (vector? %)
+              (= (first %) :Set)))
+       boolean))
+
 (s/defn halite-vector-type :- types/HaliteType
   "Construct a type representing vectors of the given type."
   [elem-type :- types/HaliteType]
@@ -216,6 +232,10 @@
   "Construct a type representing sets of the given type."
   [elem-type :- types/HaliteType]
   (types/set-type elem-type))
+
+(s/defn halite-elem-type :- (s/maybe types/HaliteType)
+  [t]
+  (types/elem-type t))
 
 ;;
 
@@ -242,11 +262,12 @@
 (potemkin/import-vars
  [types
   HaliteType decimal-type decimal-type? decimal-scale namespaced-keyword? abstract-spec-type concrete-spec-type
-  halite-set-type? halite-vector-type? elem-type
+  halite-set-type? halite-vector-type?
   nothing-like? join])
 
 (potemkin/import-vars
  [var-types
+  elem-type
   primitive-types
   halite-type-from-var-type
   VarType UserSpecVars UserSpecInfo UserSpecMap
