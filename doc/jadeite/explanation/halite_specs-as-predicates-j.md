@@ -110,7 +110,7 @@ So if any of the types are wrong or if the constraint is violated then an error 
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/X$v3', violates constraints valid_y"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/X$v3', violates constraints spec/X$v3/valid_y"]
 ```
 
 If there are multiple constraints, they are all logically combined into a single conjunction for the spec.
@@ -142,7 +142,7 @@ Again, violating any one constraint causes an error to be produced.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/X$v5', violates constraints valid_x"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/X$v5', violates constraints spec/X$v5/valid_x"]
 ```
 
 Finally, the refinements can also bring in additional constraints which are combined into the overall conjunction for the spec.
@@ -186,7 +186,7 @@ If one of the constraints implied by a refinement is violated, then an error is 
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints valid_b"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/X$v6', violates constraints spec/A/valid_b"]
 ```
 
 Implications of each additional refinement are combined into the single conujunction for this spec.
@@ -240,7 +240,7 @@ Violate one of the implied refinement constraints.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/P', violates constraints valid_q"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/X$v7', violates constraints spec/P/valid_q"]
 ```
 
 Violation of constraints can be detected by using the 'valid?' operator. This works for constraints in the spec explicitly as well as constraints implied via refinements.

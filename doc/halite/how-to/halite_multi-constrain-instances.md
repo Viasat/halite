@@ -41,7 +41,7 @@ Violating any of the constraints makes the instance invalid
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints constrain_b"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/A$v1/constrain_b"
  :h-err/invalid-instance]
 ```
 
@@ -53,7 +53,7 @@ Violating any of the constraints makes the instance invalid
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints constrain_c"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/A$v1/constrain_c"
  :h-err/invalid-instance]
 ```
 
@@ -84,7 +84,7 @@ Mutliple constraints can refer to the same variables.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints constrain_b2"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints spec/A$v2/constrain_b2"
  :h-err/invalid-instance]
 ```
 
@@ -113,7 +113,7 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints constrain_b"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints spec/A$v3/constrain_b"
  :h-err/invalid-instance]
 ```
 

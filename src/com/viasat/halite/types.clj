@@ -304,13 +304,14 @@
 
 (defn genericize-ptn
   "Convert from ptn representing a halite type to a ptn that exists in the graph."
-  [p]
+  [p original-type]
   (let [gp (case (:kind p)
              :Instance (assoc p :arg 'KW :r2 'R2)
              (:Set :Vec :Coll) (assoc p :arg 'T)
              :Decimal (assoc p :arg 'S)
              p)]
-    (assert (get @*ptn-adjacent-super gp) (str "Unknown type pattern:" gp))
+    (assert (get @*ptn-adjacent-super gp) (str "Unknown type pattern:" gp " : " (or original-type
+                                                                                    "<nil>")))
     gp))
 
 (s/defn subtype? :- s/Bool
@@ -319,8 +320,8 @@
   (or (= s t)
       (let [sp (type-ptn s)
             tp (type-ptn t)
-            gsp (genericize-ptn sp)
-            gtp (genericize-ptn tp)
+            gsp (genericize-ptn sp s)
+            gtp (genericize-ptn tp t)
             super-ptns (@*ptn-supertypes-set gsp)]
         (if-not (contains? super-ptns gtp)
           false ;; t's graph node does not appear in s's supertypes.
@@ -344,8 +345,8 @@
     s ;; easy answer, for performance
     (let [sp (type-ptn s)
           tp (type-ptn t)
-          gsp (genericize-ptn sp)
-          gtp (genericize-ptn tp)
+          gsp (genericize-ptn sp s)
+          gtp (genericize-ptn tp t)
           s-super-ptns (@*ptn-supertypes-set gsp)
           ;;_ (prn :supers (map ptn-type (@*ptn-supertypes gtp)))
           meet-ptn (if (= :Instance (:kind sp) (:kind tp))
@@ -380,8 +381,8 @@
   [s :- HaliteType, t :- HaliteType]
   (let [sp (type-ptn s)
         tp (type-ptn t)
-        gsp (genericize-ptn sp)
-        gtp (genericize-ptn tp)
+        gsp (genericize-ptn sp s)
+        gtp (genericize-ptn tp t)
         s-sub-ptns (@*ptn-subtypes-set gsp)
         ;;_ (prn :subs (map ptn-type (@*ptn-subtypes gtp)))
         join-ptn (if (= :Instance (:kind sp) (:kind tp))

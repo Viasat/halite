@@ -33,7 +33,7 @@ While the following is not a valid spec/Square
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints square"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints spec/Square/square"
  :h-err/invalid-instance]
 ```
 
@@ -77,7 +77,7 @@ But furthermore, notice that the refinement has by implication created a constra
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints square"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Box$v1', violates constraints spec/Square/square"
  :h-err/invalid-instance]
 ```
 
@@ -182,7 +182,7 @@ The box itself is valid, but now attempting to refine a non-square box into a sq
 
 ;-- result --
 [:throws
- "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints square\""
+ "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints spec/Square/square\""
  :h-err/refinement-error]
 ```
 
@@ -214,7 +214,7 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 
 ;-- result --
 [:throws
- "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints square\""
+ "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints spec/Square/square\""
  :h-err/refinement-error]
 ```
 

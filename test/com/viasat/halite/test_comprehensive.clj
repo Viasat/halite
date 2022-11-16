@@ -7149,10 +7149,10 @@
    [{:$type :my/Spec$v1, :p 0, :n -1}
     [:Instance :my/Spec$v1]
     [:throws
-     "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints pc"]
+     "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints my/Spec$v1/pc"]
     "{$type: my/Spec$v1, n: -1, p: 0}"
     [:throws
-     "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints pc"]])
+     "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints my/Spec$v1/pc"]])
   (hc
    :basic
    [{:$type :my/Spec$v1, :p 0, :n -1, :x 20}
@@ -7634,10 +7634,10 @@
    [(refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1)
     [:Instance :spec/B$v1]
     [:throws
-     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/B$v1/px"]
     "{$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/B$v1 )"
     [:throws
-     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/B$v1/px"]])
   (hc
    :basic-2
    [(valid? (refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/B$v1))
@@ -7725,19 +7725,19 @@
    [{:$type :spec/A$v1, :p 10, :n -1}
     [:Instance :spec/A$v1]
     [:throws
-     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/B$v1/px"]
     "{$type: spec/A$v1, n: -1, p: 10}"
     [:throws
-     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/B$v1/px"]])
   (hc
    :basic-2
    [(refine-to {:$type :spec/A$v1, :p 10, :n -1} :spec/A$v1)
     [:Instance :spec/A$v1]
     [:throws
-     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/B$v1/px"]
     "{$type: spec/A$v1, n: -1, p: 10}.refineTo( spec/A$v1 )"
     [:throws
-     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/B$v1', violates constraints px"]])
+     "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/B$v1/px"]])
   (hc
    :basic-2
    [(refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/A$v1)
@@ -7823,7 +7823,21 @@
    :basic-2
    [(let [v {:$type :spec/A$v1, :p 10, :n -1}] (if-value v 1 2))
     [:throws
-     "l-err/first-argument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]]))
+     "l-err/first-argument-not-optional 0-0 : First argument to 'if-value' must have an optional type"]])
+  (hc
+   {:spec/P {:spec-vars {:q :String}
+             :constraints #{{:name "valid_q" :expr '(= q "hi")}}}
+    :spec/X$v7 {:spec-vars {:x :String
+                            :y :Integer}
+                :constraints #{{:name "valid_x" :expr '(contains? #{"hi" "bye"} x)}
+                               {:name "valid_y" :expr '(> y 0)}}
+                :refines-to {:spec/P {:name "refine_to_P"
+                                      :expr '{:$type :spec/P
+                                              :q x}}}}}
+   [(valid? {:$type :spec/X$v7, :x "hola", :y 9})
+    :Boolean
+    false
+    "(valid? {$type: spec/X$v7, x: \"hola\", y: 9})" "false"]))
 
 (deftest
   test-misc-types
@@ -8519,10 +8533,10 @@
      [{:$type :spec/Inc$v1, :x 1, :y 1}
       [:Instance :spec/Inc$v1]
       [:throws
-       "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints main"]
+       "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints spec/Inc$v1/main"]
       "{$type: spec/Inc$v1, x: 1, y: 1}"
       [:throws
-       "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints main"]])
+       "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Inc$v1', violates constraints spec/Inc$v1/main"]])
     (hc
      ws
      "`valid?` catches the constraint violations to produce a boolean"
@@ -8532,7 +8546,9 @@
       "(valid? {$type: spec/Inc$v1, x: 1, y: 1})"
       "false"])
     (hc
-     {:spec/Inc$v1 {:constraints #{{:name "main" :expr '(= (inc x) y)}},
+     {:spec/BigInc$v1 {:spec-vars {:x :Integer
+                                   :y :Integer}}
+      :spec/Inc$v1 {:constraints #{{:name "main" :expr '(= (inc x) y)}},
                     :refines-to {:spec/BigInc$v1 {:expr '(when
                                                           (>= x 100)
                                                            {:$type :spec/BigInc$v1,
@@ -8545,7 +8561,23 @@
       [:Maybe [:Instance :spec/Inc$v1]]
       :Unset
       "(valid {$type: spec/Inc$v1, x: 1, y: 1})"
-      "Unset"]))
+      "Unset"])
+    (hc
+     {:spec/Inc$v1 {:constraints #{{:name "main" :expr '(= (inc x) y)}},
+                    :refines-to {:spec/BigInc$v1 {:expr '(when
+                                                          (>= x 100)
+                                                           {:$type :spec/BigInc$v1,
+                                                            :x x,
+                                                            :y y}),
+                                                  :name "spec/Inc$v1/as_big_inc"}},
+                    :spec-vars {:x :Integer, :y :Integer}}}
+     "valid` catches the constraint violations to produce a `Maybe`"
+     [(valid {:$type :spec/Inc$v1, :x 1, :y 1})
+      [:Maybe [:Instance :spec/Inc$v1]]
+      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Resource spec not found: :spec-id\""]
+      "(valid {$type: spec/Inc$v1, x: 1, y: 1})"
+      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Resource spec not found: :spec-id\""]]))
+
   (let
    [ws {:spec/Ratio$v1 {:constraints #{{:name "main" :expr '(= r (div x y))}},
                         :spec-vars {:r :Integer, :x :Integer, :y :Integer}}}]
@@ -9808,9 +9840,9 @@
                                                         (error "f1"))}}}}
       [{:$type :my/Spec$v1}
        [:Instance :my/Spec$v1]
-       [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints c1"]
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; Cannot divide by zero; f2\""]
        "{$type: my/Spec$v1}"
-       [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'my/Spec$v1', violates constraints c1"]]))
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; Cannot divide by zero; f2\""]]))
 
 (deftest
   test-reserved-words
@@ -10398,9 +10430,9 @@
                                       :inverted? true}}}}
       [(valid (refine-to {:$type :spec/B, :x 0} :spec/A))
        [:Maybe [:Instance :spec/A]]
-       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints spec/A/x\""]
        "(valid {$type: spec/B, x: 0}.refineTo( spec/A ))"
-       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]])
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints spec/A/x\""]])
 
   ;; constraint violation - refines-to?
   (hc {:spec/A {:spec-vars {:x :Integer}
@@ -10412,9 +10444,9 @@
                                       :inverted? true}}}}
       [(refines-to? {:$type :spec/B, :x 0} :spec/A)
        :Boolean
-       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints spec/A/x\""]
        "{$type: spec/B, x: 0}.refinesTo?( spec/A )"
-       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]])
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints spec/A/x\""]])
 
   ;; constraint violation - refine-to
   (hc {:spec/A {:spec-vars {:x :Integer}
@@ -10426,11 +10458,11 @@
                                       :inverted? true}}}}
       [(refine-to {:$type :spec/B, :x 0} :spec/A)
        [:Instance :spec/A]
-       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints spec/A/x\""]
        "{$type: spec/B, x: 0}.refineTo( spec/A )"
-       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints x\""]])
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints spec/A/x\""]])
 
-;; constraint violation - instantiate
+  ;; constraint violation - instantiate
   (hc {:spec/A {:spec-vars {:x :Integer}
                 :constraints #{{:name "x" :expr '(> x 0)}}}
        :spec/B {:spec-vars {:x :Integer}

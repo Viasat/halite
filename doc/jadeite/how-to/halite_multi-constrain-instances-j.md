@@ -37,7 +37,7 @@ Violating any of the constraints makes the instance invalid
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints constrain_b"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/A$v1/constrain_b"]
 ```
 
 ```java
@@ -45,7 +45,7 @@ Violating any of the constraints makes the instance invalid
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints constrain_c"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v1', violates constraints spec/A$v1/constrain_c"]
 ```
 
 Mutliple constraints can refer to the same variables.
@@ -74,7 +74,7 @@ Mutliple constraints can refer to the same variables.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints constrain_b2"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints spec/A$v2/constrain_b2"]
 ```
 
 In general, constraint extpressions can be combined with a logical 'and'. This has the same meaning because all constraints are effectively 'anded' together to produce a single logical predicate to assess whether an instance is valid. So, decomposing constraints into separate constraints is largely a matter of organizing and naming the checks to suit the modelling exercise.
@@ -103,7 +103,7 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints constrain_b"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints spec/A$v3/constrain_b"]
 ```
 
 ### Reference
