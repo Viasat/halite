@@ -60,7 +60,7 @@ However, this attempt to create an instance fails. It tells us specifically whic
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v2', violates constraints spec/Sudoku$v2/row_3"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v2', violates constraints \"spec/Sudoku$v2/row_3\""]
 ```
 
 Rather than expressing each row constraint separately, they can be captured in a single constraint expression.
@@ -93,7 +93,7 @@ While invalid solutions fail
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v3', violates constraints spec/Sudoku$v3/rows"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v3', violates constraints \"spec/Sudoku$v3/rows\""]
 ```
 
 But, we are only checking rows, let's also check columns.
@@ -126,7 +126,7 @@ Now confirm that an invalid solution fails. Notice that the error indicates that
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints spec/Sudoku$v4/columns, spec/Sudoku$v4/rows"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints \"spec/Sudoku$v4/columns\", \"spec/Sudoku$v4/rows\""]
 ```
 
 Notice that we are still not detecting the following invalid solution. Specifically, while this solution meets the row and column requirements, it does not meet the quadrant requirement.
@@ -159,7 +159,7 @@ Now the attempted solution, which has valid columns and rows, but not quadrants 
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v5', violates constraints spec/Sudoku$v5/quadrant_1, spec/Sudoku$v5/quadrant_2, spec/Sudoku$v5/quadrant_3, spec/Sudoku$v5/quadrant_4"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v5', violates constraints \"spec/Sudoku$v5/quadrant_1\", \"spec/Sudoku$v5/quadrant_2\", \"spec/Sudoku$v5/quadrant_3\", \"spec/Sudoku$v5/quadrant_4\""]
 ```
 
 Let's make sure that our valid solution works.
@@ -202,7 +202,7 @@ Invalid solution fails.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v6', violates constraints spec/Sudoku$v6/quadrants"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v6', violates constraints \"spec/Sudoku$v6/quadrants\""]
 ```
 
 As an exercise, we can convert the logic of the constraints. Instead of checking that each row, column, and quadrant has the expected elements, we can write the constraints to ensure there are not any rows, columns, or quadrants that do not have the expected elements. The double negative logic is confusing, but this shows other available logical operations.
@@ -235,7 +235,7 @@ Invalid solution fails.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v7', violates constraints spec/Sudoku$v7/quadrants"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v7', violates constraints \"spec/Sudoku$v7/quadrants\""]
 ```
 
 Finally, rather than having invalid solutions throw errors, we can instead produce a boolean value indicating whether the solution is valid.

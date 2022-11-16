@@ -47,7 +47,7 @@ The following is not a valid 'spec/Ball' and in fact it is not a valid value at 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Ball', violates constraints spec/Ball/color_constraint"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Ball', violates constraints \"spec/Ball/color_constraint\""
  :h-err/invalid-instance]
 ```
 

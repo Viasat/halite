@@ -41,7 +41,7 @@ However, an attempt to make an instance that violates this constraint fails.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints spec/A$v2/constrain_b"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v2', violates constraints \"spec/A$v2/constrain_b\""
  :h-err/invalid-instance]
 ```
 
@@ -76,7 +76,7 @@ In this example, the sum of 'a' and 'b' must be less than 10
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints spec/A$v3/constrain_b_c"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/A$v3', violates constraints \"spec/A$v3/constrain_b_c\""
  :h-err/invalid-instance]
 ```
 

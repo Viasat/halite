@@ -61,7 +61,7 @@ However, this is not a valid initial state.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/InitialVending$v1', violates constraints spec/InitialVending$v1/initial state"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/InitialVending$v1', violates constraints \"spec/InitialVending$v1/initial state\""]
 ```
 
 So now we have a model of the state space and valid initial states for the machine. However, we would like to also model valid state transitions.
@@ -115,6 +115,6 @@ An invalid attempted transition representing a snack being vended.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/VendingTransition$v1', violates constraints spec/VendingTransition$v1/state transitions"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/VendingTransition$v1', violates constraints \"spec/VendingTransition$v1/state transitions\""]
 ```
 

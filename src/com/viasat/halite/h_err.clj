@@ -243,5 +243,5 @@
                   :type-string s/Symbol
                   :underlying-error-message String
                   :variable s/Symbol
-                  :violated-constraints [s/Symbol]
+                  :violated-constraints [String]
                   :workspace-name s/Symbol})

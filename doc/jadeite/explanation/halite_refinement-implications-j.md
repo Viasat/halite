@@ -33,7 +33,7 @@ While the following is not a valid spec/Square
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints spec/Square/square"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints \"spec/Square/square\""]
 ```
 
 Now consider a new spec, 'spec/Box', and we define that it refines to 'spec/Square'.
@@ -79,7 +79,7 @@ But furthermore, notice that the refinement has by implication created a constra
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Box$v1', violates constraints spec/Square/square"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Box$v1', violates constraints \"spec/Square/square\""]
 ```
 
 It is not possible to construct an instance of 'spec/Box' which is not a 'spec/Square' because we have said that all instances of 'spec/Box' can be translated into a 'spec/Square', and more speficically into a valid instance of 'spec/Square, which is the only kind of instance that the system recognizes.
@@ -184,7 +184,7 @@ The box itself is valid, but now attempting to refine a non-square box into a sq
 
 
 //-- result --
-[:throws "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints spec/Square/square\""]
+[:throws "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints \\\"spec/Square/square\\\"\""]
 ```
 
 Of course for a square box the refinement works as expected.
@@ -206,7 +206,7 @@ As an advanced topic, there is a 'valid?' operator which deals with immediate co
 
 
 //-- result --
-[:throws "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints spec/Square/square\""]
+[:throws "h-err/refinement-error 0-0 : Refinement from 'spec/Box$v3' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/Square', violates constraints \\\"spec/Square/square\\\"\""]
 ```
 
 ### Reference

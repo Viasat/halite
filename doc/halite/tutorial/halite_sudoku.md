@@ -61,7 +61,7 @@ However, this attempt to create an instance fails. It tells us specifically whic
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v2', violates constraints spec/Sudoku$v2/row_3"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v2', violates constraints \"spec/Sudoku$v2/row_3\""
  :h-err/invalid-instance]
 ```
 
@@ -96,7 +96,7 @@ While invalid solutions fail
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v3', violates constraints spec/Sudoku$v3/rows"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v3', violates constraints \"spec/Sudoku$v3/rows\""
  :h-err/invalid-instance]
 ```
 
@@ -136,7 +136,7 @@ Now confirm that an invalid solution fails. Notice that the error indicates that
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints spec/Sudoku$v4/columns, spec/Sudoku$v4/rows"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints \"spec/Sudoku$v4/columns\", \"spec/Sudoku$v4/rows\""
  :h-err/invalid-instance]
 ```
 
@@ -192,7 +192,7 @@ Now the attempted solution, which has valid columns and rows, but not quadrants 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v5', violates constraints spec/Sudoku$v5/quadrant_1, spec/Sudoku$v5/quadrant_2, spec/Sudoku$v5/quadrant_3, spec/Sudoku$v5/quadrant_4"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v5', violates constraints \"spec/Sudoku$v5/quadrant_1\", \"spec/Sudoku$v5/quadrant_2\", \"spec/Sudoku$v5/quadrant_3\", \"spec/Sudoku$v5/quadrant_4\""
  :h-err/invalid-instance]
 ```
 
@@ -253,7 +253,7 @@ Invalid solution fails.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v6', violates constraints spec/Sudoku$v6/quadrants"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v6', violates constraints \"spec/Sudoku$v6/quadrants\""
  :h-err/invalid-instance]
 ```
 
@@ -304,7 +304,7 @@ Invalid solution fails.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v7', violates constraints spec/Sudoku$v7/quadrants"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v7', violates constraints \"spec/Sudoku$v7/quadrants\""
  :h-err/invalid-instance]
 ```
 

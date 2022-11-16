@@ -120,7 +120,7 @@ Whereas this is not a valid instance.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Country$v1', violates constraints tutorials.grocery/Country$v1/name_constraint"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Country$v1', violates constraints \"tutorials.grocery/Country$v1/name_constraint\""
  :h-err/invalid-instance]
 ```
 
@@ -153,7 +153,7 @@ While this is not a valid perk instance.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Perk$v1', violates constraints tutorials.grocery/Perk$v1/usesPerMonth_limit"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Perk$v1', violates constraints \"tutorials.grocery/Perk$v1/usesPerMonth_limit\""
  :h-err/invalid-instance]
 ```
 
@@ -201,7 +201,7 @@ While the following violates the constraint that limits the total monthly charge
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/GroceryService$v1', violates constraints tutorials.grocery/GroceryService$v1/perk_sum"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/GroceryService$v1', violates constraints \"tutorials.grocery/GroceryService$v1/perk_sum\""
  :h-err/invalid-instance]
 ```
 

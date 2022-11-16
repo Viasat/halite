@@ -51,7 +51,7 @@ The following is not a valid 'spec/Ball' and in fact it is not a valid value at 
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Ball', violates constraints spec/Ball/color_constraint"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Ball', violates constraints \"spec/Ball/color_constraint\""]
 ```
 
 The spec can be considered a predicate which only produces a value of true if it is applied to a valid instance of the spec itself. This operation is captured in the following code.

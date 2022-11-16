@@ -68,7 +68,7 @@ To guard instance construction.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Q', violates constraints spec/Q/c"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Q', violates constraints \"spec/Q/c\""]
 ```
 
 ```java

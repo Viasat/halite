@@ -48,7 +48,7 @@ Now the shirt with the invalid size cannot be constructed.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Shirt$v2', violates constraints spec/Shirt$v2/size_constraint"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Shirt$v2', violates constraints \"spec/Shirt$v2/size_constraint\""]
 ```
 
 But a shirt with a valid size can be constructed.

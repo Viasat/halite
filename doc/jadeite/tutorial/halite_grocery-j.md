@@ -97,7 +97,7 @@ Whereas this is not a valid instance.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Country$v1', violates constraints tutorials.grocery/Country$v1/name_constraint"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Country$v1', violates constraints \"tutorials.grocery/Country$v1/name_constraint\""]
 ```
 
 Next the model introduces the abstract notion of a 'perk'. These are extra options that can be added on to the base grocery subscription service. Each type of perk has a unique number assigned as its 'perkID', it has fees, and it has an optional value indicating how many times the perk can be used per month. The perk model includes certain rules that all valid perk instances must satisfy. So, for example, the following are valid perk instances under this model.
@@ -117,7 +117,7 @@ While this is not a valid perk instance.
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Perk$v1', violates constraints tutorials.grocery/Perk$v1/usesPerMonth_limit"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/Perk$v1', violates constraints \"tutorials.grocery/Perk$v1/usesPerMonth_limit\""]
 ```
 
 The model then defines the three types of perks that are actually offered. The following are example instances of these three specs.
@@ -147,7 +147,7 @@ While the following violates the constraint that limits the total monthly charge
 
 
 //-- result --
-[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/GroceryService$v1', violates constraints tutorials.grocery/GroceryService$v1/perk_sum"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.grocery/GroceryService$v1', violates constraints \"tutorials.grocery/GroceryService$v1/perk_sum\""]
 ```
 
 This spec models the service from the subscriber's perspective, but now the business needs to translate this into an order for a back-end grocery store to actually provide the delivery service. This involves executing the refinement to a subscription object.

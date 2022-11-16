@@ -223,13 +223,9 @@
 (s/defschema NetConstraintResults {:category (s/enum :constraint :refinement)
                                    :detail [ConstraintResult]})
 
-(defn constraint-name-to-symbol [constraint]
+(defn constraint-name-to-string [constraint]
   (let [{cname :name :keys [spec-id]} constraint]
-    (symbol
-     (namespace spec-id)
-     (str (name spec-id)
-          "/"
-          cname))))
+    (str (namespace spec-id) "/" (name spec-id) "/" cname)))
 
 (s/defn validate-instance :- s/Any
   "Check that an instance satisfies all applicable constraints.
@@ -360,11 +356,11 @@
                                                                          (if (and (instance? ExceptionInfo result)
                                                                                   (= :constraint-violation (:halite-error (ex-data result))))
                                                                            (:violated-constraints (ex-data result))
-                                                                           [(constraint-name-to-symbol constraint)])))
+                                                                           [(constraint-name-to-string constraint)])))
                                                               sort
                                                               vec
                                                               no-empty)
-                                   :error-constraints (no-empty (mapv (comp constraint-name-to-symbol :constraint) error-constraints))
+                                   :error-constraints (no-empty (mapv (comp constraint-name-to-string :constraint) error-constraints))
                                    :constraint-errors constraint-errors
                                    :constraint-error-strs (no-empty (mapv (comp #(or (:spec-error-str %) (:message-template %)) ex-data) constraint-errors))
                                    :spec-error-str (when (not (and (seq violated-constraints)

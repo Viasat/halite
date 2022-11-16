@@ -71,7 +71,7 @@ However, this is not a valid initial state.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/InitialVending$v1', violates constraints spec/InitialVending$v1/initial state"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/InitialVending$v1', violates constraints \"spec/InitialVending$v1/initial state\""
  :h-err/invalid-instance]
 ```
 
@@ -168,7 +168,7 @@ An invalid attempted transition representing a snack being vended.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/VendingTransition$v1', violates constraints spec/VendingTransition$v1/state transitions"
+ "h-err/invalid-instance 0-0 : Invalid instance of 'spec/VendingTransition$v1', violates constraints \"spec/VendingTransition$v1/state transitions\""
  :h-err/invalid-instance]
 ```
 
