@@ -33,12 +33,19 @@ With this spec we can construct instances.
 Let us add a spec that will capture the constraints that identify a valid initial state for a vending machine.
 
 ```clojure
-{:spec/InitialVending$v1 {:spec-vars {:initial :spec/Vending$v1},
-                          :constraints
-                            #{'{:name "initial state",
-                                :expr (and (= #d "0.00" (get initial :balance))
-                                           (> (get initial :beverageCount) 0)
-                                           (> (get initial :snackCount) 0))}}},
+{:spec/InitialVending$v1 {:spec-vars {:balance [:Decimal 2],
+                                      :beverageCount :Integer,
+                                      :snackCount :Integer},
+                          :constraints #{'{:name "initial state",
+                                           :expr (and (= #d "0.00" balance)
+                                                      (> beverageCount 0)
+                                                      (> snackCount 0))}},
+                          :refines-to {:spec/Vending$v1
+                                         {:name "toVending",
+                                          :expr '{:$type :spec/Vending$v1,
+                                                  :balance balance,
+                                                  :beverageCount beverageCount,
+                                                  :snackCount snackCount}}}},
  :spec/Vending$v1 {:spec-vars {:balance [:Decimal 2],
                                :beverageCount :Integer,
                                :snackCount :Integer},
@@ -53,20 +60,18 @@ This additional spec can be used to determine where a state is a valid initial s
 
 ```clojure
 {:$type :spec/InitialVending$v1,
- :initial {:$type :spec/Vending$v1,
-           :balance #d "0.00",
-           :beverageCount 10,
-           :snackCount 15}}
+ :balance #d "0.00",
+ :beverageCount 10,
+ :snackCount 15}
 ```
 
 However, this is not a valid initial state.
 
 ```clojure
 {:$type :spec/InitialVending$v1,
- :initial {:$type :spec/Vending$v1,
-           :balance #d "0.00",
-           :beverageCount 0,
-           :snackCount 15}}
+ :balance #d "0.00",
+ :beverageCount 0,
+ :snackCount 15}
 
 
 ;-- result --

@@ -34,24 +34,30 @@
                                                                          {:name "counts not negative"
                                                                           :expr '(and (>= beverageCount 0)
                                                                                       (>= snackCount 0))}}}
-                                        :spec/InitialVending$v1 {:spec-vars {:initial :spec/Vending$v1}
+                                        :spec/InitialVending$v1 {:spec-vars {:balance [:Decimal 2]
+                                                                             :beverageCount :Integer
+                                                                             :snackCount :Integer}
                                                                  :constraints #{{:name "initial state"
-                                                                                 :expr '(and (= #d "0.00" (get initial :balance))
-                                                                                             (> (get initial :beverageCount) 0)
-                                                                                             (> (get initial :snackCount) 0))}}}}}
+                                                                                 :expr '(and (= #d "0.00" balance)
+                                                                                             (> beverageCount 0)
+                                                                                             (> snackCount 0))}}
+                                                                 :refines-to {:spec/Vending$v1 {:name "toVending"
+                                                                                                :expr
+                                                                                                '{:$type :spec/Vending$v1
+                                                                                                  :balance balance
+                                                                                                  :beverageCount beverageCount
+                                                                                                  :snackCount snackCount}}}}}}
 
                             "This additional spec can be used to determine where a state is a valid initial state for the machine. For example, this is a valid initial state."
-                            {:code '{:$type :spec/InitialVending$v1
-                                     :initial {:$type :spec/Vending$v1
-                                               :balance #d "0.00"
-                                               :beverageCount 10
-                                               :snackCount 15}}}
+                            {:code {:$type :spec/InitialVending$v1
+                                    :balance #d "0.00"
+                                    :beverageCount 10
+                                    :snackCount 15}}
                             "However, this is not a valid initial state."
                             {:code '{:$type :spec/InitialVending$v1
-                                     :initial {:$type :spec/Vending$v1
-                                               :balance #d "0.00"
-                                               :beverageCount 0
-                                               :snackCount 15}}
+                                     :balance #d "0.00"
+                                     :beverageCount 0
+                                     :snackCount 15}
                              :throws :auto}
 
                             "So now we have a model of the state space and valid initial states for the machine. However, we would like to also model valid state transitions."

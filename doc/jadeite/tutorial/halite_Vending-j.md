@@ -41,9 +41,17 @@ Let us add a spec that will capture the constraints that identify a valid initia
   },
   "spec/InitialVending$v1" : {
     "spec-vars" : {
-      "initial" : "spec/Vending$v1"
+      "balance" : [ "Decimal", 2 ],
+      "beverageCount" : "Integer",
+      "snackCount" : "Integer"
     },
-    "constraints" : [ "{expr: ((#d \"0.00\" == initial.balance) && (initial.beverageCount > 0) && (initial.snackCount > 0)), name: \"initial state\"}" ]
+    "constraints" : [ "{expr: ((#d \"0.00\" == balance) && (beverageCount > 0) && (snackCount > 0)), name: \"initial state\"}" ],
+    "refines-to" : {
+      "spec/Vending$v1" : {
+        "name" : "toVending",
+        "expr" : "{$type: spec/Vending$v1, balance: balance, beverageCount: beverageCount, snackCount: snackCount}"
+      }
+    }
   }
 }
 ```
@@ -51,13 +59,13 @@ Let us add a spec that will capture the constraints that identify a valid initia
 This additional spec can be used to determine where a state is a valid initial state for the machine. For example, this is a valid initial state.
 
 ```java
-{$type: spec/InitialVending$v1, initial: {$type: spec/Vending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}}
+{$type: spec/InitialVending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}
 ```
 
 However, this is not a valid initial state.
 
 ```java
-{$type: spec/InitialVending$v1, initial: {$type: spec/Vending$v1, balance: #d "0.00", beverageCount: 0, snackCount: 15}}
+{$type: spec/InitialVending$v1, balance: #d "0.00", beverageCount: 0, snackCount: 15}
 
 
 //-- result --
