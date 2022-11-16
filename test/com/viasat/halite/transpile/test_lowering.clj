@@ -933,49 +933,27 @@
                first second)))))
 
 (deftest test-eliminate-error-forms-same-message
-  ;; TODO: these tests appear to show a bug in the lowering logic
-  #_(let [senv (envs/spec-env
-                '{:ws/A {:spec-vars {:an :Integer :ap [:Maybe :Boolean]}
-                         :constraints {"a1" (if (< an 10)
-                                              (if (< an 1)
-                                                (error "fail")
-                                                (if-value ap ap false))
-                                              (= ap (when (< an 20)
-                                                      (error "fail"))))}}})]
-      (is (= '{:spec-vars {:an :Integer :ap [:Maybe :Boolean]}
-               :constraints {"$all"
-                             (let [v1 (< an 10)]
-                               (and
-                                (if v1
-                                  (if-value ap ap false)
-                                  (= ap $no-value))
-                                (not (and (<= 10 an) (< an 20)))
-                                (not (and (< an 1) v1))))}
-               :refines-to {}}
-             (-> senv
-                 (ssa/build-spec-ctx :ws/A)
-                 (rewriting/rewrite-sctx lower-when-expr)
-                 (lowering/eliminate-error-forms)
-                 :ws/A
-                 (ssa/spec-from-ssa)))))
-  #_(let [senv (envs/spec-env
-                '{:ws/A {:spec-vars {:an :Integer :ap :Boolean}
-                         :constraints {"a1" (if ap
-                                              (if (< an 10)
-                                                (error "fail")
-                                                (not (= 42 (+ 1 (* an (error "fail"))))))
-                                              (= an 42))}}})]
-      (is (= '(and (= an 42)
-                   (not (and (<= 10 an) ap))
-                   (not (and (< an 10) ap)))
-             (-> senv
-                 (ssa/build-spec-ctx :ws/A)
-                 (rewriting/rewrite-sctx lower-when-expr)
-                 (lowering/eliminate-error-forms)
-                 :ws/A
-                 (ssa/spec-from-ssa)
-                 :constraints
-                 first val)))))
+  (let [senv (envs/spec-env
+              (var-types/to-halite-spec-env
+               '{:ws/A {:spec-vars {:an :Integer :ap :Boolean}
+                        :constraints #{{:name "a1" :expr (if ap
+                                                           (if (< an 10)
+                                                             (error "fail")
+                                                             (not (= 42 (+ 1 (* an (error "fail"))))))
+                                                           (= an 42))}}}}))]
+    ;; it is not clear why using the same error value in the code produces a slightly different form
+    ;; but the resulting form is equivalent by de morgan's law
+    (is (= '(and (= an 42)
+                 (not (or (and (< an 10) ap)
+                          (and (<= 10 an) ap))))
+           (-> senv
+               (ssa/build-spec-ctx :ws/A)
+               (rewriting/rewrite-sctx lower-when-expr)
+               (lowering/eliminate-error-forms)
+               :ws/A
+               (ssa/spec-from-ssa)
+               :constraints
+               first second)))))
 
 (def rewrite-instance-valued-do-child #'lowering/rewrite-instance-valued-do-child)
 
