@@ -24,7 +24,7 @@
         {:message "Instance cannot contain abstract value"})
 
 (deferr invalid-instance [data]
-        {:message "Invalid instance of ':spec-id', violates constraints :violated-constraints"})
+        {:message "Invalid instance of ':spec-id', violates constraints :violated-constraint-labels"})
 
 (deferr missing-type-field [data]
         {:message "Instance literal must have :$type field"})
@@ -243,5 +243,7 @@
                   :type-string s/Symbol
                   :underlying-error-message String
                   :variable s/Symbol
-                  :violated-constraints [String]
+                  :violated-constraints [{:spec-id s/Keyword
+                                          :name String}]
+                  :violated-constraint-labels [String]
                   :workspace-name s/Symbol})

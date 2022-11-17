@@ -323,7 +323,7 @@ An attempt was made to create an instance that violated a spec constraint.
 
 #### Error message template:
 
-> Invalid instance of ':spec-id', violates constraints :violated-constraints
+> Invalid instance of ':spec-id', violates constraints :violated-constraint-labels
 
 #### Produced by elements:
 

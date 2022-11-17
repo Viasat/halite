@@ -227,6 +227,9 @@
   (let [{cname :name :keys [spec-id]} constraint]
     (str (namespace spec-id) "/" (name spec-id) "/" cname)))
 
+(defn constraint-to-ex-data-form [constraint]
+  (select-keys constraint [:spec-id :name]))
+
 (s/defn validate-instance :- s/Any
   "Check that an instance satisfies all applicable constraints.
   Return the instance if so, throw an exception if not.
@@ -349,18 +352,28 @@
                                  (not (seq error-constraints)))
                           h-err/invalid-instance
                           h-err/spec-threw)
-                        (let [constraint-errors (no-empty (mapv :result error-constraints))]
+                        (let [constraint-errors (no-empty (mapv :result error-constraints))
+                              violated-constraints-for-ex-data (->> violated-constraints
+                                                                    (mapcat #(let [{:keys [constraint result]} %]
+                                                                               (if (and (instance? ExceptionInfo result)
+                                                                                        (= :constraint-violation (:halite-error (ex-data result))))
+                                                                                 (:violated-constraints (ex-data result))
+                                                                                 [(constraint-to-ex-data-form constraint)])))
+                                                                    (sort-by (fn [{:keys [spec-id constraint-name]}]
+                                                                               [spec-id constraint-name]))
+                                                                    vec
+                                                                    no-empty)]
                           (no-nil {:spec-id (symbol spec-id)
-                                   :violated-constraints (->> violated-constraints
-                                                              (mapcat #(let [{:keys [constraint result]} %]
-                                                                         (if (and (instance? ExceptionInfo result)
-                                                                                  (= :constraint-violation (:halite-error (ex-data result))))
-                                                                           (:violated-constraints (ex-data result))
-                                                                           [(constraint-name-to-string constraint)])))
-                                                              sort
-                                                              vec
-                                                              no-empty)
-                                   :error-constraints (no-empty (mapv (comp constraint-name-to-string :constraint) error-constraints))
+                                   :violated-constraints violated-constraints-for-ex-data
+                                   :violated-constraint-labels (->> violated-constraints-for-ex-data
+                                                                    (mapv constraint-name-to-string)
+                                                                    no-empty)
+                                   :error-constraints (->> error-constraints
+                                                           (map (comp constraint-to-ex-data-form :constraint))
+                                                           (sort-by (fn [{:keys [spec-id constraint-name]}]
+                                                                      [spec-id constraint-name]))
+                                                           vec
+                                                           no-empty)
                                    :constraint-errors constraint-errors
                                    :constraint-error-strs (no-empty (mapv (comp #(or (:spec-error-str %) (:message-template %)) ex-data) constraint-errors))
                                    :spec-error-str (when (not (and (seq violated-constraints)
