@@ -15,95 +15,95 @@ Say we want to represent a sudoku solution as a two dimensional vector of intege
 We can write a specification that contains a value of this form.
 
 ```clojure
-{:spec/Sudoku$v1 {:spec-vars {:solution [:Vec [:Vec :Integer]]}}}
+{:tutorials.sudoku/Sudoku$v1 {:spec-vars {:solution [:Vec [:Vec :Integer]]}}}
 ```
 
 An instance of this spec can be constructed as:
 
 ```clojure
-{:$type :spec/Sudoku$v1,
+{:$type :tutorials.sudoku/Sudoku$v1,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 ```
 
 In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, & 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row.
 
 ```clojure
-{:spec/Sudoku$v2 {:spec-vars {:solution [:Vec [:Vec :Integer]]},
-                  :constraints
-                    #{'{:name "row_1",
-                        :expr (= (concat #{} (get solution 0)) #{1 4 3 2})}
-                      '{:name "row_2",
-                        :expr (= (concat #{} (get solution 1)) #{1 4 3 2})}
-                      '{:name "row_3",
-                        :expr (= (concat #{} (get solution 2)) #{1 4 3 2})}
-                      '{:name "row_4",
-                        :expr (= (concat #{} (get solution 3)) #{1 4 3 2})}}}}
+{:tutorials.sudoku/Sudoku$v2
+   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
+    :constraints #{'{:name "row_1",
+                     :expr (= (concat #{} (get solution 0)) #{1 4 3 2})}
+                   '{:name "row_2",
+                     :expr (= (concat #{} (get solution 1)) #{1 4 3 2})}
+                   '{:name "row_3",
+                     :expr (= (concat #{} (get solution 2)) #{1 4 3 2})}
+                   '{:name "row_4",
+                     :expr (= (concat #{} (get solution 3)) #{1 4 3 2})}}}}
 ```
 
 Now when we create an instance it must meet these constraints. As this instance does.
 
 ```clojure
-{:$type :spec/Sudoku$v2,
+{:$type :tutorials.sudoku/Sudoku$v2,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 
 
 ;-- result --
-{:$type :spec/Sudoku$v2,
+{:$type :tutorials.sudoku/Sudoku$v2,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 ```
 
 However, this attempt to create an instance fails. It tells us specifically which constraint failed.
 
 ```clojure
-{:$type :spec/Sudoku$v2,
+{:$type :tutorials.sudoku/Sudoku$v2,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 2] [2 1 4 3]]}
 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v2', violates constraints \"spec/Sudoku$v2/row_3\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.sudoku/Sudoku$v2', violates constraints \"tutorials.sudoku/Sudoku$v2/row_3\""
  :h-err/invalid-instance]
 ```
 
 Rather than expressing each row constraint separately, they can be captured in a single constraint expression.
 
 ```clojure
-{:spec/Sudoku$v3 {:spec-vars {:solution [:Vec [:Vec :Integer]]},
-                  :constraints #{'{:name "rows",
-                                   :expr (every? [r solution]
-                                                 (= (concat #{} r)
-                                                    #{1 4 3 2}))}}}}
+{:tutorials.sudoku/Sudoku$v3 {:spec-vars {:solution [:Vec [:Vec :Integer]]},
+                              :constraints #{'{:name "rows",
+                                               :expr (every? [r solution]
+                                                             (= (concat #{} r)
+                                                                #{1 4 3 2}))}}}}
 ```
 
 Again, valid solutions can be constructed.
 
 ```clojure
-{:$type :spec/Sudoku$v3,
+{:$type :tutorials.sudoku/Sudoku$v3,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 
 
 ;-- result --
-{:$type :spec/Sudoku$v3,
+{:$type :tutorials.sudoku/Sudoku$v3,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 ```
 
 While invalid solutions fail
 
 ```clojure
-{:$type :spec/Sudoku$v3,
+{:$type :tutorials.sudoku/Sudoku$v3,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 2] [2 1 4 3]]}
 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v3', violates constraints \"spec/Sudoku$v3/rows\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.sudoku/Sudoku$v3', violates constraints \"tutorials.sudoku/Sudoku$v3/rows\""
  :h-err/invalid-instance]
 ```
 
 But, we are only checking rows, let's also check columns.
 
 ```clojure
-{:spec/Sudoku$v4
+{:tutorials.sudoku/Sudoku$v4
    {:spec-vars {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
@@ -118,44 +118,44 @@ But, we are only checking rows, let's also check columns.
 First, check if a valid solution works.
 
 ```clojure
-{:$type :spec/Sudoku$v4,
+{:$type :tutorials.sudoku/Sudoku$v4,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 
 
 ;-- result --
-{:$type :spec/Sudoku$v4,
+{:$type :tutorials.sudoku/Sudoku$v4,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 ```
 
 Now confirm that an invalid solution fails. Notice that the error indicates that both constraints are violated.
 
 ```clojure
-{:$type :spec/Sudoku$v4,
+{:$type :tutorials.sudoku/Sudoku$v4,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 2] [2 1 4 3]]}
 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v4', violates constraints \"spec/Sudoku$v4/columns\", \"spec/Sudoku$v4/rows\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.sudoku/Sudoku$v4', violates constraints \"tutorials.sudoku/Sudoku$v4/columns\", \"tutorials.sudoku/Sudoku$v4/rows\""
  :h-err/invalid-instance]
 ```
 
 Notice that we are still not detecting the following invalid solution. Specifically, while this solution meets the row and column requirements, it does not meet the quadrant requirement.
 
 ```clojure
-{:$type :spec/Sudoku$v4,
+{:$type :tutorials.sudoku/Sudoku$v4,
  :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]}
 
 
 ;-- result --
-{:$type :spec/Sudoku$v4,
+{:$type :tutorials.sudoku/Sudoku$v4,
  :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]}
 ```
 
 Let's add the quadrant checks.
 
 ```clojure
-{:spec/Sudoku$v5
+{:tutorials.sudoku/Sudoku$v5
    {:spec-vars {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
@@ -186,32 +186,32 @@ Let's add the quadrant checks.
 Now the attempted solution, which has valid columns and rows, but not quadrants is detected as invalid. Notice the error indicates that all four quadrants were violated.
 
 ```clojure
-{:$type :spec/Sudoku$v5,
+{:$type :tutorials.sudoku/Sudoku$v5,
  :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]}
 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v5', violates constraints \"spec/Sudoku$v5/quadrant_1\", \"spec/Sudoku$v5/quadrant_2\", \"spec/Sudoku$v5/quadrant_3\", \"spec/Sudoku$v5/quadrant_4\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.sudoku/Sudoku$v5', violates constraints \"tutorials.sudoku/Sudoku$v5/quadrant_1\", \"tutorials.sudoku/Sudoku$v5/quadrant_2\", \"tutorials.sudoku/Sudoku$v5/quadrant_3\", \"tutorials.sudoku/Sudoku$v5/quadrant_4\""
  :h-err/invalid-instance]
 ```
 
 Let's make sure that our valid solution works.
 
 ```clojure
-{:$type :spec/Sudoku$v5,
+{:$type :tutorials.sudoku/Sudoku$v5,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 
 
 ;-- result --
-{:$type :spec/Sudoku$v5,
+{:$type :tutorials.sudoku/Sudoku$v5,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 ```
 
 Let's combine the quadrant checks into one.
 
 ```clojure
-{:spec/Sudoku$v6
+{:tutorials.sudoku/Sudoku$v6
    {:spec-vars {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
@@ -235,32 +235,32 @@ Let's combine the quadrant checks into one.
 Valid solution still works.
 
 ```clojure
-{:$type :spec/Sudoku$v6,
+{:$type :tutorials.sudoku/Sudoku$v6,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 
 
 ;-- result --
-{:$type :spec/Sudoku$v6,
+{:$type :tutorials.sudoku/Sudoku$v6,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 ```
 
 Invalid solution fails.
 
 ```clojure
-{:$type :spec/Sudoku$v6,
+{:$type :tutorials.sudoku/Sudoku$v6,
  :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]}
 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v6', violates constraints \"spec/Sudoku$v6/quadrants\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.sudoku/Sudoku$v6', violates constraints \"tutorials.sudoku/Sudoku$v6/quadrants\""
  :h-err/invalid-instance]
 ```
 
 As an exercise, we can convert the logic of the constraints. Instead of checking that each row, column, and quadrant has the expected elements, we can write the constraints to ensure there are not any rows, columns, or quadrants that do not have the expected elements. The double negative logic is confusing, but this shows other available logical operations.
 
 ```clojure
-{:spec/Sudoku$v7
+{:tutorials.sudoku/Sudoku$v7
    {:spec-vars {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
@@ -286,32 +286,32 @@ As an exercise, we can convert the logic of the constraints. Instead of checking
 Valid solution still works.
 
 ```clojure
-{:$type :spec/Sudoku$v7,
+{:$type :tutorials.sudoku/Sudoku$v7,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 
 
 ;-- result --
-{:$type :spec/Sudoku$v7,
+{:$type :tutorials.sudoku/Sudoku$v7,
  :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}
 ```
 
 Invalid solution fails.
 
 ```clojure
-{:$type :spec/Sudoku$v7,
+{:$type :tutorials.sudoku/Sudoku$v7,
  :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]}
 
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'spec/Sudoku$v7', violates constraints \"spec/Sudoku$v7/quadrants\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.sudoku/Sudoku$v7', violates constraints \"tutorials.sudoku/Sudoku$v7/quadrants\""
  :h-err/invalid-instance]
 ```
 
 Finally, rather than having invalid solutions throw errors, we can instead produce a boolean value indicating whether the solution is valid.
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v7,
+(valid? {:$type :tutorials.sudoku/Sudoku$v7,
          :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]})
 
 
@@ -320,7 +320,7 @@ true
 ```
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v7,
+(valid? {:$type :tutorials.sudoku/Sudoku$v7,
          :solution [[1 2 3 4] [3 4 1 2] [4 3 2 2] [2 1 4 3]]})
 
 
@@ -329,7 +329,7 @@ false
 ```
 
 ```clojure
-(valid? {:$type :spec/Sudoku$v7,
+(valid? {:$type :tutorials.sudoku/Sudoku$v7,
          :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]})
 
 

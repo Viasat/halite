@@ -8,12 +8,15 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ## Tutorials
 
-### spec
+### tutorials.vending
+
+* Model a vending machine as a state machine [(Halite)](halite/tutorial/halite_vending.md) [(Jadeite)](jadeite/tutorial/halite_vending-j.md)
+  * Use specs to map out a state space and valid transitions
+
+### tutorials.sudoku
 
 * Model a sudokuo puzzle [(Halite)](halite/tutorial/halite_sudoku.md) [(Jadeite)](jadeite/tutorial/halite_sudoku-j.md)
   * Consider how to use specs to model a sudoku game.
-* Model a vending machine as a state machine [(Halite)](halite/tutorial/halite_vending.md) [(Jadeite)](jadeite/tutorial/halite_vending-j.md)
-  * Use specs to map out a state space and valid transitions
 
 ### tutorials.grocery
 

@@ -5,21 +5,21 @@
 
 (set! *warn-on-reflection* true)
 
-(def tutorials {:tutorials.vending/Vending
+(def tutorials {:tutorials.vending/vending
                 {:label "Model a vending machine as a state machine"
                  :desc "Use specs to map out a state space and valid transitions"
                  :contents ["We can model the state space for a vending machine that accepts nickels, dimes, and quarters and which vends  snacks for $0.50 and beverages for $1.00."
-                            {:tutorials-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                                        :beverageCount :Integer
-                                                                                        :snackCount :Integer}
-                                                                            :constraints #{{:name "balance_not_negative"
-                                                                                            :expr '(>= balance #d "0.00")}
-                                                                                           {:name "counts_not_negative"
-                                                                                            :expr '(and (>= beverageCount 0)
-                                                                                                        (>= snackCount 0))}
-                                                                                           {:name "counts_below_capacity"
-                                                                                            :expr '(and (<= beverageCount 20)
-                                                                                                        (<= snackCount 20))}}}}}
+                            {:spec-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
+                                                                                   :beverageCount :Integer
+                                                                                   :snackCount :Integer}
+                                                                       :constraints #{{:name "balance_not_negative"
+                                                                                       :expr '(>= balance #d "0.00")}
+                                                                                      {:name "counts_not_negative"
+                                                                                       :expr '(and (>= beverageCount 0)
+                                                                                                   (>= snackCount 0))}
+                                                                                      {:name "counts_below_capacity"
+                                                                                       :expr '(and (<= beverageCount 20)
+                                                                                                   (<= snackCount 20))}}}}}
                             "With this spec we can construct instances."
                             {:code '{:$type :tutorials.vending/Vending$v1
                                      :balance #d "0.00"
@@ -54,11 +54,11 @@
                                     :beverageCount 10
                                     :snackCount 15}}
                             "The corresponding vending state can be 'extracted' from the initial state:"
-                            {:code '(refine-to {:$type :spec/InitialVending$v1
+                            {:code '(refine-to {:$type :tutorials.vending/InitialVending$v1
                                                 :balance #d "0.00"
                                                 :beverageCount 10
                                                 :snackCount 15}
-                                               :spec/Vending$v1)
+                                               :tutorials.vending/Vending$v1)
                              :result :auto}
 
                             "However, this is not a valid initial state."
