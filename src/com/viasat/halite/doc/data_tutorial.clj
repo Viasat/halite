@@ -53,6 +53,14 @@
                                     :balance #d "0.00"
                                     :beverageCount 10
                                     :snackCount 15}}
+                            "The corresponding vending state can be 'extracted' from the initial state:"
+                            {:code '(refine-to {:$type :spec/InitialVending$v1
+                                                :balance #d "0.00"
+                                                :beverageCount 10
+                                                :snackCount 15}
+                                               :spec/Vending$v1)
+                             :result :auto}
+
                             "However, this is not a valid initial state."
                             {:code '{:$type :tutorials.vending/InitialVending$v1
                                      :balance #d "0.00"

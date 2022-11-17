@@ -62,6 +62,16 @@ This additional spec can be used to determine where a state is a valid initial s
 {$type: spec/InitialVending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}
 ```
 
+The corresponding vending state can be 'extracted' from the initial state:
+
+```java
+{$type: spec/InitialVending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}.refineTo( spec/Vending$v1 )
+
+
+//-- result --
+{$type: spec/Vending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}
+```
+
 However, this is not a valid initial state.
 
 ```java
@@ -107,7 +117,7 @@ An invalid transition, because the balance cannot increase by $0.07
 
 
 //-- result --
-[:throws "begin 1, end 0, length 2"]
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'spec/VendingTransition$v1', violates constraints \"spec/VendingTransition$v1/state transitions\""]
 ```
 
 A valid transition representing a snack being vended.
