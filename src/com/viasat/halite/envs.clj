@@ -24,7 +24,7 @@
                          :expr s/Any})
 
 (s/defschema SpecInfo
-  {(s/optional-key :spec-vars) {types/BareKeyword types/HaliteType}
+  {(s/optional-key :fields) {types/BareKeyword types/HaliteType}
    (s/optional-key :constraints) [NamedConstraint]
    (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
@@ -90,7 +90,7 @@
   are the variables of the given resource spec."
   [spec :- SpecInfo]
   (-> spec
-      :spec-vars
+      :fields
       (update-keys symbol)
       type-env))
 
@@ -104,19 +104,19 @@
   (->EnvImpl (merge '{;; for backwards compatibility
                       no-value :Unset} bindings)))
 
-(s/defn env-from-spec-var-keys :- (s/protocol Env)
-  [spec-var-keys :- [types/BareKeyword]
+(s/defn env-from-field-keys :- (s/protocol Env)
+  [field-keys :- [types/BareKeyword]
    inst]
   (env
    (reduce
     (fn [m kw]
       (assoc m (symbol kw) (if (contains? inst kw) (kw inst) :Unset)))
     {}
-    spec-var-keys)))
+    field-keys)))
 
 (s/defn env-from-inst :- (s/protocol Env)
   [spec-info :- SpecInfo, inst]
-  (env-from-spec-var-keys (keys (:spec-vars spec-info)) inst))
+  (env-from-field-keys (keys (:fields spec-info)) inst))
 
 ;;;;;; Spec Maps ;;;;;;;;;;;;
 
@@ -164,8 +164,8 @@
 
 (s/defn spec-refs :- #{types/NamespacedKeyword}
   "The set of spec ids referenced by the given spec, as variable types or in constraint/refinement expressions."
-  [{:keys [spec-vars refines-to constraints] :as spec-info} :- SpecInfo]
-  (->> spec-vars
+  [{:keys [fields refines-to constraints] :as spec-info} :- SpecInfo]
+  (->> fields
        vals
        (map spec-ref-from-type)
        (remove nil?)

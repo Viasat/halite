@@ -131,7 +131,7 @@
            :else (throw (ex-info (format "BUG! Variables of type '%s' not supported yet" htype)
                                  {:var-kw var-kw :type htype}))))
        {::mandatory #{} ::spec-id spec-id}
-       (->> spec-id sctx :spec-vars))
+       (->> spec-id sctx :fields))
       (assoc ::refines-to (->> (tree-seq (constantly true) #(map spec-refinements (keys %)) (spec-refinements spec-id))
                                (apply concat)
                                (into {}
@@ -343,7 +343,7 @@
 (defn- spec-ify-bound*
   [flattened-vars sctx spec-bound]
   (->>
-   {:spec-vars (->> flattened-vars leaves (filter vector?) (into {}))
+   {:fields (->> flattened-vars leaves (filter vector?) (into {}))
     :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]}
    (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
    (add-refinement-equality-constraints flattened-vars)))
@@ -396,7 +396,7 @@
    senv :- (s/protocol envs/SpecEnv)
    flattened-vars :- FlattenedVars]
   (let [spec-id (::spec-id flattened-vars)
-        spec-vars (:spec-vars (envs/lookup-spec senv spec-id))
+        fields (:fields (envs/lookup-spec senv spec-id))
         spec-type (case (some-> flattened-vars :$witness first choco-bounds)
                     false :Unset
                     (nil true) spec-id
@@ -407,7 +407,7 @@
       (-> {:$type spec-type}
           (into (->> (dissoc flattened-vars ::mandatory :$witness ::spec-id ::refines-to)
                      (map (fn [[k v]]
-                            (let [htype (get spec-vars k)]
+                            (let [htype (get fields k)]
                               [k (if (types/spec-maybe-type? htype)
                                    (to-spec-bound choco-bounds senv v)
                                    (to-atom-bound choco-bounds htype v))])))))

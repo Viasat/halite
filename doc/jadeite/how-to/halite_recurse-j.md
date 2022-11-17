@@ -9,7 +9,7 @@ Specs can be defined to be recursive.
 ```java
 {
   "spec/Cell" : {
-    "spec-vars" : {
+    "fields" : {
       "value" : "Integer",
       "next" : [ "Maybe", "spec/Cell" ]
     }

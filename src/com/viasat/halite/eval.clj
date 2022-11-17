@@ -245,7 +245,7 @@
                                                                        (mapv symbol))}))
               (swap! *instance-path-atom* conj spec-id))
           spec-id-0 spec-id
-          {:keys [spec-vars refines-to] :as spec-info} (envs/lookup-spec senv spec-id)
+          {:keys [fields refines-to] :as spec-info} (envs/lookup-spec senv spec-id)
           spec-tenv (envs/type-env-from-spec spec-info)
           env (envs/env-from-inst spec-info inst)
           ctx {:senv senv, :env env}
@@ -260,7 +260,7 @@
       ;; check that all variables have values that are concrete and that conform to the
       ;; types declared in the parent resource spec
       (doseq [[kw v] (dissoc inst :$type)
-              :let [declared-type (kw spec-vars)]]
+              :let [declared-type (kw fields)]]
         ;; TODO: consider letting instances of abstract spec contain abstract values
         (when-not (concrete? senv v)
           (throw-err (h-err/no-abstract {:value v})))

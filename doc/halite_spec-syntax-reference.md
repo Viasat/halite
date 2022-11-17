@@ -14,9 +14,9 @@ Specs include variables which have types as:
 
 ![type](halite-bnf-diagrams/spec-syntax/type.svg)
 
-The variables for a spec are defined in a spec-var-map:
+The variables for a spec are defined in a field-map:
 
-![spec-var-map](halite-bnf-diagrams/spec-syntax/spec-var-map.svg)
+![field-map](halite-bnf-diagrams/spec-syntax/field-map.svg)
 
 Constraints on those variables are defined as:
 

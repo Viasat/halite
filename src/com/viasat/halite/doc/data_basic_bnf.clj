@@ -125,7 +125,7 @@
                        'h-err/not-boolean-constraint ;; is this right?
                        'h-err/spec-cycle-runtime
                        'h-err/refinement-diamond]
-              :how-to-ref [:instance/spec-variables]
+              :how-to-ref [:instance/spec-fields]
               :tutorial-ref [:spec/sudoku]
               :tags #{'instance-out 'instance-op 'instance-field-op}}
    'vector {:bnf "'[' [whitespace] { value whitespace} [value] [whitespace] ']'"

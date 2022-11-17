@@ -19,7 +19,7 @@ A refinement can be defined that does not convert from a concrete instance to a 
     }
   },
   "spec/Ford" : {
-    "spec-vars" : {
+    "fields" : {
       "model" : "String",
       "year" : "Integer"
     }

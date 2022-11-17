@@ -12,14 +12,14 @@ Say we have an abstract car.
 {
   "spec/Car" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "make" : "String",
       "year" : "Integer"
     }
   },
   "spec/Ford" : {
     "abstract?" : false,
-    "spec-vars" : {
+    "fields" : {
       "year" : "Integer"
     },
     "refines-to" : {
@@ -31,7 +31,7 @@ Say we have an abstract car.
   },
   "spec/Chevy" : {
     "abstract?" : false,
-    "spec-vars" : {
+    "fields" : {
       "year" : "Integer"
     },
     "refines-to" : {
@@ -43,7 +43,7 @@ Say we have an abstract car.
   },
   "spec/Garage" : {
     "abstract?" : false,
-    "spec-vars" : {
+    "fields" : {
       "car" : "spec/Car"
     }
   }

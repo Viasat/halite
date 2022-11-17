@@ -11,14 +11,14 @@ The following is a full model for the grocery delivery business.
 ```java
 {
   "tutorials.grocery/Country$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "name" : "String"
     },
     "constraints" : [ "{expr: #{\"Canada\", \"Mexico\", \"US\"}.contains?(name), name: \"name_constraint\"}" ]
   },
   "tutorials.grocery/Perk$v1" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "perkId" : "Integer",
       "feePerMonth" : [ "Decimal", 2 ],
       "feePerUse" : [ "Decimal", 2 ],
@@ -27,7 +27,7 @@ The following is a full model for the grocery delivery business.
     "constraints" : [ "{expr: (ifValue(usesPerMonth) {((0 <= usesPerMonth) && (usesPerMonth <= 999))} else {true}), name: \"usesPerMonth_limit\"}", "{expr: ((#d \"0.00\" <= feePerMonth) && (feePerMonth <= #d \"199.99\")), name: \"feePerMonth_limit\"}", "{expr: ((#d \"0.00\" <= feePerUse) && (feePerUse <= #d \"14.99\")), name: \"feePerUse_limit\"}" ]
   },
   "tutorials.grocery/FreeDeliveryPerk$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "usesPerMonth" : "Integer"
     },
     "constraints" : [ "{expr: (usesPerMonth < 20), name: \"usesPerMonth_limit\"}" ],
@@ -39,7 +39,7 @@ The following is a full model for the grocery delivery business.
     }
   },
   "tutorials.grocery/DiscountedPrescriptionPerk$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "prescriptionID" : "String"
     },
     "refines-to" : {
@@ -58,7 +58,7 @@ The following is a full model for the grocery delivery business.
     }
   },
   "tutorials.grocery/GroceryService$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "deliveriesPerMonth" : "Integer",
       "feePerMonth" : [ "Decimal", 2 ],
       "perks" : [ "Set", "tutorials.grocery/Perk$v1" ],
@@ -74,7 +74,7 @@ The following is a full model for the grocery delivery business.
     }
   },
   "tutorials.grocery/GroceryStoreSubscription$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "name" : "String",
       "storeCountry" : "tutorials.grocery/Country$v1",
       "perkIds" : [ "Vec", "Integer" ]

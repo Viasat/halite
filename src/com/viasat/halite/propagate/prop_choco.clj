@@ -47,8 +47,8 @@
 
 (s/defn ^:private lower-spec :- choco-clj/ChocoSpec
   [spec :- envs/SpecInfo]
-  {:vars (-> spec :spec-vars (update-keys symbol) (update-vals to-choco-type))
-   :optionals (->> spec :spec-vars
+  {:vars (-> spec :fields (update-keys symbol) (update-vals to-choco-type))
+   :optionals (->> spec :fields
                    (filter (comp types/maybe-type?
                                  val))
                    (map (comp symbol key)) set)

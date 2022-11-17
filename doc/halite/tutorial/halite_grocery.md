@@ -10,11 +10,11 @@ The following is a full model for the grocery delivery business.
 
 ```clojure
 {:tutorials.grocery/Country$v1
-   {:spec-vars {:name :String},
+   {:fields {:name :String},
     :constraints #{'{:name "name_constraint",
                      :expr (contains? #{"Canada" "Mexico" "US"} name)}}},
  :tutorials.grocery/DiscountedPrescriptionPerk$v1
-   {:spec-vars {:prescriptionID :String},
+   {:fields {:prescriptionID :String},
     :refines-to {:tutorials.grocery/Perk$v1
                    {:name "refine_to_Perk",
                     :expr '{:$type :tutorials.grocery/Perk$v1,
@@ -30,7 +30,7 @@ The following is a full model for the grocery delivery business.
                             :feePerUse #d "1.99",
                             :usesPerMonth 2}}}},
  :tutorials.grocery/FreeDeliveryPerk$v1
-   {:spec-vars {:usesPerMonth :Integer},
+   {:fields {:usesPerMonth :Integer},
     :constraints #{'{:name "usesPerMonth_limit",
                      :expr (< usesPerMonth 20)}},
     :refines-to {:tutorials.grocery/Perk$v1
@@ -41,10 +41,10 @@ The following is a full model for the grocery delivery business.
                             :feePerUse #d "0.00",
                             :usesPerMonth usesPerMonth}}}},
  :tutorials.grocery/GroceryService$v1
-   {:spec-vars {:deliveriesPerMonth :Integer,
-                :feePerMonth [:Decimal 2],
-                :perks [:Set :tutorials.grocery/Perk$v1],
-                :subscriberCountry :tutorials.grocery/Country$v1},
+   {:fields {:deliveriesPerMonth :Integer,
+             :feePerMonth [:Decimal 2],
+             :perks [:Set :tutorials.grocery/Perk$v1],
+             :subscriberCountry :tutorials.grocery/Country$v1},
     :constraints
       #{'{:name "feePerMonth_limit",
           :expr (and (< #d "5.99" feePerMonth) (< feePerMonth #d "12.99"))}
@@ -75,9 +75,9 @@ The following is a full model for the grocery delivery business.
                       (get p :perkId))},
           :inverted? true}}},
  :tutorials.grocery/GroceryStoreSubscription$v1
-   {:spec-vars {:name :String,
-                :perkIds [:Vec :Integer],
-                :storeCountry :tutorials.grocery/Country$v1},
+   {:fields {:name :String,
+             :perkIds [:Vec :Integer],
+             :storeCountry :tutorials.grocery/Country$v1},
     :constraints #{'{:name "storeCountryServed",
                      :expr (or (and (= name "Acme Foods")
                                     (contains? #{"Canada" "US" "Costa Rica"}
@@ -89,10 +89,10 @@ The following is a full model for the grocery delivery business.
                      :expr (or (= name "Acme Foods") (= name "Good Foods"))}}},
  :tutorials.grocery/Perk$v1
    {:abstract? true,
-    :spec-vars {:feePerMonth [:Decimal 2],
-                :feePerUse [:Decimal 2],
-                :perkId :Integer,
-                :usesPerMonth [:Maybe :Integer]},
+    :fields {:feePerMonth [:Decimal 2],
+             :feePerUse [:Decimal 2],
+             :perkId :Integer,
+             :usesPerMonth [:Maybe :Integer]},
     :constraints
       #{'{:name "feePerMonth_limit",
           :expr (and (<= #d "0.00" feePerMonth) (<= feePerMonth #d "199.99"))}

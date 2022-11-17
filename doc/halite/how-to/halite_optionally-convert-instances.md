@@ -9,12 +9,12 @@ Consider there are some cases where an instance can be converted to another spec
 In the following example, the refinement expression determines whether to convert an instance based on the value of 'b'.
 
 ```clojure
-{:spec/A$v1 {:spec-vars {:b :Integer},
+{:spec/A$v1 {:fields {:b :Integer},
              :refines-to {:spec/X$v1 {:name "refine_to_X",
                                       :expr '(when (> b 10)
                                                {:$type :spec/X$v1,
                                                 :y b})}}},
- :spec/X$v1 {:spec-vars {:y :Integer}}}
+ :spec/X$v1 {:fields {:y :Integer}}}
 ```
 
 In this example, the refinement applies.

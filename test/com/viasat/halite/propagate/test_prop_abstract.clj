@@ -18,25 +18,25 @@
 (def simplest-abstract-var-example
   '{:ws/W
     {:abstract? true
-     :spec-vars {:wn :Integer}
+     :fields {:wn :Integer}
      :constraints [["wn_range" (and (< 2 wn) (< wn 8))]]}
     :ws/A
-    {:spec-vars {:a :Integer}
+    {:fields {:a :Integer}
      :constraints [["ca" (< a 6)]]
      :refines-to {:ws/W {:expr {:$type :ws/W, :wn (+ a 1)}}}}
     :ws/B
-    {:spec-vars {:b :Integer}
+    {:fields {:b :Integer}
      :constraints [["cb" (< 5 b)]]
      :refines-to {:ws/W {:expr {:$type :ws/W, :wn (- b 2)}}}}
     :ws/C
-    {:spec-vars {:w [:Instance :* #{:ws/W}] :cn :Integer}
+    {:fields {:w [:Instance :* #{:ws/W}] :cn :Integer}
      :constraints [["c1" (< cn (get (refine-to w :ws/W) :wn))]]}})
 
 (def optional-abstract-var-example
   (assoc
    simplest-abstract-var-example
    :ws/C
-   '{:spec-vars {:w [:Maybe [:Instance :ws/W]] :cn :Integer}
+   '{:fields {:w [:Maybe [:Instance :ws/W]] :cn :Integer}
      :constraints [["c1" (< cn (if-value w (get (refine-to w :ws/W) :wn) 10))]]}))
 
 (def lower-abstract-vars #'pa/lower-abstract-vars)
@@ -47,7 +47,7 @@
           specs simplest-abstract-var-example
           sctx (update-vals specs #(ssa/spec-to-ssa specs %))
           c (:ws/C sctx)]
-      (is (= '{:spec-vars
+      (is (= '{:fields
                {:w$type :Integer
                 :w$0 [:Maybe [:Instance :ws/A]]
                 :w$1 [:Maybe [:Instance :ws/B]]
@@ -69,7 +69,7 @@
           sctx (update-vals specs #(ssa/spec-to-ssa specs %))
           c (:ws/C sctx)]
 
-      (is (= '{:spec-vars
+      (is (= '{:fields
                {:w$type [:Maybe :Integer]
                 :w$0 [:Maybe [:Instance :ws/A]]
                 :w$1 [:Maybe [:Instance :ws/B]]
@@ -325,25 +325,25 @@
 
 (def nested-abstracts-example
   '{:ws/W {:abstract? true
-           :spec-vars {:wn :Integer}}
+           :fields {:wn :Integer}}
 
-    :ws/A {:spec-vars {:an :Integer}
+    :ws/A {:fields {:an :Integer}
            :refines-to {:ws/W {:expr {:$type :ws/W :wn an}}}}
 
-    :ws/B {:spec-vars {:bn :Integer}
+    :ws/B {:fields {:bn :Integer}
            :refines-to {:ws/W {:expr {:$type :ws/W :wn bn}}}}
 
     :ws/V {:abstract? true
-           :spec-vars {:vn :Integer}}
+           :fields {:vn :Integer}}
 
-    :ws/C {:spec-vars {:cw [:Instance :* #{:ws/W}] :cn :Integer}
+    :ws/C {:fields {:cw [:Instance :* #{:ws/W}] :cn :Integer}
            :constraints [["c1" (< 0 cn)]]
            :refines-to {:ws/V {:expr {:$type :ws/V
                                       :vn (+ cn (get (refine-to cw :ws/W) :wn))}}}}
-    :ws/D {:spec-vars {:dn :Integer}
+    :ws/D {:fields {:dn :Integer}
            :refines-to {:ws/V {:expr {:$type :ws/V :vn dn}}}}
 
-    :ws/E {:spec-vars {:v [:Instance :* #{:ws/V}]}}})
+    :ws/E {:fields {:v [:Instance :* #{:ws/V}]}}})
 
 (deftest test-lower-abstract-bounds-for-nested-abstracts
   (s/with-fn-validation
@@ -431,19 +431,19 @@
 
 (def abstract-refinement-chain-example
   '{:ws/W {:abstract? true
-           :spec-vars {:wn :Integer}}
+           :fields {:wn :Integer}}
 
-    :ws/A1 {:spec-vars {:a1n :Integer}
+    :ws/A1 {:fields {:a1n :Integer}
             :refines-to {:ws/W {:expr {:$type :ws/W :wn (+ a1n 1)}}}}
 
     :ws/A2 {:abstract? true
-            :spec-vars {:a2n :Integer}
+            :fields {:a2n :Integer}
             :refines-to {:ws/A1 {:expr {:$type :ws/A1 :a1n (+ a2n 1)}}}}
 
-    :ws/A3 {:spec-vars {:a3n :Integer}
+    :ws/A3 {:fields {:a3n :Integer}
             :refines-to {:ws/A2 {:expr {:$type :ws/A2 :a2n (+ a3n 1)}}}}
 
-    :ws/B {:spec-vars {:w [:Instance :* #{:ws/W}]}}})
+    :ws/B {:fields {:w [:Instance :* #{:ws/W}]}}})
 
 (deftest test-abstract-refinement-chain
   (let [sctx (ssa/spec-map-to-ssa abstract-refinement-chain-example)]
@@ -496,23 +496,23 @@
 ;; We'll want to support this sort of structural recursion eventually, but it will take some doing.
 (def list-example
   '{:ws/List {:abstract? true
-              :spec-vars {:length :Integer
-                          :sum :Integer}
+              :fields {:length :Integer
+                       :sum :Integer}
               :constraints [["posLength" (<= 0 length)]]}
     :ws/Empty {:refines-to {:ws/List {:expr {:$type :ws/List :length 0 :sum 0}}}}
-    :ws/Node {:spec-vars {:head :Integer
-                          :tail :ws/List}
+    :ws/Node {:fields {:head :Integer
+                       :tail :ws/List}
               :constraints [["shortList" (< (get (refine-to tail :ws/List) :length) 5)]]
               :refines-to {:ws/List {:expr (let [t (refine-to tail :ws/List)]
                                              {:$type :ws/List
                                               :length (+ 1 (get t :length))
                                               :sum (+ head (get t :sum))})}}}
-    :ws/A {:spec-vars {:list [:Instance :* #{:ws/List}]}}})
+    :ws/A {:fields {:list [:Instance :* #{:ws/List}]}}})
 
 (deftest test-tricky-inst-literal-simplification
   (let [sctx (ssa/spec-map-to-ssa
               '{:ws/A
-                {:spec-vars {:b1 [:Maybe [:Instance :ws/B]]}
+                {:fields {:b1 [:Maybe [:Instance :ws/B]]}
                  :constraints [["a2" (if-value b1 true false)]]}
                 :ws/B
                 {}})]
@@ -523,7 +523,7 @@
   (let [sctx (ssa/spec-map-to-ssa
               '{:ws/A {}
                 :ws/B {:refines-to {:ws/A {:expr {:$type :ws/A}}}}
-                :ws/C {:spec-vars {:b [:Instance :ws/B]}}})
+                :ws/C {:fields {:b [:Instance :ws/B]}}})
         expected {:$type :ws/C
                   :b {:$type :ws/B
                       :$refines-to {:ws/A {}}}}]
@@ -556,14 +556,14 @@
          (pa/propagate (ssa/spec-map-to-ssa
                         '{:ws/X {:abstract? true}
                           :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                          :ws/A {:spec-vars {:x [:Maybe [:Instance :* #{:ws/X}]]}}})
+                          :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}})
                        {:$type :ws/A}))
       "Base case where an optional field does have concrete specs to satisfy it")
   (is (= {:$type :ws/A
           :x :Unset}
          (pa/propagate (ssa/spec-map-to-ssa
                         '{:ws/X {:abstract? true}
-                          :ws/A {:spec-vars {:x [:Maybe [:Instance :* #{:ws/X}]]}}})
+                          :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}})
                        {:$type :ws/A}))
       "Case where an optional field has no concrete specs to satisfy it")
   (is (= {:$type :ws/A
@@ -572,13 +572,13 @@
          (pa/propagate (ssa/spec-map-to-ssa
                         '{:ws/X {:abstract? true}
                           :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                          :ws/A {:spec-vars {:x [:Instance :* #{:ws/X}]}}})
+                          :ws/A {:fields {:x [:Instance :* #{:ws/X}]}}})
                        {:$type :ws/A}))
       "Case where a mandatory field does have concrete specs to satisfy it")
   (is (thrown-with-msg? ExceptionInfo #"has empty domain"
                         (pa/propagate (ssa/spec-map-to-ssa
                                        '{:ws/X {:abstract? true}
-                                         :ws/A {:spec-vars {:x [:Instance :* #{:ws/X}]}}})
+                                         :ws/A {:fields {:x [:Instance :* #{:ws/X}]}}})
                                       {:$type :ws/A}))
       "Case where a mandatory field has no concrete specs to satisfy it"))
 
@@ -591,8 +591,8 @@
          (pa/propagate (ssa/spec-map-to-ssa
                         '{:ws/X {:abstract? true}
                           :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                          :ws/A {:spec-vars {:x [:Maybe [:Instance :* #{:ws/X}]]}}
-                          :ws/P {:spec-vars {:a [:Instance :ws/A]}}})
+                          :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}
+                          :ws/P {:fields {:a [:Instance :ws/A]}}})
                        {:$type :ws/P})))
   (is (= {:$type :ws/P
           :a {:$type :ws/A
@@ -602,23 +602,23 @@
          (pa/propagate (ssa/spec-map-to-ssa
                         '{:ws/X {:abstract? true}
                           :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                          :ws/A {:spec-vars {:x [:Maybe [:Instance :* #{:ws/X}]]}}
-                          :ws/P {:spec-vars {:a [:Instance :ws/A]}}})
+                          :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}
+                          :ws/P {:fields {:a [:Instance :ws/A]}}})
                        {:$type :ws/P
                         :a {:$type :ws/A}}))))
 
 (deftest test-recursive-structure
   ;; TODO: currently produces NPE in prop-composition
   #_(do
-      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:spec-vars {:value "Integer"
-                                                                  :next [:Maybe :spec/Cell]}}})
+      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
+                                                               :next [:Maybe :spec/Cell]}}})
                     {:$type :spec/Cell})
-      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:spec-vars {:value "Integer"
-                                                                  :next [:Maybe :spec/Cell]}}})
+      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
+                                                               :next [:Maybe :spec/Cell]}}})
                     {:$type :spec/Cell
                      :next {:$type :spec/Cell}})
-      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:spec-vars {:value "Integer"
-                                                                  :next [:Maybe :spec/Cell]}}})
+      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
+                                                               :next [:Maybe :spec/Cell]}}})
                     {:$type :spec/Cell
                      :next {:$type :spec/Cell
                             :next {:$type :spec/Cell}}})))

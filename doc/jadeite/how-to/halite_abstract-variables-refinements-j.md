@@ -12,12 +12,12 @@ The way to use an abstract field value as the result value in a refinement is to
 {
   "spec/Animal" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "species" : "String"
     }
   },
   "spec/Pet$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "animal" : "spec/Animal",
       "name" : "String"
     },
@@ -29,7 +29,7 @@ The way to use an abstract field value as the result value in a refinement is to
     }
   },
   "spec/Dog" : {
-    "spec-vars" : {
+    "fields" : {
       "breed" : "String"
     },
     "refines-to" : {
@@ -40,7 +40,7 @@ The way to use an abstract field value as the result value in a refinement is to
     }
   },
   "spec/Cat" : {
-    "spec-vars" : {
+    "fields" : {
       "lives" : "Integer"
     },
     "refines-to" : {
@@ -75,12 +75,12 @@ Even if we happen to know the concrete type of an abstract field is of the right
 {
   "spec/Animal" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "species" : "String"
     }
   },
   "spec/Pet$v2" : {
-    "spec-vars" : {
+    "fields" : {
       "animal" : "spec/Animal",
       "name" : "String"
     },
@@ -92,7 +92,7 @@ Even if we happen to know the concrete type of an abstract field is of the right
     }
   },
   "spec/Dog" : {
-    "spec-vars" : {
+    "fields" : {
       "breed" : "String"
     },
     "refines-to" : {
@@ -121,12 +121,12 @@ If instead, we attempt to define the refinement of type animal, but still try to
 {
   "spec/Animal" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "species" : "String"
     }
   },
   "spec/Pet$v3" : {
-    "spec-vars" : {
+    "fields" : {
       "animal" : "spec/Animal",
       "name" : "String"
     },
@@ -138,7 +138,7 @@ If instead, we attempt to define the refinement of type animal, but still try to
     }
   },
   "spec/Dog" : {
-    "spec-vars" : {
+    "fields" : {
       "breed" : "String"
     },
     "refines-to" : {
@@ -149,7 +149,7 @@ If instead, we attempt to define the refinement of type animal, but still try to
     }
   },
   "spec/Cat" : {
-    "spec-vars" : {
+    "fields" : {
       "lives" : "Integer"
     },
     "refines-to" : {

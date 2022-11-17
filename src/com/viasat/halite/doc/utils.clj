@@ -74,7 +74,7 @@
    (let [s (zprint/zprint-str code 80 {:fn-force-nl #{:binding}
                                        :style :backtranslate
                                        :map {:force-nl? true
-                                             :key-order [:abstract? :spec-vars :constraints :refines-to
+                                             :key-order [:abstract? :fields :constraints :refines-to
                                                          :name :expr :inverted?]}})]
      (if trailing-newline?
        (if (= \newline s)

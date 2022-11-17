@@ -9,9 +9,9 @@ Consider you need to evaluate an expression as a predicate, to determine if some
 The following specification uses a constraint to capture a predicate that checks whether a value is equal to the sum of two other values.
 
 ```clojure
-{:spec/Sum {:spec-vars {:sum :Integer,
-                        :x :Integer,
-                        :y :Integer},
+{:spec/Sum {:fields {:sum :Integer,
+                     :x :Integer,
+                     :y :Integer},
             :constraints #{'{:name "constrain_sum",
                              :expr (= sum (+ x y))}}}}
 ```

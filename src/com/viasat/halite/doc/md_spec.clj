@@ -17,8 +17,8 @@
 
         "Specs include variables which have types as:\n\n"
         (embed-bnf-f "type")
-        "The variables for a spec are defined in a spec-var-map:\n\n"
-        (embed-bnf-f "spec-var-map")
+        "The variables for a spec are defined in a field-map:\n\n"
+        (embed-bnf-f "field-map")
         "Constraints on those variables are defined as:\n\n"
         (embed-bnf-f "constraints")
         "Any applicable refinements are defined as:\n\n"

@@ -23,7 +23,7 @@ An 'unset' value is expected to come into play via an optional field.
 ```java
 {
   "spec/A" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : [ "Maybe", "Integer" ]
     }
   }
@@ -155,7 +155,7 @@ The 'when-value' and 'if-value' operators are useful from within the context of 
 ```java
 {
   "spec/X" : {
-    "spec-vars" : {
+    "fields" : {
       "y" : [ "Maybe", "Integer" ],
       "z" : [ "Maybe", "Integer" ]
     },
@@ -167,7 +167,7 @@ The 'when-value' and 'if-value' operators are useful from within the context of 
     }
   },
   "spec/P" : {
-    "spec-vars" : {
+    "fields" : {
       "q" : [ "Maybe", "Integer" ],
       "r" : "Integer"
     }

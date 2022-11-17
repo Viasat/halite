@@ -46,7 +46,7 @@ It is a bit more subtle, but a cyclical dependency that crosses both a refinemen
 {:spec/Car {:refines-to {:spec/Garage {:name "refine_to_Garage",
                                        :expr '{:$type :spec/Garage,
                                                :car {:$type :spec/Car}}}}},
- :spec/Garage {:spec-vars {:car :spec/Car}}}
+ :spec/Garage {:fields {:car :spec/Car}}}
 ```
 
 ```clojure
@@ -61,7 +61,7 @@ It is a bit more subtle, but a cyclical dependency that crosses both a refinemen
 Diamonds are a bit different than a recursive refinement, but they too are disallowed and produce a similar error.
 
 ```clojure
-{:spec/Destination {:spec-vars {:d :Integer}},
+{:spec/Destination {:fields {:d :Integer}},
  :spec/Path1 {:refines-to {:spec/Destination {:name "refine_to_Destination",
                                               :expr '{:$type :spec/Destination,
                                                       :d 1}}}},

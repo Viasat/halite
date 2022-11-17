@@ -12,7 +12,7 @@ Say we have an abstract concept of squareness.
 {
   "spec/Square" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "height" : "Integer"
     }
@@ -32,13 +32,13 @@ However, this spec cannot be instantiated in the context of another instance. So
 {
   "spec/Square" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "height" : "Integer"
     }
   },
   "spec/Painting" : {
-    "spec-vars" : {
+    "fields" : {
       "square" : "spec/Square",
       "painter" : "String"
     }
@@ -62,19 +62,19 @@ To create an instance of the composite painting spec, we need to define an addit
 {
   "spec/Square" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "height" : "Integer"
     }
   },
   "spec/Painting" : {
-    "spec-vars" : {
+    "fields" : {
       "square" : "spec/Square",
       "painter" : "String"
     }
   },
   "spec/Canvas" : {
-    "spec-vars" : {
+    "fields" : {
       "size" : "String"
     },
     "refines-to" : {
@@ -115,13 +115,13 @@ Consider another spec context, where an alternate spec is defined that refines t
 {
   "spec/Square" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "height" : "Integer"
     }
   },
   "spec/Painting" : {
-    "spec-vars" : {
+    "fields" : {
       "square" : "spec/Square",
       "painter" : "String"
     }

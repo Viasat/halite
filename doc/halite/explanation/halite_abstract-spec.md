@@ -10,8 +10,8 @@ Say we have an abstract concept of squareness.
 
 ```clojure
 {:spec/Square {:abstract? true,
-               :spec-vars {:height :Integer,
-                           :width :Integer}}}
+               :fields {:height :Integer,
+                        :width :Integer}}}
 ```
 
 The spec can be instantiated in a standalone fashion.
@@ -25,11 +25,11 @@ The spec can be instantiated in a standalone fashion.
 However, this spec cannot be instantiated in the context of another instance. So consider the following two specs, where a concrete spec uses an abstract spec in composition.
 
 ```clojure
-{:spec/Painting {:spec-vars {:painter :String,
-                             :square :spec/Square}},
+{:spec/Painting {:fields {:painter :String,
+                          :square :spec/Square}},
  :spec/Square {:abstract? true,
-               :spec-vars {:height :Integer,
-                           :width :Integer}}}
+               :fields {:height :Integer,
+                        :width :Integer}}}
 ```
 
 The instance of the abstract spec cannot be used in the construction of the painting instance.
@@ -50,7 +50,7 @@ The instance of the abstract spec cannot be used in the construction of the pain
 To create an instance of the composite painting spec, we need to define an additional spec which refines to the abstract spec, square.
 
 ```clojure
-{:spec/Canvas {:spec-vars {:size :String},
+{:spec/Canvas {:fields {:size :String},
                :refines-to {:spec/Square {:name "refine_to_square",
                                           :expr '(if (= "small" size)
                                                    {:$type :spec/Square,
@@ -59,11 +59,11 @@ To create an instance of the composite painting spec, we need to define an addit
                                                    {:$type :spec/Square,
                                                     :width 10,
                                                     :height 10})}}},
- :spec/Painting {:spec-vars {:painter :String,
-                             :square :spec/Square}},
+ :spec/Painting {:fields {:painter :String,
+                          :square :spec/Square}},
  :spec/Square {:abstract? true,
-               :spec-vars {:height :Integer,
-                           :width :Integer}}}
+               :fields {:height :Integer,
+                        :width :Integer}}}
 ```
 
 Now we can instantiate a painting using an instance of the concrete canvas spec.
@@ -101,11 +101,11 @@ An abstract spec is a spec that can be used to define some constraints on the va
 Consider another spec context, where an alternate spec is defined that refines to square.
 
 ```clojure
-{:spec/Painting {:spec-vars {:painter :String,
-                             :square :spec/Square}},
+{:spec/Painting {:fields {:painter :String,
+                          :square :spec/Square}},
  :spec/Square {:abstract? true,
-               :spec-vars {:height :Integer,
-                           :width :Integer}},
+               :fields {:height :Integer,
+                        :width :Integer}},
  :spec/Wall {:refines-to {:spec/Square {:name "refine_to_square",
                                         :expr '{:$type :spec/Square,
                                                 :width 100,

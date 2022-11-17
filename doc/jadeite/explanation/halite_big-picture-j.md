@@ -11,7 +11,7 @@ Writing a spec is carving out a subset out of the universe of all possible value
 ```java
 {
   "spec/Ball" : {
-    "spec-vars" : {
+    "fields" : {
       "color" : "String"
     },
     "constraints" : [ "{expr: #{\"blue\", \"green\", \"red\"}.contains?(color), name: \"color_constraint\"}" ]
@@ -36,7 +36,7 @@ If instead we defined this spec, then we are further constraining the set of val
 ```java
 {
   "spec/Ball" : {
-    "spec-vars" : {
+    "fields" : {
       "color" : "String"
     },
     "constraints" : [ "{expr: #{\"blue\", \"green\", \"red\"}.contains?(color), name: \"color_constraint\"}" ]
@@ -79,12 +79,12 @@ However, it is possible to convert an instance of one spec into an instance of a
 ```java
 {
   "spec/Round" : {
-    "spec-vars" : {
+    "fields" : {
       "radius" : "Integer"
     }
   },
   "spec/Ball" : {
-    "spec-vars" : {
+    "fields" : {
       "color" : "String"
     },
     "constraints" : [ "{expr: #{\"blue\", \"green\", \"red\"}.contains?(color), name: \"color_constraint\"}" ],

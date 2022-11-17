@@ -11,7 +11,7 @@ In the following example, the refinement expression determines whether to conver
 ```java
 {
   "spec/A$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     },
     "refines-to" : {
@@ -22,7 +22,7 @@ In the following example, the refinement expression determines whether to conver
     }
   },
   "spec/X$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "y" : "Integer"
     }
   }

@@ -11,7 +11,7 @@ Say we want to model a shirt size and the valid values are "small", "medium", an
 ```java
 {
   "spec/Shirt$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "size" : "String"
     }
   }
@@ -33,7 +33,7 @@ So we can add a constraint to limit the values to what we expect.
 ```java
 {
   "spec/Shirt$v2" : {
-    "spec-vars" : {
+    "fields" : {
       "size" : "String"
     },
     "constraints" : [ "{expr: #{\"large\", \"medium\", \"small\"}.contains?(size), name: \"size_constraint\"}" ]
@@ -69,6 +69,6 @@ But a shirt with a valid size can be constructed.
 
 #### How Tos:
 
-* [spec-variables](../how-to/halite_spec-variables-j.md)
+* [spec-fields](../how-to/halite_spec-fields-j.md)
 
 

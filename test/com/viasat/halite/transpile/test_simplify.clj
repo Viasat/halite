@@ -12,7 +12,7 @@
 
 (deftest test-simplify
   (let [senv '{:ws/A
-               {:spec-vars {:an :Integer, :ap :Boolean}}}]
+               {:fields {:an :Integer, :ap :Boolean}}}]
     (are [expr simplified]
          (= simplified
             (binding [ssa/*hide-non-halite-ops* false]

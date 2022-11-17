@@ -1243,7 +1243,7 @@
          (analysis/find-spec-refs-but-tail :my/Spec '(if true {:$type :my/Spec} {:$type :my/Other})))))
 
 (deftest test-cyclical-dependencies
-  (let [spec-map (var-types/to-halite-spec-env {:spec/Destination {:spec-vars {:d :Integer}}
+  (let [spec-map (var-types/to-halite-spec-env {:spec/Destination {:fields {:d :Integer}}
                                                 :spec/Path1 {:refines-to {:spec/Destination {:name "refine_to_Destination"
                                                                                              :expr '{:$type :spec/Destination
                                                                                                      :d 1}}}}
@@ -1259,8 +1259,8 @@
             :spec/Start #{:spec/Path1 :spec/Path2}}
            (#'analysis/get-spec-map-dependencies spec-map)))
     (is (nil? (analysis/find-cycle-in-dependencies spec-map))))
-  (let [spec-map (var-types/to-halite-spec-env {:spec/A {:spec-vars {:b :spec/B}}
-                                                :spec/B {:spec-vars {:a :spec/A}}})]
+  (let [spec-map (var-types/to-halite-spec-env {:spec/A {:fields {:b :spec/B}}
+                                                :spec/B {:fields {:a :spec/A}}})]
     (is (= {:spec/A #{:spec/B}
             :spec/B #{:spec/A}}
            (#'analysis/get-spec-map-dependencies spec-map)))

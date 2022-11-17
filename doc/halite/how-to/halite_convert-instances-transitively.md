@@ -9,15 +9,15 @@ How to convert an instance from one spec type to another through an intermediate
 Refinements are automatically, transitively applied to produce an instance of the target spec.
 
 ```clojure
-{:spec/A$v3 {:spec-vars {:b :Integer},
+{:spec/A$v3 {:fields {:b :Integer},
              :refines-to {:spec/P$v3 {:name "refine_to_P",
                                       :expr '{:$type :spec/P$v3,
                                               :q b}}}},
- :spec/P$v3 {:spec-vars {:q :Integer},
+ :spec/P$v3 {:fields {:q :Integer},
              :refines-to {:spec/X$v3 {:name "refine_to_X",
                                       :expr '{:$type :spec/X$v3,
                                               :y q}}}},
- :spec/X$v3 {:spec-vars {:y :Integer}}}
+ :spec/X$v3 {:fields {:y :Integer}}}
 ```
 
 The chain of refinements is invoked by simply refining the instance to the final target spec.

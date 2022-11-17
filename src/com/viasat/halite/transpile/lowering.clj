@@ -126,7 +126,7 @@
         (if (not= 1 (count arg-types))
           (= comparison-op 'not=)
           (let [arg-type (first arg-types)
-                var-kws (->> arg-type (types/spec-id) (envs/lookup-spec senv) :spec-vars keys sort)]
+                var-kws (->> arg-type (types/spec-id) (envs/lookup-spec senv) :fields keys sort)]
             (->> var-kws
                  (map (fn [var-kw]
                         (apply list comparison-op
@@ -224,16 +224,16 @@
 
 (s/defn ^:private validity-guard-inst
   [sctx :- SpecCtx, ctx :- ssa/SSACtx, inst]
-  (let [{:keys [spec-vars ssa-graph constraints] :as spec-info} (sctx (:$type inst))
+  (let [{:keys [fields ssa-graph constraints] :as spec-info} (sctx (:$type inst))
         inst-entries (dissoc inst :$type)
-        scope (->> spec-vars keys (map symbol) set)
+        scope (->> fields keys (map symbol) set)
         inlined-constraints (->> constraints
                                  (map (fn [[cname id]]
                                         (binding [ssa/*hide-non-halite-ops* false]
                                           (ssa/form-from-ssa scope ssa-graph id))))
                                  (mk-junct 'and)
                                  (replace-in-expr
-                                  (-> spec-vars (update-vals (constantly '$no-value)) (merge inst-entries) (update-keys symbol))))
+                                  (-> fields (update-vals (constantly '$no-value)) (merge inst-entries) (update-keys symbol))))
         sub-guards (->> inst-entries
                         (vals)
                         (map (partial validity-guard sctx ctx))
@@ -289,7 +289,7 @@
 
   (validity-guard <int>) => true
   (validity-guard <boolean>) => true
-  (validity-guard <spec-var>) => true
+  (validity-guard <field>) => true
   (validity-guard (if <pred> <then> <else>))
   => (if <(validity-guard pred)>
        (if <pred> <(validity-guard then)> <(validity-guard else)>)
@@ -345,12 +345,12 @@
         (->> (loom.alg/shortest-path rgraph from-spec-id to-spec-id)
              (partition 2 1)
              (reduce (fn [out-form [from-spec-id to-spec-id]]
-                       (let [{:keys [spec-vars refines-to] :as spec-info} (sctx from-spec-id)
+                       (let [{:keys [fields refines-to] :as spec-info} (sctx from-spec-id)
                              refine-expr-id (:expr (get refines-to to-spec-id))
                              refine-expr (ssa/form-from-ssa spec-info refine-expr-id)
                              bindings (vec (mapcat (fn [var-kw] [(symbol var-kw)
                                                                  (list 'get out-form var-kw)])
-                                                   (keys spec-vars)))]
+                                                   (keys fields)))]
                          (list 'let bindings refine-expr)))
                      expr-id))))))
 

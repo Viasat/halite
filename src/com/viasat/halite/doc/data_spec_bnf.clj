@@ -12,8 +12,8 @@
    'collection-type {:bnf "primitive-type | '[' { ':Vec' | ':Set' } primitive-type ']'"}
    'maybe-type {:bnf "collection-type | '[' ':Maybe' collection-type ']'"}])
 
-(def spec-var-map-bnf-pair
-  ['spec-var-map {:bnf "'{' {bare-keyword maybe-type} '}'"}])
+(def field-map-bnf
+  ['field-map {:bnf "'{' {bare-keyword maybe-type} '}'"}])
 
 (def constraint-set-bnf
   ['constraint-set {:bnf " '#{' { '{' ':name' string ':expr' halite-expr '}' } '}'"}])
@@ -22,5 +22,5 @@
   ['refinement-map {:bnf " '{' {namespaced-keyword:spec-id '{' ':name' string ':expr' halite-expr [':inverted?' boolean] '}' } '}'"}])
 
 (def spec-map-bnf-pair
-  ['spec-map {:bnf "'{' {namespaced-keyword:spec-id '{' { (':abstract?' boolean) | (':spec-vars' spec-var-map) |  (':constraints' constraint-set) | (':refines-to' refinement-map) } '}'} '}'"}])
+  ['spec-map {:bnf "'{' {namespaced-keyword:spec-id '{' { (':abstract?' boolean) | (':fields' field-map) |  (':constraints' constraint-set) | (':refines-to' refinement-map) } '}'} '}'"}])
 

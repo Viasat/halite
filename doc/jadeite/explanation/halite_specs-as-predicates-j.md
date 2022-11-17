@@ -11,7 +11,7 @@ The type indications of spec variables can be considered as predicates.
 ```java
 {
   "spec/X$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "String"
     }
   }
@@ -43,7 +43,7 @@ If a specification defines multiple spec vars then the result is a logical conju
 ```java
 {
   "spec/X$v2" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "String",
       "y" : "Integer"
     }
@@ -86,7 +86,7 @@ Similarly, each constraint by itself is a predicate and is combined in a conjunc
 ```java
 {
   "spec/X$v3" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "String",
       "y" : "Integer"
     },
@@ -118,7 +118,7 @@ If there are multiple constraints, they are all logically combined into a single
 ```java
 {
   "spec/X$v5" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "String",
       "y" : "Integer"
     },
@@ -150,13 +150,13 @@ Finally, the refinements can also bring in additional constraints which are comb
 ```java
 {
   "spec/A" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     },
     "constraints" : [ "{expr: (b < 10), name: \"valid_b\"}" ]
   },
   "spec/X$v6" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "String",
       "y" : "Integer"
     },
@@ -194,19 +194,19 @@ Implications of each additional refinement are combined into the single conujunc
 ```java
 {
   "spec/A" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     },
     "constraints" : [ "{expr: (b < 10), name: \"valid_b\"}" ]
   },
   "spec/P" : {
-    "spec-vars" : {
+    "fields" : {
       "q" : "String"
     },
     "constraints" : [ "{expr: (q == \"hi\"), name: \"valid_q\"}" ]
   },
   "spec/X$v7" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "String",
       "y" : "Integer"
     },

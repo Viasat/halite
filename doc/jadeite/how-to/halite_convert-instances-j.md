@@ -11,12 +11,12 @@ An expression can convert an instance of one type to the instance of another typ
 ```java
 {
   "spec/A$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     }
   },
   "spec/X$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "y" : "Integer"
     }
   }
@@ -38,7 +38,7 @@ This work, but the language has a built-in idea of 'refinements' that allow such
 ```java
 {
   "spec/A$v2" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     },
     "refines-to" : {
@@ -49,7 +49,7 @@ This work, but the language has a built-in idea of 'refinements' that allow such
     }
   },
   "spec/X$v2" : {
-    "spec-vars" : {
+    "fields" : {
       "y" : "Integer"
     }
   }

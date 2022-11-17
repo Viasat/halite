@@ -323,7 +323,7 @@ The contents of the instance are specified in pair-wise fashion with alternating
 
 ### How tos:
 
-* [spec-variables](how-to/halite_spec-variables-j.md)
+* [spec-fields](how-to/halite_spec-fields-j.md)
 
 
 ### Tutorials:

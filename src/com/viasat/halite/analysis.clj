@@ -1054,7 +1054,7 @@
 
 ;;;;
 
-(s/defn ^:private get-spec-var-dependencies :- (s/maybe {types/NamespacedKeyword #{types/NamespacedKeyword}})
+(s/defn ^:private get-field-dependencies :- (s/maybe {types/NamespacedKeyword #{types/NamespacedKeyword}})
   [spec-map :- envs/SpecMap
    spec-id :- types/NamespacedKeyword
    [_ var-type]]
@@ -1081,8 +1081,8 @@
   [spec-map :- envs/SpecMap
    spec-id :- types/NamespacedKeyword
    spec-info :- envs/SpecInfo]
-  (let [{:keys [spec-vars constraints refines-to]} spec-info]
-    (->> [(map (partial get-spec-var-dependencies spec-map spec-id) spec-vars)
+  (let [{:keys [fields constraints refines-to]} spec-info]
+    (->> [(map (partial get-field-dependencies spec-map spec-id) fields)
           (map (partial get-constraint-dependencies spec-id) constraints)
           (map (partial get-refines-to-dependencies spec-id) refines-to)]
          (remove nil?)

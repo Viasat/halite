@@ -11,7 +11,7 @@ Multiple constraints can be defined on a spec. Each constraint must have a uniqu
 ```java
 {
   "spec/A$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer",
       "c" : "Integer"
     },
@@ -53,7 +53,7 @@ Mutliple constraints can refer to the same variables.
 ```java
 {
   "spec/A$v2" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     },
     "constraints" : [ "{expr: (b > 100), name: \"constrain_b\"}", "{expr: (b < 110), name: \"constrain_b2\"}" ]
@@ -82,7 +82,7 @@ In general, constraint extpressions can be combined with a logical 'and'. This h
 ```java
 {
   "spec/A$v3" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     },
     "constraints" : [ "{expr: ((b > 100) && (b < 110)), name: \"constrain_b\"}" ]

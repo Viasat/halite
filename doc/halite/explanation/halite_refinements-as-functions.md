@@ -13,8 +13,8 @@ A refinement can be defined that does not convert from a concrete instance to a 
                                      :expr '{:$type :spec/Ford,
                                              :model "Mustang",
                                              :year 2000}}}},
- :spec/Ford {:spec-vars {:model :String,
-                         :year :Integer}}}
+ :spec/Ford {:fields {:model :String,
+                      :year :Integer}}}
 ```
 
 In this example a highly abstract instance, just called a car, is converted into a concrete instance that has more detailed information.

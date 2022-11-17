@@ -7,8 +7,8 @@
 Specs can be defined to be recursive.
 
 ```clojure
-{:spec/Cell {:spec-vars {:next [:Maybe :spec/Cell],
-                         :value :Integer}}}
+{:spec/Cell {:fields {:next [:Maybe :spec/Cell],
+                      :value :Integer}}}
 ```
 
 ```clojure

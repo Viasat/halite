@@ -9,8 +9,8 @@ How to make specs which are the composition of other specs and how to make insta
 A spec variable can be of the type of another spec
 
 ```clojure
-{:spec/A$v1 {:spec-vars {:b :spec/B$v1}},
- :spec/B$v1 {:spec-vars {:c :Integer}}}
+{:spec/A$v1 {:fields {:b :spec/B$v1}},
+ :spec/B$v1 {:fields {:c :Integer}}}
 ```
 
 Composite instances are created by nesting the instances at construction time.
@@ -29,6 +29,6 @@ Composite instances are created by nesting the instances at construction time.
 
 #### How Tos:
 
-* [spec-variables](../how-to/halite_spec-variables.md)
+* [spec-fields](../how-to/halite_spec-fields.md)
 
 

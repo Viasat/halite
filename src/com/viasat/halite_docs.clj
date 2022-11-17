@@ -39,13 +39,13 @@
 
 (comment
   ;; an example of evaluating a halite form in the context of a spec-map
-  (let [r (doc-run/hc-body {:spec/A {:spec-vars {:x :Integer}
+  (let [r (doc-run/hc-body {:spec/A {:fields {:x :Integer}
                                      :constraints #{{:name "c" :expr '(> x 12)}}
                                      :refines-to {:spec/B {:name "r"
                                                            :expr '{:$type :spec/B
                                                                    :a (inc x)}}}}
                             :spec/B {:abstract? true
-                                     :spec-vars {:a :Integer}
+                                     :fields {:a :Integer}
                                      :constraints #{}
                                      :refines-to {}}}
                            '(refine-to {:$type :spec/A
@@ -380,7 +380,7 @@
 
 (defn- produce-spec-bnf-diagrams [run-config]
   (bnf-diagrams/produce-spec-bnf-diagram run-config "type.svg" data-spec-bnf/type-bnf-vector)
-  (bnf-diagrams/produce-spec-bnf-diagram run-config "spec-var-map.svg" data-spec-bnf/spec-var-map-bnf-pair)
+  (bnf-diagrams/produce-spec-bnf-diagram run-config "field-map.svg" data-spec-bnf/field-map-bnf)
   (bnf-diagrams/produce-spec-bnf-diagram run-config "constraints.svg" data-spec-bnf/constraint-set-bnf)
   (bnf-diagrams/produce-spec-bnf-diagram run-config "refinement-map.svg" data-spec-bnf/refinement-map-bnf-pair)
   (bnf-diagrams/produce-spec-bnf-diagram run-config "spec-map.svg" data-spec-bnf/spec-map-bnf-pair))

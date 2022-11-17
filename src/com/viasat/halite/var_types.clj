@@ -76,7 +76,7 @@
 
 (s/defschema UserSpecInfo
   (assoc envs/SpecInfo
-         (s/optional-key :spec-vars) {types/BareKeyword VarType}
+         (s/optional-key :fields) {types/BareKeyword VarType}
          (s/optional-key :constraints) #{envs/Constraint}))
 
 (s/defschema UserSpecMap
@@ -129,8 +129,8 @@
   [senv :- (s/protocol envs/SpecEnv)
    spec-info :- s/Any]
   (when spec-info
-    (let [spec-info (if (seq (:spec-vars spec-info))
-                      (update spec-info :spec-vars update-vals (partial halite-type-from-var-type senv))
+    (let [spec-info (if (seq (:fields spec-info))
+                      (update spec-info :fields update-vals (partial halite-type-from-var-type senv))
                       spec-info)]
       (if (:constraints spec-info)
         (update spec-info :constraints #(mapv (fn [{:keys [name expr]}]

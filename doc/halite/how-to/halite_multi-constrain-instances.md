@@ -9,8 +9,8 @@ How to define multiple constraints in a spec
 Multiple constraints can be defined on a spec. Each constraint must have a unique name within the context of a spec.
 
 ```clojure
-{:spec/A$v1 {:spec-vars {:b :Integer,
-                         :c :Integer},
+{:spec/A$v1 {:fields {:b :Integer,
+                      :c :Integer},
              :constraints #{'{:name "constrain_b",
                               :expr (> b 100)}
                             '{:name "constrain_c",
@@ -60,7 +60,7 @@ Violating any of the constraints makes the instance invalid
 Mutliple constraints can refer to the same variables.
 
 ```clojure
-{:spec/A$v2 {:spec-vars {:b :Integer},
+{:spec/A$v2 {:fields {:b :Integer},
              :constraints #{'{:name "constrain_b",
                               :expr (> b 100)}
                             '{:name "constrain_b2",
@@ -91,7 +91,7 @@ Mutliple constraints can refer to the same variables.
 In general, constraint extpressions can be combined with a logical 'and'. This has the same meaning because all constraints are effectively 'anded' together to produce a single logical predicate to assess whether an instance is valid. So, decomposing constraints into separate constraints is largely a matter of organizing and naming the checks to suit the modelling exercise.
 
 ```clojure
-{:spec/A$v3 {:spec-vars {:b :Integer},
+{:spec/A$v3 {:fields {:b :Integer},
              :constraints #{'{:name "constrain_b",
                               :expr (and (> b 100) (< b 110))}}}}
 ```

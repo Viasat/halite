@@ -11,12 +11,12 @@ A spec variable can be of the type of another spec
 ```java
 {
   "spec/A$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "spec/B$v1"
     }
   },
   "spec/B$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "c" : "Integer"
     }
   }
@@ -37,6 +37,6 @@ Composite instances are created by nesting the instances at construction time.
 
 #### How Tos:
 
-* [spec-variables](../how-to/halite_spec-variables-j.md)
+* [spec-fields](../how-to/halite_spec-fields-j.md)
 
 

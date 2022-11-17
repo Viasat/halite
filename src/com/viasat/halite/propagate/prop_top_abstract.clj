@@ -41,7 +41,7 @@
   (ssa/add-spec-to-context sctx
                            generated-spec-id
                            (ssa/spec-to-ssa (ssa/as-spec-env sctx)
-                                            {:spec-vars {generated-field-name (-> refines-to-spec-id types/concrete-spec-type types/maybe-type)}})))
+                                            {:fields {generated-field-name (-> refines-to-spec-id types/concrete-spec-type types/maybe-type)}})))
 
 (s/defn ^:private generate-spec-id
   "Generate a unique spec-id that will not collide with the current context."

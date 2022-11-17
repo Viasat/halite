@@ -11,7 +11,7 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
 ```java
 {
   "spec/A$v4" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer",
       "c" : "Integer",
       "d" : "String"
@@ -24,7 +24,7 @@ Refinement expressions can be arbitrary expressions over the fields of the insta
     }
   },
   "spec/X$v4" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer",
       "z" : "Integer"

@@ -22,26 +22,26 @@
 (deftest test-spec-ify-bound-on-simple-spec
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
-                 {:spec-vars {:x :Integer, :y :Integer, :b :Boolean}
+                 {:fields {:x :Integer, :y :Integer, :b :Boolean}
                   :constraints [["c1" (let [delta (abs (- x y))]
                                         (and (< 5 delta)
                                              (< delta 10)))]
                                 ["c2" (= b (< x y))]]}})]
 
-    (is (= '{:spec-vars {:x :Integer, :y :Integer, :b :Boolean}
+    (is (= '{:fields {:x :Integer, :y :Integer, :b :Boolean}
              :constraints [["vars" (valid? {:$type :ws/A :x x :y y :b b})]]}
            (pc/spec-ify-bound specs {:$type :ws/A})))))
 
 (deftest test-spec-ify-bound-with-composite-specs
   (testing "simple composition"
     (let [specs (ssa/spec-map-to-ssa
-                 '{:ws/A {:spec-vars {:x :Integer, :y :Integer}
+                 '{:ws/A {:fields {:x :Integer, :y :Integer}
                           :constraints [["pos" (and (< 0 x) (< 0 y))]
                                         ["boundedSum" (< (+ x y) 20)]]}
-                   :ws/B {:spec-vars {:a1 [:Instance :ws/A] :a2 [:Instance :ws/A]}
+                   :ws/B {:fields {:a1 [:Instance :ws/A] :a2 [:Instance :ws/A]}
                           :constraints [["a1smaller" (and (< (get a1 :x) (get a2 :x))
                                                           (< (get a1 :y) (get a2 :y)))]]}})]
-      (is (= '{:spec-vars {:a1|x :Integer, :a1|y :Integer, :a2|x :Integer, :a2|y :Integer}
+      (is (= '{:fields {:a1|x :Integer, :a1|y :Integer, :a2|x :Integer, :a2|y :Integer}
                :constraints [["vars" (valid? {:$type :ws/B
                                               :a1 {:$type :ws/A :x a1|x :y a1|y}
                                               :a2 {:$type :ws/A :x a2|x :y a2|y}})]]}
@@ -49,7 +49,7 @@
 
 (deftest test-propagation-of-trivial-spec
   (let [specs (ssa/spec-map-to-ssa
-               {:ws/A {:spec-vars {:x :Integer, :y :Integer, :oddSum :Boolean}
+               {:ws/A {:fields {:x :Integer, :y :Integer, :oddSum :Boolean}
                        :constraints '[["pos" (and (< 0 x) (< 0 y))]
                                       ["y_is_greater" (< x y)]
                                       ["lines" (let [xysum (+ x y)]
@@ -70,10 +70,10 @@
 
 (deftest test-one-to-one-composition
   (let [specs (ssa/spec-map-to-ssa
-               '{:ws/A {:spec-vars {:x :Integer, :y :Integer}
+               '{:ws/A {:fields {:x :Integer, :y :Integer}
                         :constraints [["pos" (and (< 0 x) (< 0 y))]
                                       ["boundedSum" (< (+ x y) 20)]]}
-                 :ws/B {:spec-vars {:a1 [:Instance :ws/A] :a2 [:Instance :ws/A]}
+                 :ws/B {:fields {:a1 [:Instance :ws/A] :a2 [:Instance :ws/A]}
                         :constraints [["a1smaller" (and (< (get a1 :x) (get a2 :x))
                                                         (< (get a1 :y) (get a2 :y)))]]}})
         opts {:default-int-bounds [-100 100]}]
@@ -104,17 +104,17 @@
 (deftest test-instance-literals
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
-                 {:spec-vars {:ax :Integer}
+                 {:fields {:ax :Integer}
                   :constraints [["c1" (and (< 0 ax) (< ax 10))]]}
 
                  :ws/B
-                 {:spec-vars {:by :Integer, :bz :Integer}
+                 {:fields {:by :Integer, :bz :Integer}
                   :constraints [["c2" (let [a {:$type :ws/A :ax (* 2 by)}
                                             x (get {:$type :ws/A :ax (+ bz bz)} :ax)]
                                         (= x (get {:$type :ws/C :cx (get a :ax)} :cx)))]]}
 
                  :ws/C
-                 {:spec-vars {:cx :Integer}
+                 {:fields {:cx :Integer}
                   :constraints [["c3" (= cx (get {:$type :ws/A :ax cx} :ax))]]}})
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
@@ -127,21 +127,21 @@
 (deftest test-propagate-and-refinement
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
-                 {:spec-vars {:an :Integer}
+                 {:fields {:an :Integer}
                   :constraints [["a1" (<= an 6)]]
                   :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
 
                  :ws/B
-                 {:spec-vars {:bn :Integer}
+                 {:fields {:bn :Integer}
                   :constraints [["b1" (< 0 bn)]]
                   :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
 
                  :ws/C
-                 {:spec-vars {:cn :Integer}
+                 {:fields {:cn :Integer}
                   :constraints [["c1" (= 0 (mod cn 2))]]}
 
                  :ws/D
-                 {:spec-vars {:a [:Instance :ws/A] :dm :Integer, :dn :Integer}
+                 {:fields {:a [:Instance :ws/A] :dm :Integer, :dn :Integer}
                   :constraints [["d1" (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))]
                                 ["d2" (= (+ 1 dn) (get (refine-to a :ws/B) :bn))]]}})]
 
@@ -169,19 +169,19 @@
 
 (deftest test-spec-ify-bound-for-primitive-optionals
   (let [specs '{:ws/A
-                {:spec-vars {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
+                {:fields {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
                  :constraints [["a1" (= aw (when p an))]]
                  :refines-to {}}}
         opts {:default-int-bounds [-10 10]}]
 
-    (is (= '{:spec-vars {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
+    (is (= '{:fields {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
              :constraints [["vars" (valid? {:$type :ws/A :an an :aw aw :p p})]]}
            (pc/spec-ify-bound specs {:$type :ws/A})))))
 
 (deftest test-propagate-for-primitive-optionals
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
-                 {:spec-vars {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
+                 {:fields {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
                   :constraints [["a1" (= aw (when p an))]]
                   :refines-to {}}})
         opts {:default-int-bounds [-10 10]}]
@@ -197,17 +197,17 @@
 (deftest test-push-if-value-with-refinement
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/B
-                 {:spec-vars {:bw [:Maybe :Integer], :c2 [:Maybe [:Instance :ws/C]]}}
+                 {:fields {:bw [:Maybe :Integer], :c2 [:Maybe [:Instance :ws/C]]}}
                  :ws/C
-                 {:spec-vars {:cw [:Maybe :Integer]}}
+                 {:fields {:cw [:Maybe :Integer]}}
                  :ws/D
-                 {:spec-vars {:dx :Integer}
+                 {:fields {:dx :Integer}
                   :refines-to {:ws/B {:expr {:$type :ws/B
                                              :bw (when (= 0 dx) 5)
                                              :c2 {:$type :ws/C :cw 6}}}}}
-                 :ws/E {:spec-vars {:dx :Integer,
-                                    :bw [:Maybe :Integer],
-                                    :cw [:Maybe :Integer]},
+                 :ws/E {:fields {:dx :Integer,
+                                 :bw [:Maybe :Integer],
+                                 :cw [:Maybe :Integer]},
                         :constraints [["$all" (= (refine-to {:dx dx, :$type :ws/D} :ws/B)
                                                  {:bw bw,
                                                   :c2 (if-value cw
@@ -218,17 +218,17 @@
            (pc/propagate specs {:default-int-bounds [-10 10]} {:$type :ws/E})))))
 
 (def nested-optionals-spec-env
-  '{:ws/A {:spec-vars {:b1 [:Maybe [:Instance :ws/B]], :b2 [:Maybe [:Instance :ws/B]], :ap :Boolean}
+  '{:ws/A {:fields {:b1 [:Maybe [:Instance :ws/B]], :b2 [:Maybe [:Instance :ws/B]], :ap :Boolean}
            :constraints [["a1" (= b1 b2)]
                          ["a2" (=> ap (if-value b1 true false))]]}
-    :ws/B {:spec-vars {:bx :Integer, :bw [:Maybe :Integer], :bp :Boolean
-                       :c1 [:Instance :ws/C]
-                       :c2 [:Maybe [:Instance :ws/C]]}
+    :ws/B {:fields {:bx :Integer, :bw [:Maybe :Integer], :bp :Boolean
+                    :c1 [:Instance :ws/C]
+                    :c2 [:Maybe [:Instance :ws/C]]}
            :constraints [["b1" (= bw (when bp bx))]
                          ["b2" (< bx 15)]]}
-    :ws/C {:spec-vars {:cx :Integer
-                       :cw [:Maybe :Integer]}}
-    :ws/D {:spec-vars {:dx :Integer}
+    :ws/C {:fields {:cx :Integer
+                    :cw [:Maybe :Integer]}}
+    :ws/D {:fields {:dx :Integer}
            :refines-to {:ws/B {:expr {:$type :ws/B
                                       :bx (+ dx 1)
                                       :bw (when (= 0 (mod (abs dx) 2))
@@ -437,12 +437,12 @@
 
 (deftest test-lower-spec-bound-and-refines-to
   (s/with-fn-validation
-    (let [specs '{:ws/A {:spec-vars {:an :Integer}
+    (let [specs '{:ws/A {:fields {:an :Integer}
                          :constraints [["a1" (< 0 an)]]}
-                  :ws/B {:spec-vars {:bn :Integer}
+                  :ws/B {:fields {:bn :Integer}
                          :constraints [["b1" (< bn 10)]]
                          :refines-to {:ws/A {:expr {:$type :ws/A :an bn}}}}
-                  :ws/C {:spec-vars {:b [:Maybe [:Instance :ws/B]] :cn :Integer}
+                  :ws/C {:fields {:b [:Maybe [:Instance :ws/B]] :cn :Integer}
                          :constraints [["c1" (if-value b (= cn (get (refine-to b :ws/A) :an)) true)]]}}
           sctx (ssa/spec-map-to-ssa specs)]
       (are [in out]
@@ -623,18 +623,18 @@
 (deftest simpler-composite-optional-test
   (let [specs (ssa/spec-map-to-ssa
                '{:ws/A
-                 {:spec-vars {:b1 [:Instance :ws/B] :b2 [:Maybe [:Instance :ws/B]]}
+                 {:fields {:b1 [:Instance :ws/B] :b2 [:Maybe [:Instance :ws/B]]}
                   :constraints [["a1" (= b1 b2)]]}
                  :ws/B
-                 {:spec-vars {:bx :Integer, :by [:Maybe :Integer]}
+                 {:fields {:bx :Integer, :by [:Maybe :Integer]}
                   :constraints [["b1" (< 0 bx)]]}})
         opts {:default-int-bounds [-10 10]}]
 
-    (is (= '{:spec-vars {:b1|bx :Integer
-                         :b1|by [:Maybe :Integer]
-                         :b2? :Boolean
-                         :b2|bx [:Maybe :Integer]
-                         :b2|by [:Maybe :Integer]}
+    (is (= '{:fields {:b1|bx :Integer
+                      :b1|by [:Maybe :Integer]
+                      :b2? :Boolean
+                      :b2|bx [:Maybe :Integer]
+                      :b2|by [:Maybe :Integer]}
              :constraints [["vars" (valid?
                                     {:$type :ws/A
                                      :b1 {:$type :ws/B :bx b1|bx :by b1|by}
@@ -655,12 +655,12 @@
   ;; The 'features' that interact here: valid? and instance literals w/ unassigned variables.
   (let [specs (ssa/spec-map-to-ssa
                '{:my/A {:abstract? true
-                        :spec-vars {:a1 [:Maybe :Integer]
-                                    :a2 [:Maybe :Integer]}
+                        :fields {:a1 [:Maybe :Integer]
+                                 :a2 [:Maybe :Integer]}
                         :constraints [["a1_pos" (if-value a1 (> a1 0) true)]
                                       ["a2_pos" (if-value a2 (> a2 0) true)]]}
                  :my/B {:abstract? false
-                        :spec-vars {:b :Integer}
+                        :fields {:b :Integer}
                         :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}})]
     (is (= {:$type :my/B
             :b {:$in [1 100]}
@@ -669,7 +669,7 @@
 
 (deftest test-propagate-with-errors
   (let [specs (ssa/spec-map-to-ssa
-               '{:ws/A {:spec-vars {:an :Integer :ap [:Maybe :Boolean]}
+               '{:ws/A {:fields {:an :Integer :ap [:Maybe :Boolean]}
                         :constraints [["a1" (if (< an 10)
                                               (if (< an 1)
                                                 (error "an is too small")
@@ -686,16 +686,16 @@
 
 (defn specs-to-ssa [env-map]
   (-> env-map
-      (update-vals #(merge {:spec-vars {}, :constraints [], :refines-to {}} %))
+      (update-vals #(merge {:fields {}, :constraints [], :refines-to {}} %))
       ssa/spec-map-to-ssa))
 
 (deftest test-basic-refines-to-bounds
   (let [specs (specs-to-ssa
-               '{:my/A {:spec-vars {:a1 :Integer}
+               '{:my/A {:fields {:a1 :Integer}
                         :constraints [["a1_pos" (< 0 a1)]]}
-                 :my/B {:spec-vars {:b1 :Integer}
+                 :my/B {:fields {:b1 :Integer}
                         :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
-                 :my/C {:spec-vars {:cb [:Instance :my/B]}}})]
+                 :my/C {:fields {:cb [:Instance :my/B]}}})]
 
     (testing "Refinement bounds can be given and will influence resulting bound"
       (is (= {:$type :my/C,
@@ -721,13 +721,13 @@
                                   :$refines-to {:my/A {:a1 3}}}))))))
 
 (deftest test-refines-to-bounds-with-optionals
-  (let [env-map '{:my/A {:spec-vars {:a1 :Integer, :a2 [:Maybe :Integer]}
+  (let [env-map '{:my/A {:fields {:a1 :Integer, :a2 [:Maybe :Integer]}
                          :constraints [["a1_pos" (< 0 a1)]]}
-                  :my/B {:spec-vars {:b1 :Integer}
+                  :my/B {:fields {:b1 :Integer}
                          :refines-to {:my/A {:expr {:$type :my/A,
                                                     :a1 (+ 10 b1),
                                                     :a2 (when (< 5 b1) (+ 2 b1))}}}}
-                  :my/C {:spec-vars {:cb [:Maybe [:Instance :my/B]]}}}
+                  :my/C {:fields {:cb [:Maybe [:Instance :my/B]]}}}
         specs (specs-to-ssa env-map)]
 
     (testing "basic optionals"
@@ -759,7 +759,7 @@
 
     (testing "transitive refinement bounds"
       (let [specs (specs-to-ssa (merge env-map
-                                       '{:my/D {:spec-vars {:d1 :Integer}
+                                       '{:my/D {:fields {:d1 :Integer}
                                                 :refines-to {:my/B {:expr {:$type :my/B,
                                                                            :b1 (* 2 d1)}}}}}))]
 
@@ -789,7 +789,7 @@
 
     (testing "nested refinement bounds"
       (let [specs (specs-to-ssa (merge env-map
-                                       '{:my/D {:spec-vars {:d1 :Integer}
+                                       '{:my/D {:fields {:d1 :Integer}
                                                 :refines-to {:my/C {:expr {:$type :my/C,
                                                                            :cb {:$type :my/B
                                                                                 :b1 (* d1 2)}}}}}}))]
@@ -813,13 +813,13 @@
                                                               :$refines-to {:my/A {:a2 {:$in [-9 9]}}}}}}})))))))
 
 (deftest test-maybe-refines-to-bounds-tight
-  (let [env-map '{:my/A {:spec-vars {:ab [:Maybe [:Instance :my/B]]}}
+  (let [env-map '{:my/A {:fields {:ab [:Maybe [:Instance :my/B]]}}
                   :my/B {:refines-to {:my/C {:expr {:$type :my/C
                                                     :cn 5}}}}
-                  :my/C {:spec-vars {:cn :Integer}}}
+                  :my/C {:fields {:cn :Integer}}}
         specs (specs-to-ssa env-map)]
 
-    (is (= '{:spec-vars {:ab|>my$C|cn [:Maybe :Integer], :ab? :Boolean},
+    (is (= '{:fields {:ab|>my$C|cn [:Maybe :Integer], :ab? :Boolean},
              :constraints [["vars" (valid? {:$type :my/A, :ab (when ab? {:$type :my/B})})]
                            ["$refine|ab-to-:my/C"
                             (let [$from (when ab? {:$type :my/B})]
@@ -840,11 +840,11 @@
 
 (deftest test-refines-to-bounds-errors
   (let [specs (specs-to-ssa
-               '{:my/A {:spec-vars {:a1 :Integer}
+               '{:my/A {:fields {:a1 :Integer}
                         :constraints [["a1_pos" (< 0 a1)]]}
-                 :my/B {:spec-vars {:b1 :Integer}
+                 :my/B {:fields {:b1 :Integer}
                         :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
-                 :my/C {:spec-vars {:c1 :Integer}
+                 :my/C {:fields {:c1 :Integer}
                         :refines-to {:my/B {:expr {:$type :my/B, :b1 (+ 5 c1)}}}}})]
 
     (testing "transitive refinements can be listed directly"
@@ -869,20 +869,20 @@
 
 (deftest test-semantics-preserving-instance-elimination
   (let [specs (specs-to-ssa
-               '{:ws/A {:spec-vars {:an :Integer}
+               '{:ws/A {:fields {:an :Integer}
                         :constraints [["a1" (let [b {:$type :ws/B :bm (div 100 an) :bn an}]
                                               (and (< -5 an) (< an 5)))]]}
-                 :ws/B {:spec-vars {:bm :Integer :bn :Integer}
+                 :ws/B {:fields {:bm :Integer :bn :Integer}
                         :constraints [["b1" (and (<= -3 bn) (<= bn 3))]]}})]
     (is (= {:$type :ws/A :an {:$in #{-3 -2 -1 1 2 3}}}
            (pc/propagate specs {:$type :ws/A :an {:$in (set (range -5 6))}})))))
 
 (deftest test-short-circuiting-ifs
   (let [specs (specs-to-ssa
-               '{:ws/A {:spec-vars {:an :Integer :ap :Boolean}
+               '{:ws/A {:fields {:an :Integer :ap :Boolean}
                         :constraints [["a1" (let [b (when ap {:$type :ws/B :bn an})]
                                               (and (<= -3 an) (<= an 3)))]]}
-                 :ws/B {:spec-vars {:bn :Integer}
+                 :ws/B {:fields {:bn :Integer}
                         :constraints [["b1" (< (div 20 bn) 20)]]}})]
 
     (is (= {:$type :ws/A
@@ -902,8 +902,8 @@
 
 (deftest test-instance-if-comparison
   (let [specs (specs-to-ssa
-               '{:ws/A {:spec-vars {:an :Integer} :constraints [] :refines-to {}}
-                 :ws/B {:spec-vars {:a [:Instance :ws/A] :bn :Integer :p :Boolean} :refines-to {}
+               '{:ws/A {:fields {:an :Integer} :constraints [] :refines-to {}}
+                 :ws/B {:fields {:a [:Instance :ws/A] :bn :Integer :p :Boolean} :refines-to {}
                         :constraints [["b1" (= a (if p {:$type :ws/A :an bn} {:$type :ws/A :an (+ bn 1)}))]]}})]
     (is (= '{:$type :ws/B
              :a {:$type :ws/A :an 3}
@@ -915,10 +915,10 @@
 
 (deftest test-abstract-type-instance-comparisons
   (let [specs (specs-to-ssa
-               '{:ws/A {:spec-vars {:an :Integer}}
-                 :ws/B {:spec-vars {:bn :Integer}}
-                 :ws/C {:spec-vars {:cn :Integer}}
-                 :ws/D {:spec-vars {:a [:Instance :ws/A] :b [:Instance :ws/B] :p :Boolean}
+               '{:ws/A {:fields {:an :Integer}}
+                 :ws/B {:fields {:bn :Integer}}
+                 :ws/C {:fields {:cn :Integer}}
+                 :ws/D {:fields {:a [:Instance :ws/A] :b [:Instance :ws/B] :p :Boolean}
                         :constraints [["d1" (= a (if p a b))]]}})]
     (is (= '{:$type :ws/D :p true
              :a {:$type :ws/A :an {:$in [-1000 1000]}}

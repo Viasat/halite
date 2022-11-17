@@ -14,7 +14,7 @@
 (use-fixtures :once schema.test/validate-schemas)
 
 (def simple-example
-  '{:spec-vars {:s1 :String :s2 :String :s3 :String}
+  '{:fields {:s1 :String :s2 :String :s3 :String}
     :constraints [["c1" (and (not= s1 "foo")
                              (= s1 s2)
                              (or (= s2 "foo") (= s2 "bar"))
@@ -53,7 +53,7 @@
 
 (deftest test-simplify-string-exprs
   ;; literal-literal string comparisons need to be evaluated
-  (let [spec (->> '{:spec-vars {:p :Boolean}
+  (let [spec (->> '{:fields {:p :Boolean}
                     :constraints [["c" (= "foo" (if p "foo" "bar"))]]}
                   (ssa/spec-to-ssa {})
                   (simplify-string-exprs))]
@@ -61,7 +61,7 @@
            (-> spec (ssa/spec-from-ssa) :constraints first second))))
 
   ;; multi-arity comparisons need to be expanded to binary comparisons
-  (let [spec (->> '{:spec-vars {:s1 :String :s2 [:Maybe :String] :s3 [:Maybe :String]}
+  (let [spec (->> '{:fields {:s1 :String :s2 [:Maybe :String] :s3 [:Maybe :String]}
                     :constraints [["c1" (= s1 "foo" s2)]
                                   ["c2" (not= s2 "bar" "baz" $no-value)]
                                   ["c3" (not= s1 s2 s3)]]}
@@ -78,8 +78,8 @@
   (let [spec (ssa/spec-to-ssa {} simple-example)
         scg (compute-string-comparison-graph spec)
         lowered (lower-spec spec scg)]
-    (is (= '{:spec-vars {:$s1 [:Maybe :Integer] :$s2 [:Maybe :Integer] :$s3 [:Maybe :Integer]
-                         :$s1=s2 :Boolean, :$s1=s3 :Boolean}
+    (is (= '{:fields {:$s1 [:Maybe :Integer] :$s2 [:Maybe :Integer] :$s3 [:Maybe :Integer]
+                      :$s1=s2 :Boolean, :$s1=s3 :Boolean}
              :constraints [["$all"
                             (and
                              ;; (not= s1 "foo")
@@ -178,7 +178,7 @@
       {:s2 {:$in #{"bar" "baz"}}} {:s1 "bar" :s2 "bar" :s3 :String})))
 
 (def mixed-constraints-example
-  '{:spec-vars {:p :Boolean :n :Integer :s1 :String :s2 :String}
+  '{:fields {:p :Boolean :n :Integer :s1 :String :s2 :String}
     :constraints [["c1" (if p
                           (= s1 "foo")
                           (< n 5))]
@@ -221,14 +221,14 @@
        {:s1 "blerg" :n 2 :p false :s2 "baz"}))))
 
 (def simple-optional-string-var-example
-  '{:spec-vars {:s1 [:Maybe :String], :s2 :String}
+  '{:fields {:s1 [:Maybe :String], :s2 :String}
     :constraints [["c1" (= s2 (if-value s1 s1 "bar"))]
                   ["c2" (not= s2 "baz")]
                   ["c3" (or (= s1 "foo") (= $no-value s1))]]})
 
 (comment
   "simplifies to"
-  {:spec-vars {:s1 [:Maybe :String], :s2 :String},
+  {:fields {:s1 [:Maybe :String], :s2 :String},
    :constraints [["$all"
                   (and
                    (if ($value? s1)
@@ -263,7 +263,7 @@
       's1 's2 '$s1=s2))
 
   ;; Edge cases!
-  (let [spec (ssa/spec-to-ssa {} '{:spec-vars {:s :String :s2 [:Maybe :String]}
+  (let [spec (ssa/spec-to-ssa {} '{:fields {:s :String :s2 [:Maybe :String]}
                                    :constraints [["c" (not= s $no-value)]]})
         scg (compute-string-comparison-graph spec)]
     ;; For mandatory string vars, comparison with $no-value should not
@@ -283,7 +283,7 @@
   (let [spec (simplify-string-exprs (ssa/spec-to-ssa {} simple-optional-string-var-example))
         scg (compute-string-comparison-graph spec)
         lowered (lower-spec spec scg)]
-    (is (= '{:spec-vars
+    (is (= '{:fields
              {:$s1 [:Maybe :Integer] :$s2 [:Maybe :Integer]
               :$s1=s2 :Boolean}
              :constraints [["$all" (let [v1 (if-value $s1 (= $s1 0) false)]
@@ -298,7 +298,7 @@
            (ssa/spec-from-ssa lowered)))))
 
 (def optional-string-vars-example
-  '{:spec-vars {:p :Boolean :n :Integer :s1 [:Maybe :String] :s2 :String}
+  '{:fields {:p :Boolean :n :Integer :s1 [:Maybe :String] :s2 :String}
     :constraints [["c1" (if p
                           (= s1 "foo")
                           (< n 5))]
@@ -339,7 +339,7 @@
       {:$s1 {:$in #{0 1}}, :$s2 {:$in #{0 :Unset}}, :$s1=s2 {:$in #{true false}}}
       {:s1 {:$in #{:Unset "foo"}} :s2 :String}))
 
-  (let [spec (ssa/spec-to-ssa {} '{:spec-vars {:s1 :String :s2 [:Maybe :String]}})
+  (let [spec (ssa/spec-to-ssa {} '{:fields {:s1 :String :s2 [:Maybe :String]}})
         scg (compute-string-comparison-graph spec)]
     (is (= {:s1 :String :s2 {:$in #{:Unset :String}}}
            (raise-spec-bound {:$s1 :Unset :$s2 {:$in #{0 :Unset}}} scg {})))))

@@ -55,7 +55,7 @@ To guard instance construction.
 ```java
 {
   "spec/Q" : {
-    "spec-vars" : {
+    "fields" : {
       "a" : "Integer"
     },
     "constraints" : [ "{expr: (a > 0), name: \"c\"}" ]
@@ -110,12 +110,12 @@ To guard refinements.
 ```java
 {
   "spec/Q" : {
-    "spec-vars" : {
+    "fields" : {
       "q" : "Integer"
     }
   },
   "spec/P" : {
-    "spec-vars" : {
+    "fields" : {
       "p" : "Integer"
     },
     "refines-to" : {

@@ -11,7 +11,7 @@ Refinements are automatically, transitively applied to produce an instance of th
 ```java
 {
   "spec/A$v3" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     },
     "refines-to" : {
@@ -22,7 +22,7 @@ Refinements are automatically, transitively applied to produce an instance of th
     }
   },
   "spec/P$v3" : {
-    "spec-vars" : {
+    "fields" : {
       "q" : "Integer"
     },
     "refines-to" : {
@@ -33,7 +33,7 @@ Refinements are automatically, transitively applied to produce an instance of th
     }
   },
   "spec/X$v3" : {
-    "spec-vars" : {
+    "fields" : {
       "y" : "Integer"
     }
   }

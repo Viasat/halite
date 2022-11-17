@@ -195,7 +195,7 @@
 (s/defn env-from-inst :- (s/protocol envs/Env)
   [spec-info :- var-types/UserSpecInfo
    inst]
-  (envs/env-from-spec-var-keys (keys (:spec-vars spec-info)) inst))
+  (envs/env-from-field-keys (keys (:fields spec-info)) inst))
 
 (s/defn vector-type :- var-types/VarType
   "Construct a type representing vectors of the given type."

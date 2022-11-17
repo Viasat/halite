@@ -10,17 +10,17 @@ Consider the following specs, where a pet is composed of an animal object and a 
 
 ```clojure
 {:spec/Animal {:abstract? true,
-               :spec-vars {:species :String}},
- :spec/Cat {:spec-vars {:lives :Integer},
+               :fields {:species :String}},
+ :spec/Cat {:fields {:lives :Integer},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Feline"}}}},
- :spec/Dog {:spec-vars {:breed :String},
+ :spec/Dog {:fields {:breed :String},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Canine"}}}},
- :spec/Pet {:spec-vars {:name :String,
-                        :animal :spec/Animal}}}
+ :spec/Pet {:fields {:name :String,
+                     :animal :spec/Animal}}}
 ```
 
 The animal spec cannot be directly used to make a pet instance.

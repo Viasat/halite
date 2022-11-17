@@ -85,22 +85,22 @@
                           :ws/Y {:y {:$in [120 130]}}
                           :ws/X {:x {:$in [120 130]}}}}
            (propagate/propagate '{:ws/A {:abstract? true
-                                         :spec-vars {:a "Integer"}
+                                         :fields {:a "Integer"}
                                          :constraints [["ac" (< a 200)]]}
 
-                                  :ws/B {:spec-vars {:b "Integer"}
+                                  :ws/B {:fields {:b "Integer"}
                                          :refines-to {:ws/A {:expr {:$type :ws/A
                                                                     :a b}}}}
 
                                   :ws/X {:abstract? true
-                                         :spec-vars {:x "Integer"}
+                                         :fields {:x "Integer"}
                                          :constraints [["xc" (> x 100)]]}
 
-                                  :ws/Y {:spec-vars {:y "Integer"}
+                                  :ws/Y {:fields {:y "Integer"}
                                          :refines-to {:ws/X {:expr {:$type :ws/X
                                                                     :x y}}}}
 
-                                  :ws/Q {:spec-vars {:q "Integer"}
+                                  :ws/Q {:fields {:q "Integer"}
                                          :refines-to {:ws/Y {:expr {:$type :ws/Y
                                                                     :y q}}
                                                       :ws/B {:expr {:$type :ws/B
@@ -120,22 +120,22 @@
                           :ws/Y {:y {:$in [120 130]}}
                           :ws/X {:x {:$in [120 130]}}}}
            (propagate/propagate '{:ws/A {:abstract? true
-                                         :spec-vars {:a "Integer"}
+                                         :fields {:a "Integer"}
                                          :constraints [["ac" (< a 200)]]}
 
-                                  :ws/B {:spec-vars {:b "Integer"}
+                                  :ws/B {:fields {:b "Integer"}
                                          :refines-to {:ws/A {:expr {:$type :ws/A
                                                                     :a b}}}}
 
                                   :ws/X {:abstract? true
-                                         :spec-vars {:x "Integer"}
+                                         :fields {:x "Integer"}
                                          :constraints [["xc" (> x 100)]]}
 
-                                  :ws/Y {:spec-vars {:y "Integer"}
+                                  :ws/Y {:fields {:y "Integer"}
                                          :refines-to {:ws/X {:expr {:$type :ws/X
                                                                     :x y}}}}
 
-                                  :ws/Q {:spec-vars {:q "Integer"}
+                                  :ws/Q {:fields {:q "Integer"}
                                          :refines-to {:ws/Y {:expr {:$type :ws/Y
                                                                     :y q}}
                                                       :ws/B {:expr {:$type :ws/B
@@ -155,23 +155,23 @@
                           :ws/Y {:y {:$in [120 130]}}
                           :ws/X {:x {:$in [120 130]}}}}
            (propagate/propagate '{:ws/A {:abstract? true
-                                         :spec-vars {:a "Integer"}
+                                         :fields {:a "Integer"}
                                          :constraints [["ac" (< a 200)]]}
 
-                                  :ws/B {:spec-vars {:b "Integer"}
+                                  :ws/B {:fields {:b "Integer"}
                                          :refines-to {:ws/A {:expr {:$type :ws/A
                                                                     :a b}}}}
 
                                   :ws/X {:abstract? true
-                                         :spec-vars {:x "Integer"}
+                                         :fields {:x "Integer"}
                                          :constraints [["xc" (> x 100)]]}
 
-                                  :ws/Y {:spec-vars {:y "Integer"}
+                                  :ws/Y {:fields {:y "Integer"}
                                          :refines-to {:ws/X {:expr {:$type :ws/X
                                                                     :x y}}}}
 
-                                  :ws/Q {:spec-vars {:q "Integer"
-                                                     :p [:Maybe :ws/P]}
+                                  :ws/Q {:fields {:q "Integer"
+                                                  :p [:Maybe :ws/P]}
                                          :refines-to {:ws/Y {:expr {:$type :ws/Y
                                                                     :y (if-value p
                                                                                  200
@@ -202,12 +202,12 @@
 
   #_(is (thrown-with-msg? ExceptionInfo #"No concrete specs"
                           (propagate/propagate '{:ws/A {:abstract? true
-                                                        :spec-vars {}
+                                                        :fields {}
                                                         :constraints []
                                                         :refines-to {}}
 
                                                  :ws/X {:abstract? true
-                                                        :spec-vars {}
+                                                        :fields {}
                                                         :constraints []
                                                         :refines-to {}}}
 
@@ -219,9 +219,9 @@
             :$refines-to {:ws/A {:x {:$type [:Maybe :ws/X]
                                      :y {:$in [-1000 1000]}}}}})
         (propagate/propagate '{:ws/A {:abstract? true
-                                      :spec-vars {:x [:Maybe :ws/X]}}
+                                      :fields {:x [:Maybe :ws/X]}}
 
-                               :ws/B {:spec-vars {:b "Integer"}
+                               :ws/B {:fields {:b "Integer"}
                                       :refines-to {:ws/A {:expr {:$type :ws/A
                                                                  :x (when (> b 0)
                                                                       {:$type :ws/A
@@ -230,7 +230,7 @@
                                :ws/P {:abstract? true
                                       :refines-to {:ws/A {:expr {:$type :ws/A}}}}
 
-                               :ws/X {:spec-vars {:y "Integer"}}}
+                               :ws/X {:fields {:y "Integer"}}}
 
                              {:$refines-to {:ws/A {}
                                             :ws/P {}}})))

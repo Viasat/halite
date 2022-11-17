@@ -47,10 +47,10 @@
 (deftest test-type-env-from-spec
   (let [senv (var-types/to-halite-spec-env {:ws/A {:abstract? true}
                                             :ws/B {}
-                                            :ws/C {:spec-vars {:x :Integer
-                                                               :w [:Maybe :Integer]
-                                                               :as [:Maybe [:Set :ws/A]]
-                                                               :bs [:Vec :ws/B]}}})]
+                                            :ws/C {:fields {:x :Integer
+                                                            :w [:Maybe :Integer]
+                                                            :as [:Maybe [:Set :ws/A]]
+                                                            :bs [:Vec :ws/B]}}})]
     (is (=
          '{no-value :Unset
            x :Integer
@@ -67,19 +67,19 @@
        (var-types/to-halite-spec {}
                                  nil)))
   (is (= {:abstract? true
-          :spec-vars {:x [:Maybe [:Vec :Integer]]}}
+          :fields {:x [:Maybe [:Vec :Integer]]}}
          (var-types/to-halite-spec {}
                                    {:abstract? true
-                                    :spec-vars {:x [:Maybe [:Vec :Integer]]}})))
+                                    :fields {:x [:Maybe [:Vec :Integer]]}})))
   (is (= {:abstract? true
-          :spec-vars {:x [:Instance :ws/X]}}
+          :fields {:x [:Instance :ws/X]}}
          (var-types/to-halite-spec {:ws/X {}}
                                    {:abstract? true
-                                    :spec-vars {:x :ws/X}})))
-  (is (= {:spec-vars {:x [:Instance :* #{:ws/X}]}
+                                    :fields {:x :ws/X}})))
+  (is (= {:fields {:x [:Instance :* #{:ws/X}]}
           :constraints [["x" 'true]]}
          (var-types/to-halite-spec {:ws/X {:abstract? true}}
-                                   {:spec-vars {:x :ws/X}
+                                   {:fields {:x :ws/X}
                                     :constraints #{{:name "x"
                                                     :expr 'true}}})))
   (is (= {:abstract? true

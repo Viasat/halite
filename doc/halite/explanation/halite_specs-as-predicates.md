@@ -9,7 +9,7 @@ A spec can be considered a giant predicate which when applied to a value returns
 The type indications of spec variables can be considered as predicates.
 
 ```clojure
-{:spec/X$v1 {:spec-vars {:x :String}}}
+{:spec/X$v1 {:fields {:x :String}}}
 ```
 
 If an instance is made with the correct type for a field value, then the predicate produces 'true'.
@@ -38,8 +38,8 @@ If an instance is made without the correct type for a field value, then the pred
 If a specification defines multiple spec vars then the result is a logical conjunct.
 
 ```clojure
-{:spec/X$v2 {:spec-vars {:x :String,
-                         :y :Integer}}}
+{:spec/X$v2 {:fields {:x :String,
+                      :y :Integer}}}
 ```
 
 All of the fields must be of the correct type. This is a conjunct: the field x must be a string and the field y must be an integer
@@ -83,8 +83,8 @@ Violating either conditions causes the overall value to produce an error.
 Similarly, each constraint by itself is a predicate and is combined in a conjunction with all of the spec variable type checks.
 
 ```clojure
-{:spec/X$v3 {:spec-vars {:x :String,
-                         :y :Integer},
+{:spec/X$v3 {:fields {:x :String,
+                      :y :Integer},
              :constraints #{'{:name "valid_y",
                               :expr (> y 0)}}}}
 ```
@@ -118,8 +118,8 @@ So if any of the types are wrong or if the constraint is violated then an error 
 If there are multiple constraints, they are all logically combined into a single conjunction for the spec.
 
 ```clojure
-{:spec/X$v5 {:spec-vars {:x :String,
-                         :y :Integer},
+{:spec/X$v5 {:fields {:x :String,
+                      :y :Integer},
              :constraints #{'{:name "valid_x",
                               :expr (contains? #{"bye" "hi"} x)}
                             '{:name "valid_y",
@@ -155,11 +155,11 @@ Again, violating any one constraint causes an error to be produced.
 Finally, the refinements can also bring in additional constraints which are combined into the overall conjunction for the spec.
 
 ```clojure
-{:spec/A {:spec-vars {:b :Integer},
+{:spec/A {:fields {:b :Integer},
           :constraints #{'{:name "valid_b",
                            :expr (< b 10)}}},
- :spec/X$v6 {:spec-vars {:x :String,
-                         :y :Integer},
+ :spec/X$v6 {:fields {:x :String,
+                      :y :Integer},
              :constraints #{'{:name "valid_x",
                               :expr (contains? #{"bye" "hi"} x)}
                             '{:name "valid_y",
@@ -198,14 +198,14 @@ If one of the constraints implied by a refinement is violated, then an error is 
 Implications of each additional refinement are combined into the single conujunction for this spec.
 
 ```clojure
-{:spec/A {:spec-vars {:b :Integer},
+{:spec/A {:fields {:b :Integer},
           :constraints #{'{:name "valid_b",
                            :expr (< b 10)}}},
- :spec/P {:spec-vars {:q :String},
+ :spec/P {:fields {:q :String},
           :constraints #{'{:name "valid_q",
                            :expr (= q "hi")}}},
- :spec/X$v7 {:spec-vars {:x :String,
-                         :y :Integer},
+ :spec/X$v7 {:fields {:x :String,
+                      :y :Integer},
              :constraints #{'{:name "valid_x",
                               :expr (contains? #{"bye" "hi"} x)}
                             '{:name "valid_y",

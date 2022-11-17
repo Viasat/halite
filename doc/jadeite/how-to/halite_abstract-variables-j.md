@@ -12,18 +12,18 @@ Consider the following specs, where a pet is composed of an animal object and a 
 {
   "spec/Animal" : {
     "abstract?" : true,
-    "spec-vars" : {
+    "fields" : {
       "species" : "String"
     }
   },
   "spec/Pet" : {
-    "spec-vars" : {
+    "fields" : {
       "animal" : "spec/Animal",
       "name" : "String"
     }
   },
   "spec/Dog" : {
-    "spec-vars" : {
+    "fields" : {
       "breed" : "String"
     },
     "refines-to" : {
@@ -34,7 +34,7 @@ Consider the following specs, where a pet is composed of an animal object and a 
     }
   },
   "spec/Cat" : {
-    "spec-vars" : {
+    "fields" : {
       "lives" : "Integer"
     },
     "refines-to" : {

@@ -11,7 +11,7 @@ We can model the state space for a vending machine that accepts nickels, dimes, 
 ```java
 {
   "tutorials.vending/Vending$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "balance" : [ "Decimal", 2 ],
       "beverageCount" : "Integer",
       "snackCount" : "Integer"
@@ -32,7 +32,7 @@ Let us add a spec that will capture the constraints that identify a valid initia
 ```java
 {
   "tutorials.vending/Vending$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "balance" : [ "Decimal", 2 ],
       "beverageCount" : "Integer",
       "snackCount" : "Integer"
@@ -40,7 +40,7 @@ Let us add a spec that will capture the constraints that identify a valid initia
     "constraints" : [ "{expr: ((beverageCount >= 0) && (snackCount >= 0)), name: \"counts_not_negative\"}", "{expr: (balance >= #d \"0.00\"), name: \"balance_not_negative\"}" ]
   },
   "tutorials.vending/InitialVending$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "balance" : [ "Decimal", 2 ],
       "beverageCount" : "Integer",
       "snackCount" : "Integer"
@@ -87,7 +87,7 @@ So now we have a model of the state space and valid initial states for the machi
 ```java
 {
   "tutorials.vending/Vending$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "balance" : [ "Decimal", 2 ],
       "beverageCount" : "Integer",
       "snackCount" : "Integer"
@@ -95,7 +95,7 @@ So now we have a model of the state space and valid initial states for the machi
     "constraints" : [ "{expr: ((beverageCount >= 0) && (snackCount >= 0)), name: \"counts_not_negative\"}", "{expr: (balance >= #d \"0.00\"), name: \"balance_not_negative\"}" ]
   },
   "tutorials.vending/VendingTransition$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "current" : "tutorials.vending/Vending$v1",
       "next" : "tutorials.vending/Vending$v1"
     },

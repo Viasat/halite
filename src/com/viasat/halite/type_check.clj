@@ -26,7 +26,7 @@
         spec-info (or (envs/lookup-spec (:senv ctx) t)
                       (throw-err (h-err/resource-spec-not-found {:spec-id (symbol t)
                                                                  error-key inst})))
-        field-types (:spec-vars spec-info)
+        field-types (:fields spec-info)
         fields (set (keys field-types))
         required-fields (->> field-types
                              (remove (comp types/maybe-type? val))
@@ -155,7 +155,7 @@
     (and (types/spec-type? subexpr-type)
          (types/spec-id subexpr-type)
          (not (types/needs-refinement? subexpr-type)))
-    (let [field-types (->> subexpr-type types/spec-id (envs/lookup-spec (:senv ctx)) :spec-vars)]
+    (let [field-types (->> subexpr-type types/spec-id (envs/lookup-spec (:senv ctx)) :fields)]
       (when-not (types/bare-keyword? index)
         (throw-err (h-err/invalid-instance-index {:form form, :index-form index})))
       (when-not (contains? field-types index)

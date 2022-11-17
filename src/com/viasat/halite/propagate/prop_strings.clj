@@ -213,12 +213,12 @@
   whose value represents that of the corresponding comparison. Variable-variable comparisons are
   represented with boolean variables. Variable-literal comparisons are represented by
   variable-int comparisons."
-  [{{dgraph :dgraph :as ssa-graph} :ssa-graph, spec-vars :spec-vars :as spec} :- ssa/SpecInfo]
+  [{{dgraph :dgraph :as ssa-graph} :ssa-graph, fields :fields :as spec} :- ssa/SpecInfo]
   (let [g (loom-graph/graph)
         g (loom-graph/add-nodes g :Unset)
         ;; ensure nodes for all string-valued variables
-        optional-str-var? (->> spec-vars (filter (comp maybe-string-type? val)) (map (comp symbol key)) set)
-        g (->> spec-vars
+        optional-str-var? (->> fields (filter (comp maybe-string-type? val)) (map (comp symbol key)) set)
+        g (->> fields
                (filter (comp string-type? val))
                (map (comp symbol key))
                (apply loom-graph/add-nodes g))
@@ -320,8 +320,8 @@
 
 (s/defn ^:private lower-spec :- ssa/SpecInfo
   [spec :- ssa/SpecInfo, scg]
-  (let [spec (update spec :spec-vars merge (alt-var-decls scg))
-        spec (update spec :spec-vars merge (comp-var-decls scg))
+  (let [spec (update spec :fields merge (alt-var-decls scg))
+        spec (update spec :fields merge (comp-var-decls scg))
         spec (->> {:$propagate/Bounds spec}
                   (rewriting/rewrite-sctx*
                    {:rule-name "replace-string-comparison-with-var"
@@ -334,7 +334,7 @@
                   :$propagate/Bounds)
         str-var-kws (->> scg loom-graph/nodes (filter symbol?) (map keyword))]
     (-> spec
-        (update :spec-vars #(apply dissoc % str-var-kws)))))
+        (update :fields #(apply dissoc % str-var-kws)))))
 
 ;;;;;;;;;;; Bounds ;;;;;;;;;;;;;;;;;
 

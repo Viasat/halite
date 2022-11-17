@@ -174,7 +174,7 @@ true
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -230,7 +230,7 @@ Expected use is in an instance expression to indicate that a field in the instan
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : [ "Maybe", "Integer" ]
     }
   }
@@ -854,7 +854,7 @@ false
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -874,7 +874,7 @@ false
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -1072,7 +1072,7 @@ The $type value of an instance is not considered a field that can be extracted w
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -1131,13 +1131,13 @@ The first path element in the path is looked up in the initial target. If there 
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "my/SubSpec$v1",
       "y" : "Integer"
     }
   },
   "my/SubSpec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "a" : "Integer",
       "b" : "Integer"
     }
@@ -1157,13 +1157,13 @@ The first path element in the path is looked up in the initial target. If there 
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "my/SubSpec$v1",
       "y" : "Integer"
     }
   },
   "my/SubSpec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "a" : [ "Vec", "Integer" ],
       "b" : "Integer"
     }
@@ -1700,7 +1700,7 @@ false
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -1720,7 +1720,7 @@ false
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -2375,7 +2375,7 @@ true
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -2538,7 +2538,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "p" : "Integer",
       "n" : "Integer"
     },
@@ -2550,7 +2550,7 @@ Attempt to refine the given instance into an instance of type, spec-id.
     }
   },
   "an/Other$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -2652,7 +2652,7 @@ true
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "p" : "Integer",
       "n" : "Integer"
     },
@@ -2664,7 +2664,7 @@ true
     }
   },
   "an/Other$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     }
@@ -3071,7 +3071,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "p" : "Integer",
       "n" : "Integer"
     },
@@ -3093,7 +3093,7 @@ This operation can be thought of as producing an instance if it is valid. This c
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "p" : "Integer",
       "n" : "Integer"
     },
@@ -3138,7 +3138,7 @@ Similar to 'valid', but insted of possibly producing an instance, it produces a 
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "p" : "Integer",
       "n" : "Integer"
     },
@@ -3160,7 +3160,7 @@ true
 //-- context --
 {
   "my/Spec$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "p" : "Integer",
       "n" : "Integer"
     },

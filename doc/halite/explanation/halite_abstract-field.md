@@ -10,22 +10,22 @@ Say we have an abstract car.
 
 ```clojure
 {:spec/Car {:abstract? true,
-            :spec-vars {:make :String,
-                        :year :Integer}},
+            :fields {:make :String,
+                     :year :Integer}},
  :spec/Chevy {:abstract? false,
-              :spec-vars {:year :Integer},
+              :fields {:year :Integer},
               :refines-to {:spec/Car {:name "as_car",
                                       :expr '{:$type :spec/Car,
                                               :make "Chevy",
                                               :year year}}}},
  :spec/Ford {:abstract? false,
-             :spec-vars {:year :Integer},
+             :fields {:year :Integer},
              :refines-to {:spec/Car {:name "as_car",
                                      :expr '{:$type :spec/Car,
                                              :make "Ford",
                                              :year year}}}},
  :spec/Garage {:abstract? false,
-               :spec-vars {:car :spec/Car}}}
+               :fields {:car :spec/Car}}}
 ```
 
 Since the garage has a field of an abstract type, it can hold an instance of either Ford or Chevy.

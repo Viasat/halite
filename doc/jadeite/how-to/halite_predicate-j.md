@@ -11,7 +11,7 @@ The following specification uses a constraint to capture a predicate that checks
 ```java
 {
   "spec/Sum" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer",
       "sum" : "Integer"

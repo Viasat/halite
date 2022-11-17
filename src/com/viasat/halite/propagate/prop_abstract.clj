@@ -136,23 +136,23 @@
   alternatives for an abstract variable."
   [sctx alternatives spec-id spec]
   (let [senv (ssa/as-spec-env sctx)
-        {:keys [spec-vars]} spec]
+        {:keys [fields]} spec]
     (ssa/add-spec-to-context
      sctx
      spec-id
      (reduce-kv
-      (fn [{:keys [spec-vars constraints refines-to] :as spec} var-kw var-type]
+      (fn [{:keys [fields constraints refines-to] :as spec} var-kw var-type]
         (let [alts (alternatives (var-entry->spec-id senv [var-kw var-type]))
 
               optional-var? (types/maybe-type? var-type)
 
               ;; add the discriminator var
-              spec (assoc-in spec [:spec-vars (discriminator-var-kw var-kw)] (cond->> :Integer optional-var? types/maybe-type))
+              spec (assoc-in spec [:fields (discriminator-var-kw var-kw)] (cond->> :Integer optional-var? types/maybe-type))
 
               ;; add the alt vars
               spec (reduce-kv
                     (fn [spec alt-spec-id i]
-                      (assoc-in spec [:spec-vars (keyword (str (name var-kw) "$" i))] (-> alt-spec-id types/concrete-spec-type types/maybe-type)))
+                      (assoc-in spec [:fields (keyword (str (name var-kw) "$" i))] (-> alt-spec-id types/concrete-spec-type types/maybe-type)))
                     spec alts)
 
               ;; the expression that this abstract var will be replaced with
@@ -192,10 +192,10 @@
                     (sort (vals alts)))
 
               ;; remove abstract var
-              spec (update spec :spec-vars dissoc var-kw)]
+              spec (update spec :fields dissoc var-kw)]
           spec))
       spec
-      (filter (partial abstract-var? senv) spec-vars)))))
+      (filter (partial abstract-var? senv) fields)))))
 
 (defn- invert-adj [adj-lists]
   (reduce-kv
@@ -251,8 +251,8 @@
 (s/defn ^:private promote-abstract-bounds-to-concrete-bounds-where-appropriate
   "If an abstract var bound was used for a concrete field, then populate the type field of the
   bound (to make it a concrete bound)."
-  [spec-bound senv spec-vars]
-  (->> spec-vars
+  [spec-bound senv fields]
+  (->> fields
        (remove #(abstract-var? senv %))
        (reduce (fn [spec-bound [var-kw var-type]]
                  (let [var-spec-id (-> var-type types/no-maybe types/inner-spec-type)
@@ -274,9 +274,9 @@
    alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second) ; unwrap [:Maybe ..]
-        {:keys [spec-vars]} (envs/lookup-spec senv spec-id)]
+        {:keys [fields]} (envs/lookup-spec senv spec-id)]
     (->>
-     spec-vars
+     fields
      (reduce
       (fn [spec-bound [var-kw var-type :as var-entry]]
         (let [recur? (or (var-kw spec-bound)
@@ -323,7 +323,7 @@
                                                        alternatives))
                   spec-bound))
               spec-bound))))
-      (promote-abstract-bounds-to-concrete-bounds-where-appropriate spec-bound senv spec-vars)))))
+      (promote-abstract-bounds-to-concrete-bounds-where-appropriate spec-bound senv fields)))))
 
 (declare raise-abstract-bounds)
 
@@ -357,9 +357,9 @@
   [spec-bound :- ConcreteSpecBound2, senv :- (s/protocol envs/SpecEnv), alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second)
-        {:keys [spec-vars]} (envs/lookup-spec senv spec-id)]
+        {:keys [fields]} (envs/lookup-spec senv spec-id)]
     (->>
-     spec-vars
+     fields
      (reduce
       (fn [spec-bound [var-kw _ :as var-entry]]
         (if (abstract-var? senv var-entry)

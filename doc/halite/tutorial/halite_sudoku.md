@@ -15,7 +15,7 @@ Say we want to represent a sudoku solution as a two dimensional vector of intege
 We can write a specification that contains a value of this form.
 
 ```clojure
-{:tutorials.sudoku/Sudoku$v1 {:spec-vars {:solution [:Vec [:Vec :Integer]]}}}
+{:tutorials.sudoku/Sudoku$v1 {:fields {:solution [:Vec [:Vec :Integer]]}}}
 ```
 
 An instance of this spec can be constructed as:
@@ -29,7 +29,7 @@ In order to be a valid solution, certain properties must be met: each row, colum
 
 ```clojure
 {:tutorials.sudoku/Sudoku$v2
-   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
+   {:fields {:solution [:Vec [:Vec :Integer]]},
     :constraints #{'{:name "row_1",
                      :expr (= (concat #{} (get solution 0)) #{1 4 3 2})}
                    '{:name "row_2",
@@ -68,7 +68,7 @@ However, this attempt to create an instance fails. It tells us specifically whic
 Rather than expressing each row constraint separately, they can be captured in a single constraint expression.
 
 ```clojure
-{:tutorials.sudoku/Sudoku$v3 {:spec-vars {:solution [:Vec [:Vec :Integer]]},
+{:tutorials.sudoku/Sudoku$v3 {:fields {:solution [:Vec [:Vec :Integer]]},
                               :constraints #{'{:name "rows",
                                                :expr (every? [r solution]
                                                              (= (concat #{} r)
@@ -104,7 +104,7 @@ But, we are only checking rows, let's also check columns.
 
 ```clojure
 {:tutorials.sudoku/Sudoku$v4
-   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
+   {:fields {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
           :expr (every? [i [0 1 2 3]]
@@ -156,7 +156,7 @@ Let's add the quadrant checks.
 
 ```clojure
 {:tutorials.sudoku/Sudoku$v5
-   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
+   {:fields {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
           :expr (every? [i [0 1 2 3]]
@@ -212,7 +212,7 @@ Let's combine the quadrant checks into one.
 
 ```clojure
 {:tutorials.sudoku/Sudoku$v6
-   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
+   {:fields {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
           :expr (every? [i [0 1 2 3]]
@@ -261,7 +261,7 @@ As an exercise, we can convert the logic of the constraints. Instead of checking
 
 ```clojure
 {:tutorials.sudoku/Sudoku$v7
-   {:spec-vars {:solution [:Vec [:Vec :Integer]]},
+   {:fields {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
           :expr (not

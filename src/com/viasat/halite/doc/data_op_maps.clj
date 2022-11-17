@@ -33,7 +33,7 @@
                :examples [{:expr-str "(if-value $no-value 7 13)"
                            :expr-str-j :auto
                            :result :auto}
-                          {:spec-map {:my/Spec$v1 {:spec-vars {:x [:Maybe :Integer]}}}
+                          {:spec-map {:my/Spec$v1 {:fields {:x [:Maybe :Integer]}}}
                            :expr-str "{:$type :my/Spec$v1,\n :x $no-value}"
                            :expr-str-j :auto
                            :result :auto}]}
@@ -168,14 +168,14 @@
                   {:expr-str "(= [#{1 2} #{3}] [#{1 2} #{4}])"
                    :expr-str-j :auto
                    :result :auto}
-                  {:spec-map {:my/Spec$v1 {:spec-vars {:x :Integer
-                                                       :y :Integer}}}
+                  {:spec-map {:my/Spec$v1 {:fields {:x :Integer
+                                                    :y :Integer}}}
                    :instance {:$type :my/Other$v1}
                    :expr-str "(= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
                    :expr-str-j :auto
                    :result :auto}
-                  {:spec-map {:my/Spec$v1 {:spec-vars {:x :Integer
-                                                       :y :Integer}}}
+                  {:spec-map {:my/Spec$v1 {:fields {:x :Integer
+                                                    :y :Integer}}}
                    :instance {:$type :my/Other$v1}
                    :expr-str "(= {:$type :my/Spec$v1 :x 1 :y 0} {:$type :my/Spec$v1 :x 1 :y 0})"
                    :expr-str-j :auto
@@ -502,8 +502,8 @@
          :examples [{:expr-str "(get [10 20 30 40] 2)"
                      :expr-str-j :auto
                      :result :auto}
-                    {:spec-map {:my/Spec$v1 {:spec-vars {:x :Integer
-                                                         :y :Integer}}}
+                    {:spec-map {:my/Spec$v1 {:fields {:x :Integer
+                                                      :y :Integer}}}
                      :expr-str "(get {:$type :my/Spec$v1, :x -3, :y 2} :x)"
                      :expr-str-j :auto
                      :result :auto}]
@@ -530,17 +530,17 @@
             :examples [{:expr-str "(get-in [[10 20] [30 40]] [1 0])"
                         :expr-str-j :auto
                         :result :auto}
-                       {:spec-map {:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1
-                                                            :y :Integer}}
-                                   :my/SubSpec$v1 {:spec-vars {:a :Integer
-                                                               :b :Integer}}}
+                       {:spec-map {:my/Spec$v1 {:fields {:x :my/SubSpec$v1
+                                                         :y :Integer}}
+                                   :my/SubSpec$v1 {:fields {:a :Integer
+                                                            :b :Integer}}}
                         :expr-str "(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a 20, :b 10}, :y 2} [:x :a])"
                         :expr-str-j :auto
                         :result :auto}
-                       {:spec-map {:my/Spec$v1 {:spec-vars {:x :my/SubSpec$v1
-                                                            :y :Integer}}
-                                   :my/SubSpec$v1 {:spec-vars {:a [:Vec :Integer]
-                                                               :b :Integer}}}
+                       {:spec-map {:my/Spec$v1 {:fields {:x :my/SubSpec$v1
+                                                         :y :Integer}}
+                                   :my/SubSpec$v1 {:fields {:a [:Vec :Integer]
+                                                            :b :Integer}}}
                         :instance {:$type :my/Other$v1}
                         :expr-str "(get-in {:$type :my/Spec$v1, :x {:$type :my/SubSpec$v1, :a [20 30 40], :b 10}, :y 2} [:x :a 1])"
                         :expr-str-j :auto
@@ -577,10 +577,10 @@
                   :examples [{:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "r"
                                                                                                        :expr 'placeholder
                                                                                                        :inverted? true}}}
-                                                             :my/Result$v1 {:spec-vars {:x :Integer}}
-                                                             :my/Spec$v1 {:spec-vars {:n :Integer
-                                                                                      :o [:Maybe :Integer]
-                                                                                      :p :Integer}
+                                                             :my/Result$v1 {:fields {:x :Integer}}
+                                                             :my/Spec$v1 {:fields {:n :Integer
+                                                                                   :o [:Maybe :Integer]
+                                                                                   :p :Integer}
                                                                           :constraints #{{:name "pc" :expr '(> p 0)}
                                                                                          {:name "pn" :expr '(< n 0)}}}})
                               :instance {:$type :my/Other$v1}
@@ -590,10 +590,10 @@
                              {:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "r"
                                                                                                        :expr 'placeholder
                                                                                                        :inverted? true}}}
-                                                             :my/Result$v1 {:spec-vars {:x :Integer}},
-                                                             :my/Spec$v1 {:spec-vars {:n :Integer
-                                                                                      :o [:Maybe :Integer]
-                                                                                      :p :Integer}
+                                                             :my/Result$v1 {:fields {:x :Integer}},
+                                                             :my/Spec$v1 {:fields {:n :Integer
+                                                                                   :o [:Maybe :Integer]
+                                                                                   :p :Integer}
                                                                           :constraints #{{:name "pc" :expr '(> p 0)}
                                                                                          {:name "pn" :expr '(< n 0)}}}})
                               :instance {:$type :my/Other$v1}
@@ -754,8 +754,8 @@
                      {:expr-str "(not= [#{1 2} #{3}] [#{1 2} #{4}])"
                       :expr-str-j :auto
                       :result :auto}
-                     {:spec-map {:my/Spec$v1 {:spec-vars {:x :Integer
-                                                          :y :Integer}}}
+                     {:spec-map {:my/Spec$v1 {:fields {:x :Integer
+                                                       :y :Integer}}}
                       :expr-str "(not= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
                       :expr-str-j :auto
                       :result :auto}]
@@ -826,14 +826,14 @@
                            :expr-str-j :auto
                            :result :auto
                            :doc "A basic refinement."}
-                          {:spec-map {:my/Spec$v1 {:spec-vars {:p :Integer
-                                                               :n :Integer}
+                          {:spec-map {:my/Spec$v1 {:fields {:p :Integer
+                                                            :n :Integer}
                                                    :refines-to {:an/Other$v1 {:name "r"
                                                                               :expr '{:$type :an/Other$v1
                                                                                       :x (inc p)
                                                                                       :y (dec n)}}}}
-                                      :an/Other$v1 {:spec-vars {:x :Integer
-                                                                :y :Integer}}}
+                                      :an/Other$v1 {:fields {:x :Integer
+                                                             :y :Integer}}}
                            :expr-str "(refine-to {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)"
                            :expr-str-j :auto
                            :result :auto
@@ -859,14 +859,14 @@
                              :expr-str-j :auto
                              :result :auto
                              :doc "A basic refinement."}
-                            {:spec-map {:my/Spec$v1 {:spec-vars {:p :Integer
-                                                                 :n :Integer}
+                            {:spec-map {:my/Spec$v1 {:fields {:p :Integer
+                                                              :n :Integer}
                                                      :refines-to {:an/Other$v1 {:name "r"
                                                                                 :expr '{:$type :an/Other$v1
                                                                                         :x (inc p)
                                                                                         :y (dec n)}}}}
-                                        :an/Other$v1 {:spec-vars {:x :Integer
-                                                                  :y :Integer}}}
+                                        :an/Other$v1 {:fields {:x :Integer
+                                                               :y :Integer}}}
                              :expr-str "(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :an/Other$v1)"
                              :expr-str-j :auto
                              :result :auto
@@ -998,16 +998,16 @@
            :doc "Evaluate the instance-expression and produce the result. If a constraint violation occurs while evaluating the expression then produce an 'unset' value."
            :comment "This operation can be thought of as producing an instance if it is valid. This considers not just the constraints on the immediate instance, but also the constraints implied by refinements defined on the specification."
 
-           :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p :Integer
-                                                           :n :Integer}
+           :examples [{:spec-map {:my/Spec$v1 {:fields {:p :Integer
+                                                        :n :Integer}
                                                :constraints #{{:name "cp" :expr '(> p 0)}
                                                               {:name "cn" :expr '(< n 0)}}}}
                        :expr-str "(valid {:$type :my/Spec$v1, :p 1, :n -1})"
                        :expr-str-j :auto
                        :result :auto
                        :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}
-                      {:spec-map {:my/Spec$v1 {:spec-vars {:p :Integer
-                                                           :n :Integer}
+                      {:spec-map {:my/Spec$v1 {:fields {:p :Integer
+                                                        :n :Integer}
                                                :constraints #{{:name "cp" :expr '(> p 0)}
                                                               {:name "cn" :expr '(< n 0)}}}}
                        :expr-str "(valid {:$type :my/Spec$v1, :p 1, :n 1})"
@@ -1021,16 +1021,16 @@
             :tutorial-ref [:spec/sudoku]
             :doc "Evaluate the instance expression and produce false if a constraint violation occurs during the evaluation. Otherwise, produce true."
             :comment "Similar to 'valid', but insted of possibly producing an instance, it produces a boolean indicating whether the instance was valid. This can be thought of as invoking a specification as a single predicate on a candidate instance value."
-            :examples [{:spec-map {:my/Spec$v1 {:spec-vars {:p :Integer
-                                                            :n :Integer}
+            :examples [{:spec-map {:my/Spec$v1 {:fields {:p :Integer
+                                                         :n :Integer}
                                                 :constraints #{{:name "cp" :expr '(> p 0)}
                                                                {:name "cn" :expr '(< n 0)}}}}
                         :expr-str "(valid? {:$type :my/Spec$v1, :p 1, :n -1})"
                         :expr-str-j :auto
                         :result :auto
                         :doc "When the spec has constraints that the field, p, must be positive and the field, n, must be negative."}
-                       {:spec-map {:my/Spec$v1 {:spec-vars {:p :Integer
-                                                            :n :Integer}
+                       {:spec-map {:my/Spec$v1 {:fields {:p :Integer
+                                                         :n :Integer}
                                                 :constraints #{{:name "cp" :expr '(> p 0)}
                                                                {:name "cn" :expr '(< n 0)}}}}
                         :expr-str "(valid? {:$type :my/Spec$v1, :p 1, :n 0})"
@@ -1059,8 +1059,8 @@
                 :examples [{:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
                                                                                                     :inverted? true
                                                                                                     :name "r"}}
-                                                                        :spec-vars {:x [:Maybe :Integer]}}
-                                                           :my/Result$v1 {:spec-vars {:x [:Maybe :Integer]}}})
+                                                                        :fields {:x [:Maybe :Integer]}}
+                                                           :my/Result$v1 {:fields {:x [:Maybe :Integer]}}})
                             :instance {:$type :my/Spec$v1, :x 1}
                             :expr-str "(when-value x (+ x 2))"
                             :expr-str-j "whenValue(x) {x + 2}"
@@ -1069,8 +1069,8 @@
                            {:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
                                                                                                     :inverted? true,
                                                                                                     :name "r"}}
-                                                                        :spec-vars {:x [:Maybe :Integer]}}
-                                                           :my/Result$v1 {:spec-vars {:x [:Maybe :Integer]}}})
+                                                                        :fields {:x [:Maybe :Integer]}}
+                                                           :my/Result$v1 {:fields {:x [:Maybe :Integer]}}})
                             :instance {:$type :my/Spec$v1}
                             :expr-str "(when-value x (+ x 2))"
                             :expr-str-j "whenValue(x) {x + 2}"
@@ -1085,8 +1085,8 @@
                     :examples [{:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
                                                                                                         :inverted? true
                                                                                                         :name "r"}}
-                                                                            :spec-vars {:y [:Maybe :Integer]}}
-                                                               :my/Result$v1 {:spec-vars {:x [:Maybe :Integer]}}})
+                                                                            :fields {:y [:Maybe :Integer]}}
+                                                               :my/Result$v1 {:fields {:x [:Maybe :Integer]}}})
                                 :instance {:$type :my/Spec$v1, :y 1}
                                 :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"
@@ -1095,8 +1095,8 @@
                                {:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
                                                                                                         :inverted? true
                                                                                                         :name "r"}}
-                                                                            :spec-vars {:y [:Maybe :Integer]}}
-                                                               :my/Result$v1 {:spec-vars {:x [:Maybe :Integer]}}})
+                                                                            :fields {:y [:Maybe :Integer]}}
+                                                               :my/Result$v1 {:fields {:x [:Maybe :Integer]}}})
                                 :instance {:$type :my/Spec$v1}
                                 :expr-str "(when-value-let [x (when-value y (+ y 2))] (inc x))"
                                 :expr-str-j "(whenValueLet ( x = (whenValue(y) {(y + 2)}) ) {(x + 1)})"

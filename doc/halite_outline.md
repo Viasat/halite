@@ -37,7 +37,7 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
   * Specs can be defined to be recursive.
 * Recursive refinements [(Halite)](halite/how-to/halite_recursive-refinement.md) [(Jadeite)](jadeite/how-to/halite_recursive-refinement-j.md)
   * Specs cannot be defined to recursively refine to themselves.
-* Spec variables [(Halite)](halite/how-to/halite_spec-variables.md) [(Jadeite)](jadeite/how-to/halite_spec-variables-j.md)
+* Spec fields [(Halite)](halite/how-to/halite_spec-fields.md) [(Jadeite)](jadeite/how-to/halite_spec-fields-j.md)
   * How to model data fields in specifications.
 * String as enumeration [(Halite)](halite/how-to/halite_string-enum.md) [(Jadeite)](jadeite/how-to/halite_string-enum-j.md)
   * How to model an enumeration as a string

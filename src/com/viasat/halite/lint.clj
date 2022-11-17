@@ -73,7 +73,7 @@
     (and (types/spec-type? subexpr-type)
          (types/spec-id subexpr-type)
          (not (types/needs-refinement? subexpr-type)))
-    (let [field-types (->> subexpr-type types/spec-id (envs/lookup-spec (:senv ctx)) :spec-vars)]
+    (let [field-types (->> subexpr-type types/spec-id (envs/lookup-spec (:senv ctx)) :fields)]
       (get field-types index))))
 
 (s/defn ^:private type-check-get :- types/HaliteType

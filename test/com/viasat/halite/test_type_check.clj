@@ -17,15 +17,15 @@
            {:spec-id :ws2/B$v1
             :variable-name :d}}
          (type-check/find-field-accesses
-          {:ws/A$v1 {:spec-vars {:x :Integer
-                                 :y :Boolean
-                                 :c [:Instance :ws2/B$v1]}}
-           :ws2/B$v1 {:spec-vars {:d [:Instance :ws/D$v1]}}
-           :ws/C$v1 {:spec-vars {:xs [:Vec :Integer]}}
-           :ws/D$v1 {:spec-vars {:xss [:Vec [:Vec :Integer]]}}}
-          {:spec-vars {:x :Integer
-                       :y :Boolean
-                       :c [:Vec [:Instance :ws2/B$v1]]}}
+          {:ws/A$v1 {:fields {:x :Integer
+                              :y :Boolean
+                              :c [:Instance :ws2/B$v1]}}
+           :ws2/B$v1 {:fields {:d [:Instance :ws/D$v1]}}
+           :ws/C$v1 {:fields {:xs [:Vec :Integer]}}
+           :ws/D$v1 {:fields {:xss [:Vec [:Vec :Integer]]}}}
+          {:fields {:x :Integer
+                    :y :Boolean
+                    :c [:Vec [:Instance :ws2/B$v1]]}}
           '(get-in c [0 :d :xss])))))
 
 ;; (run-tests)

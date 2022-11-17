@@ -73,7 +73,7 @@ It is a bit more subtle, but a cyclical dependency that crosses both a refinemen
     }
   },
   "spec/Garage" : {
-    "spec-vars" : {
+    "fields" : {
       "car" : "spec/Car"
     }
   }
@@ -93,7 +93,7 @@ Diamonds are a bit different than a recursive refinement, but they too are disal
 ```java
 {
   "spec/Destination" : {
-    "spec-vars" : {
+    "fields" : {
       "d" : "Integer"
     }
   },

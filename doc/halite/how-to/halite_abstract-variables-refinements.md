@@ -10,17 +10,17 @@ The way to use an abstract field value as the result value in a refinement is to
 
 ```clojure
 {:spec/Animal {:abstract? true,
-               :spec-vars {:species :String}},
- :spec/Cat {:spec-vars {:lives :Integer},
+               :fields {:species :String}},
+ :spec/Cat {:fields {:lives :Integer},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Feline"}}}},
- :spec/Dog {:spec-vars {:breed :String},
+ :spec/Dog {:fields {:breed :String},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Canine"}}}},
- :spec/Pet$v1 {:spec-vars {:name :String,
-                           :animal :spec/Animal},
+ :spec/Pet$v1 {:fields {:name :String,
+                        :animal :spec/Animal},
                :refines-to {:spec/Animal {:name "refine_to_Animal",
                                           :expr '(refine-to animal
                                                             :spec/Animal)}}}}
@@ -56,13 +56,13 @@ Even if we happen to know the concrete type of an abstract field is of the right
 
 ```clojure
 {:spec/Animal {:abstract? true,
-               :spec-vars {:species :String}},
- :spec/Dog {:spec-vars {:breed :String},
+               :fields {:species :String}},
+ :spec/Dog {:fields {:breed :String},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Canine"}}}},
- :spec/Pet$v2 {:spec-vars {:name :String,
-                           :animal :spec/Animal},
+ :spec/Pet$v2 {:fields {:name :String,
+                        :animal :spec/Animal},
                :refines-to {:spec/Dog {:name "refine_to_Dog",
                                        :expr 'animal}}}}
 ```
@@ -87,17 +87,17 @@ If instead, we attempt to define the refinement of type animal, but still try to
 
 ```clojure
 {:spec/Animal {:abstract? true,
-               :spec-vars {:species :String}},
- :spec/Cat {:spec-vars {:lives :Integer},
+               :fields {:species :String}},
+ :spec/Cat {:fields {:lives :Integer},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Feline"}}}},
- :spec/Dog {:spec-vars {:breed :String},
+ :spec/Dog {:fields {:breed :String},
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Canine"}}}},
- :spec/Pet$v3 {:spec-vars {:name :String,
-                           :animal :spec/Animal},
+ :spec/Pet$v3 {:fields {:name :String,
+                        :animal :spec/Animal},
                :refines-to {:spec/Animal {:name "refine_to_Animal",
                                           :expr 'animal}}}}
 ```

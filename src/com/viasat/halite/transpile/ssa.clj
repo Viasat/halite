@@ -459,7 +459,7 @@
       (types/spec-type? t)
       (let [spec-id (types/spec-id t)
             var-kw var-kw-or-idx
-            htype (or (->> spec-id (envs/lookup-spec senv) :spec-vars var-kw)
+            htype (or (->> spec-id (envs/lookup-spec senv) :fields var-kw)
                       (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
                                       {:form form, :var-kw var-kw, :spec-id spec-id})))]
         (ensure-node ssa-graph (list 'get id var-kw) htype))
@@ -1025,8 +1025,8 @@
      :else (throw (ex-info "Couldn't normalize expression" {:expr expr})))))
 
 (s/defn form-from-ssa
-  ([{:keys [spec-vars ssa-graph] :as spec-info} :- SpecInfo, id :- NodeId]
-   (form-from-ssa (->> spec-vars keys (map symbol) set) ssa-graph id))
+  ([{:keys [fields ssa-graph] :as spec-info} :- SpecInfo, id :- NodeId]
+   (form-from-ssa (->> fields keys (map symbol) set) ssa-graph id))
   ([scope :- #{s/Symbol}, ssa-graph :- SSAGraph, id :- NodeId]
    (let [ordering (zipmap (topo-sort ssa-graph) (range))]
      (->> id
@@ -1038,8 +1038,8 @@
   ([spec-info :- SpecInfo]
    (spec-from-ssa spec-info {:conjoin-constraints? true}))
   ([spec-info :- SpecInfo {:keys [conjoin-constraints?] :or {conjoin-constraints? false}}]
-   (let [{:keys [ssa-graph constraints refines-to spec-vars] :as spec-info} (prune-ssa-graph spec-info false)
-         scope (->> spec-vars keys (map symbol) set)
+   (let [{:keys [ssa-graph constraints refines-to fields] :as spec-info} (prune-ssa-graph spec-info false)
+         scope (->> fields keys (map symbol) set)
          ssa-ctx (init-ssa-ctx (envs/spec-env {}) (envs/type-env {}) ssa-graph)
          constraints (if conjoin-constraints?
                        (let [[ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]

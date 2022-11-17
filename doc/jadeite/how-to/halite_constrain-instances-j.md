@@ -11,7 +11,7 @@ As a starting point specs specify the fields that make up instances.
 ```java
 {
   "spec/A$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     }
   }
@@ -23,7 +23,7 @@ This indicates that 'b' must be an integer, but it doesn't indicate what valid v
 ```java
 {
   "spec/A$v2" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer"
     },
     "constraints" : [ "{expr: (b > 100), name: \"constrain_b\"}" ]
@@ -56,7 +56,7 @@ Constraints can be arbitrary expressions that refer to multiple fields.
 ```java
 {
   "spec/A$v3" : {
-    "spec-vars" : {
+    "fields" : {
       "b" : "Integer",
       "c" : "Integer"
     },

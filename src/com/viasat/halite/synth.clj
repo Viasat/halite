@@ -42,16 +42,16 @@
         (and (map? $this)
              (= ~spec-id (:$type $this))
              ;; TODO: handle optionals
-             ~@(let [mandatory-spec-vars (->> (:spec-vars spec)
-                                              (remove (fn [[k v]]
-                                                        (and (vector? v)
-                                                             (= :Maybe (first v)))))
-                                              keys)]
-                 (if (= (count mandatory-spec-vars) (count (:spec-vars spec)))
-                   `[(= ~(into #{:$type} (keys (:spec-vars spec))) (set (keys $this)))]
+             ~@(let [mandatory-fields (->> (:fields spec)
+                                           (remove (fn [[k v]]
+                                                     (and (vector? v)
+                                                          (= :Maybe (first v)))))
+                                           keys)]
+                 (if (= (count mandatory-fields) (count (:fields spec)))
+                   `[(= ~(into #{:$type} (keys (:fields spec))) (set (keys $this)))]
                    [`(set/subset? (set (keys $this))
-                                  ~(into #{:$type} (keys (:spec-vars spec))))
-                    `(set/subset? ~(into #{:$type} mandatory-spec-vars)
+                                  ~(into #{:$type} (keys (:fields spec))))
+                    `(set/subset? ~(into #{:$type} mandatory-fields)
                                   (set (keys $this)))]))
 
              ;; constraints
@@ -158,7 +158,7 @@
 
 (defn clj-user-eval-form [spec-map $this expr]
   (strip-ns
-   `(let [{:keys ~(vec (map symbol (keys (:spec-vars (spec-map (:$type $this))))))} ~$this]
+   `(let [{:keys ~(vec (map symbol (keys (:fields (spec-map (:$type $this))))))} ~$this]
       ~expr)))
 
 (def this-ns *ns*)

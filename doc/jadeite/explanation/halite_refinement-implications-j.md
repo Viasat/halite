@@ -11,7 +11,7 @@ One spec can be defined to be a refinement of another spec. First consider a squ
 ```java
 {
   "spec/Square" : {
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "height" : "Integer"
     },
@@ -41,14 +41,14 @@ Now consider a new spec, 'spec/Box', and we define that it refines to 'spec/Squa
 ```java
 {
   "spec/Square" : {
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "height" : "Integer"
     },
     "constraints" : [ "{expr: (width == height), name: \"square\"}" ]
   },
   "spec/Box$v1" : {
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "length" : "Integer"
     },
@@ -89,14 +89,14 @@ If this was not the intent, and rather the intent was to indicate that some inst
 ```java
 {
   "spec/Square" : {
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "height" : "Integer"
     },
     "constraints" : [ "{expr: (width == height), name: \"square\"}" ]
   },
   "spec/Box$v2" : {
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "length" : "Integer"
     },
@@ -145,14 +145,14 @@ Another way of defining the refinement is to declare it to be 'inverted?'. What 
 ```java
 {
   "spec/Square" : {
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "height" : "Integer"
     },
     "constraints" : [ "{expr: (width == height), name: \"square\"}" ]
   },
   "spec/Box$v3" : {
-    "spec-vars" : {
+    "fields" : {
       "width" : "Integer",
       "length" : "Integer"
     },

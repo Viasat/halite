@@ -10,9 +10,9 @@ We can model the state space for a vending machine that accepts nickels, dimes, 
 
 ```clojure
 {:tutorials.vending/Vending$v1
-   {:spec-vars {:balance [:Decimal 2],
-                :beverageCount :Integer,
-                :snackCount :Integer},
+   {:fields {:balance [:Decimal 2],
+             :beverageCount :Integer,
+             :snackCount :Integer},
     :constraints #{'{:name "balance_not_negative",
                      :expr (>= balance #d "0.00")}
                    '{:name "counts_below_capacity",
@@ -34,9 +34,9 @@ Let us add a spec that will capture the constraints that identify a valid initia
 
 ```clojure
 {:tutorials.vending/InitialVending$v1
-   {:spec-vars {:balance [:Decimal 2],
-                :beverageCount :Integer,
-                :snackCount :Integer},
+   {:fields {:balance [:Decimal 2],
+             :beverageCount :Integer,
+             :snackCount :Integer},
     :constraints #{'{:name "initial_state",
                      :expr (and (= #d "0.00" balance)
                                 (> beverageCount 0)
@@ -48,9 +48,9 @@ Let us add a spec that will capture the constraints that identify a valid initia
                             :beverageCount beverageCount,
                             :snackCount snackCount}}}},
  :tutorials.vending/Vending$v1
-   {:spec-vars {:balance [:Decimal 2],
-                :beverageCount :Integer,
-                :snackCount :Integer},
+   {:fields {:balance [:Decimal 2],
+             :beverageCount :Integer,
+             :snackCount :Integer},
     :constraints #{'{:name "balance_not_negative",
                      :expr (>= balance #d "0.00")}
                    '{:name "counts_not_negative",
@@ -102,16 +102,16 @@ So now we have a model of the state space and valid initial states for the machi
 
 ```clojure
 {:tutorials.vending/Vending$v1
-   {:spec-vars {:balance [:Decimal 2],
-                :beverageCount :Integer,
-                :snackCount :Integer},
+   {:fields {:balance [:Decimal 2],
+             :beverageCount :Integer,
+             :snackCount :Integer},
     :constraints #{'{:name "balance_not_negative",
                      :expr (>= balance #d "0.00")}
                    '{:name "counts_not_negative",
                      :expr (and (>= beverageCount 0) (>= snackCount 0))}}},
  :tutorials.vending/VendingTransition$v1
-   {:spec-vars {:current :tutorials.vending/Vending$v1,
-                :next :tutorials.vending/Vending$v1},
+   {:fields {:current :tutorials.vending/Vending$v1,
+             :next :tutorials.vending/Vending$v1},
     :constraints
       #{'{:name "state_transitions",
           :expr

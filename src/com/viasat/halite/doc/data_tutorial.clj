@@ -9,9 +9,9 @@
                 {:label "Model a vending machine as a state machine"
                  :desc "Use specs to map out a state space and valid transitions"
                  :contents ["We can model the state space for a vending machine that accepts nickels, dimes, and quarters and which vends  snacks for $0.50 and beverages for $1.00."
-                            {:spec-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                                   :beverageCount :Integer
-                                                                                   :snackCount :Integer}
+                            {:spec-map {:tutorials.vending/Vending$v1 {:fields {:balance [:Decimal 2]
+                                                                                :beverageCount :Integer
+                                                                                :snackCount :Integer}
                                                                        :constraints #{{:name "balance_not_negative"
                                                                                        :expr '(>= balance #d "0.00")}
                                                                                       {:name "counts_not_negative"
@@ -26,17 +26,17 @@
                                      :beverageCount 10
                                      :snackCount 15}}
                             "Let us add a spec that will capture the constraints that identify a valid initial state for a vending machine."
-                            {:spec-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                                   :beverageCount :Integer
-                                                                                   :snackCount :Integer}
+                            {:spec-map {:tutorials.vending/Vending$v1 {:fields {:balance [:Decimal 2]
+                                                                                :beverageCount :Integer
+                                                                                :snackCount :Integer}
                                                                        :constraints #{{:name "balance_not_negative"
                                                                                        :expr '(>= balance #d "0.00")}
                                                                                       {:name "counts_not_negative"
                                                                                        :expr '(and (>= beverageCount 0)
                                                                                                    (>= snackCount 0))}}}
-                                        :tutorials.vending/InitialVending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                                          :beverageCount :Integer
-                                                                                          :snackCount :Integer}
+                                        :tutorials.vending/InitialVending$v1 {:fields {:balance [:Decimal 2]
+                                                                                       :beverageCount :Integer
+                                                                                       :snackCount :Integer}
                                                                               :constraints #{{:name "initial_state"
                                                                                               :expr '(and (= #d "0.00" balance)
                                                                                                           (> beverageCount 0)
@@ -69,16 +69,16 @@
                              :throws :auto}
 
                             "So now we have a model of the state space and valid initial states for the machine. However, we would like to also model valid state transitions."
-                            {:spec-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                                   :beverageCount :Integer
-                                                                                   :snackCount :Integer}
+                            {:spec-map {:tutorials.vending/Vending$v1 {:fields {:balance [:Decimal 2]
+                                                                                :beverageCount :Integer
+                                                                                :snackCount :Integer}
                                                                        :constraints #{{:name "balance_not_negative"
                                                                                        :expr '(>= balance #d "0.00")}
                                                                                       {:name "counts_not_negative"
                                                                                        :expr '(and (>= beverageCount 0)
                                                                                                    (>= snackCount 0))}}}
-                                        :tutorials.vending/VendingTransition$v1 {:spec-vars {:current :tutorials.vending/Vending$v1
-                                                                                             :next :tutorials.vending/Vending$v1}
+                                        :tutorials.vending/VendingTransition$v1 {:fields {:current :tutorials.vending/Vending$v1
+                                                                                          :next :tutorials.vending/Vending$v1}
                                                                                  :constraints #{{:name "state_transitions"
                                                                                                  :expr '(or (and
                                                                                                              (contains? #{#d "0.05"
@@ -159,7 +159,7 @@
                                      [4 3 2 1]
                                      [2 1 4 3]]}
                             "We can write a specification that contains a value of this form."
-                            {:spec-map {:tutorials.sudoku/Sudoku$v1 {:spec-vars {:solution [:Vec [:Vec :Integer]]}}}}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v1 {:fields {:solution [:Vec [:Vec :Integer]]}}}}
                             "An instance of this spec can be constructed as:"
                             {:code '{:$type :tutorials.sudoku/Sudoku$v1
                                      :solution [[1 2 3 4]
@@ -167,7 +167,7 @@
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}}
                             "In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, & 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row."
-                            {:spec-map {:tutorials.sudoku/Sudoku$v2 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v2 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                                      :constraints #{{:name "row_1" :expr '(= (concat #{} (get solution 0))
                                                                                                              #{1 2 3 4})}
                                                                                     {:name "row_2" :expr '(= (concat #{} (get solution 1))
@@ -191,7 +191,7 @@
                                                 [2 1 4 3]]}
                              :throws :auto}
                             "Rather than expressing each row constraint separately, they can be captured in a single constraint expression."
-                            {:spec-map {:tutorials.sudoku/Sudoku$v3 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v3 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                                      :constraints #{{:name "rows" :expr '(every? [r solution]
                                                                                                                  (= (concat #{} r)
                                                                                                                     #{1 2 3 4}))}}}}}
@@ -210,7 +210,7 @@
                                                 [2 1 4 3]]}
                              :throws :auto}
                             "But, we are only checking rows, let's also check columns."
-                            {:spec-map {:tutorials.sudoku/Sudoku$v4 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v4 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                                      :constraints #{{:name "rows" :expr '(every? [r solution]
                                                                                                                  (= (concat #{} r)
                                                                                                                     #{1 2 3 4}))}
@@ -242,7 +242,7 @@
                                                 [2 3 4 1]]}
                              :result :auto}
                             "Let's add the quadrant checks."
-                            {:spec-map {:tutorials.sudoku/Sudoku$v5 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v5 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                                      :constraints #{{:name "rows" :expr '(every? [r solution]
                                                                                                                  (= (concat #{} r)
                                                                                                                     #{1 2 3 4}))}
@@ -287,7 +287,7 @@
                                                 [2 1 4 3]]}
                              :result :auto}
                             "Let's combine the quadrant checks into one."
-                            {:spec-map {:tutorials.sudoku/Sudoku$v6 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v6 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                                      :constraints #{{:name "rows" :expr '(every? [r solution]
                                                                                                                  (= (concat #{} r)
                                                                                                                     #{1 2 3 4}))}
@@ -320,7 +320,7 @@
                                                 [2 3 4 1]]}
                              :throws :auto}
                             "As an exercise, we can convert the logic of the constraints. Instead of checking that each row, column, and quadrant has the expected elements, we can write the constraints to ensure there are not any rows, columns, or quadrants that do not have the expected elements. The double negative logic is confusing, but this shows other available logical operations."
-                            {:spec-map {:tutorials.sudoku/Sudoku$v7 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v7 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                                      :constraints #{{:name "rows" :expr '(not (any? [r solution]
                                                                                                                     (not= (concat #{} r)
                                                                                                                           #{1 2 3 4})))}
@@ -382,14 +382,14 @@
                  :explanation-ref [:tutorials.grocery/specs-as-predicates :tutorials.grocery/refinements-as-functions]
                  :contents ["The following is a full model for the grocery delivery business."
 
-                            {:spec-map {:tutorials.grocery/Country$v1 {:spec-vars {:name :String}
+                            {:spec-map {:tutorials.grocery/Country$v1 {:fields {:name :String}
                                                                        :constraints #{{:name "name_constraint" :expr '(contains? #{"Canada" "Mexico" "US"} name)}}}
 
                                         :tutorials.grocery/Perk$v1 {:abstract? true
-                                                                    :spec-vars {:perkId :Integer
-                                                                                :feePerMonth [:Decimal 2]
-                                                                                :feePerUse [:Decimal 2]
-                                                                                :usesPerMonth [:Maybe :Integer]}
+                                                                    :fields {:perkId :Integer
+                                                                             :feePerMonth [:Decimal 2]
+                                                                             :feePerUse [:Decimal 2]
+                                                                             :usesPerMonth [:Maybe :Integer]}
                                                                     :constraints #{{:name "feePerMonth_limit" :expr '(and (<= #d "0.00" feePerMonth)
                                                                                                                           (<= feePerMonth #d "199.99"))}
                                                                                    {:name "feePerUse_limit" :expr '(and (<= #d "0.00" feePerUse)
@@ -398,7 +398,7 @@
                                                                                                                                 (and (<= 0 usesPerMonth)
                                                                                                                                      (<= usesPerMonth 999))
                                                                                                                                 true)}}}
-                                        :tutorials.grocery/FreeDeliveryPerk$v1 {:spec-vars {:usesPerMonth :Integer}
+                                        :tutorials.grocery/FreeDeliveryPerk$v1 {:fields {:usesPerMonth :Integer}
                                                                                 :constraints #{{:name "usesPerMonth_limit" :expr '(< usesPerMonth 20)}}
                                                                                 :refines-to {:tutorials.grocery/Perk$v1 {:name "refine_to_Perk"
                                                                                                                          :expr '{:$type :tutorials.grocery/Perk$v1
@@ -406,7 +406,7 @@
                                                                                                                                  :feePerMonth #d "2.99"
                                                                                                                                  :feePerUse #d "0.00"
                                                                                                                                  :usesPerMonth usesPerMonth}}}}
-                                        :tutorials.grocery/DiscountedPrescriptionPerk$v1 {:spec-vars {:prescriptionID :String}
+                                        :tutorials.grocery/DiscountedPrescriptionPerk$v1 {:fields {:prescriptionID :String}
                                                                                           :refines-to {:tutorials.grocery/Perk$v1 {:name "refine_to_Perk"
                                                                                                                                    :expr '{:$type :tutorials.grocery/Perk$v1
                                                                                                                                            :perkId 102
@@ -419,10 +419,10 @@
                                                                                                                                       :feePerUse #d "1.99"
                                                                                                                                       :usesPerMonth 2}}}}
 
-                                        :tutorials.grocery/GroceryService$v1 {:spec-vars {:deliveriesPerMonth :Integer
-                                                                                          :feePerMonth [:Decimal 2]
-                                                                                          :perks [:Set :tutorials.grocery/Perk$v1]
-                                                                                          :subscriberCountry :tutorials.grocery/Country$v1}
+                                        :tutorials.grocery/GroceryService$v1 {:fields {:deliveriesPerMonth :Integer
+                                                                                       :feePerMonth [:Decimal 2]
+                                                                                       :perks [:Set :tutorials.grocery/Perk$v1]
+                                                                                       :subscriberCountry :tutorials.grocery/Country$v1}
                                                                               :constraints #{{:name "feePerMonth_limit" :expr '(and (< #d "5.99" feePerMonth)
                                                                                                                                     (< feePerMonth #d "12.99"))}
                                                                                              {:name "perk_limit" :expr '(<= (count perks) 2)}
@@ -441,9 +441,9 @@
                                                                                                                                                                              (get pi :perkId))]
                                                                                                                                                                  (get p :perkId))}
                                                                                                                                            :inverted? true}}}
-                                        :tutorials.grocery/GroceryStoreSubscription$v1 {:spec-vars {:name :String
-                                                                                                    :storeCountry :tutorials.grocery/Country$v1
-                                                                                                    :perkIds [:Vec :Integer]}
+                                        :tutorials.grocery/GroceryStoreSubscription$v1 {:fields {:name :String
+                                                                                                 :storeCountry :tutorials.grocery/Country$v1
+                                                                                                 :perkIds [:Vec :Integer]}
                                                                                         :constraints #{{:name "valid_stores" :expr '(or (= name "Acme Foods")
                                                                                                                                         (= name "Good Foods"))}
                                                                                                        {:name "storeCountryServed" :expr '(or (and (= name "Acme Foods")

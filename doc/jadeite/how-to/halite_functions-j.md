@@ -11,7 +11,7 @@ It is a bit convoluted, but consider the following specs.
 ```java
 {
   "spec/Add" : {
-    "spec-vars" : {
+    "fields" : {
       "x" : "Integer",
       "y" : "Integer"
     },
@@ -23,7 +23,7 @@ It is a bit convoluted, but consider the following specs.
     }
   },
   "spec/IntegerResult" : {
-    "spec-vars" : {
+    "fields" : {
       "result" : "Integer"
     }
   }
