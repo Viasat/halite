@@ -5,21 +5,21 @@
 
 (set! *warn-on-reflection* true)
 
-(def tutorials {:tutorials.vending/vending
+(def tutorials {:tutorials.vending/Vending
                 {:label "Model a vending machine as a state machine"
                  :desc "Use specs to map out a state space and valid transitions"
                  :contents ["We can model the state space for a vending machine that accepts nickels, dimes, and quarters and which vends  snacks for $0.50 and beverages for $1.00."
-                            {:spec-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                                   :beverageCount :Integer
-                                                                                   :snackCount :Integer}
-                                                                       :constraints #{{:name "balance_not_negative"
-                                                                                       :expr '(>= balance #d "0.00")}
-                                                                                      {:name "counts_not_negative"
-                                                                                       :expr '(and (>= beverageCount 0)
-                                                                                                   (>= snackCount 0))}
-                                                                                      {:name "counts_below_capacity"
-                                                                                       :expr '(and (<= beverageCount 20)
-                                                                                                   (<= snackCount 20))}}}}}
+                            {:tutorials-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
+                                                                                        :beverageCount :Integer
+                                                                                        :snackCount :Integer}
+                                                                            :constraints #{{:name "balance_not_negative"
+                                                                                            :expr '(>= balance #d "0.00")}
+                                                                                           {:name "counts_not_negative"
+                                                                                            :expr '(and (>= beverageCount 0)
+                                                                                                        (>= snackCount 0))}
+                                                                                           {:name "counts_below_capacity"
+                                                                                            :expr '(and (<= beverageCount 20)
+                                                                                                        (<= snackCount 20))}}}}}
                             "With this spec we can construct instances."
                             {:code '{:$type :tutorials.vending/Vending$v1
                                      :balance #d "0.00"
@@ -37,7 +37,7 @@
                                         :tutorials.vending/InitialVending$v1 {:spec-vars {:balance [:Decimal 2]
                                                                                           :beverageCount :Integer
                                                                                           :snackCount :Integer}
-                                                                              :constraints #{{:name "initial state"
+                                                                              :constraints #{{:name "initial_state"
                                                                                               :expr '(and (= #d "0.00" balance)
                                                                                                           (> beverageCount 0)
                                                                                                           (> snackCount 0))}}
@@ -49,17 +49,15 @@
                                                                                                                             :snackCount snackCount}}}}}}
 
                             "This additional spec can be used to determine where a state is a valid initial state for the machine. For example, this is a valid initial state."
-                            {:code '{:$type :tutorials.vending/InitialVending$v1
-                                     :initial {:$type :tutorials.vending/Vending$v1
-                                               :balance #d "0.00"
-                                               :beverageCount 10
-                                               :snackCount 15}}}
+                            {:code {:$type :tutorials.vending/InitialVending$v1
+                                    :balance #d "0.00"
+                                    :beverageCount 10
+                                    :snackCount 15}}
                             "However, this is not a valid initial state."
                             {:code '{:$type :tutorials.vending/InitialVending$v1
-                                     :initial {:$type :tutorials.vending/Vending$v1
-                                               :balance #d "0.00"
-                                               :beverageCount 0
-                                               :snackCount 15}}
+                                     :balance #d "0.00"
+                                     :beverageCount 0
+                                     :snackCount 15}
                              :throws :auto}
 
                             "So now we have a model of the state space and valid initial states for the machine. However, we would like to also model valid state transitions."
