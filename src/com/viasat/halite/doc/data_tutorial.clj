@@ -5,141 +5,143 @@
 
 (set! *warn-on-reflection* true)
 
-(def tutorials {:spec/Vending
+(def tutorials {:tutorials.vending/vending
                 {:label "Model a vending machine as a state machine"
                  :desc "Use specs to map out a state space and valid transitions"
                  :contents ["We can model the state space for a vending machine that accepts nickels, dimes, and quarters and which vends  snacks for $0.50 and beverages for $1.00."
-                            {:spec-map {:spec/Vending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                      :beverageCount :Integer
-                                                                      :snackCount :Integer}
-                                                          :constraints #{{:name "balance not negative"
-                                                                          :expr '(>= balance #d "0.00")}
-                                                                         {:name "counts not negative"
-                                                                          :expr '(and (>= beverageCount 0)
-                                                                                      (>= snackCount 0))}
-                                                                         {:name "counts below capacity"
-                                                                          :expr '(and (<= beverageCount 20)
-                                                                                      (<= snackCount 20))}}}}}
+                            {:spec-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
+                                                                                   :beverageCount :Integer
+                                                                                   :snackCount :Integer}
+                                                                       :constraints #{{:name "balance_not_negative"
+                                                                                       :expr '(>= balance #d "0.00")}
+                                                                                      {:name "counts_not_negative"
+                                                                                       :expr '(and (>= beverageCount 0)
+                                                                                                   (>= snackCount 0))}
+                                                                                      {:name "counts_below_capacity"
+                                                                                       :expr '(and (<= beverageCount 20)
+                                                                                                   (<= snackCount 20))}}}}}
                             "With this spec we can construct instances."
-                            {:code '{:$type :spec/Vending$v1
+                            {:code '{:$type :tutorials.vending/Vending$v1
                                      :balance #d "0.00"
                                      :beverageCount 10
                                      :snackCount 15}}
                             "Let us add a spec that will capture the constraints that identify a valid initial state for a vending machine."
-                            {:spec-map {:spec/Vending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                      :beverageCount :Integer
-                                                                      :snackCount :Integer}
-                                                          :constraints #{{:name "balance not negative"
-                                                                          :expr '(>= balance #d "0.00")}
-                                                                         {:name "counts not negative"
-                                                                          :expr '(and (>= beverageCount 0)
-                                                                                      (>= snackCount 0))}}}
-                                        :spec/InitialVending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                             :beverageCount :Integer
-                                                                             :snackCount :Integer}
-                                                                 :constraints #{{:name "initial state"
-                                                                                 :expr '(and (= #d "0.00" balance)
-                                                                                             (> beverageCount 0)
-                                                                                             (> snackCount 0))}}
-                                                                 :refines-to {:spec/Vending$v1 {:name "toVending"
-                                                                                                :expr
-                                                                                                '{:$type :spec/Vending$v1
-                                                                                                  :balance balance
-                                                                                                  :beverageCount beverageCount
-                                                                                                  :snackCount snackCount}}}}}}
+                            {:spec-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
+                                                                                   :beverageCount :Integer
+                                                                                   :snackCount :Integer}
+                                                                       :constraints #{{:name "balance_not_negative"
+                                                                                       :expr '(>= balance #d "0.00")}
+                                                                                      {:name "counts_not_negative"
+                                                                                       :expr '(and (>= beverageCount 0)
+                                                                                                   (>= snackCount 0))}}}
+                                        :tutorials.vending/InitialVending$v1 {:spec-vars {:balance [:Decimal 2]
+                                                                                          :beverageCount :Integer
+                                                                                          :snackCount :Integer}
+                                                                              :constraints #{{:name "initial state"
+                                                                                              :expr '(and (= #d "0.00" balance)
+                                                                                                          (> beverageCount 0)
+                                                                                                          (> snackCount 0))}}
+                                                                              :refines-to {:tutorials.vending/Vending$v1 {:name "toVending"
+                                                                                                                          :expr
+                                                                                                                          '{:$type :tutorials.vending/Vending$v1
+                                                                                                                            :balance balance
+                                                                                                                            :beverageCount beverageCount
+                                                                                                                            :snackCount snackCount}}}}}}
 
                             "This additional spec can be used to determine where a state is a valid initial state for the machine. For example, this is a valid initial state."
-                            {:code {:$type :spec/InitialVending$v1
-                                    :balance #d "0.00"
-                                    :beverageCount 10
-                                    :snackCount 15}}
+                            {:code '{:$type :tutorials.vending/InitialVending$v1
+                                     :initial {:$type :tutorials.vending/Vending$v1
+                                               :balance #d "0.00"
+                                               :beverageCount 10
+                                               :snackCount 15}}}
                             "However, this is not a valid initial state."
-                            {:code '{:$type :spec/InitialVending$v1
-                                     :balance #d "0.00"
-                                     :beverageCount 0
-                                     :snackCount 15}
+                            {:code '{:$type :tutorials.vending/InitialVending$v1
+                                     :initial {:$type :tutorials.vending/Vending$v1
+                                               :balance #d "0.00"
+                                               :beverageCount 0
+                                               :snackCount 15}}
                              :throws :auto}
 
                             "So now we have a model of the state space and valid initial states for the machine. However, we would like to also model valid state transitions."
-                            {:spec-map {:spec/Vending$v1 {:spec-vars {:balance [:Decimal 2]
-                                                                      :beverageCount :Integer
-                                                                      :snackCount :Integer}
-                                                          :constraints #{{:name "balance not negative"
-                                                                          :expr '(>= balance #d "0.00")}
-                                                                         {:name "counts not negative"
-                                                                          :expr '(and (>= beverageCount 0)
-                                                                                      (>= snackCount 0))}}}
-                                        :spec/VendingTransition$v1 {:spec-vars {:current :spec/Vending$v1
-                                                                                :next :spec/Vending$v1}
-                                                                    :constraints #{{:name "state transitions"
-                                                                                    :expr '(or (and
-                                                                                                (contains? #{#d "0.05"
-                                                                                                             #d "0.10"
-                                                                                                             #d "0.25"}
-                                                                                                           (- (get next :balance)
-                                                                                                              (get current :balance)))
-                                                                                                (= (get next :beverageCount)
-                                                                                                   (get current :beverageCount))
-                                                                                                (= (get next :snackCount)
-                                                                                                   (get current :snackCount)))
-                                                                                               (and
-                                                                                                (= #d "0.50" (- (get current :balance)
-                                                                                                                (get next :balance)))
-                                                                                                (= (get next :beverageCount)
-                                                                                                   (get current :beverageCount))
-                                                                                                (= (get next :snackCount)
-                                                                                                   (dec (get current :snackCount))))
-                                                                                               (and
-                                                                                                (= #d "1.00" (- (get current :balance)
-                                                                                                                (get next :balance)))
-                                                                                                (= (get next :beverageCount)
-                                                                                                   (dec (get current :beverageCount)))
-                                                                                                (= (get next :snackCount)
-                                                                                                   (get current :snackCount))))}}}}}
+                            {:spec-map {:tutorials.vending/Vending$v1 {:spec-vars {:balance [:Decimal 2]
+                                                                                   :beverageCount :Integer
+                                                                                   :snackCount :Integer}
+                                                                       :constraints #{{:name "balance_not_negative"
+                                                                                       :expr '(>= balance #d "0.00")}
+                                                                                      {:name "counts_not_negative"
+                                                                                       :expr '(and (>= beverageCount 0)
+                                                                                                   (>= snackCount 0))}}}
+                                        :tutorials.vending/VendingTransition$v1 {:spec-vars {:current :tutorials.vending/Vending$v1
+                                                                                             :next :tutorials.vending/Vending$v1}
+                                                                                 :constraints #{{:name "state_transitions"
+                                                                                                 :expr '(or (and
+                                                                                                             (contains? #{#d "0.05"
+                                                                                                                          #d "0.10"
+                                                                                                                          #d "0.25"}
+                                                                                                                        (- (get next :balance)
+                                                                                                                           (get current :balance)))
+                                                                                                             (= (get next :beverageCount)
+                                                                                                                (get current :beverageCount))
+                                                                                                             (= (get next :snackCount)
+                                                                                                                (get current :snackCount)))
+                                                                                                            (and
+                                                                                                             (= #d "0.50" (- (get current :balance)
+                                                                                                                             (get next :balance)))
+                                                                                                             (= (get next :beverageCount)
+                                                                                                                (get current :beverageCount))
+                                                                                                             (= (get next :snackCount)
+                                                                                                                (dec (get current :snackCount))))
+                                                                                                            (and
+                                                                                                             (= #d "1.00" (- (get current :balance)
+                                                                                                                             (get next :balance)))
+                                                                                                             (= (get next :beverageCount)
+                                                                                                                (dec (get current :beverageCount)))
+                                                                                                             (= (get next :snackCount)
+                                                                                                                (get current :snackCount))))}}}}}
                             "A valid transition representing a dime being dropped into the machine."
-                            {:code '{:$type :spec/VendingTransition$v1
-                                     :current {:$type :spec/Vending$v1
+                            {:code '{:$type :tutorials.vending/VendingTransition$v1
+                                     :current {:$type :tutorials.vending/Vending$v1
                                                :balance #d "0.00"
                                                :beverageCount 10
                                                :snackCount 15}
-                                     :next {:$type :spec/Vending$v1
+                                     :next {:$type :tutorials.vending/Vending$v1
                                             :balance #d "0.10"
                                             :beverageCount 10
                                             :snackCount 15}}}
                             "An invalid transition, because the balance cannot increase by $0.07"
-                            {:code '{:$type :spec/VendingTransition$v1
-                                     :current {:$type :spec/Vending$v1
+                            {:code '{:$type :tutorials.vending/VendingTransition$v1
+                                     :current {:$type :tutorials.vending/Vending$v1
                                                :balance #d "0.00"
                                                :beverageCount 10
                                                :snackCount 15}
-                                     :next {:$type :spec/Vending$v1
+                                     :next {:$type :tutorials.vending/Vending$v1
                                             :balance #d "0.07"
                                             :beverageCount 10
                                             :snackCount 15}}
                              :throws :auto}
                             "A valid transition representing a snack being vended."
-                            {:code '{:$type :spec/VendingTransition$v1
-                                     :current {:$type :spec/Vending$v1
+                            {:code '{:$type :tutorials.vending/VendingTransition$v1
+                                     :current {:$type :tutorials.vending/Vending$v1
                                                :balance #d "0.75"
                                                :beverageCount 10
                                                :snackCount 15}
-                                     :next {:$type :spec/Vending$v1
+                                     :next {:$type :tutorials.vending/Vending$v1
                                             :balance #d "0.25"
                                             :beverageCount 10
                                             :snackCount 14}}}
                             "An invalid attempted transition representing a snack being vended."
-                            {:code '{:$type :spec/VendingTransition$v1
-                                     :current {:$type :spec/Vending$v1
+                            {:code '{:$type :tutorials.vending/VendingTransition$v1
+                                     :current {:$type :tutorials.vending/Vending$v1
                                                :balance #d "0.75"
                                                :beverageCount 10
                                                :snackCount 15}
-                                     :next {:$type :spec/Vending$v1
+                                     :next {:$type :tutorials.vending/Vending$v1
                                             :balance #d "0.25"
                                             :beverageCount 9
                                             :snackCount 14}}
                              :throws :auto}]}
 
-                :spec/sudoku
+                :tutorials.sudoku/sudoku
                 {:label "Model a sudokuo puzzle"
                  :desc "Consider how to use specs to model a sudoku game."
                  :basic-ref ['integer 'vector 'instance 'set 'boolean 'spec-map]
@@ -151,194 +153,194 @@
                                      [4 3 2 1]
                                      [2 1 4 3]]}
                             "We can write a specification that contains a value of this form."
-                            {:spec-map {:spec/Sudoku$v1 {:spec-vars {:solution [:Vec [:Vec :Integer]]}}}}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v1 {:spec-vars {:solution [:Vec [:Vec :Integer]]}}}}
                             "An instance of this spec can be constructed as:"
-                            {:code '{:$type :spec/Sudoku$v1
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v1
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}}
                             "In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, & 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row."
-                            {:spec-map {:spec/Sudoku$v2 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
-                                                         :constraints #{{:name "row_1" :expr '(= (concat #{} (get solution 0))
-                                                                                                 #{1 2 3 4})}
-                                                                        {:name "row_2" :expr '(= (concat #{} (get solution 1))
-                                                                                                 #{1 2 3 4})}
-                                                                        {:name "row_3" :expr '(= (concat #{} (get solution 2))
-                                                                                                 #{1 2 3 4})}
-                                                                        {:name "row_4" :expr '(= (concat #{} (get solution 3))
-                                                                                                 #{1 2 3 4})}}}}}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v2 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                                                                     :constraints #{{:name "row_1" :expr '(= (concat #{} (get solution 0))
+                                                                                                             #{1 2 3 4})}
+                                                                                    {:name "row_2" :expr '(= (concat #{} (get solution 1))
+                                                                                                             #{1 2 3 4})}
+                                                                                    {:name "row_3" :expr '(= (concat #{} (get solution 2))
+                                                                                                             #{1 2 3 4})}
+                                                                                    {:name "row_4" :expr '(= (concat #{} (get solution 3))
+                                                                                                             #{1 2 3 4})}}}}}
                             "Now when we create an instance it must meet these constraints. As this instance does."
-                            {:code '{:$type :spec/Sudoku$v2
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v2
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}
                              :result :auto}
                             "However, this attempt to create an instance fails. It tells us specifically which constraint failed."
-                            {:code '{:$type :spec/Sudoku$v2
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v2
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 2]
                                                 [2 1 4 3]]}
                              :throws :auto}
                             "Rather than expressing each row constraint separately, they can be captured in a single constraint expression."
-                            {:spec-map {:spec/Sudoku$v3 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
-                                                         :constraints #{{:name "rows" :expr '(every? [r solution]
-                                                                                                     (= (concat #{} r)
-                                                                                                        #{1 2 3 4}))}}}}}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v3 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                                                                     :constraints #{{:name "rows" :expr '(every? [r solution]
+                                                                                                                 (= (concat #{} r)
+                                                                                                                    #{1 2 3 4}))}}}}}
                             "Again, valid solutions can be constructed."
-                            {:code '{:$type :spec/Sudoku$v3
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v3
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}
                              :result :auto}
                             "While invalid solutions fail"
-                            {:code '{:$type :spec/Sudoku$v3
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v3
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 2]
                                                 [2 1 4 3]]}
                              :throws :auto}
                             "But, we are only checking rows, let's also check columns."
-                            {:spec-map {:spec/Sudoku$v4 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
-                                                         :constraints #{{:name "rows" :expr '(every? [r solution]
-                                                                                                     (= (concat #{} r)
-                                                                                                        #{1 2 3 4}))}
-                                                                        {:name "columns" :expr '(every? [i [0 1 2 3]]
-                                                                                                        (= #{(get-in solution [0 i])
-                                                                                                             (get-in solution [1 i])
-                                                                                                             (get-in solution [2 i])
-                                                                                                             (get-in solution [3 i])}
-                                                                                                           #{1 2 3 4}))}}}}}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v4 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                                                                     :constraints #{{:name "rows" :expr '(every? [r solution]
+                                                                                                                 (= (concat #{} r)
+                                                                                                                    #{1 2 3 4}))}
+                                                                                    {:name "columns" :expr '(every? [i [0 1 2 3]]
+                                                                                                                    (= #{(get-in solution [0 i])
+                                                                                                                         (get-in solution [1 i])
+                                                                                                                         (get-in solution [2 i])
+                                                                                                                         (get-in solution [3 i])}
+                                                                                                                       #{1 2 3 4}))}}}}}
                             "First, check if a valid solution works."
-                            {:code '{:$type :spec/Sudoku$v4
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v4
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}
                              :result :auto}
                             "Now confirm that an invalid solution fails. Notice that the error indicates that both constraints are violated."
-                            {:code '{:$type :spec/Sudoku$v4
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v4
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 2]
                                                 [2 1 4 3]]}
                              :throws :auto}
                             "Notice that we are still not detecting the following invalid solution. Specifically, while this solution meets the row and column requirements, it does not meet the quadrant requirement."
-                            {:code '{:$type :spec/Sudoku$v4
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v4
                                      :solution [[1 2 3 4]
                                                 [4 1 2 3]
                                                 [3 4 1 2]
                                                 [2 3 4 1]]}
                              :result :auto}
                             "Let's add the quadrant checks."
-                            {:spec-map {:spec/Sudoku$v5 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
-                                                         :constraints #{{:name "rows" :expr '(every? [r solution]
-                                                                                                     (= (concat #{} r)
-                                                                                                        #{1 2 3 4}))}
-                                                                        {:name "columns" :expr '(every? [i [0 1 2 3]]
-                                                                                                        (= #{(get-in solution [0 i])
-                                                                                                             (get-in solution [1 i])
-                                                                                                             (get-in solution [2 i])
-                                                                                                             (get-in solution [3 i])}
-                                                                                                           #{1 2 3 4}))}
-                                                                        {:name "quadrant_1" :expr '(= #{(get-in solution [0 0])
-                                                                                                        (get-in solution [0 1])
-                                                                                                        (get-in solution [1 0])
-                                                                                                        (get-in solution [1 1])}
-                                                                                                      #{1 2 3 4})}
-                                                                        {:name "quadrant_2" :expr '(= #{(get-in solution [0 2])
-                                                                                                        (get-in solution [0 3])
-                                                                                                        (get-in solution [1 2])
-                                                                                                        (get-in solution [1 3])}
-                                                                                                      #{1 2 3 4})}
-                                                                        {:name "quadrant_3" :expr '(= #{(get-in solution [2 0])
-                                                                                                        (get-in solution [2 1])
-                                                                                                        (get-in solution [3 0])
-                                                                                                        (get-in solution [3 1])}
-                                                                                                      #{1 2 3 4})}
-                                                                        {:name "quadrant_4" :expr '(= #{(get-in solution [2 2])
-                                                                                                        (get-in solution [2 3])
-                                                                                                        (get-in solution [3 2])
-                                                                                                        (get-in solution [3 3])}
-                                                                                                      #{1 2 3 4})}}}}}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v5 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                                                                     :constraints #{{:name "rows" :expr '(every? [r solution]
+                                                                                                                 (= (concat #{} r)
+                                                                                                                    #{1 2 3 4}))}
+                                                                                    {:name "columns" :expr '(every? [i [0 1 2 3]]
+                                                                                                                    (= #{(get-in solution [0 i])
+                                                                                                                         (get-in solution [1 i])
+                                                                                                                         (get-in solution [2 i])
+                                                                                                                         (get-in solution [3 i])}
+                                                                                                                       #{1 2 3 4}))}
+                                                                                    {:name "quadrant_1" :expr '(= #{(get-in solution [0 0])
+                                                                                                                    (get-in solution [0 1])
+                                                                                                                    (get-in solution [1 0])
+                                                                                                                    (get-in solution [1 1])}
+                                                                                                                  #{1 2 3 4})}
+                                                                                    {:name "quadrant_2" :expr '(= #{(get-in solution [0 2])
+                                                                                                                    (get-in solution [0 3])
+                                                                                                                    (get-in solution [1 2])
+                                                                                                                    (get-in solution [1 3])}
+                                                                                                                  #{1 2 3 4})}
+                                                                                    {:name "quadrant_3" :expr '(= #{(get-in solution [2 0])
+                                                                                                                    (get-in solution [2 1])
+                                                                                                                    (get-in solution [3 0])
+                                                                                                                    (get-in solution [3 1])}
+                                                                                                                  #{1 2 3 4})}
+                                                                                    {:name "quadrant_4" :expr '(= #{(get-in solution [2 2])
+                                                                                                                    (get-in solution [2 3])
+                                                                                                                    (get-in solution [3 2])
+                                                                                                                    (get-in solution [3 3])}
+                                                                                                                  #{1 2 3 4})}}}}}
                             "Now the attempted solution, which has valid columns and rows, but not quadrants is detected as invalid. Notice the error indicates that all four quadrants were violated."
-                            {:code '{:$type :spec/Sudoku$v5
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v5
                                      :solution [[1 2 3 4]
                                                 [4 1 2 3]
                                                 [3 4 1 2]
                                                 [2 3 4 1]]}
                              :throws :auto}
                             "Let's make sure that our valid solution works."
-                            {:code '{:$type :spec/Sudoku$v5
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v5
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}
                              :result :auto}
                             "Let's combine the quadrant checks into one."
-                            {:spec-map {:spec/Sudoku$v6 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
-                                                         :constraints #{{:name "rows" :expr '(every? [r solution]
-                                                                                                     (= (concat #{} r)
-                                                                                                        #{1 2 3 4}))}
-                                                                        {:name "columns" :expr '(every? [i [0 1 2 3]]
-                                                                                                        (= #{(get-in solution [0 i])
-                                                                                                             (get-in solution [1 i])
-                                                                                                             (get-in solution [2 i])
-                                                                                                             (get-in solution [3 i])}
-                                                                                                           #{1 2 3 4}))}
-                                                                        {:name "quadrants" :expr '(every? [base [[0 0] [0 2] [2 0] [2 2]]]
-                                                                                                          (let [base-x (get base 0)
-                                                                                                                base-y (get base 1)]
-                                                                                                            (= #{(get-in solution [base-x base-y])
-                                                                                                                 (get-in solution [base-x (inc base-y)])
-                                                                                                                 (get-in solution [(inc base-x) base-y])
-                                                                                                                 (get-in solution [(inc base-x) (inc base-y)])}
-                                                                                                               #{1 2 3 4})))}}}}}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v6 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                                                                     :constraints #{{:name "rows" :expr '(every? [r solution]
+                                                                                                                 (= (concat #{} r)
+                                                                                                                    #{1 2 3 4}))}
+                                                                                    {:name "columns" :expr '(every? [i [0 1 2 3]]
+                                                                                                                    (= #{(get-in solution [0 i])
+                                                                                                                         (get-in solution [1 i])
+                                                                                                                         (get-in solution [2 i])
+                                                                                                                         (get-in solution [3 i])}
+                                                                                                                       #{1 2 3 4}))}
+                                                                                    {:name "quadrants" :expr '(every? [base [[0 0] [0 2] [2 0] [2 2]]]
+                                                                                                                      (let [base-x (get base 0)
+                                                                                                                            base-y (get base 1)]
+                                                                                                                        (= #{(get-in solution [base-x base-y])
+                                                                                                                             (get-in solution [base-x (inc base-y)])
+                                                                                                                             (get-in solution [(inc base-x) base-y])
+                                                                                                                             (get-in solution [(inc base-x) (inc base-y)])}
+                                                                                                                           #{1 2 3 4})))}}}}}
                             "Valid solution still works."
-                            {:code '{:$type :spec/Sudoku$v6
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v6
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}
                              :result :auto}
                             "Invalid solution fails."
-                            {:code '{:$type :spec/Sudoku$v6
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v6
                                      :solution [[1 2 3 4]
                                                 [4 1 2 3]
                                                 [3 4 1 2]
                                                 [2 3 4 1]]}
                              :throws :auto}
                             "As an exercise, we can convert the logic of the constraints. Instead of checking that each row, column, and quadrant has the expected elements, we can write the constraints to ensure there are not any rows, columns, or quadrants that do not have the expected elements. The double negative logic is confusing, but this shows other available logical operations."
-                            {:spec-map {:spec/Sudoku$v7 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
-                                                         :constraints #{{:name "rows" :expr '(not (any? [r solution]
-                                                                                                        (not= (concat #{} r)
-                                                                                                              #{1 2 3 4})))}
-                                                                        {:name "columns" :expr '(not (any? [i [0 1 2 3]]
-                                                                                                           (not= #{(get-in solution [0 i])
-                                                                                                                   (get-in solution [1 i])
-                                                                                                                   (get-in solution [2 i])
-                                                                                                                   (get-in solution [3 i])}
-                                                                                                                 #{1 2 3 4})))}
-                                                                        {:name "quadrants" :expr '(not (any? [base [[0 0] [0 2] [2 0] [2 2]]]
-                                                                                                             (let [base-x (get base 0)
-                                                                                                                   base-y (get base 1)]
-                                                                                                               (not= #{(get-in solution [base-x base-y])
-                                                                                                                       (get-in solution [base-x (inc base-y)])
-                                                                                                                       (get-in solution [(inc base-x) base-y])
-                                                                                                                       (get-in solution [(inc base-x) (inc base-y)])}
-                                                                                                                     #{1 2 3 4}))))}}}}}
+                            {:spec-map {:tutorials.sudoku/Sudoku$v7 {:spec-vars {:solution [:Vec [:Vec :Integer]]}
+                                                                     :constraints #{{:name "rows" :expr '(not (any? [r solution]
+                                                                                                                    (not= (concat #{} r)
+                                                                                                                          #{1 2 3 4})))}
+                                                                                    {:name "columns" :expr '(not (any? [i [0 1 2 3]]
+                                                                                                                       (not= #{(get-in solution [0 i])
+                                                                                                                               (get-in solution [1 i])
+                                                                                                                               (get-in solution [2 i])
+                                                                                                                               (get-in solution [3 i])}
+                                                                                                                             #{1 2 3 4})))}
+                                                                                    {:name "quadrants" :expr '(not (any? [base [[0 0] [0 2] [2 0] [2 2]]]
+                                                                                                                         (let [base-x (get base 0)
+                                                                                                                               base-y (get base 1)]
+                                                                                                                           (not= #{(get-in solution [base-x base-y])
+                                                                                                                                   (get-in solution [base-x (inc base-y)])
+                                                                                                                                   (get-in solution [(inc base-x) base-y])
+                                                                                                                                   (get-in solution [(inc base-x) (inc base-y)])}
+                                                                                                                                 #{1 2 3 4}))))}}}}}
                             "Valid solution still works."
-                            {:code '{:$type :spec/Sudoku$v7
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v7
                                      :solution [[1 2 3 4]
                                                 [3 4 1 2]
                                                 [4 3 2 1]
                                                 [2 1 4 3]]}
                              :result :auto}
                             "Invalid solution fails."
-                            {:code '{:$type :spec/Sudoku$v7
+                            {:code '{:$type :tutorials.sudoku/Sudoku$v7
                                      :solution [[1 2 3 4]
                                                 [4 1 2 3]
                                                 [3 4 1 2]
@@ -346,19 +348,19 @@
                              :throws :auto}
 
                             "Finally, rather than having invalid solutions throw errors, we can instead produce a boolean value indicating whether the solution is valid."
-                            {:code '(valid? {:$type :spec/Sudoku$v7
+                            {:code '(valid? {:$type :tutorials.sudoku/Sudoku$v7
                                              :solution [[1 2 3 4]
                                                         [3 4 1 2]
                                                         [4 3 2 1]
                                                         [2 1 4 3]]})
                              :result :auto}
-                            {:code '(valid? {:$type :spec/Sudoku$v7
+                            {:code '(valid? {:$type :tutorials.sudoku/Sudoku$v7
                                              :solution [[1 2 3 4]
                                                         [3 4 1 2]
                                                         [4 3 2 2]
                                                         [2 1 4 3]]})
                              :result :auto}
-                            {:code '(valid? {:$type :spec/Sudoku$v7
+                            {:code '(valid? {:$type :tutorials.sudoku/Sudoku$v7
                                              :solution [[1 2 3 4]
                                                         [4 1 2 3]
                                                         [3 4 1 2]
