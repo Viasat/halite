@@ -73,10 +73,13 @@
   (is (= #d "0.00"
          (fixed-decimal/fixed-decimal-reader "0.00")))
   (is (= #d "1.234567890123456789"
-         (fixed-decimal/fixed-decimal-reader "1.234567890123456789"))))
+         (fixed-decimal/fixed-decimal-reader "1.234567890123456789")))
+  (is (= #d "-1.234567890123456789"
+         (fixed-decimal/fixed-decimal-reader "-1.234567890123456789"))))
 
 (deftest test-equality
   (is (= #d "1.0" #d "1.0"))
+  (is (= #d "-1.0" #d "-1.0"))
   (is (= #d "1.0" #d "1.0" #d "1.0"))
   (is (= #d "1.0" (fixed-decimal/f+ #d "0.1" #d "0.9")))
   (is (not (= #d "-1.0" #d "1.0")))
@@ -157,6 +160,8 @@
          (fixed-decimal/f* #d "1.0" 1)))
   (is (= #d "6.0"
          (fixed-decimal/f* #d "1.0" 1 2 3)))
+  (is (= #d "-6.0"
+         (fixed-decimal/f* #d "-1.0" 1 2 3)))
   (is (= #d "2.0"
          (fixed-decimal/f* #d "1.0" 2)))
   (is (= #d "2.0"
@@ -182,6 +187,8 @@
          (fixed-decimal/fquot #d "1.0" 2)))
   (is (= #d "2.0"
          (fixed-decimal/fquot #d "2.0" 1)))
+  (is (= #d "-2.0"
+         (fixed-decimal/fquot #d "-2.0" 1)))
   (is (= #d "0.41"
          (fixed-decimal/fquot #d "1.23" 3)))
   (is (= #d "0.00"
@@ -216,6 +223,9 @@
   (is (not (fixed-decimal/f< #d "3.0" #d "1.0" #d "2.0")))
   (is (not (fixed-decimal/f< #d "1.0" #d "1.0")))
   (is (not (fixed-decimal/f< #d "2.0" #d "1.0")))
+  (is (fixed-decimal/f< #d "-2.0" #d "1.0"))
+  (is (not (fixed-decimal/f< #d "2.0" #d "-1.0")))
+  (is (fixed-decimal/f< #d "-2.0" #d "-1.0"))
   (is (fixed-decimal/f<= #d "1.0" #d "1.0"))
   (is (fixed-decimal/f<= #d "1.0" #d "2.0"))
   (is (not (fixed-decimal/f<= #d "2.0" #d "1.0")))
@@ -262,6 +272,8 @@
          (fixed-decimal/set-scale #d "1.23" 4)))
   (is (= #d "1.230000000000000000"
          (fixed-decimal/set-scale #d "1.23" 18)))
+  (is (= #d "-1.230000000000000000"
+         (fixed-decimal/set-scale #d "-1.23" 18)))
   (is (thrown-with-msg? ExceptionInfo #"invalid scale"
                         (fixed-decimal/set-scale #d "1.23" 19)))
   (is (= 1
@@ -303,7 +315,9 @@
 (deftest test-customize-printing
   (binding [fixed-decimal/*reader-symbol* 'fixed-decimal/decimal]
     (is (= "#fixed-decimal/decimal \"1.2\""
-           (pr-str #d "1.2")))))
+           (pr-str #d "1.2")))
+    (is (= "#fixed-decimal/decimal \"-1.2\""
+           (pr-str #d "-1.2")))))
 
 (deftest test-package-long
   (is (= #d "0.0"
@@ -325,13 +339,19 @@
   (is (= #d "0.9876"
          (#'fixed-decimal/package-long 4 9876)))
   (is (= #d "0.09876"
-         (#'fixed-decimal/package-long 5 9876))))
+         (#'fixed-decimal/package-long 5 9876)))
+  (is (= #d "-0.09876"
+         (#'fixed-decimal/package-long 5 -9876)))
+  (is (= #d "-0.01"
+         (#'fixed-decimal/package-long 2 -1))))
 
 (deftest test-sort-key
   (is (= 10
          (fixed-decimal/sort-key #d "1.0")))
   (is (= 11
          (fixed-decimal/sort-key #d "1.1")))
+  (is (= -11
+         (fixed-decimal/sort-key #d "-1.1")))
   (is (= 10
          (fixed-decimal/sort-key #d "0.10")))
   (is (= 11

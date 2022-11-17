@@ -76,12 +76,14 @@
   is a positive value."
   [scale :- schema/Int
    n :- Long]
-  (let [s (str n)
+  (let [s (if (neg? n)
+            (subs (str n) 1)
+            (str n))
         fractional-start (- (count s) scale)]
     (FixedDecimal. (if (neg? n) "-" "")
                    (if (neg? fractional-start)
                      "0"
-                     (let [integer (subs s (if (neg? n) 1 0) fractional-start)]
+                     (let [integer (subs s 0 fractional-start)]
                        (if (zero? (count integer))
                          "0"
                          integer)))
