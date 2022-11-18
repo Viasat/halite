@@ -48,13 +48,13 @@ Let us add a spec that will capture the constraints that identify a valid initia
 }
 ```
 
-This additional spec can be used to determine where a state is a valid initial state for the machine. For example, this is a valid initial state.
+This additional spec can be used to determine whether a state is a valid initial state for the machine. For example, this is a valid initial state.
 
 ```java
 {$type: tutorials.vending/InitialVending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}
 ```
 
-The corresponding vending state can be 'extracted' from the initial state:
+The corresponding vending state can be produced from the initial state:
 
 ```java
 {$type: tutorials.vending/InitialVending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}.refineTo( tutorials.vending/Vending$v1 )
@@ -64,7 +64,7 @@ The corresponding vending state can be 'extracted' from the initial state:
 {$type: tutorials.vending/Vending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}
 ```
 
-However, this is not a valid initial state.
+The following is not a valid initial state.
 
 ```java
 {$type: tutorials.vending/InitialVending$v1, balance: #d "0.00", beverageCount: 0, snackCount: 15}
@@ -126,7 +126,7 @@ It is a bit subtle, but our constraints also allow the state to be unchanged. Th
 {$type: tutorials.vending/VendingTransition$v1, current: {$type: tutorials.vending/Vending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}, next: {$type: tutorials.vending/Vending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}}
 ```
 
-Now we have modeled valid state transitions without modeling the events that trigger those transitions. That may be sufficient for what we are looking to accomplish, but lets take it further and model a possible event structure.
+At this point we have modeled valid state transitions without modeling the events that trigger those transitions. That may be sufficient for what we are looking to accomplish, but let's take it further and model a possible event structure.
 
 ```java
 {
@@ -181,7 +181,7 @@ map(e in [{$type: tutorials.vending/CoinEvent$v1, denomination: "nickel"}, {$typ
 [{$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: #d "0.05", beverageDelta: 0, snackDelta: 0}, {$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: #d "0.10", beverageDelta: 0, snackDelta: 0}, {$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: #d "0.25", beverageDelta: 0, snackDelta: 0}, {$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: #d "-0.50", beverageDelta: 0, snackDelta: -1}, {$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: #d "-1.00", beverageDelta: -1, snackDelta: 0}]
 ```
 
-Now add a spec which will take a vending machine state and event to produce a new vending machine state.
+As the next step, we add a spec which will take a vending machine state and and event as input to produce a new vending machine state as output.
 
 ```java
 {
@@ -222,7 +222,7 @@ If we try to process an event that cannot be handled then the state is unchanged
 {$type: tutorials.vending/VendingTransition$v1, current: {$type: tutorials.vending/Vending$v1, balance: #d "0.10", beverageCount: 5, snackCount: 6}, next: {$type: tutorials.vending/Vending$v1, balance: #d "0.10", beverageCount: 5, snackCount: 6}}
 ```
 
-We have come this far, now we can tie it all together by making a spec to represent a sequence of transitions starting with an initial state.
+We have come this far we might as well add one more spec that ties it all together via an initial state and a sequence of events.
 
 ```java
 {
@@ -241,7 +241,7 @@ We have come this far, now we can tie it all together by making a spec to repres
 }
 ```
 
-Now from an initial state and a sequence of events we can compute the final state.
+From an initial state and a sequence of events we can compute the final state.
 
 ```java
 {$type: tutorials.vending/VendBehavior$v1, events: [{$type: tutorials.vending/CoinEvent$v1, denomination: "quarter"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "nickel"}, {$type: tutorials.vending/VendEvent$v1, item: "snack"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "dime"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "quarter"}, {$type: tutorials.vending/VendEvent$v1, item: "snack"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "dime"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "nickel"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "dime"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "quarter"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "quarter"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "quarter"}, {$type: tutorials.vending/VendEvent$v1, item: "beverage"}, {$type: tutorials.vending/VendEvent$v1, item: "beverage"}], initial: {$type: tutorials.vending/InitialVending$v1, balance: #d "0.00", beverageCount: 10, snackCount: 15}}.refineTo( tutorials.vending/Vending$v1 )

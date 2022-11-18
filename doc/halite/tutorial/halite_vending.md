@@ -49,7 +49,7 @@ Let us add a spec that will capture the constraints that identify a valid initia
                             :snackCount snackCount}}}}}
 ```
 
-This additional spec can be used to determine where a state is a valid initial state for the machine. For example, this is a valid initial state.
+This additional spec can be used to determine whether a state is a valid initial state for the machine. For example, this is a valid initial state.
 
 ```clojure
 {:$type :tutorials.vending/InitialVending$v1,
@@ -58,7 +58,7 @@ This additional spec can be used to determine where a state is a valid initial s
  :snackCount 15}
 ```
 
-The corresponding vending state can be 'extracted' from the initial state:
+The corresponding vending state can be produced from the initial state:
 
 ```clojure
 (refine-to {:$type :tutorials.vending/InitialVending$v1,
@@ -75,7 +75,7 @@ The corresponding vending state can be 'extracted' from the initial state:
  :snackCount 15}
 ```
 
-However, this is not a valid initial state.
+The following is not a valid initial state.
 
 ```clojure
 {:$type :tutorials.vending/InitialVending$v1,
@@ -196,7 +196,7 @@ It is a bit subtle, but our constraints also allow the state to be unchanged. Th
         :snackCount 15}}
 ```
 
-Now we have modeled valid state transitions without modeling the events that trigger those transitions. That may be sufficient for what we are looking to accomplish, but lets take it further and model a possible event structure.
+At this point we have modeled valid state transitions without modeling the events that trigger those transitions. That may be sufficient for what we are looking to accomplish, but let's take it further and model a possible event structure.
 
 ```clojure
 {:tutorials.vending/CoinEvent$v1
@@ -288,7 +288,7 @@ We can verify that all of these events produce the expected abstract events.
   :snackDelta 0}]
 ```
 
-Now add a spec which will take a vending machine state and event to produce a new vending machine state.
+As the next step, we add a spec which will take a vending machine state and and event as input to produce a new vending machine state as output.
 
 ```clojure
 {:tutorials.vending/VendEventHandler$v1
@@ -370,7 +370,7 @@ If we try to process an event that cannot be handled then the state is unchanged
         :snackCount 6}}
 ```
 
-We have come this far, now we can tie it all together by making a spec to represent a sequence of transitions starting with an initial state.
+We have come this far we might as well add one more spec that ties it all together via an initial state and a sequence of events.
 
 ```clojure
 {:tutorials.vending/VendBehavior$v1
@@ -389,7 +389,7 @@ We have come this far, now we can tie it all together by making a spec to repres
                      :next))}}}}
 ```
 
-Now from an initial state and a sequence of events we can compute the final state.
+From an initial state and a sequence of events we can compute the final state.
 
 ```clojure
 (refine-to {:$type :tutorials.vending/VendBehavior$v1,

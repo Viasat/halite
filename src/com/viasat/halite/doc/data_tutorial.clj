@@ -40,14 +40,14 @@
                                                                                                                                   :beverageCount beverageCount
                                                                                                                                   :snackCount snackCount}}}}}}
 
-                            "This additional spec can be used to determine where a state is a valid initial state for the machine. For example, this is a valid initial state."
+                            "This additional spec can be used to determine whether a state is a valid initial state for the machine. For example, this is a valid initial state."
 
                             {:code {:$type :tutorials.vending/InitialVending$v1
                                     :balance #d "0.00"
                                     :beverageCount 10
                                     :snackCount 15}}
 
-                            "The corresponding vending state can be 'extracted' from the initial state:"
+                            "The corresponding vending state can be produced from the initial state:"
                             {:code '(refine-to {:$type :tutorials.vending/InitialVending$v1
                                                 :balance #d "0.00"
                                                 :beverageCount 10
@@ -55,7 +55,7 @@
                                                :tutorials.vending/Vending$v1)
                              :result :auto}
 
-                            "However, this is not a valid initial state."
+                            "The following is not a valid initial state."
                             {:code '{:$type :tutorials.vending/InitialVending$v1
                                      :balance #d "0.00"
                                      :beverageCount 0
@@ -144,7 +144,7 @@
                                             :beverageCount 10
                                             :snackCount 15}}}
 
-                            "Now we have modeled valid state transitions without modeling the events that trigger those transitions. That may be sufficient for what we are looking to accomplish, but lets take it further and model a possible event structure."
+                            "At this point we have modeled valid state transitions without modeling the events that trigger those transitions. That may be sufficient for what we are looking to accomplish, but let's take it further and model a possible event structure."
                             {:spec-map-merge {:tutorials.vending/VendingAbstractEvent$v1 {:abstract? true
                                                                                           :fields {:balanceDelta [:Decimal 2]
                                                                                                    :beverageDelta :Integer
@@ -199,7 +199,7 @@
                                               :item "beverage"}]]
                                          (refine-to e :tutorials.vending/VendingAbstractEvent$v1))
                              :result :auto}
-                            "Now add a spec which will take a vending machine state and event to produce a new vending machine state."
+                            "As the next step, we add a spec which will take a vending machine state and and event as input to produce a new vending machine state as output."
                             {:spec-map-merge {:tutorials.vending/VendEventHandler$v1 {:fields {:current :tutorials.vending/Vending$v1
                                                                                                :event :tutorials.vending/VendingAbstractEvent$v1}
                                                                                       :refines-to {:tutorials.vending/VendingTransition$v1
@@ -241,7 +241,7 @@
                                                :tutorials.vending/VendingTransition$v1)
                              :result :auto}
 
-                            "We have come this far, now we can tie it all together by making a spec to represent a sequence of transitions starting with an initial state."
+                            "We have come this far we might as well add one more spec that ties it all together via an initial state and a sequence of events."
                             {:spec-map-merge {:tutorials.vending/VendBehavior$v1 {:fields {:initial :tutorials.vending/InitialVending$v1
                                                                                            :events [:Vec :tutorials.vending/VendingAbstractEvent$v1]}
                                                                                   :refines-to {:tutorials.vending/Vending$v1
@@ -253,7 +253,7 @@
                                                                                                                                 :event e}
                                                                                                                                :tutorials.vending/VendingTransition$v1)
                                                                                                                     :next))}}}}}
-                            "Now from an initial state and a sequence of events we can compute the final state."
+                            "From an initial state and a sequence of events we can compute the final state."
                             {:code '(refine-to {:$type :tutorials.vending/VendBehavior$v1
                                                 :initial {:$type :tutorials.vending/InitialVending$v1
                                                           :balance #d "0.00"
