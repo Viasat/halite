@@ -219,6 +219,13 @@
 
 (declare lower-abstract-bounds)
 
+(defn ^:private intersect-spec-bounds [a b]
+  (if (and (or (= [:$type] (keys a)) (= [:$type] (keys b)))
+           (= (:$type a) (:$type b)))
+    (merge a b)
+    (throw (ex-info "Bounds on both an instance and refinement to itself is not yet supported"
+                    {:conflicting-bounds [a b]}))))
+
 (s/defn ^:private lower-abstract-var-bound
   "Takes an AbstractSpecBound and converts it into bounds on new variables in the parent bound.
   $if and $type fields are normalized into $in values. Lifts all of the $in values into the parent-bound as different alternatives."
@@ -241,7 +248,9 @@
                       (lower-abstract-bounds
                        parent-spec-ids
                        (cond-> (assoc spec-bound :$type [:Maybe spec-id])
-                         $refines-to (assoc :$refines-to $refines-to))
+                         (get $refines-to spec-id) (intersect-spec-bounds (assoc (get $refines-to spec-id)
+                                                                                 :$type [:Maybe spec-id]))
+                         $refines-to (assoc :$refines-to (dissoc $refines-to spec-id)))
                        senv alternatives))))
            ;; restrict the discriminator
            (assoc parent-bound (discriminator-var-kw var-kw) {:$in (cond-> alt-ids unset? (conj :Unset))})

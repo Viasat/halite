@@ -607,6 +607,60 @@
                        {:$type :ws/P
                         :a {:$type :ws/A}}))))
 
+(deftest test-refines-to-self
+  (let [sctx (ssa/spec-map-to-ssa
+                        '{:ws/T {:fields {:a [:Maybe [:Instance :* #{:ws/A}]]}}
+                          :ws/A {:abstract? true}
+                          :ws/X {:fields {:n :Integer}
+                                 :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X
+                                                            :n 5}}}}})]
+    (is (= {:$type :ws/T,
+            :a {:$in {:Unset true,
+                      :ws/X {:n 5,
+                             :$refines-to {:ws/A {}}},
+                      :ws/Y {:$refines-to {:ws/X {:n 5},
+                                           :ws/A {}}}},
+                :$refines-to {:ws/A {}}}}
+           (pa/propagate sctx
+                         {:$type :ws/T
+                          :a {:$refines-to {:ws/X {:n 5}}}})))
+
+    (is (= {:$type :ws/T
+            :a {:$in {:Unset true
+                      :ws/X {:$refines-to {:ws/A {}}
+                             :n 6}}
+                :$refines-to {:ws/A {}}}}
+           (pa/propagate sctx
+                         {:$type :ws/T
+                          :a {:$refines-to {:ws/X {:n 6}}}})))
+
+    (is (= {:$type :ws/T,
+            :a {:$in {:Unset true,
+                      :ws/Y {:$refines-to {:ws/A {},
+                                           :ws/X {:n 5}}}}
+                :$refines-to {}}}
+           (pa/propagate sctx
+                         {:$type :ws/T
+                          :a {:$refines-to {:ws/Y {}}}})))
+
+    (is (= {:$type :ws/T,
+            :a {:$in {:Unset true,
+                      :ws/X {:n {:$in [-1000 1000]},
+                             :$refines-to {:ws/A {}}},
+                      :ws/Y {:$refines-to {:ws/X {:n 5},
+                                           :ws/A {}}}},
+                :$refines-to {:ws/A {}}}}
+           (pa/propagate sctx
+                         {:$type :ws/T})))
+
+    (is (thrown-with-msg? Exception #"not yet supported"
+                          (pa/propagate sctx
+                                        {:$type :ws/T
+                                         :a {:$in {:ws/X {:n {:$in [0 5]}}
+                                                   :ws/Y {}}
+                                             :$refines-to {:ws/X {:n {:$in [4 10]}}}}})))))
+
 (deftest test-recursive-structure
   ;; TODO: currently produces NPE in prop-composition
   #_(do
