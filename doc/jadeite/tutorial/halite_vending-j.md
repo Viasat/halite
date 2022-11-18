@@ -31,14 +31,6 @@ Let us add a spec that will capture the constraints that identify a valid initia
 
 ```java
 {
-  "tutorials.vending/Vending$v1" : {
-    "fields" : {
-      "balance" : [ "Decimal", 2 ],
-      "beverageCount" : "Integer",
-      "snackCount" : "Integer"
-    },
-    "constraints" : [ "{expr: ((beverageCount >= 0) && (snackCount >= 0)), name: \"counts_not_negative\"}", "{expr: (balance >= #d \"0.00\"), name: \"balance_not_negative\"}" ]
-  },
   "tutorials.vending/InitialVending$v1" : {
     "fields" : {
       "balance" : [ "Decimal", 2 ],
@@ -86,14 +78,6 @@ So now we have a model of the state space and valid initial states for the machi
 
 ```java
 {
-  "tutorials.vending/Vending$v1" : {
-    "fields" : {
-      "balance" : [ "Decimal", 2 ],
-      "beverageCount" : "Integer",
-      "snackCount" : "Integer"
-    },
-    "constraints" : [ "{expr: ((beverageCount >= 0) && (snackCount >= 0)), name: \"counts_not_negative\"}", "{expr: (balance >= #d \"0.00\"), name: \"balance_not_negative\"}" ]
-  },
   "tutorials.vending/VendingTransition$v1" : {
     "fields" : {
       "current" : "tutorials.vending/Vending$v1",
@@ -146,21 +130,6 @@ Now we have modeled valid state transitions without modeling the events that tri
 
 ```java
 {
-  "tutorials.vending/Vending$v1" : {
-    "fields" : {
-      "balance" : [ "Decimal", 2 ],
-      "beverageCount" : "Integer",
-      "snackCount" : "Integer"
-    },
-    "constraints" : [ "{expr: ((beverageCount >= 0) && (snackCount >= 0)), name: \"counts_not_negative\"}", "{expr: (balance >= #d \"0.00\"), name: \"balance_not_negative\"}" ]
-  },
-  "tutorials.vending/VendingTransition$v1" : {
-    "fields" : {
-      "current" : "tutorials.vending/Vending$v1",
-      "next" : "tutorials.vending/Vending$v1"
-    },
-    "constraints" : [ "{expr: ((#{#d \"0.05\", #d \"0.10\", #d \"0.25\"}.contains?((next.balance - current.balance)) && (next.beverageCount == current.beverageCount) && (next.snackCount == current.snackCount)) || ((#d \"0.50\" == (current.balance - next.balance)) && (next.beverageCount == current.beverageCount) && (next.snackCount == (current.snackCount - 1))) || ((#d \"1.00\" == (current.balance - next.balance)) && (next.beverageCount == (current.beverageCount - 1)) && (next.snackCount == current.snackCount)) || (current == next)), name: \"state_transitions\"}" ]
-  },
   "tutorials.vending/VendingAbstractEvent$v1" : {
     "abstract?" : true,
     "fields" : {
@@ -216,53 +185,6 @@ Now add a spec which will take a vending machine state and event to produce a ne
 
 ```java
 {
-  "tutorials.vending/Vending$v1" : {
-    "fields" : {
-      "balance" : [ "Decimal", 2 ],
-      "beverageCount" : "Integer",
-      "snackCount" : "Integer"
-    },
-    "constraints" : [ "{expr: ((beverageCount >= 0) && (snackCount >= 0)), name: \"counts_not_negative\"}", "{expr: (balance >= #d \"0.00\"), name: \"balance_not_negative\"}" ]
-  },
-  "tutorials.vending/VendingTransition$v1" : {
-    "fields" : {
-      "current" : "tutorials.vending/Vending$v1",
-      "next" : "tutorials.vending/Vending$v1"
-    },
-    "constraints" : [ "{expr: ((#{#d \"0.05\", #d \"0.10\", #d \"0.25\"}.contains?((next.balance - current.balance)) && (next.beverageCount == current.beverageCount) && (next.snackCount == current.snackCount)) || ((#d \"0.50\" == (current.balance - next.balance)) && (next.beverageCount == current.beverageCount) && (next.snackCount == (current.snackCount - 1))) || ((#d \"1.00\" == (current.balance - next.balance)) && (next.beverageCount == (current.beverageCount - 1)) && (next.snackCount == current.snackCount)) || (current == next)), name: \"state_transitions\"}" ]
-  },
-  "tutorials.vending/VendingAbstractEvent$v1" : {
-    "abstract?" : true,
-    "fields" : {
-      "balanceDelta" : [ "Decimal", 2 ],
-      "beverageDelta" : "Integer",
-      "snackDelta" : "Integer"
-    }
-  },
-  "tutorials.vending/CoinEvent$v1" : {
-    "fields" : {
-      "denomination" : "String"
-    },
-    "constraints" : [ "{expr: #{\"dime\", \"nickel\", \"quarter\"}.contains?(denomination), name: \"valid_coin\"}" ],
-    "refines-to" : {
-      "tutorials.vending/VendingAbstractEvent$v1" : {
-        "name" : "coin_event_to_abstract",
-        "expr" : "{$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: (if((\"nickel\" == denomination)) {#d \"0.05\"} else {(if((\"dime\" == denomination)) {#d \"0.10\"} else {#d \"0.25\"})}), beverageDelta: 0, snackDelta: 0}"
-      }
-    }
-  },
-  "tutorials.vending/VendEvent$v1" : {
-    "fields" : {
-      "item" : "String"
-    },
-    "constraints" : [ "{expr: #{\"beverage\", \"snack\"}.contains?(item), name: \"valid_item\"}" ],
-    "refines-to" : {
-      "tutorials.vending/VendingAbstractEvent$v1" : {
-        "name" : "vend_event_to_abstract",
-        "expr" : "{$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: (if((\"snack\" == item)) {#d \"-0.50\"} else {#d \"-1.00\"}), beverageDelta: (if((\"snack\" == item)) {0} else {-1}), snackDelta: (if((\"snack\" == item)) {-1} else {0})}"
-      }
-    }
-  },
   "tutorials.vending/VendEventHandler$v1" : {
     "fields" : {
       "current" : "tutorials.vending/Vending$v1",
@@ -278,7 +200,7 @@ Now add a spec which will take a vending machine state and event to produce a ne
 }
 ```
 
-Note that in the event handler we place the new state into a transition instance. This will ensure that the new state represents a valid transition per the constraints in that spec.
+Note that in the event handler we place the new state into a transition instance. This will ensure that the new state represents a valid transition per the constraints in that spec. Also note that we are not changing our state if the event would cause our balance or counts to go negative. Since the transition spec allows the state to be unchanged we can simply user our current state as the new state in these cases.
 
 Let's exercise the event handler to see if works as we expect.
 
@@ -304,79 +226,6 @@ We have come this far, now we can tie it all together by making a spec to repres
 
 ```java
 {
-  "tutorials.vending/InitialVending$v1" : {
-    "fields" : {
-      "balance" : [ "Decimal", 2 ],
-      "beverageCount" : "Integer",
-      "snackCount" : "Integer"
-    },
-    "constraints" : [ "{expr: ((#d \"0.00\" == balance) && (beverageCount > 0) && (snackCount > 0)), name: \"initial_state\"}" ],
-    "refines-to" : {
-      "tutorials.vending/Vending$v1" : {
-        "name" : "toVending",
-        "expr" : "{$type: tutorials.vending/Vending$v1, balance: balance, beverageCount: beverageCount, snackCount: snackCount}"
-      }
-    }
-  },
-  "tutorials.vending/Vending$v1" : {
-    "fields" : {
-      "balance" : [ "Decimal", 2 ],
-      "beverageCount" : "Integer",
-      "snackCount" : "Integer"
-    },
-    "constraints" : [ "{expr: ((beverageCount >= 0) && (snackCount >= 0)), name: \"counts_not_negative\"}", "{expr: (balance >= #d \"0.00\"), name: \"balance_not_negative\"}" ]
-  },
-  "tutorials.vending/VendingTransition$v1" : {
-    "fields" : {
-      "current" : "tutorials.vending/Vending$v1",
-      "next" : "tutorials.vending/Vending$v1"
-    },
-    "constraints" : [ "{expr: ((#{#d \"0.05\", #d \"0.10\", #d \"0.25\"}.contains?((next.balance - current.balance)) && (next.beverageCount == current.beverageCount) && (next.snackCount == current.snackCount)) || ((#d \"0.50\" == (current.balance - next.balance)) && (next.beverageCount == current.beverageCount) && (next.snackCount == (current.snackCount - 1))) || ((#d \"1.00\" == (current.balance - next.balance)) && (next.beverageCount == (current.beverageCount - 1)) && (next.snackCount == current.snackCount)) || (current == next)), name: \"state_transitions\"}" ]
-  },
-  "tutorials.vending/VendingAbstractEvent$v1" : {
-    "abstract?" : true,
-    "fields" : {
-      "balanceDelta" : [ "Decimal", 2 ],
-      "beverageDelta" : "Integer",
-      "snackDelta" : "Integer"
-    }
-  },
-  "tutorials.vending/CoinEvent$v1" : {
-    "fields" : {
-      "denomination" : "String"
-    },
-    "constraints" : [ "{expr: #{\"dime\", \"nickel\", \"quarter\"}.contains?(denomination), name: \"valid_coin\"}" ],
-    "refines-to" : {
-      "tutorials.vending/VendingAbstractEvent$v1" : {
-        "name" : "coin_event_to_abstract",
-        "expr" : "{$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: (if((\"nickel\" == denomination)) {#d \"0.05\"} else {(if((\"dime\" == denomination)) {#d \"0.10\"} else {#d \"0.25\"})}), beverageDelta: 0, snackDelta: 0}"
-      }
-    }
-  },
-  "tutorials.vending/VendEvent$v1" : {
-    "fields" : {
-      "item" : "String"
-    },
-    "constraints" : [ "{expr: #{\"beverage\", \"snack\"}.contains?(item), name: \"valid_item\"}" ],
-    "refines-to" : {
-      "tutorials.vending/VendingAbstractEvent$v1" : {
-        "name" : "vend_event_to_abstract",
-        "expr" : "{$type: tutorials.vending/VendingAbstractEvent$v1, balanceDelta: (if((\"snack\" == item)) {#d \"-0.50\"} else {#d \"-1.00\"}), beverageDelta: (if((\"snack\" == item)) {0} else {-1}), snackDelta: (if((\"snack\" == item)) {-1} else {0})}"
-      }
-    }
-  },
-  "tutorials.vending/VendEventHandler$v1" : {
-    "fields" : {
-      "current" : "tutorials.vending/Vending$v1",
-      "event" : "tutorials.vending/VendingAbstractEvent$v1"
-    },
-    "refines-to" : {
-      "tutorials.vending/VendingTransition$v1" : {
-        "name" : "event_handler",
-        "expr" : "{$type: tutorials.vending/VendingTransition$v1, current: current, next: ({ ae = event.refineTo( tutorials.vending/VendingAbstractEvent$v1 ); newBalance = (current.balance + ae.balanceDelta); newBeverageCount = (current.beverageCount + ae.beverageDelta); newSnackCount = (current.snackCount + ae.snackDelta); (if(((newBalance >= #d \"0.00\") && (newBeverageCount >= 0) && (newSnackCount >= 0))) {{$type: tutorials.vending/Vending$v1, balance: newBalance, beverageCount: newBeverageCount, snackCount: newSnackCount}} else {current}) })}"
-      }
-    }
-  },
   "tutorials.vending/VendBehavior$v1" : {
     "fields" : {
       "initial" : "tutorials.vending/InitialVending$v1",

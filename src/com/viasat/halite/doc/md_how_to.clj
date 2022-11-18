@@ -21,27 +21,32 @@
                                                                            nil
                                                                            (str c "\n\n"))))
 
-        (and (map c) (:spec-map c)) (let [spec-map-result (when (= :auto (:throws c))
-                                                            (let [^HCInfo i (binding [doc-run/*check-spec-map-for-cycles?* true]
-                                                                              (doc-run/hc-body
-                                                                               (:spec-map c)
-                                                                               'true))
-                                                                  h-result (.-h-result i)]
-                                                              (when (not (and (vector? h-result)
-                                                                              (= :throws (first h-result))))
-                                                                (throw (ex-info "expected spec-map to fail" {:spec-map spec-map
-                                                                                                             :h-result h-result})))
-                                                              (str ({:halite  "\n\n;-- result --\n"
-                                                                     :jadeite "\n\n//-- result --\n"}
-                                                                    lang)
-                                                                   ({:halite (utils/pprint-halite h-result)
-                                                                     :jadeite (str h-result "\n")} lang))))]
-                                      (recur more-c
-                                             (:spec-map c)
-                                             (:throws c)
-                                             (conj results
-                                                   (spec-snippet-f lang (translate-spec-map-to-f lang (:spec-map c)
-                                                                                                 spec-map-result)))))
+        (and (map c) (or (:spec-map c)
+                         (:spec-map-merge c))) (let [spec-map-to-use (or (:spec-map c)
+                                                                         (merge spec-map (:spec-map-merge c)))
+                                                     spec-map-result (when (= :auto (:throws c))
+                                                                       (let [^HCInfo i (binding [doc-run/*check-spec-map-for-cycles?* true]
+                                                                                         (doc-run/hc-body
+                                                                                          spec-map-to-use
+                                                                                          'true))
+                                                                             h-result (.-h-result i)]
+                                                                         (when (not (and (vector? h-result)
+                                                                                         (= :throws (first h-result))))
+                                                                           (throw (ex-info "expected spec-map to fail" {:spec-map spec-map-to-use
+                                                                                                                        :h-result h-result})))
+                                                                         (str ({:halite  "\n\n;-- result --\n"
+                                                                                :jadeite "\n\n//-- result --\n"}
+                                                                               lang)
+                                                                              ({:halite (utils/pprint-halite h-result)
+                                                                                :jadeite (str h-result "\n")} lang))))]
+                                                 (recur more-c
+                                                        spec-map-to-use
+                                                        (:throws c)
+                                                        (conj results
+                                                              (spec-snippet-f lang (translate-spec-map-to-f lang (or
+                                                                                                                  (:spec-map-merge c)
+                                                                                                                  (:spec-map c))
+                                                                                                            spec-map-result)))))
         (and (map c) (:code c)) (let [h-expr (:code c)
                                       ^HCInfo i (doc-run/hc-body
                                                  spec-map
