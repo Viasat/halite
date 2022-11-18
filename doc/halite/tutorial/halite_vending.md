@@ -9,7 +9,7 @@ Use specs to map out a state space and valid transitions
 We can model the state space for a vending machine that accepts nickels, dimes, and quarters and which vends  snacks for $0.50 and beverages for $1.00.
 
 ```clojure
-{:tutorials.vending/Vending$v1
+{:tutorials.vending/State$v1
    {:fields {:balance [:Decimal 2],
              :beverageCount :Integer,
              :snackCount :Integer},
@@ -24,7 +24,7 @@ We can model the state space for a vending machine that accepts nickels, dimes, 
 With this spec we can construct instances.
 
 ```clojure
-{:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/State$v1,
  :balance #d "0.00",
  :beverageCount 10,
  :snackCount 15}
@@ -33,7 +33,7 @@ With this spec we can construct instances.
 Let us add a spec that will capture the constraints that identify a valid initial state for a vending machine.
 
 ```clojure
-{:tutorials.vending/InitialVending$v1
+{:tutorials.vending/InitialState$v1
    {:fields {:balance [:Decimal 2],
              :beverageCount :Integer,
              :snackCount :Integer},
@@ -41,9 +41,9 @@ Let us add a spec that will capture the constraints that identify a valid initia
                      :expr (and (= #d "0.00" balance)
                                 (> beverageCount 0)
                                 (> snackCount 0))}},
-    :refines-to {:tutorials.vending/Vending$v1
+    :refines-to {:tutorials.vending/State$v1
                    {:name "toVending",
-                    :expr '{:$type :tutorials.vending/Vending$v1,
+                    :expr '{:$type :tutorials.vending/State$v1,
                             :balance balance,
                             :beverageCount beverageCount,
                             :snackCount snackCount}}}}}
@@ -52,7 +52,7 @@ Let us add a spec that will capture the constraints that identify a valid initia
 This additional spec can be used to determine whether a state is a valid initial state for the machine. For example, this is a valid initial state.
 
 ```clojure
-{:$type :tutorials.vending/InitialVending$v1,
+{:$type :tutorials.vending/InitialState$v1,
  :balance #d "0.00",
  :beverageCount 10,
  :snackCount 15}
@@ -61,15 +61,15 @@ This additional spec can be used to determine whether a state is a valid initial
 The corresponding vending state can be produced from the initial state:
 
 ```clojure
-(refine-to {:$type :tutorials.vending/InitialVending$v1,
+(refine-to {:$type :tutorials.vending/InitialState$v1,
             :balance #d "0.00",
             :beverageCount 10,
             :snackCount 15}
-           :tutorials.vending/Vending$v1)
+           :tutorials.vending/State$v1)
 
 
 ;-- result --
-{:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/State$v1,
  :balance #d "0.00",
  :beverageCount 10,
  :snackCount 15}
@@ -78,7 +78,7 @@ The corresponding vending state can be produced from the initial state:
 The following is not a valid initial state.
 
 ```clojure
-{:$type :tutorials.vending/InitialVending$v1,
+{:$type :tutorials.vending/InitialState$v1,
  :balance #d "0.00",
  :beverageCount 0,
  :snackCount 15}
@@ -86,16 +86,16 @@ The following is not a valid initial state.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.vending/InitialVending$v1', violates constraints \"tutorials.vending/InitialVending$v1/initial_state\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.vending/InitialState$v1', violates constraints \"tutorials.vending/InitialState$v1/initial_state\""
  :h-err/invalid-instance]
 ```
 
 So now we have a model of the state space and valid initial states for the machine. However, we would like to also model valid state transitions.
 
 ```clojure
-{:tutorials.vending/VendingTransition$v1
-   {:fields {:current :tutorials.vending/Vending$v1,
-             :next :tutorials.vending/Vending$v1},
+{:tutorials.vending/Transition$v1
+   {:fields {:current :tutorials.vending/State$v1,
+             :next :tutorials.vending/State$v1},
     :constraints
       #{'{:name "state_transitions",
           :expr
@@ -117,12 +117,12 @@ So now we have a model of the state space and valid initial states for the machi
 A valid transition representing a dime being dropped into the machine.
 
 ```clojure
-{:$type :tutorials.vending/VendingTransition$v1,
- :current {:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/Transition$v1,
+ :current {:$type :tutorials.vending/State$v1,
            :balance #d "0.00",
            :beverageCount 10,
            :snackCount 15},
- :next {:$type :tutorials.vending/Vending$v1,
+ :next {:$type :tutorials.vending/State$v1,
         :balance #d "0.10",
         :beverageCount 10,
         :snackCount 15}}
@@ -131,12 +131,12 @@ A valid transition representing a dime being dropped into the machine.
 An invalid transition, because the balance cannot increase by $0.07
 
 ```clojure
-{:$type :tutorials.vending/VendingTransition$v1,
- :current {:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/Transition$v1,
+ :current {:$type :tutorials.vending/State$v1,
            :balance #d "0.00",
            :beverageCount 10,
            :snackCount 15},
- :next {:$type :tutorials.vending/Vending$v1,
+ :next {:$type :tutorials.vending/State$v1,
         :balance #d "0.07",
         :beverageCount 10,
         :snackCount 15}}
@@ -144,19 +144,19 @@ An invalid transition, because the balance cannot increase by $0.07
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.vending/VendingTransition$v1', violates constraints \"tutorials.vending/VendingTransition$v1/state_transitions\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.vending/Transition$v1', violates constraints \"tutorials.vending/Transition$v1/state_transitions\""
  :h-err/invalid-instance]
 ```
 
 A valid transition representing a snack being vended.
 
 ```clojure
-{:$type :tutorials.vending/VendingTransition$v1,
- :current {:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/Transition$v1,
+ :current {:$type :tutorials.vending/State$v1,
            :balance #d "0.75",
            :beverageCount 10,
            :snackCount 15},
- :next {:$type :tutorials.vending/Vending$v1,
+ :next {:$type :tutorials.vending/State$v1,
         :balance #d "0.25",
         :beverageCount 10,
         :snackCount 14}}
@@ -165,12 +165,12 @@ A valid transition representing a snack being vended.
 An invalid attempted transition representing a snack being vended.
 
 ```clojure
-{:$type :tutorials.vending/VendingTransition$v1,
- :current {:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/Transition$v1,
+ :current {:$type :tutorials.vending/State$v1,
            :balance #d "0.75",
            :beverageCount 10,
            :snackCount 15},
- :next {:$type :tutorials.vending/Vending$v1,
+ :next {:$type :tutorials.vending/State$v1,
         :balance #d "0.25",
         :beverageCount 9,
         :snackCount 14}}
@@ -178,19 +178,19 @@ An invalid attempted transition representing a snack being vended.
 
 ;-- result --
 [:throws
- "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.vending/VendingTransition$v1', violates constraints \"tutorials.vending/VendingTransition$v1/state_transitions\""
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.vending/Transition$v1', violates constraints \"tutorials.vending/Transition$v1/state_transitions\""
  :h-err/invalid-instance]
 ```
 
 It is a bit subtle, but our constraints also allow the state to be unchanged. This will turn out to be useful for us later.
 
 ```clojure
-{:$type :tutorials.vending/VendingTransition$v1,
- :current {:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/Transition$v1,
+ :current {:$type :tutorials.vending/State$v1,
            :balance #d "0.00",
            :beverageCount 10,
            :snackCount 15},
- :next {:$type :tutorials.vending/Vending$v1,
+ :next {:$type :tutorials.vending/State$v1,
         :balance #d "0.00",
         :beverageCount 10,
         :snackCount 15}}
@@ -199,14 +199,18 @@ It is a bit subtle, but our constraints also allow the state to be unchanged. Th
 At this point we have modeled valid state transitions without modeling the events that trigger those transitions. That may be sufficient for what we are looking to accomplish, but let's take it further and model a possible event structure.
 
 ```clojure
-{:tutorials.vending/CoinEvent$v1
+{:tutorials.vending/AbstractEvent$v1 {:abstract? true,
+                                      :fields {:balanceDelta [:Decimal 2],
+                                               :beverageDelta :Integer,
+                                               :snackDelta :Integer}},
+ :tutorials.vending/CoinEvent$v1
    {:fields {:denomination :String},
     :constraints #{'{:name "valid_coin",
                      :expr (contains? #{"dime" "nickel" "quarter"}
                                       denomination)}},
-    :refines-to {:tutorials.vending/VendingAbstractEvent$v1
+    :refines-to {:tutorials.vending/AbstractEvent$v1
                    {:name "coin_event_to_abstract",
-                    :expr '{:$type :tutorials.vending/VendingAbstractEvent$v1,
+                    :expr '{:$type :tutorials.vending/AbstractEvent$v1,
                             :balanceDelta (if (= "nickel" denomination)
                                             #d "0.05"
                                             (if (= "dime" denomination)
@@ -218,18 +222,13 @@ At this point we have modeled valid state transitions without modeling the event
    {:fields {:item :String},
     :constraints #{'{:name "valid_item",
                      :expr (contains? #{"beverage" "snack"} item)}},
-    :refines-to {:tutorials.vending/VendingAbstractEvent$v1
+    :refines-to {:tutorials.vending/AbstractEvent$v1
                    {:name "vend_event_to_abstract",
-                    :expr '{:$type :tutorials.vending/VendingAbstractEvent$v1,
+                    :expr '{:$type :tutorials.vending/AbstractEvent$v1,
                             :balanceDelta
                               (if (= "snack" item) #d "-0.50" #d "-1.00"),
                             :beverageDelta (if (= "snack" item) 0 -1),
-                            :snackDelta (if (= "snack" item) -1 0)}}}},
- :tutorials.vending/VendingAbstractEvent$v1 {:abstract? true,
-                                             :fields {:balanceDelta [:Decimal
-                                                                     2],
-                                                      :beverageDelta :Integer,
-                                                      :snackDelta :Integer}}}
+                            :snackDelta (if (= "snack" item) -1 0)}}}}}
 ```
 
 Now we can construct the following events.
@@ -262,27 +261,27 @@ We can verify that all of these events produce the expected abstract events.
      :item "snack"}
     {:$type :tutorials.vending/VendEvent$v1,
      :item "beverage"}]]
-  (refine-to e :tutorials.vending/VendingAbstractEvent$v1))
+  (refine-to e :tutorials.vending/AbstractEvent$v1))
 
 
 ;-- result --
-[{:$type :tutorials.vending/VendingAbstractEvent$v1,
+[{:$type :tutorials.vending/AbstractEvent$v1,
   :balanceDelta #d "0.05",
   :beverageDelta 0,
   :snackDelta 0}
- {:$type :tutorials.vending/VendingAbstractEvent$v1,
+ {:$type :tutorials.vending/AbstractEvent$v1,
   :balanceDelta #d "0.10",
   :beverageDelta 0,
   :snackDelta 0}
- {:$type :tutorials.vending/VendingAbstractEvent$v1,
+ {:$type :tutorials.vending/AbstractEvent$v1,
   :balanceDelta #d "0.25",
   :beverageDelta 0,
   :snackDelta 0}
- {:$type :tutorials.vending/VendingAbstractEvent$v1,
+ {:$type :tutorials.vending/AbstractEvent$v1,
   :balanceDelta #d "-0.50",
   :beverageDelta 0,
   :snackDelta -1}
- {:$type :tutorials.vending/VendingAbstractEvent$v1,
+ {:$type :tutorials.vending/AbstractEvent$v1,
   :balanceDelta #d "-1.00",
   :beverageDelta -1,
   :snackDelta 0}]
@@ -291,17 +290,16 @@ We can verify that all of these events produce the expected abstract events.
 As the next step, we add a spec which will take a vending machine state and and event as input to produce a new vending machine state as output.
 
 ```clojure
-{:tutorials.vending/VendEventHandler$v1
-   {:fields {:current :tutorials.vending/Vending$v1,
-             :event :tutorials.vending/VendingAbstractEvent$v1},
+{:tutorials.vending/EventHandler$v1
+   {:fields {:current :tutorials.vending/State$v1,
+             :event :tutorials.vending/AbstractEvent$v1},
     :refines-to
-      {:tutorials.vending/VendingTransition$v1
+      {:tutorials.vending/Transition$v1
          {:name "event_handler",
-          :expr '{:$type :tutorials.vending/VendingTransition$v1,
+          :expr '{:$type :tutorials.vending/Transition$v1,
                   :current current,
-                  :next (let [ae (refine-to
-                                   event
-                                   :tutorials.vending/VendingAbstractEvent$v1)
+                  :next (let [ae (refine-to event
+                                            :tutorials.vending/AbstractEvent$v1)
                               newBalance (+ (get current :balance)
                                             (get ae :balanceDelta))
                               newBeverageCount (+ (get current :beverageCount)
@@ -311,7 +309,7 @@ As the next step, we add a spec which will take a vending machine state and and 
                           (if (and (>= newBalance #d "0.00")
                                    (>= newBeverageCount 0)
                                    (>= newSnackCount 0))
-                            {:$type :tutorials.vending/Vending$v1,
+                            {:$type :tutorials.vending/State$v1,
                              :balance newBalance,
                              :beverageCount newBeverageCount,
                              :snackCount newSnackCount}
@@ -323,23 +321,23 @@ Note that in the event handler we place the new state into a transition instance
 Let's exercise the event handler to see if works as we expect.
 
 ```clojure
-(refine-to {:$type :tutorials.vending/VendEventHandler$v1,
-            :current {:$type :tutorials.vending/Vending$v1,
+(refine-to {:$type :tutorials.vending/EventHandler$v1,
+            :current {:$type :tutorials.vending/State$v1,
                       :balance #d "0.10",
                       :beverageCount 5,
                       :snackCount 6},
             :event {:$type :tutorials.vending/CoinEvent$v1,
                     :denomination "quarter"}}
-           :tutorials.vending/VendingTransition$v1)
+           :tutorials.vending/Transition$v1)
 
 
 ;-- result --
-{:$type :tutorials.vending/VendingTransition$v1,
- :current {:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/Transition$v1,
+ :current {:$type :tutorials.vending/State$v1,
            :balance #d "0.10",
            :beverageCount 5,
            :snackCount 6},
- :next {:$type :tutorials.vending/Vending$v1,
+ :next {:$type :tutorials.vending/State$v1,
         :balance #d "0.35",
         :beverageCount 5,
         :snackCount 6}}
@@ -348,23 +346,23 @@ Let's exercise the event handler to see if works as we expect.
 If we try to process an event that cannot be handled then the state is unchanged.
 
 ```clojure
-(refine-to {:$type :tutorials.vending/VendEventHandler$v1,
-            :current {:$type :tutorials.vending/Vending$v1,
+(refine-to {:$type :tutorials.vending/EventHandler$v1,
+            :current {:$type :tutorials.vending/State$v1,
                       :balance #d "0.10",
                       :beverageCount 5,
                       :snackCount 6},
             :event {:$type :tutorials.vending/VendEvent$v1,
                     :item "snack"}}
-           :tutorials.vending/VendingTransition$v1)
+           :tutorials.vending/Transition$v1)
 
 
 ;-- result --
-{:$type :tutorials.vending/VendingTransition$v1,
- :current {:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/Transition$v1,
+ :current {:$type :tutorials.vending/State$v1,
            :balance #d "0.10",
            :beverageCount 5,
            :snackCount 6},
- :next {:$type :tutorials.vending/Vending$v1,
+ :next {:$type :tutorials.vending/State$v1,
         :balance #d "0.10",
         :beverageCount 5,
         :snackCount 6}}
@@ -373,27 +371,26 @@ If we try to process an event that cannot be handled then the state is unchanged
 We have come this far we might as well add one more spec that ties it all together via an initial state and a sequence of events.
 
 ```clojure
-{:tutorials.vending/VendBehavior$v1
-   {:fields {:events [:Vec :tutorials.vending/VendingAbstractEvent$v1],
-             :initial :tutorials.vending/InitialVending$v1},
+{:tutorials.vending/Behavior$v1
+   {:fields {:events [:Vec :tutorials.vending/AbstractEvent$v1],
+             :initial :tutorials.vending/InitialState$v1},
     :refines-to
-      {:tutorials.vending/Vending$v1
+      {:tutorials.vending/State$v1
          {:name "apply_events",
-          :expr '(reduce [a (refine-to initial :tutorials.vending/Vending$v1)]
+          :expr '(reduce [a (refine-to initial :tutorials.vending/State$v1)]
                    [e events]
-                   (get
-                     (refine-to {:$type :tutorials.vending/VendEventHandler$v1,
-                                 :current a,
-                                 :event e}
-                                :tutorials.vending/VendingTransition$v1)
-                     :next))}}}}
+                   (get (refine-to {:$type :tutorials.vending/EventHandler$v1,
+                                    :current a,
+                                    :event e}
+                                   :tutorials.vending/Transition$v1)
+                        :next))}}}}
 ```
 
 From an initial state and a sequence of events we can compute the final state.
 
 ```clojure
-(refine-to {:$type :tutorials.vending/VendBehavior$v1,
-            :initial {:$type :tutorials.vending/InitialVending$v1,
+(refine-to {:$type :tutorials.vending/Behavior$v1,
+            :initial {:$type :tutorials.vending/InitialState$v1,
                       :balance #d "0.00",
                       :beverageCount 10,
                       :snackCount 15},
@@ -425,11 +422,11 @@ From an initial state and a sequence of events we can compute the final state.
                       :item "beverage"}
                      {:$type :tutorials.vending/VendEvent$v1,
                       :item "beverage"}]}
-           :tutorials.vending/Vending$v1)
+           :tutorials.vending/State$v1)
 
 
 ;-- result --
-{:$type :tutorials.vending/Vending$v1,
+{:$type :tutorials.vending/State$v1,
  :balance #d "0.15",
  :beverageCount 9,
  :snackCount 14}
