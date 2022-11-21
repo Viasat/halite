@@ -1214,7 +1214,7 @@
          (analysis/find-spec-refs '{:$type :my/Spec
                                     :a (= {:$type :my/Other}
                                           {:$type :my/Other})})))
-  (is (= #{{:tail :my/Spec} :my/Spec}
+  (is (= #{{:tail :my/Spec}}
          (analysis/find-spec-refs '(let [x {:$type :my/Spec}]
                                      x))))
   (is (= #{:my/Spec {:tail :my/Other}}
@@ -1239,7 +1239,7 @@
 
   (is (= #{{:tail :my/Spec} {:tail :my/Other}}
          (analysis/find-spec-refs '(if true {:$type :my/Spec} {:$type :my/Other}))))
-  (is (= #{{:tail :my/Spec} :my/Spec}
+  (is (= #{{:tail :my/Spec}}
          (analysis/find-spec-refs '(let [x {:$type :my/Spec}
                                          y x]
                                      y))))
@@ -1271,19 +1271,90 @@
                                                          :event e}
                                                         :tutorials.vending/Transition$v1))))))
 
-  (is (= #{{:tail :spec/Event} :spec/Event :tutorials.vending/State$v1 :spec/Mine}
+  (is (= #{{:tail :spec/Event}
+           :spec/Event
+           :tutorials.vending/State$v1
+           :spec/Mine}
          (analysis/find-spec-refs '(let [events [{:$type :spec/Event}]]
                                      (reduce [a (refine-to {:$type :spec/Mine} :tutorials.vending/State$v1)]
                                              [e events]
                                              e)))))
   (is (= #{{:tail :tutorials.vending/State$v1}
            :spec/Mine
-           :spec/Event
-           :tutorials.vending/State$v1}
+           :spec/Event}
          (analysis/find-spec-refs '(let [events [{:$type :spec/Event}]]
                                      (reduce [a (refine-to {:$type :spec/Mine} :tutorials.vending/State$v1)]
                                              [e events]
                                              a)))))
+
+  (is (= #{:spec/X
+           {:tail :spec/Y}
+           :spec/Z}
+         (analysis/find-spec-refs '(let [x {:$type :spec/X}
+                                         y {:$type :spec/Y}]
+                                     (let [z {:$type :spec/Z}
+                                           a y]
+                                       a)))))
+
+  (is (= #{:spec/X
+           {:tail :spec/Y}
+           :spec/Z}
+         (analysis/find-spec-refs '(let [x {:$type :spec/X}
+                                         y {:$type :spec/Y}
+                                         z {:$type :spec/Z}
+                                         a y]
+                                     a))))
+  (is (= #{:spec/X
+           {:tail :spec/Y}
+           :spec/Y
+           :spec/Z}
+         (analysis/find-spec-refs '(let [x {:$type :spec/X}
+                                         y {:$type :spec/Y}]
+                                     (let [z {:$type :spec/Z}
+                                           a y]
+                                       y)))))
+  (is (= #{:spec/X
+           :spec/Y
+           {:tail :spec/Z}}
+         (analysis/find-spec-refs '(let [x {:$type :spec/X}
+                                         y {:$type :spec/Y}]
+                                     (let [z {:$type :spec/Z}]
+                                       z)))))
+
+  (is (= #{{:tail :spec/X}
+           {:tail :spec/Y}
+           :spec/Z}
+         (analysis/find-spec-refs '(let [x {:$type :spec/X}
+                                         y {:$type :spec/Y}]
+                                     (let [z {:$type :spec/Z}
+                                           a y]
+                                       (if true
+                                         a
+                                         x))))))
+
+  (is (= #{{:tail :my/Spec}}
+         (analysis/find-spec-refs '(if-value-let [o {:$type :my/Spec}]
+                                                 o
+                                                 {:$type :my/Spec}))))
+  (is (= #{{:tail :my/Spec}
+           {:tail :my/Other}}
+         (analysis/find-spec-refs '(if-value-let [o {:$type :my/Spec}]
+                                                 o
+                                                 {:$type :my/Other}))))
+  (is (= #{:my/Spec
+           {:tail :my/X}
+           {:tail :my/Other}}
+         (analysis/find-spec-refs '(if-value-let [o {:$type :my/Spec}]
+                                                 {:$type :my/X}
+                                                 {:$type :my/Other}))))
+  (is (= #{{:tail :my/Spec}}
+         (analysis/find-spec-refs '(when-value-let [o {:$type :my/Spec}]
+                                                   o))))
+  (is (= #{:my/Spec
+           {:tail :my/Other}}
+         (analysis/find-spec-refs '(when-value-let [o {:$type :my/Spec}]
+                                                   {:$type :my/Other}))))
+
   (is (= #{:my/Other}
          (analysis/find-spec-refs-but-tail :my/Spec '(if true {:$type :my/Spec} {:$type :my/Other})))))
 

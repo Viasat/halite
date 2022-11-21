@@ -929,11 +929,19 @@
 
 ;;;;
 
-(s/defschema TailSpecRef {:tail types/NamespacedKeyword})
+(s/defschema TailSpecRef {:tail types/NamespacedKeyword
+                          (s/optional-key :sym) [s/Symbol]})
 
 (s/defschema SpecRef (s/conditional
                       map? TailSpecRef
                       :else types/NamespacedKeyword))
+
+(s/defn ^:private tail-ref? :- Boolean
+  [expr :- SpecRef]
+  (boolean (and (map? expr)
+                (or (= 1 (count expr))
+                    (= 2 (count expr)))
+                (contains? expr :tail))))
 
 (declare find-spec-refs)
 
@@ -943,9 +951,7 @@
 
 (s/defn ^:private unwrap-tail :- types/NamespacedKeyword
   [expr :- SpecRef]
-  (if (and (map? expr)
-           (= 1 (count expr))
-           (contains? expr :tail))
+  (if (tail-ref? expr)
     (:tail expr)
     expr))
 
@@ -955,29 +961,65 @@
        (map unwrap-tail)
        set))
 
+(s/defn ^:private wrap-sym :- SpecRef
+  [s :- s/Symbol
+   expr :- SpecRef]
+  (if (tail-ref? expr)
+    (update expr :sym conj s)
+    expr))
+
 (s/defn ^:private find-collection-spec-refs :- #{SpecRef}
   [context expr]
   (->> expr
        (map (partial find-spec-refs context))
        (reduce into #{})))
 
+(s/defn ^:private unwrap-tail-syms
+  [binding-pairs sub-results-map ignore-sym-set inner-result]
+  (let [{inner-tail-results true inner-other-results false} (group-by tail-ref? inner-result)
+        {:keys [inner-tail-results
+                post-sub-results]} (->> binding-pairs
+                                        reverse
+                                        (reduce (fn [{:keys [inner-tail-results post-sub-results] :as p} [s _]]
+                                                  (let [match? (some #(= (first (:sym %)) s) inner-tail-results)]
+                                                    (if match?
+                                                      {:inner-tail-results (->> inner-tail-results
+                                                                                (map #(if (= (first (:sym %)) s)
+                                                                                        (remove-nil-vals (update % :sym (comp no-empty rest)))
+                                                                                        %)))
+                                                       ;; skip the items that are already reflected in tail result
+                                                       :post-sub-results post-sub-results}
+                                                      {:inner-tail-results (->> inner-tail-results
+                                                                                (map
+                                                                                 #(if (ignore-sym-set (first (:sym %)))
+                                                                                    (remove-nil-vals (update % :sym (comp no-empty rest)))
+                                                                                    %)))
+                                                       :post-sub-results (into post-sub-results
+                                                                               (get sub-results-map s))})))
+                                                {:inner-tail-results inner-tail-results
+                                                 :post-sub-results #{}}))]
+    (into (into post-sub-results
+                inner-other-results)
+          inner-tail-results)))
+
 (s/defn ^:private find-seq-spec-refs :- #{SpecRef}
   [context expr]
   (cond
     (= 'let (first expr))
     (let [[_ bindings body] expr
+          binding-pairs (->> bindings
+                             (partition 2))
           {context' :context
-           :keys [sub-results]} (->> bindings
-                                     (partition 2)
-                                     (reduce (fn [{:keys [context sub-results]} [s e]]
-                                               (let [sub-result (find-spec-refs context e)]
-                                                 {:context (assoc context s sub-result)
-                                                  :sub-results (into sub-results
-                                                                     (unwrap-tail-set sub-result))}))
-                                             {:context context
-                                              :sub-results #{}}))]
-      (into sub-results
-            (find-spec-refs context' body)))
+           :keys [sub-results-map]} (->> binding-pairs
+                                         (reduce (fn [{:keys [context sub-results-map]} [s e]]
+                                                   (let [sub-result (find-spec-refs context e)
+                                                         unwrapped-sub-result (unwrap-tail-set sub-result)]
+                                                     {:context (assoc context s sub-result)
+                                                      :sub-results-map (assoc sub-results-map
+                                                                              s unwrapped-sub-result)}))
+                                                 {:context context
+                                                  :sub-results-map {}}))]
+      (unwrap-tail-syms binding-pairs sub-results-map #{} (find-spec-refs context' body)))
 
     (#{'if 'if-value} (first expr))
     (let [[_ check then else] expr]
@@ -993,25 +1035,30 @@
     (= 'if-value-let (first expr))
     (let [[_ [binding-symbol binding-expr] then else] expr
           sub-result (find-spec-refs context binding-expr)]
-      (into (into (unwrap-tail-set sub-result)
-                  (find-spec-refs context else))
-            (find-spec-refs (assoc context binding-symbol sub-result) then)))
+      (into (find-spec-refs context else)
+            (unwrap-tail-syms [[binding-symbol binding-expr]] {binding-symbol (unwrap-tail-set sub-result)}
+                              #{}
+                              (find-spec-refs (assoc context binding-symbol sub-result) then))))
 
     (= 'when-value-let (first expr))
     (let [[_ [binding-symbol binding-expr] then] expr
           sub-result (find-spec-refs context binding-expr)]
-      (into (unwrap-tail-set sub-result)
-            (find-spec-refs (assoc context binding-symbol sub-result) then)))
+      (unwrap-tail-syms [[binding-symbol binding-expr]] {binding-symbol (unwrap-tail-set sub-result)}
+                        #{}
+                        (find-spec-refs (assoc context binding-symbol sub-result) then)))
 
     (= 'reduce (first expr))
     (let [[_ [binding-symbol binding-expr] [binding-symbol-2 binding-expr-2] body] expr
           sub-result-1 (find-spec-refs context binding-expr)
-          sub-result-2 (find-spec-refs context binding-expr-2)]
-      (into (unwrap-tail-set (into sub-result-1 sub-result-2))
-            (find-spec-refs (assoc context
-                                   binding-symbol sub-result-1
-                                   binding-symbol-2 sub-result-2)
-                            body)))
+          sub-result-2 (find-spec-refs context binding-expr-2)
+          sub-results-map {binding-symbol (unwrap-tail-set sub-result-1)}
+          binding-pairs [[binding-symbol binding-expr]]]
+      (into (unwrap-tail-set sub-result-2)
+            (unwrap-tail-syms binding-pairs sub-results-map #{binding-symbol-2}
+                              (find-spec-refs (assoc context
+                                                     binding-symbol sub-result-1
+                                                     binding-symbol-2 sub-result-2)
+                                              body))))
 
     (= 'refine-to (first expr))
     (let [[_ instance-expr spec] expr]
@@ -1035,7 +1082,7 @@
          set)))
 
 (s/defn find-spec-refs :- (s/maybe #{(s/conditional
-                                      map? {:tail types/NamespacedKeyword}
+                                      map? TailSpecRef
                                       :else types/NamespacedKeyword)})
   "Return a set of spec-ids for specs that are referenced by the expr. If a spec-id is referenced in a
   tail position then wrap it in a map that indicates this."
@@ -1047,7 +1094,7 @@
      (base/integer-or-long? expr) #{}
      (base/fixed-decimal? expr) #{}
      (string? expr) #{}
-     (symbol? expr) (get context expr)
+     (symbol? expr) (set (map (partial wrap-sym expr) (get context expr)))
      (keyword? expr) (if (types/namespaced-keyword? expr)
                        #{(wrap-tail expr)}
                        #{})
