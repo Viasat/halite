@@ -1331,6 +1331,44 @@
                                        (if true
                                          a
                                          x))))))
+  (is (= #{{:tail :spec/X}
+           {:tail :spec/Y}
+           :spec/Z}
+         (analysis/find-spec-refs '(let [x {:$type :spec/X}
+                                         y {:$type :spec/Y}]
+                                     (let [z {:$type :spec/Z}
+                                           a y
+                                           q (if true
+                                               a
+                                               x)]
+                                       q)))))
+
+  (is (= #{:spec/X
+           :spec/Y
+           :spec/Z
+           {:tail :spec/Q}}
+         (analysis/find-spec-refs '(let [x {:$type :spec/X}
+                                         y {:$type :spec/Y}]
+                                     (let [z {:$type :spec/Z}
+                                           a y
+                                           q (if true
+                                               a
+                                               x)]
+                                       (when-value-let [q {:$type :spec/Q}]
+                                                       q))))))
+  (is (= #{{:tail :spec/X}
+           {:tail :spec/Y}
+           :spec/Z
+           :spec/Q}
+         (analysis/find-spec-refs '(let [x {:$type :spec/X}
+                                         y {:$type :spec/Y}]
+                                     (let [z {:$type :spec/Z}
+                                           a y
+                                           q (if true
+                                               a
+                                               x)]
+                                       (when-value-let [p {:$type :spec/Q}]
+                                                       q))))))
 
   (is (= #{{:tail :my/Spec}}
          (analysis/find-spec-refs '(if-value-let [o {:$type :my/Spec}]
