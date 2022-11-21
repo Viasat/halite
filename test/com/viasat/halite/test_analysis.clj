@@ -1214,7 +1214,7 @@
          (analysis/find-spec-refs '{:$type :my/Spec
                                     :a (= {:$type :my/Other}
                                           {:$type :my/Other})})))
-  (is (= #{{:tail :my/Spec}}
+  (is (= #{{:tail :my/Spec} :my/Spec}
          (analysis/find-spec-refs '(let [x {:$type :my/Spec}]
                                      x))))
   (is (= #{:my/Spec {:tail :my/Other}}
@@ -1232,13 +1232,58 @@
          (analysis/find-spec-refs '(any? [x [{:$type :my/Spec}]] true))))
   (is (= #{:my/Spec :my/Other}
          (analysis/find-spec-refs '(any? [x [{:$type :my/Spec}]] {:$type :my/Other}))))
-  (is (= #{:my/Spec :my/Other}
+  (is (= #{:my/Spec {:tail :my/Other}}
          (analysis/find-spec-refs '(refine-to {:$type :my/Spec} :my/Other))))
   (is (= #{:my/Spec :my/Other}
-         (analysis/find-spec-refs '(refine-to? {:$type :my/Spec} :my/Other))))
+         (analysis/find-spec-refs '(refines-to? {:$type :my/Spec} :my/Other))))
 
   (is (= #{{:tail :my/Spec} {:tail :my/Other}}
          (analysis/find-spec-refs '(if true {:$type :my/Spec} {:$type :my/Other}))))
+  (is (= #{{:tail :my/Spec} :my/Spec}
+         (analysis/find-spec-refs '(let [x {:$type :my/Spec}
+                                         y x]
+                                     y))))
+
+  (is (= #{:tutorials.vending/EventHandler$v1
+           :tutorials.vending/State$v1
+           :tutorials.vending/Transition$v1
+           :spec/Mine
+           :spec/Event}
+         (analysis/find-spec-refs '(let [events [{:$type :spec/Event}]]
+                                     (reduce [a (refine-to {:$type :spec/Mine} :tutorials.vending/State$v1)]
+                                             [e events]
+                                             (get (refine-to {:$type :tutorials.vending/EventHandler$v1
+                                                              :current a
+                                                              :event e}
+                                                             :tutorials.vending/Transition$v1)
+                                                  :next))))))
+
+  (is (= #{:tutorials.vending/EventHandler$v1
+           :tutorials.vending/State$v1
+           {:tail :tutorials.vending/Transition$v1}
+           :spec/Mine
+           :spec/Event}
+         (analysis/find-spec-refs '(let [events [{:$type :spec/Event}]]
+                                     (reduce [a (refine-to {:$type :spec/Mine} :tutorials.vending/State$v1)]
+                                             [e events]
+                                             (refine-to {:$type :tutorials.vending/EventHandler$v1
+                                                         :current a
+                                                         :event e}
+                                                        :tutorials.vending/Transition$v1))))))
+
+  (is (= #{{:tail :spec/Event} :spec/Event :tutorials.vending/State$v1 :spec/Mine}
+         (analysis/find-spec-refs '(let [events [{:$type :spec/Event}]]
+                                     (reduce [a (refine-to {:$type :spec/Mine} :tutorials.vending/State$v1)]
+                                             [e events]
+                                             e)))))
+  (is (= #{{:tail :tutorials.vending/State$v1}
+           :spec/Mine
+           :spec/Event
+           :tutorials.vending/State$v1}
+         (analysis/find-spec-refs '(let [events [{:$type :spec/Event}]]
+                                     (reduce [a (refine-to {:$type :spec/Mine} :tutorials.vending/State$v1)]
+                                             [e events]
+                                             a)))))
   (is (= #{:my/Other}
          (analysis/find-spec-refs-but-tail :my/Spec '(if true {:$type :my/Spec} {:$type :my/Other})))))
 

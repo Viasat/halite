@@ -966,14 +966,17 @@
   (cond
     (= 'let (first expr))
     (let [[_ bindings body] expr
-          sub-results (->> bindings
-                           (partition 2)
-                           (map (comp (partial find-spec-refs context) second)))
-          context' (merge context (zipmap
-                                   (->> bindings (partition 2) (map first))
-                                   sub-results))]
-      (into (->> sub-results
-                 (reduce into #{}))
+          {context' :context
+           :keys [sub-results]} (->> bindings
+                                     (partition 2)
+                                     (reduce (fn [{:keys [context sub-results]} [s e]]
+                                               (let [sub-result (find-spec-refs context e)]
+                                                 {:context (assoc context s sub-result)
+                                                  :sub-results (into sub-results
+                                                                     (unwrap-tail-set sub-result))}))
+                                             {:context context
+                                              :sub-results #{}}))]
+      (into sub-results
             (find-spec-refs context' body)))
 
     (#{'if 'if-value} (first expr))
@@ -990,32 +993,41 @@
     (= 'if-value-let (first expr))
     (let [[_ [binding-symbol binding-expr] then else] expr
           sub-result (find-spec-refs context binding-expr)]
-      (into (into sub-result
-                  (find-spec-refs context then))
-            (find-spec-refs (assoc context binding-symbol binding-expr) else)))
+      (into (into (unwrap-tail-set sub-result)
+                  (find-spec-refs context else))
+            (find-spec-refs (assoc context binding-symbol sub-result) then)))
 
     (= 'when-value-let (first expr))
     (let [[_ [binding-symbol binding-expr] then] expr
           sub-result (find-spec-refs context binding-expr)]
-      (into sub-result
-            (find-spec-refs (assoc context binding-symbol binding-expr) then)))
+      (into (unwrap-tail-set sub-result)
+            (find-spec-refs (assoc context binding-symbol sub-result) then)))
 
     (= 'reduce (first expr))
     (let [[_ [binding-symbol binding-expr] [binding-symbol-2 binding-expr-2] body] expr
-          sub-result (find-spec-refs context binding-expr)
+          sub-result-1 (find-spec-refs context binding-expr)
           sub-result-2 (find-spec-refs context binding-expr-2)]
-      (into (into sub-result
-                  sub-result-2)
+      (into (unwrap-tail-set (into sub-result-1 sub-result-2))
             (find-spec-refs (assoc context
-                                   binding-symbol binding-expr
-                                   binding-symbol-2 binding-expr-2)
+                                   binding-symbol sub-result-1
+                                   binding-symbol-2 sub-result-2)
                             body)))
+
+    (= 'refine-to (first expr))
+    (let [[_ instance-expr spec] expr]
+      (conj (unwrap-tail-set (find-spec-refs context instance-expr))
+            (wrap-tail spec)))
+
+    (= 'refines-to? (first expr))
+    (let [[_ instance-expr spec] expr]
+      (conj (unwrap-tail-set (find-spec-refs context instance-expr))
+            spec))
 
     (= #{'any? 'every? 'filter 'map 'sort-by} (first expr))
     (let [[_ [binding-symbol binding-expr] body] expr
           sub-result (find-spec-refs context binding-expr)]
-      (into sub-result
-            (find-spec-refs (assoc context binding-symbol binding-expr) body)))
+      (into (unwrap-tail-set sub-result)
+            (find-spec-refs (assoc context binding-symbol sub-result) body)))
 
     :default
     (->> (find-collection-spec-refs context (rest expr))
