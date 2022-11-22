@@ -22,6 +22,10 @@ Performs logical implication. If the first value is true, then the second value 
 
 Perform a logical 'and' operation on the input values.
 
+#### [`cond`](halite_full-reference.md#cond)
+
+Consider arguments pairwise as a predicate followed by an expression. For the first pair, if the predicate evaluates to true then evaluate the expression as the result otherwise consider the next pair. If none of the pairs have a predicate that evaluates to true, then the final argument is evaluated as the result.
+
 #### [`if`](halite_full-reference.md#if)
 
 If the first argument is true, then evaluate the second argument, otherwise evaluate the third argument.

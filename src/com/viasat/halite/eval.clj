@@ -538,6 +538,12 @@
                                (fixed-decimal/set-scale (eval-in-env f) s))
                     'if (let [[pred then else] (rest expr)]
                           (eval-in-env (if (eval-in-env pred) then else)))
+                    'cond (loop [[pred then & more] (rest expr)]
+                            (if (nil? then)
+                              (eval-in-env pred)
+                              (if (eval-in-env pred)
+                                (eval-in-env then)
+                                (recur more))))
                     'when (let [[pred body] (rest expr)]
                             (if (eval-in-env pred)
                               (eval-in-env body)

@@ -373,7 +373,33 @@
        (= v (halite/eval-expr senv tenv empty-env expr))
 
     '(if true 1 2) 1
-    '(if (< 1 (count [])) 12 (+ 2 3)) 5))
+    '(if (< 1 (count [])) 12 (+ 2 3)) 5
+    '(if (> 2 1) false true) false
+    '(if false false true) true
+    '(if false true false) false))
+
+(deftest cond-tests
+  (are [expr v]
+       (= v (halite/eval-expr senv tenv empty-env expr))
+
+    '(cond true 1 -1) 1
+    '(cond false 0 true 1 -1) 1
+    '(let [x 0]
+       (cond (> x 10) "a"
+             (> x 0) "b"
+             "c")) "c"
+    '(let [x 1]
+       (cond (> x 10) "a"
+             (> x 0) "b"
+             "c")) "b"
+    '(let [x 100]
+       (cond (> x 10) "a"
+             (> x 0) "b"
+             "c")) "a"
+    '(cond (> 2 1) false true) false
+    '(cond (> 2 1) false true) false
+    '(cond false false true) true
+    '(cond false true false) false))
 
 (deftest let-tests
   (are [expr etype]

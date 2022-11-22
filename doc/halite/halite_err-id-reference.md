@@ -888,6 +888,19 @@ The operation expected at least a certain number of arguments. This minimum was 
 > Wrong number of arguments to ':op': expected at least :minimum-arg-count, but got :actual-arg-count
 
 ---
+### <a name="h-err/wrong-arg-count-odd"></a>h-err/wrong-arg-count-odd
+
+The operation expected an odd number of arguments.
+
+#### Error message template:
+
+> Wrong number of arguments to ':op': expected odd number of arguments, but got :actual-arg-count
+
+#### Produced by operators:
+
+* [`cond`](halite_full-reference.md#cond)
+
+---
 ### <a name="l-err/binding-expression-not-optional"></a>l-err/binding-expression-not-optional
 
 The expression being tested in an 'if-value-let' statement must optionally produce a value.

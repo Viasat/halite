@@ -845,6 +845,40 @@ Invoking this operation with a vector and an empty set has the effect of convert
  [Set operations](halite_set-op-reference.md),  [Produce sets](halite_set-out-reference.md),  [Vector operations](halite_vector-op-reference.md),  [Produce vectors](halite_vector-out-reference.md)
 
 ---
+### <a name="cond"></a>cond
+
+Consider arguments pairwise as a predicate followed by an expression. For the first pair, if the predicate evaluates to true then evaluate the expression as the result otherwise consider the next pair. If none of the pairs have a predicate that evaluates to true, then the final argument is evaluated as the result.
+
+![["boolean any-expression { boolean any-expression } any-expression" "any"]](../halite-bnf-diagrams/op/cond-0.svg)
+
+#### Basic elements:
+
+[`any`](halite_basic-syntax-reference.md#any), [`boolean`](halite_basic-syntax-reference.md#boolean)
+
+#### Examples:
+
+<table><tr><td colspan="4">
+
+```clojure
+(let [x 10] (cond (> x 100) "big" (> x 10) "med" (> x 0) "small" "negative"))
+
+;-- result --
+"small"
+```
+
+</td></tr></table>
+
+#### Possible errors:
+
+* [`h-err/wrong-arg-count-odd`](halite_err-id-reference.md#h-err/wrong-arg-count-odd)
+
+See also: [`if`](#if) [`when`](#when)
+
+#### Tags:
+
+ [Boolean operations](halite_boolean-op-reference.md),  [Control flow](halite_control-flow-reference.md),  [Special forms](halite_special-form-reference.md)
+
+---
 ### <a name="conj"></a>conj
 
 Add individual items to a collection.
@@ -1584,7 +1618,7 @@ If the first argument is true, then evaluate the second argument, otherwise eval
 
 </td></tr></table>
 
-See also: [`when`](#when)
+See also: [`cond`](#cond) [`when`](#when)
 
 #### Tags:
 

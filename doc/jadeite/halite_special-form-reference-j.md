@@ -20,6 +20,10 @@ A path of element accessors can be created by chaining together element access f
 
 Evaluates to true if the boolean-expression is true when the symbol is bound to some element in the collection.
 
+#### [`cond`](halite_full-reference-j.md#cond)
+
+Consider arguments pairwise as a predicate followed by an expression. For the first pair, if the predicate evaluates to true then evaluate the expression as the result otherwise consider the next pair. If none of the pairs have a predicate that evaluates to true, then the final argument is evaluated as the result.
+
 #### [`every?`](halite_full-reference-j.md#every_Q)
 
 Evaluates to true if the boolean-expression is true when the symbol is bound to each the element in the collection.

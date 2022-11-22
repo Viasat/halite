@@ -83,6 +83,9 @@
 (deferr wrong-arg-count-min [data]
         {:message "Wrong number of arguments to ':op': expected at least :minimum-arg-count, but got :actual-arg-count"})
 
+(deferr wrong-arg-count-odd [data]
+        {:message "Wrong number of arguments to ':op': expected odd number of arguments, but got :actual-arg-count"})
+
 (deferr invalid-vector-index [data]
         {:message "Index must be an integer when target is a vector"})
 

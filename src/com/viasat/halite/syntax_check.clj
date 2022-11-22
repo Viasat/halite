@@ -84,6 +84,7 @@
                           'get
                           'get-in
                           'if
+                          'cond
                           'if-value
                           'if-value-let
                           'intersection

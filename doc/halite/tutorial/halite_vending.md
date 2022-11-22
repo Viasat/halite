@@ -211,11 +211,10 @@ At this point we have modeled valid state transitions without modeling the event
     :refines-to {:tutorials.vending/AbstractEvent$v1
                    {:name "coin_event_to_abstract",
                     :expr '{:$type :tutorials.vending/AbstractEvent$v1,
-                            :balanceDelta (if (= "nickel" denomination)
-                                            #d "0.05"
-                                            (if (= "dime" denomination)
-                                              #d "0.10"
-                                              #d "0.25")),
+                            :balanceDelta
+                              (cond (= "nickel" denomination) #d "0.05"
+                                    (= "dime" denomination) #d "0.10"
+                                    #d "0.25"),
                             :beverageDelta 0,
                             :snackDelta 0}}}},
  :tutorials.vending/VendEvent$v1
@@ -433,4 +432,21 @@ From an initial state and a sequence of events we can compute the final state.
 ```
 
 Note that some of the vend events were effectively ignored because the balance was too low.
+
+### Reference
+
+#### Basic elements:
+
+[`fixed-decimal`](../halite_basic-syntax-reference.md#fixed-decimal), [`integer`](../halite_basic-syntax-reference.md#integer), [`set`](../halite_basic-syntax-reference.md#set), [`string`](../halite_basic-syntax-reference.md#string), [`vector`](../halite_basic-syntax-reference.md#vector)
+
+#### How Tos:
+
+* [convert-instances](../how-to/halite_convert-instances.md)
+
+
+#### Explanations:
+
+* [refinements-as-functions](../explanation/halite_refinements-as-functions.md)
+* [specs-as-predicates](../explanation/halite_specs-as-predicates.md)
+
 

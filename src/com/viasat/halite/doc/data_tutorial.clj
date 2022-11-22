@@ -8,6 +8,9 @@
 (def tutorials {:tutorials.vending/vending
                 {:label "Model a vending machine as a state machine"
                  :desc "Use specs to map out a state space and valid transitions"
+                 :basic-ref ['fixed-decimal 'integer 'string 'vector 'set]
+                 :how-to-ref [:refinement/convert-instances]
+                 :explanation-ref [:tutorials.grocery/specs-as-predicates :tutorials.grocery/refinements-as-functions]
                  :contents ["We can model the state space for a vending machine that accepts nickels, dimes, and quarters and which vends  snacks for $0.50 and beverages for $1.00."
                             {:spec-map {:tutorials.vending/State$v1 {:fields {:balance [:Decimal 2]
                                                                               :beverageCount :Integer
@@ -154,11 +157,9 @@
                                                                                                :expr '(contains? #{"nickel" "dime" "quarter"} denomination)}}
                                                                                :refines-to {:tutorials.vending/AbstractEvent$v1 {:name "coin_event_to_abstract"
                                                                                                                                  :expr '{:$type :tutorials.vending/AbstractEvent$v1
-                                                                                                                                         :balanceDelta (if (= "nickel" denomination)
-                                                                                                                                                         #d "0.05"
-                                                                                                                                                         (if (= "dime" denomination)
-                                                                                                                                                           #d "0.10"
-                                                                                                                                                           #d "0.25"))
+                                                                                                                                         :balanceDelta (cond (= "nickel" denomination) #d "0.05"
+                                                                                                                                                             (= "dime" denomination) #d "0.10"
+                                                                                                                                                             #d "0.25")
                                                                                                                                          :beverageDelta 0
                                                                                                                                          :snackDelta 0}}}}
                                               :tutorials.vending/VendEvent$v1 {:fields {:item :String}

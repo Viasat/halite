@@ -30,6 +30,10 @@ Determine if values are equivalent. For vectors and sets this performs a compari
 
 Performs logical implication. If the first value is true, then the second value must also be true for the result to be true. If the first value is false, then the result is true.
 
+#### [`cond`](halite_full-reference-j.md#cond)
+
+Consider arguments pairwise as a predicate followed by an expression. For the first pair, if the predicate evaluates to true then evaluate the expression as the result otherwise consider the next pair. If none of the pairs have a predicate that evaluates to true, then the final argument is evaluated as the result.
+
 #### [`equalTo`](halite_full-reference-j.md#equalTo)
 
 Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.

@@ -557,7 +557,19 @@
                    {:expr-str "(if (> 2 1) 10 (error \"fail\"))"
                     :expr-str-j :auto
                     :result :auto}]
-        :op-ref ['when]}
+        :op-ref ['cond 'when]}
+
+   'cond {:sigs [["boolean any-expression { boolean any-expression } any-expression" "any"]]
+          :sigs-j [["'if' '(' boolean ')' any-expression 'else' any-expression" "any"]]
+          :tags #{:boolean-op :control-flow :special-form}
+          :basic-ref ['boolean 'any]
+          :throws ['h-err/wrong-arg-count-odd]
+          :doc "Consider arguments pairwise as a predicate followed by an expression. For the first pair, if the predicate evaluates to true then evaluate the expression as the result otherwise consider the next pair. If none of the pairs have a predicate that evaluates to true, then the final argument is evaluated as the result."
+          :examples [{:expr-str "(let [x 10] (cond (> x 100) \"big\" (> x 10) \"med\" (> x 0) \"small\" \"negative\"))"
+                      :expr-str-j :auto
+                      :result :auto}]
+          :op-ref ['if 'when]}
+
    'if-value {:sigs [["symbol any-expression any-expression" "any"]]
               :sigs-j [["'ifValue' '(' symbol ')' any-expression 'else' any-expression" "any"]]
               :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then evaluate the third argument."

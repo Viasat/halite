@@ -120,6 +120,16 @@
   (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
     (types/meet s t)))
 
+(s/defn ^:private type-check-cond :- types/HaliteType
+  [ctx :- TypeContext, expr :- s/Any]
+  (loop [[pred-type t & more] (mapv (partial type-check* ctx) (rest expr))
+         s nil]
+    (if t
+      (recur more (if s
+                    (types/meet s t)
+                    t))
+      (types/meet pred-type s))))
+
 (s/defn ^:private type-check-when :- types/HaliteType
   [ctx :- TypeContext
    expr]
@@ -318,6 +328,7 @@
                   'not= (type-check-equals ctx expr) ; = and not= have same typing rule
                   'rescale (type-check-set-scale ctx expr)
                   'if (type-check-if ctx expr)
+                  'cond (type-check-cond ctx expr)
                   'when (type-check-when ctx expr)
                   'let (type-check-let ctx expr)
                   'if-value (type-check-if-value ctx expr)

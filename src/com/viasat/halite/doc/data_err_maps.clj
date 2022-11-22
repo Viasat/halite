@@ -74,6 +74,7 @@
    'h-err/field-name-not-in-spec {:doc "The field name is not valid for the spec. The field name was provided to either define a field value in an instance or to lookup a field in an instance."}
    'h-err/wrong-arg-count {:doc "The number of arguments provided to the operation did not match what was expected."}
    'h-err/wrong-arg-count-min {:doc "The operation expected at least a certain number of arguments. This minimum was not met."}
+   'h-err/wrong-arg-count-odd {:doc "The operation expected an odd number of arguments."}
    'h-err/spec-cycle-runtime {:doc "Specs cannot be defined to refine to themselves either directly or transitively. At execution time, this was violated."}
    'h-err/refinement-diamond {:doc "Spec refinements cannot be defined that allow multiple refinement paths between the same two specs."}
    'h-err/spec-cycle {:doc "Dependencies between specs cannot form a cycle."}

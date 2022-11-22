@@ -22,6 +22,7 @@
             'c [:Instance :ws/C$v1]
             'ohno [:Instance :ws/OhNo$v1]
             'xb :Boolean
+            'yb :Boolean
             'i :Integer
             'mi [:Maybe :Integer]
             'j :Integer
@@ -56,13 +57,20 @@
     ^:skip-type-check ^:exact
     ((get-in a [:b :c (+ (get-in d [:e 2]) 3) :f]) "a.b.c[(d.e[2] + 3)].f")
 
-    ((if xb
-       (= (+ i j) 3)
-       (and (= (mod i 2) 1)
-            (> j 3)
-            (not (or (not= j 1)
-                     (= i 3)))
-            true))
+    ((cond xb
+           1
+           2)
+     "if(xb)
+        1
+      else
+        2")
+    ((cond xb
+           (= (+ i j) 3)
+           (and (= (mod i 2) 1)
+                (> j 3)
+                (not (or (not= j 1)
+                         (= i 3)))
+                true))
      "if(xb)
         (i + j == 3)
       else
@@ -70,6 +78,21 @@
          && j > 3
          && !(j != 1 || i == 3)
          && true)")
+    ((cond xb
+           (= (+ i j) 3)
+           yb
+           25
+           (and (= (mod i 2) 1)
+                (> j 3)
+                (not (or (not= j 1)
+                         (= i 3)))
+                true))
+     "if(xb) 
+          {((i + j) == 3)}
+       else if(yb)
+          25
+        else 
+         (((i % 2) == 1) && (j > 3) && !((j != 1) || (i == 3)) && true)")
 
     (#{}               "#{}")
     ([]                "[]")
@@ -169,6 +192,9 @@
     ^:skip-type-check
     ((if-value- x (if (> x 50) "large" "small") "unset") ;; deprecated
      "ifValue( x ) if( x > 50 ) \"large\" else \"small\" else \"unset\"")
+    ^:skip-type-check
+    ((if-value x (if (> x 50) "large" (if true "small" "none")) "unset")
+     "(ifValue(x) {(if((x > 50)) {\"large\"} else {(if(true) {\"small\"} else {\"none\"})})} else {\"unset\"})")
     ((when-value mi (+ mi 10)) "whenValue(mi) mi + 10")
     ^:skip-type-check
     ((when-value $no-value 42) "whenValue(<$no-value>) 42")
@@ -476,6 +502,20 @@ else {
 (deftest test-reduce
   (is (= '(reduce [if []] [in xs] (conj if in))
          (jadeite/to-halite "reduce(if = []; in in xs) if.conj(in)"))))
+
+(deftest test-combine-ifs
+  (is (nil?
+       (#'jadeite/combine-ifs nil)))
+  (is (= 1
+         (#'jadeite/combine-ifs 1)))
+  (is (= '(+ 1 2)
+         (#'jadeite/combine-ifs '(+ 1 2))))
+  (is (= '(if a b c)
+         (#'jadeite/combine-ifs '(if a b c))))
+  (is (= '(cond a b x y z)
+         (#'jadeite/combine-ifs '(if a b (if x y z)))))
+  (is (= '(cond a b x y p q r)
+         (#'jadeite/combine-ifs '(if a b (if x y (if p q r)))))))
 
 #_(deftest test-no-value
     (is (thrown-with-msg? RuntimeException #"null not allowed"

@@ -1027,6 +1027,13 @@
                   (find-spec-refs context then))
             (find-spec-refs context else)))
 
+    (= 'cond (first expr))
+    ;; turn 'cond into nested 'ifs for analysis purposes
+    (find-seq-spec-refs context (reduce (fn [if-expr [pred then]]
+                                          (list 'if pred then if-expr))
+                                        (last expr)
+                                        (reverse (partition 2 (rest expr)))))
+
     (#{'when 'when-value} (first expr))
     (let [[_ check then] expr]
       (into (unwrap-tail-set (find-spec-refs context check))

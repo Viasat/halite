@@ -62,11 +62,22 @@
   (add-source-metadata-when-possible [obj source-tree]
     obj))
 
+(defn- combine-ifs [h]
+  (if (and (seq? h)
+           (#{'if 'cond} (first h)))
+    (let [[_ pred then else] h]
+      (if (and (seq? else)
+               (#{'if 'cond} (first else)))
+        (let [[_ & more] (combine-ifs else)]
+          (apply list (into ['cond pred then] more)))
+        h))
+    h))
+
 (defn toh
   "Translate from tree of expression objects created by instaparse (hiccup) into halite"
   [tree]
   (-> (match [tree]
-        [[:conditional op a b c]]      (list (if (= "if" op) 'if 'if-value) (toh a) (toh b) (toh c))
+        [[:conditional op a b c]]      (combine-ifs (list (if (= "if" op) 'if 'if-value) (toh a) (toh b) (toh c)))
         [[:if-value-let sym m t e]]    (list 'if-value-let [(toh sym) (toh m)] (toh t) (toh e))
         [[:when-value-let sym m t]]    (list 'when-value-let [(toh sym) (toh m)] (toh t))
         [[:when-value sym t]]          (list 'when-value (toh sym) (toh t))
@@ -235,7 +246,14 @@
                                 a1)
                  if (str "(if(" (toj a0)
                          ") {" (toj a1)
-                         "} else {" (toj a2) "})")
+                         "} else {" (toj a2)
+                         "})")
+                 cond (str "(if(" (toj a0)
+                           ") {" (toj a1)
+                           "} else {" (if (> (count args) 3)
+                                        (toj (apply list (into ['cond] (drop 2 args))))
+                                        (toj a2))
+                           "})")
                  when (str "(when(" (toj a0) ") {" (toj a1) "})") ; WAT
                  valid? (str "(valid? " (toj a0) ")")
                  valid (str "(valid " (toj a0) ")")

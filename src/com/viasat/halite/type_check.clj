@@ -137,6 +137,13 @@
                                            :actual-arg-count (count (rest form))
                                            :form form}))))
 
+(defn- arg-count-odd
+  [form]
+  (when (not (= (mod (count (rest form)) 2) 1))
+    (throw-err (h-err/wrong-arg-count-odd {:op (first form)
+                                           :actual-arg-count (count (rest form))
+                                           :form form}))))
+
 (def ^:dynamic *lookup-f* nil)
 
 (defn ^:private type-check-lookup [ctx form subexpr-type index]
@@ -223,6 +230,21 @@
     (when (not= :Boolean pred-type)
       (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'if :expected-type-description (text "boolean") :expr expr}))))
     (types/meet s t)))
+
+(s/defn ^:private type-check-cond :- types/HaliteType
+  [ctx :- TypeContext, expr :- s/Any]
+  (arg-count-odd expr)
+  (arg-count-at-least 3 expr)
+  (loop [[pred-type t & more] (mapv (partial type-check* ctx) (rest expr))
+         s nil]
+    (if t
+      (do
+        (when (not= :Boolean pred-type)
+          (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'cond :expected-type-description (text "boolean") :expr expr}))))
+        (recur more (if s
+                      (types/meet s t)
+                      t)))
+      (types/meet pred-type s))))
 
 (s/defn ^:private type-check-when :- types/HaliteType
   [ctx :- TypeContext, expr]
@@ -488,6 +510,7 @@
                              'not= (type-check-equals ctx expr) ; = and not= have same typing rule
                              'rescale (type-check-set-scale ctx expr)
                              'if (type-check-if ctx expr)
+                             'cond (type-check-cond ctx expr)
                              'when (type-check-when ctx expr)
                              'let (type-check-let ctx expr)
                              'if-value (type-check-if-value ctx expr)

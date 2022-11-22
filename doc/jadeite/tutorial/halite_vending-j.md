@@ -253,3 +253,20 @@ From an initial state and a sequence of events we can compute the final state.
 
 Note that some of the vend events were effectively ignored because the balance was too low.
 
+### Reference
+
+#### Basic elements:
+
+[`fixed-decimal`](../halite_basic-syntax-reference-j.md#fixed-decimal), [`integer`](../halite_basic-syntax-reference-j.md#integer), [`set`](../halite_basic-syntax-reference-j.md#set), [`string`](../halite_basic-syntax-reference-j.md#string), [`vector`](../halite_basic-syntax-reference-j.md#vector)
+
+#### How Tos:
+
+* [convert-instances](../how-to/halite_convert-instances-j.md)
+
+
+#### Explanations:
+
+* [refinements-as-functions](../explanation/halite_refinements-as-functions-j.md)
+* [specs-as-predicates](../explanation/halite_specs-as-predicates-j.md)
+
+

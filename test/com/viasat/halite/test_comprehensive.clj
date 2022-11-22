@@ -277,8 +277,7 @@
    "false")
   (h
    (if true false)
-   [:throws
-    "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'if': expected 3, but got 2"])
+   [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'if': expected 3, but got 2"])
   (h
    (if true $no-value $no-value)
    :Unset
@@ -307,7 +306,14 @@
   (h
    (if-value-let [x false] false true)
    [:throws
-    "l-err/binding-expression-not-optional 0-0 : Binding expression in 'if-value-let' must have an optional type"]))
+    "l-err/binding-expression-not-optional 0-0 : Binding expression in 'if-value-let' must have an optional type"])
+  (h (cond false 0 true 1 -1) :Integer 1 "(if(false) {0} else {(if(true) {1} else {-1})})" "1")
+  (h (cond false 0 true 1) [:throws "h-err/wrong-arg-count-odd 0-0 : Wrong number of arguments to 'cond': expected odd number of arguments, but got 4"])
+
+  (h (cond true 1 -1) :Integer 1 "(if(true) {1} else {-1})" "1")
+  (h (cond false) [:throws "h-err/wrong-arg-count-min 0-0 : Wrong number of arguments to 'cond': expected at least 3, but got 1"])
+  (h (cond) [:throws "h-err/wrong-arg-count-odd 0-0 : Wrong number of arguments to 'cond': expected odd number of arguments, but got 0"])
+  (h (cond false 1 100) :Integer 100 "(if(false) {1} else {100})" "100"))
 
 (deftest
   test-int
