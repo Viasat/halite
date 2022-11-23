@@ -875,15 +875,19 @@
                       (let [unbound (remove bound? (take (- (count form) 2) (rest form)))
                             [bound? bindings] (reduce
                                                (fn [[bound? bindings] id]
-                                                 [(conj bound? id)
-                                                  (conj bindings
-                                                        id
-                                                        (form-from-ssa* ssa-graph ordering guards bound? curr-guard id))])
+                                                 (let [val-form (form-from-ssa* ssa-graph ordering guards bound? curr-guard id)]
+                                                   (cond
+                                                     (= id val-form) [bound? bindings] ;; don't bind to self
+                                                     (bound? id) (throw (ex-info "BUG! id already bound"
+                                                                                 {:id id :val-form val-form
+                                                                                  :bindings bindings}))
+                                                     :else [(conj bound? id)
+                                                            (conj bindings id val-form)])))
                                                [bound? []]
                                                unbound)]
                         (-> (form-from-ssa* ssa-graph ordering guards bound? curr-guard (last form))
                             (cond->>
-                             (seq unbound) (list 'let bindings))))
+                             (seq bindings) (list 'let bindings))))
 
                       (and (= '$value! (first form)) *hide-non-halite-ops*)
                       (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form))
