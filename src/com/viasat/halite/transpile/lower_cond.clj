@@ -18,6 +18,7 @@
   (map lower-cond-in-expr expr))
 
 (s/defn ^:private lower-cond-in-seq
+  "Assumes the 'cond expressions have been type-checked and have valid number of arguments."
   [expr]
   (cond
     (= 'cond (first expr))
@@ -27,8 +28,7 @@
                                 (last expr)
                                 (reverse (partition 2 (rest expr)))))
     :default
-    (apply list (into [(first expr)]
-                      (lower-cond-in-collection (rest expr))))))
+    (apply list (first expr) (lower-cond-in-collection (rest expr)))))
 
 (defn- lower-cond-in-expr
   [expr]

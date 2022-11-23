@@ -25,6 +25,8 @@
          (#'lower-cond/lower-cond-in-expr '#{(cond a b x y z)
                                              (+ 1 2)
                                              (cond p q r)})))
+  (is (= '(map [x [1 2 (if (> z 1) 3 4)]] (+ x 1))
+         (#'lower-cond/lower-cond-in-expr '(map [x [1 2 (cond (> z 1) 3 4)]] (+ x 1)))))
   (is (= {:name "c"
           :expr '(if a b (if x y z))}
          (#'lower-cond/lower-cond-in-expr-object {:name "c"
