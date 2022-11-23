@@ -26,14 +26,16 @@
                   {:expr {:$type :ws/Colored
                           :color (if (> horsePower 250) "red" "blue")}}}}})
 
+(def simple-answer {:$type :ws/Car,
+                    :horsePower {:$in [120 300]},
+                    :$refines-to #:ws{:Colored {:color {:$in #{"blue" "green" "red"}}}}})
+
 (deftest test-strings-and-abstract-specs-example
   (are [in out]
        (= out (propagate/propagate strings-and-abstract-specs-example in))
 
     {:$type :ws/Car}
-    {:$type :ws/Car,
-     :horsePower {:$in [120 300]},
-     :$refines-to #:ws{:Colored {:color {:$in #{"blue" "green" "red"}}}}}
+    simple-answer
 
     {:$type :ws/Car :$refines-to {:ws/Colored {:color {:$in #{"red" "yellow"}}}}}
     {:$type :ws/Car,
@@ -43,5 +45,23 @@
     {:$type :ws/Car :horsePower 140}
     {:$type :ws/Car, :horsePower 140
      :$refines-to {:ws/Colored {:color "blue"}}}))
+
+(deftest test-propagate-cond
+  (is (= simple-answer
+         (propagate/propagate '{:ws/Colored {:abstract? true
+                                             :fields {:color :String}
+                                             :constraints [["validColors" (cond (= color "red") true
+                                                                                (= color "green") true
+                                                                                (= color "blue") true
+                                                                                false)]]}
+                                :ws/Car {:fields {:horsePower :Integer}
+                                         :constraints [["validHorsePowers" (cond (and (<= 120 horsePower)
+                                                                                      (<= horsePower 300)) true
+                                                                                 false)]]
+                                         :refines-to {:ws/Colored
+                                                      {:expr {:$type :ws/Colored
+                                                              :color (cond (> horsePower 250) "red"
+                                                                           "blue")}}}}}
+                              {:$type :ws/Car}))))
 
 ;; (run-tests)

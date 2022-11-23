@@ -23,6 +23,11 @@
 (s/defschema Constraint {:name base/ConstraintName
                          :expr s/Any})
 
+(s/defschema ExprObject (s/conditional
+                         #(or (not (nil? (:inverted? %)))
+                              (nil? (:name %))) Refinement
+                         :else Constraint))
+
 (s/defschema SpecInfo
   {(s/optional-key :fields) {types/BareKeyword types/HaliteType}
    (s/optional-key :constraints) [NamedConstraint]
