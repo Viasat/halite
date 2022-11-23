@@ -875,14 +875,10 @@
                       (let [unbound (remove bound? (take (- (count form) 2) (rest form)))
                             [bound? bindings] (reduce
                                                (fn [[bound? bindings] id]
-                                                 (let [val-form (form-from-ssa* ssa-graph ordering guards bound? curr-guard id)]
-                                                   (cond
-                                                     (= id val-form) [bound? bindings] ;; don't bind to self
-                                                     (bound? id) (throw (ex-info "BUG! id already bound"
-                                                                                 {:id id :val-form val-form
-                                                                                  :bindings bindings}))
-                                                     :else [(conj bound? id)
-                                                            (conj bindings id val-form)])))
+                                                 (if (bound? id)
+                                                   [bound? bindings] ;; don't rebind already-bound id
+                                                   [(conj bound? id)
+                                                    (conj bindings id (form-from-ssa* ssa-graph ordering guards bound? curr-guard id))]))
                                                [bound? []]
                                                unbound)]
                         (-> (form-from-ssa* ssa-graph ordering guards bound? curr-guard (last form))
