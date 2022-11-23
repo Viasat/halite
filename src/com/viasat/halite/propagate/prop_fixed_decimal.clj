@@ -106,10 +106,6 @@
   [context f]
   (assoc context :field f))
 
-(s/defn ^:private context-into-schema
-  [context s]
-  (update context :schema-path conj s))
-
 ;;
 
 (declare walk-bound)
@@ -118,46 +114,40 @@
 
 (s/defn ^:private walk-map
   [context m]
-  (let [context (context-into-schema context 'map)]
-    (-> m
-        (update-map (fn [f bound]
-                      (let [context (context-into-field context f)]
-                        [f (walk-concrete-bound context bound)]))))))
+  (-> m
+      (update-map (fn [f bound]
+                    (let [context (context-into-field context f)]
+                      [f (walk-concrete-bound context bound)])))))
 
 (s/defn ^:private walk-untyped-map
   [context m]
-  (let [context (context-into-schema context 'untyped-map)]
-    (-> m
-        (update-map (fn [f bound]
-                      (let [context (context-into-field context f)]
-                        [f (walk-bound context bound)]))))))
+  (-> m
+      (update-map (fn [f bound]
+                    (let [context (context-into-field context f)]
+                      [f (walk-bound context bound)])))))
 
 (s/defn ^:private walk-spec-id
   [context bound]
-  (let [context (context-into-schema context 'spec-id)]
-    bound))
+  bound)
 
 (s/defn ^:private walk-refinement
   [context
    t
    bound]
-  (let [context (context-into-schema context 'refinement)
-        context' (context-into-type context t)]
+  (let [context' (context-into-type context t)]
     [(walk-spec-id context t)
      (-> bound
          (update-vals (partial walk-concrete-bound context')))]))
 
 (s/defn ^:private walk-refinement-bound
   [context bound]
-  (let [context (context-into-schema context 'refinement-bound)]
-    (-> bound
-        (update-map (partial walk-refinement context)))))
+  (-> bound
+      (update-map (partial walk-refinement context))))
 
 (s/defn ^:private walk-concrete-spec-bound
   [context
    bound :- prop-composition/ConcreteSpecBound]
-  (let [context (context-into-schema context 'concrete-spec-bound)
-        context' (context-into-type context (:$type bound))]
+  (let [context' (context-into-type context (:$type bound))]
     (merge (no-nil {:$type (walk-spec-id context (:$type bound))
                     :$refines-to (some->> (:$refines-to bound)
                                           (walk-refinement-bound context'))})
@@ -167,47 +157,43 @@
 (s/defn ^:private walk-atom-bound
   [context
    bound :- prop-composition/AtomBound]
-  (let [context (context-into-schema context 'atom-bound)]
-    (cond
-      (integer? bound) (if (:g context)
-                         ((:g context) context bound)
-                         bound)
-      (base/fixed-decimal? bound) (if (:f context)
-                                    ((:f context) bound)
-                                    bound)
-      (boolean? bound) bound
-      (string? bound) bound
-      (= :Unset bound) bound
-      (= :String bound) bound
-      (map? bound) (let [in (:$in bound)]
-                     {:$in (cond
-                             (set? in) (set (map (partial walk-bound context) in))
-                             (vector? in) (vec (map (partial walk-bound context) in)))})
-      :default (throw (ex-info "unrecognized atom:" {:context context
-                                                     :bound bound})))))
+  (cond
+    (integer? bound) (if (:g context)
+                       ((:g context) context bound)
+                       bound)
+    (base/fixed-decimal? bound) (if (:f context)
+                                  ((:f context) bound)
+                                  bound)
+    (boolean? bound) bound
+    (string? bound) bound
+    (= :Unset bound) bound
+    (= :String bound) bound
+    (map? bound) (let [in (:$in bound)]
+                   {:$in (cond
+                           (set? in) (set (map (partial walk-bound context) in))
+                           (vector? in) (vec (map (partial walk-bound context) in)))})
+    :default (throw (ex-info "unrecognized atom:" {:context context
+                                                   :bound bound}))))
 
 (s/defn ^:private walk-spec-id-to-bound-entry
   [context
    t
    bound]
-  (let [context (context-into-schema context 'spec-id-to-bound-entry)
-        context' (context-into-type context t)]
+  (let [context' (context-into-type context t)]
     [(walk-spec-id context t)
      (walk-untyped-map context' bound)]))
 
 (s/defn ^:private walk-spec-id-to-bound
   [context
    bound]
-  (let [context (context-into-schema context 'spec-id-to-bound)]
-    (-> bound
-        (update-map (partial walk-spec-id-to-bound-entry context)))))
+  (-> bound
+      (update-map (partial walk-spec-id-to-bound-entry context))))
 
 (s/defn ^:private walk-refines-to
   [context
    t
    bound]
-  (let [context (context-into-schema context 'refines-to)
-        context' (context-into-type context t)]
+  (let [context' (context-into-type context t)]
     [(walk-spec-id context t)
      (merge (no-nil {:$refines-to (some->> (:$refines-to bound)
                                            (walk-spec-id-to-bound context'))})
@@ -217,40 +203,36 @@
 (s/defn ^:private walk-spec-id-to-bound-with-refines-to
   [context
    bound :- prop-abstract/SpecIdToBoundWithRefinesTo]
-  (let [context (context-into-schema context 'spec-id-to-bound-with-refines-to)]
-    (merge bound
-           (-> (dissoc bound :Unset)
-               (update-map (partial walk-refines-to context))))))
+  (merge bound
+         (-> (dissoc bound :Unset)
+             (update-map (partial walk-refines-to context)))))
 
 (s/defn ^:private walk-abstract-spec-bound
   [context
    bound :- prop-abstract/AbstractSpecBound]
-  (let [context (context-into-schema context 'abstract-spec-bound)]
-    (no-nil {:$in (some->> (:$in bound)
-                           (walk-spec-id-to-bound-with-refines-to context))
-             :$if (some->> (:$if bound)
-                           (walk-spec-id-to-bound-with-refines-to context))
-             :$refines-to (some->> (:$refines-to bound)
-                                   (walk-spec-id-to-bound context))})))
+  (no-nil {:$in (some->> (:$in bound)
+                         (walk-spec-id-to-bound-with-refines-to context))
+           :$if (some->> (:$if bound)
+                         (walk-spec-id-to-bound-with-refines-to context))
+           :$refines-to (some->> (:$refines-to bound)
+                                 (walk-spec-id-to-bound context))}))
 
 (s/defn ^:private walk-concrete-bound
   [context
    bound :- prop-composition/ConcreteSpecBound]
-  (let [context (context-into-schema context 'concrete-bound)]
-    (cond
-      (:$type bound) (walk-concrete-spec-bound context bound)
-      :default (walk-atom-bound context bound))))
+  (cond
+    (:$type bound) (walk-concrete-spec-bound context bound)
+    :default (walk-atom-bound context bound)))
 
 (s/defn ^:private walk-bound
   [context
    bound]
-  (let [context (context-into-schema context 'walk)]
-    (cond
-      (:$type bound) (walk-concrete-bound context bound)
-      (or (not (map? bound))
-          (and (contains? bound :$in)
-               (not (map? (:$in bound))))) (walk-atom-bound context bound)
-      :default (walk-abstract-spec-bound context bound))))
+  (cond
+    (:$type bound) (walk-concrete-bound context bound)
+    (or (not (map? bound))
+        (and (contains? bound :$in)
+             (not (map? (:$in bound))))) (walk-atom-bound context bound)
+    :default (walk-abstract-spec-bound context bound)))
 
 ;;
 
