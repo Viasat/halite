@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.propagate.prop-fixed-decimal
   "Lower fixed-decimal fields and values to integers."
-  (:require [com.viasat.halite.base :as base]
+  (:require [com.viasat.halite.analysis :as analysis]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
@@ -101,6 +102,10 @@
   [context t]
   (assoc context :type t))
 
+(s/defn ^:private context-into-field
+  [context f]
+  (assoc context :field f))
+
 (s/defn ^:private context-into-schema
   [context s]
   (update context :schema-path conj s))
@@ -115,13 +120,17 @@
   [context m]
   (let [context (context-into-schema context 'map)]
     (-> m
-        (update-vals (partial walk-concrete-bound context)))))
+        (update-map (fn [f bound]
+                      (let [context (context-into-field context f)]
+                        [f (walk-concrete-bound context bound)]))))))
 
 (s/defn ^:private walk-untyped-map
   [context m]
   (let [context (context-into-schema context 'untyped-map)]
     (-> m
-        (update-vals (partial walk-bound context)))))
+        (update-map (fn [f bound]
+                      (let [context (context-into-field context f)]
+                        [f (walk-bound context bound)]))))))
 
 (s/defn ^:private walk-spec-id
   [context bound]
@@ -160,8 +169,12 @@
    bound :- prop-composition/AtomBound]
   (let [context (context-into-schema context 'atom-bound)]
     (cond
-      (integer? bound) bound
-      (base/fixed-decimal? bound) ((:f context) bound)
+      (integer? bound) (if (:g context)
+                         ((:g context) context bound)
+                         bound)
+      (base/fixed-decimal? bound) (if (:f context)
+                                    ((:f context) bound)
+                                    bound)
       (boolean? bound) bound
       (string? bound) bound
       (= :Unset bound) bound
@@ -180,7 +193,7 @@
   (let [context (context-into-schema context 'spec-id-to-bound-entry)
         context' (context-into-type context t)]
     [(walk-spec-id context t)
-     (walk-untyped-map context bound)]))
+     (walk-untyped-map context' bound)]))
 
 (s/defn ^:private walk-spec-id-to-bound
   [context
@@ -197,7 +210,7 @@
         context' (context-into-type context t)]
     [(walk-spec-id context t)
      (merge (no-nil {:$refines-to (some->> (:$refines-to bound)
-                                           (walk-spec-id-to-bound context))})
+                                           (walk-spec-id-to-bound context'))})
             (->> (dissoc bound :$refines-to)
                  (walk-map context')))]))
 
@@ -252,5 +265,10 @@
     (->> (prop-top-concrete/propagate sctx opts
                                       (->> initial-bound
                                            (walk-bound {:f fixed-decimal-to-long})))
-         ;; TODO: convert back to fixed-decimals in output bounds
-         (walk-bound {}))))
+         (walk-bound {:g (fn [context n]
+                           (let [{:keys [field type]} context
+                                 field-type (get-in spec-map [type :fields field])]
+                             (if (types/decimal-type? field-type)
+                               (->> (analysis/make-fixed-decimal-string n (types/decimal-scale field-type))
+                                    fixed-decimal/fixed-decimal-reader)
+                               n)))}))))

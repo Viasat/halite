@@ -63,6 +63,18 @@
           :$refines-to {}}
          (#'prop-fixed-decimal/walk-bound {} {:$in {:ws/A {:$refines-to {}}
                                                     :ws/B {:$refines-to {:ws/A {}}}}
-                                              :$refines-to {}}))))
+                                              :$refines-to {}})))
+  (is (= {:$in {:ws/A {:$refines-to {:ws/A {:x 14}}}
+                :ws/B {:$refines-to {:ws/A {:r 20}}}}
+          :$refines-to {}}
+         (#'prop-fixed-decimal/walk-bound {:g (fn [context i]
+                                                (let [{:keys [field type]} context]
+                                                  (if (and (= field :r)
+                                                           (= type :ws/A))
+                                                    (inc i)
+                                                    i)))}
+                                          {:$in {:ws/A {:$refines-to {:ws/A {:x 14}}}
+                                                 :ws/B {:$refines-to {:ws/A {:r 19}}}}
+                                           :$refines-to {}}))))
 
 ;; (run-tests)

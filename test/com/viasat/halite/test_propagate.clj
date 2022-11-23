@@ -64,4 +64,24 @@
                                                                            "blue")}}}}}
                               {:$type :ws/Car}))))
 
+(deftest test-propagate-fixed-decimal
+  (is (= {:$type :ws/Car,
+          :horsePower {:$in [#d "12.0" #d "30.0"]},
+          :$refines-to #:ws{:Painted {:color {:$in #{"blue" "green" "red"}}}}}
+         (propagate/propagate '{:ws/Painted {:abstract? true
+                                             :fields {:color :String}
+                                             :constraints [["validColors" (cond (= color "red") true
+                                                                                (= color "green") true
+                                                                                (= color "blue") true
+                                                                                false)]]}
+                                :ws/Car {:fields {:horsePower [:Decimal 1]}
+                                         :constraints [["validHorsePowers" (cond (and (<= #d "12.0" horsePower)
+                                                                                      (<= horsePower #d "30.0")) true
+                                                                                 false)]]
+                                         :refines-to {:ws/Painted
+                                                      {:expr {:$type :ws/Painted
+                                                              :color (cond (> horsePower #d "25.0") "red"
+                                                                           "blue")}}}}}
+                              {:$type :ws/Car}))))
+
 ;; (run-tests)
