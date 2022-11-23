@@ -8,13 +8,13 @@
 
 (deftest test-lower-fixed-decimal
   (let [spec-1 {:$type :spec/A
-                :spec-vars {:x [:Decimal 2]}
+                :fields {:x [:Decimal 2]}
                 :abstract? false
                 :constraints [["c1" '(= x #d "1.23")]]
                 :refines-to {:spec/B {:name "r1"
                                       :expr '#d "9.72"}}}]
     (is (= {:spec/A {:$type :spec/A
-                     :spec-vars {:x :Integer}
+                     :fields {:x :Integer}
                      :abstract? false
                      :constraints [["c1" '(= x 123)]]
                      :refines-to {:spec/B {:name "r1"
@@ -57,6 +57,12 @@
          (#'prop-fixed-decimal/walk-bound {} {:$type :ws/Car :$refines-to {:ws/Painted {:color {:$in #{"red" "yellow"}}
                                                                                         :w {:$type :ws/Wheel
                                                                                             :$refines-to {:ws/Round {:radius 20}}
-                                                                                            :r 10}}}}))))
+                                                                                            :r 10}}}})))
+  (is (= {:$in {:ws/A {:$refines-to {}}
+                :ws/B {:$refines-to {:ws/A {}}}}
+          :$refines-to {}}
+         (#'prop-fixed-decimal/walk-bound {} {:$in {:ws/A {:$refines-to {}}
+                                                    :ws/B {:$refines-to {:ws/A {}}}}
+                                              :$refines-to {}}))))
 
 ;; (run-tests)

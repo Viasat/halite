@@ -5,9 +5,7 @@
   "Constraint propagation for halite."
   (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
-            [com.viasat.halite.propagate.prop-top-concrete :as prop-top-concrete]
-            [com.viasat.halite.transpile.lower-cond :as lower-cond]
-            [com.viasat.halite.transpile.ssa :as ssa]
+            [com.viasat.halite.propagate.prop-fixed-decimal :as prop-fixed-decimal]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -26,9 +24,6 @@
   ([senv :- (s/protocol envs/SpecEnv), opts :- prop-abstract/Opts, initial-bound :- SpecBound]
    (let [spec-map (if (map? senv)
                     senv
-                    (envs/build-spec-map senv (:$type initial-bound)))
-         sctx (->> spec-map
-                   lower-cond/lower-cond-in-spec-map
-                   ssa/spec-map-to-ssa)]
-     (prop-top-concrete/propagate sctx opts initial-bound))))
+                    (envs/build-spec-map senv (:$type initial-bound)))]
+     (prop-fixed-decimal/propagate spec-map opts initial-bound))))
 

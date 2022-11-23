@@ -7,6 +7,9 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
+            [com.viasat.halite.propagate.prop-top-concrete :as prop-top-concrete]
+            [com.viasat.halite.transpile.lower-cond :as lower-cond]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
@@ -53,10 +56,10 @@
 (s/defn ^:private encode-fixed-decimals-in-spec :- envs/SpecInfo
   [spec :- envs/SpecInfo]
   (-> spec
-      (update :spec-vars #(update-vals % (fn [halite-type]
-                                           (if (types/decimal-type? halite-type)
-                                             :Integer
-                                             halite-type))))
+      (update :fields #(update-vals % (fn [halite-type]
+                                        (if (types/decimal-type? halite-type)
+                                          :Integer
+                                          halite-type))))
       (update :constraints #(->> %
                                  (mapv (fn [[cname expr]]
                                          [cname (encode-fixed-decimals-in-expr expr)]))))
@@ -114,6 +117,12 @@
     (-> m
         (update-vals (partial walk-concrete-bound context)))))
 
+(s/defn ^:private walk-untyped-map
+  [context m]
+  (let [context (context-into-schema context 'untyped-map)]
+    (-> m
+        (update-vals (partial walk-bound context)))))
+
 (s/defn ^:private walk-spec-id
   [context bound]
   (let [context (context-into-schema context 'spec-id)]
@@ -164,12 +173,21 @@
       :default (throw (ex-info "unrecognized atom:" {:context context
                                                      :bound bound})))))
 
+(s/defn ^:private walk-spec-id-to-bound-entry
+  [context
+   t
+   bound]
+  (let [context (context-into-schema context 'spec-id-to-bound-entry)
+        context' (context-into-type context t)]
+    [(walk-spec-id context t)
+     (walk-untyped-map context bound)]))
+
 (s/defn ^:private walk-spec-id-to-bound
   [context
    bound]
   (let [context (context-into-schema context 'spec-id-to-bound)]
     (-> bound
-        (update-vals (partial walk-map)))))
+        (update-map (partial walk-spec-id-to-bound-entry context)))))
 
 (s/defn ^:private walk-refines-to
   [context
@@ -178,8 +196,8 @@
   (let [context (context-into-schema context 'refines-to)
         context' (context-into-type context t)]
     [(walk-spec-id context t)
-     (merge (no-nil {:$refines-to (some-> (:$refines-to bound)
-                                          (partial walk-spec-id-to-bound context))})
+     (merge (no-nil {:$refines-to (some->> (:$refines-to bound)
+                                           (walk-spec-id-to-bound context))})
             (->> (dissoc bound :$refines-to)
                  (walk-map context')))]))
 
@@ -195,12 +213,12 @@
   [context
    bound :- prop-abstract/AbstractSpecBound]
   (let [context (context-into-schema context 'abstract-spec-bound)]
-    (no-nil {:$in (some-> (:$in bound)
-                          (walk-spec-id-to-bound-with-refines-to context))
-             :$if (some-> (:$if bound)
-                          (walk-spec-id-to-bound-with-refines-to context))
-             :$refines-to (some-> (:$refines-to bound)
-                                  (walk-spec-id-to-bound context))})))
+    (no-nil {:$in (some->> (:$in bound)
+                           (walk-spec-id-to-bound-with-refines-to context))
+             :$if (some->> (:$if bound)
+                           (walk-spec-id-to-bound-with-refines-to context))
+             :$refines-to (some->> (:$refines-to bound)
+                                   (walk-spec-id-to-bound context))})))
 
 (s/defn ^:private walk-concrete-bound
   [context
@@ -220,3 +238,19 @@
           (and (contains? bound :$in)
                (not (map? (:$in bound))))) (walk-atom-bound context bound)
       :default (walk-abstract-spec-bound context bound))))
+
+;;
+
+(s/defn propagate :- prop-abstract/SpecBound
+  [spec-map :- envs/SpecMap
+   opts :- prop-abstract/Opts
+   initial-bound :- prop-abstract/SpecBound]
+  (let [sctx (->> spec-map
+                  encode-fixed-decimals-in-spec-map
+                  lower-cond/lower-cond-in-spec-map
+                  ssa/spec-map-to-ssa)]
+    (->> (prop-top-concrete/propagate sctx opts
+                                      (->> initial-bound
+                                           (walk-bound {:f fixed-decimal-to-long})))
+         ;; TODO: convert back to fixed-decimals in output bounds
+         (walk-bound {}))))
