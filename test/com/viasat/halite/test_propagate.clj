@@ -14,7 +14,7 @@
   (:use clojure.test))
 
 (def strings-and-abstract-specs-example
-  '{:ws/Colored
+  '{:ws/Painted
     {:abstract? true
      :fields {:color :String}
      :constraints [["validColors" (or (= color "red") (= color "green") (= color "blue"))]]}
@@ -22,13 +22,13 @@
     :ws/Car
     {:fields {:horsePower :Integer}
      :constraints [["validHorsePowers" (and (<= 120 horsePower) (<= horsePower 300))]]
-     :refines-to {:ws/Colored
-                  {:expr {:$type :ws/Colored
+     :refines-to {:ws/Painted
+                  {:expr {:$type :ws/Painted
                           :color (if (> horsePower 250) "red" "blue")}}}}})
 
 (def simple-answer {:$type :ws/Car,
                     :horsePower {:$in [120 300]},
-                    :$refines-to #:ws{:Colored {:color {:$in #{"blue" "green" "red"}}}}})
+                    :$refines-to #:ws{:Painted {:color {:$in #{"blue" "green" "red"}}}}})
 
 (deftest test-strings-and-abstract-specs-example
   (are [in out]
@@ -37,18 +37,18 @@
     {:$type :ws/Car}
     simple-answer
 
-    {:$type :ws/Car :$refines-to {:ws/Colored {:color {:$in #{"red" "yellow"}}}}}
+    {:$type :ws/Car :$refines-to {:ws/Painted {:color {:$in #{"red" "yellow"}}}}}
     {:$type :ws/Car,
      :horsePower {:$in [251 300]},
-     :$refines-to #:ws{:Colored {:color "red"}}}
+     :$refines-to #:ws{:Painted {:color "red"}}}
 
     {:$type :ws/Car :horsePower 140}
     {:$type :ws/Car, :horsePower 140
-     :$refines-to {:ws/Colored {:color "blue"}}}))
+     :$refines-to {:ws/Painted {:color "blue"}}}))
 
 (deftest test-propagate-cond
   (is (= simple-answer
-         (propagate/propagate '{:ws/Colored {:abstract? true
+         (propagate/propagate '{:ws/Painted {:abstract? true
                                              :fields {:color :String}
                                              :constraints [["validColors" (cond (= color "red") true
                                                                                 (= color "green") true
@@ -58,8 +58,8 @@
                                          :constraints [["validHorsePowers" (cond (and (<= 120 horsePower)
                                                                                       (<= horsePower 300)) true
                                                                                  false)]]
-                                         :refines-to {:ws/Colored
-                                                      {:expr {:$type :ws/Colored
+                                         :refines-to {:ws/Painted
+                                                      {:expr {:$type :ws/Painted
                                                               :color (cond (> horsePower 250) "red"
                                                                            "blue")}}}}}
                               {:$type :ws/Car}))))
