@@ -6,7 +6,6 @@
   that are statically evaluable."
   (:require [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.util :refer [fixpoint]]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
@@ -138,6 +137,12 @@
       (when (every? #(or (integer? %) (string? %) (boolean? %) (keyword? %)) args)
         (apply (comparison-fns (first form)) args)))))
 
+(s/defn simplify-equals-identical
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  (when-let [[_= a b] (and (seq? form) (= '= (first form)) form)]
+    (when (= a b)
+      (list '$do! a true))))
+
 (s/defn simplify :- ssa/SpecCtx
   "Perform semantics-preserving simplifications on the expressions in the specs."
   [sctx :- ssa/SpecCtx]
@@ -151,4 +156,5 @@
     (rewriting/rule simplify-no-value)
     (rewriting/rule simplify-statically-known-value?)
     (rewriting/rule simplify-redundant-value!)
-    (rewriting/rule simplify-statically-known-comparisons)]))
+    (rewriting/rule simplify-statically-known-comparisons)
+    (rewriting/rule simplify-equals-identical)]))
