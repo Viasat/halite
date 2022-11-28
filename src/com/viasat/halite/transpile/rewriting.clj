@@ -35,23 +35,27 @@
 
 (def type-error-item (atom nil))
 
-(defn type-check-trace-item [senv {:keys [op rule spec-info spec-info'] :as item} & {:keys [verbose?]}]
-  (when (and rule spec-info spec-info')
+(defn type-check-trace-item
+  [senv
+   {:keys [op rule spec-info spec-info'] :as item}
+   & {:keys [verbose?]}]
+  (when (and rule spec-info')
     (let [report-err
           (fn [stage ex]
             (reset! type-error-item item)
             (println (format "Found type error %s %s" stage rule))
             (binding [ssa/*hide-non-halite-ops* true]
-              (-> (ssa/spec-from-ssa spec-info) :constraints first second clojure.pprint/pprint)
-              (print-trace-item item)
-              (-> (ssa/spec-from-ssa spec-info') :constraints first second clojure.pprint/pprint))
-            (throw (ex-info (format "Found type error %s %s" stage rule) {} ex)))]
-      (try
-        (binding [ssa/*hide-non-halite-ops* true]
-          (type-check/type-check-spec senv (ssa/spec-from-ssa spec-info))
-          (when verbose? (println "ok before" rule)))
-        (catch Exception ex
-          (report-err "before" ex)))
+              (print-trace-item item))
+            (throw (ex-info (format "Found type error %s %s" stage rule)
+                            {:error-in-spec-id (:spec-id item)}
+                            ex)))]
+      (when spec-info
+        (try
+          (binding [ssa/*hide-non-halite-ops* true]
+            (type-check/type-check-spec senv (ssa/spec-from-ssa spec-info))
+            (when verbose? (println "ok before" rule)))
+          (catch Exception ex
+            (report-err "before" ex))))
 
       (try
         (binding [ssa/*hide-non-halite-ops* true]
