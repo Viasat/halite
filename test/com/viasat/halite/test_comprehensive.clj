@@ -1212,6 +1212,8 @@
    [:throws
     "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
   (h (first (sort #{1})) :Integer 1 "#{1}.sort().first()" "1")
+  (h (first (reduce (a []) [x (sort #{1})] (conj a x)))
+     [:syntax-check-throws "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: a"])
   (h
    (first (reduce [a []] [x (sort #{1})] (conj a x)))
    :Integer
@@ -9676,6 +9678,13 @@
    (rescale 1 1)
    [:throws
     "h-err/arg-type-mismatch 0-0 : First argument to 'rescale' must be a fixed point decimal"])
+  (h (if true #d "1.1" #d "1.23")
+     :Value
+     #d "1.1"
+     "(if(true) {#d \"1.1\"} else {#d \"1.23\"})"
+     "#d \"1.1\"")
+  (h (rescale (if true #d "1.1" #d "1.23") 1)
+     [:throws "h-err/arg-type-mismatch 0-0 : First argument to 'rescale' must be a fixed point decimal"])
   (h
    (intersection #{0 1 2} #{#d "0.0" #d "1.0" #d "2.0"})
    [:Set :Nothing]
