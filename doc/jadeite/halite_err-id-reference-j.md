@@ -397,6 +397,15 @@ A refinement expression must produce an instance whose :$type matches the type t
 * [`refinesTo?`](halite_full-reference-j.md#refinesTo_Q)
 
 ---
+### <a name="h-err/invalid-refines-to-bound"></a>h-err/invalid-refines-to-bound
+
+Propagate cannot use the given bounds because it refers to a refinement path that doesn't exist.
+
+#### Error message template:
+
+> No such refinement path for $refines-to bounds from spec ':spec-id' to spec ':to-spec-id'.
+
+---
 ### <a name="h-err/invalid-symbol-char"></a>h-err/invalid-symbol-char
 
 Only certain characters, in certain sequences are allowed to appear in symbols.

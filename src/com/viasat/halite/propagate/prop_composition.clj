@@ -77,7 +77,7 @@
       (and (types/maybe-type? htype) (vector? htype)
            (#{:Integer :Boolean :String} (second htype)))))
 
-(defn- unwrap-maybe [htype]
+(defn unwrap-maybe [htype]
   (cond-> htype
     (and (vector? htype) (= :Maybe (first htype))) second))
 

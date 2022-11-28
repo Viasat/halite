@@ -38,6 +38,7 @@
    'h-err/invalid-lookup-target {:doc "An attempt was made to retrieve a field from an instance but the value was not known to be an instance of a specific spec. For example, the value may have been missing, as in the case of an optional field. Or perhaps the instance was a result of an expression and the result could have been an instance of many alternative specs."}
    'h-err/invalid-refinement-expression {:doc "A refinement expression must produce an instance whose :$type matches the type that is declared on the refinement."
                                          :doc-j "A refinement expression must produce an instance whose $type matches the type that is declared on the refinement."}
+   'h-err/invalid-refines-to-bound {:doc "Propagate cannot use the given bounds because it refers to a refinement path that doesn't exist."}
    'h-err/invalid-symbol-char {:doc "Only certain characters, in certain sequences are allowed to appear in symbols."}
    'h-err/invalid-symbol-length {:doc "The length of symbols is limited. The supplied symbol exceeded the limit."}
    'h-err/invalid-type-value {:doc "The value of the :$type field in an instance must be a keyword that includes a '/' separator."

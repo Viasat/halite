@@ -215,6 +215,9 @@
 (deferr unknown-type-collection [data]
         {:template "Collections must contain values of a single known type"})
 
+(deferr invalid-refines-to-bound [data]
+        {:template "No such refinement path for $refines-to bounds from spec ':spec-id' to spec ':to-spec-id'."})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol
@@ -242,6 +245,7 @@
                   :spec-error-str String
                   :spec-id s/Symbol
                   :target-type s/Symbol
+                  :to-spec-id s/Symbol
                   :type s/Symbol
                   :type-string s/Symbol
                   :underlying-error-message String
