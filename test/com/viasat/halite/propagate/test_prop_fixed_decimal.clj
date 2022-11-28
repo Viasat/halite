@@ -3,6 +3,7 @@
 
 (ns com.viasat.halite.propagate.test-prop-fixed-decimal
   (:require [com.viasat.halite.propagate.prop-fixed-decimal :as prop-fixed-decimal]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [schema.test :refer [validate-schemas]])
   (:use clojure.test))
 
@@ -13,13 +14,16 @@
                 :constraints [["c1" '(= x #d "1.23")]]
                 :refines-to {:spec/B {:name "r1"
                                       :expr '#d "9.72"}}}]
-    (is (= {:spec/A {:$type :spec/A
-                     :fields {:x :Integer}
-                     :abstract? false
-                     :constraints [["c1" '(= x 123)]]
-                     :refines-to {:spec/B {:name "r1"
-                                           :expr '972}}}}
-           (prop-fixed-decimal/encode-fixed-decimals-in-spec-map {:spec/A spec-1})))))
+    (is (= {:$type :spec/A
+            :fields {:x :Integer}
+            :abstract? false
+            :constraints [["$all" '(= x 123)]]
+            :refines-to {:spec/B {:name "r1"
+                                  :expr '972}}}
+           (->> {:spec/A spec-1}
+                (#'prop-fixed-decimal/lowered-spec-context)
+                :spec/A
+                ssa/spec-from-ssa)))))
 
 (deftest test-walk-bound
   (is (= 1

@@ -9,6 +9,7 @@
             [clojure.set :as set]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
             [com.viasat.halite.types :as types]
             [schema.core :as s]
@@ -621,6 +622,7 @@
     (int? form) (ensure-node ssa-graph form :Integer)
     (boolean? form) (ensure-node ssa-graph form :Boolean)
     (string? form) (ensure-node ssa-graph form :String)
+    (fixed-decimal/fixed-decimal? form) (ensure-node ssa-graph form [:Decimal (fixed-decimal/get-scale form)])
     (= :Unset form) (ensure-node ssa-graph form :Unset)
     (symbol? form) (symbol-to-ssa ctx form)
     (seq? form) (let [[op & args] form]
