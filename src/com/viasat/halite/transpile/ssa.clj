@@ -365,7 +365,7 @@
      ssa-graph
      (cons op args)
      (cond
-       ('#{+ - * div mod expt abs count if when} op) (invoke-type-check ctx form)
+       ('#{+ - * div mod expt abs count if when concat conj} op) (invoke-type-check ctx form)
 
        ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
        ('#{range} op) [:Vec :Integer]
@@ -562,17 +562,6 @@
                 :Boolean)]
     (ensure-node ssa-graph (list op local-id coll-id body-id) htype)))
 
-(s/defn ^:private concat-to-ssa :- NodeInGraph
-  [ctx :- SSACtx form]
-  (let [[a b] (rest form)
-        [ssa-graph a-id] (form-to-ssa ctx a)
-        [ssa-graph b-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) b)
-        [a-type b-type] (map #(node-type (deref-id ssa-graph %)) [a-id b-id])
-        htype (->> b-type types/elem-type
-                   (types/change-elem-type a-type)
-                   (types/meet a-type))]
-    (ensure-node ssa-graph (list 'concat a-id b-id) htype)))
-
 (s/defn ^:private conj-to-ssa :- NodeInGraph
   [ctx :- SSACtx form]
   (let [[coll & elems] (rest form)
@@ -651,8 +640,6 @@
                     'every? (comprehension-to-ssa ctx form)
                     'any? (comprehension-to-ssa ctx form)
                     'map (comprehension-to-ssa ctx form)
-                    'concat (concat-to-ssa ctx form)
-                    'conj (conj-to-ssa ctx form)
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)

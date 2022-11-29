@@ -949,4 +949,42 @@
   (is (= {}
          (envs/lookup-spec (ssa/as-spec-env {:ws/A {:ssa-graph ssa/empty-ssa-graph}}) :ws/A))))
 
+(deftest test-form-to-ssa
+  (let [senv (envs/spec-env {})
+        tenv (envs/type-env '{x [:Vec :Integer]})
+        ctx {:senv senv, :tenv tenv, :env {}, :ssa-graph ssa/empty-ssa-graph :local-stack []}]
+    (is (= '[{:dgraph {$1 [x [:Vec :Integer]]
+                       $2 [1 :Integer]
+                       $3 [2 :Integer]
+                       $4 [[$2 $3] [:Vec :Integer]]
+                       $5 [(concat $1 $4) [:Vec :Integer]]}
+              :next-id 6
+              :form-ids {x $1
+                         1 $2
+                         2 $3
+                         [$2 $3] $4
+                         (concat $1 $4) $5}}
+             $5]
+           (ssa/form-to-ssa ctx '(concat x [1 2]))))
+    (is (= '[{:dgraph {$1 [x [:Vec :Integer]]
+                       $2 [1 :Integer]
+                       $3 [(conj $1 $2) [:Vec :Integer]]}
+              :next-id 4
+              :form-ids {x $1
+                         1 $2
+                         (conj $1 $2) $3}}
+             $3]
+           (ssa/form-to-ssa ctx '(conj x 1)))))
+  (let [senv (envs/spec-env
+              '{:ws/A {:fields {:an :Integer}}})
+        tenv (envs/type-env '{a [:Instance :ws/A], x :Integer, y :Integer, p :Boolean})
+        ctx {:senv senv, :tenv tenv, :env {}, :ssa-graph ssa/empty-ssa-graph :local-stack []}]
+    (is (= '[{:dgraph {$1 [a [:Instance :ws/A]]
+                       $2 [(get $1 :an) :Integer]}
+              :next-id 3
+              :form-ids {a $1
+                         (get $1 :an) $2}}
+             $2]
+           (ssa/form-to-ssa ctx '(get a :an))))))
+
 ;; (run-tests)
