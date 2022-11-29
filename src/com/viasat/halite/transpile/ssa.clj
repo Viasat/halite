@@ -20,7 +20,7 @@
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when-value when error
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = cond if not= let get valid? refine-to if-value when-value when error
       count range every? any? concat conj map
       ;; introduced just so the fixed-decimal lowering can be performed on ssa form
       rescale
@@ -653,6 +653,10 @@
                     (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
                   (condp = op
                     'let (let-to-ssa ctx form)
+                    'cond (form-to-ssa ctx (reduce (fn [if-expr [pred then]]
+                                                     (list 'if pred then if-expr))
+                                                   (last form)
+                                                   (reverse (partition 2 (rest form)))))
                     'if (if-to-ssa ctx form)
                     'when (when-to-ssa ctx form)
                     'get (get-to-ssa ctx form)
@@ -909,7 +913,7 @@
                                                unbound)]
                         (-> (form-from-ssa* ssa-graph ordering guards bound? curr-guard (last form))
                             (cond->>
-                             (seq bindings) (list 'let bindings))))
+                                (seq bindings) (list 'let bindings))))
 
                       (and (= '$value! (first form)) *hide-non-halite-ops*)
                       (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form))

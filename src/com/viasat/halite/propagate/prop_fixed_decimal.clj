@@ -9,7 +9,6 @@
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.propagate.prop-top-concrete :as prop-top-concrete]
-            [com.viasat.halite.transpile.lower-cond :as lower-cond]
             [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx] :as halite-rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
@@ -251,7 +250,6 @@
 (s/defn ^:private lowered-spec-context :- ssa/SpecCtx
   [spec-map  :- envs/SpecMap]
   (->> spec-map
-       lower-cond/lower-cond-in-spec-map
        ssa/spec-map-to-ssa
        lower-fixed-decimal
        lower-spec-field-types))
