@@ -89,10 +89,8 @@
                                                 field-kws))
               original-fields (zipmap field-kws (map symbol field-kws))
 
-              instance-literal (merge {:$type spec-id} original-fields refinement-fields)
-              let-form (list 'let original-as-bindings instance-literal)]
-          #_(prn :let-form let-form)
-          let-form)))))
+              instance-literal (merge {:$type spec-id} original-fields refinement-fields)]
+          (list 'let original-as-bindings instance-literal))))))
 
 (defn realize-intrisic-refinements [sctx]
   (rewriting/squash-trace! {:rule "realize-intrisic-refinements"}
@@ -107,14 +105,8 @@
                                [(refinement-field to-spec-id)
                                 (-> spec :ssa-graph (ssa/deref-id expr) ssa/node-type)]))))))
         ;; add refinement variables to instance literals:
-        ((fn [sctx]
-           (fixpoint
-            #(rewriting/rewrite-sctx % realize-intrisic-refinements-expr)
-            sctx)))
-        #_ ;; why doesn't this work?
         (rewriting/rewrite-reachable-sctx
          [(rewriting/rule realize-intrisic-refinements-expr)]))))
-
 
 (defn add-refinement-constraints [sctx]
   (zipmap (keys sctx)

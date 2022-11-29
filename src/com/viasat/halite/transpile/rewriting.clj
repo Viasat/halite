@@ -4,7 +4,6 @@
 (ns com.viasat.halite.transpile.rewriting
   "Functions to facilitate rewriting of halite specs."
   (:require [clojure.set :as set]
-            [clojure.core.reducers :as r]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecInfo SpecCtx SSACtx]]
@@ -220,7 +219,8 @@
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (envs/tenv-keys tenv)]
     (fixpoint #(apply-to-reachable sctx ctx scope spec-id %
-                                   (r/map second (:constraints %))
+                                   (concat (map second (:constraints %))
+                                           (map (comp :expr val) (:refines-to %)))
                                    rules)
               spec-info)))
 
