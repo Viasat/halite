@@ -180,6 +180,13 @@
    [:throws
     "l-err/disallowed-nothing 0-0 : Disallowed ':Nothing' expression: error, \"fail\""])
   (h
+   (when true (error "fail"))
+   :Unset
+   [:throws "h-err/spec-threw 0-0 : Spec threw error: \"fail\""]
+   "(when(true) {error(\"fail\")})"
+   [:throws "h-err/spec-threw 0-0 : Spec threw error: \"fail\""])
+
+  (h
    (and true (> (div 1 0) 1))
    :Boolean
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]

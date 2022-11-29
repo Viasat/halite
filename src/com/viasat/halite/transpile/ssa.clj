@@ -306,18 +306,6 @@
 
         (insert-node-and-negation ssa-graph ssa-form)))))
 
-(s/defn ^:private ensure-node :- NodeInGraph
-  [ssa-graph :- SSAGraph, ssa-form :- SSAForm, htype :- types/HaliteType]
-  (if-let [id (find-form ssa-graph ssa-form)]
-    (let [node (deref-id ssa-graph id)]
-      (if (not= htype (node-type (deref-id ssa-graph id)))
-        (throw (ex-info (format "BUG! Tried to add node %s, but that form already recorded as %s" [ssa-form htype] node)
-                        {:node node :ssa-graph ssa-graph}))
-        [ssa-graph id]))
-    (if (= :Boolean htype)
-      (ensure-boolean-node ssa-graph ssa-form)
-      (insert-node ssa-graph ssa-form htype))))
-
 (declare form-to-ssa)
 
 (s/defschema SSACtx
@@ -336,6 +324,20 @@
   (let [[ssa-graph id] (ensure-node ssa-graph (list '$local (inc (count local-stack)) htype) htype)]
     [(-> ctx (assoc :ssa-graph ssa-graph) (update :local-stack conj id)) id]))
 
+(s/defn ^:private ensure-node :- NodeInGraph
+  [ssa-graph :- SSAGraph
+   ssa-form :- SSAForm
+   htype :- types/HaliteType]
+  (if-let [id (find-form ssa-graph ssa-form)]
+    (let [node (deref-id ssa-graph id)]
+      (if (not= htype (node-type (deref-id ssa-graph id)))
+        (throw (ex-info (format "BUG! Tried to add node %s, but that form already recorded as %s" [ssa-form htype] node)
+                        {:node node :ssa-graph ssa-graph}))
+        [ssa-graph id]))
+    (if (= :Boolean htype)
+      (ensure-boolean-node ssa-graph ssa-form)
+      (insert-node ssa-graph ssa-form htype))))
+
 (s/defn ^:private invoke-type-check :- types/HaliteType
   [ctx :- SSACtx
    form]
@@ -347,8 +349,13 @@
                (extend-scope* [_ sym t]
                  (throw (ex-info "BUG: extend-scope* not implemented" {:sym sym
                                                                        :t t}))))]
-
     (type-check/type-check senv tenv form)))
+
+(s/defn ^:private ensure-node-with-type :- NodeInGraph
+  [ctx :- SSACtx
+   ssa-form :- SSAForm]
+  (let [{:keys [ssa-graph]} ctx]
+    (ensure-node ssa-graph ssa-form (invoke-type-check ctx ssa-form))))
 
 (s/defn ^:private ensure-node-for-app :- NodeInGraph
   [ctx :- SSACtx,
@@ -358,7 +365,7 @@
      ssa-graph
      (cons op args)
      (cond
-       ('#{+ - * div mod expt abs count} op) (invoke-type-check ctx form)
+       ('#{+ - * div mod expt abs count if when} op) (invoke-type-check ctx form)
 
        ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
        ('#{range} op) [:Vec :Integer]
@@ -405,22 +412,6 @@
     :else (let [htype (or (get (envs/scope tenv) form)
                           (throw (ex-info (format "BUG! Undefined: '%s'" form) {:tenv tenv :form form})))]
             (ensure-node ssa-graph form htype))))
-
-(s/defn ^:private if-to-ssa :- NodeInGraph
-  [ctx :- SSACtx, [_ pred then else :as form]]
-  (let [[ssa-graph pred-id] (form-to-ssa ctx pred)
-        [ssa-graph then-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) then)
-        [ssa-graph else-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) else)
-        htype (types/meet (node-type (deref-id ssa-graph then-id))
-                          (node-type (deref-id ssa-graph else-id)))]
-    (ensure-node ssa-graph (list 'if pred-id then-id else-id) htype)))
-
-(s/defn ^:private when-to-ssa :- NodeInGraph
-  [ctx :- SSACtx, [_ pred then :as form]]
-  (let [[ssa-graph pred-id] (form-to-ssa ctx pred)
-        [ssa-graph then-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) then)
-        [_ then-type] (deref-id ssa-graph then-id)]
-    (ensure-node ssa-graph (list 'when pred-id then-id) (types/meet then-type :Unset))))
 
 (s/defn ^:private if-value-to-ssa :- NodeInGraph
   [{:keys [ssa-graph] :as ctx} :- SSACtx, [_ var-sym then else :as form]]
@@ -472,25 +463,23 @@
 (s/defn ^:private get-to-ssa :- NodeInGraph
   [{:keys [ssa-graph senv] :as ctx} :- SSACtx, [_ subexpr var-kw-or-idx :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)
-        t (->> id (deref-id ssa-graph) node-type)]
-    (cond
-      (types/spec-type? t)
-      (let [spec-id (types/spec-id t)
-            var-kw var-kw-or-idx
-            htype (or (->> spec-id (envs/lookup-spec senv) :fields var-kw)
-                      (throw (ex-info (format "BUG! nil type of field '%s' of spec '%s'" var-kw spec-id)
-                                      {:form form, :var-kw var-kw, :spec-id spec-id})))]
-        (ensure-node ssa-graph (list 'get id var-kw) htype))
+        t (->> id (deref-id ssa-graph) node-type)
+        {:keys [form-to-add ssa-graph]} (cond
+                                          (types/spec-type? t)
+                                          (let [spec-id (types/spec-id t)
+                                                var-kw var-kw-or-idx]
+                                            {:form-to-add (list 'get id var-kw)
+                                             :ssa-graph ssa-graph})
 
-      (types/halite-vector-type? t)
-      (let [[ssa-graph idx-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) var-kw-or-idx)
-            _ (when (not= :Integer (node-type (deref-id ssa-graph idx-id)))
-                (throw (ex-info "BUG! 1st argument has vector type, 2nd is not of type :Integer" {:form form})))]
-        (ensure-node ssa-graph (list 'get id idx-id) (types/elem-type t)))
+                                          (types/halite-vector-type? t)
+                                          (let [[ssa-graph idx-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) var-kw-or-idx)]
+                                            {:form-to-add (list 'get id idx-id)
+                                             :ssa-graph ssa-graph})
 
-      :else
-      (throw (ex-info (format "BUG! get sub-expression has type %s, expected a spec type" t)
-                      {:form form :subexpr-type t})))))
+                                          :else
+                                          (throw (ex-info (format "BUG! get sub-expression has type %s, expected a spec type" t)
+                                                          {:form form :subexpr-type t})))]
+    (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) form-to-add)))
 
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
@@ -597,7 +586,7 @@
                                         [ssa-graph [] (types/elem-type coll-type)]
                                         elems)
         form-to-add (apply list 'conj coll-id elem-ids)]
-    (ensure-node ssa-graph form-to-add (invoke-type-check (assoc ctx :ssa-graph ssa-graph) form-to-add))))
+    (ensure-node-with-type (invoke-type-check (assoc ctx :ssa-graph ssa-graph)) form-to-add)))
 
 (s/defn replace-in-expr :- NodeInGraph
   [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
@@ -652,8 +641,6 @@
                                                      (list 'if pred then if-expr))
                                                    (last form)
                                                    (reverse (partition 2 (rest form)))))
-                    'if (if-to-ssa ctx form)
-                    'when (when-to-ssa ctx form)
                     'get (get-to-ssa ctx form)
                     'refine-to (refine-to-to-ssa ctx form)
                     '$do! (do!-to-ssa ctx form)

@@ -311,7 +311,8 @@
              :Decimal (assoc p :arg 'S)
              p)]
     (assert (get @*ptn-adjacent-super gp) (str "Unknown type pattern:" gp " : " (or original-type
-                                                                                    "<nil>")))
+                                                                                    "<nil>")
+                                               " : " p))
     gp))
 
 (s/defn subtype? :- s/Bool
@@ -475,9 +476,7 @@
 (s/defn maybe-type :- HaliteType
   "Construct a type representing values that are 'maybe' of the given type."
   [t :- HaliteType]
-  (if (maybe-type? t)
-    t
-    [:Maybe t]))
+  (meet t :Unset))
 
 (defn spec-maybe-type?
   [t]
