@@ -362,6 +362,9 @@
 
        ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
        ('#{range} op) [:Vec :Integer]
+       ('#{rescale} op) (let [[_ target-id scale-id] form]
+                          ;; the 2nd arg to rescale must be an integer literal, i.e. not a symbol
+                          (invoke-type-check ctx (list 'rescale target-id (node-form (deref-id ssa-graph scale-id)))))
        :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
                              {:form form}))))))
 
@@ -592,17 +595,9 @@
                                                 t (node-type (deref-id ssa-graph coll-id))]
                                             [ssa-graph (conj elem-ids elem-id) (types/meet elem-type t)]))
                                         [ssa-graph [] (types/elem-type coll-type)]
-                                        elems)]
-    (ensure-node ssa-graph (apply list 'conj coll-id elem-ids) (types/change-elem-type coll-type elem-type))))
-
-(s/defn ^:private rescale-to-ssa :- NodeInGraph
-  [ctx :- SSACtx, [_ target scale :as form]]
-  (let [[ssa-graph target-id] (form-to-ssa ctx target)
-        [ssa-graph scale-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) scale)
-        scale-form (node-form (deref-id ssa-graph scale-id))]
-    (ensure-node ssa-graph (list 'rescale target-id scale-id) (if (zero? scale-form)
-                                                                :Integer
-                                                                (types/decimal-type scale-form)))))
+                                        elems)
+        form-to-add (apply list 'conj coll-id elem-ids)]
+    (ensure-node ssa-graph form-to-add (invoke-type-check (assoc ctx :ssa-graph ssa-graph) form-to-add))))
 
 (s/defn replace-in-expr :- NodeInGraph
   [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
@@ -671,7 +666,6 @@
                     'map (comprehension-to-ssa ctx form)
                     'concat (concat-to-ssa ctx form)
                     'conj (conj-to-ssa ctx form)
-                    'rescale (rescale-to-ssa ctx form)
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)
@@ -913,7 +907,7 @@
                                                unbound)]
                         (-> (form-from-ssa* ssa-graph ordering guards bound? curr-guard (last form))
                             (cond->>
-                                (seq bindings) (list 'let bindings))))
+                             (seq bindings) (list 'let bindings))))
 
                       (and (= '$value! (first form)) *hide-non-halite-ops*)
                       (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form))
