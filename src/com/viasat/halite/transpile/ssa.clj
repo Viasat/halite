@@ -11,27 +11,25 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
+            [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
             [schema.core :as s]
             [weavejester.dependency :as dep]))
 
 (set! *warn-on-reflection* true)
 
-(def ^:private renamed-ops
-  ;; TODO: When we support vectors, we'll need to remove this as an alias and have separate implementations, since get* is 1-based for vectors.
-  '{mod* mod, get* get, if-value- if-value})
-
 (def ^:private supported-halite-ops
   (into
    '#{dec inc + - * < <= > >= and or not => div mod expt abs = if not= let get valid? refine-to if-value when-value when error
       count range every? any? concat conj map
+      ;; introduced just so the fixed-decimal lowering can be performed on ssa form
+      rescale
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
       $do!
       ;; These are not available to halite users; they serve as the internal representation of if-value forms.
       $value? $value!
       ;; This form represents 'local' variables introduced by e.g. every?/any?
-      $local}
-   (keys renamed-ops)))
+      $local}))
 
 (s/defschema NodeId
   (s/constrained s/Symbol #(re-matches #"\$[1-9][0-9]*" (name %))))
@@ -320,19 +318,6 @@
       (ensure-boolean-node ssa-graph ssa-form)
       (insert-node ssa-graph ssa-form htype))))
 
-(s/defn ^:private ensure-node-for-app :- NodeInGraph
-  [ssa-graph :- SSAGraph, [op & args :as form] :- SSAForm]
-  (let [op (get renamed-ops op op)]
-    (ensure-node
-     ssa-graph
-     (cons op args)
-     (cond
-       ('#{+ - * div mod expt abs count} op) :Integer
-       ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
-       ('#{range} op) [:Vec :Integer]
-       :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
-                             {:form form}))))))
-
 (declare form-to-ssa)
 
 (s/defschema SSACtx
@@ -350,6 +335,35 @@
   [{:keys [ssa-graph local-stack] :as ctx} :- SSACtx, htype :- types/HaliteType]
   (let [[ssa-graph id] (ensure-node ssa-graph (list '$local (inc (count local-stack)) htype) htype)]
     [(-> ctx (assoc :ssa-graph ssa-graph) (update :local-stack conj id)) id]))
+
+(s/defn ^:private invoke-type-check :- types/HaliteType
+  [ctx :- SSACtx
+   form]
+  (let [{:keys [senv ssa-graph]} ctx
+        tenv (reify envs/TypeEnv
+               (scope* [_])
+               (lookup-type* [_ sym]
+                 (node-type (deref-id ssa-graph sym)))
+               (extend-scope* [_ sym t]
+                 (throw (ex-info "BUG: extend-scope* not implemented" {:sym sym
+                                                                       :t t}))))]
+
+    (type-check/type-check senv tenv form)))
+
+(s/defn ^:private ensure-node-for-app :- NodeInGraph
+  [ctx :- SSACtx,
+   [op & args :as form] :- SSAForm]
+  (let [{:keys [ssa-graph]} ctx]
+    (ensure-node
+     ssa-graph
+     (cons op args)
+     (cond
+       ('#{+ - * div mod expt abs count} op) (invoke-type-check ctx form)
+
+       ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
+       ('#{range} op) [:Vec :Integer]
+       :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
+                             {:form form}))))))
 
 (def ^:private no-value-symbols
   "All of these symbols mean :Unset"
@@ -377,7 +391,7 @@
                                      [ssa-graph (conj args id)]))
                                  [(:ssa-graph ctx) []]
                                  args)]
-    (ensure-node-for-app ssa-graph (apply list op args))))
+    (ensure-node-for-app (assoc ctx :ssa-graph ssa-graph) (apply list op args))))
 
 (s/defn ^:private symbol-to-ssa :- NodeInGraph
   [{:keys [ssa-graph tenv env]} :- SSACtx, form]
@@ -581,6 +595,15 @@
                                         elems)]
     (ensure-node ssa-graph (apply list 'conj coll-id elem-ids) (types/change-elem-type coll-type elem-type))))
 
+(s/defn ^:private rescale-to-ssa :- NodeInGraph
+  [ctx :- SSACtx, [_ target scale :as form]]
+  (let [[ssa-graph target-id] (form-to-ssa ctx target)
+        [ssa-graph scale-id] (form-to-ssa (assoc ctx :ssa-graph ssa-graph) scale)
+        scale-form (node-form (deref-id ssa-graph scale-id))]
+    (ensure-node ssa-graph (list 'rescale target-id scale-id) (if (zero? scale-form)
+                                                                :Integer
+                                                                (types/decimal-type scale-form)))))
+
 (s/defn replace-in-expr :- NodeInGraph
   [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
   (let [node (deref-id ssa-graph id), form (node-form node), htype (node-type node)]
@@ -628,7 +651,7 @@
     (seq? form) (let [[op & args] form]
                   (when-not (contains? supported-halite-ops op)
                     (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
-                  (condp = (get renamed-ops op op)
+                  (condp = op
                     'let (let-to-ssa ctx form)
                     'if (if-to-ssa ctx form)
                     'when (when-to-ssa ctx form)
@@ -644,6 +667,7 @@
                     'map (comprehension-to-ssa ctx form)
                     'concat (concat-to-ssa ctx form)
                     'conj (conj-to-ssa ctx form)
+                    'rescale (rescale-to-ssa ctx form)
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)

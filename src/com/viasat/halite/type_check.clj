@@ -118,7 +118,7 @@
   [ctx :- TypeContext, sym]
   (if (= '$no-value sym)
     :Unset
-    (or (get (envs/scope (:tenv ctx)) sym)
+    (or (envs/lookup-type* (:tenv ctx) sym)
         (throw-err (h-err/undefined-symbol {:form sym})))))
 
 (defn- arg-count-exactly

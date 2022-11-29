@@ -218,16 +218,7 @@
         $6 [(not $5) :Boolean $5]}
       '[$5]
 
-      '[(get* {:$type :foo/Bar :a 10 :b false} :b)]
-      '{$1 [10 :Integer]
-        $2 [true :Boolean $3]
-        $3 [false :Boolean $2]
-        $4 [{:$type :foo/Bar :a $1 :b $3} [:Instance :foo/Bar]]
-        $5 [(get $4 :b) :Boolean $6]
-        $6 [(not $5) :Boolean $5]}
-      '[$5]
-
-      '[(= 1 (mod* x 2))]
+      '[(= 1 (mod x 2))]
       '{$1 [1 :Integer]
         $2 [x :Integer]
         $3 [2 :Integer]
@@ -283,7 +274,7 @@
         $7 [(if $3 $5 $6) :Integer]}
       '[$7]
 
-      '[(if-value- w w 1)]  ; deprecated
+      '[(if-value w w 1)]
       '{$1 [:Unset :Unset]
         $2 [w [:Maybe :Integer]]
         $3 [($value? $2) :Boolean $4]

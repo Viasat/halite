@@ -55,7 +55,7 @@
                                       ["lines" (let [xysum (+ x y)]
                                                  (or (= 42 xysum)
                                                      (= 24 (+ 42 (- 0 xysum)))))]
-                                      ["oddSum" (= oddSum (= 1 (mod* (+ x y) 2)))]]}})
+                                      ["oddSum" (= oddSum (= 1 (mod (+ x y) 2)))]]}})
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
          (= out (pc/propagate specs opts in))

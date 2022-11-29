@@ -200,10 +200,11 @@
    [form]]
   (when (and (seq? form)
              (= 'rescale (first form)))
-    (let [[_rescale target-id new-scale-id] form
-          [target-form target-type] (ssa/deref-id target-id)
+    (let [{:keys [ssa-graph]} ctx
+          [_rescale target-id new-scale-id] form
+          [target-form target-type] (ssa/deref-id ssa-graph target-id)
           target-scale (types/decimal-scale target-type)
-          [new-scale] (ssa/deref-id new-scale-id)]
+          [new-scale] (ssa/deref-id ssa-graph new-scale-id)]
       (produce-rescale-code target-form target-scale new-scale))))
 
 (s/defn ^:private lower-rescale :- ssa/SpecCtx

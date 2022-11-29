@@ -532,7 +532,8 @@
     "vector"
     "set"))
 
-(s/defn decimal-type [scale]
+(s/defn decimal-type
+  [scale :- s/Int]
   [:Decimal scale])
 
 (s/defn decimal-type? [t]

@@ -232,7 +232,7 @@
                                 {:name "b2" :expr (=> bp (<= 0 bn))}}}
                 :ws/C
                 {:fields {:b :ws/B}
-                 :constraints #{{:name "c1" :expr (not= (get* b :bn) 4)}}}})]
+                 :constraints #{{:name "c1" :expr (not= (get b :bn) 4)}}}})]
     (are [expr lowered-expr]
          (= lowered-expr
             (binding [ssa/*hide-non-halite-ops* false]

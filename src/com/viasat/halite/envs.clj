@@ -53,6 +53,7 @@
 
 (defprotocol TypeEnv
   (scope* [self])
+  (lookup-type* [self sym])
   (extend-scope* [self sym t]))
 
 (s/defn scope :- {types/BareSymbol types/HaliteType}
@@ -82,6 +83,7 @@
 (deftype TypeEnvImpl [scope]
   TypeEnv
   (scope* [self] scope)
+  (lookup-type* [self sym] (get scope sym))
   (extend-scope* [self sym t] (TypeEnvImpl. (assoc scope sym t))))
 
 (s/defn type-env :- (s/protocol TypeEnv)

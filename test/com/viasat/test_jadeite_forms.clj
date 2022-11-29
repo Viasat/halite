@@ -190,9 +190,6 @@
     ((if-value x (if (> x 50) "large" "small") "unset")
      "ifValue( x ) if( x > 50 ) \"large\" else \"small\" else \"unset\"")
     ^:skip-type-check
-    ((if-value- x (if (> x 50) "large" "small") "unset") ;; deprecated
-     "ifValue( x ) if( x > 50 ) \"large\" else \"small\" else \"unset\"")
-    ^:skip-type-check
     ((if-value x (if (> x 50) "large" (if true "small" "none")) "unset")
      "(ifValue(x) {(if((x > 50)) {\"large\"} else {(if(true) {\"small\"} else {\"none\"})})} else {\"unset\"})")
     ((when-value mi (+ mi 10)) "whenValue(mi) mi + 10")
