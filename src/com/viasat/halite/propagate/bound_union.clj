@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.propagate.bound-union
   (:require [clojure.set :as set]
-            [com.viasat.halite.propagate.prop-composition
+            [com.viasat.halite.propagate.prop-refine
              :refer [ConcreteBound RefinementBound]]
             [schema.core :as s]))
 

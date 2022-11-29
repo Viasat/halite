@@ -409,104 +409,6 @@
                  (ssa/spec-from-ssa)
                  :constraints first second))))))
 
-(def lower-refinement-constraints #'lowering/lower-refinement-constraints)
-
-(deftest test-lower-refinement-constraints
-  (let [senv (envs/spec-env
-              (var-types/to-halite-spec-env
-               '{:ws/A
-                 {:fields {:an :Integer}
-                  :constraints #{{:name "a1" :expr (< an 10)}}
-                  :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
-                 :ws/B
-                 {:fields {:bn :Integer}
-                  :constraints #{{:name "b1" :expr (< 0 bn)}}
-                  :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
-                 :ws/C
-                 {:fields {:cn :Integer}
-                  :constraints #{{:name "c1" :expr (= 0 (mod cn 2))}}}}))
-        sctx (ssa/build-spec-ctx senv :ws/A)]
-
-    (is (= '(and (< an 10)
-                 (valid? {:$type :ws/B, :bn (+ 1 an)}))
-           (-> sctx
-               (lower-refinement-constraints)
-               :ws/A
-               (ssa/spec-from-ssa)
-               :constraints first second)))
-
-    (is (= '(let [v1 (+ 1 an)]
-              (and (< an 10)
-                   (and (< 0 v1)
-                        (= 0 (mod v1 2)))))
-           (-> sctx
-               (lowering/lower)
-               :ws/A
-               (ssa/spec-from-ssa)
-               :constraints first second)))))
-
-(def lower-refine-to #'lowering/lower-refine-to)
-
-(deftest test-lower-refine-to
-  (let [senv (envs/spec-env
-              (var-types/to-halite-spec-env
-               '{:ws/A
-                 {:fields {:an :Integer}
-                  :constraints #{{:name "a1" :expr (< an 10)}}
-                  :refines-to {:ws/B {:expr {:$type :ws/B :bn (+ 1 an)}}}}
-                 :ws/B
-                 {:fields {:bn :Integer}
-                  :constraints #{{:name "b1" :expr (< 0 bn)}}
-                  :refines-to {:ws/C {:expr {:$type :ws/C :cn bn}}}}
-                 :ws/C
-                 {:fields {:cn :Integer}
-                  :constraints #{{:name "c1" :expr (= 0 (mod cn 2))}}}
-                 :ws/D
-                 {:fields {:dm :Integer, :dn :Integer}
-                  :constraints #{{:name "d1" :expr (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))}
-                                 {:name "d2" :expr (= dn (get (refine-to {:$type :ws/B :bn dn} :ws/B) :bn))}
-                                 {:name "d3" :expr (not= 72 (get {:$type :ws/A :an dn} :an))}}}}))
-        sctx (ssa/build-spec-ctx senv :ws/D)]
-    (is (= '(let [v1 (get {:$type :ws/A, :an dn} :an)
-                  v2 (get {:$type :ws/B, :bn (+ 1 v1)} :bn)]
-              (and
-               (= dm (get {:$type :ws/C, :cn v2} :cn))
-               (= dn (get {:$type :ws/B, :bn dn} :bn))
-               (not= 72 v1)))
-           (-> sctx
-               (lower-refine-to)
-               :ws/D
-               (ssa/spec-from-ssa)
-               :constraints first second)))
-
-    (is (= '(let [v1 (get {:$type :ws/A, :an dn} :an)
-                  v2 (get {:$type :ws/B, :bn (+ 1 v1)} :bn)]
-              (and
-               (= dm (get {:$type :ws/C, :cn v2} :cn))
-               (= dn (get {:$type :ws/B, :bn dn} :bn))
-               (not= 72 v1)))
-           (-> sctx
-               (lowering/lower)
-               :ws/D
-               (ssa/spec-from-ssa)
-               :constraints first second)))))
-
-(deftest test-lower-refine-to-ignores-unknown-instance-type
-  (let [senv (envs/spec-env
-              (var-types/to-halite-spec-env
-               '{:ws/W {:fields {:wn :Integer}}
-                 :ws/A {:refines-to {:ws/W {:expr {:$type :ws/W :wn 1}}}}
-                 :ws/B {:refines-to {:ws/W {:expr {:$type :ws/W :wn 2}}}}
-                 :ws/C {:fields {:a :ws/A :b :ws/B :p :Boolean}
-                        :constraints #{{:name "c1" :expr (< 0 (get (refine-to (if p a b) :ws/W) :wn))}}}}))]
-    (is (= '(< 0 (get (refine-to (if p a b) :ws/W) :wn))
-           (-> senv
-               (ssa/build-spec-ctx :ws/C)
-               lower-refine-to
-               :ws/C
-               ssa/spec-from-ssa
-               :constraints first second)))))
-
 (deftest test-push-refine-to-into-if
   (let [senv (envs/spec-env
               (var-types/to-halite-spec-env
@@ -836,12 +738,7 @@
                 (ssa/spec-from-ssa))))
 
      (is (= '{:fields {:dx :Integer}
-              :constraints [["$all"
-                             (let [v1 {:$type :ws/C, :cw 12, :cx dx}
-                                   v2 {:$type :ws/C, :cw dx, :cx dx}]
-                               (if (= 0 (mod dx 2))
-                                 (let [v3 (div dx 2)] false)
-                                 true))]],
+              :constraints [["$all" true]],
               :refines-to {:ws/B {:expr {:$type :ws/B,
                                          :bp false,
                                          :bw (if (= 0 (mod dx 2)) (div dx 2) $no-value),
@@ -853,30 +750,6 @@
                 (lowering/lower)
                 :ws/D
                 (ssa/spec-from-ssa)))))))
-
-(deftest test-refine-optional
-  ;; The 'features' that interact here: valid? and instance literals w/ unassigned variables.
-  (rewriting/with-tracing [traces]
-    (let [senv (envs/spec-env
-                (var-types/to-halite-spec-env
-                 '{:my/A {:abstract? true
-                          :fields {:a1 [:Maybe :Integer]
-                                   :a2 [:Maybe :Integer]}
-                          :constraints #{{:name "a1_pos" :expr (if-value a1 (> a1 0) true)}
-                                         {:name "a2_pos" :expr (if-value a2 (> a2 0) true)}}}
-                   :my/B {:abstract? false
-                          :fields {:b [:Maybe :Integer]}
-                          :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}}))
-          sctx (ssa/build-spec-ctx senv :my/B)]
-      (is (= '{:abstract? false,
-               :constraints [["$all" (if-value b (< 0 b) true)]]
-               :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}},
-               :fields {:b [:Maybe :Integer]}}
-             (-> senv
-                 (ssa/build-spec-ctx :my/B)
-                 (lowering/lower)
-                 :my/B
-                 (ssa/spec-from-ssa)))))))
 
 (deftest test-eliminate-error-forms
   (let [senv (envs/spec-env

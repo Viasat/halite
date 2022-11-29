@@ -20,14 +20,9 @@
 
 (declare ConcreteBound)
 
-(s/defschema RefinementBound
-  {types/NamespacedKeyword
-   {types/BareKeyword (s/recursive #'ConcreteBound)}})
-
 (s/defschema ConcreteSpecBound
   {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one types/NamespacedKeyword :type)]
                       types/NamespacedKeyword)
-   (s/optional-key :$refines-to) RefinementBound
    types/BareKeyword (s/recursive #'ConcreteBound)})
 
 (s/defschema AtomBound
@@ -47,8 +42,6 @@
   [(s/one types/BareKeyword :var-kw)
    (s/one (s/cond-pre PrimitiveMaybeType PrimitiveType) :type)])
 
-(declare FlattenedRefinementMap)
-
 ;; A FlattenedVar represents a mapping from a ConcerteSpecBound with vars that are
 ;; unique within that individual spec instance to choco var names that are
 ;; unique in the whole composed choco spec, to the depth of composition implied
@@ -58,18 +51,7 @@
 (s/defschema ^:private FlattenedVars
   {::mandatory #{types/BareKeyword}
    ::spec-id types/NamespacedKeyword
-   (s/optional-key ::refines-to) (s/recursive #'FlattenedRefinementMap)
    types/BareKeyword (s/cond-pre FlattenedVar (s/recursive #'FlattenedVars))})
-
-;; A FlattenedRefinement is like a FlattenedVar, but does not support a
-;; ::refines-to map because the right place to put such a flattening would be in
-;; the FlattenedVar that contains this FlattenedRefinement.
-(s/defschema ^:private FlattenedRefinement
-  {::mandatory #{types/BareKeyword}
-   types/BareKeyword (s/cond-pre FlattenedVar FlattenedVars)})
-
-(s/defschema ^:private FlattenedRefinementMap
-  {types/NamespacedKeyword FlattenedRefinement})
 
 (defn- primitive-maybe-type?
   [htype]
@@ -81,9 +63,6 @@
   (cond-> htype
     (and (vector? htype) (= :Maybe (first htype))) second))
 
-(defn refined-var-name [prefix spec-id]
-  (str prefix ">" (namespace spec-id) "$" (name spec-id) "|"))
-
 (s/defn ^:private flatten-vars :- FlattenedVars
   ([sctx :- ssa/SpecCtx, spec-bound :- ConcreteSpecBound]
    (flatten-vars sctx [] "" false spec-bound))
@@ -93,56 +72,43 @@
     already-optional? :- s/Bool
     spec-bound :- ConcreteSpecBound]
    (let [spec-id (->> spec-bound :$type unwrap-maybe)
-         spec-refinements #(-> % sctx :refines-to)
          senv (ssa/as-spec-env sctx)]
-     (->
-      (reduce
-       (fn [vars [var-kw htype]]
-         (cond
-           (primitive-maybe-type? htype)
-           (let [actually-mandatory? (and already-optional? (not (types/maybe-type? htype)))
-                 prefixed-var-kw (keyword (str prefix (name var-kw)))]
-             (-> vars
-                 (assoc var-kw [prefixed-var-kw
-                                (cond->> htype
-                                  actually-mandatory? types/maybe-type)])
-                 (cond->
-                  actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
+     (reduce
+      (fn [vars [var-kw htype]]
+        (cond
+          (primitive-maybe-type? htype)
+          (let [actually-mandatory? (and already-optional? (not (types/maybe-type? htype)))
+                prefixed-var-kw (keyword (str prefix (name var-kw)))]
+            (-> vars
+                (assoc var-kw [prefixed-var-kw
+                               (cond->> htype
+                                 actually-mandatory? types/maybe-type)])
+                (cond->
+                    actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
 
-           (types/spec-maybe-type? htype)
-           (let [spec-id (types/spec-id (unwrap-maybe htype))
-                 recur? (or (contains? spec-bound var-kw)
-                            (every? #(not= % spec-id) parent-spec-ids))
-                 optional? (types/maybe-type? htype)
-                 sub-bound (get spec-bound var-kw :Unset)
-                 flattened-vars (when recur?
-                                  (flatten-vars sctx
-                                                (conj parent-spec-ids (unwrap-maybe (:$type spec-bound)))
-                                                (str prefix (name var-kw) "|")
-                                                (or already-optional? optional?)
-                                                (if (not= :Unset sub-bound) sub-bound {:$type spec-id})))]
-             (cond-> vars
-               recur? (assoc var-kw flattened-vars)
+          (types/spec-maybe-type? htype)
+          (let [spec-id (types/spec-id (unwrap-maybe htype))
+                recur? (or (contains? spec-bound var-kw)
+                           (every? #(not= % spec-id) parent-spec-ids))
+                optional? (types/maybe-type? htype)
+                sub-bound (get spec-bound var-kw :Unset)
+                flattened-vars (when recur?
+                                 (flatten-vars sctx
+                                               (conj parent-spec-ids (unwrap-maybe (:$type spec-bound)))
+                                               (str prefix (name var-kw) "|")
+                                               (or already-optional? optional?)
+                                               (if (not= :Unset sub-bound) sub-bound {:$type spec-id})))]
+            (cond-> vars
+              recur? (assoc var-kw flattened-vars)
 
-               (not optional?) (update ::mandatory into (::mandatory flattened-vars))
+              (not optional?) (update ::mandatory into (::mandatory flattened-vars))
 
-               optional? (assoc-in [var-kw :$witness] [(keyword (str prefix (name var-kw) "?")) :Boolean])))
+              optional? (assoc-in [var-kw :$witness] [(keyword (str prefix (name var-kw) "?")) :Boolean])))
 
-           :else (throw (ex-info (format "BUG! Variables of type '%s' not supported yet" htype)
-                                 {:var-kw var-kw :type htype}))))
-       {::mandatory #{} ::spec-id spec-id}
-       (->> spec-id sctx :fields))
-      (assoc ::refines-to (->> (tree-seq (constantly true) #(map spec-refinements (keys %)) (spec-refinements spec-id))
-                               (apply concat)
-                               (into {}
-                                     (map (fn [[dest-spec-id _]]
-                                            [dest-spec-id (-> (flatten-vars sctx
-                                                                            (conj parent-spec-ids dest-spec-id)
-                                                                            (refined-var-name prefix dest-spec-id)
-                                                                            (or already-optional? #_optional?)
-                                                                            (assoc (get-in spec-bound [:$refines-to dest-spec-id])
-                                                                                   :$type dest-spec-id))
-                                                              (dissoc ::spec-id ::refines-to))])))))))))
+          :else (throw (ex-info (format "BUG! Variables of type '%s' not supported yet" htype)
+                                {:var-kw var-kw :type htype}))))
+      {::mandatory #{} ::spec-id spec-id}
+      (->> spec-id sctx :fields)))))
 
 (defn- leaves [m]
   (if (map? m)
@@ -151,78 +117,62 @@
 
 (declare lower-spec-bound)
 
-(s/defn ^:private lower-refines-to-bound
-  [optional-context? :- s/Bool, refinements :- FlattenedRefinementMap choco-bound refine-to-map]
-  (->> refine-to-map
-       (reduce (fn [choco-bound [dest-spec-id bound-map]]
-                 (merge choco-bound
-                        ;; awkwardly use lower-spec-bound for a FlattenedRefinement
-                        (lower-spec-bound (assoc (get refinements dest-spec-id)
-                                                 ::spec-id dest-spec-id
-                                                 ::mandatory #{}
-                                                 ::refines-to {})
-                                          optional-context?
-                                          (assoc bound-map :$type dest-spec-id))))
-               choco-bound)))
-
 (s/defn ^:private lower-spec-bound :- prop-strings/SpecBound
   ([vars :- FlattenedVars, spec-bound :- ConcreteSpecBound]
    (lower-spec-bound vars false spec-bound))
   ([vars :- FlattenedVars, optional-context? :- s/Bool, spec-bound :- ConcreteSpecBound]
    (reduce
     (fn [choco-bounds [var-kw bound]]
-      (if (= :$refines-to var-kw)
-        (lower-refines-to-bound optional-context? (::refines-to vars) choco-bounds bound)
-        (let [composite-var? (map? (vars var-kw))
-              choco-var (when-not composite-var?
-                          (or (some-> var-kw vars first)
-                              (throw (ex-info "BUG! No choco var for var in spec bound"
-                                              {:vars vars :spec-bound spec-bound :var-kw var-kw}))))
-              witness-var (when composite-var?
-                            (some-> var-kw vars :$witness first))]
-          (cond
-            (or (int? bound) (boolean? bound) (string? bound))
-            (assoc choco-bounds choco-var (if optional-context? {:$in #{bound :Unset}} bound))
+      (let [composite-var? (map? (vars var-kw))
+            choco-var (when-not composite-var?
+                        (or (some-> var-kw vars first)
+                            (throw (ex-info "BUG! No choco var for var in spec bound"
+                                            {:vars vars :spec-bound spec-bound :var-kw var-kw}))))
+            witness-var (when composite-var?
+                          (some-> var-kw vars :$witness first))]
+        (cond
+          (or (int? bound) (boolean? bound) (string? bound))
+          (assoc choco-bounds choco-var (if optional-context? {:$in #{bound :Unset}} bound))
 
-            (= :Unset bound)
-            (if composite-var?
-              (if witness-var
-                (assoc choco-bounds witness-var false)
-                (throw (ex-info (format "Invalid bounds: %s is not an optional variable, and cannot be unset" (name var-kw))
-                                {:vars vars :var-kw var-kw :bound bound})))
-              (assoc choco-bounds choco-var :Unset))
+          (= :Unset bound)
+          (if composite-var?
+            (if witness-var
+              (assoc choco-bounds witness-var false)
+              (throw (ex-info (format "Invalid bounds: %s is not an optional variable, and cannot be unset" (name var-kw))
+                              {:vars vars :var-kw var-kw :bound bound})))
+            (assoc choco-bounds choco-var :Unset))
 
-            (and (map? bound) (contains? bound :$in))
-            (let [range-or-set (:$in bound)]
-              (when composite-var?
-                (throw (ex-info (format "Invalid bound for composite var %s" (name var-kw))
-                                {:var-kw var-kw :bound bound})))
-              (if (or (vector? range-or-set) (set? range-or-set))
-                (assoc choco-bounds choco-var
-                       {:$in
-                        (cond
-                          (and (set? range-or-set) optional-context?) (conj range-or-set :Unset)
-                          (and (vector range-or-set) (= 2 (count range-or-set)) optional-context?) (conj range-or-set :Unset)
-                          :else range-or-set)})
-                (throw (ex-info (format "Invalid bound for %s" (name var-kw))
-                                {:var-kw var-kw :bound bound}))))
+          (and (map? bound) (contains? bound :$in))
+          (let [range-or-set (:$in bound)]
+            (when composite-var?
+              (throw (ex-info (format "Invalid bound for composite var %s" (name var-kw))
+                              {:var-kw var-kw :bound bound})))
+            (if (or (vector? range-or-set) (set? range-or-set))
+              (assoc choco-bounds choco-var
+                     {:$in
+                      (cond
+                        (and (set? range-or-set) optional-context?) (conj range-or-set :Unset)
+                        (and (vector range-or-set) (= 2 (count range-or-set)) optional-context?) (conj range-or-set :Unset)
+                        :else range-or-set)})
+              (throw (ex-info (format "Invalid bound for %s" (name var-kw))
+                              {:var-kw var-kw :bound bound}))))
 
-            (and (map? bound) (contains? bound :$type))
-            (let [optional? (and (vector? (:$type bound)) (= :Maybe (first (:$type bound))))
-                  htype (types/concrete-spec-type (cond-> (:$type bound) optional? (second)))]
-              (when-not composite-var?
-                (throw (ex-info (format "Invalid bound for %s, which is not composite" (name var-kw))
-                                {:var-kw var-kw :bound bound})))
-              (when (and (nil? witness-var) (types/maybe-type? htype))
-                (throw (ex-info (format "Invalid bound for %s, which is not optional" (name var-kw))
-                                {:var-kw var-kw :bound bound})))
-              (-> choco-bounds
-                  (merge (lower-spec-bound (vars var-kw) (or optional-context? optional?) bound))
-                  (cond-> (and witness-var (not optional?) (not optional-context?))
-                    (assoc witness-var true))))
+          (and (map? bound) (contains? bound :$type))
+          (let [optional? (and (vector? (:$type bound)) (= :Maybe (first (:$type bound))))
+                htype (types/concrete-spec-type (cond-> (:$type bound) optional? (second)))]
+            (when-not composite-var?
+              (throw (ex-info (format "Invalid bound for %s, which is not composite" (name var-kw))
+                              {:var-kw var-kw :bound bound})))
+            (when (and (nil? witness-var) (types/maybe-type? htype))
+              (throw (ex-info (format "Invalid bound for %s, which is not optional" (name var-kw))
+                              {:var-kw var-kw :bound bound})))
+            (-> choco-bounds
+                (merge (lower-spec-bound (vars var-kw) (or optional-context? optional?) bound))
+                (cond-> (and witness-var (not optional?) (not optional-context?))
+                  (assoc witness-var true))))
 
-            :else (throw (ex-info (format "Invalid bound for %s" (name var-kw))
-                                  {:var-kw var-kw :bound bound}))))))
+          :else (throw (ex-info (format "Invalid bound for %s" (name var-kw))
+                                {:var-kw var-kw :bound bound})))))
     {}
     (dissoc spec-bound :$type))))
 
@@ -281,72 +231,15 @@
                (symbol (first v))
                (flattened-vars-as-instance-literal v))))
     {:$type spec-id}
-    (dissoc flattened-vars ::spec-id ::mandatory ::refines-to :$witness))
+    (dissoc flattened-vars ::spec-id ::mandatory :$witness))
     $witness (guard-optional-instance-literal $witness mandatory)))
-
-(s/defn ^:private refinement-equality-constraints :- [envs/NamedConstraint]
-  [constraint-name-prefix :- s/Str,
-   flattened-vars :- FlattenedVars]
-  (concat
-   ;; constraints for this composition level
-   (let [from-instance (flattened-vars-as-instance-literal flattened-vars)]
-     (->>
-      (::refines-to flattened-vars)
-      (mapcat (fn [[to-spec-id to-vars]] ;; to-var is a FlattenedRefinement
-                (let [witness-kw (first (:$witness flattened-vars))
-                      to-instance (flattened-vars-as-instance-literal
-                                   (conj to-vars
-                                         [::spec-id to-spec-id]
-                                         [::refines-to {}]
-                                         (when-let [w (:$witness flattened-vars)]
-                                           [:$witness w])))]
-                  (concat
-                   ;; instance equality
-                   [[(str "$refine" constraint-name-prefix "-to-" to-spec-id)
-                     (if-not witness-kw
-                       (list '=
-                             (list 'refine-to from-instance to-spec-id)
-                             to-instance)
-                       (list 'let ['$from from-instance]
-                             (list 'if-value '$from
-                                   (list '=
-                                         (list 'refine-to '$from to-spec-id)
-                                         to-instance)
-                                   true)))]]
-                   ;; recurse into spec-types
-                   (->> (dissoc to-vars ::mandatory)
-                        (mapcat (fn [[var-kw v]]
-                                  (when (map? v)
-                                    (refinement-equality-constraints
-                                     (str constraint-name-prefix "-" to-spec-id "|" var-kw)
-                                     v)))))
-                   ;; equate inner mandatory provided to outer provided, for tighter bounds
-                   (when witness-kw
-                     (->> (::mandatory to-vars)
-                          (mapcat (fn [flat-kw]
-                                    [[(str "$refines" witness-kw "=" flat-kw "?")
-                                      (list '=
-                                            (symbol witness-kw)
-                                            (list 'if-value (symbol flat-kw) true false))]]))))))))))
-   ;; recurse into spec-typed vars
-   (->> (dissoc flattened-vars ::spec-id ::mandatory ::refines-to)
-        (mapcat (fn [[var-kw v]]
-                  (when (map? v)
-                    (refinement-equality-constraints (str constraint-name-prefix "|" (name var-kw))
-                                                     v)))))))
-
-(s/defn ^:private add-refinement-equality-constraints :- envs/SpecInfo
-  [flattened-vars :- FlattenedVars
-   spec-info :- envs/SpecInfo]
-  (update spec-info :constraints into (refinement-equality-constraints "" flattened-vars)))
 
 (defn- spec-ify-bound*
   [flattened-vars sctx spec-bound]
   (->>
    {:fields (->> flattened-vars leaves (filter vector?) (into {}))
     :constraints [["vars" (list 'valid? (flattened-vars-as-instance-literal flattened-vars))]]}
-   (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)
-   (add-refinement-equality-constraints flattened-vars)))
+   (optionality-constraints (ssa/as-spec-env sctx) flattened-vars)))
 
 (s/defn spec-ify-bound :- envs/SpecInfo
   "Compile the spec-bound into a self-contained halite spec that explicitly states the constraints
@@ -400,28 +293,16 @@
         spec-type (case (some-> flattened-vars :$witness first choco-bounds)
                     false :Unset
                     (nil true) spec-id
-                    [:Maybe spec-id])
-        refine-to-pairs (seq (::refines-to flattened-vars))]
+                    [:Maybe spec-id])]
     (if (= :Unset spec-type)
       :Unset
       (-> {:$type spec-type}
-          (into (->> (dissoc flattened-vars ::mandatory :$witness ::spec-id ::refines-to)
+          (into (->> (dissoc flattened-vars ::mandatory :$witness ::spec-id)
                      (map (fn [[k v]]
                             (let [htype (get fields k)]
                               [k (if (types/spec-maybe-type? htype)
                                    (to-spec-bound choco-bounds senv v)
-                                   (to-atom-bound choco-bounds htype v))])))))
-          (cond-> refine-to-pairs
-            (assoc :$refines-to
-                   (->> refine-to-pairs
-                        (map (fn [[spec-id flattened-vars]]
-                               [spec-id
-                                (-> (to-spec-bound choco-bounds
-                                                   senv
-                                                   (assoc flattened-vars
-                                                          ::spec-id spec-id))
-                                    (dissoc :$type))]))
-                        (into {}))))))))
+                                   (to-atom-bound choco-bounds htype v))])))))))))
 
 ;;;;;;;;;;;; Main API ;;;;;;;;;;;;;;;;
 
@@ -439,31 +320,15 @@
    {}
    sctx))
 
-(defn- disallow-optional-refinements
-  "Our refinement lowering code is not currently correct when the refinements are optional.
-  We'll fix it, but until we do, we should at least not emit incorrect results silently."
-  [sctx]
-  (doseq [[spec-id {:keys [refines-to ssa-graph]}] sctx
-          [to-id {:keys [expr]}] refines-to]
-    (let [htype (->> expr (ssa/deref-id ssa-graph) ssa/node-type)]
-      (when (types/maybe-type? htype)
-        (throw (ex-info (format "BUG! Refinement of %s to %s is optional, and propagate does not yet support optional refinements"
-                                spec-id to-id)
-                        {:sctx sctx})))))
-  sctx)
-
 (s/defn propagate :- ConcreteSpecBound
   ([sctx :- ssa/SpecCtx, initial-bound :- ConcreteSpecBound]
    (propagate sctx default-options initial-bound))
   ([sctx :- ssa/SpecCtx, opts :- Opts, initial-bound :- ConcreteSpecBound]
-   (let [refinement-graph (loom-graph/digraph (update-vals sctx (comp keys :refines-to)))
-         flattened-vars (flatten-vars sctx initial-bound)
+   (let [flattened-vars (flatten-vars sctx initial-bound)
          lowered-bounds (lower-spec-bound flattened-vars initial-bound)
          spec-ified-bound (spec-ify-bound* flattened-vars sctx initial-bound)]
      (-> sctx
          (ssa/add-spec-to-context :$propagate/Bounds (ssa/spec-to-ssa (ssa/as-spec-env sctx) spec-ified-bound))
-         (disallow-optional-refinements)
-         (lowering/lower-refinement-constraints)
          (lowering/eliminate-runtime-constraint-violations)
          (lowering/lower-valid?)
          (drop-constraints-except-for-Bounds)
@@ -487,14 +352,10 @@
            (rewriting/rule lowering/lower-no-value-comparison-expr)
            (rewriting/rule lowering/lower-maybe-comparison-expr)
            (rewriting/rule lowering/push-gets-into-ifs-expr)
-           (rewriting/rule lowering/push-refine-to-into-if)
            (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
            (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
            (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)
-           ;; This rule needs access to the refinement graph, so we don't use the rule macro.
-           {:rule-name "lower-refine-to"
-            :rewrite-fn (partial lowering/lower-refine-to-expr refinement-graph)
-            :nodes :all}])
+           ])
          simplify/simplify
          :$propagate/Bounds
          (prop-strings/propagate opts lowered-bounds)

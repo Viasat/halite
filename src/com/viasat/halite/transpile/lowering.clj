@@ -337,31 +337,6 @@
 
 ;;;;;;;;;; Lower refine-to ;;;;;;;;;;;;;;;
 
-(s/defn lower-refine-to-expr
-  [rgraph, {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- rewriting/RewriteFnCtx, id, [form htype]]
-  (when-let [[_ expr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
-    (let [[_ from-htype] (ssa/deref-id ssa-graph expr-id)]
-      (when-let [from-spec-id (types/spec-id from-htype)]
-        (->> (loom.alg/shortest-path rgraph from-spec-id to-spec-id)
-             (partition 2 1)
-             (reduce (fn [out-form [from-spec-id to-spec-id]]
-                       (let [{:keys [fields refines-to] :as spec-info} (sctx from-spec-id)
-                             refine-expr-id (:expr (get refines-to to-spec-id))
-                             refine-expr (ssa/form-from-ssa spec-info refine-expr-id)
-                             bindings (vec (mapcat (fn [var-kw] [(symbol var-kw)
-                                                                 (list 'get out-form var-kw)])
-                                                   (keys fields)))]
-                         (list 'let bindings refine-expr)))
-                     expr-id))))))
-
-(s/defn lower-refine-to :- SpecCtx
-  [sctx :- SpecCtx]
-  (let [g (loom.graph/digraph (update-vals sctx (comp keys :refines-to)))]
-    (rewriting/rewrite-sctx* {:rule-name "lower-refine-to"
-                              :rewrite-fn (partial lower-refine-to-expr g),
-                              :nodes :all}
-                             sctx)))
-
 (s/defn push-refine-to-into-if
   [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id [form htype]]
   (when-let [[_ subexpr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
@@ -376,41 +351,6 @@
                 (if (= :Nothing else-type)
                   else-id
                   (list 'refine-to else-id to-spec-id))))))))
-
-;;;;;;;;;; Lower Refinement Constraints ;;;;;;;;;;;;;;;
-
-(s/defn ^:private lower-refinement-constraints-in-spec :- [(s/one s/Keyword "spec-id") (s/one SpecInfo "spec-info")]
-  [sctx :- SpecCtx
-   [spec-id  {:keys [refines-to ssa-graph] :as spec-info}] :- [(s/one s/Keyword "spec-id") (s/one SpecInfo "spec-info")]]
-  (let [ctx (make-ssa-ctx sctx spec-info)
-        scope (->> ctx :tenv envs/tenv-keys)]
-    [spec-id
-     (->> refines-to
-          (reduce
-           (fn [{:keys [ssa-graph] :as spec-info} [target-id {:keys [expr inverted?]}]]
-             (when inverted?
-               (throw (ex-info "BUG! Lowering inverted refinements not yet supported" {:spec-info spec-info})))
-             (let [[ssa-graph id] (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph) (list 'valid? expr))
-                   result (-> spec-info
-                              (assoc :ssa-graph ssa-graph)
-                              (update :constraints conj [(str target-id) id]))]
-               (rewriting/trace!
-                sctx
-                {:op :add-constraint
-                 :rule "lower-refinement-constraints"
-                 :spec-id spec-id
-                 :id' id
-                 :result expr
-                 :spec-info spec-info
-                 :spec-info' result})
-               result))
-           spec-info))]))
-
-(s/defn lower-refinement-constraints :- SpecCtx
-  [sctx :- SpecCtx]
-  (->> sctx
-       (map (partial lower-refinement-constraints-in-spec sctx))
-       (into {})))
 
 ;;;;;;;;;; Lowering Optionality ;;;;;;;;;;;;
 
@@ -561,8 +501,6 @@
   a minimal subset of halite."
   [sctx :- SpecCtx]
   (-> sctx
-      (lower-refine-to)
-      (lower-refinement-constraints)
       (lower-valid?)
       (rewriting/rewrite-reachable-sctx
        [(rewriting/rule bubble-up-do-expr)
