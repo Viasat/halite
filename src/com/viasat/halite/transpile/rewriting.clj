@@ -195,7 +195,7 @@
   [rules :- [RewriteRule], sctx :- SpecCtx, spec-id :- types/NamespacedKeyword]
   (let [spec-info (get sctx spec-id)
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
-        scope (->> tenv (envs/scope) keys set)]
+        scope (->> tenv envs/scope keys set)]
     (fixpoint #(apply-to-reachable sctx ctx scope spec-id %
                                    (r/map second (:constraints %))
                                    rules)
@@ -213,7 +213,7 @@
 (s/defn rewrite-spec-constraints :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
-        scope (->> tenv (envs/scope) keys set)]
+        scope (->> tenv envs/scope keys set)]
     (->> (:constraints spec-info)
          (reduce (fn [spec-info [cname cid]]
                    (apply-rule-to-id rule sctx ctx scope spec-id spec-info cid))
@@ -223,7 +223,7 @@
 (s/defn ^:private rewrite-ssa-graph :- SpecInfo
   [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
-        scope (->> tenv (envs/scope) keys set)
+        scope (->> tenv envs/scope keys set)
         reachable? (ssa/reachable-nodes spec-info)]
     (reduce
      #(apply-rule-to-id rule sctx (assoc ctx :ssa-graph (:ssa-graph %1)) scope spec-id %1 %2)

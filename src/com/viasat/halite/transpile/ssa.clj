@@ -410,7 +410,7 @@
     (contains? no-value-symbols form) (ensure-node ssa-graph :Unset :Unset)
     (contains-id? ssa-graph form) [ssa-graph form]
     (contains? env form) [ssa-graph (env form)]
-    :else (let [htype (or (get (envs/scope tenv) form)
+    :else (let [htype (or (envs/lookup-type* tenv form)
                           (throw (ex-info (format "BUG! Undefined: '%s'" form) {:tenv tenv :form form})))]
             (ensure-node ssa-graph form htype))))
 

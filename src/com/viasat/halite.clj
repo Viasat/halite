@@ -76,7 +76,7 @@
     (when (seq unbound-symbols)
       (throw-err (h-err/symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
     (doseq [sym declared-symbols]
-      (let [declared-type (get (envs/scope tenv) sym)
+      (let [declared-type (envs/lookup-type* tenv sym)
             ;; it is not necessary to setup the eval bindings for the following because the
             ;; instances have already been processed by load-env at this point
             value (eval/eval-expr* {:env empty-env :senv senv} (get (envs/bindings env) sym))

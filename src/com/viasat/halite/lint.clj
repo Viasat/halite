@@ -55,7 +55,7 @@
    sym]
   (if (= '$no-value sym)
     :Unset
-    (let [t (get (envs/scope (:tenv ctx)) sym)]
+    (let [t (envs/lookup-type* (:tenv ctx) sym)]
       (when (and (= :Unset t)
                  (not (or (= 'no-value sym)
                           (= '$no-value sym))))
