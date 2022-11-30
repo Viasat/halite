@@ -464,9 +464,6 @@
          (ssa/add-spec-to-context :$propagate/Bounds (ssa/spec-to-ssa (ssa/as-spec-env sctx) spec-ified-bound))
          (disallow-optional-refinements)
          (lowering/lower-refinement-constraints)
-         ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
-         ;; Consequently, no rewrite rules should introduce new when forms!
-         (lowering/lower-when)
          (lowering/eliminate-runtime-constraint-violations)
          (lowering/lower-valid?)
          (drop-constraints-except-for-Bounds)

@@ -431,16 +431,6 @@
   [sctx :- SpecCtx]
   (rewrite-sctx sctx lower-no-value-comparison-expr))
 
-(s/defn ^:private lower-when-expr
-  [{ctx :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
-  (when (and (seq? form) (= 'when (first form)))
-    (let [[_when pred-id body-id] form]
-      (list 'if pred-id body-id :Unset))))
-
-(s/defn lower-when :- SpecCtx
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx lower-when-expr))
-
 (s/defn lower-maybe-comparison-expr
   [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
   (let [opt-arg? (fn [[form htype]]
@@ -574,7 +564,6 @@
       (lower-refine-to)
       (lower-refinement-constraints)
       (lower-valid?)
-      (lower-when)
       (halite-rewriting/rewrite-reachable-sctx
        [(halite-rewriting/rule bubble-up-do-expr)
         (halite-rewriting/rule flatten-do-expr)

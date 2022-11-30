@@ -249,7 +249,7 @@
       true true
 
       '(valid? {:$type :ws/B :bn 1 :bp (= $no-value (when (= an 1) 42))})
-      '(and (=> (= $no-value (when (= an 1) 42)) (<= 0 1)) (<= 1 10))
+      '(and (=> (= $no-value (if (= an 1) 42 $no-value)) (<= 0 1)) (<= 1 10))
 
       '(valid? {:$type :ws/B :bn 1 :bp true})
       '(and (=> true (<= 0 1)) (<= 1 10))
@@ -536,15 +536,6 @@
       '(= $no-value u) '(= $no-value u)
       '(= (if p $no-value (error "foo")) $no-value) '($do! (if p $no-value (error "foo")) true)
       '(= (if p $no-value (error "foo")) x) '($do! (if p $no-value (error "foo")) x false))))
-
-(def lower-when-expr #'lowering/lower-when-expr)
-
-(deftest test-lower-when
-  (let [ctx (make-empty-ssa-ctx)]
-    (are [expr result]
-         (= result (rewrite-expr ctx lower-when-expr expr))
-
-      '(when (= 1 2) (+ 3 4)) '(if (= 1 2) (+ 3 4) $no-value))))
 
 (def lower-maybe-comparisons #'lowering/lower-maybe-comparisons)
 (def lower-maybe-comparison-expr #'lowering/lower-maybe-comparison-expr)
@@ -846,8 +837,8 @@
 
      (is (= '{:fields {:dx :Integer}
               :constraints [["$all"
-                             (let [v1 {:$type :ws/C, :cw dx, :cx dx}
-                                   v2 {:$type :ws/C, :cw 12, :cx dx}]
+                             (let [v1 {:$type :ws/C, :cw 12, :cx dx}
+                                   v2 {:$type :ws/C, :cw dx, :cx dx}]
                                (if (= 0 (mod dx 2))
                                  (let [v3 (div dx 2)] false)
                                  true))]],
@@ -908,7 +899,6 @@
              :refines-to {}}
            (-> senv
                (ssa/build-spec-ctx :ws/A)
-               (rewriting/rewrite-sctx lower-when-expr)
                (lowering/eliminate-error-forms)
                :ws/A
                (ssa/spec-from-ssa)))))
@@ -925,7 +915,6 @@
                  (not (and (< an 10) ap)))
            (-> senv
                (ssa/build-spec-ctx :ws/A)
-               (rewriting/rewrite-sctx lower-when-expr)
                (lowering/eliminate-error-forms)
                :ws/A
                (ssa/spec-from-ssa)
@@ -948,7 +937,6 @@
                           (and (<= 10 an) ap))))
            (-> senv
                (ssa/build-spec-ctx :ws/A)
-               (rewriting/rewrite-sctx lower-when-expr)
                (lowering/eliminate-error-forms)
                :ws/A
                (ssa/spec-from-ssa)
