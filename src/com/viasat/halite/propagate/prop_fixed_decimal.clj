@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.propagate.prop-fixed-decimal
   "Lower fixed-decimal fields and values to integers."
-  (:require [com.viasat.halite.analysis :as analysis]
+  (:require [clojure.math :as math]
+            [com.viasat.halite.analysis :as analysis]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
@@ -184,13 +185,10 @@
 ;;
 
 (defn- produce-rescale-code [target-form target-scale new-scale]
-  `(~'let [~'$prop-fixed-decimal-target ~target-form]
-          (~'let [~'$prop-fixed-decimal-shift (~'- ~target-scale ~new-scale)
-                  ~'$prop-fixed-decimal-factor (~'expt 10 (~'abs ~'$prop-fixed-decimal-shift))]
-                 (~'cond
-                  (~'> ~'$prop-fixed-decimal-shift 0) (~'div ~'$prop-fixed-decimal-target ~'$prop-fixed-decimal-factor)
-                  (~'< ~'$prop-fixed-decimal-shift 0) (~'* ~'$prop-fixed-decimal-target ~'$prop-fixed-decimal-factor)
-                  ~'$prop-fixed-decimal-target))))
+  (let [shift (- target-scale new-scale)]
+    (if (= shift 0)
+      target-form
+      (list (if (> shift 0) 'div '*) target-form (->> shift abs (math/pow 10) long)))))
 
 (s/defn ^:private lower-rescale-expr
   [{ctx :ctx} :- rewriting/RewriteFnCtx
