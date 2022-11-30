@@ -365,10 +365,11 @@
      ssa-graph
      (cons op args)
      (cond
-       ('#{+ - * div mod expt abs count if when concat conj} op) (invoke-type-check ctx form)
-
-       ('#{< <= > >= and or not => = not= valid? $value?} op) :Boolean
-       ('#{range} op) [:Vec :Integer]
+       ('#{+ - * div mod expt abs count
+           if when concat conj
+           < <= > >= and or not => = not= valid?
+           range} op) (invoke-type-check ctx form)
+       ('#{$value?} op) :Boolean
        ('#{rescale} op) (let [[_ target-id scale-id] form]
                           ;; the 2nd arg to rescale must be an integer literal, i.e. not a symbol
                           (invoke-type-check ctx (list 'rescale target-id (node-form (deref-id ssa-graph scale-id)))))
@@ -437,10 +438,8 @@
                            unguarded-id)
             [ssa-graph guard-id] (ensure-node ssa-graph (list '$value? unguarded-id) :Boolean)
             [ssa-graph then-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa then))
-            [ssa-graph else-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa else))
-            htype (types/meet (node-type (deref-id ssa-graph then-id))
-                              (node-type (deref-id ssa-graph else-id)))]
-        (ensure-node ssa-graph (list 'if guard-id then-id else-id) htype))
+            [ssa-graph else-id] (-> ctx (assoc :ssa-graph ssa-graph) (form-to-ssa else))]
+        (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (list 'if guard-id then-id else-id)))
 
       :else
       (let [[ssa-graph guard-id] (ensure-node ssa-graph (list '$value? unguarded-id) :Boolean)
@@ -455,10 +454,8 @@
                                     (assoc :ssa-graph ssa-graph)
                                     (update :tenv envs/extend-scope var-sym :Unset)
                                     (update :env assoc var-sym no-value-id)
-                                    (form-to-ssa (if (= else unguarded-id) no-value-id else)))
-            htype (types/meet (node-type (deref-id ssa-graph then-id))
-                              (node-type (deref-id ssa-graph else-id)))]
-        (ensure-node ssa-graph (list 'if guard-id then-id else-id) htype)))))
+                                    (form-to-ssa (if (= else unguarded-id) no-value-id else)))]
+        (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (list 'if guard-id then-id else-id))))))
 
 (s/defn ^:private get-to-ssa :- NodeInGraph
   [{:keys [ssa-graph senv] :as ctx} :- SSACtx, [_ subexpr var-kw-or-idx :as form]]
@@ -543,7 +540,7 @@
                      (string? (first (deref-id ssa-graph (second form))))))
     (throw (ex-info "Only string literals currently allowed in error forms" {:form form :ssa-graph ssa-graph})))
   (let [[ssa-graph arg-id] (form-to-ssa ctx (second form))]
-    (ensure-node ssa-graph (list 'error arg-id) :Nothing)))
+    (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (list 'error arg-id))))
 
 (s/defn ^:private comprehension-to-ssa :- NodeInGraph
   [ctx :- SSACtx form]
@@ -573,9 +570,8 @@
                                                 t (node-type (deref-id ssa-graph coll-id))]
                                             [ssa-graph (conj elem-ids elem-id) (types/meet elem-type t)]))
                                         [ssa-graph [] (types/elem-type coll-type)]
-                                        elems)
-        form-to-add (apply list 'conj coll-id elem-ids)]
-    (ensure-node-with-type (invoke-type-check (assoc ctx :ssa-graph ssa-graph)) form-to-add)))
+                                        elems)]
+    (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (apply list 'conj coll-id elem-ids))))
 
 (s/defn replace-in-expr :- NodeInGraph
   [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
