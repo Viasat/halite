@@ -6,7 +6,7 @@
   features down into lower-level features."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as halite-rewriting]
+            [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as rewriting]
             [com.viasat.halite.transpile.simplify :refer [simplify always-evaluates?]]
             [com.viasat.halite.transpile.ssa :as ssa :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
             [com.viasat.halite.transpile.util :refer [fixpoint mk-junct make-do]]
@@ -45,7 +45,7 @@
        first))
 
 (s/defn bubble-up-do-expr
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (cond
     (map? form)
     (let [[match? done-ids inst]
@@ -92,7 +92,7 @@
 ;; Finally, we can 'flatten' $do! forms.
 
 (s/defn flatten-do-expr
-  [{ctx :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{ctx :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (do-form? form)
     (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
       (concat (take i form) (rest nested-do-form) (drop (inc i) form)))))
@@ -100,7 +100,7 @@
 ;;;;;;;;; Comparisons known to be true/false, by argument type ;;;;;;;
 
 (s/defn lower-comparison-exprs-with-incompatible-types
-  [{{:keys [ssa-graph]} :ctx} :- halite-rewriting/RewriteFnCtx, id [form htype]]
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id [form htype]]
   (when (and (seq? form) (#{'= 'not=} (first form)))
     (let [comparison-op (first form)
           arg-ids (rest form)
@@ -116,7 +116,7 @@
 ;;;;;;;;; Instance Comparison Lowering ;;;;;;;;
 
 (s/defn lower-instance-comparison-expr
-  [{{:keys [ssa-graph senv] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph senv] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (#{'= 'not=} (first form)))
     (let [comparison-op (first form)
           logical-op (if (= comparison-op '=) 'and 'or)
@@ -140,7 +140,7 @@
 ;;;;;;;;; Push gets inside instance-valued ifs ;;;;;;;;;;;
 
 (s/defn push-gets-into-ifs-expr
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'get (first form)))
     (let [[_get arg-id var-kw] form
           [subform htype] (ssa/deref-id ssa-graph (second form))]
@@ -321,14 +321,14 @@
       :else (throw (ex-info "BUG! Cannot compute validity-guard" {:ssa-graph ssa-graph :id id :node node})))))
 
 (s/defn ^:private lower-valid?-expr
-  [{sctx :sctx, ctx :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{sctx :sctx, ctx :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'valid? (first form)))
     (let [[_valid? expr-id] form]
       (validity-guard sctx ctx expr-id))))
 
 (s/defn lower-valid? :- SpecCtx
   [sctx :- SpecCtx]
-  (halite-rewriting/rewrite-in-dependency-order*
+  (rewriting/rewrite-in-dependency-order*
    {:rule-name "lower-valid?"
     :rewrite-fn lower-valid?-expr
     :nodes :all}
@@ -338,7 +338,7 @@
 ;;;;;;;;;; Lower refine-to ;;;;;;;;;;;;;;;
 
 (s/defn lower-refine-to-expr
-  [rgraph, {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [rgraph, {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when-let [[_ expr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
     (let [[_ from-htype] (ssa/deref-id ssa-graph expr-id)]
       (when-let [from-spec-id (types/spec-id from-htype)]
@@ -357,13 +357,13 @@
 (s/defn lower-refine-to :- SpecCtx
   [sctx :- SpecCtx]
   (let [g (loom.graph/digraph (update-vals sctx (comp keys :refines-to)))]
-    (halite-rewriting/rewrite-sctx* {:rule-name "lower-refine-to"
-                                     :rewrite-fn (partial lower-refine-to-expr g),
-                                     :nodes :all}
-                                    sctx)))
+    (rewriting/rewrite-sctx* {:rule-name "lower-refine-to"
+                              :rewrite-fn (partial lower-refine-to-expr g),
+                              :nodes :all}
+                             sctx)))
 
 (s/defn push-refine-to-into-if
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id [form htype]]
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id [form htype]]
   (when-let [[_ subexpr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
     (let [subexpr-node (ssa/deref-id ssa-graph subexpr-id), subexpr (ssa/node-form subexpr-node)]
       (when-let [[_ pred-id then-id else-id] (and (seq? subexpr) (= 'if (first subexpr)) subexpr)]
@@ -394,7 +394,7 @@
                    result (-> spec-info
                               (assoc :ssa-graph ssa-graph)
                               (update :constraints conj [(str target-id) id]))]
-               (halite-rewriting/trace!
+               (rewriting/trace!
                 sctx
                 {:op :add-constraint
                  :rule "lower-refinement-constraints"
@@ -415,7 +415,7 @@
 ;;;;;;;;;; Lowering Optionality ;;;;;;;;;;;;
 
 (s/defn lower-no-value-comparison-expr
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (contains? #{'= 'not=} (first form)))
     (let [[op & arg-ids] form
           args (map-indexed vector (mapv (partial ssa/deref-id ssa-graph) arg-ids))
@@ -432,7 +432,7 @@
   (rewrite-sctx sctx lower-no-value-comparison-expr))
 
 (s/defn lower-maybe-comparison-expr
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (let [opt-arg? (fn [[form htype]]
                    (types/maybe-type? htype))
         if-form? (fn [[form htype]]
@@ -494,7 +494,7 @@
   (rewrite-sctx sctx lower-maybe-comparison-expr))
 
 (s/defn push-comparison-into-nonprimitive-if-in-expr
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (let [nonprimitive-if? (fn [[form htype]]
                            (and (seq? form)
                                 (= 'if (first form))
@@ -514,7 +514,7 @@
                     (apply list op (assoc (vec arg-ids) i else-id))))))))))
 
 (s/defn push-if-value-into-if-in-expr
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_if val?-id then-id else-id] form
           [val?-form] (ssa/deref-id ssa-graph val?-id)]
@@ -564,21 +564,21 @@
       (lower-refine-to)
       (lower-refinement-constraints)
       (lower-valid?)
-      (halite-rewriting/rewrite-reachable-sctx
-       [(halite-rewriting/rule bubble-up-do-expr)
-        (halite-rewriting/rule flatten-do-expr)
-        (halite-rewriting/rule lower-instance-comparison-expr)
-        (halite-rewriting/rule push-gets-into-ifs-expr)
-        (halite-rewriting/rule lower-maybe-comparison-expr)
-        (halite-rewriting/rule lower-no-value-comparison-expr)
-        (halite-rewriting/rule push-comparison-into-nonprimitive-if-in-expr)
-        (halite-rewriting/rule push-if-value-into-if-in-expr)])
+      (rewriting/rewrite-reachable-sctx
+       [(rewriting/rule bubble-up-do-expr)
+        (rewriting/rule flatten-do-expr)
+        (rewriting/rule lower-instance-comparison-expr)
+        (rewriting/rule push-gets-into-ifs-expr)
+        (rewriting/rule lower-maybe-comparison-expr)
+        (rewriting/rule lower-no-value-comparison-expr)
+        (rewriting/rule push-comparison-into-nonprimitive-if-in-expr)
+        (rewriting/rule push-if-value-into-if-in-expr)])
       (simplify)))
 
 ;;;;;;;;;; Semantics-modifying passes ;;;;;;;;;;;;;;;;
 
 (s/defn ^:private eliminate-runtime-constraint-violations-in-expr
-  [{:keys [sctx ctx]} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{:keys [sctx ctx]} :- rewriting/RewriteFnCtx, id, [form htype]]
   (let [guard (validity-guard sctx ctx id)]
     (when (not (true? guard))
       (list 'if guard id false))))
@@ -591,14 +591,14 @@
   [sctx :- SpecCtx]
   (->> sctx
       ;; Does this actually have to be done in dependency order? Why or why not?
-       (halite-rewriting/rewrite-in-dependency-order*
+       (rewriting/rewrite-in-dependency-order*
         {:rule-name "eliminate-runtime-constraint-violations"
          :rewrite-fn eliminate-runtime-constraint-violations-in-expr
          :nodes :constraints}
         deps-via-instance-literal)))
 
 (s/defn cancel-get-of-instance-literal-expr
-  [{{:keys [ssa-graph]} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when-let [[_get coll-id var-kw] (and (seq? form) (= 'get (first form)) form)]
     (let [[coll] (ssa/deref-id ssa-graph coll-id)]
       (when (map? coll)
@@ -611,7 +611,7 @@
   (rewrite-sctx sctx cancel-get-of-instance-literal-expr))
 
 (s/defn eliminate-do-expr
-  [rctx :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [rctx :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= '$do! (first form)))
     (let [tail-id (last form)]
       tail-id)))
@@ -644,7 +644,7 @@
                   spec-info' (-> spec-info
                                  (assoc :ssa-graph ssa-graph')
                                  (update :constraints conj [message cid]))]
-              (halite-rewriting/trace!
+              (rewriting/trace!
                sctx
                {:op :add-constraint
                 :rule "add-error-guards-as-constraints"
@@ -656,7 +656,7 @@
           spec-info))))
 
 (s/defn ^:private drop-branches-containing-unguarded-errors-rewrite-fn
-  [unguarded-error? {{:keys [ssa-graph]} :ctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [unguarded-error? {{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'when (first form)))
     (throw (ex-info "BUG! Applied drop-branches-containing-ungaurded-errors rule without lowering 'when'"
                     {:ssa-graph ssa-graph :id id})))
@@ -680,7 +680,7 @@
                              (seq (set/intersection error-ids unconditionally-reachable))))]
     (assoc
      sctx spec-id
-     (halite-rewriting/rewrite-spec
+     (rewriting/rewrite-spec
       {:rule-name "drop-branches-containing-unguarded-errors"
        :rewrite-fn (partial drop-branches-containing-unguarded-errors-rewrite-fn unguarded-error?)
        :nodes :all}
@@ -703,7 +703,7 @@
              (and (vector? inner) (= :Instance (first inner)))))))
 
 (s/defn ^:private rewrite-instance-valued-do-child
-  [{:keys [sctx ctx] :as rctx} :- halite-rewriting/RewriteFnCtx, id]
+  [{:keys [sctx ctx] :as rctx} :- rewriting/RewriteFnCtx, id]
   (let [{:keys [ssa-graph]} ctx
         node (ssa/deref-id ssa-graph id), form (ssa/node-form node), htype (ssa/node-type node)
         rewrite-child-exprs (fn [child-exprs]
@@ -757,7 +757,7 @@
                             {:ssa-graph ssa-graph :id id :form form})))))
 
 (s/defn eliminate-unused-instance-valued-exprs-in-do-expr
-  [{:keys [sctx ctx] :as rctx} :- halite-rewriting/RewriteFnCtx, id, [form htype]]
+  [{:keys [sctx ctx] :as rctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (let [ssa-graph (:ssa-graph ctx)]
     (when (and (seq? form) (= '$do! (first form)))
       (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]
@@ -781,7 +781,7 @@
   (rewrite-sctx sctx eliminate-unused-instance-valued-exprs-in-do-expr))
 
 (s/defn ^:private rewrite-no-value-do-child
-  [{:keys [ctx] :as rctx} :- halite-rewriting/RewriteFnCtx, id]
+  [{:keys [ctx] :as rctx} :- rewriting/RewriteFnCtx, id]
   (let [{:keys [ssa-graph]} ctx
         node (ssa/deref-id ssa-graph id), form (ssa/node-form node), htype (ssa/node-type node)]
     (when-not (types/subtype? :Unset htype)
@@ -806,7 +806,7 @@
       :else id)))
 
 (s/defn eliminate-unused-no-value-exprs-in-do-expr
-  [rctx :- halite-rewriting/RewriteFnCtx id [form htype]]
+  [rctx :- rewriting/RewriteFnCtx id [form htype]]
   (let [ssa-graph (:ssa-graph (:ctx rctx))]
     (when (and (seq? form) (= '$do! (first form)))
       (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]

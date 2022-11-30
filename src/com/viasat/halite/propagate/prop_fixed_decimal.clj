@@ -9,7 +9,7 @@
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.propagate.prop-top-concrete :as prop-top-concrete]
-            [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx] :as halite-rewriting]
+            [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx] :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.types :as types]
@@ -193,7 +193,7 @@
                   ~'$prop-fixed-decimal-target))))
 
 (s/defn ^:private lower-rescale-expr
-  [{ctx :ctx} :- halite-rewriting/RewriteFnCtx
+  [{ctx :ctx} :- rewriting/RewriteFnCtx
    _
    [form]]
   (when (and (seq? form)
@@ -207,14 +207,14 @@
 
 (s/defn ^:private lower-rescale :- ssa/SpecCtx
   [sctx :- ssa/SpecCtx]
-  (halite-rewriting/rewrite-sctx sctx lower-rescale-expr))
+  (rewriting/rewrite-sctx sctx lower-rescale-expr))
 
 (s/defn ^:private fixed-decimal-to-long [f]
   (let [scale (fixed-decimal/get-scale f)]
     (fixed-decimal/shift-scale f scale)))
 
 (s/defn ^:private lower-fixed-decimal-values-expr
-  [{ctx :ctx} :- halite-rewriting/RewriteFnCtx
+  [{ctx :ctx} :- rewriting/RewriteFnCtx
    _
    [form]]
   (when (fixed-decimal/fixed-decimal? form)
@@ -222,7 +222,7 @@
 
 (s/defn ^:private lower-fixed-decimal-values :- ssa/SpecCtx
   [sctx :- ssa/SpecCtx]
-  (halite-rewriting/rewrite-sctx sctx lower-fixed-decimal-values-expr))
+  (rewriting/rewrite-sctx sctx lower-fixed-decimal-values-expr))
 
 (s/defn ^:private lower-fixed-decimal :- ssa/SpecCtx
   [sctx :- ssa/SpecCtx]
