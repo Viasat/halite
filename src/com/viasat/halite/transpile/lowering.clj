@@ -383,7 +383,7 @@
   [sctx :- SpecCtx
    [spec-id  {:keys [refines-to ssa-graph] :as spec-info}] :- [(s/one s/Keyword "spec-id") (s/one SpecInfo "spec-info")]]
   (let [ctx (make-ssa-ctx sctx spec-info)
-        scope (->> ctx :tenv envs/scope keys set)]
+        scope (->> ctx :tenv envs/tenv-keys)]
     [spec-id
      (->> refines-to
           (reduce

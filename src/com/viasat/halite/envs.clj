@@ -61,6 +61,10 @@
   [tenv :- (s/protocol TypeEnv)]
   (scope* tenv))
 
+(s/defn tenv-keys :- #{types/BareSymbol}
+  [tenv :- (s/protocol TypeEnv)]
+  (->> tenv scope* keys set))
+
 (s/defn extend-scope :- (s/protocol TypeEnv)
   "Produce a new type environment, extending the current scope by mapping the given symbol to the given type."
   [tenv :- (s/protocol TypeEnv), sym :- types/BareSymbol, t :- types/HaliteType]

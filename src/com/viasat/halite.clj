@@ -69,7 +69,7 @@
   [senv :- (s/protocol envs/SpecEnv)
    tenv :- (s/protocol envs/TypeEnv)
    env :- (s/protocol envs/Env)]
-  (let [declared-symbols (set (keys (envs/scope tenv)))
+  (let [declared-symbols (envs/tenv-keys tenv)
         bound-symbols (set (keys (envs/bindings env)))
         unbound-symbols (set/difference declared-symbols bound-symbols)
         empty-env (envs/env {})]

@@ -343,7 +343,8 @@
    form]
   (let [{:keys [senv ssa-graph]} ctx
         tenv (reify envs/TypeEnv
-               (scope* [_])
+               (scope* [_]
+                 (throw (ex-info "BUG: scope* not implemented" {:ssa-graph ssa-graph})))
                (lookup-type* [_ sym]
                  (node-type (deref-id ssa-graph sym)))
                (extend-scope* [_ sym t]

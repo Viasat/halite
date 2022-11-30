@@ -45,7 +45,7 @@
     (let [[ssa-graph id] (ssa/form-to-ssa ctx form)
           new-expr (rewrite-fn {:sctx {} :ctx (assoc ctx :ssa-graph ssa-graph)} id (ssa/deref-id ssa-graph id))
           [ssa-graph id] (if (not= nil new-expr) (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph) new-expr) [ssa-graph id])
-          scope (set (keys (envs/scope (:tenv ctx))))]
+          scope (envs/tenv-keys (:tenv ctx))]
       (ssa/form-from-ssa scope ssa-graph id))))
 
 (defn- make-ssa-ctx
