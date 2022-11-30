@@ -622,8 +622,6 @@
                     (throw (ex-info (format "BUG! Cannot transpile operation '%s'" op) {:form form})))
                   (condp = op
                     'let (let-to-ssa ctx form)
-                    ;; When is lowered to if once, early, so that rules generally only have one control flow form to worry about.
-                    ;; Consequently, no rewrite rules should introduce new when forms!
                     'when (app-to-ssa ctx (concat ['if] (rest form) ['$no-value]))
                     'cond (app-to-ssa ctx (reduce (fn [if-expr [pred then]]
                                                     (list 'if pred then if-expr))

@@ -187,11 +187,10 @@
   `(~'let [~'$prop-fixed-decimal-target ~target-form]
           (~'let [~'$prop-fixed-decimal-shift (~'- ~target-scale ~new-scale)
                   ~'$prop-fixed-decimal-factor (~'expt 10 (~'abs ~'$prop-fixed-decimal-shift))]
-                 (~'if (~'> ~'$prop-fixed-decimal-shift 0)
-                       (~'div ~'$prop-fixed-decimal-target ~'$prop-fixed-decimal-factor)
-                       (~'if (~'< ~'$prop-fixed-decimal-shift 0)
-                             (~'* ~'$prop-fixed-decimal-target ~'$prop-fixed-decimal-factor)
-                             ~'$prop-fixed-decimal-target)))))
+                 (~'cond
+                  (~'> ~'$prop-fixed-decimal-shift 0) (~'div ~'$prop-fixed-decimal-target ~'$prop-fixed-decimal-factor)
+                  (~'< ~'$prop-fixed-decimal-shift 0) (~'* ~'$prop-fixed-decimal-target ~'$prop-fixed-decimal-factor)
+                  ~'$prop-fixed-decimal-target))))
 
 (s/defn ^:private lower-rescale-expr
   [{ctx :ctx} :- halite-rewriting/RewriteFnCtx
