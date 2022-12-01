@@ -256,8 +256,8 @@
 
 (def ^:dynamic *squash-throw-site* false)
 
-(defn format-long-msg [site-code {:keys [err-id] :as data-map}]
-  (str (namespace err-id) "/" (name err-id) " " site-code " : " (format-msg data-map)))
+(defn format-long-msg [{:keys [err-id throw-site] :as data-map}]
+  (str (namespace err-id) "/" (name err-id) " " throw-site " : " (format-msg data-map)))
 
 (defmacro throw-err
   [data & more]
@@ -269,7 +269,7 @@
                       ~(site-code *ns* &form))
          data# (assoc (extend-err-data ~data) :throw-site site-code#)]
      (check-data data#)
-     (throw (ex-info (format-long-msg site-code# data#)
+     (throw (ex-info (format-long-msg data#)
                      data#
                      ~@more))))
 

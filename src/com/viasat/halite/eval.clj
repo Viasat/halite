@@ -11,7 +11,7 @@
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors
-             :refer [throw-err with-exception-data format-msg]]
+             :refer [throw-err with-exception-data format-long-msg]]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [clojure.lang BigInt ExceptionInfo]))
@@ -378,14 +378,14 @@
                                    :constraint-errors constraint-errors
                                    :constraint-error-strs (no-empty
                                                            (mapv #(or (:spec-error-str (ex-data %))
-                                                                      (format-msg (ex-data %)))
+                                                                      (format-long-msg (ex-data %)))
                                                                  constraint-errors))
                                    :spec-error-str (when (not (and (seq violated-constraints)
                                                                    (not (seq error-constraints))))
                                                      (string/join "; "
                                                                   (no-empty
                                                                    (mapv #(or (:spec-error-str (ex-data %))
-                                                                              (format-msg (ex-data %)))
+                                                                              (format-long-msg (ex-data %)))
                                                                          constraint-errors))))
                                    :value inst
                                    :halite-error (when (and (seq violated-constraints)

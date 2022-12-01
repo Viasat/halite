@@ -8589,9 +8589,9 @@
      "valid` catches the constraint violations to produce a `Maybe`"
      [(valid {:$type :spec/Inc$v1, :x 1, :y 1})
       [:Maybe [:Instance :spec/Inc$v1]]
-      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Resource spec not found: spec/BigInc$v1\""]
+      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/resource-spec-not-found 0-0 : Resource spec not found: spec/BigInc$v1\""]
       "(valid {$type: spec/Inc$v1, x: 1, y: 1})"
-      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Resource spec not found: spec/BigInc$v1\""]]))
+      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/resource-spec-not-found 0-0 : Resource spec not found: spec/BigInc$v1\""]]))
 
   (let
    [ws {:spec/Ratio$v1 {:constraints #{{:name "main" :expr '(= r (div x y))}},
@@ -9862,9 +9862,9 @@
                                                         (error "f1"))}}}}
       [{:$type :my/Spec$v1}
        [:Instance :my/Spec$v1]
-       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; Cannot divide by zero; f2\""]
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; h-err/divide-by-zero 0-0 : Cannot divide by zero; f2\""]
        "{$type: my/Spec$v1}"
-       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; Cannot divide by zero; f2\""]]))
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"f1; h-err/divide-by-zero 0-0 : Cannot divide by zero; f2\""]]))
 
 (deftest
   test-reserved-words
@@ -10393,9 +10393,9 @@
                                       :expr '(error "fail")}}}}
       [{:$type :spec/B, :x 0}
        [:Instance :spec/B]
-       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Cannot divide by zero; fail\""]
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/divide-by-zero 0-0 : Cannot divide by zero; fail\""]
        "{$type: spec/B, x: 0}"
-       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Cannot divide by zero; fail\""]])
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/divide-by-zero 0-0 : Cannot divide by zero; fail\""]])
 
   (hc {:spec/A {:fields {:x :Integer}
                 :constraints #{{:name "x" :expr '(> x 0)}}}
@@ -10425,9 +10425,9 @@
                                               :x (div 1 0)}}}}}
       [{:$type :spec/B, :x 0}
        [:Instance :spec/B]
-       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Cannot divide by zero; fail\""]
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/divide-by-zero 0-0 : Cannot divide by zero; fail\""]
        "{$type: spec/B, x: 0}"
-       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Cannot divide by zero; fail\""]])
+       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/divide-by-zero 0-0 : Cannot divide by zero; fail\""]])
 
   (hc {:spec/A {:fields {:x :Integer}
                 :constraints #{{:name "x" :expr '(> x 0)}}}
