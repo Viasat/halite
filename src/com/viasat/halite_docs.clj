@@ -345,6 +345,22 @@
    (str (name tag) ".svg")
    (str (name tag) "-j" ".svg")))
 
+(def local-doc-config
+  {:root-dir "doc"
+   :image-dir "doc"
+   :prefix "halite_"
+   :generate-hdr-f utils/generate-hdr
+   :generate-how-to-hdr-f utils/generate-hdr
+   :code-snippet-f utils/code-snippet
+   :spec-snippet-f utils/code-snippet
+   :embed-bnf-f utils/embed-bnf
+   :get-link-f utils/get-link
+   :get-image-link-f utils/get-image-link
+   :get-svg-link-f utils/get-svg-link
+   :get-table-data-f utils/get-table-data
+   :get-reference-links-f utils/get-reference-links
+   :translate-spec-map-to-f utils/translate-spec-map})
+
 ;; A list of vector pairs [data-var fn] indicating a document-generation
 ;; function that should be run whenever the data-var is updated, by installing
 ;; watcher on the data-var.  The fn is optional -- if not given, the watcher
@@ -360,14 +376,16 @@
                      (produce-basic-md :halite)
                      (produce-basic-md :jadeite))]
    [#'explanations #(do (run! (partial explanation-md :halite)  explanations)
-                        (run! (partial explanation-md :jadeite) explanations))]])
+                        (run! (partial explanation-md :jadeite) explanations))]
+   [#'tutorials #(run! (partial tutorial-md :halite) tutorials)]])
 
 (def ^:dynamic *running-gen-doc* #{})
 
 (defn- gen-doc-with-fn [f _key data-var _old-val new-val]
   (when-not (*running-gen-doc* data-var)
     (let [indent (apply str (repeat (count *running-gen-doc*) "  "))]
-      (binding [*running-gen-doc* (conj *running-gen-doc* data-var)]
+      (binding [*running-gen-doc* (conj *running-gen-doc* data-var)
+                *run-config* local-doc-config]
         (println (format "%striggered at %s by %s" indent (java.util.Date.) data-var))
         (alter-var-root data-var (constantly new-val))
         (f)
@@ -455,17 +473,4 @@
                                      run-config))))
 
 (defn generate-local-docs []
-  (generate-docs {:root-dir "doc"
-                  :image-dir "doc"
-                  :prefix "halite_"
-                  :generate-hdr-f utils/generate-hdr
-                  :generate-how-to-hdr-f utils/generate-hdr
-                  :code-snippet-f utils/code-snippet
-                  :spec-snippet-f utils/code-snippet
-                  :embed-bnf-f utils/embed-bnf
-                  :get-link-f utils/get-link
-                  :get-image-link-f utils/get-image-link
-                  :get-svg-link-f utils/get-svg-link
-                  :get-table-data-f utils/get-table-data
-                  :get-reference-links-f utils/get-reference-links
-                  :translate-spec-map-to-f utils/translate-spec-map}))
+  (generate-docs local-doc-config))
