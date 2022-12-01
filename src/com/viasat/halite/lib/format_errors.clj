@@ -248,50 +248,30 @@
                       (pr-str v))]))
        (apply hash-map)))
 
-(defn format-msg [err-id msg-str data-map]
-  (format-msg* err-id msg-str (format-data-map data-map) data-map))
+(defn format-msg [{:keys [err-id message-template] :as data-map}]
+  (format-msg* err-id message-template (format-data-map data-map) data-map))
 
 (defn site-code [^Namespace ns form]
   (str (mod (.hashCode (str (ns-name ns))) 1000) "-" (:line (meta form))))
 
 (def ^:dynamic *squash-throw-site* false)
 
+(defn format-long-msg [site-code {:keys [err-id] :as data-map}]
+  (str (namespace err-id) "/" (name err-id) " " site-code " : " (format-msg data-map)))
+
 (defmacro throw-err
-  ([data]
-   (when trace-err-defs?
-     (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
-       (swap! trace-atom conj t)))
-   `(let [data# ~data
-          site-code# ~(site-code *ns* &form)]
-      (check-data data#)
-      (throw (ex-info (str (namespace (:err-id data#)) "/" (name (:err-id data#)) " " (if *squash-throw-site*
-                                                                                        "0-0"
-                                                                                        site-code#) " : " (format-msg
-                                                                                                           (:err-id data#)
-                                                                                                           (:message data#)
-                                                                                                           data#))
-                      (assoc (extend-err-data data#)
-                             :throw-site (if *squash-throw-site*
-                                           "0-0"
-                                           site-code#))))))
-  ([data ex]
-   (when trace-err-defs?
-     (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
-       (swap! trace-atom conj t)))
-   `(let [data# ~data
-          site-code# ~(site-code *ns* &form)]
-      (check-data data#)
-      (throw (ex-info (str (namespace (:err-id data#)) "/" (name (:err-id data#)) " " (if *squash-throw-site*
-                                                                                        "0-0"
-                                                                                        site-code#) " : " (format-msg
-                                                                                                           (:err-id data#)
-                                                                                                           (:message data#)
-                                                                                                           data#))
-                      (assoc (extend-err-data data#)
-                             :throw-site (if *squash-throw-site*
-                                           "0-0"
-                                           site-code#))
-                      ~ex)))))
+  [data & more]
+  (when trace-err-defs?
+    (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
+      (swap! trace-atom conj t)))
+  `(let [site-code# (if *squash-throw-site*
+                      "0-0"
+                      ~(site-code *ns* &form))
+         data# (assoc (extend-err-data ~data) :throw-site site-code#)]
+     (check-data data#)
+     (throw (ex-info (format-long-msg site-code# data#)
+                     data#
+                     ~@more))))
 
 (defmacro with-exception-data
   "Merge extra-data into any ex-info thrown from inside body"

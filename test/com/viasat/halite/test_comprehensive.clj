@@ -8589,9 +8589,9 @@
      "valid` catches the constraint violations to produce a `Maybe`"
      [(valid {:$type :spec/Inc$v1, :x 1, :y 1})
       [:Maybe [:Instance :spec/Inc$v1]]
-      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Resource spec not found: :spec-id\""]
+      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Resource spec not found: spec/BigInc$v1\""]
       "(valid {$type: spec/Inc$v1, x: 1, y: 1})"
-      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Resource spec not found: :spec-id\""]]))
+      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"Resource spec not found: spec/BigInc$v1\""]]))
 
   (let
    [ws {:spec/Ratio$v1 {:constraints #{{:name "main" :expr '(= r (div x y))}},

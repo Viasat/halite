@@ -10,7 +10,8 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
+            [com.viasat.halite.lib.format-errors
+             :refer [throw-err with-exception-data format-msg]]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [clojure.lang BigInt ExceptionInfo]))
@@ -375,11 +376,17 @@
                                                            vec
                                                            no-empty)
                                    :constraint-errors constraint-errors
-                                   :constraint-error-strs (no-empty (mapv (comp #(or (:spec-error-str %) (:message-template %)) ex-data) constraint-errors))
+                                   :constraint-error-strs (no-empty
+                                                           (mapv #(or (:spec-error-str (ex-data %))
+                                                                      (format-msg (ex-data %)))
+                                                                 constraint-errors))
                                    :spec-error-str (when (not (and (seq violated-constraints)
                                                                    (not (seq error-constraints))))
                                                      (string/join "; "
-                                                                  (no-empty (mapv (comp #(or (:spec-error-str %) (:message-template %)) ex-data) constraint-errors))))
+                                                                  (no-empty
+                                                                   (mapv #(or (:spec-error-str (ex-data %))
+                                                                              (format-msg (ex-data %)))
+                                                                         constraint-errors))))
                                    :value inst
                                    :halite-error (when (and (seq violated-constraints)
                                                             (not (seq error-constraints)))
