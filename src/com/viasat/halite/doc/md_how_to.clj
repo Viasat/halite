@@ -65,12 +65,14 @@
                                              (vector? h-result)
                                              (= :throws (first h-result)))
                                     (throw (ex-info "failed" {:h-expr h-expr
-                                                              :h-result h-result})))
+                                                              :h-result h-result}
+                                                    (:ex (meta h-result)))))
                                   (when (and (:throws c)
                                              (not (and (vector? h-result)
                                                        (= :throws (first h-result)))))
                                     (throw (ex-info "expected to fail" {:h-expr h-expr
-                                                                        :h-result h-result})))
+                                                                        :h-result h-result}
+                                                    (:ex (meta h-result)))))
                                   (recur more-c
                                          spec-map
                                          spec-map-throws

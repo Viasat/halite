@@ -127,25 +127,31 @@
                    [:throws (.getMessage e)]))
           h-result (try (eval-h-expr spec-map tenv env expr)
                         (catch ExceptionInfo e
-                          (if separate-err-id?
-                            [:throws (.getMessage e) (:err-id (ex-data e))]
-                            [:throws (.getMessage e)]))
+                          (vary-meta
+                            (if separate-err-id?
+                              [:throws (.getMessage e) (:err-id (ex-data e))]
+                              [:throws (.getMessage e)])
+                            assoc :ex e))
                         (catch RuntimeException e
-                          [:throws (.getMessage e)]))
+                          (vary-meta [:throws (.getMessage e)]
+                                     assoc :ex e)))
           jh-expr (when (string? j-expr)
                     (try
                       (jadeite/to-halite j-expr)
                       (catch RuntimeException e
-                        [:throws (.getMessage e)])))
+                        (vary-meta [:throws (.getMessage e)]
+                                   assoc :ex e))))
 
           jh-result (try
                       (eval-h-expr spec-map tenv env jh-expr)
                       (catch RuntimeException e
-                        [:throws (.getMessage e)]))
+                        (vary-meta [:throws (.getMessage e)]
+                                   assoc :ex e)))
           j-result (try
                      (jadeite/to-jadeite (eval-h-expr spec-map tenv env jh-expr))
                      (catch RuntimeException e
-                       [:throws (.getMessage e)]))]
+                       (vary-meta [:throws (.getMessage e)]
+                                  assoc :ex e)))]
 
       (HCInfo. s t h-result j-expr jh-result j-result))))
 
