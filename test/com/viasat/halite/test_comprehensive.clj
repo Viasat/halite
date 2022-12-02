@@ -8023,10 +8023,7 @@
                 :fields {:n :Integer}}
     :spec/V$v1 {:fields {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
-    [:Instance :spec/V$v1]
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]
-    "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]])
+    [:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
   (hc
    {:spec/C$v1 {:refines-to {:spec/T$v1 {:name "spec/C$v1/as_T"
                                          :expr '{:$type :spec/T$v1
@@ -8049,10 +8046,7 @@
                                          :expr '{:$type :spec/S$v1}}}}
     :spec/U$v1 {:fields {:s :spec/S$v1}}}
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
-    [:Instance :spec/U$v1]
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]
-    "{$type: spec/U$v1, s: {$type: spec/T$v1}}"
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]])
+    [:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
   (hc
    {:spec/S$v1 {},
     :spec/T$v1 {:abstract? true
@@ -8060,8 +8054,7 @@
                                          :expr '{:$type :spec/S$v1}}}}
     :spec/U$v1 {:fields {:s :spec/S$v1}}}
    [{:$type :spec/U$v1, :s {:$type :spec/T$v1}}
-    [:throws
-     "h-err/field-value-of-wrong-type 0-0 : Value of 's' has wrong type"]])
+    [:throws "h-err/field-value-of-wrong-type 0-0 : Value of 's' has wrong type"]])
   (hc
    {:spec/S$v1 {}
     :spec/T$v1 {:refines-to {:spec/S$v1 {:name "spec/T$v1/as_S"
@@ -8141,8 +8134,7 @@
     :spec/U$v1 {:fields {:s :spec/T$v1}},
     :spec/V$v1 {:fields {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
-    [:throws
-     "h-err/field-value-of-wrong-type 0-0 : Value of 't' has wrong type"]])
+    [:throws "h-err/field-value-of-wrong-type 0-0 : Value of 't' has wrong type"]])
   (hc
    {:spec/C$v1 {:abstract? true,
                 :refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
@@ -8150,10 +8142,7 @@
     :spec/T$v1 {:abstract? true},
     :spec/V$v1 {:fields {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
-    [:Instance :spec/V$v1]
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]
-    "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]])
+    [:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
   (hc
    {:spec/C$v1 {:refines-to {:spec/S$v1 {:expr '{:$type :spec/S$v1},
                                          :name "spec/C$v1/as_s"},
@@ -8334,10 +8323,8 @@
                                          :name "spec/V$v1/as_t"}},
                 :fields {:t :spec/T$v1}}}
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/T$v1}} :spec/T$v1)
-    [:Instance :spec/T$v1]
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]
-    "{$type: spec/V$v1, t: {$type: spec/T$v1}}.refineTo( spec/T$v1 )"
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]])
+    [:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]])
+
   (hc
    {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
                                          :name "spec/C$v1/as_t"}}},
@@ -8350,11 +8337,10 @@
                 :fields {:t :spec/T$v1}}}
    [(refine-to {:$type :spec/V$v1, :t {:$type :spec/C$v1}} :spec/T$v1)
     [:Instance :spec/T$v1]
-    [:throws
-     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]
+    [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}.refineTo( spec/T$v1 )"
-    [:throws
-     "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
+    [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/V$v1' to 'spec/T$v1'"]])
+
   (hc
    {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '(when false {:$type :spec/T$v1})
                                          :name "spec/C$v1/as_t"}}},

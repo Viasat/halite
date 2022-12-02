@@ -117,14 +117,20 @@
           env (halite/env {})
           j-expr (try (jadeite/to-jadeite expr)
                       (catch RuntimeException e
-                        [:throws (.getMessage e)]))
+                        (vary-meta
+                         [:throws (.getMessage e)]
+                         :ex e)))
           s (try (halite/syntax-check expr)
                  nil
                  (catch RuntimeException e
-                   [:syntax-check-throws (.getMessage e)]))
+                   (vary-meta
+                    [:syntax-check-throws (.getMessage e)]
+                    assoc :ex e)))
           t (try (halite/type-check-and-lint spec-map tenv expr)
                  (catch RuntimeException e
-                   [:throws (.getMessage e)]))
+                   (vary-meta
+                    [:throws (.getMessage e)]
+                    assoc :ex e)))
           h-result (try (eval-h-expr spec-map tenv env expr)
                         (catch ExceptionInfo e
                           (vary-meta

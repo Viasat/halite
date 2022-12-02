@@ -51,7 +51,13 @@
           (throw-err (h-err/field-value-of-wrong-type {error-key inst
                                                        :variable (symbol field-kw)
                                                        :expected field-type
-                                                       :actual actual-type})))))
+                                                       :actual actual-type})))
+        (when (and (map? field-val)
+                   (:abstract? (envs/lookup-spec (:senv ctx) (:$type field-val))))
+          (throw-err (h-err/no-abstract {:value field-val
+                                         :field field-kw
+                                         :spec-id (symbol (:$type inst))
+                                         :instance inst})))))
     (types/concrete-spec-type t)))
 
 (s/defn ^:private get-typestring-for-coll [coll]
