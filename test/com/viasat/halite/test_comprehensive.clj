@@ -8225,9 +8225,9 @@
     :spec/U$v1 {:fields {:s :spec/S$v1}}}
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:Instance :spec/U$v1]
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"No active refinement path from 'spec/T$v1' to 'spec/S$v1'\""]
+    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'\""]
     "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}"
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"No active refinement path from 'spec/T$v1' to 'spec/S$v1'\""]])
+    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-refinement-path 0-0 : No active refinement path from 'spec/T$v1' to 'spec/S$v1'\""]])
   (hc
    {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
                                          :name "spec/C$v1/as_t"}}},
@@ -8238,9 +8238,9 @@
     :spec/U$v1 {:fields {:s :spec/S$v1}}}
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:Instance :spec/U$v1]
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]
+    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-abstract 0-0 : Instance cannot contain abstract value\""]
     "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}"
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]])
+    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-abstract 0-0 : Instance cannot contain abstract value\""]])
   (hc
    {:spec/C$v1 {:refines-to {:spec/T$v1 {:expr '{:$type :spec/T$v1},
                                          :name "spec/C$v1/as_t"}}},
@@ -8279,9 +8279,9 @@
     :spec/U$v1 {:fields {:s :spec/T$v1}}}
    [{:$type :spec/U$v1, :s (refine-to {:$type :spec/C$v1} :spec/T$v1)}
     [:Instance :spec/U$v1]
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]
+    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-abstract 0-0 : Instance cannot contain abstract value\""]
     "{$type: spec/U$v1, s: {$type: spec/C$v1}.refineTo( spec/T$v1 )}"
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]]))
+    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-abstract 0-0 : Instance cannot contain abstract value\""]]))
 
 (deftest
   test-component-refinement
@@ -8348,9 +8348,9 @@
     :spec/V$v1 {:fields {:t :spec/T$v1}}}
    [{:$type :spec/V$v1, :t {:$type :spec/C$v1}}
     [:Instance :spec/V$v1]
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"No active refinement path from 'spec/C$v1' to 'spec/T$v1'\""]
+    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'\""]
     "{$type: spec/V$v1, t: {$type: spec/C$v1}}"
-    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"No active refinement path from 'spec/C$v1' to 'spec/T$v1'\""]])
+    [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-refinement-path 0-0 : No active refinement path from 'spec/C$v1' to 'spec/T$v1'\""]])
   (hc
    {:spec/T$v1 {},
     :spec/V$v1 {:refines-to {:spec/T$v1 {:expr 't, :name "spec/V$v1/as_t"}}
@@ -10518,9 +10518,9 @@
        :spec/R {:fields {:p :spec/P}}}
       [(let [c {:$type :spec/C, :a {:$type :spec/B, :x 5}}] {:$type :spec/R, :p (get c :a)})
        [:Instance :spec/R]
-       [:throws "h-err/instance-threw 0-0 : Instance threw error: \"No active refinement path from 'spec/B' to 'spec/P'\""]
+       [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/P'\""]
        "({ c = {$type: spec/C, a: {$type: spec/B, x: 5}}; {$type: spec/R, p: c.a} })"
-       [:throws "h-err/instance-threw 0-0 : Instance threw error: \"No active refinement path from 'spec/B' to 'spec/P'\""]])
+       [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/P'\""]])
   (hc {:spec/A {:abstract? true
                 :fields {:x :Integer}
                 :constraints #{{:name "x" :expr '(> x 0)}}}
@@ -10537,9 +10537,9 @@
                          :ps [:Vec :spec/P]}}}
       [(let [c {:$type :spec/C, :a {:$type :spec/B, :x 5}}] {:$type :spec/R, :p (get c :a), :ps [(get c :a) (get c :a)]})
        [:Instance :spec/R]
-       [:throws "h-err/instance-threw 0-0 : Instance threw error: \"No active refinement path from 'spec/B' to 'spec/P'; No active refinement path from 'spec/B' to 'spec/P'; No active refinement path from 'spec/B' to 'spec/P'\""]
+       [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/P'; h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/P'; h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/P'\""]
        "({ c = {$type: spec/C, a: {$type: spec/B, x: 5}}; {$type: spec/R, p: c.a, ps: [c.a, c.a]} })"
-       [:throws "h-err/instance-threw 0-0 : Instance threw error: \"No active refinement path from 'spec/B' to 'spec/P'; No active refinement path from 'spec/B' to 'spec/P'; No active refinement path from 'spec/B' to 'spec/P'\""]]))
+       [:throws "h-err/instance-threw 0-0 : Instance threw error: \"h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/P'; h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/P'; h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/P'\""]]))
 
 ;; deftest-end
 
