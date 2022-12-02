@@ -16,6 +16,8 @@
             [loom.graph :as loom-graph]
             [schema.core :as s]))
 
+(set! *warn-on-reflection* true)
+
 ;; This layer adds to each Spec one field for each direct intrinsic refinement,
 ;; expressing refinement in terms of composition (the next layer down).
 ;;
