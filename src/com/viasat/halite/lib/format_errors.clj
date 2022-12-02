@@ -237,6 +237,21 @@
 
 ;;
 
+(defn- truncated-str
+  "Convert the object x to a string, if the string is longer than n characters then truncate it and
+  add the truncate-suffix to indicate it was truncated"
+  [n truncate-suffix x]
+  (let [result (str x)]
+    (if (> (count result)
+           n)
+      (str (.substring result 0 (max (- n (count truncate-suffix)) 0))
+           truncate-suffix)
+      result)))
+
+(defn- truncate-msg
+  [msg]
+  (truncated-str 2048 "..." msg))
+
 (defn format-data-map [data-map]
   (->> data-map
        (mapcat (fn [[k v]]
@@ -247,7 +262,7 @@
        (apply hash-map)))
 
 (defn format-msg [{:keys [err-id template] :as data-map}]
-  (format-msg* err-id template (format-data-map data-map) data-map))
+  (truncate-msg (format-msg* err-id template (format-data-map data-map) data-map)))
 
 (defn site-code [^Namespace ns form]
   (str (mod (.hashCode (str (ns-name ns))) 1000) "-" (:line (meta form))))
@@ -255,7 +270,7 @@
 (def ^:dynamic *squash-throw-site* false)
 
 (defn format-long-msg [{:keys [err-id throw-site] :as data-map}]
-  (str (namespace err-id) "/" (name err-id) " " throw-site " : " (format-msg data-map)))
+  (truncate-msg (str (namespace err-id) "/" (name err-id) " " throw-site " : " (format-msg data-map))))
 
 (defmacro throw-err
   [data & more]
