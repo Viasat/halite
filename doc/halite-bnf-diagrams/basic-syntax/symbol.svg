@@ -1,4 +1,0 @@
-<!--
-RULE = (bare-symbol [ '/' bare-symbol]);
--->
-<svg version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" width="291" height="50" viewbox="0 0 291 50"><defs><style type="text/css">.c{fill: none; stroke: #888888; stroke-width: 2px;}.i{fill:#000000;font-family:Verdana,Sans-serif;font-size:12px;}.l{fill:#90d9ff;stroke:#222222;}.r{fill:#d3f0ff;stroke:#222222;}</style></defs><path class="c" d="M0 18h5m98 0h30m25 0h10m98 0h20m-168 0q5 0 5 5v8q0 5 5 5h143q5 0 5-5v-8q0-5 5-5m5 0h5"/><a xlink:href="#bare-symbol"><rect class="r" x="5" y="5" width="98" height="25"/><text class="i" x="15" y="22">bare-symbol</text></a><rect class="l" x="133" y="5" width="25" height="25" rx="7"/><text class="i" x="143" y="22">/</text><a xlink:href="#bare-symbol"><rect class="r" x="168" y="5" width="98" height="25"/><text class="i" x="178" y="22">bare-symbol</text></a></svg>
