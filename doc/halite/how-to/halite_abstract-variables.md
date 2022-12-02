@@ -33,8 +33,9 @@ The animal spec cannot be directly used to make a pet instance.
 
 
 ;-- result --
-[:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"
- :h-err/no-abstract]
+[:throws
+ "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""
+ :h-err/instance-threw]
 ```
 
 Instead, to construct a pet instance, a dog or cat instance must be used for the animal field.

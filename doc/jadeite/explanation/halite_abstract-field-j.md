@@ -67,7 +67,7 @@ However, it cannot hold a direct instance of car, because an abstract instance c
 
 
 //-- result --
-[:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"]
+[:throws "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""]
 ```
 
 In an interesting way, declaring a field to be of the type of an abstract instance, means it can hold any instance except for an instance of that type.

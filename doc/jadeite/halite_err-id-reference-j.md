@@ -286,6 +286,19 @@ The index falls outside of the bounds of the vector. A way to avoid this is to f
 * [`ACCESSOR-CHAIN`](halite_full-reference-j.md#ACCESSOR-CHAIN)
 
 ---
+### <a name="h-err/instance-threw"></a>h-err/instance-threw
+
+An instance literal produced errors. The specific errors are included in the error data.
+
+#### Error message template:
+
+> Instance threw error: :instance-error-str
+
+#### Produced by elements:
+
+* [`instance`](halite_basic-syntax-reference-j.md#instance)
+
+---
 ### <a name="h-err/invalid-collection-type"></a>h-err/invalid-collection-type
 
 This indicates that a collection value was provided, but the collection is not of a type that is supported.
@@ -792,7 +805,7 @@ This is a low-level exception indicating that an operation was invoked that prov
 ---
 ### <a name="h-err/spec-threw"></a>h-err/spec-threw
 
-An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers it not possible to proceed in the encountered situation. See the error string in the exception detail for details.
+This error can occur in two situations. First, it occurs from an explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers it not possible to proceed in the encountered situation. See the error string in the exception detail for details. Second, this error is produced when a spec if being type checked at runtime.
 
 #### Error message template:
 

@@ -335,6 +335,7 @@ The contents of the instance are specified in pair-wise fashion with alternating
 
 * [`h-err/field-name-not-in-spec`](halite_err-id-reference.md#h-err/field-name-not-in-spec)
 * [`h-err/field-value-of-wrong-type`](halite_err-id-reference.md#h-err/field-value-of-wrong-type)
+* [`h-err/instance-threw`](halite_err-id-reference.md#h-err/instance-threw)
 * [`h-err/invalid-instance`](halite_err-id-reference.md#h-err/invalid-instance)
 * [`h-err/invalid-type-value`](halite_err-id-reference.md#h-err/invalid-type-value)
 * [`h-err/missing-required-vars`](halite_err-id-reference.md#h-err/missing-required-vars)

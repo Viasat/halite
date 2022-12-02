@@ -11,7 +11,7 @@
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors
-             :refer [throw-err with-exception-data format-long-msg]]
+             :refer [throw-err with-exception-data format-msg format-long-msg]]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [clojure.lang BigInt ExceptionInfo]))
@@ -180,17 +180,24 @@
   during type checking when the spec foo/Bar is abstract. The type system ensures that v is some instance,
   but at runtime, we need to confirm that v actually refines to the expected type. This function does,
   and recursively deals with collection types."
-  [declared-type :- types/HaliteType, v]
+  [spec-id
+   field
+   declared-type :- types/HaliteType
+   v]
   ;; TODO: could this just call refine-to?
   (let [declared-type (types/no-maybe declared-type)]
     (cond
       (types/spec-id declared-type) (when-not (refines-to? v declared-type)
-                                      (throw-err (h-err/no-refinement-path
-                                                  {:type (symbol (:$type v))
-                                                   :value v
-                                                   :target-type (symbol (types/spec-id declared-type))})))
+                                      [(try (throw-err (h-err/no-refinement-path
+                                                        {:type (symbol (:$type v))
+                                                         :value v
+                                                         :target-type (symbol (types/spec-id declared-type))
+                                                         :field field
+                                                         :spec-id (symbol spec-id)}))
+                                            (catch Throwable e
+                                              e))])
       :else (if-let [elem-type (types/elem-type declared-type)]
-              (dorun (map (partial check-against-declared-type elem-type) v))
+              (mapcat (partial check-against-declared-type spec-id field elem-type) v)
               nil))))
 
 (def ^:dynamic *refinements*)
@@ -260,12 +267,29 @@
 
       ;; check that all variables have values that are concrete and that conform to the
       ;; types declared in the parent resource spec
-      (doseq [[kw v] (dissoc inst :$type)
-              :let [declared-type (kw fields)]]
-        ;; TODO: consider letting instances of abstract spec contain abstract values
-        (when-not (concrete? senv v)
-          (throw-err (h-err/no-abstract {:value v})))
-        (check-against-declared-type declared-type v))
+      (let [instance-errors (->> (sort (dissoc inst :$type))
+                                 (mapcat (fn [[kw v]]
+                                           (let [declared-type (kw fields)
+                                                 spec-id (:$type inst)]
+                                             ;; TODO: consider letting instances of abstract spec contain abstract values
+                                             (into [(when-not (concrete? senv v)
+                                                      (try
+                                                        (throw-err (h-err/no-abstract {:value v
+                                                                                       :field kw
+                                                                                       :spec-id (symbol spec-id)}))
+                                                        (catch Throwable e
+                                                          e)))]
+                                                   (check-against-declared-type spec-id kw declared-type v)))))
+                                 (remove nil?))]
+        (when (seq instance-errors)
+          (throw-err (h-err/instance-threw
+                      {:instance inst
+                       :instance-errors instance-errors
+                       :instance-error-str (string/join "; "
+                                                        (no-empty
+                                                         (mapv #(or (:instance-error-str (ex-data %))
+                                                                    (format-msg (ex-data %)))
+                                                               instance-errors)))}))))
 
       ;; check all constraints
       (let [constraint-results {:category :constraint
@@ -301,7 +325,7 @@
                                                                                     refines-to-spec-id
                                                                                     spec-id)
                                                                          :name (if rname
-                                                                                              ;; the rname has the spec qualifier on it already
+                                                                                 ;; the rname has the spec qualifier on it already
                                                                                  (name (symbol (name (symbol rname))))
                                                                                  (str "<refine-to-" refines-to-spec-id ">"))
                                                                          :expr expr}

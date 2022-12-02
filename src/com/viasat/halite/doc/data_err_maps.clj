@@ -66,7 +66,8 @@
    'h-err/resource-spec-not-found {:doc "The spec identifier provided did not correspond to a known spec."}
    'h-err/size-exceeded {:doc "There are various, context specific, limits that are enforced. e.g. limits on the lengths of strings. One of these limits was violated. See the exception data for more details."}
    'h-err/sort-value-collision {:doc "When sorting a collection with 'sort-by', the sort expression must produce a unique value for each element in the collection."}
-   'h-err/spec-threw {:doc "An explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers it not possible to proceed in the encountered situation. See the error string in the exception detail for details."}
+   'h-err/spec-threw {:doc "This error can occur in two situations. First, it occurs from an explicit invocation of the 'error' operation was encountered in a spec. This indicates that the spec author considers it not possible to proceed in the encountered situation. See the error string in the exception detail for details. Second, this error is produced when a spec if being type checked at runtime."}
+   'h-err/instance-threw {:doc "An instance literal produced errors. The specific errors are included in the error data."}
    'h-err/symbol-undefined {:doc "An unbound symbol was referenced in an expression at evaluation time."}
    'h-err/symbols-not-bound {:doc "Unbound symbols are referenced in an expression at type-check time."}
    'h-err/syntax-error {:doc "An object appeared in an expression that is not one of the expected values for the language."}

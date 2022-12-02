@@ -65,6 +65,9 @@
 (deferr spec-threw [data]
         {:template "Spec threw error: :spec-error-str"})
 
+(deferr instance-threw [data]
+        {:template "Instance threw error: :instance-error-str"})
+
 (deferr unknown-function-or-operator [data]
         {:template "Unknown function or operator: :op"})
 

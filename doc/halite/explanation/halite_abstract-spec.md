@@ -43,8 +43,9 @@ The instance of the abstract spec cannot be used in the construction of the pain
 
 
 ;-- result --
-[:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"
- :h-err/no-abstract]
+[:throws
+ "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""
+ :h-err/instance-threw]
 ```
 
 To create an instance of the composite painting spec, we need to define an additional spec which refines to the abstract spec, square.

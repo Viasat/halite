@@ -129,8 +129,9 @@ In fact, there is no way to make this refinement work because the animal field c
 
 
 ;-- result --
-[:throws "h-err/no-abstract 0-0 : Instance cannot contain abstract value"
- :h-err/no-abstract]
+[:throws
+ "h-err/instance-threw 0-0 : Instance threw error: \"Instance cannot contain abstract value\""
+ :h-err/instance-threw]
 ```
 
 ### Reference

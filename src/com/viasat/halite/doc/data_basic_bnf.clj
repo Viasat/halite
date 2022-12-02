@@ -124,7 +124,8 @@
                        'h-err/invalid-type-value
                        'h-err/not-boolean-constraint ;; is this right?
                        'h-err/spec-cycle-runtime
-                       'h-err/refinement-diamond]
+                       'h-err/refinement-diamond
+                       'h-err/instance-threw]
               :how-to-ref [:instance/spec-fields]
               :tutorial-ref [:spec/sudoku]
               :tags #{'instance-out 'instance-op 'instance-field-op}}
