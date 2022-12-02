@@ -93,20 +93,21 @@
           (list 'let original-as-bindings instance-literal))))))
 
 (defn realize-intrisic-refinements [sctx]
-  (rewriting/squash-trace! {:rule "realize-intrisic-refinements"}
-    (-> sctx
-        ;; add refinement variables to specs:
-        (update-vals
-         (fn [spec]
-           (update spec :fields (fnil into {})
-                   (->> (:refines-to spec)
-                        (remove #(-> % val :inverted?))
-                        (map (fn [[to-spec-id {:keys [expr]}]]
-                               [(refinement-field to-spec-id)
-                                (-> spec :ssa-graph (ssa/deref-id expr) ssa/node-type)]))))))
-        ;; add refinement variables to instance literals:
-        (rewriting/rewrite-reachable-sctx
-         [(rewriting/rule realize-intrisic-refinements-expr)]))))
+  (rewriting/squash-trace!
+   {:rule "realize-intrisic-refinements"}
+   (-> sctx
+       ;; add refinement variables to specs:
+       (update-vals
+        (fn [spec]
+          (update spec :fields (fnil into {})
+                  (->> (:refines-to spec)
+                       (remove #(-> % val :inverted?))
+                       (map (fn [[to-spec-id {:keys [expr]}]]
+                              [(refinement-field to-spec-id)
+                               (-> spec :ssa-graph (ssa/deref-id expr) ssa/node-type)]))))))
+       ;; add refinement variables to instance literals:
+       (rewriting/rewrite-reachable-sctx
+        [(rewriting/rule realize-intrisic-refinements-expr)]))))
 
 (defn add-refinement-constraints [sctx]
   (zipmap (keys sctx)

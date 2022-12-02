@@ -85,7 +85,7 @@
                 :my/C {:fields {:c1 :Integer}
                        :refines-to {:my/B {:expr {:$type :my/B, :b1 (+ 5 c1)}}}}
                 :my/D {:fields {:a [:Instance :my/A]
-                                   :c1 :Integer}
+                                :c1 :Integer}
                        :constraints [["rto" (= a (refine-to {:$type :my/C
                                                              :c1 c1}
                                                             :my/A))]]}})]
@@ -168,7 +168,6 @@
                       :dm {:$in [2 6]},
                       :dn {:$in [1 5]}})))
 
-
 (deftest test-refine-to-of-unknown-type
   (let [sctx (ssa/spec-map-to-ssa
               '{:t/A {:fields {:y :Integer}
@@ -193,31 +192,30 @@
     (is (= {:$type :t/D, :x 6, :cn 26}
            (pr/propagate sctx {:$type :t/D, :x 6})))))
 
-#_
-(deftest test-optionals-travel-together
-  (let [specs '{:ws/A {:fields {:an "Integer"}
-                       :constraints [["a1" (< 0 an)]]
-                       :refines-to {}}
-                :ws/B {:fields {:bn "Integer"}
-                       :constraints [["b1" (< bn 10)]]
-                       :refines-to {:ws/A {:expr {:$type :ws/A :an bn}}}}
-                :ws/C {:fields {:b [:Maybe :ws/B] :cn "Integer"}
-                       :constraints [["c1" (if-value b (= cn (get (refine-to b :ws/A) :an)) true)]]
-                       :refines-to {}}}
-        sctx (-> specs (update-vals full-spec-info) ssa/spec-map-to-ssa)]
+#_(deftest test-optionals-travel-together
+    (let [specs '{:ws/A {:fields {:an "Integer"}
+                         :constraints [["a1" (< 0 an)]]
+                         :refines-to {}}
+                  :ws/B {:fields {:bn "Integer"}
+                         :constraints [["b1" (< bn 10)]]
+                         :refines-to {:ws/A {:expr {:$type :ws/A :an bn}}}}
+                  :ws/C {:fields {:b [:Maybe :ws/B] :cn "Integer"}
+                         :constraints [["c1" (if-value b (= cn (get (refine-to b :ws/A) :an)) true)]]
+                         :refines-to {}}}
+          sctx (-> specs (update-vals full-spec-info) ssa/spec-map-to-ssa)]
 
-    (is (=
-         {:$type :ws/C,
-          :b {:$type [:Maybe :ws/B],
-              :bn {:$in [-1000 1000]},
-              :$refines-to {:ws/A :Unset}}, ;; TODO: since this is unset, :b should also be unset
-          :cn {:$in [-1000 1000]}}
+      (is (=
+           {:$type :ws/C,
+            :b {:$type [:Maybe :ws/B],
+                :bn {:$in [-1000 1000]},
+                :$refines-to {:ws/A :Unset}}, ;; TODO: since this is unset, :b should also be unset
+            :cn {:$in [-1000 1000]}}
 
-         (pr/propagate
-          sctx
-          {:$type :ws/C
-           :b {:$type [:Maybe :ws/B]
-               :$refines-to {:ws/A {:an 12}}}})))))
+           (pr/propagate
+            sctx
+            {:$type :ws/C
+             :b {:$type [:Maybe :ws/B]
+                 :$refines-to {:ws/A {:an 12}}}})))))
 
 (deftest test-lower-bound
   (s/with-fn-validation
@@ -270,7 +268,7 @@
         specs (ssa/spec-map-to-ssa nested-optionals-spec-env)]
 
     (are [in out]
-        (= out (pr/propagate specs opts in))
+         (= out (pr/propagate specs opts in))
 
       {:$type :ws/D}
       {:$type :ws/D
@@ -340,12 +338,12 @@
 
 (deftest test-refines-to-bounds-with-optionals
   (let [specs '{:my/A {:fields {:a1 :Integer, :a2 [:Maybe :Integer]}
-                         :constraints [["a1_pos" (< 0 a1)]]}
-                  :my/B {:fields {:b1 :Integer}
-                         :refines-to {:my/A {:expr {:$type :my/A,
-                                                    :a1 (+ 10 b1),
-                                                    :a2 (when (< 5 b1) (+ 2 b1))}}}}
-                  :my/C {:fields {:cb [:Maybe [:Instance :my/B]]}}}
+                       :constraints [["a1_pos" (< 0 a1)]]}
+                :my/B {:fields {:b1 :Integer}
+                       :refines-to {:my/A {:expr {:$type :my/A,
+                                                  :a1 (+ 10 b1),
+                                                  :a2 (when (< 5 b1) (+ 2 b1))}}}}
+                :my/C {:fields {:cb [:Maybe [:Instance :my/B]]}}}
         sctx (ssa/spec-map-to-ssa specs)]
 
     (testing "basic optionals"
@@ -397,12 +395,12 @@
                (pr/propagate sctx {:$type :my/D,
                                    :$refines-to {:my/A {:a2 {:$in [-5 15]}}}})))
 
-        #_ ;; old version produced these tighter bounds:
-        {:$type :my/D,
-         :d1 {:$in [3 6]},
-         :$refines-to {:my/B {:b1 {:$in [6 12]}},
-                       :my/A {:a1 {:$in [16 22]},
-                              :a2 {:$in [8 14]}}}}
+        #_;; old version produced these tighter bounds:
+          {:$type :my/D,
+           :d1 {:$in [3 6]},
+           :$refines-to {:my/B {:b1 {:$in [6 12]}},
+                         :my/A {:a1 {:$in [16 22]},
+                                :a2 {:$in [8 14]}}}}
         (is (= {:$type :my/D,
                 :d1 {:$in [-2 7]},
                 :$refines-to {:my/B {:b1 {:$in [-4 14]}},
@@ -440,9 +438,9 @@
 
 (deftest test-maybe-refines-to-bounds-tight
   (let [specs '{:my/A {:fields {:ab [:Maybe [:Instance :my/B]]}}
-                  :my/B {:refines-to {:my/C {:expr {:$type :my/C
-                                                    :cn 5}}}}
-                  :my/C {:fields {:cn :Integer}}}
+                :my/B {:refines-to {:my/C {:expr {:$type :my/C
+                                                  :cn 5}}}}
+                :my/C {:fields {:cn :Integer}}}
         sctx (ssa/spec-map-to-ssa specs)]
 
     (is (= '{:fields {:ab? :Boolean, :ab|>my$C|cn [:Maybe :Integer]}
@@ -451,9 +449,9 @@
                              {:$type :my/A,
                               :ab (when ab?
                                     (if-value ab|>my$C|cn
-                                      {:$type :my/B,
-                                       :>my$C {:$type :my/C, :cn ab|>my$C|cn}}
-                                      $no-value))})]
+                                              {:$type :my/B,
+                                               :>my$C {:$type :my/C, :cn ab|>my$C|cn}}
+                                              $no-value))})]
                            ["$ab?" (= ab? (if-value ab|>my$C|cn true false))]]}
            (pc/spec-ify-bound (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
                               {:$type :my/A})))
@@ -482,16 +480,14 @@
 
       ;; There was once a version of propagate that produced these bounds, which
       ;; also seem valid:
-      #_
-      {:$type :my/C,
-       :cb {:$type [:Maybe :my/B],
-            :b1 {:$in [-1000 1000]},
-            :$refines-to {:my/A {:a1 {:$in [1 1000]},
-                                 :a2 {:$in [8 992 :Unset]}}}}}
-      #_
-      (prn :eval
-           (halite/eval-expr specs (halite/type-env {}) (halite/env {})
-                             '(refine-to {:$type :my/B :b1 991} :my/A))))))
+      #_{:$type :my/C,
+         :cb {:$type [:Maybe :my/B],
+              :b1 {:$in [-1000 1000]},
+              :$refines-to {:my/A {:a1 {:$in [1 1000]},
+                                   :a2 {:$in [8 992 :Unset]}}}}}
+      #_(prn :eval
+             (halite/eval-expr specs (halite/type-env {}) (halite/env {})
+                               '(refine-to {:$type :my/B :b1 991} :my/A))))))
 
 (deftest test-refines-to-bounds-errors
   (let [sctx (ssa/spec-map-to-ssa
@@ -539,8 +535,8 @@
                        :constraints [["$all" (= (refine-to {:dx dx, :$type :ws/D} :ws/B)
                                                 {:bw bw,
                                                  :c2 (if-value cw
-                                                       {:cw cw, :$type :ws/C}
-                                                       $no-value),
+                                                               {:cw cw, :$type :ws/C}
+                                                               $no-value),
                                                  :$type :ws/B})]]}})]
     (is (= {:$type :ws/E, :bw {:$in #{5 :Unset}}, :cw 6, :dx {:$in [-10 10]}}
            (pr/propagate sctx {:default-int-bounds [-10 10]} {:$type :ws/E})))))
@@ -583,110 +579,108 @@
                (ssa/spec-from-ssa)
                :constraints first second)))))
 
-#_
-(deftest test-guarded-refinement
-  (let [sctx (ssa/spec-map-to-ssa
-              '{:my/A {:fields {:a1 :Integer}
-                       :constraints {:a1_pos (< 0 a1)}}
-                :my/B {:fields {:b1 :Integer}
-                       :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
-                :my/C {:fields {:c1 :Integer}
-                       :refines-to {:my/B {:expr (when (< c1 5)
-                                                   {:$type :my/B, :b1 (+ 5 c1)})}}}
-                :my/D {:refines-to {:my/A {:expr {:$type :my/A, :a1 10}}}}})]
+#_(deftest test-guarded-refinement
+    (let [sctx (ssa/spec-map-to-ssa
+                '{:my/A {:fields {:a1 :Integer}
+                         :constraints {:a1_pos (< 0 a1)}}
+                  :my/B {:fields {:b1 :Integer}
+                         :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
+                  :my/C {:fields {:c1 :Integer}
+                         :refines-to {:my/B {:expr (when (< c1 5)
+                                                     {:$type :my/B, :b1 (+ 5 c1)})}}}
+                  :my/D {:refines-to {:my/A {:expr {:$type :my/A, :a1 10}}}}})]
 
-    (s/with-fn-validation
+      (s/with-fn-validation
+        (is (= {:$type :my/C,
+                :c1 {:$in [-14 1000]},
+                :>:my$B {:$type [:Maybe :my/B],
+                         :b1 {:$in [-9 9]},
+                         :>:my$A {:$type :my/A,
+                                  :a1 {:$in [1 19]}}}}
+
+               (pr/lower-bound
+                sctx
+                {:$type :my/C,
+                 :c1 {:$in [-14 1000]},
+                 :$refines-to {:my/B {:$type [:Maybe :my/B],
+                                      :b1 {:$in [-9 9]}}
+                               :my/A {:$type :my/A,
+                                      :a1 {:$in [1 19]}}}})))
+
+        (is (thrown-with-msg? Exception #"No.*refinement path"
+                              (pr/lower-bound
+                               sctx
+                               {:$type :my/C,
+                                :$refines-to {:my/A {:$type :my/A}}}))))
+
       (is (= {:$type :my/C,
               :c1 {:$in [-14 1000]},
-              :>:my$B {:$type [:Maybe :my/B],
-                       :b1 {:$in [-9 9]},
-                       :>:my$A {:$type :my/A,
-                                :a1 {:$in [1 19]}}}}
+              :$refines-to {:my/B
+                            {:$type [:Maybe :my/B],
+                             :b1 {:$in [-9 9]},
+                             :$refines-to {:my/A {:$type :my/A,
+                                                  :a1 {:$in [1 19]}}}}}}
 
-             (pr/lower-bound
-              sctx
-              {:$type :my/C,
-               :c1 {:$in [-14 1000]},
-               :$refines-to {:my/B {:$type [:Maybe :my/B],
-                                    :b1 {:$in [-9 9]}}
-                             :my/A {:$type :my/A,
-                                    :a1 {:$in [1 19]}}}})))
+             (pr/propagate sctx {:$type :my/C})))))
 
-      (is (thrown-with-msg? Exception #"No.*refinement path"
-                            (pr/lower-bound
-                             sctx
-                             {:$type :my/C,
-                              :$refines-to {:my/A {:$type :my/A}}}))))
-
-    (is (= {:$type :my/C,
-            :c1 {:$in [-14 1000]},
-            :$refines-to {:my/B
-                          {:$type [:Maybe :my/B],
-                           :b1 {:$in [-9 9]},
-                           :$refines-to {:my/A {:$type :my/A,
-                                                :a1 {:$in [1 19]}}}}}}
-
-           (pr/propagate sctx {:$type :my/C})))))
-
-#_
-(deftest test-refine-to-of-guarded
-  (let [sctx (ssa/spec-map-to-ssa
-              '{:my/A {:fields {:a1 :Integer}
-                       :constraints {:a1_pos (< 0 a1)}}
-                :my/B {:fields {:b1 :Integer}
-                       :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
-                :my/C {:fields {:c1 :Integer}
-                       :refines-to {:my/B {:expr (when (< c1 5)
-                                                   {:$type :my/B, :b1 (+ 5 c1)})}}}
-                :my/D {:fields {:a [:Instance :my/A]
-                                   :c1 :Integer}
-                       :constraints {:rto (= a (refine-to {:$type :my/C
-                                                           :c1 c1}
-                                                          :my/A))}}})]
-
-    (s/with-fn-validation
-      (is (= '{:my/A {:fields {:a1 :Integer}
-                      :constraints {"$all" (< 0 a1)},
-                      :refines-to {}},
-               :my/B {:fields {:b1 :Integer
-                                  :>:my$A [:Instance :my/A]}
-                      :constraints {"$all" (= >:my$A {:$type :my/A, :a1 (+ 10 b1)})},
-                      :refines-to {}},
-               :my/C {:fields {:c1 :Integer
-                                  :>:my$B [:Maybe [:Instance :my/B]]}
-                      :constraints
-                      {"$all" (= >:my$B
-                                 (when (< c1 5)
-                                   (let [v1 (+ 5 c1)]
-                                     {:$type :my/B,
-                                      :>:my$A {:$type :my/A, :a1 (+ 10 v1)},
-                                      :b1 v1})))},
-                      :refines-to {}},
-               :my/D {:fields {:a [:Instance :my/A]
+#_(deftest test-refine-to-of-guarded
+    (let [sctx (ssa/spec-map-to-ssa
+                '{:my/A {:fields {:a1 :Integer}
+                         :constraints {:a1_pos (< 0 a1)}}
+                  :my/B {:fields {:b1 :Integer}
+                         :refines-to {:my/A {:expr {:$type :my/A, :a1 (+ 10 b1)}}}}
+                  :my/C {:fields {:c1 :Integer}
+                         :refines-to {:my/B {:expr (when (< c1 5)
+                                                     {:$type :my/B, :b1 (+ 5 c1)})}}}
+                  :my/D {:fields {:a [:Instance :my/A]
                                   :c1 :Integer}
-                      :constraints
-                      {"$all" (let [v1 (get (let [v1 c1]
-                                              {:$type :my/C,
-                                               :>:my$B (when (< v1 5)
-                                                         (let [v2 (+ 5 v1)]
-                                                           {:$type :my/B,
-                                                            :>:my$A {:$type :my/A, :a1 (+ 10 v2)},
-                                                            :b1 v2})),
-                                               :c1 v1})
-                                            :>:my$B)
-                                    v2 (get (if-value v1
-                                              v1
-                                              (error "No active refinement path"))
-                                            :>:my$A)]
-                                (= a (if-value v2
-                                       v2
-                                       (error "No active refinement path"))))},
-                      :refines-to {}}}
-             (update-vals (pr/lower-spec-refinements sctx)
-                          ssa/spec-from-ssa))))
+                         :constraints {:rto (= a (refine-to {:$type :my/C
+                                                             :c1 c1}
+                                                            :my/A))}}})]
 
-    (is (= {:$type :my/D,
-            :c1 {:$in [-14 4]}
-            :a {:$type :my/A,
-                :a1 {:$in [1 19]}}}
-           (pr/propagate sctx {:$type :my/D})))))
+      (s/with-fn-validation
+        (is (= '{:my/A {:fields {:a1 :Integer}
+                        :constraints {"$all" (< 0 a1)},
+                        :refines-to {}},
+                 :my/B {:fields {:b1 :Integer
+                                 :>:my$A [:Instance :my/A]}
+                        :constraints {"$all" (= >:my$A {:$type :my/A, :a1 (+ 10 b1)})},
+                        :refines-to {}},
+                 :my/C {:fields {:c1 :Integer
+                                 :>:my$B [:Maybe [:Instance :my/B]]}
+                        :constraints
+                        {"$all" (= >:my$B
+                                   (when (< c1 5)
+                                     (let [v1 (+ 5 c1)]
+                                       {:$type :my/B,
+                                        :>:my$A {:$type :my/A, :a1 (+ 10 v1)},
+                                        :b1 v1})))},
+                        :refines-to {}},
+                 :my/D {:fields {:a [:Instance :my/A]
+                                 :c1 :Integer}
+                        :constraints
+                        {"$all" (let [v1 (get (let [v1 c1]
+                                                {:$type :my/C,
+                                                 :>:my$B (when (< v1 5)
+                                                           (let [v2 (+ 5 v1)]
+                                                             {:$type :my/B,
+                                                              :>:my$A {:$type :my/A, :a1 (+ 10 v2)},
+                                                              :b1 v2})),
+                                                 :c1 v1})
+                                              :>:my$B)
+                                      v2 (get (if-value v1
+                                                        v1
+                                                        (error "No active refinement path"))
+                                              :>:my$A)]
+                                  (= a (if-value v2
+                                                 v2
+                                                 (error "No active refinement path"))))},
+                        :refines-to {}}}
+               (update-vals (pr/lower-spec-refinements sctx)
+                            ssa/spec-from-ssa))))
+
+      (is (= {:$type :my/D,
+              :c1 {:$in [-14 4]}
+              :a {:$type :my/A,
+                  :a1 {:$in [1 19]}}}
+             (pr/propagate sctx {:$type :my/D})))))

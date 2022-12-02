@@ -609,12 +609,12 @@
 
 (deftest test-refines-to-self
   (let [sctx (ssa/spec-map-to-ssa
-                        '{:ws/T {:fields {:a [:Maybe [:Instance :* #{:ws/A}]]}}
-                          :ws/A {:abstract? true}
-                          :ws/X {:fields {:n :Integer}
-                                 :refines-to {:ws/A {:expr {:$type :ws/A}}}}
-                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X
-                                                            :n 5}}}}})]
+              '{:ws/T {:fields {:a [:Maybe [:Instance :* #{:ws/A}]]}}
+                :ws/A {:abstract? true}
+                :ws/X {:fields {:n :Integer}
+                       :refines-to {:ws/A {:expr {:$type :ws/A}}}}
+                :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X
+                                                  :n 5}}}}})]
     (is (= {:$type :ws/T,
             :a {:$in {:Unset true,
                       :ws/X {:n 5,

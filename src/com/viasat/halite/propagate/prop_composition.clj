@@ -84,7 +84,7 @@
                                (cond->> htype
                                  actually-mandatory? types/maybe-type)])
                 (cond->
-                    actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
+                 actually-mandatory? (update ::mandatory conj prefixed-var-kw))))
 
           (types/spec-maybe-type? htype)
           (let [spec-id (types/spec-id (unwrap-maybe htype))
@@ -354,8 +354,7 @@
            (rewriting/rule lowering/push-gets-into-ifs-expr)
            (rewriting/rule lowering/push-comparison-into-nonprimitive-if-in-expr)
            (rewriting/rule lowering/eliminate-unused-instance-valued-exprs-in-do-expr)
-           (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)
-           ])
+           (rewriting/rule lowering/eliminate-unused-no-value-exprs-in-do-expr)])
          simplify/simplify
          :$propagate/Bounds
          (prop-strings/propagate opts lowered-bounds)
