@@ -128,10 +128,10 @@
           h-result (try (eval-h-expr spec-map tenv env expr)
                         (catch ExceptionInfo e
                           (vary-meta
-                            (if separate-err-id?
-                              [:throws (.getMessage e) (:err-id (ex-data e))]
-                              [:throws (.getMessage e)])
-                            assoc :ex e))
+                           (if separate-err-id?
+                             [:throws (.getMessage e) (:err-id (ex-data e))]
+                             [:throws (.getMessage e)])
+                           assoc :ex e))
                         (catch RuntimeException e
                           (vary-meta [:throws (.getMessage e)]
                                      assoc :ex e)))
