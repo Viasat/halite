@@ -181,10 +181,8 @@
                       data)))))
 
 (defn extend-err-data [data]
-  (-> (merge (-> data :form meta (select-keys [:row :col :end-row :end-col]))
-             data)
-      (dissoc :message)
-      (assoc :message-template (:message data))))
+  (merge (-> data :form meta (select-keys [:row :col :end-row :end-col]))
+         data))
 
 (defn format-msg* [err-id msg-str data-map original-data-map]
   (-> msg-str
@@ -248,8 +246,8 @@
                       (pr-str v))]))
        (apply hash-map)))
 
-(defn format-msg [{:keys [err-id message-template] :as data-map}]
-  (format-msg* err-id message-template (format-data-map data-map) data-map))
+(defn format-msg [{:keys [err-id template] :as data-map}]
+  (format-msg* err-id template (format-data-map data-map) data-map))
 
 (defn site-code [^Namespace ns form]
   (str (mod (.hashCode (str (ns-name ns))) 1000) "-" (:line (meta form))))

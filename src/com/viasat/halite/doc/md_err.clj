@@ -11,7 +11,7 @@
         "<a name=\"" (utils/safe-op-anchor err-id) "\"></a>"
         err-id "\n\n" (:doc err) "\n\n"
         "#### Error message template:" "\n\n"
-        "> " (:message err)
+        "> " (:template err)
         "\n\n"
         (when-let [thrown-bys (:thrown-by-basic err)]
           ["#### Produced by elements:\n\n"
