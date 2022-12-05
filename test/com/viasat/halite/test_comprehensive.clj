@@ -390,6 +390,7 @@
    "(1 / 9223372036854775807)"
    "0")
   (h (mod 3 2) :Integer 1 "(3 % 2)" "1")
+  (h (let [x 2] (mod 3 x)) :Integer 1 "({ x = 2; (3 % x) })" "1")
   (h (mod 1 3) :Integer 1 "(1 % 3)" "1")
   (h (mod -1 3) :Integer 2 "(-1 % 3)" "2")
   (h (mod 1 -3) :Integer -2 "(1 % -3)" "-2")
@@ -10186,9 +10187,8 @@
                                            :x y}}}}}
    [(refine-to {:$type :spec/A, :x 1} :spec/A)
     [:Instance :spec/A]
-    {:$type :spec/A, :x 1}
-    "{$type: spec/A, x: 1}.refineTo( spec/A )"
-    "{$type: spec/A, x: 1}"])
+    [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
+    "{$type: spec/A, x: 1}.refineTo( spec/A )" [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
 
   (hc
    {:spec/A {:fields {:x :Integer}
@@ -10202,9 +10202,8 @@
                                            :x y}}}}}
    [(refine-to (refine-to {:$type :spec/A, :x 1} :spec/B) :spec/A)
     [:Instance :spec/A]
-    {:$type :spec/A, :x 0}
-    "{$type: spec/A, x: 1}.refineTo( spec/B ).refineTo( spec/A )"
-    "{$type: spec/A, x: 0}"])
+    [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
+    "{$type: spec/A, x: 1}.refineTo( spec/B ).refineTo( spec/A )" [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
 
   (hc
    {:spec/A {:fields {:x :Integer}
@@ -10218,11 +10217,11 @@
                                            :x y}}}}}
    [(refine-to (refine-to (refine-to {:$type :spec/A, :x 1} :spec/B) :spec/A) :spec/B)
     [:Instance :spec/B]
-    [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A' to 'spec/B'"]
+    [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
     "{$type: spec/A, x: 1}.refineTo( spec/B ).refineTo( spec/A ).refineTo( spec/B )"
-    [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/A' to 'spec/B'"]]))
+    [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]]))
 
-(deftest test-recursive-refinement
+(deftest test-recursive-refinement-2
   (hc {:spec/Mirror {:refines-to {:spec/Mirror {:name "refine_to_Mirror"
                                                 :expr '{:$type :spec/Mirror}}}}}
       [{:$type :spec/Mirror}
@@ -10240,6 +10239,63 @@
        [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
        "{$type: spec/A}"
        [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]]))
+
+(deftest test-structural-and-refinement-loop
+  (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                      :expr '{:$type :spec/B
+                                              :a {:$type :spec/A}}}}}
+       :spec/B {:fields {:a :spec/A}}}
+      [{:$type :spec/A}
+       [:Instance :spec/A]
+       [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
+       "{$type: spec/A}"
+       [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
+  (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                      :expr '{:$type :spec/B}}}}
+       :spec/B {:fields {:a [:Maybe :spec/A]}}}
+      [{:$type :spec/A}
+       [:Instance :spec/A]
+       {:$type :spec/A}
+       "{$type: spec/A}"
+       "{$type: spec/A}"])
+  (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                      :expr '{:$type :spec/B
+                                              :a {:$type :spec/A}}}}}
+       :spec/B {:fields {:a [:Maybe :spec/A]}}}
+      [{:$type :spec/A}
+       [:Instance :spec/A]
+       [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]
+       "{$type: spec/A}"
+       [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
+  (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                      :expr '{:$type :spec/B}
+                                      :inverted? true}}}
+       :spec/B {:fields {:a [:Maybe :spec/A]}}}
+      [{:$type :spec/A}
+       [:Instance :spec/A]
+       {:$type :spec/A}
+       "{$type: spec/A}"
+       "{$type: spec/A}"])
+  (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                      :expr '{:$type :spec/B
+                                              :a {:$type :spec/A}}
+                                      :inverted? true}}}
+       :spec/B {:fields {:a [:Maybe :spec/A]}}}
+      [{:$type :spec/A}
+       [:Instance :spec/A]
+       {:$type :spec/A}
+       "{$type: spec/A}"
+       "{$type: spec/A}"])
+  (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
+                                      :expr '{:$type :spec/B
+                                              :a {:$type :spec/A}}
+                                      :inverted? true}}}
+       :spec/B {:fields {:a [:Maybe :spec/A]}}}
+      [(refine-to {:$type :spec/A} :spec/B)
+       [:Instance :spec/B]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/A' failed unexpectedly: \"h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies\""]
+       "{$type: spec/A}.refineTo( spec/B )"
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/A' failed unexpectedly: \"h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies\""]]))
 
 (deftest test-refinement-errors
   ;; guard error
@@ -10554,6 +10610,118 @@
 b" :String "a\nb" "\"a\\nb\"" "\"a\\nb\"")
   (is (= "a\nb" (doc-run/j-eval "\"a
 b\""))))
+
+(deftest test-turing-machine
+  (hc {:spec/Machine {:fields {:data [:Vec :Integer]
+                               :data-pointer :Integer
+                               :input [:Vec :String]
+                               :instruction-pointer :Integer}}
+       :spec/IncrementDataPointer {:fields {:machine :spec/Machine}
+                                   :refines-to {:spec/Machine {:name "increment data pointer"
+                                                               :expr '{:$type :spec/Machine
+                                                                       :data (get machine :data)
+                                                                       :data-pointer (inc (get machine :data-pointer))
+                                                                       :input (get machine :input)
+                                                                       :instruction-pointer (inc (get machine :instruction-pointer))}}}}
+       :spec/DecrementDataPointer {:fields {:machine :spec/Machine}
+                                   :refines-to {:spec/Machine {:name "decrement data pointer"
+                                                               :expr '{:$type :spec/Machine
+                                                                       :data (get machine :data)
+                                                                       :data-pointer (dec (get machine :data-pointer))
+                                                                       :input (get machine :input)
+                                                                       :instruction-pointer (inc (get machine :instruction-pointer))}}}}
+       :spec/Increment {:fields {:machine :spec/Machine}
+                        :refines-to {:spec/Machine {:name "increment"
+                                                    :expr '{:$type :spec/Machine
+                                                            :data (reduce [a []] [i (range (count (get machine :data)))]
+                                                                          (conj a (if (= i (get machine :data-pointer))
+                                                                                    (inc (get (get machine :data) i))
+                                                                                    (get (get machine :data) i))))
+                                                            :data-pointer (get machine :data-pointer)
+                                                            :input (get machine :input)
+                                                            :instruction-pointer (inc (get machine :instruction-pointer))}}}}
+       :spec/Decrement {:fields {:machine :spec/Machine}
+                        :refines-to {:spec/Machine {:name "decrement"
+                                                    :expr '{:$type :spec/Machine
+                                                            :data (reduce [a []] [i (range (count (get machine :data)))]
+                                                                          (conj a (if (= i (get machine :data-pointer))
+                                                                                    (dec (get (get machine :data) i))
+                                                                                    (get (get machine :data) i))))
+                                                            :data-pointer (get machine :data-pointer)
+                                                            :input (get machine :input)
+                                                            :instruction-pointer (inc (get machine :instruction-pointer))}}}}
+       :spec/JumpAhead {:fields {:machine :spec/Machine}
+                        :refines-to {:spec/Machine {:name "jump ahead"
+                                                    :expr '{:$type :spec/Machine
+                                                            :data (get machine :data)
+                                                            :data-pointer (get machine :data-pointer)
+                                                            :input (get machine :input)
+                                                            :instruction-pointer (if (= 0
+                                                                                        (get (get machine :data)
+                                                                                             (get machine :data-pointer)))
+                                                                                   (reduce [a -99]
+                                                                                           [i (range (get machine :instruction-pointer)
+                                                                                                     (count (get machine :input)))]
+                                                                                           (if (and (= a -99)
+                                                                                                    (= "back" (get (get machine :input) i)))
+                                                                                             i
+                                                                                             a))
+                                                                                   (inc (get machine :instruction-pointer)))}}}}
+       :spec/JumpBack {:fields {:machine :spec/Machine}
+                       :refines-to {:spec/Machine
+                                    {:name "jump back"
+                                     :expr
+                                     '{:$type :spec/Machine
+                                       :data (get machine :data)
+                                       :data-pointer (get machine :data-pointer)
+                                       :input (get machine :input)
+                                       :instruction-pointer (if (= 0
+                                                                   (get (get machine :data)
+                                                                        (get machine :data-pointer)))
+                                                              (inc (get machine :instruction-pointer))
+                                                              (reduce [a -99]
+                                                                      [i (range 1 (inc (get machine :instruction-pointer)))]
+                                                                      (if (and (= a -99)
+                                                                               (= "jump" (get (get machine :input)
+                                                                                              (- (get machine :instruction-pointer) i))))
+                                                                        (- (get machine :instruction-pointer) i)
+                                                                        a)))}}}}
+       :spec/Step {:fields {:machine :spec/Machine}
+                   :refines-to {:spec/Machine {:name "step"
+                                               :expr
+                                               '(let [instruction (get (get machine :input) (get machine :instruction-pointer))
+                                                      command (cond
+                                                                (= ">>" instruction) {:$type :spec/IncrementDataPointer :machine machine}
+                                                                (= "<<" instruction) {:$type :spec/DecrementDataPointer :machine machine}
+                                                                (= "inc" instruction) {:$type :spec/Increment :machine machine}
+                                                                (= "dec" instruction) {:$type :spec/Decrement :machine machine}
+                                                                (= "jump" instruction) {:$type :spec/JumpAhead :machine machine}
+                                                                (= "back" instruction) {:$type :spec/JumpBack :machine machine}
+                                                                (error "unknown instruction"))]
+                                                  (refine-to command :spec/Machine))}}}
+       :spec/Go {:fields {:machine :spec/Machine
+                          :max-steps :Integer}
+                 :refines-to {:spec/Machine {:name "go"
+                                             :expr
+                                             '(reduce [m machine]
+                                                      [i (range max-steps)]
+                                                      (if (< (get m :instruction-pointer) (count (get m :input)))
+                                                        (refine-to {:$type :spec/Step :machine m} :spec/Machine)
+                                                        m))}}}}
+
+      [(let [m {:$type :spec/Machine
+                :data [3 1]
+                :data-pointer 0
+                :input ["jump" "dec" ">>" "inc" "<<" "back"]
+                :instruction-pointer 0}]
+         (refine-to {:$type :spec/Go
+                     :machine m
+                     :max-steps 400}
+                    :spec/Machine))
+       [:Instance :spec/Machine]
+       {:$type :spec/Machine, :data [0 4], :data-pointer 0, :input ["jump" "dec" ">>" "inc" "<<" "back"], :instruction-pointer 6}
+       "({ m = {$type: spec/Machine, 'data-pointer': 0, 'instruction-pointer': 0, data: [3, 1], input: [\"jump\", \"dec\", \">>\", \"inc\", \"<<\", \"back\"]}; {$type: spec/Go, 'max-steps': 400, machine: m}.refineTo( spec/Machine ) })"
+       "{$type: spec/Machine, 'data-pointer': 0, 'instruction-pointer': 6, data: [0, 4], input: [\"jump\", \"dec\", \">>\", \"inc\", \"<<\", \"back\"]}"]))
 
 (defn- update-expected-results []
   (->> (read-string
