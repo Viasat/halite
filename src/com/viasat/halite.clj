@@ -22,6 +22,8 @@
 
 (set! *warn-on-reflection* true)
 
+(def ^:dynamic *debug* false)
+
 (s/defn ^:private eval-predicate :- Boolean
   [ctx :- eval/EvalContext
    tenv :- (s/protocol envs/TypeEnv)
@@ -138,7 +140,8 @@
            (type-check-env senv tenv loaded-env))
          (optionally-with-eval-bindings
           type-check-spec-refinements-and-constraints?
-          (eval/eval-expr* {:env loaded-env :senv senv} expr)))))))
+          (binding [eval/*debug* *debug*]
+            (eval/eval-expr* {:env loaded-env :senv senv} expr))))))))
 
 (defn syntax-check
   ([expr]

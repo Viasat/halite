@@ -540,96 +540,104 @@
                       :vector-runtime-count)
                     x))
 
+(def ^:dynamic *debug* false)
+
 (s/defn eval-expr* :- s/Any
   [ctx :- EvalContext, expr]
-  (let [eval-in-env (partial eval-expr* ctx)]
-    (cond
-      (or (boolean? expr)
-          (base/integer-or-long? expr)
-          (string? expr)) expr
-      (base/fixed-decimal? expr) expr
-      (symbol? expr) (if (= '$no-value expr)
-                       :Unset
-                       (let [b (envs/bindings (:env ctx))]
-                         (if (contains? b expr)
-                           (get b expr)
-                           (throw-err (h-err/symbol-undefined {:form expr})))))
-      (map? expr) (with-exception-data {:form expr}
-                    (->> (dissoc expr :$type)
-                         (map (fn [[k v]] [k (eval-in-env v)]))
-                         (remove (fn [[k v]] (= :Unset v)))
-                         (into (select-keys expr [:$type]))
-                         (validate-instance (:senv ctx))))
-      (seq? expr) (condp = (first expr)
-                    'get (eval-get ctx expr)
-                    'get-in (eval-get-in ctx expr)
-                    '= (apply = (mapv eval-in-env (rest expr)))
-                    'not= (apply not= (mapv eval-in-env (rest expr)))
-                    'rescale (let [[_ f s] expr]
-                               (fixed-decimal/set-scale (eval-in-env f) s))
-                    'if (let [[pred then else] (rest expr)]
-                          (eval-in-env (if (eval-in-env pred) then else)))
-                    'cond (loop [[pred then & more] (rest expr)]
-                            (if (nil? then)
-                              (eval-in-env pred)
-                              (if (eval-in-env pred)
-                                (eval-in-env then)
-                                (recur more))))
-                    'when (let [[pred body] (rest expr)]
-                            (if (eval-in-env pred)
-                              (eval-in-env body)
-                              :Unset))
-                    'let (apply eval-let ctx (rest expr))
-                    'if-value (eval-if-value ctx expr)
-                    'when-value (eval-if-value ctx expr) ; eval-if-value handles when-value
-                    'if-value-let (eval-if-value-let ctx expr)
-                    'when-value-let (eval-if-value-let ctx expr) ; eval-if-value-let handles when-value-let
-                    'union (reduce set/union (map eval-in-env (rest expr)))
-                    'intersection (reduce set/intersection (map eval-in-env (rest expr)))
-                    'difference (apply set/difference (map eval-in-env (rest expr)))
-                    'first (or (first (eval-in-env (second expr)))
-                               (throw-err (h-err/argument-empty {:form expr})))
-                    'rest (let [arg (eval-in-env (second expr))]
-                            (if (empty? arg) [] (subvec arg 1)))
-                    'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))
-                    'concat (check-collection-runtime-count (apply into (map eval-in-env (rest expr))))
-                    'refine-to (eval-refine-to ctx expr)
-                    'refines-to? (let [[subexpr kw] (rest expr)
-                                       inst (eval-in-env subexpr)]
-                                   (with-exception-data {:form expr}
-                                     (refines-to? inst (types/concrete-spec-type kw))))
-                    'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
-                    'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
-                    'map (let [[coll result] (eval-comprehend ctx (rest expr))]
-                           (when (some #(= :Unset %) result)
-                             (throw-err (h-err/must-produce-value {:form expr})))
-                           (into (empty coll) result))
-                    'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
-                              (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))
-                    'valid (try
-                             (eval-in-env (second expr))
-                             (catch ExceptionInfo ex
-                               (if (= :constraint-violation (:halite-error (ex-data ex)))
-                                 :Unset
-                                 (throw ex))))
-                    'valid? (not= :Unset (eval-in-env (list 'valid (second expr))))
-                    'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
-                               (when-not (= (count (set indexes))
-                                            (count indexes))
-                                 (throw-err (h-err/sort-value-collision {:form expr
-                                                                         :coll coll})))
-                               (mapv #(nth % 1) (if (and (pos? (count indexes))
-                                                         (fixed-decimal/fixed-decimal? (first indexes)))
-                                                  (sort-by
-                                                   (comp fixed-decimal/sort-key first)
-                                                   (map vector indexes coll))
-                                                  (sort (map vector indexes coll)))))
-                    'reduce (eval-reduce ctx expr)
-                    (with-exception-data {:form expr}
-                      (apply (or (:impl (get builtins (first expr)))
-                                 (throw-err (h-err/unknown-function-or-operator {:op (first expr), :form expr})))
-                             (mapv eval-in-env (rest expr)))))
-      (vector? expr) (mapv eval-in-env expr)
-      (set? expr) (set (map eval-in-env expr))
-      (= :Unset expr) :Unset
-      :else (throw-err (h-err/invalid-expression {:form expr})))))
+  (let [eval-in-env (partial eval-expr* ctx)
+        result (cond
+                 (or (boolean? expr)
+                     (base/integer-or-long? expr)
+                     (string? expr)) expr
+                 (base/fixed-decimal? expr) expr
+                 (symbol? expr) (if (= '$no-value expr)
+                                  :Unset
+                                  (let [b (envs/bindings (:env ctx))]
+                                    (if (contains? b expr)
+                                      (get b expr)
+                                      (throw-err (h-err/symbol-undefined {:form expr})))))
+                 (map? expr) (with-exception-data {:form expr}
+                               (->> (dissoc expr :$type)
+                                    (map (fn [[k v]] [k (eval-in-env v)]))
+                                    (remove (fn [[k v]] (= :Unset v)))
+                                    (into (select-keys expr [:$type]))
+                                    (validate-instance (:senv ctx))))
+                 (seq? expr) (condp = (first expr)
+                               'get (eval-get ctx expr)
+                               'get-in (eval-get-in ctx expr)
+                               '= (apply = (mapv eval-in-env (rest expr)))
+                               'not= (apply not= (mapv eval-in-env (rest expr)))
+                               'rescale (let [[_ f s] expr]
+                                          (fixed-decimal/set-scale (eval-in-env f) s))
+                               'if (let [[pred then else] (rest expr)]
+                                     (eval-in-env (if (eval-in-env pred) then else)))
+                               'cond (loop [[pred then & more] (rest expr)]
+                                       (if (nil? then)
+                                         (eval-in-env pred)
+                                         (if (eval-in-env pred)
+                                           (eval-in-env then)
+                                           (recur more))))
+                               'when (let [[pred body] (rest expr)]
+                                       (if (eval-in-env pred)
+                                         (eval-in-env body)
+                                         :Unset))
+                               'let (apply eval-let ctx (rest expr))
+                               'if-value (eval-if-value ctx expr)
+                               'when-value (eval-if-value ctx expr) ; eval-if-value handles when-value
+                               'if-value-let (eval-if-value-let ctx expr)
+                               'when-value-let (eval-if-value-let ctx expr) ; eval-if-value-let handles when-value-let
+                               'union (reduce set/union (map eval-in-env (rest expr)))
+                               'intersection (reduce set/intersection (map eval-in-env (rest expr)))
+                               'difference (apply set/difference (map eval-in-env (rest expr)))
+                               'first (or (first (eval-in-env (second expr)))
+                                          (throw-err (h-err/argument-empty {:form expr})))
+                               'rest (let [arg (eval-in-env (second expr))]
+                                       (if (empty? arg) [] (subvec arg 1)))
+                               'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))
+                               'concat (check-collection-runtime-count (apply into (map eval-in-env (rest expr))))
+                               'refine-to (eval-refine-to ctx expr)
+                               'refines-to? (let [[subexpr kw] (rest expr)
+                                                  inst (eval-in-env subexpr)]
+                                              (with-exception-data {:form expr}
+                                                (refines-to? inst (types/concrete-spec-type kw))))
+                               'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
+                               'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
+                               'map (let [[coll result] (eval-comprehend ctx (rest expr))]
+                                      (when (some #(= :Unset %) result)
+                                        (throw-err (h-err/must-produce-value {:form expr})))
+                                      (into (empty coll) result))
+                               'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
+                                         (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))
+                               'valid (try
+                                        (eval-in-env (second expr))
+                                        (catch ExceptionInfo ex
+                                          (if (= :constraint-violation (:halite-error (ex-data ex)))
+                                            :Unset
+                                            (throw ex))))
+                               'valid? (not= :Unset (eval-in-env (list 'valid (second expr))))
+                               'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
+                                          (when-not (= (count (set indexes))
+                                                       (count indexes))
+                                            (throw-err (h-err/sort-value-collision {:form expr
+                                                                                    :coll coll})))
+                                          (mapv #(nth % 1) (if (and (pos? (count indexes))
+                                                                    (fixed-decimal/fixed-decimal? (first indexes)))
+                                                             (sort-by
+                                                              (comp fixed-decimal/sort-key first)
+                                                              (map vector indexes coll))
+                                                             (sort (map vector indexes coll)))))
+                               'reduce (eval-reduce ctx expr)
+                               (with-exception-data {:form expr}
+                                 (apply (or (:impl (get builtins (first expr)))
+                                            (throw-err (h-err/unknown-function-or-operator {:op (first expr), :form expr})))
+                                        (mapv eval-in-env (rest expr)))))
+                 (vector? expr) (mapv eval-in-env expr)
+                 (set? expr) (set (map eval-in-env expr))
+                 (= :Unset expr) :Unset
+                 :else (throw-err (h-err/invalid-expression {:form expr})))]
+    (when *debug*)
+    (if (:debug (meta expr))
+      (println result)
+      (if (:inspect (meta expr))
+        (println expr " : " result)))
+    result))
