@@ -487,10 +487,12 @@
                          :a3n 10}},
            :$refines-to {:ws/W {:wn 13}}}}
 
-      ;; Doesn't work :(
-      ;; {:$type :ws/B :w {:$refines-to {:ws/A2 {:a2n 42}}}}
-      ;; nil
-      )))
+      {:$type :ws/B :w {:$refines-to {:ws/A2 {:a2n 42}}}}
+      {:$type :ws/B, :w {:$type :ws/A3,
+                         :a3n 41,
+                         :$refines-to {:ws/A2 {:a2n 42},
+                                       :ws/A1 {:a1n 43},
+                                       :ws/W {:wn 44}}}})))
 
 ;; Trying to propgate this example currently causes a stack overflow.
 ;; We'll want to support this sort of structural recursion eventually, but it will take some doing.
