@@ -158,13 +158,11 @@
                               {:var-kw var-kw :bound bound}))))
 
           (and (map? bound) (contains? bound :$type))
-          (let [optional? (and (vector? (:$type bound)) (= :Maybe (first (:$type bound))))
-                htype (types/concrete-spec-type (cond-> (:$type bound) optional? (second)))]
+          (let [optional-bound? (and (vector? (:$type bound)) (= :Maybe (first (:$type bound))))
+                optional? (and (boolean witness-var) optional-bound?)
+                htype (types/concrete-spec-type (cond-> (:$type bound) optional-bound? (second)))]
             (when-not composite-var?
               (throw (ex-info (format "Invalid bound for %s, which is not composite" (name var-kw))
-                              {:var-kw var-kw :bound bound})))
-            (when (and (nil? witness-var) (types/maybe-type? htype))
-              (throw (ex-info (format "Invalid bound for %s, which is not optional" (name var-kw))
                               {:var-kw var-kw :bound bound})))
             (-> choco-bounds
                 (merge (lower-spec-bound (vars var-kw) (or optional-context? optional?) bound))

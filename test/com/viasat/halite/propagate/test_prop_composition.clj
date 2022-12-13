@@ -122,6 +122,7 @@
 
       {:$type :ws/C} {:$type :ws/C :cx {:$in [1 9]}}
       {:$type :ws/B} {:$type :ws/B :by {:$in [1 4]} :bz {:$in [1 4]}}
+      {:$type :ws/C :cx {:$in [2 5 :Unset]}} {:$type :ws/C :cx {:$in [2 5]}}
       {:$type :ws/B :by 2} {:$type :ws/B :by 2 :bz 2})))
 
 (deftest test-spec-ify-bound-for-primitive-optionals
@@ -176,6 +177,24 @@
        ::pc/mandatory #{}}
 
       {:$type :ws/B}
+      {::pc/spec-id :ws/B
+       :bx [:bx :Integer]
+       :bw [:bw [:Maybe :Integer]]
+       :bp [:bp :Boolean]
+       :c1 {::pc/spec-id :ws/C
+            :cx [:c1|cx :Integer]
+            :cw [:c1|cw [:Maybe :Integer]]
+            ::pc/mandatory #{}}
+       :c2 {::pc/spec-id :ws/C
+            :$witness [:c2? :Boolean]
+            :cx [:c2|cx [:Maybe :Integer]]
+            :cw [:c2|cw [:Maybe :Integer]]
+            ::pc/mandatory #{:c2|cx}}
+       ::pc/mandatory #{}}
+
+      {:$type :ws/B
+       :c1 {:$type [:Maybe :ws/C]
+            :cw 10}}
       {::pc/spec-id :ws/B
        :bx [:bx :Integer]
        :bw [:bw [:Maybe :Integer]]
@@ -333,7 +352,9 @@
         ;; TODO: Ensure that optionality-constraints for this case produces (=> b1? b1|c2?)
         {:$type :ws/A :b1 {:$type [:Maybe :ws/B] :c2 {:$type :ws/C :cw 5}}} '{:b1|c2|cw {:$in #{5 :Unset}}}
 
-        {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{:b1? true, :b1|c2? true, :b1|c2|cw 5}))))
+        {:$type :ws/A :b1 {:$type :ws/B :c2 {:$type :ws/C :cw 5}}} '{:b1? true, :b1|c2? true, :b1|c2|cw 5}
+
+        {:$type :ws/B :c1 {:$type [:Maybe :ws/C] :cw 10}} {:c1|cw 10}))))
 
 (def optionality-constraint #'pc/optionality-constraint)
 
@@ -478,7 +499,19 @@
             :bw 7,
             :bx 7,
             :c1 {:$type :ws/C, :cw {:$in [-10 10 :Unset]}, :cx {:$in [-10 10]}},
-            :c2 {:$type [:Maybe :ws/C], :cw {:$in [-10 10 :Unset]}, :cx {:$in [-10 10]}}}})))
+            :c2 {:$type [:Maybe :ws/C], :cw {:$in [-10 10 :Unset]}, :cx {:$in [-10 10]}}}}
+
+      {:$type :ws/B :c1 {:$type [:Maybe :ws/C] :cw 10}}
+      {:$type :ws/B,
+       :bx {:$in [-10 10]},
+       :bw {:$in [-10 10 :Unset]},
+       :bp {:$in #{true false}},
+       :c1 {:$type :ws/C,
+            :cx {:$in [-10 10]},
+            :cw 10},
+       :c2 {:$type [:Maybe :ws/C],
+            :cx {:$in [-10 10]},
+            :cw {:$in [-10 10 :Unset]}}})))
 
 (deftest simpler-composite-optional-test
   (let [specs (ssa/spec-map-to-ssa
