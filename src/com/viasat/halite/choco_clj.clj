@@ -56,6 +56,7 @@
 
 (defn- make-var [^Model m [var var-type]]
   (let [[default-lb default-ub] *default-int-bounds*]
+    (assert (and default-lb default-ub) "*default-int-bounds* must be set")
     [var
      [(cond
         (= var-type :Int) (.intVar m (name var) (int default-lb) (int default-ub) true)
