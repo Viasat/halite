@@ -290,6 +290,7 @@
   (validity-guard <int>) => true
   (validity-guard <boolean>) => true
   (validity-guard <field>) => true
+  (validity-guard (valid? <expr>)) => true
   (validity-guard (if <pred> <then> <else>))
   => (if <(validity-guard pred)>
        (if <pred> <(validity-guard then)> <(validity-guard else)>)
@@ -299,7 +300,6 @@
        (if <pred> <(validity-guard then)> true)
        false)
   (validity-guard (get <expr> <var-kw>) => <(validity-guard expr)>
-  (validity-guard (valid? <expr>)) => <(validity-guard expr)>
   (validity-guard (<op> <...expr_i>)) => (and <...(validity-guard expr_i)>)
   (validity-guard {<...kw_i expr_i>})
   => (if (and <...(validity-guard expr_i)>)
@@ -313,6 +313,7 @@
       (map? form) (validity-guard-inst sctx ctx form)
       (seq? form) (let [[op & args] form]
                     (condp = op
+                      'valid? 'true
                       'get (validity-guard sctx ctx (first args))
                       'refine-to (validity-guard sctx ctx (first args))
                       'if (validity-guard-if sctx ctx form)

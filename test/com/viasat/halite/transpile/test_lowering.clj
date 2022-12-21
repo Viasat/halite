@@ -3,6 +3,7 @@
 
 (ns com.viasat.halite.transpile.test-lowering
   (:require [com.viasat.halite :as halite]
+            [com.viasat.halite.eval :as eval]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [rewrite-reachable-sctx rule]]
@@ -218,7 +219,19 @@
       ;; When the constraint from :ws/D is inlined, it'll
       ;; have the form '(if ($value? $no-value) ... true), which should
       ;; be simplified in-place to just 'true.
-      '(let [d {:$type :ws/D}] (< 1 an)) true)))
+      '(let [d {:$type :ws/D}] (< 1 an)) true
+
+      '{:$type :ws/C :cn 0}
+      '(< 12 $1)
+
+      '(valid? {:$type :ws/C :cn 0})
+      'true
+
+      '(let [i {:$type :ws/C :cn 0}] (if-value i true false))
+      '(and (< 12 $1) (if (< 12 $1) true false))
+
+      '(let [i (valid? {:$type :ws/C :cn 0})] (if-value i true false))
+      'true)))
 
 (def lower-valid? #'lowering/lower-valid?)
 
@@ -408,6 +421,45 @@
                  :ws/A
                  (ssa/spec-from-ssa)
                  :constraints first second))))))
+
+(defn senv-eval [senv expr]
+  (eval/eval-expr* {:senv (update-vals senv ssa/spec-from-ssa)
+                    :env (envs/env {})}
+                   expr))
+
+(deftest test-eliminate-runtime-constraint-violations-vs-eval
+  (let [senv '{:ws/A {:fields {:av :Boolean}
+                      :constraints [["av?" av]]}
+               :ws/B {:fields {:bv :Boolean}}}
+        with-bconst (fn [bconst]
+                      (ssa/spec-map-to-ssa
+                       (assoc-in senv [:ws/B :constraints] [["bconst" bconst]])))]
+
+    (s/with-fn-validation
+      (are [bconst expr result]
+           ;; eliminate-runtime-constraint-violations shouldn't change the
+           ;; result of any expression that doesn't throw:
+           (= (senv-eval (with-bconst bconst) expr)
+              (senv-eval (-> (with-bconst bconst)
+                             lowering/eliminate-runtime-constraint-violations)
+                         expr)
+              result)
+
+        '(let [i {:$type :ws/A :av bv}] true)
+        '(valid? {:$type :ws/B, :bv true})
+        true
+
+        '(let [i {:$type :ws/A :av bv}] true)
+        '(valid? {:$type :ws/B, :bv false})
+        false
+
+        '(let [i (valid? {:$type :ws/A :av bv})] true)
+        '(valid? {:$type :ws/B, :bv true})
+        true
+
+        '(let [i (valid? {:$type :ws/A :av bv})] true)
+        '(valid? {:$type :ws/B, :bv false})
+        true))))
 
 (deftest test-push-refine-to-into-if
   (let [senv (envs/spec-env
