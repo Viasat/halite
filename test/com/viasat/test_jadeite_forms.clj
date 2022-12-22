@@ -3,6 +3,7 @@
 
 (ns com.viasat.test-jadeite-forms
   (:require [clojure.test :refer :all]
+            [clojure.set :as set]
             [com.viasat.halite :as halite]
             [com.viasat.jadeite :as jadeite])
   (:import (clojure.lang ExceptionInfo)))
@@ -383,21 +384,21 @@ else {
        (meta (jadeite/to-halite "\"hello\""))))
   (is (nil?
        (meta (jadeite/to-halite "#d \"1.23\""))))
-  (is (= {:row 1, :col 1, :end-row 1, :end-col 19}
-         (meta (jadeite/to-halite "{$type: test/C$v1}"))))
-  (is (= {:row 1, :col 1, :end-row 1, :end-col 11}
-         (meta (jadeite/to-halite "#{1, 2, 3}"))))
-  (is (= {:row 1, :col 1, :end-row 1, :end-col 6}
-         (meta (jadeite/to-halite "4 + 3"))))
-  (is (= {:row 1, :col 1, :end-row 3, :end-col 2}
-         (meta (jadeite/to-halite "4
+  (is (set/subset? (set {:row 1, :col 1, :end-row 1, :end-col 19})
+                   (set (meta (jadeite/to-halite "{$type: test/C$v1}")))))
+  (is (set/subset? (set {:row 1, :col 1, :end-row 1, :end-col 11})
+                   (set (meta (jadeite/to-halite "#{1, 2, 3}")))))
+  (is (set/subset? (set {:row 1, :col 1, :end-row 1, :end-col 6})
+                   (set (meta (jadeite/to-halite "4 + 3")))))
+  (is (set/subset? (set {:row 1, :col 1, :end-row 3, :end-col 2})
+                   (set (meta (jadeite/to-halite "4
 +
-3"))))
+3")))))
 
-  (is (= {:row 1, :col 1, :end-row 1, :end-col 11}
-         (meta (jadeite/to-halite "x + y == 3"))))
-  (is (= {:row 1, :col 1, :end-row 1, :end-col 6}
-         (meta (second (jadeite/to-halite "x + y == 3"))))))
+  (is (set/subset? (set {:row 1, :col 1, :end-row 1, :end-col 11})
+                   (set (meta (jadeite/to-halite "x + y == 3")))))
+  (is (set/subset? (set {:row 1, :col 1, :end-row 1, :end-col 6})
+                   (set (meta (second (jadeite/to-halite "x + y == 3")))))))
 
 (deftest test-equalTo
   (is (= '(= 1 2)
