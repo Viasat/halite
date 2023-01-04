@@ -786,33 +786,30 @@
         $6 [(if $2 $4 $5) :Integer]}
       '(if-value w w 1)
 
-      ;; The instance literal should not be referenced outside the `valid?`
-      ;; guard:
-      #_#_#_
-      '[$5]
-      '{$1 [{:$type :ws/C} [:Instance :ws/C]],
-        $2 [(valid? $1) :Boolean $3],
-        $3 [(not $2) :Boolean $2],
-        $4 [c [:Instance :ws/C]],
-        $5 [(if $2 $1 $4) [:Instance :ws/C]]}
-      '(if (valid? {:$type :ws/C})
-         {:$type :ws/C}
-         c)
-
-      #_#_#_
-      '[$9]
-      '{$1 [true :Boolean $2]
-        $2 [false :Boolean $1]
-        $3 [1 :Integer]
-        $4 [{:$type :ws/C :cn $3} [:Instance :ws/C]]
-        $5 [c [:Instance :ws/C]]
-        $6 [(if $1 $4 $5) [:Instance :ws/C]]
-        $7 [(valid? $6) :Boolean $8]
-        $8 [(not $7) :Boolean $7]
-        $9 [(if $7 $6 $5) [:Instance :ws/C]]}
-      '(if (valid? (if true {:cn 1, :$type :ws/C} c))
-         (if true {:cn 1, :$type :ws/C} c)
-         c)
+      ;; The instance literal should not be referenced outside the `valid?` guard:
+      ;; '[$5]
+      ;; '{$1 [{:$type :ws/C} [:Instance :ws/C]],
+      ;;   $2 [(valid? $1) :Boolean $3],
+      ;;   $3 [(not $2) :Boolean $2],
+      ;;   $4 [c [:Instance :ws/C]],
+      ;;   $5 [(if $2 $1 $4) [:Instance :ws/C]]}
+      ;; '(if (valid? {:$type :ws/C})
+      ;;    {:$type :ws/C}
+      ;;    c)
+      ;;
+      ;; '[$9]
+      ;; '{$1 [true :Boolean $2]
+      ;;   $2 [false :Boolean $1]
+      ;;   $3 [1 :Integer]
+      ;;   $4 [{:$type :ws/C :cn $3} [:Instance :ws/C]]
+      ;;   $5 [c [:Instance :ws/C]]
+      ;;   $6 [(if $1 $4 $5) [:Instance :ws/C]]
+      ;;   $7 [(valid? $6) :Boolean $8]
+      ;;   $8 [(not $7) :Boolean $7]
+      ;;   $9 [(if $7 $6 $5) [:Instance :ws/C]]}
+      ;; '(if (valid? (if true {:cn 1, :$type :ws/C} c))
+      ;;    (if true {:cn 1, :$type :ws/C} c)
+      ;;    c)
 
       '[$14]
       '{$1 [b :Boolean $2]
