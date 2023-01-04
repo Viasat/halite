@@ -221,6 +221,9 @@
 (deferr invalid-refines-to-bound [data]
         {:template "No such refinement path for $refines-to bounds from spec ':spec-id' to spec ':to-spec-id'."})
 
+(deferr invalid-refines-to-bound-conflict [data]
+        {:template "Cannot provide $refines-to bounds for ':spec-id' that is both required and unset"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol

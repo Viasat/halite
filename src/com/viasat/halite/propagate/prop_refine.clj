@@ -36,10 +36,13 @@
 ;;
 ;; However, since we do not want to require users to know full refinement paths,
 ;; :$refines-to bounds contain all transitive refinements, both extrinsic and
-;; intrinsic, at a single level per source instance.
+;; intrinsic, at a single level per source instance.  This is the source of much
+;; of the complexity in lower-bound and raise-bound.  For example, if a
+;; transitive refinement is guarded, but the input bound requires it to have a
+;; value, then every instance in the chain to it from the root must also be
+;; required.
 
 ;; TODO: extrinsic (inverted) refinements
-;; TODO: guarded refinements
 ;; TODO: refines-to? support
 
 (def AtomBound prop-composition/AtomBound)
@@ -52,8 +55,10 @@
 
 (s/defschema RefinementBound
   {types/NamespacedKeyword
-   {;;(s/optional-key :$type) SpecIdBound ;; TODO add this to support guarded refinements
-    types/BareKeyword (s/recursive #'ConcreteBound)}})
+   (s/conditional
+    map? {(s/optional-key :$type) SpecIdBound
+          types/BareKeyword (s/recursive #'ConcreteBound)}
+    :else (s/enum :Unset))})
 
 ;; this is not the place to interpret a missing :$type field as either T or
 ;; [:Maybe T] -- such a feature should be at an earlier lowering layer so that
@@ -68,6 +73,9 @@
   (s/conditional
    :$type ConcreteSpecBound
    :else AtomBound))
+
+(s/defschema Graph
+  (s/protocol loom-graph/Graph))
 
 (def Opts prop-composition/Opts)
 (def default-options prop-composition/default-options)
@@ -94,7 +102,8 @@
               instance-literal (merge {:$type spec-id} original-fields refinement-fields)]
           (list 'let original-as-bindings instance-literal))))))
 
-(defn realize-intrisic-refinements [sctx]
+(s/defn realize-intrisic-refinements
+  [sctx :- SpecCtx]
   (rewriting/squash-trace!
    {:rule "realize-intrisic-refinements"}
    (-> sctx
@@ -106,6 +115,7 @@
                        (remove #(-> % val :inverted?))
                        (map (fn [[to-spec-id {:keys [expr]}]]
                               [(refinement-field to-spec-id)
+                               ;; guarded refinement expressions have :Maybe type here:
                                (-> spec :ssa-graph (ssa/deref-id expr) ssa/node-type)]))))))
        ;; add refinement variables to instance literals:
        (rewriting/rewrite-reachable-sctx
@@ -126,7 +136,7 @@
 
 ;; TODO support refines-to? like this but return true or false instead of inst or error
 (s/defn lower-refine-to-expr
-  [rgraph
+  [rgraph :- Graph
    {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- rewriting/RewriteFnCtx
    id
    [form htype]]
@@ -156,15 +166,12 @@
     (when inverted?
       (throw (ex-info (format "BUG! Refinement of %s to %s is inverted, and propagate does not yet support inverted refinements"
                               spec-id to-id)
-                      {:sctx sctx})))
-    (let [htype (->> expr (ssa/deref-id ssa-graph) ssa/node-type)]
-      (when (types/maybe-type? htype)
-        (throw (ex-info (format "BUG! Refinement of %s to %s is optional, and propagate does not yet support optional refinements"
-                                spec-id to-id)
-                        {:sctx sctx})))))
+                      {:sctx sctx}))))
   sctx)
 
-(defn lower-spec-refinements [sctx rgraph]
+(s/defn lower-spec-refinements
+  [sctx :- SpecCtx
+   rgraph :- Graph]
   (-> sctx
       (disallow-unsupported-refinements)
 
@@ -195,24 +202,50 @@
                (f (unwrap-maybe (:$type %)) %))
             bound))
 
-(defn assoc-in-refn-path [base-bound spec-id-path bound]
-  (let [path (next spec-id-path)]
-    (->
-     (reduce (fn [base-bound path]
-               (update-in base-bound
-                          ;; TODO: to support guarded refinements, choose correct maybeness
-                          ;; (merge of mandatory and optional is mandatory?)
-                          (conj (mapv refinement-field path) :$type)
-                          #(or % (peek path))))
-             base-bound
-             (rest (reductions conj [] path)))
-     (assoc-in (map refinement-field path)
-               (merge {:$type (last path)}  ;; default mandatory; should be supplied at a higher layer?
-                      bound)))))
+(defn maybe? [spec-bound-type]
+  (and (vector? spec-bound-type) (= :Maybe (first spec-bound-type))))
+
+(defn ^:private assoc-in-refn-path*
+  [base-bound [spec-id & more-path] leaf-bound maybe-leaf?]
+  (cond
+    (= :Unset base-bound) (if maybe-leaf?
+                            :Unset
+                            (throw-err (h-err/invalid-refines-to-bound-conflict
+                                        {:spec-id (symbol spec-id)})))
+    (empty? more-path) (if (= :Unset leaf-bound)
+                         (if (or (maybe? (:$type base-bound))
+                                 (= :Unset base-bound)
+                                 (nil? base-bound))
+                           :Unset
+                           (throw-err (h-err/invalid-refines-to-bound-conflict
+                                       {:spec-id (symbol spec-id)})))
+                         ;; default mandatory, unless user bound provided a
+                         ;; :$type like [:Maybe ...]
+                         (merge {:$type spec-id} leaf-bound))
+    :else (let [field (refinement-field (first more-path))
+                field-bound (get base-bound field)]
+            (let [sub-bound (assoc-in-refn-path*
+                             field-bound more-path leaf-bound maybe-leaf?)]
+              (assoc base-bound
+                     :$type (if (and maybe-leaf?
+                                     (or (nil? (:$type base-bound))
+                                         (maybe? (:$type base-bound))))
+                              [:Maybe spec-id]
+                              spec-id)
+                     field sub-bound)))))
+
+(defn assoc-in-refn-path
+  "Like assoc-in, but convert spec-id-path to fields using `refinement-field`,
+  and update the :$type of each spec bound on the refinement path."
+  [base-bound spec-id-path bound]
+  (assoc (assoc-in-refn-path* base-bound spec-id-path bound
+                              (or (maybe? (:$type bound))
+                                  (= :Unset bound)))
+         :$type (:$type base-bound)))
 
 (s/defn lower-bound
   [sctx :- SpecCtx
-   rgraph
+   rgraph :- Graph
    bound :- ConcreteSpecBound]
   (update-spec-bounds
    bound
@@ -239,14 +272,31 @@
                      (-> spec-bound
                          (dissoc field)
                          (assoc-in [:$refines-to to-spec-id]
-                                   (-> b
-                                       (dissoc :$type) ;; until we support guarded refinements
-                                       (dissoc :$refines-to)))
-                         (update :$refines-to merge (:$refines-to b))))))
+                                   (if (= :Unset b)
+                                     :Unset
+                                     (-> b
+                                         (cond-> (not (maybe? (:$type b)))
+                                           ;; TODO: never dissoc, leaving non-maybe :$types in place?
+                                           (dissoc :$type))
+                                         (dissoc :$refines-to))))
+                         (update :$refines-to merge
+                                 (-> (:$refines-to b)
+                                     ;; If a refinement is maybe, we must raise all _its_
+                                     ;; refinements as maybes too. This is a loss of
+                                     ;; precision that we might choose to fix later:
+                                     (cond-> (maybe? (:$type b))
+                                       (as-> rt
+                                             (zipmap (keys rt)
+                                                     (map (fn [[k v]]
+                                                            (if (= :Unset v)
+                                                              :Unset
+                                                              (assoc v :$type [:Maybe k])))
+                                                          rt))))))))))
                spec-bound
                to-spec-ids)))))
 
-(defn make-rgraph [sctx]
+(s/defn make-rgraph :- Graph
+  [sctx :- SpecCtx]
   (loom-graph/digraph (update-vals sctx (comp keys :refines-to))))
 
 (s/defn propagate :- ConcreteSpecBound

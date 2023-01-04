@@ -39,6 +39,7 @@
    'h-err/invalid-refinement-expression {:doc "A refinement expression must produce an instance whose :$type matches the type that is declared on the refinement."
                                          :doc-j "A refinement expression must produce an instance whose $type matches the type that is declared on the refinement."}
    'h-err/invalid-refines-to-bound {:doc "Propagate cannot use the given bounds because it refers to a refinement path that doesn't exist."}
+   'h-err/invalid-refines-to-bound-conflict {:doc "Propagate cannot use the given bounds because a $refines-to bound specifies a target spec must be :Unset by one entry, but required by another."}
    'h-err/invalid-symbol-char {:doc "Only certain characters, in certain sequences are allowed to appear in symbols."}
    'h-err/invalid-symbol-length {:doc "The length of symbols is limited. The supplied symbol exceeded the limit."}
    'h-err/invalid-type-value {:doc "The value of the :$type field in an instance must be a keyword that includes a '/' separator."

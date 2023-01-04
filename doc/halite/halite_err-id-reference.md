@@ -419,6 +419,15 @@ Propagate cannot use the given bounds because it refers to a refinement path tha
 > No such refinement path for $refines-to bounds from spec ':spec-id' to spec ':to-spec-id'.
 
 ---
+### <a name="h-err/invalid-refines-to-bound-conflict"></a>h-err/invalid-refines-to-bound-conflict
+
+Propagate cannot use the given bounds because a $refines-to bound specifies a target spec must be :Unset by one entry, but required by another.
+
+#### Error message template:
+
+> Cannot provide $refines-to bounds for ':spec-id' that is both required and unset
+
+---
 ### <a name="h-err/invalid-symbol-char"></a>h-err/invalid-symbol-char
 
 Only certain characters, in certain sequences are allowed to appear in symbols.
