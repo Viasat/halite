@@ -21,15 +21,15 @@
                 fe/field-map-atom (atom {})]
 
     (eval
-     '(fe/deferr test-err [data]
+     `(fe/deferr ~'test-err [~'data]
                  {:template "This is error is just a test: :mystr, :mynil, :mything"
                   :extra :stuff}))
 
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"This is error is just a test: \"this is mystr\""
-                          (eval '(fe/with-exception-data {:more :data}
-                                   (fe/throw-err (test-err {:mystr "this is mystr"
-                                                            :mynil nil
-                                                            :mything [#{(list 5)}]}))))))
+                          (eval `(fe/with-exception-data {:more :data}
+                                   (fe/throw-err (~'test-err {:mystr "this is mystr"
+                                                              :mynil nil
+                                                              :mything [#{(list 5)}]}))))))
 
     (is (= '[{test-format-errors {test-err {:mystr #{java.lang.String},
                                             :mynil #{nil},
