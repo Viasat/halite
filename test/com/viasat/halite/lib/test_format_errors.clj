@@ -16,46 +16,47 @@
 (fe/merge-field-map {:type s/Symbol})
 
 (deftest test-analyze-runtime-usage
-  (with-redefs [fe/trace-err-defs? true
-                fe/trace-atom (atom [])
-                fe/field-map-atom (atom {})]
+  (binding [*ns* (the-ns 'com.viasat.halite.lib.test-format-errors)]
+    (with-redefs [fe/trace-err-defs? true
+                  fe/trace-atom (atom [])
+                  fe/field-map-atom (atom {})]
 
-    (eval
-     `(fe/deferr ~'test-err [~'data]
-                 {:template "This is error is just a test: :mystr, :mynil, :mything"
-                  :extra :stuff}))
+      (eval
+       '(fe/deferr test-err [data]
+                   {:template "This is error is just a test: :mystr, :mynil, :mything"
+                    :extra :stuff}))
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"This is error is just a test: \"this is mystr\""
-                          (eval `(fe/with-exception-data {:more :data}
-                                   (fe/throw-err (~'test-err {:mystr "this is mystr"
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"This is error is just a test: \"this is mystr\""
+                            (eval '(fe/with-exception-data {:more :data}
+                                     (fe/throw-err (test-err {:mystr "this is mystr"
                                                               :mynil nil
                                                               :mything [#{(list 5)}]}))))))
 
-    (is (= '[{test-format-errors {test-err {:mystr #{java.lang.String},
-                                            :mynil #{nil},
-                                            :mything #{[#{(java.lang.Long)}]}}}}
-             {:mystr #{java.lang.String},
-              :mynil #{nil},
-              :mything #{[#{(java.lang.Long)}]}}]
-           (fe/analyze-runtime-usage)))
+      (is (= '[{test-format-errors {test-err {:mystr #{java.lang.String},
+                                              :mynil #{nil},
+                                              :mything #{[#{(java.lang.Long)}]}}}}
+               {:mystr #{java.lang.String},
+                :mynil #{nil},
+                :mything #{[#{(java.lang.Long)}]}}]
+             (fe/analyze-runtime-usage)))
 
-    (is (= '{:err-defs
-             {test-format-errors/test-err
-              {:message "This is error is just a test: :mystr, :mynil, :mything",
-               :fields #{:mything :mynil :mystr}}},
-             :fields {:more 1, :mything 1, :mynil 1, :mystr 1},
-             :field-index
-             {:mything #{test-format-errors/test-err},
-              :mynil #{test-format-errors/test-err},
-              :mystr #{test-format-errors/test-err}},
-             :systems {"test-format-errors" #{com.viasat.halite.lib.test-format-errors}}}
-           (fe/analyze-err-defs)))
+      (is (= '{:err-defs
+               {test-format-errors/test-err
+                {:message "This is error is just a test: :mystr, :mynil, :mything",
+                 :fields #{:mything :mynil :mystr}}},
+               :fields {:more 1, :mything 1, :mynil 1, :mystr 1},
+               :field-index
+               {:mything #{test-format-errors/test-err},
+                :mynil #{test-format-errors/test-err},
+                :mystr #{test-format-errors/test-err}},
+               :systems {"test-format-errors" #{com.viasat.halite.lib.test-format-errors}}}
+             (fe/analyze-err-defs)))
 
-    (is (= '{test-format-errors [test-err]}
-           (fe/assemble-err-ids)))
+      (is (= '{test-format-errors [test-err]}
+             (fe/assemble-err-ids)))
 
-    (is (= ["This is error is just a test: :mystr, :mynil, :mything"]
-           (fe/assemble-err-messages)))))
+      (is (= ["This is error is just a test: :mystr, :mynil, :mything"]
+             (fe/assemble-err-messages))))))
 
 (deftest test-check-data
   (with-redefs [log/log* (fn [logger level t message]
