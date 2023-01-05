@@ -80,6 +80,10 @@
         (recur m' more-f)
         m'))))
 
+(defn with-prefix [err-id ns-name]
+  (let [system-name (last (string/split (str ns-name) #"\."))]
+    [system-name (symbol system-name (str err-id))]))
+
 (defn analyze-err-defs []
   (loop [err-defs {}
          fields {}
@@ -89,8 +93,7 @@
     (let [[err-defs' fields' field-index' systems']
           (condp = (second t)
             :deferr (let [[ns-name _ err-id message] t
-                          system-name (last (string/split (str ns-name) #"\."))
-                          err-id (symbol system-name (str err-id))]
+                          [system-name err-id] (with-prefix err-id ns-name)]
                       (when (contains? err-defs err-id)
                         (throw (ex-info "duplicate err-id" {:err-id err-id})))
                       [(assoc err-defs err-id {:message message
@@ -100,6 +103,7 @@
                        (update systems system-name #(if % (conj % ns-name) #{ns-name}))])
 
             :throw-err (let [[ns-name _ err-id data] t
+                             [system-name err-id] (with-prefix err-id ns-name)
                              new-fields (if (map? data)
                                           (set (keys data))
                                           #{'?})]
@@ -172,7 +176,7 @@
     (swap! error-atom assoc (symbol computed-err-id) (assoc data
                                                             :ns-name (ns-name *ns*)))
     (when trace-err-defs?
-      (let [t [(ns-name *ns*) :deferr err-id (:message data)]]
+      (let [t [(ns-name *ns*) :deferr err-id (:template data)]]
         (swap! trace-atom conj t)))
     `(defn ~err-id [~data-arg]
        (merge ~data-arg
@@ -275,7 +279,7 @@
 (defmacro throw-err
   [data & more]
   (when trace-err-defs?
-    (let [t [(str (.name *ns*)) :throw-err (first data) (second data)]]
+    (let [t [(ns-name *ns*) :throw-err (first data) (second data)]]
       (swap! trace-atom conj t)))
   `(let [site-code# (if *squash-throw-site*
                       "0-0"
@@ -293,7 +297,7 @@
                                      [nil (first args) (rest args)]
                                      [(first args) (second args) (rest (rest args))])]
      (when trace-err-defs?
-       (let [t [(str (.name *ns*)) :with-exception-data extra-data]]
+       (let [t [(ns-name *ns*) :with-exception-data extra-data]]
          (swap! trace-atom conj t)))
      (assert (map? extra-data))
      (if message
