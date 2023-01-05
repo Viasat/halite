@@ -97,18 +97,32 @@
                  :ws/B
                  {:fields {:bn :Integer :bb :Boolean}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
-    (is (= '[["$all" (let [v1 {:$type :ws/B :bn 12 :bb true}
-                           v2 (get v1 :bb)
-                           v3 {:$type :ws/B :bn an :bb true}
-                           v4 {:$type :ws/B :bn 4 :bb false}
-                           v5 (get v1 :bn)]
+
+    (is (= '[["$all" (let [v1 {:bb true, :bn 12, :$type :ws/B}]
                        (and
-                        (and (= v2 (get v3 :bb))
-                             (= v5 (get v3 :bn)))
-                        (or (not= (get v4 :bb) v2)
-                            (not= (get v4 :bn) v5))
+                        (and (= (get v1 :bb) (get {:bb true, :bn an, :$type :ws/B} :bb))
+                             (= (get v1 :bn) (get {:bb true, :bn an, :$type :ws/B} :bn)))
+                        (or (not= (get {:bb false, :bn 4, :$type :ws/B} :bb)
+                                  (get v1 :bb))
+                            (not= (get {:bb false, :bn 4, :$type :ws/B} :bn)
+                                  (get v1 :bn)))
                         (= an 45)))]]
-           (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints)))))
+           (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints)))
+
+    ;; This is a correct output, but not what spec-from-ssa currently produces,
+    ;; because it refuses to let-bind instance literals that weren't already let-bound.
+    #_(is (= '[["$all" (let [v1 {:$type :ws/B :bn 12 :bb true}
+                             v2 (get v1 :bb)
+                             v3 {:$type :ws/B :bn an :bb true}
+                             v4 {:$type :ws/B :bn 4 :bb false}
+                             v5 (get v1 :bn)]
+                         (and
+                          (and (= v2 (get v3 :bb))
+                               (= v5 (get v3 :bn)))
+                          (or (not= (get v4 :bb) v2)
+                              (not= (get v4 :bn) v5))
+                          (= an 45)))]]
+             (-> sctx lower-instance-comparisons :ws/A ssa/spec-from-ssa :constraints)))))
 
 (deftest test-lower-comparisons-with-incompatible-types
   (let [senv (var-types/to-halite-spec-env

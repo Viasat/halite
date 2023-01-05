@@ -867,6 +867,10 @@
                       (= 'refine-to (first form))
                       (list 'refine-to (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
 
+                      ;; Don't emit useless ($do! $1 $1) -- should this be a simplify rule instead?
+                      (and (= '$do! (first form)) (apply = (rest form)))
+                      (form-from-ssa* ssa-graph ordering guards bound? curr-guard (last form))
+
                       (and (= '$do! (first form)) *hide-non-halite-ops*)
                       (let [unbound (remove bound? (take (- (count form) 2) (rest form)))
                             [bound? bindings] (reduce
@@ -933,6 +937,28 @@
   This is only to be used for debugging of rewrite rules!"
   false)
 
+(defn ^:private remove-instance-literal-parents
+  "Given an map of nodes to topo-order, and a dgraph, returns all dgraph
+  key/value entries that are not instance literals and do not reference an
+  instance literal, even transitively.
+  This is used because instance literals may throw constraint
+  violations or not, depending on whether they're contains in a `valid?` form.
+  There may be a less aggressive filter that would also produce correct results,
+  perhaps by taking into account how `valid?` is used in the graph."
+  [ordering dgraph]
+  (->> (sort-by val ordering)
+       keys
+       (reduce (fn [s id]
+                 (if-let [node (dgraph id)]
+                   (if (or (map? (node-form node))
+                           (some (:has-inst s) (child-nodes node)))
+                     (update s :has-inst conj id)
+                     (update s :ok-entries conj [id node]))
+                   s))
+               {:has-inst #{}
+                :ok-entries []})
+       :ok-entries))
+
 (s/defn ^:private let-bindable-exprs
   "We want to avoid as much expression duplication as possible without changing
   semantics. Expressions are side effect free, so we can generally avoid multiple occurrences
@@ -950,6 +976,7 @@
                           frequencies)
         [bound? bindings] (->> subgraph
                                :dgraph
+                               (remove-instance-literal-parents ordering)
                                (remove
                                 (fn [[id [form htype]]]
                                   (or (bound? form) (bound? id)
