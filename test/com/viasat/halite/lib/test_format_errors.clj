@@ -22,8 +22,8 @@
 
     (eval
      '(fe/deferr test-err [data]
-        {:template "This is error is just a test: :mystr, :mynil, :mything"
-         :extra :stuff}))
+                 {:template "This is error is just a test: :mystr, :mynil, :mything"
+                  :extra :stuff}))
 
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"This is error is just a test: \"this is mystr\""
                           (eval '(fe/with-exception-data {:more :data}
