@@ -67,6 +67,24 @@
         $9 [(if $7 $6 $5) [:Instance :ws/C]]}
       '[$9]
 
+      '[(if (valid? {:$type :ws/C, :cn 1})
+          (let [x {:$type :ws/C, :cn 1}]
+            (if (valid? {:$type :ws/C, :cn 1})
+              2
+              4))
+          8)]
+      '{$1 [1 :Integer]
+        $2 [{:$type :ws/C :cn $1} [:Instance :ws/C]]
+        $3 [(valid? $2) :Boolean $4]
+        $4 [(not $3) :Boolean $3]
+        $5 [2 :Integer]
+        $6 [4 :Integer]
+        $7 [(if $3 $5 $6) :Integer]
+        $8 [($do! $2 $7) :Integer]
+        $9 [8 :Integer]
+        $10 [(if $3 $8 $9) :Integer]}
+      '($10)
+
       '[(if false (error "never") (if false (error "never") 5))]
       '{$1 [true :Boolean $2]
         $2 [false :Boolean $1]
@@ -685,6 +703,31 @@
     '(let [$10 1, $20 2, $30 3] (+ $10 $20 v3 $30))
     '(let [v1 1, v2 2, v4 3] (+ v1 v2 v3 v4))))
 
+(deftest test-foo
+  (let [spec-info {:fields {:v [:Maybe :Integer], :w [:Maybe :Integer], :x :Integer, :y :Integer, :z :Integer, :b :Boolean, :c [:Instance :ws/C]
+                            :s :String}}]
+
+    (are [constraints dgraph new-constraint]
+         (= [["$all" new-constraint]]
+            (-> spec-info
+                (assoc :ssa-graph (ssa/make-ssa-graph dgraph)
+                       :constraints (vec (map-indexed #(vector (str "c" %1) %2) constraints)))
+                (ssa/spec-from-ssa)
+                :constraints))
+      '[$9]
+      '{$1 [true :Boolean $2]
+        $2 [false :Boolean $1]
+        $3 [1 :Integer]
+        $4 [{:$type :ws/C :cn $3} [:Instance :ws/C]]
+        $5 [c [:Instance :ws/C]]
+        $6 [(if $1 $4 $5) [:Instance :ws/C]]
+        $7 [(valid? $6) :Boolean $8]
+        $8 [(not $7) :Boolean $7]
+        $9 [(if $7 $6 $5) [:Instance :ws/C]]}
+      '(if (valid? (if true {:cn 1, :$type :ws/C} c))
+         (if true {:cn 1, :$type :ws/C} c)
+         c))))
+
 (deftest test-spec-from-ssa
   (let [spec-info {:fields {:v [:Maybe :Integer], :w [:Maybe :Integer], :x :Integer, :y :Integer, :z :Integer, :b :Boolean, :c [:Instance :ws/C]
                             :s :String}}]
@@ -787,29 +830,44 @@
       '(if-value w w 1)
 
       ;; The instance literal should not be referenced outside the `valid?` guard:
-      ;; '[$5]
-      ;; '{$1 [{:$type :ws/C} [:Instance :ws/C]],
-      ;;   $2 [(valid? $1) :Boolean $3],
-      ;;   $3 [(not $2) :Boolean $2],
-      ;;   $4 [c [:Instance :ws/C]],
-      ;;   $5 [(if $2 $1 $4) [:Instance :ws/C]]}
-      ;; '(if (valid? {:$type :ws/C})
-      ;;    {:$type :ws/C}
-      ;;    c)
-      ;;
-      ;; '[$9]
-      ;; '{$1 [true :Boolean $2]
-      ;;   $2 [false :Boolean $1]
-      ;;   $3 [1 :Integer]
-      ;;   $4 [{:$type :ws/C :cn $3} [:Instance :ws/C]]
-      ;;   $5 [c [:Instance :ws/C]]
-      ;;   $6 [(if $1 $4 $5) [:Instance :ws/C]]
-      ;;   $7 [(valid? $6) :Boolean $8]
-      ;;   $8 [(not $7) :Boolean $7]
-      ;;   $9 [(if $7 $6 $5) [:Instance :ws/C]]}
-      ;; '(if (valid? (if true {:cn 1, :$type :ws/C} c))
-      ;;    (if true {:cn 1, :$type :ws/C} c)
-      ;;    c)
+      '[$5]
+      '{$1 [{:$type :ws/C} [:Instance :ws/C]],
+        $2 [(valid? $1) :Boolean $3],
+        $3 [(not $2) :Boolean $2],
+        $4 [c [:Instance :ws/C]],
+        $5 [(if $2 $1 $4) [:Instance :ws/C]]}
+      '(if (valid? {:$type :ws/C})
+         {:$type :ws/C}
+         c)
+
+      '[$9]
+      '{$1 [true :Boolean $2]
+        $2 [false :Boolean $1]
+        $3 [1 :Integer]
+        $4 [{:$type :ws/C :cn $3} [:Instance :ws/C]]
+        $5 [c [:Instance :ws/C]]
+        $6 [(if $1 $4 $5) [:Instance :ws/C]]
+        $7 [(valid? $6) :Boolean $8]
+        $8 [(not $7) :Boolean $7]
+        $9 [(if $7 $6 $5) [:Instance :ws/C]]}
+      '(if (valid? (if true {:cn 1, :$type :ws/C} c))
+         (if true {:cn 1, :$type :ws/C} c)
+         c)
+
+      '($10)
+      '{$1 [1 :Integer]
+        $2 [{:$type :ws/C :cn $1} [:Instance :ws/C]]
+        $3 [(valid? $2) :Boolean $4]
+        $4 [(not $3) :Boolean $3]
+        $5 [2 :Integer]
+        $6 [4 :Integer]
+        $7 [(if $3 $5 $6) :Integer]
+        $8 [($do! $2 $7) :Integer]
+        $9 [8 :Integer]
+        $10 [(if $3 $8 $9) :Integer]}
+      '(if (valid? {:cn 1, :$type :ws/C})
+         (let [v1 {:cn 1, :$type :ws/C}]
+           (if (valid? v1) 2 4)) 8)
 
       '[$14]
       '{$1 [b :Boolean $2]

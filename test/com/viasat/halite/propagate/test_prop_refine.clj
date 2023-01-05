@@ -124,16 +124,16 @@
                                                 :$type :my/B}))]],
                     :refines-to {}},
              :my/D {:fields {:a [:Instance :my/A], :c1 :Integer},
-                    :constraints [["$all" (let [v1 (+ 5 c1)
-                                                v2 (get {:$type :my/C
-                                                         :c1 c1
-                                                         :>my$B {:>my$A {:$type :my/A
-                                                                         :a1 (+ 10 v1)}
-                                                                 :b1 v1,
-                                                                 :$type :my/B}}
-                                                        :>my$B)
-                                                v3 (get v2 :>my$A)]
-                                            (= a v3))]],
+                    :constraints [["$all"
+                                   (let [v1 (+ 5 c1)]
+                                     (= a
+                                        (get
+                                         (get
+                                          {:$type :my/C,
+                                           :>my$B {:$type :my/B, :>my$A {:$type :my/A, :a1 (+ 10 v1)}, :b1 v1},
+                                           :c1 c1}
+                                          :>my$B)
+                                         :>my$A)))]],
                     :refines-to {}}}
            (update-vals (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
                         ssa/spec-from-ssa)))
@@ -587,20 +587,21 @@
                  :constraints [["d1" (= dm (get (refine-to {:$type :ws/A :an dn} :ws/C) :cn))]
                                ["d2" (= dn (get (refine-to {:$type :ws/B :bn dn} :ws/B) :bn))]
                                ["d3" (not= 72 (get {:$type :ws/A :an dn} :an))]]}})]
-    (is (= '(let [v1 (+ 1 dn)
-                  v2 {:>ws$B {:>ws$C {:cn v1, :$type :ws/C},
-                              :bn v1,
-                              :$type :ws/B},
-                      :an dn,
-                      :$type :ws/A}
-                  v3 (get v2 :>ws$B)
-                  v4 (get v3 :>ws$C)]
-              (and (= dm (get v4 :cn))
+    (is (= '(let [v1 (+ 1 dn)]
+              (and (= dm (get (get (get {:$type :ws/A, :>ws$B {:$type :ws/B, :>ws$C {:$type :ws/C, :cn v1}, :bn v1}, :an dn}
+                                        :>ws$B)
+                                   :>ws$C)
+                              :cn))
                    (= dn (get {:>ws$C {:cn dn, :$type :ws/C},
                                :bn dn,
                                :$type :ws/B}
                               :bn))
-                   (not= 72 (get v2 :an))))
+                   (not= 72 (get {:$type :ws/A,
+                                  :an dn
+                                  :>ws$B {:$type :ws/B,
+                                          :>ws$C {:$type :ws/C, :cn v1},
+                                          :bn v1}}
+                                 :an))))
 
            (-> (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
                :ws/D
@@ -688,46 +689,46 @@
                                                             :my/A))]]}})
         rgraph (pr/make-rgraph sctx)]
 
-    (s/with-fn-validation
-      (is (= '{:my/A {:fields {:a1 :Integer}
-                      :constraints [["$all" (< 0 a1)]],
-                      :refines-to {}},
-               :my/B {:fields {:b1 :Integer
-                               :>my$A [:Instance :my/A]}
-                      :constraints [["$all" (= >my$A {:$type :my/A, :a1 (+ 10 b1)})]],
-                      :refines-to {}},
-               :my/C {:fields {:c1 :Integer
-                               :>my$B [:Maybe [:Instance :my/B]]}
-                      :constraints
-                      [["$all" (= >my$B
-                                  (if (< c1 5)
-                                    (let [v1 (+ 5 c1)]
-                                      {:$type :my/B,
-                                       :>my$A {:$type :my/A, :a1 (+ 10 v1)},
-                                       :b1 v1})
-                                    $no-value))]],
-                      :refines-to {}},
-               :my/D {:fields {:a [:Instance :my/A]
-                               :c1 :Integer}
-                      :constraints
-                      [["$all" (let [v1 (get {:$type :my/C,
-                                              :c1 c1
-                                              :>my$B (if (< c1 5)
-                                                       (let [v1 (+ 5 c1)]
-                                                         {:$type :my/B
-                                                          :b1 v1
-                                                          :>my$A {:$type :my/A,
-                                                                  :a1 (+ 10 v1)}})
-                                                       $no-value)}
-                                             :>my$B)
-                                     v2 (get (if-value v1
-                                                       v1
-                                                       (error "No active refinement path"))
-                                             :>my$A)]
-                                 (= a v2))]],
-                      :refines-to {}}}
-             (update-vals (pr/lower-spec-refinements sctx rgraph)
-                          ssa/spec-from-ssa))))
+    (is (= '{:my/A {:fields {:a1 :Integer}
+                    :constraints [["$all" (< 0 a1)]],
+                    :refines-to {}},
+             :my/B {:fields {:b1 :Integer
+                             :>my$A [:Instance :my/A]}
+                    :constraints [["$all" (= >my$A {:$type :my/A, :a1 (+ 10 b1)})]],
+                    :refines-to {}},
+             :my/C {:fields {:c1 :Integer
+                             :>my$B [:Maybe [:Instance :my/B]]}
+                    :constraints
+                    [["$all" (= >my$B
+                                (if (< c1 5)
+                                  (let [v1 (+ 5 c1)]
+                                    {:$type :my/B,
+                                     :>my$A {:$type :my/A, :a1 (+ 10 v1)},
+                                     :b1 v1})
+                                  $no-value))]],
+                    :refines-to {}},
+             :my/D {:fields {:a [:Instance :my/A]
+                             :c1 :Integer}
+                    :constraints
+                    [["$all" (= a
+                                (get (let [v1 (get {:$type :my/C,
+                                                    :c1 c1
+                                                    :>my$B (if (< c1 5)
+                                                             (let [v1 (+ 5 c1)]
+                                                               {:$type :my/B
+                                                                :b1 v1
+                                                                :>my$A {:$type :my/A,
+                                                                        :a1 (+ 10 v1)}})
+                                                             $no-value)}
+                                                   :>my$B)]
+                                       (if-value v1
+                                                 v1
+                                                 (error "No active refinement path")))
+                                     :>my$A))]],
+                    :refines-to {}}}
+           (update-vals (s/with-fn-validation
+                          (pr/lower-spec-refinements sctx rgraph))
+                        ssa/spec-from-ssa)))
 
     (is (= {:$type :my/D,
             :c1 {:$in [-14 4]}
@@ -985,3 +986,5 @@
             :$refines-to {:my/B :Unset}}
            (prop-twice sctx {:$type :my/A
                              :$refines-to {:my/B :Unset}})))))
+
+;; (time (t/run-tests))
