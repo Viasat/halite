@@ -99,11 +99,13 @@
                                 :check-for-spec-cycles? true})
 
 (s/defn eval-expr :- s/Any
-  "Evaluate a halite expression against the given type environment, and return the result. Optionally check the
-  bindings in the environment are checked against the type environment before evaluation. Optionally
-  type check the expression before evaluating it. Optionally type check any refinements or
-  constraints involved with instance literals in the expr and env. By default all checks are
-  performed."
+  "Evaluate a halite expression against the given type environment, and return the
+  result. Optionally check the bindings in the environment against the type environment before
+  evaluation. Optionally type check the expression before evaluating it. Optionally type check any
+  refinements or constraints involved with instance literals in the expr and env. By default all
+  checks are performed. Using the variant where 'options' are passed in requires the caller to turn
+  on all of the checks that are needed. If a check has not already been performed and is not turned
+  on when 'options' are passed in, then the results are indeterminate."
   ([senv :- (s/protocol envs/SpecEnv)
     tenv :- (s/protocol envs/TypeEnv)
     env :- (s/protocol envs/Env)
