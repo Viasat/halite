@@ -79,6 +79,14 @@
                                                     i)))}
                                           {:$in {:ws/A {:$refines-to {:ws/A {:x 14}}}
                                                  :ws/B {:$refines-to {:ws/A {:r 19}}}}
-                                           :$refines-to {}}))))
+                                           :$refines-to {}})))
+
+  (is (= {:$type :ws/Z,
+          :z {:$in {:ws/A {:$refines-to {:ws/A {:x 14}}}
+                    :ws/B {:$refines-to {:ws/A {:r 19}}}}}}
+         (#'prop-fixed-decimal/walk-bound {}
+                                          {:$type :ws/Z
+                                           :z {:$in {:ws/A {:$refines-to {:ws/A {:x 14}}}
+                                                     :ws/B {:$refines-to {:ws/A {:r 19}}}}}}))))
 
 ;; (run-tests)

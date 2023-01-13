@@ -65,7 +65,7 @@
   (-> m
       (update-map (fn [f bound]
                     (let [context (context-into-field context f)]
-                      [f (walk-concrete-bound context bound)])))))
+                      [f (walk-bound context bound)])))))
 
 (s/defn ^:private walk-untyped-map
   [context m]
