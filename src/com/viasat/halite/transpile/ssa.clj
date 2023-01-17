@@ -366,7 +366,7 @@
      ssa-graph
      (cons op args)
      (cond
-       ('#{+ - * div mod expt abs count
+       ('#{+ - * div mod expt abs count dec
            if when concat conj
            < <= > >= and or not => = not= valid?
            range} op) (invoke-type-check ctx form)
@@ -762,7 +762,7 @@
   (let [node (deref-id ssa-graph id), form (node-form node), htype (node-type node)
         result (update result id update-guards current)]
     (cond
-      (or (integer? form) (boolean? form) (= :Unset form) (string? form)) result
+      (or (integer? form) (boolean? form) (= :Unset form) (string? form) (base/fixed-decimal? form)) result
       (symbol? form) result
       (seq? form) (let [[op & args] form]
                     (cond
@@ -855,7 +855,7 @@
     (let [node (or (deref-id ssa-graph id) (throw (ex-info "BUG! Node not found" {:id id :ssa-graph ssa-graph})))
           form (node-form node)]
       (cond
-        (or (integer? form) (boolean? form) (string? form)) form
+        (or (integer? form) (boolean? form) (string? form) (base/fixed-decimal? form)) form
         (= :Unset form) '$no-value
         (symbol? form) (if (bound? form)
                          form
@@ -1017,7 +1017,7 @@
   ([scope expr] (normalize-vars scope {} expr))
   ([scope aliases expr]
    (cond
-     (or (integer? expr) (boolean? expr) (string? expr) (keyword? expr)) expr
+     (or (integer? expr) (boolean? expr) (string? expr) (keyword? expr) (base/fixed-decimal? expr)) expr
      (symbol? expr) (get aliases expr expr)
      (map? expr) (update-vals expr (partial normalize-vars scope aliases))
      (vector? expr) (mapv (partial normalize-vars scope aliases) expr)

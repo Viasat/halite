@@ -184,6 +184,14 @@
 
 ;;
 
+(defn- lower-fixed-decimal-types [sctx]
+  (update-vals sctx (fn [spec-info]
+                      (update-in spec-info [:ssa-graph :dgraph] update-vals
+                                 (fn [node]
+                                   (if (types/decimal-type? (nth node 1))
+                                     (assoc node 1 :Integer)
+                                     node))))))
+
 (defn- produce-rescale-code [target-form target-scale new-scale]
   (let [shift (- target-scale new-scale)]
     (if (= shift 0)
@@ -222,12 +230,6 @@
   [sctx :- ssa/SpecCtx]
   (rewriting/rewrite-sctx sctx lower-fixed-decimal-values-expr))
 
-(s/defn ^:private lower-fixed-decimal :- ssa/SpecCtx
-  [sctx :- ssa/SpecCtx]
-  (-> sctx
-      lower-rescale
-      lower-fixed-decimal-values))
-
 ;;
 
 (s/defn ^:private lower-spec-field-types-in-spec :- ssa/SpecInfo
@@ -246,10 +248,14 @@
 
 (s/defn ^:private lowered-spec-context :- ssa/SpecCtx
   [spec-map  :- envs/SpecMap]
-  (->> spec-map
-       ssa/spec-map-to-ssa
-       lower-fixed-decimal
-       lower-spec-field-types))
+  (rewriting/squash-trace!
+   {:rule "lower-fixed-decimal"}
+   (->> spec-map
+        ssa/spec-map-to-ssa
+        lower-rescale
+        lower-spec-field-types
+        lower-fixed-decimal-types
+        lower-fixed-decimal-values)))
 
 (s/defn propagate :- prop-abstract/SpecBound
   [spec-map :- envs/SpecMap
