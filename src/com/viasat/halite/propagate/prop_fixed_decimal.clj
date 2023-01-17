@@ -84,8 +84,7 @@
    bound]
   (let [context' (context-into-type context t)]
     [(walk-spec-id context t)
-     (-> bound
-         (update-vals (partial walk-concrete-bound context')))]))
+     (walk-map context' bound)]))
 
 (s/defn ^:private walk-refinement-bound
   [context bound]

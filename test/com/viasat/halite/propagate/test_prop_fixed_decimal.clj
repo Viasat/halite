@@ -109,6 +109,26 @@
             :y {:$in [#d "-96.9" #d "100.0"]}}
            (prop-fixed-decimal/propagate specs
                                          prop-composition/default-options
+                                         {:$type :my/A}))))
+
+  (let [vspecs '{:my/A {:fields {:x [:Decimal 2]}
+                        :refines-to {:my/B {:expr (if (< x #d "5.01")
+                                                    {:$type :my/B,
+                                                     :x (+ x #d "-1.00")
+                                                     :y #d "0.2"}
+                                                    {:$type :my/B
+                                                     :x (+ x #d "1.05")
+                                                     :y #d "0.5"})}}}
+                 :my/B {:fields {:x [:Decimal 2]
+                                 :y [:Decimal 1]}}}
+        specs (var-types/to-halite-spec-env vspecs)] ;; for prop-fixed-decimal
+
+    (is (= {:$type :my/A,
+            :x {:$in [#d "-10.00" #d "10.00"]}
+            :$refines-to {:my/B {:x {:$in [#d "-10.00" #d "10.00"]}
+                                 :y {:$in [#d "0.2" #d "0.5"]}}}}
+           (prop-fixed-decimal/propagate specs
+                                         prop-composition/default-options
                                          {:$type :my/A})))))
 
 ;; (run-tests)
