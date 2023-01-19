@@ -21,7 +21,7 @@
 (def ^:private supported-halite-ops
   (into
    '#{dec inc + - * < <= > >= and or not => div mod expt abs = cond if not= let get valid? refine-to if-value when-value when error
-      count range every? any? concat conj map
+      count range every? any? concat conj map contains?
       ;; introduced just so the fixed-decimal lowering can be performed on ssa form
       rescale
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
@@ -638,6 +638,10 @@
                     'every? (comprehension-to-ssa ctx form)
                     'any? (comprehension-to-ssa ctx form)
                     'map (comprehension-to-ssa ctx form)
+                    'contains? (let [[coll expr] (rest form)]
+                                 (if (set? coll)
+                                   (app-to-ssa ctx (list* 'or (map #(list '= % expr) coll)))
+                                   (throw (ex-info (format "TBD: `contains?` only currently supported on literal sets")))))
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)
