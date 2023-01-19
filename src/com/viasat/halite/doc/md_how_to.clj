@@ -101,7 +101,7 @@
                                                   ;;code-str #(translate-spec-map-to-f lang % "") ;; Prettier jadeite, but doesn't handle fixed decimals
                                                   code-str ({:halite utils/pprint-halite
                                                              :jadeite #(str (jadeite/to-jadeite %) "\n")}
-                                                             lang)]
+                                                            lang)]
                                               (spec-snippet-f lang
                                                               (str
                                                                comment " Propagate input bounds:\n"
