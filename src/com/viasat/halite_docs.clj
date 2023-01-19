@@ -377,7 +377,8 @@
                      (produce-basic-md :jadeite))]
    [#'explanations #(do (run! (partial explanation-md :halite)  explanations)
                         (run! (partial explanation-md :jadeite) explanations))]
-   [#'tutorials #(run! (partial tutorial-md :halite) tutorials)]])
+   [#'tutorials #(do (run! (partial tutorial-md :halite) tutorials)
+                     (run! (partial tutorial-md :jadeite) tutorials))]])
 
 (def ^:dynamic *running-gen-doc* #{})
 

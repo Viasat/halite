@@ -5,7 +5,10 @@
   (:require [clojure.string :as string]
             [com.viasat.halite.doc.run :as doc-run]
             [com.viasat.halite.doc.utils :as utils]
-            [com.viasat.jadeite :as jadeite])
+            [com.viasat.halite.propagate :as propagate]
+            [com.viasat.halite.var-types :as var-types]
+            [com.viasat.jadeite :as jadeite]
+            [com.viasat.halite.transpile.rewriting :as rewriting])
   (:import [com.viasat.halite.doc.run HCInfo]))
 
 (set! *warn-on-reflection* true)
@@ -88,7 +91,26 @@
                                                                         :jadeite "\n\n//-- result --\n"}
                                                                        lang)
                                                                       ({:halite (utils/pprint-halite h-result)
-                                                                        :jadeite (str j-result "\n")} lang))))))))))
+                                                                        :jadeite (str j-result "\n")} lang)))))))))
+        (and (map c) (:propagate c)) (recur
+                                      more-c
+                                      spec-map
+                                      spec-map-throws
+                                      (conj results
+                                            (let [comment ({:halite  ";;" :jadeite "//"} lang)
+                                                  ;;code-str #(translate-spec-map-to-f lang % "") ;; Prettier jadeite, but doesn't handle fixed decimals
+                                                  code-str ({:halite utils/pprint-halite
+                                                             :jadeite #(str (jadeite/to-jadeite %) "\n")}
+                                                             lang)]
+                                              (spec-snippet-f lang
+                                                              (str
+                                                               comment " Propagate input bounds:\n"
+                                                               (code-str (:propagate c))
+                                                               "\n" comment " -- result bounds --\n"
+                                                               (code-str
+                                                                (propagate/propagate (var-types/to-halite-spec-env spec-map)
+                                                                                     propagate/default-options
+                                                                                     (:propagate c)))))))))
       results)))
 
 (defn how-to-md [lang {:keys [menu-file
