@@ -22,16 +22,16 @@ The refinement has a direction in terms of converting X to Y.
 {:$type :spec/Y$v1}
 ```
 
-This direction of the spec is the same, regardless of whether the refinement is inverted.
+This direction of the spec is the same, regardless of whether the refinement is intrinsic or extrinsic.
 
 ```clojure
 {:spec/X$v2 {:refines-to {:spec/Y$v2 {:name "refine_to_Y",
                                       :expr '{:$type :spec/Y$v2},
-                                      :inverted? true}}},
+                                      :extrinsic? true}}},
  :spec/Y$v2 {}}
 ```
 
-The inverted flag determines whether the constraints of Y are applied to all instances of X, but it does not affect the basic 'direction' of the refinement. i.e. the refinement still converts instances of X into instances of Y.
+The extrinsic flag determines whether the constraints of Y are applied to all instances of X, but it does not affect the basic 'direction' of the refinement. i.e. the refinement still converts instances of X into instances of Y.
 
 ```clojure
 (refine-to {:$type :spec/X$v2} :spec/Y$v2)

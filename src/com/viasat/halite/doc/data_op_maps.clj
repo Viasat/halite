@@ -588,7 +588,7 @@
                   :comment "This is similar to the 'if-value' operation, but applies generally to an expression which may or may not produce a value."
                   :examples [{:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "r"
                                                                                                        :expr 'placeholder
-                                                                                                       :inverted? true}}}
+                                                                                                       :extrinsic? true}}}
                                                              :my/Result$v1 {:fields {:x :Integer}}
                                                              :my/Spec$v1 {:fields {:n :Integer
                                                                                    :o [:Maybe :Integer]
@@ -601,7 +601,7 @@
                               :result :auto}
                              {:spec-map-f (make-spec-map-fn {:my/Other$v1 {:refines-to {:my/Result$v1 {:name "r"
                                                                                                        :expr 'placeholder
-                                                                                                       :inverted? true}}}
+                                                                                                       :extrinsic? true}}}
                                                              :my/Result$v1 {:fields {:x :Integer}},
                                                              :my/Spec$v1 {:fields {:n :Integer
                                                                                    :o [:Maybe :Integer]
@@ -1069,7 +1069,7 @@
                 :basic-ref ['symbol 'any]
                 :doc "Consider the value bound to the symbol. If it is a 'value', then evaluate the second argument. If instead it is 'unset' then produce unset."
                 :examples [{:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
-                                                                                                    :inverted? true
+                                                                                                    :extrinsic? true
                                                                                                     :name "r"}}
                                                                         :fields {:x [:Maybe :Integer]}}
                                                            :my/Result$v1 {:fields {:x [:Maybe :Integer]}}})
@@ -1079,7 +1079,7 @@
                             :doc "In the context of an instance with an optional field, x, when the field is set to the value of '1'."
                             :result :auto}
                            {:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
-                                                                                                    :inverted? true,
+                                                                                                    :extrinsic? true,
                                                                                                     :name "r"}}
                                                                         :fields {:x [:Maybe :Integer]}}
                                                            :my/Result$v1 {:fields {:x [:Maybe :Integer]}}})
@@ -1095,7 +1095,7 @@
                     :basic-ref ['symbol 'any]
                     :doc "If the binding value is a 'value' then evaluate the second argument with the symbol bound to binding. If instead, the binding value is 'unset', then produce 'unset'"
                     :examples [{:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
-                                                                                                        :inverted? true
+                                                                                                        :extrinsic? true
                                                                                                         :name "r"}}
                                                                             :fields {:y [:Maybe :Integer]}}
                                                                :my/Result$v1 {:fields {:x [:Maybe :Integer]}}})
@@ -1105,7 +1105,7 @@
                                 :result :auto
                                 :doc "In the context of an instance with an optional field, y, when the field is set to the value of '1'."}
                                {:spec-map-f (make-spec-map-fn {:my/Spec$v1 {:refines-to {:my/Result$v1 {:expr 'placeholder
-                                                                                                        :inverted? true
+                                                                                                        :extrinsic? true
                                                                                                         :name "r"}}
                                                                             :fields {:y [:Maybe :Integer]}}
                                                                :my/Result$v1 {:fields {:x [:Maybe :Integer]}}})

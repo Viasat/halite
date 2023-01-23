@@ -25,7 +25,7 @@
                                    (and (map? $this)
                                         (= :spec/B (:$type $this))
                                         (= #{:$type} (set (keys $this)))
-                                        ;; non-inverted refinement
+                                        ;; intrinsic refinement
                                         (if-let [refined (refine* :spec/B :spec/A $this)]
                                           (valid?* :spec/A refined)
                                           true)))
@@ -89,7 +89,7 @@
     (is (= true
            (spec-map-eval spec-map '(refines-to? {:$type :spec/C} :spec/A))))))
 
-(deftest test-transitive-refinements-with-invalid-inverted-step
+(deftest test-transitive-refinements-with-invalid-extrinsic-step
   (let [spec-map
         {:spec/Object {}
          :spec/Falsey {:fields {:f :Boolean}
@@ -101,7 +101,7 @@
                        :refines-to {:spec/Falsey {:name "as_Falsey"
                                                   :expr '{:$type :spec/Falsey
                                                           :f t}
-                                                  :inverted? true}}}}]
+                                                  :extrinsic? true}}}}]
     (is (= '{:spec/Object {:valid?-fn (fn [$this]
                                         (and (map? $this)
                                              (= :spec/Object (:$type $this))
@@ -238,7 +238,7 @@
                            :refines-to {:spec/A {:name "as_A"
                                                  :expr '{:$type :spec/A
                                                          :a (and b c)}
-                                                 :inverted? true}}}}]
+                                                 :extrinsic? true}}}}]
     (compare-to-halite spec-map '{:$type :spec/B :b true :c false})
     (compare-to-halite spec-map '(refine-to {:$type :spec/B :b true :c false} :spec/A))
 
@@ -251,6 +251,6 @@
     (compare-to-halite spec-map '{:$type :spec/C :b true :c true})
     (compare-to-halite spec-map '(refine-to {:$type :spec/C :b true :c true} :spec/A))))
 
-;; TODO: test whether errors in inverted refinements are handled properly by refines-to?
+;; TODO: test whether errors in extrinsic refinements are handled properly by refines-to?
 
 ;; (t/run-tests)

@@ -10269,7 +10269,7 @@
        [:throws "h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies"]])
   (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
                                       :expr '{:$type :spec/B}
-                                      :inverted? true}}}
+                                      :extrinsic? true}}}
        :spec/B {:fields {:a [:Maybe :spec/A]}}}
       [{:$type :spec/A}
        [:Instance :spec/A]
@@ -10279,7 +10279,7 @@
   (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
                                       :expr '{:$type :spec/B
                                               :a {:$type :spec/A}}
-                                      :inverted? true}}}
+                                      :extrinsic? true}}}
        :spec/B {:fields {:a [:Maybe :spec/A]}}}
       [{:$type :spec/A}
        [:Instance :spec/A]
@@ -10289,7 +10289,7 @@
   (hc {:spec/A {:refines-to {:spec/B {:name "refine_to_B"
                                       :expr '{:$type :spec/B
                                               :a {:$type :spec/A}}
-                                      :inverted? true}}}
+                                      :extrinsic? true}}}
        :spec/B {:fields {:a [:Maybe :spec/A]}}}
       [(refine-to {:$type :spec/A} :spec/B)
        [:Instance :spec/B]
@@ -10306,7 +10306,7 @@
                                       :expr '(when (> 0 (div 1 0))
                                                {:$type :spec/A
                                                 :x 1})
-                                      ;; :inverted? true
+                                      ;; :extrinsic? true
                                       }}}}
       [{:$type :spec/B, :x 0}
        [:Instance :spec/B]
@@ -10336,7 +10336,7 @@
                                                             :x 0} :x) -1)
                                                {:$type :spec/A
                                                 :x 5})
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(valid {:$type :spec/B, :x 0})
        [:Maybe [:Instance :spec/B]]
        {:$type :spec/B, :x 0}
@@ -10349,7 +10349,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '(when false {:$type :spec/A
                                                           :x (error "fail")})
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [{:$type :spec/B, :x 0}
        [:Instance :spec/B]
        {:$type :spec/B, :x 0}
@@ -10362,7 +10362,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '(when false {:$type :spec/A
                                                           :x (error "fail")})
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(refine-to {:$type :spec/B, :x 0} :spec/A)
        [:Instance :spec/A]
        [:throws "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B' to 'spec/A'"]
@@ -10376,7 +10376,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x (div 1 0)}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [{:$type :spec/B, :x 0}
        [:Instance :spec/B]
        {:$type :spec/B, :x 0}
@@ -10389,7 +10389,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x (div 1 0)}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(refine-to {:$type :spec/B, :x 0} :spec/A)
        [:Instance :spec/A]
        [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/divide-by-zero 0-0 : Cannot divide by zero\""]
@@ -10430,10 +10430,10 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x (div 1 0)}
-                                      :inverted? true}
+                                      :extrinsic? true}
                              :spec/X {:name "rx"
                                       :expr '(error "fail")
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(refine-to {:$type :spec/B, :x 0} :spec/X)
        [:Instance :spec/X]
        [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/spec-threw 0-0 : Spec threw error: \\\"fail\\\"\""]
@@ -10461,7 +10461,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x (div 1 0)}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(refines-to? {:$type :spec/B, :x 0} :spec/A)
        :Boolean
        [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/divide-by-zero 0-0 : Cannot divide by zero\""]
@@ -10475,7 +10475,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(valid (refine-to {:$type :spec/B, :x 0} :spec/A))
        [:Maybe [:Instance :spec/A]]
        [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints \\\"spec/A/x\\\"\""]
@@ -10489,7 +10489,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(refines-to? {:$type :spec/B, :x 0} :spec/A)
        :Boolean
        [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints \\\"spec/A/x\\\"\""]
@@ -10503,7 +10503,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(refine-to {:$type :spec/B, :x 0} :spec/A)
        [:Instance :spec/A]
        [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints \\\"spec/A/x\\\"\""]
@@ -10517,7 +10517,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [{:$type :spec/B, :x 0}
        [:Instance :spec/B]
        {:$type :spec/B, :x 0}
@@ -10530,7 +10530,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [{:$type :spec/B, :x 1}
        [:Instance :spec/B]
        {:$type :spec/B, :x 1}
@@ -10544,7 +10544,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}}
+                                      :extrinsic? true}}}}
       [(let [i {:$type :spec/B, :x 1}] 19)
        :Integer
        19
@@ -10555,7 +10555,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}
+                                      :extrinsic? true}}}
        :spec/C {:fields {:a :spec/A}}}
       [{:$type :spec/C, :a 1}
        [:throws "h-err/field-value-of-wrong-type 0-0 : Value of 'a' has wrong type"]])
@@ -10566,7 +10566,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}
+                                      :extrinsic? true}}}
        :spec/C {:fields {:a :spec/A}}
        :spec/P {:abstract? true
                 :fields {:q :Integer}
@@ -10584,7 +10584,7 @@
                 :refines-to {:spec/A {:name "refine_to_A"
                                       :expr '{:$type :spec/A
                                               :x x}
-                                      :inverted? true}}}
+                                      :extrinsic? true}}}
        :spec/C {:fields {:a :spec/A}}
        :spec/P {:abstract? true
                 :fields {:q :Integer}

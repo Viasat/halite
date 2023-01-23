@@ -585,7 +585,7 @@
                                                                                                                                                                                       (refine-to p :tutorials.grocery/Perk$v1))]
                                                                                                                                                                              (get pi :perkId))]
                                                                                                                                                                  (get p :perkId))}
-                                                                                                                                           :inverted? true}}}
+                                                                                                                                           :extrinsic? true}}}
                                         :tutorials.grocery/GroceryStoreSubscription$v1 {:fields {:name :String
                                                                                                  :storeCountry :tutorials.grocery/Country$v1
                                                                                                  :perkIds [:Vec :Integer]}

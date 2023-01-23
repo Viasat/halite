@@ -13,7 +13,7 @@
 (s/defschema Refinement
   {:expr s/Any
    (s/optional-key :name) s/Str
-   (s/optional-key :inverted?) s/Bool})
+   (s/optional-key :extrinsic?) s/Bool})
 
 (s/defschema NamedConstraint
   [(s/one base/ConstraintName :name) (s/one s/Any :expr)])
@@ -24,7 +24,7 @@
                          :expr s/Any})
 
 (s/defschema ExprObject (s/conditional
-                         #(or (not (nil? (:inverted? %)))
+                         #(or (not (nil? (:extrinsic? %)))
                               (nil? (:name %))) Refinement
                          :else Constraint))
 

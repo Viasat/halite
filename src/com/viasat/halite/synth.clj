@@ -63,9 +63,9 @@
                                   `(user-eval $this '~expr)))))]
                  [])
 
-             ;; non-inverted refinements
+             ;; intrinsic refinements
              ~@(->> (:refines-to spec)
-                    (remove (comp :inverted? val))
+                    (remove (comp :extrinsic? val))
                     (map (fn [[to-spec-id {:keys [expr]}]]
                            (strip-ns
                             `(if-let [refined (refine* ~spec-id ~to-spec-id $this)]
@@ -94,7 +94,7 @@
                    [(last refinement-path)
                     (strip-ns
                      `(fn [$this]
-                        ~(if (get-in spec-map [spec-id :refines-to (second refinement-path) :inverted?])
+                        ~(if (get-in spec-map [spec-id :refines-to (second refinement-path) :extrinsic?])
                            `(let [next (refine* ~spec-id ~(second refinement-path) $this)]
                               (when (not (valid?* ~(second refinement-path) next))
                                 (throw (ex-info "failed in refinement" {})))

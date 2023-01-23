@@ -69,7 +69,7 @@ The following is a full model for the grocery delivery business.
       "tutorials.grocery/GroceryStoreSubscription$v1" : {
         "name" : "refine_to_Store",
         "expr" : "{$type: tutorials.grocery/GroceryStoreSubscription$v1, name: \"Acme Foods\", perkIds: map(p in sortBy(pi in map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 ))pi.perkId)p.perkId, storeCountry: subscriberCountry}",
-        "inverted?" : true
+        "extrinsic?" : true
       }
     }
   },

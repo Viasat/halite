@@ -19,7 +19,7 @@
   ['constraint-set {:bnf " '#{' { '{' ':name' string ':expr' halite-expr '}' } '}'"}])
 
 (def refinement-map-bnf-pair
-  ['refinement-map {:bnf " '{' {namespaced-keyword:spec-id '{' ':name' string ':expr' halite-expr [':inverted?' boolean] '}' } '}'"}])
+  ['refinement-map {:bnf " '{' {namespaced-keyword:spec-id '{' ':name' string ':expr' halite-expr [':extrinsic?' boolean] '}' } '}'"}])
 
 (def spec-map-bnf-pair
   ['spec-map {:bnf "'{' {namespaced-keyword:spec-id '{' { (':abstract?' boolean) | (':fields' field-map) |  (':constraints' constraint-set) | (':refines-to' refinement-map) } '}'} '}'"}])

@@ -198,7 +198,7 @@
                                "Alternatively, we can simply ask whether the box can be converted to a square:"
                                {:code '(refines-to? {:$type :spec/Box$v2 :width 5 :length 6} :spec/Square)
                                 :result :auto}
-                               "Another way of defining the refinement is to declare it to be 'inverted?'. What this means is that the refinement will be applied where possible, and where it results in a contradiction then a runtime error is produced."
+                               "Another way of defining the refinement is to declare it to be 'extrinsic?'. What this means is that the refinement will be applied where possible, and where it results in a contradiction then a runtime error is produced."
                                {:spec-map {:spec/Square {:fields {:width :Integer
                                                                   :height :Integer}
                                                          :constraints #{{:name "square" :expr '(= width height)}}}
@@ -208,8 +208,8 @@
                                                                                     :expr '{:$type :spec/Square
                                                                                             :width width
                                                                                             :height length}
-                                                                                    :inverted? true}}}}}
-                               "Note that in this version of the refinement the guard clause in the refinement expression has been removed, which means the refinement applies to all instances of box. However, the refinement has been declared to be 'inverted?'. This means that even if the resulting square instance would violate the constraints of spec/Square, the spec/Box instance is still valid."
+                                                                                    :extrinsic? true}}}}}
+                               "Note that in this version of the refinement the guard clause in the refinement expression has been removed, which means the refinement applies to all instances of box. However, the refinement has been declared to be 'extrinsic?'. This means that even if the resulting square instance would violate the constraints of spec/Square, the spec/Box instance is still valid."
                                {:code '{:$type :spec/Box$v3 :width 5 :length 6}
                                 :result :auto}
                                "The box itself is valid, but now attempting to refine a non-square box into a square will produce a runtime error."
@@ -218,8 +218,8 @@
                                "Of course for a square box the refinement works as expected."
                                {:code '(refine-to {:$type :spec/Box$v3 :width 5 :length 5} :spec/Square)
                                 :result :auto}
-                               "A way of summarizing the two approaches to a refinement are: for 'normal' refinements, the refinement implies that the author of the spec is intending to incorporate all of the constraints implied by the refinement into the spec at hand. However, for an inverted refinement, the spec at hand is being defined independent of constraints implied by the refinement. Instead, it is the responsibility of the refinement expression to deal with all of the implications of the constraints of the spec being refined to. If the refinement expression does not take all the implications into account, then a runtime error results."
-                               "As an advanced topic, there is a 'valid?' operator which deals with immediate constraint violations in the spec at hand, but it does not handle the case of the application of an inverted refinement leading to a constraint violation."
+                               "A way of summarizing the two approaches to a refinement are: for 'intrinsic' refinements, the refinement implies that the author of the spec is intending to incorporate all of the constraints implied by the refinement into the spec at hand. However, for an extrinsic refinement, the spec at hand is being defined independent of constraints implied by the refinement. Instead, it is the responsibility of the refinement expression to deal with all of the implications of the constraints of the spec being refined to. If the refinement expression does not take all the implications into account, then a runtime error results."
+                               "As an advanced topic, there is a 'valid?' operator which deals with immediate constraint violations in the spec at hand, but it does not handle the case of the application of an extrinsic refinement leading to a constraint violation."
                                {:code '(valid? (refine-to {:$type :spec/Box$v3 :width 5 :length 6} :spec/Square))
                                 :throws :auto}]}
 
@@ -323,12 +323,12 @@
                                {:code '(refine-to {:$type :spec/X$v1} :spec/Y$v1)
                                 :result :auto}
 
-                               "This direction of the spec is the same, regardless of whether the refinement is inverted."
+                               "This direction of the spec is the same, regardless of whether the refinement is intrinsic or extrinsic."
                                {:spec-map {:spec/Y$v2 {}
                                            :spec/X$v2 {:refines-to {:spec/Y$v2 {:name "refine_to_Y"
                                                                                 :expr '{:$type :spec/Y$v2}
-                                                                                :inverted? true}}}}}
-                               "The inverted flag determines whether the constraints of Y are applied to all instances of X, but it does not affect the basic 'direction' of the refinement. i.e. the refinement still converts instances of X into instances of Y."
+                                                                                :extrinsic? true}}}}}
+                               "The extrinsic flag determines whether the constraints of Y are applied to all instances of X, but it does not affect the basic 'direction' of the refinement. i.e. the refinement still converts instances of X into instances of Y."
                                {:code '(refine-to {:$type :spec/X$v2} :spec/Y$v2)
                                 :result :auto}
                                "The use of the word 'to' in 'refine-to' and 'refines-to?' refers to this direction of the refinement mapping. So 'refine-to' means to 'execute a refinement', specifically a refinement that converts instances 'to' instances of the indicated spec."]

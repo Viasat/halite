@@ -73,7 +73,7 @@ The following is a full model for the grocery delivery business.
                                       (refine-to p :tutorials.grocery/Perk$v1))]
                                    (get pi :perkId))]
                       (get p :perkId))},
-          :inverted? true}}},
+          :extrinsic? true}}},
  :tutorials.grocery/GroceryStoreSubscription$v1
    {:fields {:name :String,
              :perkIds [:Vec :Integer],

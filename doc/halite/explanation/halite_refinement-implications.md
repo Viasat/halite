@@ -141,7 +141,7 @@ Alternatively, we can simply ask whether the box can be converted to a square:
 false
 ```
 
-Another way of defining the refinement is to declare it to be 'inverted?'. What this means is that the refinement will be applied where possible, and where it results in a contradiction then a runtime error is produced.
+Another way of defining the refinement is to declare it to be 'extrinsic?'. What this means is that the refinement will be applied where possible, and where it results in a contradiction then a runtime error is produced.
 
 ```clojure
 {:spec/Box$v3 {:fields {:length :Integer,
@@ -150,14 +150,14 @@ Another way of defining the refinement is to declare it to be 'inverted?'. What 
                                           :expr '{:$type :spec/Square,
                                                   :width width,
                                                   :height length},
-                                          :inverted? true}}},
+                                          :extrinsic? true}}},
  :spec/Square {:fields {:height :Integer,
                         :width :Integer},
                :constraints #{'{:name "square",
                                 :expr (= width height)}}}}
 ```
 
-Note that in this version of the refinement the guard clause in the refinement expression has been removed, which means the refinement applies to all instances of box. However, the refinement has been declared to be 'inverted?'. This means that even if the resulting square instance would violate the constraints of spec/Square, the spec/Box instance is still valid.
+Note that in this version of the refinement the guard clause in the refinement expression has been removed, which means the refinement applies to all instances of box. However, the refinement has been declared to be 'extrinsic?'. This means that even if the resulting square instance would violate the constraints of spec/Square, the spec/Box instance is still valid.
 
 ```clojure
 {:$type :spec/Box$v3,
@@ -201,9 +201,9 @@ Of course for a square box the refinement works as expected.
  :width 5}
 ```
 
-A way of summarizing the two approaches to a refinement are: for 'normal' refinements, the refinement implies that the author of the spec is intending to incorporate all of the constraints implied by the refinement into the spec at hand. However, for an inverted refinement, the spec at hand is being defined independent of constraints implied by the refinement. Instead, it is the responsibility of the refinement expression to deal with all of the implications of the constraints of the spec being refined to. If the refinement expression does not take all the implications into account, then a runtime error results.
+A way of summarizing the two approaches to a refinement are: for 'intrinsic' refinements, the refinement implies that the author of the spec is intending to incorporate all of the constraints implied by the refinement into the spec at hand. However, for an extrinsic refinement, the spec at hand is being defined independent of constraints implied by the refinement. Instead, it is the responsibility of the refinement expression to deal with all of the implications of the constraints of the spec being refined to. If the refinement expression does not take all the implications into account, then a runtime error results.
 
-As an advanced topic, there is a 'valid?' operator which deals with immediate constraint violations in the spec at hand, but it does not handle the case of the application of an inverted refinement leading to a constraint violation.
+As an advanced topic, there is a 'valid?' operator which deals with immediate constraint violations in the spec at hand, but it does not handle the case of the application of an extrinsic refinement leading to a constraint violation.
 
 ```clojure
 (valid? (refine-to {:$type :spec/Box$v3,

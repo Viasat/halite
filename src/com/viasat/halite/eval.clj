@@ -310,7 +310,7 @@
               (->> refines-to
                    (sort-by first)
                    (reduce
-                    (fn [{:keys [transitive-refinements exs]} [refines-to-spec-id {rname :name :keys [expr inverted?]} :as r]]
+                    (fn [{:keys [transitive-refinements exs]} [refines-to-spec-id {rname :name :keys [expr extrinsic?]} :as r]]
                       (binding [*refinements* transitive-refinements]
                         (let [{:keys [inst ex]} (try
                                                   {:inst (*eval-refinement-fn* ctx
@@ -319,9 +319,9 @@
                                                                                expr
                                                                                rname)}
                                                   (catch ExceptionInfo ex
-                                                    (if inverted?
+                                                    (if extrinsic?
                                                       {:inst ex}
-                                                      {:ex {:constraint {:spec-id (if inverted?
+                                                      {:ex {:constraint {:spec-id (if extrinsic?
                                                                                     refines-to-spec-id
                                                                                     spec-id)
                                                                          :name (if rname

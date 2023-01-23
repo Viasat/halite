@@ -713,7 +713,7 @@
 (deftest test-refinement-validation
   (let [senv {:ws/A {:fields {:x :Integer}
                      :refines-to {:ws/B {:expr '{:$type :ws/B :x x}}
-                                  :ws/C {:inverted? true :expr '{:$type :ws/C :x x}}}}
+                                  :ws/C {:extrinsic? true :expr '{:$type :ws/C :x x}}}}
               :ws/B {:fields {:x :Integer}
                      :constraints '#{{:name "posX" :expr (< 0 x)}}
                      :refines-to {:ws/D {:expr '{:$type :ws/D :x (+ 1 x)}}}}

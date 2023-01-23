@@ -42,7 +42,7 @@
 ;; value, then every instance in the chain to it from the root must also be
 ;; required.
 
-;; TODO: extrinsic (inverted) refinements
+;; TODO: extrinsic refinements
 ;; TODO: refines-to? support
 
 (def AtomBound prop-composition/AtomBound)
@@ -88,7 +88,7 @@
   (when (map? form)
     (let [spec-id (:$type form)
           spec (get sctx spec-id)
-          intrinsics (->> spec :refines-to (remove #(-> % val :inverted?)))
+          intrinsics (->> spec :refines-to (remove #(-> % val :extrinsic?)))
           refinement-fields (zipmap (map #(keyword (refinement-field %)) (keys intrinsics))
                                     (map #(ssa/form-from-ssa spec (-> % val :expr)) intrinsics))]
       (when (and (seq refinement-fields)
@@ -112,7 +112,7 @@
         (fn [spec]
           (update spec :fields (fnil into {})
                   (->> (:refines-to spec)
-                       (remove #(-> % val :inverted?))
+                       (remove #(-> % val :extrinsic?))
                        (map (fn [[to-spec-id {:keys [expr]}]]
                               [(refinement-field to-spec-id)
                                ;; guarded refinement expressions have :Maybe type here:
@@ -126,7 +126,7 @@
           (->> sctx
                (map (fn [[spec-id spec]]
                       (->> (:refines-to spec)
-                           (remove #(-> % val :inverted?))
+                           (remove #(-> % val :extrinsic?))
                            (reduce (fn [spec [to-spec-id {:keys [expr]}]]
                                      (let [field (refinement-field to-spec-id)]
                                        (rewriting/add-constraint "prop-refine-as-constraint"
@@ -158,13 +158,13 @@
 
 (defn- disallow-unsupported-refinements
   "Our refinement lowering code is not currently correct when the refinements
-  are optional, or when refinements are extrinsic (inverted).
+  are optional, or when refinements are extrinsic.
   We'll fix it, but until we do, we should at least not emit incorrect results silently."
   [sctx]
   (doseq [[spec-id {:keys [refines-to ssa-graph]}] sctx
-          [to-id {:keys [expr inverted?]}] refines-to]
-    (when inverted?
-      (throw (ex-info (format "BUG! Refinement of %s to %s is inverted, and propagate does not yet support inverted refinements"
+          [to-id {:keys [expr extrinsic?]}] refines-to]
+    (when extrinsic?
+      (throw (ex-info (format "BUG! Refinement of %s to %s is extrinsic, and propagate does not yet support extrinsic refinements"
                               spec-id to-id)
                       {:sctx sctx}))))
   sctx)

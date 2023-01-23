@@ -75,7 +75,7 @@
                                        :style :backtranslate
                                        :map {:force-nl? true
                                              :key-order [:abstract? :fields :constraints :refines-to
-                                                         :name :expr :inverted?]}})]
+                                                         :name :expr :extrinsic?]}})]
      (if trailing-newline?
        (if (= \newline s)
          s
