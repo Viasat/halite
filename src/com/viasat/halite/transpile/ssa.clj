@@ -20,7 +20,8 @@
 
 (def ^:private supported-halite-ops
   (into
-   '#{dec inc + - * < <= > >= and or not => div mod expt abs = cond if not= let get valid? refine-to if-value when-value when error
+   '#{dec inc + - * < <= > >= and or not => div mod expt abs = cond if not= let get
+      valid valid? refine-to if-value when-value when error
       count range every? any? concat conj map contains?
       ;; introduced just so the fixed-decimal lowering can be performed on ssa form
       rescale
@@ -642,6 +643,7 @@
                                  (if (set? coll)
                                    (app-to-ssa ctx (list* 'or (map #(list '= % expr) coll)))
                                    (throw (ex-info (format "TBD: `contains?` only currently supported on literal sets")))))
+                    'valid (form-to-ssa ctx (list 'when (list 'valid? (first args)) (first args)))
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)
