@@ -1,6 +1,6 @@
 (def bld-num (or (System/getenv "BUILD_NUMBER") "0"))  ; Jenkins build num (0 for local builds)
 (def ver-qualifier (or (System/getenv "GIT_COMMIT") "SNAPSHOT"))  ; Git commit (SNAPSHOT for local builds)
-(def ver (str "1.0." bld-num "-" ver-qualifier))
+(def ver (str "v1.1." bld-num "-" ver-qualifier))
 
 (defproject com.viasat/halite ver
   :description "Successor to Salt"
