@@ -8,6 +8,11 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 
 ## Tutorials
 
+### tutorials.notebook
+
+* Model a notebook mechanism [(Halite)](halite/tutorial/halite_notebook.md) [(Jadeite)](jadeite/tutorial/halite_notebook-j.md)
+  * 
+
 ### tutorials.vending
 
 * Model a vending machine as a state machine [(Halite)](halite/tutorial/halite_vending.md) [(Jadeite)](jadeite/tutorial/halite_vending-j.md)
