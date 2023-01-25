@@ -32,11 +32,11 @@
                :op-ref ['when 'when-value 'when-value-let 'if-value 'if-value-let]
                :examples [{:expr-str "(if-value $no-value 7 13)"
                            :expr-str-j :auto
-                           :result :auto}
+                           :result 13}
                           {:spec-map {:my/Spec$v1 {:fields {:x [:Maybe :Integer]}}}
                            :expr-str "{:$type :my/Spec$v1,\n :x $no-value}"
                            :expr-str-j :auto
-                           :result :auto}]}
+                           :result {:$type :my/Spec$v1}}]}
    '$this {:sigs [["" "value"]]
            :sigs-j [["<$this>" "unset"]]
            :doc "Context dependent reference to the containing object."}
@@ -51,13 +51,13 @@
        :throws ['h-err/overflow]
        :examples [{:expr-str "(* 2 3)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result 6}
                   {:expr-str "(* #d \"2.2\" 3)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result #d "6.6"}
                   {:expr-str "(* 2 3 4)"
                    :expr-str-j :auto
-                   :result :auto}]}
+                   :result 24}]}
    '+ {:sigs [["integer integer {integer}" "integer"]
               ["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]]
        :sigs-j [["integer '+' integer" "integer"]
@@ -68,16 +68,16 @@
        :throws ['h-err/overflow]
        :examples [{:expr-str "(+ 2 3)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result 5}
                   {:expr-str "(+ #d \"2.2\" #d \"3.3\")"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result #d "5.5"}
                   {:expr-str "(+ 2 3 4)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result 9}
                   {:expr-str "(+ 2 -3)"
                    :expr-str-j :auto
-                   :result :auto}]}
+                   :result -1}]}
    '- {:sigs [["integer integer {integer}" "integer"]
               ["fixed-decimal fixed-decimal {fixed-decimal}" "fixed-decimal"]]
        :sigs-j [["integer '-' integer" "integer"]
@@ -87,16 +87,16 @@
        :doc "Subtract one number from another."
        :examples [{:expr-str "(- 2 3)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result -1}
                   {:expr-str "(- #d \"2.2\" #d \"3.3\")"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result #d "-1.1"}
                   {:expr-str "(- 2 3 4)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result -5}
                   {:expr-str "(- 2 -3)"
                    :expr-str-j :auto
-                   :result :auto}]
+                   :result 5}]
        :throws ['h-err/overflow]}
    '< {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
        :sigs-j [["((integer '<'  integer) | (fixed-decimal '<' fixed-decimal))" "boolean"]]
@@ -105,13 +105,13 @@
        :doc "Determine if a number is strictly less than another."
        :examples [{:expr-str "(< 2 3)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(< #d \"2.2\" #d \"3.3\")"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(< 2 2)"
                    :expr-str-j :auto
-                   :result :auto}]}
+                   :result false}]}
    '<= {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
         :sigs-j [["((integer '<=' integer) | (fixed-decimal '<=' fixed-decimal))" "boolean"]]
         :tags #{:integer-op :fixed-decimal-op :boolean-out}
@@ -119,13 +119,13 @@
         :doc "Determine if a number is less than or equal to another."
         :examples [{:expr-str "(<= 2 3)"
                     :expr-str-j :auto
-                    :result :auto}
+                    :result true}
                    {:expr-str "(<= #d \"2.2\" #d \"3.3\")"
                     :expr-str-j :auto
-                    :result :auto}
+                    :result true}
                    {:expr-str "(<= 2 2)"
                     :expr-str-j :auto
-                    :result :auto}]}
+                    :result true}]}
    '= {:sigs [["value value {value}" "boolean"]]
        :sigs-j [["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]
                 ["value '==' value" "boolean"]]
@@ -137,49 +137,49 @@
        :op-ref ['= 'not=]
        :examples [{:expr-str "(= 2 2)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(= #d \"2.2\" #d \"3.3\")"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result false}
                   {:expr-str "(= 2 3)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result false}
                   {:expr-str "(= 1 1 1)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(= 1 1 2)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result false}
                   {:expr-str "(= \"hi\" \"hi\")"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(= [1 2 3] [1 2 3])"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(= [1 2 3] #{1 2 3})"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result false}
                   {:expr-str "(= #{3 1 2} #{1 2 3})"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(= [#{1 2} #{3}] [#{1 2} #{3}])"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(= [#{1 2} #{3}] [#{1 2} #{4}])"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result false}
                   {:spec-map {:my/Spec$v1 {:fields {:x :Integer
                                                     :y :Integer}}}
                    :instance {:$type :my/Other$v1}
                    :expr-str "(= {:$type :my/Spec$v1 :x 1 :y -1} {:$type :my/Spec$v1 :x 1 :y 0})"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result false}
                   {:spec-map {:my/Spec$v1 {:fields {:x :Integer
                                                     :y :Integer}}}
                    :instance {:$type :my/Other$v1}
                    :expr-str "(= {:$type :my/Spec$v1 :x 1 :y 0} {:$type :my/Spec$v1 :x 1 :y 0})"
                    :expr-str-j :auto
-                   :result :auto}]}
+                   :result true}]}
    '=> {:sigs [["boolean boolean" "boolean"]]
         :sigs-j [["boolean '=>' boolean" "boolean"]]
         :tags #{:boolean-op :boolean-out}
@@ -187,13 +187,13 @@
         :doc "Performs logical implication. If the first value is true, then the second value must also be true for the result to be true. If the first value is false, then the result is true."
         :examples [{:expr-str "(=> (> 2 1) (< 1 2))"
                     :expr-str-j :auto
-                    :result :auto}
+                    :result true}
                    {:expr-str "(=> (> 2 1) (> 1 2))"
                     :expr-str-j :auto
-                    :result :auto}
+                    :result false}
                    {:expr-str "(=> (> 1 2) false)"
                     :expr-str-j :auto
-                    :result :auto}]
+                    :result true}]
         :op-ref ['and 'every? 'not 'or]}
    '> {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
        :sigs-j [["((integer '>'  integer) | (fixed-decimal '>' fixed-decimal))" "boolean"]]
@@ -202,13 +202,13 @@
        :doc "Determine if a number is strictly greater than another."
        :examples [{:expr-str "(> 3 2)"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(> #d \"3.3\" #d \"2.2\" )"
                    :expr-str-j :auto
-                   :result :auto}
+                   :result true}
                   {:expr-str "(> 2 2)"
                    :expr-str-j :auto
-                   :result :auto}]}
+                   :result false}]}
    '>= {:sigs [["((integer integer) | (fixed-decimal fixed-decimal))" "boolean"]]
         :sigs-j [["((integer '>='  integer) | (fixed-decimal '>=' fixed-decimal))" "boolean"]]
         :tags #{:integer-op :fixed-decimal-op :boolean-out}
@@ -216,13 +216,13 @@
         :doc "Determine if a number is greater than or equal to another."
         :examples [{:expr-str "(>= 3 2)"
                     :expr-str-j :auto
-                    :result :auto}
+                    :result true}
                    {:expr-str "(>= #d \"3.3\" #d \"2.2\" )"
                     :expr-str-j :auto
-                    :result :auto}
+                    :result true}
                    {:expr-str "(>= 2 2)"
                     :expr-str-j :auto
-                    :result :auto}]}
+                    :result true}]}
    'abs {:sigs [["integer" "integer"]
                 ["fixed-decimal" "fixed-decimal"]]
          :sigs-j [["'abs' '(' integer ')'" "integer"]
@@ -234,13 +234,13 @@
          :throws ['h-err/abs-failure]
          :examples [{:expr-str "(abs -1)"
                      :expr-str-j :auto
-                     :result :auto}
+                     :result 1}
                     {:expr-str "(abs 1)"
                      :expr-str-j :auto
-                     :result :auto}
+                     :result 1}
                     {:expr-str "(abs #d \"-1.0\")"
                      :expr-str-j :auto
-                     :result :auto}]}
+                     :result #d "1.0"}]}
    'and {:sigs [["boolean boolean {boolean}" "boolean"]]
          :sigs-j [["boolean '&&' boolean" "boolean"]]
          :tags #{:boolean-op :boolean-out}
@@ -250,13 +250,13 @@
          :op-ref ['=> 'every? 'not 'or]
          :examples [{:expr-str "(and true false)"
                      :expr-str-j :auto
-                     :result :auto}
+                     :result false}
                     {:expr-str "(and true true)"
                      :expr-str-j :auto
-                     :result :auto}
+                     :result true}
                     {:expr-str "(and (> 2 1) (> 3 2) (> 4 3))"
                      :expr-str-j :auto
-                     :result :auto}]}
+                     :result true}]}
    'any? {:sigs [["'[' symbol (set | vector) ']' boolean-expression" "boolean"]]
           :sigs-j [["'any?' '(' symbol 'in' (set | vector) ')' boolean-expression" "boolean"]]
           :tags #{:set-op :vector-op :boolean-out :special-form}
@@ -265,10 +265,10 @@
           :comment "The operation does not short-circuit. The boolean-expression is evaluated for all elements even if a prior element has caused the boolean-expression to evaluate to true. Operating on an empty collection produces a false value."
           :examples [{:expr-str "(any? [x [1 2 3]] (> x 1))"
                       :expr-str-j :auto
-                      :result :auto}
+                      :result true}
                      {:expr-str "(any? [x #{1 2 3}] (> x 10))"
                       :expr-str-j :auto
-                      :result :auto}]
+                      :result false}]
           :throws ['h-err/comprehend-binding-wrong-count
                    'h-err/comprehend-collection-invalid-type
                    'l-err/binding-target-invalid-symbol
@@ -286,13 +286,13 @@
             :comment "Invoking this operation with a vector and an empty set has the effect of converting a vector into a set with duplicate values removed."
             :examples [{:expr-str "(concat [1 2] [3])"
                         :expr-str-j :auto
-                        :result :auto}
+                        :result [1 2 3]}
                        {:expr-str "(concat #{1 2} [3 4])"
                         :expr-str-j :auto
-                        :result :auto}
+                        :result #{1 2 3 4}}
                        {:expr-str "(concat [] [])"
                         :expr-str-j :auto
-                        :result :auto}]
+                        :result []}]
             :throws ['h-err/not-both-vectors
                      'h-err/size-exceeded
                      'h-err/unknown-type-collection]}
@@ -306,13 +306,13 @@
           :comment "Only definite values may be put into collections, i.e. collections cannot contain 'unset' values."
           :examples [{:expr-str "(conj [1 2] 3)"
                       :expr-str-j :auto
-                      :result :auto}
+                      :result [1 2 3]}
                      {:expr-str "(conj #{1 2} 3 4)"
                       :expr-str-j :auto
-                      :result :auto}
+                      :result #{1 2 3 4}}
                      {:expr-str "(conj [] 1)"
                       :expr-str-j :auto
-                      :result :auto}]
+                      :result [1]}]
           :throws ['h-err/argument-not-set-or-vector
                    'h-err/cannot-conj-unset
                    'h-err/size-exceeded
@@ -325,16 +325,16 @@
                :comment "Since collections themselves are compared by their contents, this works for collections nested inside of sets."
                :examples [{:expr-str "(contains? #{\"a\" \"b\"} \"a\")"
                            :expr-str-j :auto
-                           :result :auto}
+                           :result true}
                           {:expr-str "(contains? #{\"a\" \"b\"} \"c\")"
                            :expr-str-j :auto
-                           :result :auto}
+                           :result false}
                           {:expr-str "(contains? #{#{1 2} #{3}} #{1 2})"
                            :expr-str-j :auto
-                           :result :auto}
+                           :result true}
                           {:expr-str "(contains? #{[1 2] [3]} [4])"
                            :expr-str-j :auto
-                           :result :auto}]}
+                           :result false}]}
    'count {:sigs [["(set | vector)" "integer"]]
            :sigs-j [["(set | vector) '.' 'count()'" "integer"]]
            :tags #{:integer-out :set-op :vector-op}
@@ -342,13 +342,13 @@
            :doc "Return how many items are in a collection."
            :examples [{:expr-str "(count [10 20 30])"
                        :expr-str-j :auto
-                       :result :auto}
+                       :result 3}
                       {:expr-str "(count #{\"a\" \"b\"})"
                        :expr-str-j :auto
-                       :result :auto}
+                       :result 2}
                       {:expr-str "(count [])"
                        :expr-str-j :auto
-                       :result :auto}]}
+                       :result 0}]}
    'dec {:sigs [["integer" "integer"]]
          :sigs-j [["integer '-' '1' " "integer"]]
          :tags #{:integer-op :integer-out}
@@ -357,9 +357,9 @@
          :throws ['h-err/overflow]
          :op-ref ['inc]
          :examples [{:expr-str "(dec 10)"
-                     :result :auto}
+                     :result 9}
                     {:expr-str "(dec 0)"
-                     :result :auto}]}
+                     :result -1}]}
    'difference {:sigs [["set set" "set"]]
                 :sigs-j [["set '.' 'difference' '(' set ')'" "set"]]
                 :tags #{:set-op :set-out}
@@ -370,16 +370,16 @@
                 :throws ['h-err/arguments-not-sets]
                 :examples [{:expr-str "(difference #{1 2 3} #{1 2})"
                             :expr-str-j :auto
-                            :result :auto}
+                            :result #{3}}
                            {:expr-str "(difference #{1 2 3} #{})"
                             :expr-str-j :auto
-                            :result :auto}
+                            :result #{1 2 3}}
                            {:expr-str "(difference #{1 2 3} #{1 2 3 4})"
                             :expr-str-j :auto
-                            :result :auto}
+                            :result #{}}
                            {:expr-str "(difference #{[1 2] [3]} #{[1 2]})"
                             :expr-str-j :auto
-                            :result :auto}]}
+                            :result #{[3]}}]}
    'div {:sigs [["integer integer" "integer"]
                 ["fixed-decimal integer" "fixed-decimal"]]
          :sigs-j [["integer '/' integer" "integer"]
@@ -391,16 +391,16 @@
          :throws ['h-err/divide-by-zero]
          :examples [{:expr-str "(div 12 3)"
                      :expr-str-j :auto
-                     :result :auto}
+                     :result 4}
                     {:expr-str "(div #d \"12.3\" 3)"
                      :expr-str-j :auto
-                     :result :auto}
+                     :result #d "4.1"}
                     {:expr-str "(div 14 4)"
                      :expr-str-j :auto
-                     :result :auto}
+                     :result 3}
                     {:expr-str "(div #d \"14.3\" 3)"
                      :expr-str-j :auto
-                     :result :auto}
+                     :result #d "4.7"}
                     {:expr-str "(div 1 0)"
                      :expr-str-j :auto
                      :result :auto}]

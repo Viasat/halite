@@ -90,6 +90,11 @@
                                                                  (str ({:halite  "\n\n;-- result --\n"
                                                                         :jadeite "\n\n//-- result --\n"}
                                                                        lang)
+                                                                      (when (and (contains? c :result)
+                                                                                 (not= (:result c) :auto)
+                                                                                 (not= (:result c) h-result))
+                                                                        (throw (ex-info "results do not match" {:c c
+                                                                                                                :h-result h-result})))
                                                                       ({:halite (utils/pprint-halite h-result)
                                                                         :jadeite (str j-result "\n")} lang)))))))))
         (and (map c) (:propagate c)) (recur

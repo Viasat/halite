@@ -52,7 +52,7 @@
                                         :x 100} :spec/B))]
     (.-h-result r)))
 
-(defn- expand-example [[op m]]
+(defn- expand-example [file-name [op m]]
   [op (if (:examples m)
         (assoc m :examples (mapv (fn [example]
                                    (let [{:keys [expr-str expr-str-j result result-j spec-map-f instance spec-map]} example]
@@ -83,12 +83,11 @@
                                                    {:h-result (.-h-result i)
                                                     :j-result (.-j-result i)
                                                     :j-expr (.-j-expr i)})))
-
                                              err-result? (and (vector? h-result)
                                                               (= :throws (first h-result)))
                                              to-merge (apply merge [(when (= expr-str-j :auto)
                                                                       {:expr-str-j j-expr})
-                                                                    (when (= result :auto)
+                                                                    (when (contains? example :result)
                                                                       (if err-result?
                                                                         {:err-result (str (namespace (get h-result 2))
                                                                                           "/"
@@ -108,20 +107,27 @@
                                              base-example (if (contains? to-merge :err-result-j)
                                                             (dissoc base-example :result-j)
                                                             base-example)]
+                                         (when (and (contains? example :result)
+                                                    (not= result :auto)
+                                                    (not= result h-result))
+                                           (throw (ex-info "unexpected result" {:file-name file-name
+                                                                                :op op
+                                                                                :example example
+                                                                                :actual-result h-result})))
                                          (merge base-example to-merge))
                                        example)))
                                  (:examples m)))
         m)])
 
-(defn- expand-examples-map [op-maps]
+(defn- expand-examples-map [file-name op-maps]
   (->> op-maps
-       (mapcat expand-example)
+       (mapcat (partial expand-example file-name))
        (apply sorted-map)))
 
-(defn- expand-examples-vector [basic-bnf]
+(defn- expand-examples-vector [file-name basic-bnf]
   (->> basic-bnf
        (partition 2)
-       (mapcat expand-example)
+       (mapcat (partial expand-example file-name))
        vec))
 
 ;;;;
@@ -131,9 +137,9 @@
 
 (def ^:private misc-notes-halite ["For halite, whitespace also includes the comma. The comma can be used as an optional delimiter in sequences to improve readability."])
 
-(def ^:private basic-bnf (expand-examples-vector basic-bnf-vector))
+(def ^:private basic-bnf (expand-examples-vector "com.viasat.halite.doc.data-basic-bnf" basic-bnf-vector))
 
-(def ^:private op-maps (expand-examples-map op-maps/op-maps))
+(def ^:private op-maps (expand-examples-map "com.viasat.halite.doc.data-op-maps" op-maps/op-maps))
 
 (def ^:private jadeite-ommitted-ops #{'dec 'inc})
 
@@ -367,11 +373,11 @@
 ;; will be removed from data-var. This is incomplete -- add entries as needed
 ;; for your documentation tasks:
 (def ^:private gen-doc-fns
-  [[#'op-maps/op-maps #(alter-var-root #'op-maps (constantly (expand-examples-map op-maps/op-maps)))]
+  [[#'op-maps/op-maps #(alter-var-root #'op-maps (constantly (expand-examples-map "com.viasat.halite.doc.data-op-maps" op-maps/op-maps)))]
    [#'op-maps #(do (alter-var-root #'op-maps-j (constantly (translate-op-maps-to-jadeite op-maps)))
                    (produce-full-md :halite)
                    (produce-full-md :jadeite))]
-   [#'basic-bnf-vector #(alter-var-root #'basic-bnf (constantly (expand-examples-vector basic-bnf-vector)))]
+   [#'basic-bnf-vector #(alter-var-root #'basic-bnf (constantly (expand-examples-vector "com.viasat.halite.doc.data-basic-bnf" basic-bnf-vector)))]
    [#'basic-bnf #(do (bnf-diagrams/produce-basic-bnf-diagrams *run-config* "basic-all.svg" "basic-all-j.svg" basic-bnf)
                      (produce-basic-md :halite)
                      (produce-basic-md :jadeite))]
