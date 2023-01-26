@@ -1211,6 +1211,7 @@ h-err/divide-by-zero
 #### Possible errors:
 
 * [`h-err/divide-by-zero`](halite_err-id-reference.md#h-err/divide-by-zero)
+* [`h-err/overflow`](halite_err-id-reference.md#h-err/overflow)
 
 See also: [`mod`](#mod)
 

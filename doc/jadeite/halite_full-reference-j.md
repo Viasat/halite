@@ -637,6 +637,7 @@ h-err/divide-by-zero
 #### Possible errors:
 
 * [`h-err/divide-by-zero`](halite_err-id-reference-j.md#h-err/divide-by-zero)
+* [`h-err/overflow`](halite_err-id-reference-j.md#h-err/overflow)
 
 See also: [`%`](#%)
 

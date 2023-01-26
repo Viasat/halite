@@ -388,7 +388,7 @@
          :basic-ref ['integer 'fixed-decimal]
          :doc "Divide the first number by the second. When the first argument is an integer the result is truncated to an integer value. When the first argument is a fixed-decimal the result is truncated to the same precision as the first argument."
          :comment "As with multiplication, fixed-decimal values cannot be divided by each other, instead a fixed-decimal value can be scaled down within the number space of that scale."
-         :throws ['h-err/divide-by-zero]
+         :throws ['h-err/divide-by-zero 'h-err/overflow]
          :examples [{:expr-str "(div 12 3)"
                      :expr-str-j :auto
                      :result 4}

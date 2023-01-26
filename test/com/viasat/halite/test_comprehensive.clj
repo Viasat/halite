@@ -5655,7 +5655,7 @@
   (h
    (first [])
    [:throws
-    "h-err/argument-empty 0-0 : Argument to first is always empty"])
+    "h-err/argument-empty 0-0 : Argument to first is empty"])
   (h (rest []) [:Vec :Nothing] [] "[].rest()" "[]")
   (h
    (first)

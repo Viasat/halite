@@ -156,7 +156,7 @@
         {:template "Argument to ':op' must be a vector"})
 
 (deferr argument-empty [data]
-        {:template "Argument to first is always empty"})
+        {:template "Argument to first is empty"})
 
 (deferr argument-not-set-or-vector [data]
         {:template "First argument to 'conj' must be a set or vector"})

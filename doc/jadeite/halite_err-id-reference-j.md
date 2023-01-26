@@ -47,7 +47,7 @@ The 'first' operation cannot be invoked on an empty collection.
 
 #### Error message template:
 
-> Argument to first is always empty
+> Argument to first is empty
 
 #### Produced by operators:
 
@@ -685,6 +685,7 @@ The mathematical operation resulted in a number that is too large to fit in the 
 * [`*`](halite_full-reference-j.md#_S)
 * [`+`](halite_full-reference-j.md#_A)
 * [`-`](halite_full-reference-j.md#-)
+* [`/`](halite_full-reference-j.md#/)
 * [`expt`](halite_full-reference-j.md#expt)
 
 ---
