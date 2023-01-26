@@ -271,7 +271,7 @@
                          (reduce (fn [r arg]
                                    (when (and (= r Long/MIN_VALUE)
                                               (= arg -1))
-                                     (throw (ex-info "overflow" {})))
+                                     (throw (ex-info "overflow" {:overflow? true})))
                                    (/ r arg))
                                  n
                                  args)))))

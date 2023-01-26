@@ -120,7 +120,7 @@
                      (try
                        (fixed-decimal/fquot x y)
                        (catch ExceptionInfo ex
-                         (if (= (.getMessage ex) "overflow")
+                         (if (:overflow? (ex-data ex))
                            (throw-err (h-err/overflow {}))
                            (throw ex)))))))
 (def habs  (comp #(if (hneg? %)
