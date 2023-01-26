@@ -10,7 +10,7 @@
                  [instaparse "1.4.10"]
                  [net.nextencia/rrdiagram "0.9.4"]
                  [org.choco-solver/choco-solver "4.10.8"]
-                 [org.clojure/clojure "1.11.0"]
+                 [org.clojure/clojure "1.11.1"]
                  [org.clojure/core.match "1.0.0"]
                  [org.clojure/math.numeric-tower "0.0.5"]
                  [org.clojure/tools.logging "1.2.4"]
