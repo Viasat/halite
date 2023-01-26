@@ -85,7 +85,7 @@
                                                           lang
                                                           (str ({:halite (utils/pprint-halite h-expr)
                                                                  :jadeite (str j-expr "\n")} lang)
-                                                               (when (or (:result c)
+                                                               (when (or (contains? c :result)
                                                                          (:throws c))
                                                                  (str ({:halite  "\n\n;-- result --\n"
                                                                         :jadeite "\n\n//-- result --\n"}
