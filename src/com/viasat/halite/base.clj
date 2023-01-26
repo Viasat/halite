@@ -6,7 +6,8 @@
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [com.viasat.halite.types :as types]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
 
@@ -110,7 +111,18 @@
 (def h+    (math-f +    fixed-decimal/f+))
 (def h-    (math-f -    fixed-decimal/f-))
 (def h*    (math-f *    fixed-decimal/f*))
-(def hquot (math-f quot fixed-decimal/fquot))
+(def hquot (math-f (fn [x y]
+                     (if (and (= x Long/MIN_VALUE)
+                              (= y -1))
+                       (throw-err (h-err/overflow {}))
+                       (quot x y)))
+                   (fn [x y]
+                     (try
+                       (fixed-decimal/fquot x y)
+                       (catch ExceptionInfo ex
+                         (if (= (.getMessage ex) "overflow")
+                           (throw-err (h-err/overflow {}))
+                           (throw ex)))))))
 (def habs  (comp #(if (hneg? %)
                     (throw-err (h-err/abs-failure {:value %}))
                     %)

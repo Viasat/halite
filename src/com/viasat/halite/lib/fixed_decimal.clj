@@ -267,7 +267,14 @@
                      :args args
                      :class-args (map class args)})))
   (let [[scale n] (extract-long f)]
-    (package-long scale (long (apply / n args)))))
+    (package-long scale (long
+                         (reduce (fn [r arg]
+                                   (when (and (= r Long/MIN_VALUE)
+                                              (= arg -1))
+                                     (throw (ex-info "overflow" {})))
+                                   (/ r arg))
+                                 n
+                                 args)))))
 
 (schema/defn shift-scale :- (schema/conditional
                              fixed-decimal? FixedDecimal

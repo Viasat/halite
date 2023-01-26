@@ -671,6 +671,59 @@
    [:throws
     "h-err/abs-failure 0-0 : Cannot compute absolute value of: -9223372036854775808"])
   (h
+   (* -1 -9223372036854775808)
+   :Integer
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
+   "(-1 * -9223372036854775808)"
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
+  (h
+   (* #d "-922337203685477580.8" -1)
+   [:Decimal 1]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
+   "(#d \"-922337203685477580.8\" * -1)"
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
+  (h
+   (* -1 -9223372036854775807)
+   :Integer
+   9223372036854775807
+   "(-1 * -9223372036854775807)"
+   "9223372036854775807")
+  (h
+   (* -1 9223372036854775807)
+   :Integer
+   -9223372036854775807
+   "(-1 * 9223372036854775807)"
+   "-9223372036854775807")
+  (h
+   (div -9223372036854775807 -1)
+   :Integer
+   9223372036854775807
+   "(-9223372036854775807 / -1)"
+   "9223372036854775807")
+  (h
+   (div -9223372036854775808 -1)
+   :Integer
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
+   "(-9223372036854775808 / -1)"
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
+  (h
+   (div #d "-922337203685477580.8" -1)
+   [:Decimal 1]
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"]
+   "(#d \"-922337203685477580.8\" / -1)"
+   [:throws "h-err/overflow 0-0 : Numeric value overflow"])
+  (h
+   (div 9223372036854775807 -1)
+   :Integer
+   -9223372036854775807
+   "(9223372036854775807 / -1)"
+   "-9223372036854775807")
+  (h
+   (div -99 -1)
+   :Integer
+   99
+   "(-99 / -1)" "99")
+  (h
    (= -9223372036854775808 -9223372036854775808)
    :Boolean
    true
