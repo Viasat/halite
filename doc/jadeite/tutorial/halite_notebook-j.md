@@ -153,7 +153,7 @@
     "refines-to" : {
       "tutorials.notebook/SpecId$v1" : {
         "name" : "toSpecId",
-        "expr" : "({ 'all-spec-ids' = existingSpecIds.concat(map(ns in newSpecs)ns.refineTo( tutorials.notebook/SpecId$v1 )); 'spec-version' = inputSpecRef.specVersion; (ifValue('spec-version') {({ result = inputSpecRef.refineTo( tutorials.notebook/SpecId$v1 ); (when(#{}.concat('all-spec-ids').contains?(result)) {result}) })} else {({ 'max-version-in-context' = {$type: tutorials.notebook/FMaxSpecVersion$v1, specIds: 'all-spec-ids', specName: inputSpecRef.specName}.refineTo( tutorials.notebook/RInteger$v1 ).result; (whenValue('max-version-in-context') {{$type: tutorials.notebook/SpecId$v1, specName: inputSpecRef.specName, specVersion: 'max-version-in-context'}}) })}) })"
+        "expr" : "({ 'all-spec-ids' = existingSpecIds.concat((map(ns in newSpecs)ns.refineTo( tutorials.notebook/SpecId$v1 ))); 'spec-version' = inputSpecRef.specVersion; (ifValue('spec-version') {({ result = inputSpecRef.refineTo( tutorials.notebook/SpecId$v1 ); (when(#{}.concat('all-spec-ids').contains?(result)) {result}) })} else {({ 'max-version-in-context' = {$type: tutorials.notebook/FMaxSpecVersion$v1, specIds: 'all-spec-ids', specName: inputSpecRef.specName}.refineTo( tutorials.notebook/RInteger$v1 ).result; (whenValue('max-version-in-context') {{$type: tutorials.notebook/SpecId$v1, specName: inputSpecRef.specName, specVersion: 'max-version-in-context'}}) })}) })"
       }
     }
   }
@@ -246,7 +246,7 @@ A notebook contains spec references. This is modeled as the results of having pa
       "specIds" : [ "Vec", "tutorials.notebook/SpecId$v1" ],
       "notebooks" : [ "Vec", "tutorials.notebook/Notebook$v1" ]
     },
-    "constraints" : [ "{expr: (#{}.concat(map(n in notebooks)n.name).count() == notebooks.count()), name: \"uniqueNotebookNames\"}", "{expr: (#{}.concat(specIds).count() == specIds.count()), name: \"uniqueSpecIds\"}" ]
+    "constraints" : [ "{expr: (#{}.concat((map(n in notebooks)n.name)).count() == notebooks.count()), name: \"uniqueNotebookNames\"}", "{expr: (#{}.concat(specIds).count() == specIds.count()), name: \"uniqueSpecIds\"}" ]
   }
 }
 ```
@@ -279,7 +279,7 @@ A notebook contains spec references. This is modeled as the results of having pa
       "newSpecs" : [ "Vec", "tutorials.notebook/NewSpec$v1" ],
       "specRefs" : [ "Vec", "tutorials.notebook/SpecRef$v1" ]
     },
-    "constraints" : [ "{expr: every?(sr in specRefs){$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: specIds, inputSpecRef: sr, newSpecs: newSpecs}.refinesTo?( tutorials.notebook/SpecId$v1 ), name: \"validRefs\"}" ]
+    "constraints" : [ "{expr: (every?(sr in specRefs){$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: specIds, inputSpecRef: sr, newSpecs: newSpecs}.refinesTo?( tutorials.notebook/SpecId$v1 )), name: \"validRefs\"}" ]
   }
 }
 ```
@@ -315,7 +315,7 @@ false
       "specIds" : [ "Vec", "tutorials.notebook/SpecId$v1" ],
       "newSpecs" : [ "Vec", "tutorials.notebook/NewSpec$v1" ]
     },
-    "constraints" : [ "{expr: ({ 'all-spec-names' = (reduce( a = #{}; ns in newSpecs ) { (if(a.contains?(ns.specName)) {a} else {a.conj(ns.specName)}) }); every?(n in 'all-spec-names')({ 'max-version' = {$type: tutorials.notebook/FMaxSpecVersion$v1, specIds: specIds, specName: n}.refineTo( tutorials.notebook/RInteger$v1 ).result; versions = [(ifValue('max-version') {'max-version'} else {0})].concat(map(ns in filter(ns in newSpecs)(n == ns.specName))ns.specVersion); every?(pair in map(i in range(0, (versions.count() - 1)))[versions[i], versions[(i + 1)]])((pair[0] + 1) == pair[1]) }) }), name: \"newSpecsInOrder\"}" ]
+    "constraints" : [ "{expr: ({ 'all-spec-names' = (reduce( a = #{}; ns in newSpecs ) { (if(a.contains?(ns.specName)) {a} else {a.conj(ns.specName)}) }); (every?(n in 'all-spec-names')({ 'max-version' = {$type: tutorials.notebook/FMaxSpecVersion$v1, specIds: specIds, specName: n}.refineTo( tutorials.notebook/RInteger$v1 ).result; versions = [(ifValue('max-version') {'max-version'} else {0})].concat((map(ns in (filter(ns in newSpecs)(n == ns.specName)))ns.specVersion)); (every?(pair in (map(i in range(0, (versions.count() - 1)))[versions[i], versions[(i + 1)]]))((pair[0] + 1) == pair[1])) })) }), name: \"newSpecsInOrder\"}" ]
   }
 }
 ```
@@ -360,11 +360,11 @@ true
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: ({ filtered = filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion)); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ValidRefs$v1, newSpecs: nb.newSpecs, specIds: workspace.specIds, specRefs: nb.specRefs}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion)).count() > 0), name: \"notebookExists\"}", "{expr: ({ filtered = filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion)); (if((filtered.count() > 0)) {({ nb = filtered.first(); (nb.newSpecs.count() > 0) })} else {true}) }), name: \"notebookContainsNewSpecs\"}", "{expr: ({ filtered = filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion)); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: nb.newSpecs, specIds: workspace.specIds}) })} else {true}) }), name: \"specsApplicable\"}" ],
+    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ValidRefs$v1, newSpecs: nb.newSpecs, specIds: workspace.specIds, specRefs: nb.specRefs}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ((filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: nb.newSpecs, specIds: workspace.specIds}) })} else {true}) }), name: \"specsApplicable\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in nb.newSpecs)({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() > 0) })} else {true}) }), name: \"notebookContainsNonEphemeralNewSpecs\"}" ],
     "refines-to" : {
       "tutorials.notebook/Workspace$v1" : {
         "name" : "newWorkspace",
-        "expr" : "({ filtered = filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion)); (when((filtered.count() > 0)) {({ nb = filtered.first(); {$type: tutorials.notebook/Workspace$v1, notebooks: filter(nb in workspace.notebooks)((nb.name != notebookName) || (nb.version != notebookVersion)).conj({$type: tutorials.notebook/Notebook$v1, name: nb.name, newSpecs: [], specRefs: nb.specRefs, version: (nb.version + 1)}), specIds: workspace.specIds.concat(map(ns in nb.newSpecs)ns.refineTo( tutorials.notebook/SpecId$v1 ))} })}) })"
+        "expr" : "({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (when((filtered.count() > 0)) {({ nb = filtered.first(); {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspace.notebooks)((nb.name != notebookName) || (nb.version != notebookVersion))).conj({$type: tutorials.notebook/Notebook$v1, name: nb.name, newSpecs: (filter(ns in nb.newSpecs)({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {true} else {false}) })), specRefs: nb.specRefs, version: (nb.version + 1)}), specIds: workspace.specIds.concat((map(ns in (filter(ns in nb.newSpecs)({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })))ns.refineTo( tutorials.notebook/SpecId$v1 )))} })}) })"
       }
     }
   }
@@ -379,12 +379,14 @@ true
 [true, false, false]
 ```
 
+If all of the new specs in the notebooks are ephemeral, then it cannot be applied.
+
 ```java
-({ ws = {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, name: "notebook1", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "my/A", specVersion: 3}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 3}], version: 1}], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}]}; (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: ws}) })
+({ ws = {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, name: "notebook1", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "my/A", specVersion: 3}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 3}], version: 1}], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}]}; (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: ws}) })
 
 
 //-- result --
-true
+false
 ```
 
 ```java
@@ -396,10 +398,10 @@ false
 ```
 
 ```java
-{$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, name: "notebook1", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "my/A", specVersion: 3}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 3}], version: 1}, {$type: tutorials.notebook/Notebook$v1, name: "notebook2", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "my/B", specVersion: 1}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/B", specVersion: 1}], version: 3}], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}]}}.refineTo( tutorials.notebook/Workspace$v1 )
+{$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, name: "notebook1", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "my/A", specVersion: 3}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "my/C", specVersion: 1}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 3}], version: 1}, {$type: tutorials.notebook/Notebook$v1, name: "notebook2", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "my/B", specVersion: 1}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/B", specVersion: 1}], version: 3}], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}]}}.refineTo( tutorials.notebook/Workspace$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, name: "notebook2", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "my/B", specVersion: 1}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/B", specVersion: 1}], version: 3}, {$type: tutorials.notebook/Notebook$v1, name: "notebook1", newSpecs: [], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 3}], version: 2}], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 3}]}
+{$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, name: "notebook2", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "my/B", specVersion: 1}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/B", specVersion: 1}], version: 3}, {$type: tutorials.notebook/Notebook$v1, name: "notebook1", newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "my/C", specVersion: 1}], specRefs: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 3}], version: 2}], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 3}]}
 ```
 

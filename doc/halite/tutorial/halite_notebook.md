@@ -716,13 +716,16 @@ true
              :notebookVersion :Integer,
              :workspace :tutorials.notebook/Workspace$v1},
     :constraints
-      #{'{:name "notebookContainsNewSpecs",
+      #{'{:name "notebookContainsNonEphemeralNewSpecs",
           :expr (let [filtered (filter [nb (get workspace :notebooks)]
                                  (and (= (get nb :name) notebookName)
                                       (= (get nb :version) notebookVersion)))]
                   (if (> (count filtered) 0)
                     (let [nb (first filtered)]
-                      (> (count (get nb :newSpecs)) 0))
+                      (> (count (filter [ns (get nb :newSpecs)]
+                                  (let [is-ephemeral (get ns :isEphemeral)]
+                                    (if-value is-ephemeral false true))))
+                         0))
                     true))}
         '{:name "notebookExists",
           :expr (> (count (filter [nb (get workspace :notebooks)]
@@ -759,11 +762,14 @@ true
                    (when (> (count filtered) 0)
                      (let [nb (first filtered)]
                        {:$type :tutorials.notebook/Workspace$v1,
-                        :specIds (concat (get workspace :specIds)
-                                         (map [ns (get nb :newSpecs)]
-                                           (refine-to
-                                             ns
-                                             :tutorials.notebook/SpecId$v1))),
+                        :specIds
+                          (concat
+                            (get workspace :specIds)
+                            (map [ns
+                                  (filter [ns (get nb :newSpecs)]
+                                    (let [is-ephemeral (get ns :isEphemeral)]
+                                      (if-value is-ephemeral false true)))]
+                              (refine-to ns :tutorials.notebook/SpecId$v1))),
                         :notebooks
                           (conj (filter [nb (get workspace :notebooks)]
                                   (or (not= (get nb :name) notebookName)
@@ -771,7 +777,10 @@ true
                                 {:$type :tutorials.notebook/Notebook$v1,
                                  :name (get nb :name),
                                  :version (inc (get nb :version)),
-                                 :newSpecs [],
+                                 :newSpecs
+                                   (filter [ns (get nb :newSpecs)]
+                                     (let [is-ephemeral (get ns :isEphemeral)]
+                                       (if-value is-ephemeral true false))),
                                  :specRefs (get nb :specRefs)})})))}}}}
 ```
 
@@ -811,6 +820,8 @@ true
 [true false false]
 ```
 
+If all of the new specs in the notebooks are ephemeral, then it cannot be applied.
+
 ```clojure
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
           :specIds [{:$type :tutorials.notebook/SpecId$v1,
@@ -827,7 +838,8 @@ true
                        :version 1,
                        :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
                                    :specName "my/A",
-                                   :specVersion 3}],
+                                   :specVersion 3,
+                                   :isEphemeral true}],
                        :specRefs [{:$type :tutorials.notebook/SpecRef$v1,
                                    :specName "my/A",
                                    :specVersion 1}
@@ -841,7 +853,7 @@ true
 
 
 ;-- result --
-true
+false
 ```
 
 ```clojure
@@ -890,7 +902,11 @@ false
                             :version 1,
                             :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
                                         :specName "my/A",
-                                        :specVersion 3}],
+                                        :specVersion 3}
+                                       {:$type :tutorials.notebook/NewSpec$v1,
+                                        :specName "my/C",
+                                        :specVersion 1,
+                                        :isEphemeral true}],
                             :specRefs [{:$type :tutorials.notebook/SpecRef$v1,
                                         :specName "my/A",
                                         :specVersion 1}
@@ -930,7 +946,10 @@ false
               :version 3}
              {:name "notebook1",
               :$type :tutorials.notebook/Notebook$v1,
-              :newSpecs [],
+              :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
+                          :isEphemeral true,
+                          :specName "my/C",
+                          :specVersion 1}],
               :specRefs [{:$type :tutorials.notebook/SpecRef$v1,
                           :specName "my/A",
                           :specVersion 1}
