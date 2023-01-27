@@ -1275,6 +1275,11 @@
   (h (first (sort #{1})) :Integer 1 "#{1}.sort().first()" "1")
   (h (first (reduce (a []) [x (sort #{1})] (conj a x)))
      [:syntax-check-throws "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: a"])
+  (h (let [a 3] (first (filter [x [1 2 a]] (> x 100))))
+     :Integer
+     [:throws "h-err/argument-empty 0-0 : Argument to first is empty"]
+     "({ a = 3; (filter(x in [1, 2, a])(x > 100)).first() })"
+     [:throws "h-err/argument-empty 0-0 : Argument to first is empty"])
   (h
    (first (reduce [a []] [x (sort #{1})] (conj a x)))
    :Integer
@@ -10563,7 +10568,20 @@
        "{$type: spec/B, x: 0}.refineTo( spec/A )"
        [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints \\\"spec/A/x\\\"\""]])
 
-  ;; constraint violation - instantiate
+  (hc {:spec/A {:fields {:x :Integer}
+                :constraints #{{:name "x" :expr '(> x 0)}}}
+       :spec/B {:fields {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '{:$type :spec/A
+                                              :x x}
+                                      :extrinsic? true}}}}
+      [(valid (refine-to {:$type :spec/B, :x 0} :spec/A))
+       [:Maybe [:Instance :spec/A]]
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints \\\"spec/A/x\\\"\""]
+       "(valid {$type: spec/B, x: 0}.refineTo( spec/A ))"
+       [:throws "h-err/refinement-error 0-0 : Refinement from 'spec/B' failed unexpectedly: \"h-err/invalid-instance 0-0 : Invalid instance of 'spec/A', violates constraints \\\"spec/A/x\\\"\""]])
+
+;; constraint violation - instantiate
   (hc {:spec/A {:fields {:x :Integer}
                 :constraints #{{:name "x" :expr '(> x 0)}}}
        :spec/B {:fields {:x :Integer}
