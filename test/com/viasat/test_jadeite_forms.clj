@@ -231,7 +231,9 @@
     ((if (any? [a-b #{1 2 3}] (< a-b 3)) "yep" "nope")        "(if(any?(<a-b> in #{1, 2, 3})(<a-b> < 3)) \"yep\" else \"nope\")")
     ((every? [in [1 2]] (let [in (inc in)] (= 0 (mod in 2)))) "every?(in in [1, 2]){ in=in+1; 0 == in%2 }")
     ((map [x #{1 3 2}] (+ x 10))                              "map(x in #{ 1, 2, 3 }) x + 10")
-    ((filter [x #{1 3 2}] (and (> x 2) (< x 10)))             "filter(x in #{ 1, 2, 3 }) { x > 2 && x < 10 }")
+    ((filter [x #{1 3 2}] (and (> x 2) (< x 10)))             "(filter(x in #{ 1, 2, 3 }) { x > 2 && x < 10 })")
+    ((first (map [x [1 2]] a))                                "(map(x in [1, 2]) a).first()")
+
     ((range 2 7 3)                                            "range(2, 7, 3)")
     ((sort #{1 3 2})                                          "#{1,3,2}.sort()")
     ((sort-by [x #{1 3 2}] x)                                 "sortBy(x in #{1,3,2}) { x }")

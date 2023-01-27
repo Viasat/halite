@@ -9,7 +9,7 @@ Consider that you have a collection of values and need to produce a collection o
 A collection of values can be transformed into a new collection of values. For example, the following transforms a vector of integers into a new vector of integers.
 
 ```java
-({ v = [1, 2, 3]; map(x in v)(x * 10) })
+({ v = [1, 2, 3]; (map(x in v)(x * 10)) })
 
 
 //-- result --
@@ -19,7 +19,7 @@ A collection of values can be transformed into a new collection of values. For e
 The same works with sets.
 
 ```java
-({ s = #{1, 2, 3}; map(x in s)(x * 10) })
+({ s = #{1, 2, 3}; (map(x in s)(x * 10)) })
 
 
 //-- result --

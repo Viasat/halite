@@ -5464,19 +5464,19 @@
    (every? [x #{1 2}] (> x 0))
    :Boolean
    true
-   "every?(x in #{1, 2})(x > 0)"
+   "(every?(x in #{1, 2})(x > 0))"
    "true")
   (h
    (every? [x #{1 2}] (> x 10))
    :Boolean
    false
-   "every?(x in #{1, 2})(x > 10)"
+   "(every?(x in #{1, 2})(x > 10))"
    "false")
   (h
    (every? [x #{1 2}] (> x 1))
    :Boolean
    false
-   "every?(x in #{1, 2})(x > 1)"
+   "(every?(x in #{1, 2})(x > 1))"
    "false")
   (h
    (every? [x #{3 2}] (> (count x) 1))
@@ -5498,13 +5498,13 @@
    (every? [x #{4 3}] (every? [y #{1 2}] (< y x)))
    :Boolean
    true
-   "every?(x in #{3, 4})every?(y in #{1, 2})(y < x)"
+   "(every?(x in #{3, 4})(every?(y in #{1, 2})(y < x)))"
    "true")
   (h
    (every? [x #{4 3}] false)
    :Boolean
    false
-   "every?(x in #{3, 4})false"
+   "(every?(x in #{3, 4})false)"
    "false")
   (h
    (every? [x #{4 3}] $no-value)
@@ -5530,7 +5530,7 @@
    (every? [_ #{}] false)
    :Boolean
    true
-   "every?('_' in #{})false"
+   "(every?('_' in #{})false)"
    "true")
   (h
    (every? [_ #{}] _)
@@ -5540,13 +5540,13 @@
    (every? [_ #{true}] _)
    :Boolean
    true
-   "every?('_' in #{true})'_'"
+   "(every?('_' in #{true})'_')"
    "true")
   (h
    (every? [h19 #{true}] h19)
    :Boolean
    true
-   "every?(h19 in #{true})h19"
+   "(every?(h19 in #{true})h19)"
    "true")
   (h
    (every? [☺ #{true}] ☺)
@@ -5574,7 +5574,7 @@
    (every? [if #{1 2}] (> 0 if))
    :Boolean
    false
-   "every?(if in #{1, 2})(0 > if)"
+   "(every?(if in #{1, 2})(0 > if))"
    "false")
   (h
    (every? [if if] (> 0 if))
@@ -5594,13 +5594,13 @@
    (any? [x #{1 2}] (> x 1))
    :Boolean
    true
-   "any?(x in #{1, 2})(x > 1)"
+   "(any?(x in #{1, 2})(x > 1))"
    "true")
   (h
    (any? [x #{1 3 2}] (= x 1))
    :Boolean
    true
-   "any?(x in #{1, 2, 3})(x == 1)"
+   "(any?(x in #{1, 2, 3})(x == 1))"
    "true")
   (h
    (any? ["a" #{1 3 2}] true)
@@ -5618,13 +5618,13 @@
    (any? [x #{1 3 2}] (any? [y #{4 6 2}] (= x y)))
    :Boolean
    true
-   "any?(x in #{1, 2, 3})any?(y in #{2, 4, 6})(x == y)"
+   "(any?(x in #{1, 2, 3})(any?(y in #{2, 4, 6})(x == y)))"
    "true")
   (h
    (any? [x #{1 3 2}] (every? [y #{1 2}] (< y x)))
    :Boolean
    true
-   "any?(x in #{1, 2, 3})every?(y in #{1, 2})(y < x)"
+   "(any?(x in #{1, 2, 3})(every?(y in #{1, 2})(y < x)))"
    "true"))
 
 (deftest
@@ -6856,38 +6856,38 @@
 
 (deftest
   test-vector-every?
-  (h (every? [x []] true) :Boolean true "every?(x in [])true" "true")
-  (h (every? [x []] false) :Boolean true "every?(x in [])false" "true")
+  (h (every? [x []] true) :Boolean true "(every?(x in [])true)" "true")
+  (h (every? [x []] false) :Boolean true "(every?(x in [])false)" "true")
   (h
    (every? [_x [10 20 30]] (= (mod _x 3) 1))
    :Boolean
    false
-   "every?('_x' in [10, 20, 30])(('_x' % 3) == 1)"
+   "(every?('_x' in [10, 20, 30])(('_x' % 3) == 1))"
    "false")
   (h
    (every? [x [#{10} #{20 30}]] (> (count x) 0))
    :Boolean
    true
-   "every?(x in [#{10}, #{20, 30}])(x.count() > 0)"
+   "(every?(x in [#{10}, #{20, 30}])(x.count() > 0))"
    "true")
-  (h (every? [x []] false) :Boolean true "every?(x in [])false" "true")
+  (h (every? [x []] false) :Boolean true "(every?(x in [])false)" "true")
   (h
    (every? [x [1]] false)
    :Boolean
    false
-   "every?(x in [1])false"
+   "(every?(x in [1])false)"
    "false")
   (h
    (every? [x [1 2 3]] (every? [y [10 20]] (> y x)))
    :Boolean
    true
-   "every?(x in [1, 2, 3])every?(y in [10, 20])(y > x)"
+   "(every?(x in [1, 2, 3])(every?(y in [10, 20])(y > x)))"
    "true")
   (h
    (every? [x [false (> (mod 2 0) 3)]] x)
    :Boolean
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
-   "every?(x in [false, ((2 % 0) > 3)])x"
+   "(every?(x in [false, ((2 % 0) > 3)])x)"
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]))
 
 (deftest
@@ -6900,25 +6900,25 @@
    (any? [x []] (when true false))
    [:throws
     "h-err/not-boolean-body 0-0 : Body expression in 'any?' must be boolean"])
-  (h (any? [x []] false) :Boolean false "any?(x in [])false" "false")
-  (h (any? [x []] true) :Boolean false "any?(x in [])true" "false")
+  (h (any? [x []] false) :Boolean false "(any?(x in [])false)" "false")
+  (h (any? [x []] true) :Boolean false "(any?(x in [])true)" "false")
   (h
    (any? [x [true false false]] x)
    :Boolean
    true
-   "any?(x in [true, false, false])x"
+   "(any?(x in [true, false, false])x)"
    "true")
   (h
    (any? [x [true (= 4 (div 1 0))]] x)
    :Boolean
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
-   "any?(x in [true, (4 == (1 / 0))])x"
+   "(any?(x in [true, (4 == (1 / 0))])x)"
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"])
   (h
    (any? [x [1 0]] (> (div 100 x) 1))
    :Boolean
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
-   "any?(x in [1, 0])((100 / x) > 1)"
+   "(any?(x in [1, 0])((100 / x) > 1))"
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]))
 
 (deftest
@@ -8752,20 +8752,20 @@
    (map [x [10 11 12]] (inc x))
    [:Vec :Integer]
    [11 12 13]
-   "map(x in [10, 11, 12])(x + 1)"
+   "(map(x in [10, 11, 12])(x + 1))"
    "[11, 12, 13]")
   (h
    (map [x ["a" "b" "c"]] x)
    [:Vec :String]
    ["a" "b" "c"]
-   "map(x in [\"a\", \"b\", \"c\"])x"
+   "(map(x in [\"a\", \"b\", \"c\"])x)"
    "[\"a\", \"b\", \"c\"]")
   (h
    (map [x []] (inc x))
    [:throws
     "l-err/disallowed-nothing 0-0 : Disallowed ':Nothing' expression: x"])
-  (h (map [x []] x) [:Vec :Nothing] [] "map(x in [])x" "[]")
-  (h (map [x []] (+ 1 2)) [:Vec :Nothing] [] "map(x in [])(1 + 2)" "[]")
+  (h (map [x []] x) [:Vec :Nothing] [] "(map(x in [])x)" "[]")
+  (h (map [x []] (+ 1 2)) [:Vec :Nothing] [] "(map(x in [])(1 + 2))" "[]")
   (h
    (map [x "abc"] x)
    [:throws
@@ -8778,19 +8778,19 @@
    (map [x [[1 2] [3 4 5]]] x)
    [:Vec [:Vec :Integer]]
    [[1 2] [3 4 5]]
-   "map(x in [[1, 2], [3, 4, 5]])x"
+   "(map(x in [[1, 2], [3, 4, 5]])x)"
    "[[1, 2], [3, 4, 5]]")
   (h
    (map [x [[1 2] [3 4 5]]] (count x))
    [:Vec :Integer]
    [2 3]
-   "map(x in [[1, 2], [3, 4, 5]])x.count()"
+   "(map(x in [[1, 2], [3, 4, 5]])x.count())"
    "[2, 3]")
   (h
    (map [x [#{1 2} #{4 3 5}]] (count x))
    [:Vec :Integer]
    [2 3]
-   "map(x in [#{1, 2}, #{3, 4, 5}])x.count()"
+   "(map(x in [#{1, 2}, #{3, 4, 5}])x.count())"
    "[2, 3]")
   (h
    (map [x [1]] (when false 2))
@@ -8814,7 +8814,7 @@
    [(map [x [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]] x)
     [:Vec [:Instance :*]]
     [{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}]
-    "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x"
+    "(map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x)"
     "[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]"])
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}, :spec/B$v1 {:fields {:x :String}}}
@@ -8831,7 +8831,7 @@
     [:Vec :Integer]
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]
-    "map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x"
+    "(map(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}])x.refineTo( spec/A$v1 ).x)"
     [:throws
      "h-err/no-refinement-path 0-0 : No active refinement path from 'spec/B$v1' to 'spec/A$v1'"]])
   (hc
@@ -8841,37 +8841,37 @@
      (valid x))
     [:throws
      "h-err/arg-type-mismatch 0-0 : Argument to 'valid' must be an instance of known type"]])
-  (h (map [x #{}] x) [:Set :Nothing] #{} "map(x in #{})x" "#{}")
+  (h (map [x #{}] x) [:Set :Nothing] #{} "(map(x in #{})x)" "#{}")
   (h
    (map [x #{1 3 2}] x)
    [:Set :Integer]
    #{1 3 2}
-   "map(x in #{1, 2, 3})x"
+   "(map(x in #{1, 2, 3})x)"
    "#{1, 2, 3}")
   (h
    (map [x #{1 3 2}] (inc x))
    [:Set :Integer]
    #{4 3 2}
-   "map(x in #{1, 2, 3})(x + 1)"
+   "(map(x in #{1, 2, 3})(x + 1))"
    "#{2, 3, 4}")
   (h
    (map [x #{1 3 2}] 9)
    [:Set :Integer]
    #{9}
-   "map(x in #{1, 2, 3})9"
+   "(map(x in #{1, 2, 3})9)"
    "#{9}")
   (h
    (map [x #{"a" "b" "c"}] x)
    [:Set :String]
    #{"a" "b" "c"}
-   "map(x in #{\"a\", \"b\", \"c\"})x"
+   "(map(x in #{\"a\", \"b\", \"c\"})x)"
    "#{\"a\", \"b\", \"c\"}")
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}, :spec/B$v1 {:fields {:x :String}}}
    [(map [x #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}] x)
     [:Set [:Instance :*]]
     #{{:$type :spec/A$v1, :x 1} {:$type :spec/B$v1, :x "a"}}
-    "map(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}})x"
+    "(map(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}})x)"
     "#{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}}"])
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}, :spec/B$v1 {:fields {:x :String}}}
@@ -8887,13 +8887,13 @@
      (count x))
     [:Set :Integer]
     #{2}
-    "map(x in #{[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]})x.count()"
+    "(map(x in #{[{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: \"a\"}]})x.count())"
     "#{2}"])
   (h
    (map [x [2 1 0]] (div 1 x))
    [:Vec :Integer]
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
-   "map(x in [2, 1, 0])(1 / x)"
+   "(map(x in [2, 1, 0])(1 / x))"
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]))
 
 (deftest
@@ -8921,12 +8921,12 @@
    [(filter [x {:$type :spec/A$v1, :x 1}] true)
     [:throws
      "h-err/comprehend-collection-invalid-type 0-0 : Collection required for 'filter', not :spec/A$v1"]])
-  (h (filter [x []] true) [:Vec :Nothing] [] "filter(x in [])true" "[]")
+  (h (filter [x []] true) [:Vec :Nothing] [] "(filter(x in [])true)" "[]")
   (h
    (filter [x #{}] true)
    [:Set :Nothing]
    #{}
-   "filter(x in #{})true"
+   "(filter(x in #{})true)"
    "#{}")
   (h
    (filter [x "abs"] true)
@@ -8936,25 +8936,25 @@
    (filter [x [1 2 3]] (> x 2))
    [:Vec :Integer]
    [3]
-   "filter(x in [1, 2, 3])(x > 2)"
+   "(filter(x in [1, 2, 3])(x > 2))"
    "[3]")
   (h
    (filter [x #{1 3 2}] (> x 2))
    [:Set :Integer]
    #{3}
-   "filter(x in #{1, 2, 3})(x > 2)"
+   "(filter(x in #{1, 2, 3})(x > 2))"
    "#{3}")
   (h
    (filter [x [0 1]] (> (div 1 x) 1))
    [:Vec :Integer]
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
-   "filter(x in [0, 1])((1 / x) > 1)"
+   "(filter(x in [0, 1])((1 / x) > 1))"
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"])
   (h
    (filter [x #{0 1}] (> (div 1 x) 1))
    [:Set :Integer]
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
-   "filter(x in #{0, 1})((1 / x) > 1)"
+   "(filter(x in #{0, 1})((1 / x) > 1))"
    [:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"])
   (h
    (filter [x ["a" "b"]] (+ x 1))
@@ -8968,13 +8968,13 @@
    (filter [x #{true false}] x)
    [:Set :Boolean]
    #{true}
-   "filter(x in #{false, true})x"
+   "(filter(x in #{false, true})x)"
    "#{true}")
   (h
    (filter [x [true false false true]] (not x))
    [:Vec :Boolean]
    [false false]
-   "filter(x in [true, false, false, true])!x"
+   "(filter(x in [true, false, false, true])!x)"
    "[false, false]")
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}}
@@ -8990,7 +8990,7 @@
      (valid? x))
     [:Set [:Instance :spec/A$v1]]
     #{{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}}
-    "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}})(valid? x)"
+    "(filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}})(valid? x))"
     "#{{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}}"])
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}}
@@ -8999,7 +8999,7 @@
      (> (get x :x) 1))
     [:Vec [:Instance :spec/A$v1]]
     [{:$type :spec/A$v1, :x 2}]
-    "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])(x.x > 1)"
+    "(filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])(x.x > 1))"
     "[{$type: spec/A$v1, x: 2}]"])
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}}
@@ -9008,7 +9008,7 @@
      (refines-to? x :spec/A$v1))
     [:Vec [:Instance :spec/A$v1]]
     [{:$type :spec/A$v1, :x 1} {:$type :spec/A$v1, :x 2}]
-    "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])x.refinesTo?( spec/A$v1 )"
+    "(filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}])x.refinesTo?( spec/A$v1 ))"
     "[{$type: spec/A$v1, x: 1}, {$type: spec/A$v1, x: 2}]"])
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}, :spec/B$v1 {:fields {:x :Integer}}}
@@ -9017,7 +9017,7 @@
      (refines-to? x :spec/A$v1))
     [:Vec [:Instance :*]]
     [{:$type :spec/A$v1, :x 1}]
-    "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])x.refinesTo?( spec/A$v1 )"
+    "(filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])x.refinesTo?( spec/A$v1 ))"
     "[{$type: spec/A$v1, x: 1}]"])
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}, :spec/B$v1 {:fields {:x :Integer}}}
@@ -9038,7 +9038,7 @@
          false)))
     [:Vec [:Instance :*]]
     [{:$type :spec/A$v1, :x 1}]
-    "filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])({ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) })"
+    "(filter(x in [{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}])({ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 0)} else {false}) }))"
     "[{$type: spec/A$v1, x: 1}]"])
   (hc
    {:spec/A$v1 {:fields {:x :Integer}}, :spec/B$v1 {:fields {:x :Integer}}}
@@ -9052,7 +9052,7 @@
          true)))
     [:Set [:Instance :*]]
     #{{:$type :spec/B$v1, :x 2}}
-    "filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}})({ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 1)} else {true}) })"
+    "(filter(x in #{{$type: spec/A$v1, x: 1}, {$type: spec/B$v1, x: 2}})({ x = x; (if(x.refinesTo?( spec/A$v1 )) {(x.refineTo( spec/A$v1 ).x > 1)} else {true}) }))"
     "#{{$type: spec/B$v1, x: 2}}"]))
 
 (deftest
@@ -9325,25 +9325,25 @@
    (map [x (if true [1 2] #{4 3})] (inc x))
    [:Coll :Integer]
    [2 3]
-   "map(x in (if(true) {[1, 2]} else {#{3, 4}}))(x + 1)"
+   "(map(x in (if(true) {[1, 2]} else {#{3, 4}}))(x + 1))"
    "[2, 3]")
   (h
    (map [x (if false [1 2] #{4 3})] (inc x))
    [:Coll :Integer]
    #{4 5}
-   "map(x in (if(false) {[1, 2]} else {#{3, 4}}))(x + 1)"
+   "(map(x in (if(false) {[1, 2]} else {#{3, 4}}))(x + 1))"
    "#{4, 5}")
   (h
    (filter [x (if true [1 2] #{4 3})] (> x 1))
    [:Coll :Integer]
    [2]
-   "filter(x in (if(true) {[1, 2]} else {#{3, 4}}))(x > 1)"
+   "(filter(x in (if(true) {[1, 2]} else {#{3, 4}}))(x > 1))"
    "[2]")
   (h
    (filter [x (if false [1 2] #{1 2})] (> x 1))
    [:Coll :Integer]
    #{2}
-   "filter(x in (if(false) {[1, 2]} else {#{1, 2}}))(x > 1)"
+   "(filter(x in (if(false) {[1, 2]} else {#{1, 2}}))(x > 1))"
    "#{2}"))
 
 (deftest

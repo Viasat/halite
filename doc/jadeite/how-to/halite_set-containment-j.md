@@ -29,7 +29,7 @@ false
 It is more verbose, but an alternate solutions is the same as what would be done to determine if an item is in a vector.
 
 ```java
-({ s = #{10, 20, 30}; t = 20; any?(x in s)(x == t) })
+({ s = #{10, 20, 30}; t = 20; (any?(x in s)(x == t)) })
 
 
 //-- result --

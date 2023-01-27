@@ -64,11 +64,11 @@ The following is a full model for the grocery delivery business.
       "perks" : [ "Set", "tutorials.grocery/Perk$v1" ],
       "subscriberCountry" : "tutorials.grocery/Country$v1"
     },
-    "constraints" : [ "{expr: ({ perkInstances = sortBy(pi in map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 ))pi.perkId; ((reduce( a = #d \"0.00\"; pi in perkInstances ) { (a + pi.feePerMonth) }) < #d \"6.00\") }), name: \"perk_sum\"}", "{expr: (perks.count() <= 2), name: \"perk_limit\"}", "{expr: ((#d \"5.99\" < feePerMonth) && (feePerMonth < #d \"12.99\")), name: \"feePerMonth_limit\"}" ],
+    "constraints" : [ "{expr: ({ perkInstances = sortBy(pi in (map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 )))pi.perkId; ((reduce( a = #d \"0.00\"; pi in perkInstances ) { (a + pi.feePerMonth) }) < #d \"6.00\") }), name: \"perk_sum\"}", "{expr: (perks.count() <= 2), name: \"perk_limit\"}", "{expr: ((#d \"5.99\" < feePerMonth) && (feePerMonth < #d \"12.99\")), name: \"feePerMonth_limit\"}" ],
     "refines-to" : {
       "tutorials.grocery/GroceryStoreSubscription$v1" : {
         "name" : "refine_to_Store",
-        "expr" : "{$type: tutorials.grocery/GroceryStoreSubscription$v1, name: \"Acme Foods\", perkIds: map(p in sortBy(pi in map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 ))pi.perkId)p.perkId, storeCountry: subscriberCountry}",
+        "expr" : "{$type: tutorials.grocery/GroceryStoreSubscription$v1, name: \"Acme Foods\", perkIds: (map(p in sortBy(pi in (map(p in perks)p.refineTo( tutorials.grocery/Perk$v1 )))pi.perkId)p.perkId), storeCountry: subscriberCountry}",
         "extrinsic?" : true
       }
     }

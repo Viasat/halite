@@ -227,7 +227,7 @@
                  = (if (> (count args) 2)
                      (str "equalTo" (infix ", " args))
                      (infix " == " args))
-                 (every? any? map filter) (str op (infix " in " a0) (toj a1))
+                 (every? any? map filter) (str "(" op (infix " in " a0) (toj a1) ")")
                  sort-by (str "sortBy" (infix " in " a0) (toj a1))
                  reduce (let [[[acc init] [elem coll] body] args]
                           (str "(reduce( " (toj acc) " = " (toj init) "; " (toj elem) " in " (toj coll)

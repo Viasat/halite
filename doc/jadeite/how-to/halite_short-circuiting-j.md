@@ -195,7 +195,7 @@ Similarly, the sequence operators of 'every?', 'any?', 'map', and 'filter' are a
 This raises an error even though logically, the result could be 'true' if just the first element is considered.
 
 ```java
-({ x = [2, 1, 0]; any?(e in x)((100 / e) > 0) })
+({ x = [2, 1, 0]; (any?(e in x)((100 / e) > 0)) })
 
 
 //-- result --
@@ -203,7 +203,7 @@ This raises an error even though logically, the result could be 'true' if just t
 ```
 
 ```java
-({ x = [2, 1]; any?(e in x)((100 / e) > 0) })
+({ x = [2, 1]; (any?(e in x)((100 / e) > 0)) })
 
 
 //-- result --
@@ -213,7 +213,7 @@ true
 This raises an error even though logically, the result could be 'false' if just the first element is considered.
 
 ```java
-({ x = [200, 100, 0]; every?(e in x)((100 / e) > 0) })
+({ x = [200, 100, 0]; (every?(e in x)((100 / e) > 0)) })
 
 
 //-- result --
@@ -221,7 +221,7 @@ This raises an error even though logically, the result could be 'false' if just 
 ```
 
 ```java
-({ x = [200, 100]; every?(e in x)((100 / e) > 0) })
+({ x = [200, 100]; (every?(e in x)((100 / e) > 0)) })
 
 
 //-- result --
@@ -231,37 +231,37 @@ false
 This raises an error even though, the result could be 50 if just the first element is actually accessed.
 
 ```java
-({ x = [2, 1, 0]; map(e in x)(100 / e)[0] })
+({ x = [2, 1, 0]; (map(e in x)(100 / e))[0] })
 
 
 //-- result --
-[:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
 ```java
-({ x = [2, 1]; map(e in x)(100 / e)[0] })
+({ x = [2, 1]; (map(e in x)(100 / e))[0] })
 
 
 //-- result --
-[:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
+50
 ```
 
 This raises an error even though, the result could be 2 if just the first element is actually accessed.
 
 ```java
-({ x = [2, 1, 0]; filter(e in x)((100 / e) > 0)[0] })
+({ x = [2, 1, 0]; (filter(e in x)((100 / e) > 0))[0] })
 
 
 //-- result --
-[:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
+[:throws "h-err/divide-by-zero 0-0 : Cannot divide by zero"]
 ```
 
 ```java
-({ x = [2, 1]; filter(e in x)((100 / e) > 0)[0] })
+({ x = [2, 1]; (filter(e in x)((100 / e) > 0))[0] })
 
 
 //-- result --
-[:throws "h-err/invalid-lookup-target 0-0 : Lookup target must be an instance of known type or non-empty vector"]
+2
 ```
 
 This means that the logical operators cannot be used to guard against runtime errors. Instead the control flow statements must be used.

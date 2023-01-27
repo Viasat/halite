@@ -71,7 +71,7 @@ Rather than expressing each row constraint separately, they can be captured in a
     "fields" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : [ "{expr: every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4}), name: \"rows\"}" ]
+    "constraints" : [ "{expr: (every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})), name: \"rows\"}" ]
   }
 }
 ```
@@ -104,7 +104,7 @@ But, we are only checking rows, let's also check columns.
     "fields" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : [ "{expr: every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4}), name: \"rows\"}", "{expr: every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4}), name: \"columns\"}" ]
+    "constraints" : [ "{expr: (every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})), name: \"columns\"}", "{expr: (every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})), name: \"rows\"}" ]
   }
 }
 ```
@@ -147,7 +147,7 @@ Let's add the quadrant checks.
     "fields" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : [ "{expr: (#{solution[0][0], solution[0][1], solution[1][0], solution[1][1]} == #{1, 2, 3, 4}), name: \"quadrant_1\"}", "{expr: (#{solution[2][2], solution[2][3], solution[3][2], solution[3][3]} == #{1, 2, 3, 4}), name: \"quadrant_4\"}", "{expr: every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4}), name: \"rows\"}", "{expr: (#{solution[0][2], solution[0][3], solution[1][2], solution[1][3]} == #{1, 2, 3, 4}), name: \"quadrant_2\"}", "{expr: every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4}), name: \"columns\"}", "{expr: (#{solution[2][0], solution[2][1], solution[3][0], solution[3][1]} == #{1, 2, 3, 4}), name: \"quadrant_3\"}" ]
+    "constraints" : [ "{expr: (#{solution[0][0], solution[0][1], solution[1][0], solution[1][1]} == #{1, 2, 3, 4}), name: \"quadrant_1\"}", "{expr: (#{solution[2][2], solution[2][3], solution[3][2], solution[3][3]} == #{1, 2, 3, 4}), name: \"quadrant_4\"}", "{expr: (every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})), name: \"columns\"}", "{expr: (#{solution[0][2], solution[0][3], solution[1][2], solution[1][3]} == #{1, 2, 3, 4}), name: \"quadrant_2\"}", "{expr: (#{solution[2][0], solution[2][1], solution[3][0], solution[3][1]} == #{1, 2, 3, 4}), name: \"quadrant_3\"}", "{expr: (every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})), name: \"rows\"}" ]
   }
 }
 ```
@@ -180,7 +180,7 @@ Let's combine the quadrant checks into one.
     "fields" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : [ "{expr: every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4}), name: \"rows\"}", "{expr: every?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} == #{1, 2, 3, 4}) }), name: \"quadrants\"}", "{expr: every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4}), name: \"columns\"}" ]
+    "constraints" : [ "{expr: (every?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} == #{1, 2, 3, 4}) })), name: \"quadrants\"}", "{expr: (every?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} == #{1, 2, 3, 4})), name: \"columns\"}", "{expr: (every?(r in solution)(#{}.concat(r) == #{1, 2, 3, 4})), name: \"rows\"}" ]
   }
 }
 ```
@@ -213,7 +213,7 @@ As an exercise, we can convert the logic of the constraints. Instead of checking
     "fields" : {
       "solution" : [ "Vec", [ "Vec", "Integer" ] ]
     },
-    "constraints" : [ "{expr: !any?(r in solution)(#{}.concat(r) != #{1, 2, 3, 4}), name: \"rows\"}", "{expr: !any?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} != #{1, 2, 3, 4}) }), name: \"quadrants\"}", "{expr: !any?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} != #{1, 2, 3, 4}), name: \"columns\"}" ]
+    "constraints" : [ "{expr: !(any?(i in [0, 1, 2, 3])(#{solution[0][i], solution[1][i], solution[2][i], solution[3][i]} != #{1, 2, 3, 4})), name: \"columns\"}", "{expr: !(any?(r in solution)(#{}.concat(r) != #{1, 2, 3, 4})), name: \"rows\"}", "{expr: !(any?(base in [[0, 0], [0, 2], [2, 0], [2, 2]])({ 'base-x' = base[0]; 'base-y' = base[1]; (#{solution['base-x']['base-y'], solution['base-x'][('base-y' + 1)], solution[('base-x' + 1)]['base-y'], solution[('base-x' + 1)][('base-y' + 1)]} != #{1, 2, 3, 4}) })), name: \"quadrants\"}" ]
   }
 }
 ```

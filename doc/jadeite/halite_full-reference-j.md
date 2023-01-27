@@ -1268,7 +1268,7 @@ The operation does not short-circuit. The boolean-expression is evaluated for al
 <table><tr><td colspan="2">
 
 ```java
-any?(x in [1, 2, 3])(x > 1)
+(any?(x in [1, 2, 3])(x > 1))
 
 //-- result --
 true
@@ -1277,7 +1277,7 @@ true
 </td><td colspan="2">
 
 ```java
-any?(x in #{1, 2, 3})(x > 10)
+(any?(x in #{1, 2, 3})(x > 10))
 
 //-- result --
 false
@@ -1833,7 +1833,7 @@ Does not short-circuit. The boolean-expression is evaluated for all elements, ev
 <table><tr><td colspan="2">
 
 ```java
-every?(x in [1, 2, 3])(x > 0)
+(every?(x in [1, 2, 3])(x > 0))
 
 //-- result --
 true
@@ -1842,7 +1842,7 @@ true
 </td><td colspan="2">
 
 ```java
-every?(x in #{1, 2, 3})(x > 1)
+(every?(x in #{1, 2, 3})(x > 1))
 
 //-- result --
 false
@@ -1942,7 +1942,7 @@ Produce a new collection which contains only the elements from the original coll
 <table><tr><td colspan="2">
 
 ```java
-filter(x in [1, 2, 3])(x > 2)
+(filter(x in [1, 2, 3])(x > 2))
 
 //-- result --
 [3]
@@ -1951,7 +1951,7 @@ filter(x in [1, 2, 3])(x > 2)
 </td><td colspan="2">
 
 ```java
-filter(x in #{1, 2, 3})(x > 2)
+(filter(x in #{1, 2, 3})(x > 2))
 
 //-- result --
 #{3}
@@ -2256,7 +2256,7 @@ Produce a new collection from a collection by evaluating the expression with the
 <table><tr><td colspan="2">
 
 ```java
-map(x in [10, 11, 12])(x + 1)
+(map(x in [10, 11, 12])(x + 1))
 
 //-- result --
 [11 12 13]
@@ -2265,7 +2265,7 @@ map(x in [10, 11, 12])(x + 1)
 </td><td colspan="2">
 
 ```java
-map(x in #{10, 12})(x * 2)
+(map(x in #{10, 12})(x * 2))
 
 //-- result --
 #{20 24}

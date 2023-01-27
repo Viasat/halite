@@ -9,7 +9,7 @@ There is no explicit language construct to write a loop. So how to write one?
 Most languages will have some sort of 'for' loop or 'do while' look construct. In many cases the need for looping is subsumed by the collection operators that are present. For example, rather than writing a loop to extract values from a collection, 'filter' can be used.
 
 ```java
-({ x = [5, 17, 23, 35]; filter(e in x)(e > 20) })
+({ x = [5, 17, 23, 35]; (filter(e in x)(e > 20)) })
 
 
 //-- result --
@@ -19,7 +19,7 @@ Most languages will have some sort of 'for' loop or 'do while' look construct. I
 Similarly if we need to make a new collection derived from a collection, rather than writing a loop, we can use 'map'.
 
 ```java
-({ x = [5, 17, 23, 35]; map(e in x)(e + 1) })
+({ x = [5, 17, 23, 35]; (map(e in x)(e + 1)) })
 
 
 //-- result --
@@ -29,7 +29,7 @@ Similarly if we need to make a new collection derived from a collection, rather 
 If we need to test whether a predicate holds for items in a collection, rather than writing a loop we can use 'every?' and 'any?'.
 
 ```java
-({ x = [5, 17, 23, 35]; every?(e in x)(e > 0) })
+({ x = [5, 17, 23, 35]; (every?(e in x)(e > 0)) })
 
 
 //-- result --
@@ -37,7 +37,7 @@ true
 ```
 
 ```java
-({ x = [5, 17, 23, 35]; any?(e in x)(e > 20) })
+({ x = [5, 17, 23, 35]; (any?(e in x)(e > 20)) })
 
 
 //-- result --

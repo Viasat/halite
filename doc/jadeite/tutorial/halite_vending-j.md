@@ -174,7 +174,7 @@ Now we can construct the following events.
 We can verify that all of these events produce the expected abstract events.
 
 ```java
-map(e in [{$type: tutorials.vending/CoinEvent$v1, denomination: "nickel"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "dime"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "quarter"}, {$type: tutorials.vending/VendEvent$v1, item: "snack"}, {$type: tutorials.vending/VendEvent$v1, item: "beverage"}])e.refineTo( tutorials.vending/AbstractEvent$v1 )
+(map(e in [{$type: tutorials.vending/CoinEvent$v1, denomination: "nickel"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "dime"}, {$type: tutorials.vending/CoinEvent$v1, denomination: "quarter"}, {$type: tutorials.vending/VendEvent$v1, item: "snack"}, {$type: tutorials.vending/VendEvent$v1, item: "beverage"}])e.refineTo( tutorials.vending/AbstractEvent$v1 ))
 
 
 //-- result --
