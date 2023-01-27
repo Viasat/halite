@@ -565,13 +565,16 @@ A notebook contains spec references. This is modeled as the results of having pa
                          :resolved (get state :resolved)})
                       (let [spec-ref (refine-to item
                                                 :tutorials.notebook/SpecRef$v1)
+                            resolver {:$type
+                                        :tutorials.notebook/SpecRefResolver$v1,
+                                      :existingSpecIds (get state :context),
+                                      :newSpecs [],
+                                      :inputSpecRef spec-ref}
                             resolved
-                              (refine-to
-                                {:$type :tutorials.notebook/SpecRefResolver$v1,
-                                 :existingSpecIds (get state :context),
-                                 :newSpecs [],
-                                 :inputSpecRef spec-ref}
-                                :tutorials.notebook/SpecId$v1)]
+                              (when (refines-to? resolver
+                                                 :tutorials.notebook/SpecId$v1)
+                                (refine-to resolver
+                                           :tutorials.notebook/SpecId$v1))]
                         {:$type :tutorials.notebook/ResolveRefsState$v1,
                          :context (get state :context),
                          :resolved (if-value resolved
@@ -582,6 +585,121 @@ A notebook contains spec references. This is modeled as the results of having pa
  :tutorials.notebook/ResolveRefsState$v1
    {:fields {:context [:Vec :tutorials.notebook/SpecId$v1],
              :resolved [:Vec :tutorials.notebook/SpecId$v1]}}}
+```
+
+```clojure
+(valid? {:$type :tutorials.notebook/ResolveRefs$v1,
+         :specIds [{:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/A",
+                    :specVersion 1}
+                   {:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/B",
+                    :specVersion 1}
+                   {:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/A",
+                    :specVersion 2}],
+         :items []})
+
+
+;-- result --
+true
+```
+
+```clojure
+(valid? {:$type :tutorials.notebook/ResolveRefs$v1,
+         :specIds [{:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/A",
+                    :specVersion 1}
+                   {:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/B",
+                    :specVersion 1}
+                   {:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/A",
+                    :specVersion 2}],
+         :items [{:$type :tutorials.notebook/SpecRef$v1,
+                  :specName "my/A",
+                  :specVersion 1}]})
+
+
+;-- result --
+true
+```
+
+```clojure
+(valid? {:$type :tutorials.notebook/ResolveRefs$v1,
+         :specIds [{:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/A",
+                    :specVersion 1}
+                   {:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/B",
+                    :specVersion 1}
+                   {:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/A",
+                    :specVersion 2}],
+         :items [{:$type :tutorials.notebook/NewSpec$v1,
+                  :specName "my/A",
+                  :specVersion 3}
+                 {:$type :tutorials.notebook/SpecRef$v1,
+                  :specName "my/A",
+                  :specVersion 3}]})
+
+
+;-- result --
+true
+```
+
+```clojure
+(valid? {:$type :tutorials.notebook/ResolveRefs$v1,
+         :specIds [{:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/A",
+                    :specVersion 1}
+                   {:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/B",
+                    :specVersion 1}
+                   {:$type :tutorials.notebook/SpecId$v1,
+                    :specName "my/A",
+                    :specVersion 2}],
+         :items [{:$type :tutorials.notebook/SpecRef$v1,
+                  :specName "my/A",
+                  :specVersion 3}
+                 {:$type :tutorials.notebook/NewSpec$v1,
+                  :specName "my/A",
+                  :specVersion 3}]})
+
+
+;-- result --
+false
+```
+
+```clojure
+(get (refine-to {:$type :tutorials.notebook/ResolveRefs$v1,
+                 :specIds [{:$type :tutorials.notebook/SpecId$v1,
+                            :specName "my/A",
+                            :specVersion 1}
+                           {:$type :tutorials.notebook/SpecId$v1,
+                            :specName "my/B",
+                            :specVersion 1}
+                           {:$type :tutorials.notebook/SpecId$v1,
+                            :specName "my/A",
+                            :specVersion 2}],
+                 :items [{:$type :tutorials.notebook/SpecRef$v1,
+                          :specName "my/A"}
+                         {:$type :tutorials.notebook/NewSpec$v1,
+                          :specName "my/A",
+                          :specVersion 3}
+                         {:$type :tutorials.notebook/SpecRef$v1,
+                          :specName "my/A"}]}
+                :tutorials.notebook/RSpecIds$v1)
+     :result)
+
+
+;-- result --
+[{:$type :tutorials.notebook/SpecId$v1,
+  :specName "my/A",
+  :specVersion 2}
+ {:$type :tutorials.notebook/SpecId$v1,
+  :specName "my/A",
+  :specVersion 3}]
 ```
 
 ```clojure

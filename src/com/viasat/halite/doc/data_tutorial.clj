@@ -362,11 +362,12 @@
                                                      (refine-to new-spec :tutorials.notebook/SpecId$v1))
                                       :resolved (get state :resolved)})
                                    (let [spec-ref (refine-to item :tutorials.notebook/SpecRef$v1)
-                                         resolved (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1
-                                                              :existingSpecIds (get state :context)
-                                                              :newSpecs []
-                                                              :inputSpecRef spec-ref}
-                                                             :tutorials.notebook/SpecId$v1)]
+                                         resolver {:$type :tutorials.notebook/SpecRefResolver$v1
+                                                   :existingSpecIds (get state :context)
+                                                   :newSpecs []
+                                                   :inputSpecRef spec-ref}
+                                         resolved (when (refines-to? resolver :tutorials.notebook/SpecId$v1)
+                                                    (refine-to resolver :tutorials.notebook/SpecId$v1))]
                                      {:$type :tutorials.notebook/ResolveRefsState$v1
                                       :context (get state :context)
                                       :resolved (if-value resolved
@@ -391,6 +392,49 @@
                                          :specIds specIds
                                          :items items}
                                         :tutorials.notebook/RSpecIds$v1)}}}}}
+
+     {:code '(valid? {:$type :tutorials.notebook/ResolveRefs$v1
+                      :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
+                                {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
+                                {:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 2}]
+
+                      :items []})
+      :result true}
+
+     {:code '(valid? {:$type :tutorials.notebook/ResolveRefs$v1
+                      :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
+                                {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
+                                {:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 2}]
+                      :items [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}]})
+      :result true}
+
+     {:code '(valid? {:$type :tutorials.notebook/ResolveRefs$v1
+                      :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
+                                {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
+                                {:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 2}]
+                      :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}
+                              {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 3}]})
+      :result true}
+
+     {:code '(valid? {:$type :tutorials.notebook/ResolveRefs$v1
+                      :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
+                                {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
+                                {:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 2}]
+                      :items [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 3}
+                              {:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}]})
+      :result false}
+
+     {:code '(get (refine-to {:$type :tutorials.notebook/ResolveRefs$v1
+                              :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
+                                        {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
+                                        {:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 2}]
+                              :items [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A"}
+                                      {:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}
+                                      {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A"}]}
+                             :tutorials.notebook/RSpecIds$v1)
+                  :result)
+      :result [{:$type :tutorials.notebook/SpecId$v1, :specName "my/A", :specVersion 2}
+               {:$type :tutorials.notebook/SpecId$v1, :specName "my/A", :specVersion 3}]}
 
      {:spec-map-merge
       {:tutorials.notebook/ApplicableNewSpecs$v1
