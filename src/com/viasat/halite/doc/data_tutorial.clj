@@ -23,6 +23,9 @@
                                   :expr '(valid? {:$type :tutorials.notebook/Version$v1
                                                   :version specVersion})}}}
 
+                 :tutorials.notebook/AbstractNotebookItem$v1
+                 {:abstract? true}
+
                  :tutorials.notebook/SpecRef$v1
                  {:fields {:specName :String
                            :specVersion [:Maybe :Integer]}
@@ -34,7 +37,11 @@
                                 :expr '(when-value specVersion
                                                    {:$type :tutorials.notebook/SpecId$v1
                                                     :specName specName
-                                                    :specVersion specVersion})}}}}}
+                                                    :specVersion specVersion})}
+
+                               :tutorials.notebook/AbstractNotebookItem$v1
+                               {:name "abstractItems"
+                                :expr '{:$type :tutorials.notebook/AbstractNotebookItem$v1}}}}}}
 
      {:code '{:$type :tutorials.notebook/SpecRef$v1
               :specName "my/A"
@@ -58,7 +65,11 @@
                                      {:name "specId"
                                       :expr '{:$type :tutorials.notebook/SpecId$v1
                                               :specName specName
-                                              :specVersion specVersion}}}}}}
+                                              :specVersion specVersion}}
+
+                                     :tutorials.notebook/AbstractNotebookItem$v1
+                                     {:name "abstractItems"
+                                      :expr '{:$type :tutorials.notebook/AbstractNotebookItem$v1}}}}}}
 
      {:code '{:$type :tutorials.notebook/NewSpec$v1
               :specName "my/A"
@@ -72,6 +83,7 @@
               :specName "my/A"
               :specVersion 1
               :isEphemeral true}}
+
      {:code '{:$type :tutorials.notebook/NewSpec$v1
               :specName "my/A"
               :specVersion 1
@@ -233,6 +245,7 @@
                                         :specVersion 1}}
                         :tutorials.notebook/SpecId$v1)
       :result {:$type :tutorials.notebook/SpecId$v1, :specName "my/C", :specVersion 1}}
+
      {:code '(refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1
                            :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
                                              {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
@@ -274,8 +287,7 @@
      {:spec-map-merge {:tutorials.notebook/Notebook$v1
                        {:fields {:name :String
                                  :version :Integer
-                                 :newSpecs [:Vec :tutorials.notebook/NewSpec$v1]
-                                 :specRefs [:Vec :tutorials.notebook/SpecRef$v1]}
+                                 :items [:Vec :tutorials.notebook/AbstractNotebookItem$v1]}
                         :constraints #{{:name "positiveVersion"
                                         :expr '(valid? {:$type :tutorials.notebook/Version$v1
                                                         :version version})}}}
@@ -298,8 +310,7 @@
               :notebooks [{:$type :tutorials.notebook/Notebook$v1
                            :name "notebook1"
                            :version 1
-                           :newSpecs []
-                           :specRefs []}]}}
+                           :items []}]}}
      {:code '{:$type :tutorials.notebook/Workspace$v1
               :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
                         {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
@@ -308,8 +319,7 @@
               :notebooks [{:$type :tutorials.notebook/Notebook$v1
                            :name "notebook1"
                            :version 1
-                           :newSpecs []
-                           :specRefs []}]}
+                           :items []}]}
       :throws :auto}
      {:code '{:$type :tutorials.notebook/Workspace$v1
               :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
@@ -318,24 +328,25 @@
               :notebooks [{:$type :tutorials.notebook/Notebook$v1
                            :name "notebook1"
                            :version 1
-                           :newSpecs []
-                           :specRefs []}
+                           :items []}
                           {:$type :tutorials.notebook/Notebook$v1
                            :name "notebook1"
                            :version 2
-                           :newSpecs []
-                           :specRefs []}]}
+                           :items []}]}
       :throws :auto}
 
      {:spec-map-merge {:tutorials.notebook/ValidRefs$v1
                        {:fields {:specIds [:Vec :tutorials.notebook/SpecId$v1]
-                                 :newSpecs [:Vec :tutorials.notebook/NewSpec$v1]
-                                 :specRefs [:Vec :tutorials.notebook/SpecRef$v1]}
+                                 :items [:Vec :tutorials.notebook/AbstractNotebookItem$v1]}
                         :constraints #{{:name "validRefs"
-                                        :expr '(every? [sr specRefs]
+                                        :expr '(every? [sr (map [item (filter [item items]
+                                                                              (refines-to? item :tutorials.notebook/SpecRef$v1))]
+                                                                (refine-to item :tutorials.notebook/SpecRef$v1))]
                                                        (refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1
                                                                      :existingSpecIds specIds
-                                                                     :newSpecs newSpecs
+                                                                     :newSpecs (map [item (filter [item items]
+                                                                                                  (refines-to? item :tutorials.notebook/NewSpec$v1))]
+                                                                                    (refine-to item :tutorials.notebook/NewSpec$v1))
                                                                      :inputSpecRef sr}
                                                                     :tutorials.notebook/SpecId$v1))}}}}}
 
@@ -344,17 +355,14 @@
                                 {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 2}]
 
-                      :newSpecs []
-                      :specRefs []})
+                      :items []})
       :result true}
 
      {:code '(valid? {:$type :tutorials.notebook/ValidRefs$v1
                       :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 2}]
-
-                      :newSpecs []
-                      :specRefs [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}]}
+                      :items [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}]}
                      :tutorials.notebook/RBoolean$v1)
       :result true}
 
@@ -362,9 +370,7 @@
                       :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 2}]
-
-                      :newSpecs []
-                      :specRefs [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/X" :specVersion 1}]})
+                      :items [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/X" :specVersion 1}]})
       :result false}
 
      {:spec-map-merge
@@ -445,7 +451,9 @@
                                            notebookVersion)))]
               (if (> (count filtered) 0)
                 (let [nb (first filtered)]
-                  (> (count (filter [ns (get nb :newSpecs)]
+                  (> (count (filter [ns (map [item (filter [item (get nb :items)]
+                                                           (refines-to? item :tutorials.notebook/NewSpec$v1))]
+                                             (refine-to item :tutorials.notebook/NewSpec$v1))]
                                     (let [is-ephemeral (get ns :isEphemeral)]
                                       (if-value is-ephemeral false true))))
                      0))
@@ -461,7 +469,9 @@
                 (let [nb (first filtered)]
                   (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
                            :specIds (get workspace :specIds)
-                           :newSpecs (get nb :newSpecs)}))
+                           :newSpecs (map [item (filter [item (get nb :items)]
+                                                        (refines-to? item :tutorials.notebook/NewSpec$v1))]
+                                          (refine-to item :tutorials.notebook/NewSpec$v1))}))
                 true))}
           {:name "specsValidRefs"
            :expr
@@ -474,8 +484,7 @@
                 (let [nb (first filtered)]
                   (valid? {:$type :tutorials.notebook/ValidRefs$v1
                            :specIds (get workspace :specIds)
-                           :newSpecs (get nb :newSpecs)
-                           :specRefs (get nb :specRefs)}))
+                           :items (get nb :items)}))
                 true))}}
         :refines-to {:tutorials.notebook/Workspace$v1
                      {:name "newWorkspace"
@@ -489,7 +498,9 @@
                            (let [nb (first filtered)]
                              {:$type :tutorials.notebook/Workspace$v1
                               :specIds (concat (get workspace :specIds)
-                                               (map [ns (filter [ns (get nb :newSpecs)]
+                                               (map [ns (filter [ns (map [item (filter [item (get nb :items)]
+                                                                                       (refines-to? item :tutorials.notebook/NewSpec$v1))]
+                                                                         (refine-to item :tutorials.notebook/NewSpec$v1))]
                                                                 (let [is-ephemeral (get ns :isEphemeral)]
                                                                   (if-value is-ephemeral false true)))]
                                                     (refine-to ns :tutorials.notebook/SpecId$v1)))
@@ -501,10 +512,12 @@
                                                {:$type :tutorials.notebook/Notebook$v1
                                                 :name (get nb :name)
                                                 :version (inc (get nb :version))
-                                                :newSpecs (filter [ns (get nb :newSpecs)]
-                                                                  (let [is-ephemeral (get ns :isEphemeral)]
-                                                                    (if-value is-ephemeral true false)))
-                                                :specRefs (get nb :specRefs)})})))}}}}}
+                                                :items (filter [item (get nb :items)]
+                                                               (if (refines-to? item :tutorials.notebook/NewSpec$v1)
+                                                                 (let [ns (refine-to item :tutorials.notebook/NewSpec$v1)
+                                                                       is-ephemeral (get ns :isEphemeral)]
+                                                                   (if-value is-ephemeral true false))
+                                                                 true))})})))}}}}}
 
      {:code '(let [ws {:$type :tutorials.notebook/Workspace$v1
                        :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
@@ -513,8 +526,7 @@
                        :notebooks [{:$type :tutorials.notebook/Notebook$v1
                                     :name "notebook1"
                                     :version 1
-                                    :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}]
-                                    :specRefs []}]}]
+                                    :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}]}]}]
                [(valid? {:$type :tutorials.notebook/ApplyNotebook$v1
                          :workspace ws
                          :notebookName "notebook1"
@@ -538,9 +550,9 @@
                  :notebooks [{:$type :tutorials.notebook/Notebook$v1
                               :name "notebook1"
                               :version 1
-                              :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3 :isEphemeral true}]
-                              :specRefs [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}
-                                         {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 3}]}]}]
+                              :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3 :isEphemeral true}
+                                      {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}
+                                      {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 3}]}]}]
          (valid? {:$type :tutorials.notebook/ApplyNotebook$v1
                   :workspace ws
                   :notebookName "notebook1"
@@ -555,8 +567,7 @@
                  :notebooks [{:$type :tutorials.notebook/Notebook$v1
                               :name "notebook1"
                               :version 1
-                              :newSpecs []
-                              :specRefs [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}]}]}]
+                              :items [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}]}]}]
          (valid? {:$type :tutorials.notebook/ApplyNotebook$v1
                   :workspace ws
                   :notebookName "notebook1"
@@ -572,16 +583,16 @@
                                :notebooks [{:$type :tutorials.notebook/Notebook$v1
                                             :name "notebook1"
                                             :version 1
-                                            :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}
-                                                       {:$type :tutorials.notebook/NewSpec$v1 :specName "my/C" :specVersion 1 :isEphemeral true}]
-                                            :specRefs [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}
-                                                       {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 3}]}
+                                            :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}
+                                                    {:$type :tutorials.notebook/NewSpec$v1 :specName "my/C" :specVersion 1 :isEphemeral true}
+                                                    {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}
+                                                    {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 3}]}
                                            {:$type :tutorials.notebook/Notebook$v1
                                             :name "notebook2"
                                             :version 3
-                                            :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/B" :specVersion 1}]
-                                            :specRefs [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}
-                                                       {:$type :tutorials.notebook/SpecRef$v1 :specName "my/B" :specVersion 1}]}]}
+                                            :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/B" :specVersion 1}
+                                                    {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}
+                                                    {:$type :tutorials.notebook/SpecRef$v1 :specName "my/B" :specVersion 1}]}]}
                    :notebookName "notebook1"
                    :notebookVersion 1}
                   :tutorials.notebook/Workspace$v1)
@@ -593,15 +604,15 @@
                :notebooks [{:$type :tutorials.notebook/Notebook$v1
                             :name "notebook2"
                             :version 3
-                            :newSpecs [{:$type :tutorials.notebook/NewSpec$v1, :specName "my/B", :specVersion 1}]
-                            :specRefs [{:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 1}
-                                       {:$type :tutorials.notebook/SpecRef$v1, :specName "my/B", :specVersion 1}]}
+                            :items [{:$type :tutorials.notebook/NewSpec$v1, :specName "my/B", :specVersion 1}
+                                    {:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 1}
+                                    {:$type :tutorials.notebook/SpecRef$v1, :specName "my/B", :specVersion 1}]}
                            {:$type :tutorials.notebook/Notebook$v1
                             :name "notebook1"
                             :version 2
-                            :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/C" :specVersion 1 :isEphemeral true}]
-                            :specRefs [{:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 1}
-                                       {:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 3}]}]}}]}
+                            :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/C" :specVersion 1 :isEphemeral true}
+                                    {:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 1}
+                                    {:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 3}]}]}}]}
 
    :tutorials.vending/vending
    {:label "Model a vending machine as a state machine"
