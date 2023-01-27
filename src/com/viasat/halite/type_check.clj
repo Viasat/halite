@@ -483,6 +483,7 @@
 
 (s/defn ^:private type-check-valid :- types/HaliteType
   [ctx :- TypeContext, [_valid subexpr :as expr]]
+  (arg-count-exactly 1 expr)
   (let [t (type-check* ctx subexpr)]
     (cond
       (types/spec-type? t) (types/maybe-type t)
@@ -492,6 +493,7 @@
 
 (s/defn ^:private type-check-valid? :- types/HaliteType
   [ctx :- TypeContext, [_valid? subexpr :as expr]]
+  (arg-count-exactly 1 expr)
   (let [t (type-check* ctx subexpr)]
     (cond
       (types/spec-type? t) :Boolean

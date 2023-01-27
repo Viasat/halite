@@ -5478,6 +5478,9 @@
    "(every?(x in #{1, 2})(x > 10))"
    "false")
   (h
+   (every? [x #{1 2}] (> x 10) 19)
+   [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'every?': expected 2, but got 3"])
+  (h
    (every? [x #{1 2}] (> x 1))
    :Boolean
    false
@@ -5601,6 +5604,9 @@
    true
    "(any?(x in #{1, 2})(x > 1))"
    "true")
+  (h
+   (any? [x #{1 2}])
+   [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'any?': expected 2, but got 1"])
   (h
    (any? [x #{1 3 2}] (= x 1))
    :Boolean
@@ -7309,6 +7315,10 @@
     "true"])
   (hc
    :basic-2
+   [(= (refine-to {:$type :spec/A$v1, :p 1, :n -1} :spec/B$v1 19) {:$type :spec/B$v1, :x 10, :y -1})
+    [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'refine-to': expected 2, but got 3"]])
+  (hc
+   :basic-2
    [(=
      {:$type :spec/A$v1, :p 1, :n -1}
      (get {:$type :spec/B$v1, :x 10, :y -1} :z))
@@ -7596,6 +7606,10 @@
     "false"])
   (hc
    :basic
+   [(valid? {:$type :my/Spec$v1, :p 1, :n 0} 19)
+    [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'valid?': expected 1, but got 2"]])
+  (hc
+   :basic
    [(valid? {:$type :my/Spec$v1, :p 1, :n -1})
     :Boolean
     true
@@ -7652,6 +7666,10 @@
     true
     "{$type: my/Spec$v1, n: -1, p: 1}.refinesTo?( my/Spec$v1 )"
     "true"])
+  (hc
+   :basic
+   [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :my/Spec$v1 19)
+    [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'refines-to?': expected 2, but got 3"]])
   (hc
    :basic
    [(refines-to? {:$type :my/Spec$v1, :p 1, :n -1} :other/Spec$v1)
@@ -9272,6 +9290,9 @@
    "sortBy(x in [[10, 20], [30], [1, 2, 3]])x.first()"
    "[[1, 2, 3], [10, 20], [30]]")
   (h
+   (sort-by [x [[10 20] [30] [1 2 3]]])
+   [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'sort-by': expected 2, but got 1"])
+  (h
    (sort-by
     [x ["a" "c" "b"]]
     (if (= "a" x) 1 (if (= "b" x) 2 (if (= "c" x) 3 4))))
@@ -10385,6 +10406,17 @@
        :Unset
        "(valid {$type: spec/B, x: 0})"
        "Unset"])
+
+  (hc {:spec/A {:fields {:x :Integer}
+                :constraints #{{:name "x" :expr '(> x 0)}}}
+       :spec/B {:fields {:x :Integer}
+                :refines-to {:spec/A {:name "refine_to_A"
+                                      :expr '(when (> (get {:$type :spec/A
+                                                            :x 0} :x) -1)
+                                               {:$type :spec/A
+                                                :x 5})}}}}
+      [(valid {:$type :spec/B, :x 0} 19)
+       [:throws "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'valid': expected 1, but got 2"]])
 
   (hc {:spec/A {:fields {:x :Integer}
                 :constraints #{{:name "x" :expr '(> x 0)}}}
