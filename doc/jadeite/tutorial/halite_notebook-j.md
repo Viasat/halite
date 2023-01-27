@@ -283,38 +283,43 @@ A notebook contains spec references. This is modeled as the results of having pa
 
 ```java
 {
-  "tutorials.notebook/ValidRefs$v1" : {
+  "tutorials.notebook/ResolveRefsState$v1" : {
+    "fields" : {
+      "context" : [ "Vec", "tutorials.notebook/SpecId$v1" ],
+      "resolved" : [ "Vec", "tutorials.notebook/SpecId$v1" ]
+    }
+  },
+  "tutorials.notebook/RSpecIds$v1" : {
+    "fields" : {
+      "result" : [ "Vec", "tutorials.notebook/SpecId$v1" ]
+    }
+  },
+  "tutorials.notebook/ResolveRefsDirect$v1" : {
     "fields" : {
       "specIds" : [ "Vec", "tutorials.notebook/SpecId$v1" ],
       "items" : [ "Vec", "tutorials.notebook/AbstractNotebookItem$v1" ]
     },
-    "constraints" : [ "{expr: (every?(sr in (map(item in (filter(item in items)item.refinesTo?( tutorials.notebook/SpecRef$v1 )))item.refineTo( tutorials.notebook/SpecRef$v1 ))){$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: specIds, inputSpecRef: sr, newSpecs: (map(item in (filter(item in items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 ))}.refinesTo?( tutorials.notebook/SpecId$v1 )), name: \"validRefs\"}" ]
+    "refines-to" : {
+      "tutorials.notebook/RSpecIds$v1" : {
+        "name" : "validRefs",
+        "expr" : "{$type: tutorials.notebook/RSpecIds$v1, result: (reduce( state = {$type: tutorials.notebook/ResolveRefsState$v1, context: specIds, resolved: []}; item in items ) { (if(item.refinesTo?( tutorials.notebook/NewSpec$v1 )) {({ 'new-spec' = item.refineTo( tutorials.notebook/NewSpec$v1 ); {$type: tutorials.notebook/ResolveRefsState$v1, context: state.context.conj('new-spec'.refineTo( tutorials.notebook/SpecId$v1 )), resolved: state.resolved} })} else {({ 'spec-ref' = item.refineTo( tutorials.notebook/SpecRef$v1 ); resolved = {$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: state.context, inputSpecRef: 'spec-ref', newSpecs: []}.refineTo( tutorials.notebook/SpecId$v1 ); {$type: tutorials.notebook/ResolveRefsState$v1, context: state.context, resolved: (ifValue(resolved) {state.resolved.conj(resolved)} else {state.resolved})} })}) }).resolved}"
+      }
+    }
+  },
+  "tutorials.notebook/ResolveRefs$v1" : {
+    "fields" : {
+      "specIds" : [ "Vec", "tutorials.notebook/SpecId$v1" ],
+      "items" : [ "Vec", "tutorials.notebook/AbstractNotebookItem$v1" ]
+    },
+    "constraints" : [ "{expr: ((filter(item in items)item.refinesTo?( tutorials.notebook/SpecRef$v1 )).count() == {$type: tutorials.notebook/ResolveRefsDirect$v1, items: items, specIds: specIds}.refineTo( tutorials.notebook/RSpecIds$v1 ).result.count()), name: \"allResolve\"}" ],
+    "refines-to" : {
+      "tutorials.notebook/RSpecIds$v1" : {
+        "name" : "resolve",
+        "expr" : "{$type: tutorials.notebook/ResolveRefsDirect$v1, items: items, specIds: specIds}.refineTo( tutorials.notebook/RSpecIds$v1 )"
+      }
+    }
   }
 }
-```
-
-```java
-(valid? {$type: tutorials.notebook/ValidRefs$v1, items: [], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}]})
-
-
-//-- result --
-true
-```
-
-```java
-(valid? {$type: tutorials.notebook/ValidRefs$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/A", specVersion: 1}], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}]})
-
-
-//-- result --
-true
-```
-
-```java
-(valid? {$type: tutorials.notebook/ValidRefs$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "my/X", specVersion: 1}], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/B", specVersion: 1}, {$type: tutorials.notebook/SpecId$v1, specName: "my/A", specVersion: 2}]})
-
-
-//-- result --
-false
 ```
 
 ```java
@@ -369,7 +374,7 @@ true
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )), specIds: workspace.specIds}) })} else {true}) }), name: \"specsApplicable\"}", "{expr: ((filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() > 0) })} else {true}) }), name: \"notebookContainsNonEphemeralNewSpecs\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ValidRefs$v1, items: nb.items, specIds: workspace.specIds}) })} else {true}) }), name: \"specsValidRefs\"}" ],
+    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspace.specIds}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )), specIds: workspace.specIds}) })} else {true}) }), name: \"specsApplicable\"}", "{expr: ((filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() > 0) })} else {true}) }), name: \"notebookContainsNonEphemeralNewSpecs\"}" ],
     "refines-to" : {
       "tutorials.notebook/Workspace$v1" : {
         "name" : "newWorkspace",

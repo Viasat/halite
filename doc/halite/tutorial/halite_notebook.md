@@ -516,87 +516,72 @@ A notebook contains spec references. This is modeled as the results of having pa
 ```
 
 ```clojure
-{:tutorials.notebook/ValidRefs$v1
+{:tutorials.notebook/RSpecIds$v1
+   {:fields {:result [:Vec :tutorials.notebook/SpecId$v1]}},
+ :tutorials.notebook/ResolveRefs$v1
    {:fields {:items [:Vec :tutorials.notebook/AbstractNotebookItem$v1],
              :specIds [:Vec :tutorials.notebook/SpecId$v1]},
     :constraints
-      #{'{:name "validRefs",
-          :expr (every?
-                  [sr
-                   (map [item
-                         (filter [item items]
-                           (refines-to? item :tutorials.notebook/SpecRef$v1))]
-                     (refine-to item :tutorials.notebook/SpecRef$v1))]
-                  (refines-to?
-                    {:$type :tutorials.notebook/SpecRefResolver$v1,
-                     :existingSpecIds specIds,
-                     :newSpecs
-                       (map [item
-                             (filter [item items]
-                               (refines-to? item
-                                            :tutorials.notebook/NewSpec$v1))]
-                         (refine-to item :tutorials.notebook/NewSpec$v1)),
-                     :inputSpecRef sr}
-                    :tutorials.notebook/SpecId$v1))}}}}
-```
-
-```clojure
-(valid? {:$type :tutorials.notebook/ValidRefs$v1,
-         :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
-                    :specVersion 1}
-                   {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
-                    :specVersion 1}
-                   {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
-                    :specVersion 2}],
-         :items []})
-
-
-;-- result --
-true
-```
-
-```clojure
-(valid? {:$type :tutorials.notebook/ValidRefs$v1,
-         :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
-                    :specVersion 1}
-                   {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
-                    :specVersion 1}
-                   {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
-                    :specVersion 2}],
-         :items [{:$type :tutorials.notebook/SpecRef$v1,
-                  :specName "my/A",
-                  :specVersion 1}]}
-        :tutorials.notebook/RBoolean$v1)
-
-
-;-- result --
-true
-```
-
-```clojure
-(valid? {:$type :tutorials.notebook/ValidRefs$v1,
-         :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
-                    :specVersion 1}
-                   {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
-                    :specVersion 1}
-                   {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
-                    :specVersion 2}],
-         :items [{:$type :tutorials.notebook/SpecRef$v1,
-                  :specName "my/X",
-                  :specVersion 1}]})
-
-
-;-- result --
-false
+      #{'{:name "allResolve",
+          :expr (= (count (filter [item items]
+                            (refines-to? item :tutorials.notebook/SpecRef$v1)))
+                   (count
+                     (get (refine-to
+                            {:$type :tutorials.notebook/ResolveRefsDirect$v1,
+                             :specIds specIds,
+                             :items items}
+                            :tutorials.notebook/RSpecIds$v1)
+                          :result)))}},
+    :refines-to {:tutorials.notebook/RSpecIds$v1
+                   {:name "resolve",
+                    :expr '(refine-to
+                             {:$type :tutorials.notebook/ResolveRefsDirect$v1,
+                              :specIds specIds,
+                              :items items}
+                             :tutorials.notebook/RSpecIds$v1)}}},
+ :tutorials.notebook/ResolveRefsDirect$v1
+   {:fields {:items [:Vec :tutorials.notebook/AbstractNotebookItem$v1],
+             :specIds [:Vec :tutorials.notebook/SpecId$v1]},
+    :refines-to
+      {:tutorials.notebook/RSpecIds$v1
+         {:name "validRefs",
+          :expr
+            '{:$type :tutorials.notebook/RSpecIds$v1,
+              :result
+                (get
+                  (reduce [state
+                           {:$type :tutorials.notebook/ResolveRefsState$v1,
+                            :context specIds,
+                            :resolved []}]
+                    [item items]
+                    (if (refines-to? item :tutorials.notebook/NewSpec$v1)
+                      (let [new-spec (refine-to item
+                                                :tutorials.notebook/NewSpec$v1)]
+                        {:$type :tutorials.notebook/ResolveRefsState$v1,
+                         :context (conj (get state :context)
+                                        (refine-to
+                                          new-spec
+                                          :tutorials.notebook/SpecId$v1)),
+                         :resolved (get state :resolved)})
+                      (let [spec-ref (refine-to item
+                                                :tutorials.notebook/SpecRef$v1)
+                            resolved
+                              (refine-to
+                                {:$type :tutorials.notebook/SpecRefResolver$v1,
+                                 :existingSpecIds (get state :context),
+                                 :newSpecs [],
+                                 :inputSpecRef spec-ref}
+                                :tutorials.notebook/SpecId$v1)]
+                        {:$type :tutorials.notebook/ResolveRefsState$v1,
+                         :context (get state :context),
+                         :resolved (if-value resolved
+                                             (conj (get state :resolved)
+                                                   resolved)
+                                             (get state :resolved))})))
+                  :resolved)}}}},
+ :tutorials.notebook/ResolveRefsState$v1
+   {:fields {:context [:Vec :tutorials.notebook/SpecId$v1],
+             :resolved [:Vec :tutorials.notebook/SpecId$v1]}}}
 ```
 
 ```clojure
@@ -773,7 +758,7 @@ true
                                       (= (get nb :version) notebookVersion)))]
                   (if (> (count filtered) 0)
                     (let [nb (first filtered)]
-                      (valid? {:$type :tutorials.notebook/ValidRefs$v1,
+                      (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
                                :specIds (get workspace :specIds),
                                :items (get nb :items)}))
                     true))}},
