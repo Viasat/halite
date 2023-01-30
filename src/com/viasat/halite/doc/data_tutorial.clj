@@ -292,16 +292,28 @@
                                         :expr '(valid? {:$type :tutorials.notebook/Version$v1
                                                         :version version})}}}
 
+                       :tutorials.notebook/RegressionTest$v1
+                       {:fields {:notebookName :String
+                                 :notebookVersion :Integer}
+                        :constraints #{{:name "positiveVersion"
+                                        :expr '(valid? {:$type :tutorials.notebook/Version$v1
+                                                        :version notebookVersion})}}}
+
                        :tutorials.notebook/Workspace$v1
                        {:fields {:specIds [:Vec :tutorials.notebook/SpecId$v1]
-                                 :notebooks [:Vec :tutorials.notebook/Notebook$v1]}
-                        :constraints #{{:name "uniqueNotebookNames"
+                                 :notebooks [:Vec :tutorials.notebook/Notebook$v1]
+                                 :tests [:Vec :tutorials.notebook/RegressionTest$v1]}
+                        :constraints #{{:name "uniqueSpecIds"
+                                        :expr '(= (count (concat #{} specIds))
+                                                  (count specIds))}
+                                       {:name "uniqueNotebookNames"
                                         :expr '(= (count (concat #{} (map [n notebooks]
                                                                           (get n :name))))
                                                   (count notebooks))}
-                                       {:name "uniqueSpecIds"
-                                        :expr '(= (count (concat #{} specIds))
-                                                  (count specIds))}}}}}
+                                       {:name "uniqueTestNames"
+                                        :expr '(= (count (concat #{} (map [t tests]
+                                                                          (get t :notebookName))))
+                                                  (count tests))}}}}}
 
      {:code '{:$type :tutorials.notebook/Workspace$v1
               :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
@@ -310,7 +322,8 @@
               :notebooks [{:$type :tutorials.notebook/Notebook$v1
                            :name "notebook1"
                            :version 1
-                           :items []}]}}
+                           :items []}]
+              :tests []}}
      {:code '{:$type :tutorials.notebook/Workspace$v1
               :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
                         {:$type :tutorials.notebook/SpecId$v1 :specName "my/B" :specVersion 1}
@@ -319,7 +332,8 @@
               :notebooks [{:$type :tutorials.notebook/Notebook$v1
                            :name "notebook1"
                            :version 1
-                           :items []}]}
+                           :items []}]
+              :tests []}
       :throws :auto}
      {:code '{:$type :tutorials.notebook/Workspace$v1
               :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
@@ -332,7 +346,8 @@
                           {:$type :tutorials.notebook/Notebook$v1
                            :name "notebook1"
                            :version 2
-                           :items []}]}
+                           :items []}]
+              :tests []}
       :throws :auto}
 
      {:spec-map-merge
@@ -508,6 +523,13 @@
                      {:name "effect"
                       :expr '{:$type :tutorials.notebook/Effect$v1}}}}
 
+       :tutorials.notebook/WriteRegressionTestEffect$v1
+       {:fields {:notebookName :String
+                 :notebookVersion :Integer}
+        :refines-to {:tutorials.notebook/Effect$v1
+                     {:name "effect"
+                      :expr '{:$type :tutorials.notebook/Effect$v1}}}}
+
        :tutorials.notebook/WorkspaceAndEffects$v1
        {:fields {:workspace :tutorials.notebook/Workspace$v1
                  :effects [:Vec :tutorials.notebook/Effect$v1]}}
@@ -542,7 +564,8 @@
                                                      {:$type :tutorials.notebook/Notebook$v1
                                                       :name notebookName
                                                       :version notebookVersion
-                                                      :items notebookItems})}
+                                                      :items notebookItems})
+                                    :tests (get workspace :tests)}
                         :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1
                                    :notebookName notebookName
                                    :notebookVersion notebookVersion}]}}}}
@@ -638,13 +661,155 @@
                                                                              notebookName)
                                                                        (not= (get nb :version)
                                                                              notebookVersion)))
-                                                           new-notebook)}
+                                                           new-notebook)
+                                          :tests (get workspace :tests)}
                               :effects (conj (map [si new-spec-ids]
                                                   {:$type :tutorials.notebook/WriteSpecEffect$v1
                                                    :specId si})
                                              {:$type :tutorials.notebook/WriteNotebookEffect$v1
                                               :notebookName (get new-notebook :name)
-                                              :notebookVersion (get new-notebook :version)})})))}}}}}
+                                              :notebookVersion (get new-notebook :version)})})))}}}
+
+       :tutorials.notebook/CreateRegressionTest$v1
+       {:fields {:workspace :tutorials.notebook/Workspace$v1
+                 :notebookName :String
+                 :notebookVersion :Integer}
+        :constraints
+        #{{:name "notebookExists"
+           :expr
+           '(> (count (filter [nb (get workspace :notebooks)]
+                              (and (= (get nb :name)
+                                      notebookName)
+                                   (= (get nb :version)
+                                      notebookVersion))))
+               0)}
+          {:name "notebookCannotContainNewNonEphemeralSpecs"
+           :expr
+           '(let [filtered (filter [nb (get workspace :notebooks)]
+                                   (and (= (get nb :name)
+                                           notebookName)
+                                        (= (get nb :version)
+                                           notebookVersion)))]
+              (if (> (count filtered) 0)
+                (let [nb (first filtered)]
+                  (= (count (filter [ns (map [item (filter [item (get nb :items)]
+                                                           (refines-to? item :tutorials.notebook/NewSpec$v1))]
+                                             (refine-to item :tutorials.notebook/NewSpec$v1))]
+                                    (let [is-ephemeral (get ns :isEphemeral)]
+                                      (if-value is-ephemeral false true))))
+                     0))
+                true))}
+          {:name "specsValidRefs"
+           :expr
+           '(let [filtered (filter [nb (get workspace :notebooks)]
+                                   (and (= (get nb :name)
+                                           notebookName)
+                                        (= (get nb :version)
+                                           notebookVersion)))]
+              (if (> (count filtered) 0)
+                (let [nb (first filtered)]
+                  (valid? {:$type :tutorials.notebook/ResolveRefs$v1
+                           :specIds (get workspace :specIds)
+                           :items (get nb :items)}))
+                true))}}
+        :refines-to {:tutorials.notebook/WorkspaceAndEffects$v1
+                     {:name "newWorkspaceAndEffects"
+                      :expr
+                      '(let [filtered (filter [nb (get workspace :notebooks)]
+                                              (and (= (get nb :name)
+                                                      notebookName)
+                                                   (= (get nb :version)
+                                                      notebookVersion)))]
+                         (when (> (count filtered) 0)
+                           (let [nb (first filtered)
+                                 new-test {:$type :tutorials.notebook/RegressionTest$v1
+                                           :notebookName notebookName
+                                           :notebookVersion notebookVersion}]
+                             {:$type :tutorials.notebook/WorkspaceAndEffects$v1
+                              :workspace {:$type :tutorials.notebook/Workspace$v1
+                                          :specIds (get workspace :specIds)
+                                          :notebooks (get workspace :notebooks)
+                                          :tests (conj (get workspace :tests)
+                                                       new-test)}
+                              :effects [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1
+                                         :notebookName (get new-test :notebookName)
+                                         :notebookVersion (get new-test :notebookVersion)}]})))}}}
+
+       :tutorials.notebook/UpdateRegressionTest$v1
+       {:fields {:workspace :tutorials.notebook/Workspace$v1
+                 :notebookName :String
+                 :notebookVersion :Integer
+                 :lastNotebookVersion :Integer}
+        :constraints
+        #{{:name "notebookExists"
+           :expr
+           '(> (count (filter [nb (get workspace :notebooks)]
+                              (and (= (get nb :name)
+                                      notebookName)
+                                   (= (get nb :version)
+                                      notebookVersion))))
+               0)}
+          {:name "testExists"
+           :expr
+           '(> (count (filter [t (get workspace :tests)]
+                              (and (= (get t :notebookName)
+                                      notebookName)
+                                   (= (get t :notebookVersion)
+                                      lastNotebookVersion))))
+               0)}
+          {:name "notebookCannotContainNewNonEphemeralSpecs"
+           :expr
+           '(let [filtered (filter [nb (get workspace :notebooks)]
+                                   (and (= (get nb :name)
+                                           notebookName)
+                                        (= (get nb :version)
+                                           notebookVersion)))]
+              (if (> (count filtered) 0)
+                (let [nb (first filtered)]
+                  (= (count (filter [ns (map [item (filter [item (get nb :items)]
+                                                           (refines-to? item :tutorials.notebook/NewSpec$v1))]
+                                             (refine-to item :tutorials.notebook/NewSpec$v1))]
+                                    (let [is-ephemeral (get ns :isEphemeral)]
+                                      (if-value is-ephemeral false true))))
+                     0))
+                true))}
+          {:name "specsValidRefs"
+           :expr
+           '(let [filtered (filter [nb (get workspace :notebooks)]
+                                   (and (= (get nb :name)
+                                           notebookName)
+                                        (= (get nb :version)
+                                           notebookVersion)))]
+              (if (> (count filtered) 0)
+                (let [nb (first filtered)]
+                  (valid? {:$type :tutorials.notebook/ResolveRefs$v1
+                           :specIds (get workspace :specIds)
+                           :items (get nb :items)}))
+                true))}}
+        :refines-to {:tutorials.notebook/WorkspaceAndEffects$v1
+                     {:name "newWorkspaceAndEffects"
+                      :expr
+                      '(let [filtered (filter [nb (get workspace :notebooks)]
+                                              (and (= (get nb :name)
+                                                      notebookName)
+                                                   (= (get nb :version)
+                                                      notebookVersion)))]
+                         (when (> (count filtered) 0)
+                           (let [nb (first filtered)
+                                 new-test {:$type :tutorials.notebook/RegressionTest$v1
+                                           :notebookName notebookName
+                                           :notebookVersion notebookVersion}]
+                             {:$type :tutorials.notebook/WorkspaceAndEffects$v1
+                              :workspace {:$type :tutorials.notebook/Workspace$v1
+                                          :specIds (get workspace :specIds)
+                                          :notebooks (get workspace :notebooks)
+                                          :tests (conj (filter [t (get workspace :tests)]
+                                                               (not= (get t :notebookName)
+                                                                     notebookName))
+                                                       new-test)}
+                              :effects [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1
+                                         :notebookName (get new-test :notebookName)
+                                         :notebookVersion (get new-test :notebookVersion)}]})))}}}}}
 
      {:code '(let [ws {:$type :tutorials.notebook/Workspace$v1
                        :specIds [{:$type :tutorials.notebook/SpecId$v1 :specName "my/A" :specVersion 1}
@@ -653,7 +818,8 @@
                        :notebooks [{:$type :tutorials.notebook/Notebook$v1
                                     :name "notebook1"
                                     :version 1
-                                    :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}]}]}]
+                                    :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3}]}]
+                       :tests []}]
                [(valid? {:$type :tutorials.notebook/ApplyNotebook$v1
                          :workspace ws
                          :notebookName "notebook1"
@@ -679,7 +845,8 @@
                               :version 1
                               :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/A" :specVersion 3 :isEphemeral true}
                                       {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}
-                                      {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 3}]}]}]
+                                      {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 3}]}]
+                 :tests []}]
          (valid? {:$type :tutorials.notebook/ApplyNotebook$v1
                   :workspace ws
                   :notebookName "notebook1"
@@ -694,12 +861,32 @@
                  :notebooks [{:$type :tutorials.notebook/Notebook$v1
                               :name "notebook1"
                               :version 1
-                              :items [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}]}]}]
+                              :items [{:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}]}]
+                 :tests []}]
          (valid? {:$type :tutorials.notebook/ApplyNotebook$v1
                   :workspace ws
                   :notebookName "notebook1"
                   :notebookVersion 1}))
       :result false}
+
+     {:code
+      '(refine-to {:$type :tutorials.notebook/WriteNotebook$v1
+                   :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :specIds []
+                               :notebooks []
+                               :tests []}
+                   :notebookName "notebook1"
+                   :notebookVersion 1
+                   :notebookItems []}
+                  :tutorials.notebook/WorkspaceAndEffects$v1)
+      :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
+               :workspace {:$type :tutorials.notebook/Workspace$v1
+                           :specIds []
+                           :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 1, :items []}]
+                           :tests []}
+               :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1
+                          :notebookName "notebook1"
+                          :notebookVersion 1}]}}
 
      {:code
       '(refine-to {:$type :tutorials.notebook/ApplyNotebook$v1
@@ -719,7 +906,8 @@
                                             :version 3
                                             :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/B" :specVersion 1}
                                                     {:$type :tutorials.notebook/SpecRef$v1 :specName "my/A" :specVersion 1}
-                                                    {:$type :tutorials.notebook/SpecRef$v1 :specName "my/B" :specVersion 1}]}]}
+                                                    {:$type :tutorials.notebook/SpecRef$v1 :specName "my/B" :specVersion 1}]}]
+                               :tests []}
                    :notebookName "notebook1"
                    :notebookVersion 1}
 
@@ -741,7 +929,8 @@
                                         :version 2
                                         :items [{:$type :tutorials.notebook/NewSpec$v1 :specName "my/C" :specVersion 1 :isEphemeral true}
                                                 {:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 1}
-                                                {:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 3}]}]}
+                                                {:$type :tutorials.notebook/SpecRef$v1, :specName "my/A", :specVersion 3}]}]
+                           :tests []}
                :effects [{:$type :tutorials.notebook/WriteSpecEffect$v1
                           :specId {:$type :tutorials.notebook/SpecId$v1, :specName "my/A", :specVersion 3}}
                          {:$type :tutorials.notebook/WriteNotebookEffect$v1
@@ -749,21 +938,48 @@
                           :notebookVersion 2}]}}
 
      {:code
-      '(refine-to {:$type :tutorials.notebook/WriteNotebook$v1
+      '(refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1
                    :workspace {:$type :tutorials.notebook/Workspace$v1
                                :specIds []
-                               :notebooks []}
+                               :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 1, :items []}]
+                               :tests []}
                    :notebookName "notebook1"
-                   :notebookVersion 1
-                   :notebookItems []}
+                   :notebookVersion 1}
                   :tutorials.notebook/WorkspaceAndEffects$v1)
       :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                :workspace {:$type :tutorials.notebook/Workspace$v1
                            :specIds []
-                           :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 1, :items []}]}
-               :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1
-                          :notebookName "notebook1"
-                          :notebookVersion 1}]}}]}
+                           :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 1, :items []}]
+                           :tests [{:$type :tutorials.notebook/RegressionTest$v1,:notebookName "notebook1",:notebookVersion 1}]}
+               :effects [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1,:notebookName "notebook1",:notebookVersion 1}]}}
+
+     {:code
+      '(refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1
+                   :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :specIds []
+                               :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 2, :items []}]
+                               :tests [{:$type :tutorials.notebook/RegressionTest$v1,:notebookName "notebook1",:notebookVersion 1}]}
+                   :notebookName "notebook1"
+                   :notebookVersion 2}
+                  :tutorials.notebook/WorkspaceAndEffects$v1)
+      :throws :auto}
+
+     {:code
+      '(refine-to {:$type :tutorials.notebook/UpdateRegressionTest$v1
+                   :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :specIds []
+                               :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 9, :items []}]
+                               :tests [{:$type :tutorials.notebook/RegressionTest$v1,:notebookName "notebook1",:notebookVersion 1}]}
+                   :notebookName "notebook1"
+                   :notebookVersion 9
+                   :lastNotebookVersion 1}
+                  :tutorials.notebook/WorkspaceAndEffects$v1)
+      :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
+               :workspace {:$type :tutorials.notebook/Workspace$v1
+                           :specIds []
+                           :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 9, :items []}]
+                           :tests [{:$type :tutorials.notebook/RegressionTest$v1,:notebookName "notebook1",:notebookVersion 9}]}
+               :effects [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1,:notebookName "notebook1",:notebookVersion 9}]}}]}
 
    :tutorials.vending/vending
    {:label "Model a vending machine as a state machine"
