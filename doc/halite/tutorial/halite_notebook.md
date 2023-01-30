@@ -881,20 +881,18 @@ true
                                :items (get nb :items)}))
                     true))}},
     :refines-to
-      {:tutorials.notebook/Workspace$v1
-         {:name "newWorkspace",
-          :expr '(let [filtered (filter [nb (get workspace :notebooks)]
-                                  (and (= (get nb :name) notebookName)
-                                       (= (get nb :version) notebookVersion)))]
-                   (when (> (count filtered) 0)
-                     (let [nb (first filtered)]
-                       {:$type :tutorials.notebook/Workspace$v1,
-                        :specIds
-                          (concat
-                            (get workspace :specIds)
-                            (map [ns
-                                  (filter
-                                    [ns
+      {:tutorials.notebook/WorkspaceAndEffects$v1
+         {:name "newWorkspaceAndEffects",
+          :expr
+            '(let [filtered (filter [nb (get workspace :notebooks)]
+                              (and (= (get nb :name) notebookName)
+                                   (= (get nb :version) notebookVersion)))]
+               (when (> (count filtered) 0)
+                 (let [nb (first filtered)
+                       new-spec-ids
+                         (map
+                           [ns
+                            (filter [ns
                                      (map [item
                                            (filter [item (get nb :items)]
                                              (refines-to?
@@ -903,28 +901,87 @@ true
                                        (refine-to
                                          item
                                          :tutorials.notebook/NewSpec$v1))]
-                                    (let [is-ephemeral (get ns :isEphemeral)]
-                                      (if-value is-ephemeral false true)))]
-                              (refine-to ns :tutorials.notebook/SpecId$v1))),
-                        :notebooks
-                          (conj
-                            (filter [nb (get workspace :notebooks)]
-                              (or (not= (get nb :name) notebookName)
-                                  (not= (get nb :version) notebookVersion)))
-                            {:$type :tutorials.notebook/Notebook$v1,
-                             :name (get nb :name),
-                             :version (inc (get nb :version)),
-                             :items (filter [item (get nb :items)]
-                                      (if (refines-to?
-                                            item
-                                            :tutorials.notebook/NewSpec$v1)
-                                        (let
-                                          [ns (refine-to
+                              (let [is-ephemeral (get ns :isEphemeral)]
+                                (if-value is-ephemeral false true)))]
+                           (refine-to ns :tutorials.notebook/SpecId$v1))
+                       new-notebook
+                         {:$type :tutorials.notebook/Notebook$v1,
+                          :name (get nb :name),
+                          :version (inc (get nb :version)),
+                          :items (filter [item (get nb :items)]
+                                   (if (refines-to?
+                                         item
+                                         :tutorials.notebook/NewSpec$v1)
+                                     (let [ns (refine-to
                                                 item
                                                 :tutorials.notebook/NewSpec$v1)
                                            is-ephemeral (get ns :isEphemeral)]
-                                          (if-value is-ephemeral true false))
-                                        true))})})))}}}}
+                                       (if-value is-ephemeral true false))
+                                     true))}]
+                   {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+                    :workspace
+                      {:$type :tutorials.notebook/Workspace$v1,
+                       :specIds (concat (get workspace :specIds) new-spec-ids),
+                       :notebooks (conj (filter [nb (get workspace :notebooks)]
+                                          (or (not= (get nb :name) notebookName)
+                                              (not= (get nb :version)
+                                                    notebookVersion)))
+                                        new-notebook)},
+                    :effects
+                      (conj
+                        (map [si new-spec-ids]
+                          {:$type :tutorials.notebook/WriteSpecEffect$v1,
+                           :specId si})
+                        {:$type :tutorials.notebook/WriteNotebookEffect$v1,
+                         :notebookName (get new-notebook :name),
+                         :notebookVersion (get new-notebook :version)})})))}}},
+ :tutorials.notebook/Effect$v1 {:abstract? true},
+ :tutorials.notebook/WorkspaceAndEffects$v1
+   {:fields {:effects [:Vec :tutorials.notebook/Effect$v1],
+             :workspace :tutorials.notebook/Workspace$v1}},
+ :tutorials.notebook/WriteNotebook$v1
+   {:fields {:notebookItems [:Vec :tutorials.notebook/AbstractNotebookItem$v1],
+             :notebookName :String,
+             :notebookVersion :Integer,
+             :workspace :tutorials.notebook/Workspace$v1},
+    :constraints #{'{:name "positiveVersion",
+                     :expr (valid? {:$type :tutorials.notebook/Version$v1,
+                                    :version notebookVersion})}
+                   '{:name "priorNotebookExists",
+                     :expr (if (> notebookVersion 1)
+                             (let [filtered
+                                     (filter [nb (get workspace :notebooks)]
+                                       (and (= (get nb :name) notebookName)
+                                            (= (get nb :version)
+                                               (dec notebookVersion))))]
+                               (= (count filtered) 1))
+                             true)}},
+    :refines-to
+      {:tutorials.notebook/WorkspaceAndEffects$v1
+         {:name "newWorkspaceAndEffects",
+          :expr '{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+                  :workspace {:$type :tutorials.notebook/Workspace$v1,
+                              :specIds (get workspace :specIds),
+                              :notebooks
+                                (conj (get workspace :notebooks)
+                                      {:$type :tutorials.notebook/Notebook$v1,
+                                       :name notebookName,
+                                       :version notebookVersion,
+                                       :items notebookItems})},
+                  :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1,
+                             :notebookName notebookName,
+                             :notebookVersion notebookVersion}]}}}},
+ :tutorials.notebook/WriteNotebookEffect$v1
+   {:fields {:notebookName :String,
+             :notebookVersion :Integer},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
+ :tutorials.notebook/WriteSpecEffect$v1
+   {:fields {:specId :tutorials.notebook/SpecId$v1},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}}}
 ```
 
 ```clojure
@@ -1068,47 +1125,80 @@ false
                                      :specVersion 1}]}]},
    :notebookName "notebook1",
    :notebookVersion 1}
-  :tutorials.notebook/Workspace$v1)
+  :tutorials.notebook/WorkspaceAndEffects$v1)
 
 
 ;-- result --
-{:$type :tutorials.notebook/Workspace$v1,
- :notebooks [{:name "notebook2",
-              :$type :tutorials.notebook/Notebook$v1,
-              :items [{:$type :tutorials.notebook/NewSpec$v1,
-                       :specName "my/B",
-                       :specVersion 1}
-                      {:$type :tutorials.notebook/SpecRef$v1,
-                       :specName "my/A",
-                       :specVersion 1}
-                      {:$type :tutorials.notebook/SpecRef$v1,
-                       :specName "my/B",
-                       :specVersion 1}],
-              :version 3}
-             {:name "notebook1",
-              :$type :tutorials.notebook/Notebook$v1,
-              :items [{:$type :tutorials.notebook/NewSpec$v1,
-                       :isEphemeral true,
-                       :specName "my/C",
-                       :specVersion 1}
-                      {:$type :tutorials.notebook/SpecRef$v1,
-                       :specName "my/A",
-                       :specVersion 1}
-                      {:$type :tutorials.notebook/SpecRef$v1,
-                       :specName "my/A",
-                       :specVersion 3}],
-              :version 2}],
- :specIds [{:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 1}
-           {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/B",
-            :specVersion 1}
-           {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 2}
-           {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 3}]}
+{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+ :effects [{:$type :tutorials.notebook/WriteSpecEffect$v1,
+            :specId {:$type :tutorials.notebook/SpecId$v1,
+                     :specName "my/A",
+                     :specVersion 3}}
+           {:$type :tutorials.notebook/WriteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 2}],
+ :workspace
+   {:$type :tutorials.notebook/Workspace$v1,
+    :notebooks [{:name "notebook2",
+                 :$type :tutorials.notebook/Notebook$v1,
+                 :items [{:$type :tutorials.notebook/NewSpec$v1,
+                          :specName "my/B",
+                          :specVersion 1}
+                         {:$type :tutorials.notebook/SpecRef$v1,
+                          :specName "my/A",
+                          :specVersion 1}
+                         {:$type :tutorials.notebook/SpecRef$v1,
+                          :specName "my/B",
+                          :specVersion 1}],
+                 :version 3}
+                {:name "notebook1",
+                 :$type :tutorials.notebook/Notebook$v1,
+                 :items [{:$type :tutorials.notebook/NewSpec$v1,
+                          :isEphemeral true,
+                          :specName "my/C",
+                          :specVersion 1}
+                         {:$type :tutorials.notebook/SpecRef$v1,
+                          :specName "my/A",
+                          :specVersion 1}
+                         {:$type :tutorials.notebook/SpecRef$v1,
+                          :specName "my/A",
+                          :specVersion 3}],
+                 :version 2}],
+    :specIds [{:$type :tutorials.notebook/SpecId$v1,
+               :specName "my/A",
+               :specVersion 1}
+              {:$type :tutorials.notebook/SpecId$v1,
+               :specName "my/B",
+               :specVersion 1}
+              {:$type :tutorials.notebook/SpecId$v1,
+               :specName "my/A",
+               :specVersion 2}
+              {:$type :tutorials.notebook/SpecId$v1,
+               :specName "my/A",
+               :specVersion 3}]}}
+```
+
+```clojure
+(refine-to {:$type :tutorials.notebook/WriteNotebook$v1,
+            :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :specIds [],
+                        :notebooks []},
+            :notebookName "notebook1",
+            :notebookVersion 1,
+            :notebookItems []}
+           :tutorials.notebook/WorkspaceAndEffects$v1)
+
+
+;-- result --
+{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+ :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 1}],
+ :workspace {:$type :tutorials.notebook/Workspace$v1,
+             :notebooks [{:name "notebook1",
+                          :$type :tutorials.notebook/Notebook$v1,
+                          :items [],
+                          :version 1}],
+             :specIds []}}
 ```
 
