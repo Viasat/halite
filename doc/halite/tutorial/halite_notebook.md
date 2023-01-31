@@ -1111,14 +1111,18 @@ true
                                                     notebookVersion)))
                                         new-notebook),
                        :tests (get workspace :tests)},
-                    :effects
-                      (conj
-                        (map [si new-spec-ids]
-                          {:$type :tutorials.notebook/WriteSpecEffect$v1,
-                           :specId si})
-                        {:$type :tutorials.notebook/WriteNotebookEffect$v1,
-                         :notebookName (get new-notebook :name),
-                         :notebookVersion (get new-notebook :version)})})))}}},
+                    :effects (concat
+                               (map [si new-spec-ids]
+                                 {:$type :tutorials.notebook/WriteSpecEffect$v1,
+                                  :specId si})
+                               [{:$type
+                                   :tutorials.notebook/WriteNotebookEffect$v1,
+                                 :notebookName (get new-notebook :name),
+                                 :notebookVersion (get new-notebook :version)}
+                                {:$type :tutorials.notebook/RunTestsEffect$v1,
+                                 :notebookName notebookName,
+                                 :notebookVersion notebookVersion,
+                                 :workspaceSpecs true}])})))}}},
  :tutorials.notebook/CreateRegressionTest$v1
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
@@ -1181,9 +1185,31 @@ true
                     :effects
                       [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1,
                         :notebookName (get new-test :notebookName),
-                        :notebookVersion (get new-test
-                                              :notebookVersion)}]})))}}},
+                        :notebookVersion (get new-test :notebookVersion)}
+                       {:$type :tutorials.notebook/RunTestsEffect$v1,
+                        :notebookName notebookName,
+                        :notebookVersion notebookVersion,
+                        :registrySpecs true}]})))}}},
  :tutorials.notebook/Effect$v1 {:abstract? true},
+ :tutorials.notebook/RunTestsEffect$v1
+   {:fields {:notebookName :String,
+             :notebookVersion :Integer,
+             :registrySpecs [:Maybe :Boolean],
+             :workspaceSpecs [:Maybe :Boolean]},
+    :constraints
+      #{'{:name "exclusiveFlags",
+          :expr (and (or (if-value registrySpecs registrySpecs false)
+                         (if-value workspaceSpecs workspaceSpecs false))
+                     (not (and
+                            (if-value registrySpecs registrySpecs false)
+                            (if-value workspaceSpecs workspaceSpecs false))))}
+        '{:name "registrySpecsFlag",
+          :expr (if-value registrySpecs registrySpecs true)}
+        '{:name "workspaceSpecsFlag",
+          :expr (if-value workspaceSpecs workspaceSpecs true)}},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
  :tutorials.notebook/UpdateRegressionTest$v1
    {:fields {:lastNotebookVersion :Integer,
              :notebookName :String,
@@ -1257,8 +1283,11 @@ true
                     :effects
                       [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1,
                         :notebookName (get new-test :notebookName),
-                        :notebookVersion (get new-test
-                                              :notebookVersion)}]})))}}},
+                        :notebookVersion (get new-test :notebookVersion)}
+                       {:$type :tutorials.notebook/RunTestsEffect$v1,
+                        :notebookName notebookName,
+                        :notebookVersion notebookVersion,
+                        :registrySpecs true}]})))}}},
  :tutorials.notebook/WorkspaceAndEffects$v1
    {:fields {:effects [:Vec :tutorials.notebook/Effect$v1],
              :workspace :tutorials.notebook/Workspace$v1}},
@@ -1535,7 +1564,11 @@ false
                      :workspaceName "my"}}
            {:$type :tutorials.notebook/WriteNotebookEffect$v1,
             :notebookName "notebook1",
-            :notebookVersion 2}],
+            :notebookVersion 2}
+           {:$type :tutorials.notebook/RunTestsEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 1,
+            :workspaceSpecs true}],
  :workspace
    {:$type :tutorials.notebook/Workspace$v1,
     :notebooks [{:name "notebook2",
@@ -1610,7 +1643,11 @@ false
 {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
  :effects [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1,
             :notebookName "notebook1",
-            :notebookVersion 1}],
+            :notebookVersion 1}
+           {:$type :tutorials.notebook/RunTestsEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 1,
+            :registrySpecs true}],
  :workspace {:$type :tutorials.notebook/Workspace$v1,
              :notebooks [{:name "notebook1",
                           :$type :tutorials.notebook/Notebook$v1,
@@ -1671,7 +1708,11 @@ false
 {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
  :effects [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1,
             :notebookName "notebook1",
-            :notebookVersion 9}],
+            :notebookVersion 9}
+           {:$type :tutorials.notebook/RunTestsEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 9,
+            :registrySpecs true}],
  :workspace {:$type :tutorials.notebook/Workspace$v1,
              :notebooks [{:name "notebook1",
                           :$type :tutorials.notebook/Notebook$v1,
