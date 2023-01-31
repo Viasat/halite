@@ -476,6 +476,18 @@ true
       }
     }
   },
+  "tutorials.notebook/DeleteNotebookEffect$v1" : {
+    "fields" : {
+      "notebookName" : "String",
+      "notebookVersion" : "Integer"
+    },
+    "refines-to" : {
+      "tutorials.notebook/Effect$v1" : {
+        "name" : "effect",
+        "expr" : "{$type: tutorials.notebook/Effect$v1}"
+      }
+    }
+  },
   "tutorials.notebook/WriteNotebook$v1" : {
     "fields" : {
       "workspace" : "tutorials.notebook/Workspace$v1",
@@ -488,6 +500,18 @@ true
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
         "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspace.notebooks.conj({$type: tutorials.notebook/Notebook$v1, items: notebookItems, name: notebookName, version: notebookVersion}), registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: workspace.tests, workspaceName: workspace.workspaceName}}"
+      }
+    }
+  },
+  "tutorials.notebook/DeleteRegressionTestEffect$v1" : {
+    "fields" : {
+      "notebookName" : "String",
+      "notebookVersion" : "Integer"
+    },
+    "refines-to" : {
+      "tutorials.notebook/Effect$v1" : {
+        "name" : "effect",
+        "expr" : "{$type: tutorials.notebook/Effect$v1}"
       }
     }
   },
@@ -505,6 +529,20 @@ true
   "tutorials.notebook/Effect$v1" : {
     "abstract?" : true
   },
+  "tutorials.notebook/DeleteRegressionTest$v1" : {
+    "fields" : {
+      "workspace" : "tutorials.notebook/Workspace$v1",
+      "notebookName" : "String",
+      "notebookVersion" : "Integer"
+    },
+    "constraints" : [ "{expr: ((filter(t in workspace.tests)((t.notebookName == notebookName) && (t.notebookVersion == notebookVersion))).count() > 0), name: \"testExists\"}" ],
+    "refines-to" : {
+      "tutorials.notebook/WorkspaceAndEffects$v1" : {
+        "name" : "newWorkspaceAndEffects",
+        "expr" : "({ filtered = (filter(t in workspace.tests)((t.notebookName == notebookName) && (t.notebookVersion == notebookVersion))); ({ 'to-remove' = filtered.first(); {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteRegressionTestEffect$v1, notebookName: 'to-remove'.notebookName, notebookVersion: 'to-remove'.notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspace.notebooks, registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: (filter(t in workspace.tests)(t != 'to-remove')), workspaceName: workspace.workspaceName}} }) })"
+      }
+    }
+  },
   "tutorials.notebook/CreateRegressionTest$v1" : {
     "fields" : {
       "workspace" : "tutorials.notebook/Workspace$v1",
@@ -516,6 +554,20 @@ true
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
         "expr" : "({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (when((filtered.count() > 0)) {({ nb = filtered.first(); 'new-test' = {$type: tutorials.notebook/RegressionTest$v1, notebookName: notebookName, notebookVersion: notebookVersion}; {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: 'new-test'.notebookName, notebookVersion: 'new-test'.notebookVersion}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion, registrySpecs: true}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspace.notebooks, registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: workspace.tests.conj('new-test'), workspaceName: workspace.workspaceName}} })}) })"
+      }
+    }
+  },
+  "tutorials.notebook/DeleteNotebook$v1" : {
+    "fields" : {
+      "workspace" : "tutorials.notebook/Workspace$v1",
+      "notebookName" : "String",
+      "notebookVersion" : "Integer"
+    },
+    "constraints" : [ "{expr: (if((notebookVersion > 1)) {({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (filtered.count() == 1) })} else {true}), name: \"notebookExists\"}", "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}" ],
+    "refines-to" : {
+      "tutorials.notebook/WorkspaceAndEffects$v1" : {
+        "name" : "newWorkspaceAndEffects",
+        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspace.notebooks)(!(nb.name == notebookName) || !(nb.version == notebookVersion))), registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: workspace.tests, workspaceName: workspace.workspaceName}}"
       }
     }
   },
@@ -578,6 +630,14 @@ false
 ```
 
 ```java
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}], registrySpecIds: [], specIds: [], tests: [], workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+
+
+//-- result --
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}], registrySpecIds: [], specIds: [], tests: [], workspaceName: "my"}}
+```
+
+```java
 {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "B", specVersion: 1, workspaceName: "my"}], name: "notebook2", version: 3}], registrySpecIds: [], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], tests: [], workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
@@ -607,5 +667,13 @@ false
 
 //-- result --
 {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 9}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 9, registrySpecs: true}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}], registrySpecIds: [], specIds: [], tests: [{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 9}], workspaceName: "my"}}
+```
+
+```java
+{$type: tutorials.notebook/DeleteRegressionTest$v1, notebookName: "notebook1", notebookVersion: 9, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}], registrySpecIds: [], specIds: [], tests: [{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 9}, {$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook2", notebookVersion: 1}], workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+
+
+//-- result --
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 9}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}], registrySpecIds: [], specIds: [], tests: [{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook2", notebookVersion: 1}], workspaceName: "my"}}
 ```
 
