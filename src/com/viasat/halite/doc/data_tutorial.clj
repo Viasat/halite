@@ -9,52 +9,60 @@
   {:tutorials.notebook/notebook
    {:label "Model a notebook mechanism"
     :contents
-    [{:spec-map {:tutorials.notebook/Version$v1
+    ["The following is an extended example of implementing a non-trivial amount of logic in a set of specs. It is a bit \"meta\", but in this case the model will include specs that exist in workspaces where each spec has a version separate from its name. "
+     "Versions must be positive values."
+     {:spec-map {:tutorials.notebook/Version$v1
                  {:fields {:version [:Maybe :Integer]}
                   :constraints #{{:name "positiveVersion"
                                   :expr '(if-value version
                                                    (> version 0)
-                                                   true)}}}
+                                                   true)}}}}}
 
-                 :tutorials.notebook/SpecId$v1
-                 {:fields {:workspaceName :String
-                           :specName :String
-                           :specVersion :Integer}
-                  :constraints #{{:name "positiveVersion"
-                                  :expr '(valid? {:$type :tutorials.notebook/Version$v1
-                                                  :version specVersion})}}}
+     "An identifier for a spec includes its name and version. By referencing the Version spec in a constraint we can reuse the constraint from the Version spec."
+     {:spec-map-merge {:tutorials.notebook/SpecId$v1
+                       {:fields {:workspaceName :String
+                                 :specName :String
+                                 :specVersion :Integer}
+                        :constraints #{{:name "positiveVersion"
+                                        :expr '(valid? {:$type :tutorials.notebook/Version$v1
+                                                        :version specVersion})}}}}}
 
-                 :tutorials.notebook/AbstractNotebookItem$v1
-                 {:abstract? true}
+     "A notebook will consist of \"items\". Since there are different kinds of items an abstract spec is defined."
+     {:spec-map-merge {:tutorials.notebook/AbstractNotebookItem$v1
+                       {:abstract? true}}}
 
-                 :tutorials.notebook/SpecRef$v1
-                 {:fields {:workspaceName :String
-                           :specName :String
-                           :specVersion [:Maybe :Integer]}
-                  :constraints #{{:name "positiveVersion"
-                                  :expr '(valid? {:$type :tutorials.notebook/Version$v1
-                                                  :version specVersion})}}
-                  :refines-to {:tutorials.notebook/SpecId$v1
-                               {:name "specId"
-                                :expr '(when-value specVersion
-                                                   {:$type :tutorials.notebook/SpecId$v1
-                                                    :workspaceName workspaceName
-                                                    :specName specName
-                                                    :specVersion specVersion})}
+     "One kind of item is a reference to another spec."
+     {:spec-map-merge {:tutorials.notebook/SpecRef$v1
+                       {:fields {:workspaceName :String
+                                 :specName :String
+                                 :specVersion [:Maybe :Integer]}
+                        :constraints #{{:name "positiveVersion"
+                                        :expr '(valid? {:$type :tutorials.notebook/Version$v1
+                                                        :version specVersion})}}
+                        :refines-to {:tutorials.notebook/SpecId$v1
+                                     {:name "specId"
+                                      :expr '(when-value specVersion
+                                                         {:$type :tutorials.notebook/SpecId$v1
+                                                          :workspaceName workspaceName
+                                                          :specName specName
+                                                          :specVersion specVersion})}
 
-                               :tutorials.notebook/AbstractNotebookItem$v1
-                               {:name "abstractItems"
-                                :expr '{:$type :tutorials.notebook/AbstractNotebookItem$v1}}}}}}
+                                     :tutorials.notebook/AbstractNotebookItem$v1
+                                     {:name "abstractItems"
+                                      :expr '{:$type :tutorials.notebook/AbstractNotebookItem$v1}}}}}}
 
+     "Example of a \"fixed\" spec references that refers precisely to a given version of a spec."
      {:code '{:$type :tutorials.notebook/SpecRef$v1
               :workspaceName "my"
               :specName "A"
               :specVersion 1}}
 
+     "Example of a \"floating\" spec reference that refers to the latest version of a given spec within whatever context the reference is resolved in."
      {:code '{:$type :tutorials.notebook/SpecRef$v1
               :workspaceName "my"
               :specName "A"}}
 
+     "Another kind of notebook item is the definition of a new spec. Notice in this case the optional flag only presents two options: either it is present and set to 'true' or it is absent. So it is truly a binary. The convenience this approach provides is that it is less verbose to have it excluded it from instances where it is not set."
      {:spec-map-merge {:tutorials.notebook/NewSpec$v1
                        {:fields {:workspaceName :String
                                  :specName :String
@@ -78,6 +86,7 @@
                                      {:name "abstractItems"
                                       :expr '{:$type :tutorials.notebook/AbstractNotebookItem$v1}}}}}}
 
+     "Some examples of 'new specs'."
      {:code '{:$type :tutorials.notebook/NewSpec$v1
               :workspaceName "my"
               :specName "A"
@@ -94,6 +103,7 @@
               :specVersion 1
               :isEphemeral true}}
 
+     "It is not possible to set the flag to a value of 'false', instead it is to be omitted."
      {:code '{:$type :tutorials.notebook/NewSpec$v1
               :workspaceName "my"
               :specName "A"
@@ -101,6 +111,7 @@
               :isEphemeral false}
       :throws :auto}
 
+     "A 'new spec' can be treated as a spec identifier."
      {:code '(refine-to
               {:$type :tutorials.notebook/NewSpec$v1
                :workspaceName "my"
@@ -112,6 +123,7 @@
                :specName "A"
                :specVersion 1}}
 
+     "This is an example of writing a reusable 'function' via a spec. In this case the prefix 'F' is used in the spec name to identify it as following this pattern. The fields in this spec are the input parameters to the function. The spec representing the return value from the function is prefixed with an 'R'. Since an integer value cannot be produced from a refinement, a spec is needed to hold the result."
      {:spec-map-merge {:tutorials.notebook/RInteger$v1
                        {:fields {:result [:Maybe :Integer]}}
 
@@ -134,6 +146,8 @@
                                                                              a))]
                                                         (when (not= 0 result)
                                                           result))}}}}}}
+
+     "Some examples of invoking the function to find the max version of a given spec."
      {:code '(refine-to
               {:$type :tutorials.notebook/FMaxSpecVersion$v1
                :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
@@ -143,6 +157,7 @@
                :specName "A"}
               :tutorials.notebook/RInteger$v1)
       :result {:$type :tutorials.notebook/RInteger$v1 :result 2}}
+
      {:code '(refine-to
               {:$type :tutorials.notebook/FMaxSpecVersion$v1
                :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
@@ -152,6 +167,8 @@
                :specName "B"}
               :tutorials.notebook/RInteger$v1)
       :result {:$type :tutorials.notebook/RInteger$v1 :result 1}}
+
+     "An example of when there is no such spec in the set of specs."
      {:code '(refine-to
               {:$type :tutorials.notebook/FMaxSpecVersion$v1
                :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
@@ -162,6 +179,7 @@
               :tutorials.notebook/RInteger$v1)
       :result {:$type :tutorials.notebook/RInteger$v1}}
 
+     "A spec which resolves a spec reference in the context of other specs. In this case, this is like a function, but there is a natural way to express the result using an existing spec."
      {:spec-map-merge
       {:tutorials.notebook/SpecRefResolver$v1
        {:fields {:existingSpecIds [:Vec :tutorials.notebook/SpecId$v1]
@@ -192,6 +210,7 @@
                                       :specName (get inputSpecRef :specName)
                                       :specVersion max-version-in-context}))))}}}}}
 
+     "Cases where the input spec reference cannot be resolved are represented by failing to refine."
      {:code '(refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1
                            :existingSpecIds []
                            :newSpecs []
@@ -202,6 +221,7 @@
                           :tutorials.notebook/SpecId$v1)
       :result false}
 
+     "For cases that can be refined, the refinement result is the result of resolving the spec reference. In this example the floating reference resolves to a new spec."
      {:code '(refine-to {:$type :tutorials.notebook/SpecRefResolver$v1
                          :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                            {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -221,6 +241,7 @@
                         :tutorials.notebook/SpecId$v1)
       :result {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 3}}
 
+     "In this example a floating spec reference resolves to an existing spec in the current context."
      {:code '(refine-to {:$type :tutorials.notebook/SpecRefResolver$v1
                          :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                            {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -240,6 +261,7 @@
                         :tutorials.notebook/SpecId$v1)
       :result {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}}
 
+     "An example of resolving a fixed spec reference."
      {:code '(refine-to {:$type :tutorials.notebook/SpecRefResolver$v1
                          :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                            {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -259,6 +281,8 @@
                                         :specVersion 1}}
                         :tutorials.notebook/SpecId$v1)
       :result {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}}
+
+     "An example of resolving a reference to an ephemeral spec."
      {:code '(refine-to {:$type :tutorials.notebook/SpecRefResolver$v1
                          :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                            {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -279,6 +303,7 @@
                         :tutorials.notebook/SpecId$v1)
       :result {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "C" :specVersion 1}}
 
+     "A reference to a hypothetical ephemeral spec that does not exist does not resolve."
      {:code '(refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1
                            :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                              {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -298,6 +323,8 @@
                                           :specVersion 2}}
                           :tutorials.notebook/SpecId$v1)
       :result false}
+
+     "A reference to a completely unknown spec name does not resolve."
      {:code '(refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1
                            :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                              {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -322,23 +349,25 @@
      {:spec-map-merge {:tutorials.notebook/ResolvedSpecRefs$v1
                        {:fields {:specRefs [:Vec :tutorials.notebook/SpecId$v1]}}}}
 
-     "A notebook contains spec references. This is modeled as the results of having parsed the references out of the contents of the notebook."
+     "A notebook contains spec references. This is modeled as the results of having parsed the references out of the contents of the notebook. Constraints are added to make some of the vector fields have set semantics (i.e. to not allow duplicates). This is done rather than representing the fields as sets because sequence operations cannot be deterministically applied to sets."
      {:spec-map-merge {:tutorials.notebook/Notebook$v1
                        {:fields {:name :String
                                  :version :Integer
                                  :items [:Vec :tutorials.notebook/AbstractNotebookItem$v1]}
                         :constraints #{{:name "positiveVersion"
                                         :expr '(valid? {:$type :tutorials.notebook/Version$v1
-                                                        :version version})}}}
+                                                        :version version})}}}}}
 
-                       :tutorials.notebook/RegressionTest$v1
+     "The contents of notebooks can be used as the basis for defining regression tests for a workspace."
+     {:spec-map-merge {:tutorials.notebook/RegressionTest$v1
                        {:fields {:notebookName :String
                                  :notebookVersion :Integer}
                         :constraints #{{:name "positiveVersion"
                                         :expr '(valid? {:$type :tutorials.notebook/Version$v1
-                                                        :version notebookVersion})}}}
+                                                        :version notebookVersion})}}}}}
 
-                       :tutorials.notebook/Workspace$v1
+     "Finally, we can create a top-level spec that represents a workspace and the items it contains. Two separate fields are used to represent the specs that are available in a workspace. One captures all of those that are registered. The other captures, just the \"private\" specs that are defined in this workspace, but not made available in the registry."
+     {:spec-map-merge {:tutorials.notebook/Workspace$v1
                        {:fields {:workspaceName :String
                                  :registrySpecIds [:Vec :tutorials.notebook/SpecId$v1]
                                  :specIds [:Vec :tutorials.notebook/SpecId$v1]
@@ -365,6 +394,7 @@
                                                                           (get t :notebookName))))
                                                   (count tests))}}}}}
 
+     "An example of a valid workspace instance."
      {:code '{:$type :tutorials.notebook/Workspace$v1
               :workspaceName "my"
               :registrySpecIds []
@@ -376,6 +406,8 @@
                            :version 1
                            :items []}]
               :tests []}}
+
+     "Example workspace instance that violates a spec id constraint."
      {:code '{:$type :tutorials.notebook/Workspace$v1
               :workspaceName "my"
               :registrySpecIds []
@@ -389,6 +421,8 @@
                            :items []}]
               :tests []}
       :throws :auto}
+
+     "Example of a workspace that violates a notebook name constraint."
      {:code '{:$type :tutorials.notebook/Workspace$v1
               :workspaceName "my"
               :registrySpecIds []
@@ -538,7 +572,25 @@
                         (every? [pair (map [i (range 0 (dec (count versions)))]
                                            [(get versions i)
                                             (get versions (inc i))])]
-                                (= (inc (get pair 0)) (get pair 1))))))}}}}}
+                                (= (inc (get pair 0)) (get pair 1))))))}
+          {:name "nonEphemeralBuiltOnNonEphemeral"
+           :expr
+           '(let [all-spec-names (reduce [a #{}] [ns newSpecs]
+                                         (if (contains? a [(get ns :workspaceName) (get ns :specName)])
+                                           a
+                                           (conj a [(get ns :workspaceName) (get ns :specName)])))]
+              (every? [n all-spec-names]
+                      (let [ephemeral-values (concat [false]
+                                                     (map [ns (filter [ns newSpecs]
+                                                                      (and (= (get n 0) (get ns :workspaceName))
+                                                                           (= (get n 1) (get ns :specName))))]
+                                                          (let [is-e (get ns :isEphemeral)]
+                                                            (if-value is-e true false))))]
+                        (every? [pair (map [i (range 0 (dec (count ephemeral-values)))]
+                                           [(get ephemeral-values i)
+                                            (get ephemeral-values (inc i))])]
+                                (or (get pair 1)
+                                    (and (not (get pair 0))))))))}}}}}
 
      {:code '(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
                       :workspaceName "my"
@@ -571,6 +623,20 @@
                                  {:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "A" :specVersion 4}
                                  {:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "C" :specVersion 1}]})
       :result true}
+     {:code '(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
+                      :workspaceName "my"
+                      :specIds []
+                      :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "C" :specVersion 1}
+                                 {:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "C" :specVersion 2 :isEphemeral true}]})
+      :result true}
+
+     "Cannot create an non-ephemeral spec \"on top\" of an ephemeral spec."
+     {:code '(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
+                      :workspaceName "my"
+                      :specIds []
+                      :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "C" :specVersion 1 :isEphemeral true}
+                                 {:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "C" :specVersion 2}]})
+      :result false}
 
      {:spec-map-merge
       {:tutorials.notebook/Effect$v1

@@ -6,16 +6,39 @@
 
 
 
+The following is an extended example of implementing a non-trivial amount of logic in a set of specs. It is a bit "meta", but in this case the model will include specs that exist in workspaces where each spec has a version separate from its name. 
+
+Versions must be positive values.
+
 ```clojure
-{:tutorials.notebook/AbstractNotebookItem$v1 {:abstract? true},
- :tutorials.notebook/SpecId$v1
+{:tutorials.notebook/Version$v1
+   {:fields {:version [:Maybe :Integer]},
+    :constraints #{'{:name "positiveVersion",
+                     :expr (if-value version (> version 0) true)}}}}
+```
+
+An identifier for a spec includes its name and version. By referencing the Version spec in a constraint we can reuse the constraint from the Version spec.
+
+```clojure
+{:tutorials.notebook/SpecId$v1
    {:fields {:specName :String,
              :specVersion :Integer,
              :workspaceName :String},
     :constraints #{'{:name "positiveVersion",
                      :expr (valid? {:$type :tutorials.notebook/Version$v1,
-                                    :version specVersion})}}},
- :tutorials.notebook/SpecRef$v1
+                                    :version specVersion})}}}}
+```
+
+A notebook will consist of "items". Since there are different kinds of items an abstract spec is defined.
+
+```clojure
+{:tutorials.notebook/AbstractNotebookItem$v1 {:abstract? true}}
+```
+
+One kind of item is a reference to another spec.
+
+```clojure
+{:tutorials.notebook/SpecRef$v1
    {:fields {:specName :String,
              :specVersion [:Maybe :Integer],
              :workspaceName :String},
@@ -32,12 +55,10 @@
                                        {:$type :tutorials.notebook/SpecId$v1,
                                         :workspaceName workspaceName,
                                         :specName specName,
-                                        :specVersion specVersion})}}},
- :tutorials.notebook/Version$v1
-   {:fields {:version [:Maybe :Integer]},
-    :constraints #{'{:name "positiveVersion",
-                     :expr (if-value version (> version 0) true)}}}}
+                                        :specVersion specVersion})}}}}
 ```
+
+Example of a "fixed" spec references that refers precisely to a given version of a spec.
 
 ```clojure
 {:$type :tutorials.notebook/SpecRef$v1,
@@ -46,11 +67,15 @@
  :workspaceName "my"}
 ```
 
+Example of a "floating" spec reference that refers to the latest version of a given spec within whatever context the reference is resolved in.
+
 ```clojure
 {:$type :tutorials.notebook/SpecRef$v1,
  :specName "A",
  :workspaceName "my"}
 ```
+
+Another kind of notebook item is the definition of a new spec. Notice in this case the optional flag only presents two options: either it is present and set to 'true' or it is absent. So it is truly a binary. The convenience this approach provides is that it is less verbose to have it excluded it from instances where it is not set.
 
 ```clojure
 {:tutorials.notebook/NewSpec$v1
@@ -74,6 +99,8 @@
                             :specName specName,
                             :specVersion specVersion}}}}}
 ```
+
+Some examples of 'new specs'.
 
 ```clojure
 {:$type :tutorials.notebook/NewSpec$v1,
@@ -103,6 +130,8 @@
  :workspaceName "my"}
 ```
 
+It is not possible to set the flag to a value of 'false', instead it is to be omitted.
+
 ```clojure
 {:$type :tutorials.notebook/NewSpec$v1,
  :isEphemeral false,
@@ -116,6 +145,8 @@
  "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/NewSpec$v1', violates constraints \"tutorials.notebook/NewSpec$v1/ephemeralFlag\""
  :h-err/invalid-instance]
 ```
+
+A 'new spec' can be treated as a spec identifier.
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/NewSpec$v1,
@@ -131,6 +162,8 @@
  :specVersion 1,
  :workspaceName "my"}
 ```
+
+This is an example of writing a reusable 'function' via a spec. In this case the prefix 'F' is used in the spec name to identify it as following this pattern. The fields in this spec are the input parameters to the function. The spec representing the return value from the function is prefixed with an 'R'. Since an integer value cannot be produced from a refinement, a spec is needed to hold the result.
 
 ```clojure
 {:tutorials.notebook/FMaxSpecVersion$v1
@@ -154,6 +187,8 @@
                             (when (not= 0 result) result))}}}},
  :tutorials.notebook/RInteger$v1 {:fields {:result [:Maybe :Integer]}}}
 ```
+
+Some examples of invoking the function to find the max version of a given spec.
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/FMaxSpecVersion$v1,
@@ -203,6 +238,8 @@
  :result 1}
 ```
 
+An example of when there is no such spec in the set of specs.
+
 ```clojure
 (refine-to {:$type :tutorials.notebook/FMaxSpecVersion$v1,
             :specIds [{:$type :tutorials.notebook/SpecId$v1,
@@ -225,6 +262,8 @@
 ;-- result --
 {:$type :tutorials.notebook/RInteger$v1}
 ```
+
+A spec which resolves a spec reference in the context of other specs. In this case, this is like a function, but there is a natural way to express the result using an existing spec.
 
 ```clojure
 {:tutorials.notebook/SpecRefResolver$v1
@@ -262,6 +301,8 @@
                       :specVersion max-version-in-context}))))}}}}
 ```
 
+Cases where the input spec reference cannot be resolved are represented by failing to refine.
+
 ```clojure
 (refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1,
               :existingSpecIds [],
@@ -276,6 +317,8 @@
 ;-- result --
 false
 ```
+
+For cases that can be refined, the refinement result is the result of resolving the spec reference. In this example the floating reference resolves to a new spec.
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1,
@@ -313,6 +356,8 @@ false
  :workspaceName "my"}
 ```
 
+In this example a floating spec reference resolves to an existing spec in the current context.
+
 ```clojure
 (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1,
             :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
@@ -348,6 +393,8 @@ false
  :specVersion 1,
  :workspaceName "my"}
 ```
+
+An example of resolving a fixed spec reference.
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1,
@@ -386,6 +433,8 @@ false
  :workspaceName "my"}
 ```
 
+An example of resolving a reference to an ephemeral spec.
+
 ```clojure
 (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1,
             :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
@@ -423,6 +472,8 @@ false
  :workspaceName "my"}
 ```
 
+A reference to a hypothetical ephemeral spec that does not exist does not resolve.
+
 ```clojure
 (refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1,
               :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
@@ -456,6 +507,8 @@ false
 ;-- result --
 false
 ```
+
+A reference to a completely unknown spec name does not resolve.
 
 ```clojure
 (refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1,
@@ -498,7 +551,7 @@ Make a spec to hold the result of resolving all spec references in a notebook.
    {:fields {:specRefs [:Vec :tutorials.notebook/SpecId$v1]}}}
 ```
 
-A notebook contains spec references. This is modeled as the results of having parsed the references out of the contents of the notebook.
+A notebook contains spec references. This is modeled as the results of having parsed the references out of the contents of the notebook. Constraints are added to make some of the vector fields have set semantics (i.e. to not allow duplicates). This is done rather than representing the fields as sets because sequence operations cannot be deterministically applied to sets.
 
 ```clojure
 {:tutorials.notebook/Notebook$v1
@@ -507,14 +560,24 @@ A notebook contains spec references. This is modeled as the results of having pa
              :version :Integer},
     :constraints #{'{:name "positiveVersion",
                      :expr (valid? {:$type :tutorials.notebook/Version$v1,
-                                    :version version})}}},
- :tutorials.notebook/RegressionTest$v1
+                                    :version version})}}}}
+```
+
+The contents of notebooks can be used as the basis for defining regression tests for a workspace.
+
+```clojure
+{:tutorials.notebook/RegressionTest$v1
    {:fields {:notebookName :String,
              :notebookVersion :Integer},
     :constraints #{'{:name "positiveVersion",
                      :expr (valid? {:$type :tutorials.notebook/Version$v1,
-                                    :version notebookVersion})}}},
- :tutorials.notebook/Workspace$v1
+                                    :version notebookVersion})}}}}
+```
+
+Finally, we can create a top-level spec that represents a workspace and the items it contains. Two separate fields are used to represent the specs that are available in a workspace. One captures all of those that are registered. The other captures, just the "private" specs that are defined in this workspace, but not made available in the registry.
+
+```clojure
+{:tutorials.notebook/Workspace$v1
    {:fields {:notebooks [:Vec :tutorials.notebook/Notebook$v1],
              :registrySpecIds [:Vec :tutorials.notebook/SpecId$v1],
              :specIds [:Vec :tutorials.notebook/SpecId$v1],
@@ -542,6 +605,8 @@ A notebook contains spec references. This is modeled as the results of having pa
                    (count tests))}}}}
 ```
 
+An example of a valid workspace instance.
+
 ```clojure
 {:$type :tutorials.notebook/Workspace$v1,
  :notebooks [{:name "notebook1",
@@ -564,6 +629,8 @@ A notebook contains spec references. This is modeled as the results of having pa
  :tests [],
  :workspaceName "my"}
 ```
+
+Example workspace instance that violates a spec id constraint.
 
 ```clojure
 {:$type :tutorials.notebook/Workspace$v1,
@@ -597,6 +664,8 @@ A notebook contains spec references. This is modeled as the results of having pa
  "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/Workspace$v1', violates constraints \"tutorials.notebook/Workspace$v1/uniqueSpecIds\""
  :h-err/invalid-instance]
 ```
+
+Example of a workspace that violates a notebook name constraint.
 
 ```clojure
 {:$type :tutorials.notebook/Workspace$v1,
@@ -884,8 +953,33 @@ false
         '{:name "newSpecsInThisWorkspace",
           :expr (= 0
                    (count (filter [ns newSpecs]
-                            (not (= (get ns :workspaceName)
-                                    workspaceName)))))}}}}
+                            (not (= (get ns :workspaceName) workspaceName)))))}
+        '{:name "nonEphemeralBuiltOnNonEphemeral",
+          :expr (let [all-spec-names (reduce [a #{}]
+                                       [ns newSpecs]
+                                       (if (contains? a
+                                                      [(get ns :workspaceName)
+                                                       (get ns :specName)])
+                                         a
+                                         (conj a
+                                               [(get ns :workspaceName)
+                                                (get ns :specName)])))]
+                  (every?
+                    [n all-spec-names]
+                    (let [ephemeral-values
+                            (concat
+                              [false]
+                              (map [ns
+                                    (filter [ns newSpecs]
+                                      (and (= (get n 0) (get ns :workspaceName))
+                                           (= (get n 1) (get ns :specName))))]
+                                (let [is-e (get ns :isEphemeral)]
+                                  (if-value is-e true false))))]
+                      (every? [pair
+                               (map [i (range 0 (dec (count ephemeral-values)))]
+                                 [(get ephemeral-values i)
+                                  (get ephemeral-values (inc i))])]
+                              (or (get pair 1) (and (not (get pair 0))))))))}}}}
 ```
 
 ```clojure
@@ -998,6 +1092,46 @@ false
 
 ;-- result --
 true
+```
+
+```clojure
+(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
+         :workspaceName "my",
+         :specIds [],
+         :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
+                     :workspaceName "my",
+                     :specName "C",
+                     :specVersion 1}
+                    {:$type :tutorials.notebook/NewSpec$v1,
+                     :workspaceName "my",
+                     :specName "C",
+                     :specVersion 2,
+                     :isEphemeral true}]})
+
+
+;-- result --
+true
+```
+
+Cannot create an non-ephemeral spec "on top" of an ephemeral spec.
+
+```clojure
+(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
+         :workspaceName "my",
+         :specIds [],
+         :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
+                     :workspaceName "my",
+                     :specName "C",
+                     :specVersion 1,
+                     :isEphemeral true}
+                    {:$type :tutorials.notebook/NewSpec$v1,
+                     :workspaceName "my",
+                     :specName "C",
+                     :specVersion 2}]})
+
+
+;-- result --
+false
 ```
 
 ```clojure

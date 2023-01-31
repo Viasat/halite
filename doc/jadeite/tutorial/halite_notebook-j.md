@@ -6,6 +6,10 @@
 
 
 
+The following is an extended example of implementing a non-trivial amount of logic in a set of specs. It is a bit "meta", but in this case the model will include specs that exist in workspaces where each spec has a version separate from its name. 
+
+Versions must be positive values.
+
 ```java
 {
   "tutorials.notebook/Version$v1" : {
@@ -13,7 +17,14 @@
       "version" : [ "Maybe", "Integer" ]
     },
     "constraints" : [ "{expr: (ifValue(version) {(version > 0)} else {true}), name: \"positiveVersion\"}" ]
-  },
+  }
+}
+```
+
+An identifier for a spec includes its name and version. By referencing the Version spec in a constraint we can reuse the constraint from the Version spec.
+
+```java
+{
   "tutorials.notebook/SpecId$v1" : {
     "fields" : {
       "workspaceName" : "String",
@@ -21,10 +32,24 @@
       "specVersion" : "Integer"
     },
     "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: specVersion}), name: \"positiveVersion\"}" ]
-  },
+  }
+}
+```
+
+A notebook will consist of "items". Since there are different kinds of items an abstract spec is defined.
+
+```java
+{
   "tutorials.notebook/AbstractNotebookItem$v1" : {
     "abstract?" : true
-  },
+  }
+}
+```
+
+One kind of item is a reference to another spec.
+
+```java
+{
   "tutorials.notebook/SpecRef$v1" : {
     "fields" : {
       "workspaceName" : "String",
@@ -46,13 +71,19 @@
 }
 ```
 
+Example of a "fixed" spec references that refers precisely to a given version of a spec.
+
 ```java
 {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}
 ```
 
+Example of a "floating" spec reference that refers to the latest version of a given spec within whatever context the reference is resolved in.
+
 ```java
 {$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}
 ```
+
+Another kind of notebook item is the definition of a new spec. Notice in this case the optional flag only presents two options: either it is present and set to 'true' or it is absent. So it is truly a binary. The convenience this approach provides is that it is less verbose to have it excluded it from instances where it is not set.
 
 ```java
 {
@@ -78,6 +109,8 @@
 }
 ```
 
+Some examples of 'new specs'.
+
 ```java
 {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 1, workspaceName: "my"}
 ```
@@ -94,6 +127,8 @@
 {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "A", specVersion: 1, workspaceName: "my"}
 ```
 
+It is not possible to set the flag to a value of 'false', instead it is to be omitted.
+
 ```java
 {$type: tutorials.notebook/NewSpec$v1, isEphemeral: false, specName: "A", specVersion: 1, workspaceName: "my"}
 
@@ -102,6 +137,8 @@
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/NewSpec$v1', violates constraints \"tutorials.notebook/NewSpec$v1/ephemeralFlag\""]
 ```
 
+A 'new spec' can be treated as a spec identifier.
+
 ```java
 {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 1, workspaceName: "my"}.refineTo( tutorials.notebook/SpecId$v1 )
 
@@ -109,6 +146,8 @@
 //-- result --
 {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}
 ```
+
+This is an example of writing a reusable 'function' via a spec. In this case the prefix 'F' is used in the spec name to identify it as following this pattern. The fields in this spec are the input parameters to the function. The spec representing the return value from the function is prefixed with an 'R'. Since an integer value cannot be produced from a refinement, a spec is needed to hold the result.
 
 ```java
 {
@@ -133,6 +172,8 @@
 }
 ```
 
+Some examples of invoking the function to find the max version of a given spec.
+
 ```java
 {$type: tutorials.notebook/FMaxSpecVersion$v1, specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], specName: "A", workspaceName: "my"}.refineTo( tutorials.notebook/RInteger$v1 )
 
@@ -149,6 +190,8 @@
 {$type: tutorials.notebook/RInteger$v1, result: 1}
 ```
 
+An example of when there is no such spec in the set of specs.
+
 ```java
 {$type: tutorials.notebook/FMaxSpecVersion$v1, specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], specName: "C", workspaceName: "my"}.refineTo( tutorials.notebook/RInteger$v1 )
 
@@ -156,6 +199,8 @@
 //-- result --
 {$type: tutorials.notebook/RInteger$v1}
 ```
+
+A spec which resolves a spec reference in the context of other specs. In this case, this is like a function, but there is a natural way to express the result using an existing spec.
 
 ```java
 {
@@ -175,6 +220,8 @@
 }
 ```
 
+Cases where the input spec reference cannot be resolved are represented by failing to refine.
+
 ```java
 {$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: [], inputSpecRef: {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, newSpecs: []}.refinesTo?( tutorials.notebook/SpecId$v1 )
 
@@ -182,6 +229,8 @@
 //-- result --
 false
 ```
+
+For cases that can be refined, the refinement result is the result of resolving the spec reference. In this example the floating reference resolves to a new spec.
 
 ```java
 {$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], inputSpecRef: {$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}]}.refineTo( tutorials.notebook/SpecId$v1 )
@@ -191,6 +240,8 @@ false
 {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}
 ```
 
+In this example a floating spec reference resolves to an existing spec in the current context.
+
 ```java
 {$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], inputSpecRef: {$type: tutorials.notebook/SpecRef$v1, specName: "B", workspaceName: "my"}, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}]}.refineTo( tutorials.notebook/SpecId$v1 )
 
@@ -198,6 +249,8 @@ false
 //-- result --
 {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}
 ```
+
+An example of resolving a fixed spec reference.
 
 ```java
 {$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], inputSpecRef: {$type: tutorials.notebook/SpecRef$v1, specName: "B", specVersion: 1, workspaceName: "my"}, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}]}.refineTo( tutorials.notebook/SpecId$v1 )
@@ -207,6 +260,8 @@ false
 {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}
 ```
 
+An example of resolving a reference to an ephemeral spec.
+
 ```java
 {$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], inputSpecRef: {$type: tutorials.notebook/SpecRef$v1, specName: "C", specVersion: 1, workspaceName: "my"}, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}]}.refineTo( tutorials.notebook/SpecId$v1 )
 
@@ -215,6 +270,8 @@ false
 {$type: tutorials.notebook/SpecId$v1, specName: "C", specVersion: 1, workspaceName: "my"}
 ```
 
+A reference to a hypothetical ephemeral spec that does not exist does not resolve.
+
 ```java
 {$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], inputSpecRef: {$type: tutorials.notebook/SpecRef$v1, specName: "C", specVersion: 2, workspaceName: "my"}, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}]}.refinesTo?( tutorials.notebook/SpecId$v1 )
 
@@ -222,6 +279,8 @@ false
 //-- result --
 false
 ```
+
+A reference to a completely unknown spec name does not resolve.
 
 ```java
 {$type: tutorials.notebook/SpecRefResolver$v1, existingSpecIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], inputSpecRef: {$type: tutorials.notebook/SpecRef$v1, specName: "X", specVersion: 1, workspaceName: "my"}, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}]}.refinesTo?( tutorials.notebook/SpecId$v1 )
@@ -243,7 +302,7 @@ Make a spec to hold the result of resolving all spec references in a notebook.
 }
 ```
 
-A notebook contains spec references. This is modeled as the results of having parsed the references out of the contents of the notebook.
+A notebook contains spec references. This is modeled as the results of having parsed the references out of the contents of the notebook. Constraints are added to make some of the vector fields have set semantics (i.e. to not allow duplicates). This is done rather than representing the fields as sets because sequence operations cannot be deterministically applied to sets.
 
 ```java
 {
@@ -254,14 +313,28 @@ A notebook contains spec references. This is modeled as the results of having pa
       "items" : [ "Vec", "tutorials.notebook/AbstractNotebookItem$v1" ]
     },
     "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: version}), name: \"positiveVersion\"}" ]
-  },
+  }
+}
+```
+
+The contents of notebooks can be used as the basis for defining regression tests for a workspace.
+
+```java
+{
   "tutorials.notebook/RegressionTest$v1" : {
     "fields" : {
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
     "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}" ]
-  },
+  }
+}
+```
+
+Finally, we can create a top-level spec that represents a workspace and the items it contains. Two separate fields are used to represent the specs that are available in a workspace. One captures all of those that are registered. The other captures, just the "private" specs that are defined in this workspace, but not made available in the registry.
+
+```java
+{
   "tutorials.notebook/Workspace$v1" : {
     "fields" : {
       "workspaceName" : "String",
@@ -275,9 +348,13 @@ A notebook contains spec references. This is modeled as the results of having pa
 }
 ```
 
+An example of a valid workspace instance.
+
 ```java
 {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}], registrySpecIds: [], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], tests: [], workspaceName: "my"}
 ```
+
+Example workspace instance that violates a spec id constraint.
 
 ```java
 {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}], registrySpecIds: [], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], tests: [], workspaceName: "my"}
@@ -286,6 +363,8 @@ A notebook contains spec references. This is modeled as the results of having pa
 //-- result --
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/Workspace$v1', violates constraints \"tutorials.notebook/Workspace$v1/uniqueSpecIds\""]
 ```
+
+Example of a workspace that violates a notebook name constraint.
 
 ```java
 {$type: tutorials.notebook/Workspace$v1, notebooks: [{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 2}], registrySpecIds: [], specIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}], tests: [], workspaceName: "my"}
@@ -384,7 +463,7 @@ false
       "specIds" : [ "Vec", "tutorials.notebook/SpecId$v1" ],
       "newSpecs" : [ "Vec", "tutorials.notebook/NewSpec$v1" ]
     },
-    "constraints" : [ "{expr: ({ 'all-spec-names' = (reduce( a = #{}; ns in newSpecs ) { (if(a.contains?([ns.workspaceName, ns.specName])) {a} else {a.conj([ns.workspaceName, ns.specName])}) }); (every?(n in 'all-spec-names')({ 'max-version' = {$type: tutorials.notebook/FMaxSpecVersion$v1, specIds: specIds, specName: n[1], workspaceName: n[0]}.refineTo( tutorials.notebook/RInteger$v1 ).result; versions = [(ifValue('max-version') {'max-version'} else {0})].concat((map(ns in (filter(ns in newSpecs)((n[0] == ns.workspaceName) && (n[1] == ns.specName))))ns.specVersion)); (every?(pair in (map(i in range(0, (versions.count() - 1)))[versions[i], versions[(i + 1)]]))((pair[0] + 1) == pair[1])) })) }), name: \"newSpecsInOrder\"}", "{expr: (0 == (filter(ns in newSpecs)!(ns.workspaceName == workspaceName)).count()), name: \"newSpecsInThisWorkspace\"}" ]
+    "constraints" : [ "{expr: ({ 'all-spec-names' = (reduce( a = #{}; ns in newSpecs ) { (if(a.contains?([ns.workspaceName, ns.specName])) {a} else {a.conj([ns.workspaceName, ns.specName])}) }); (every?(n in 'all-spec-names')({ 'max-version' = {$type: tutorials.notebook/FMaxSpecVersion$v1, specIds: specIds, specName: n[1], workspaceName: n[0]}.refineTo( tutorials.notebook/RInteger$v1 ).result; versions = [(ifValue('max-version') {'max-version'} else {0})].concat((map(ns in (filter(ns in newSpecs)((n[0] == ns.workspaceName) && (n[1] == ns.specName))))ns.specVersion)); (every?(pair in (map(i in range(0, (versions.count() - 1)))[versions[i], versions[(i + 1)]]))((pair[0] + 1) == pair[1])) })) }), name: \"newSpecsInOrder\"}", "{expr: ({ 'all-spec-names' = (reduce( a = #{}; ns in newSpecs ) { (if(a.contains?([ns.workspaceName, ns.specName])) {a} else {a.conj([ns.workspaceName, ns.specName])}) }); (every?(n in 'all-spec-names')({ 'ephemeral-values' = [false].concat((map(ns in (filter(ns in newSpecs)((n[0] == ns.workspaceName) && (n[1] == ns.specName))))({ 'is-e' = ns.isEphemeral; (ifValue('is-e') {true} else {false}) }))); (every?(pair in (map(i in range(0, ('ephemeral-values'.count() - 1)))['ephemeral-values'[i], 'ephemeral-values'[(i + 1)]]))(pair[1] || (!pair[0]))) })) }), name: \"nonEphemeralBuiltOnNonEphemeral\"}", "{expr: (0 == (filter(ns in newSpecs)!(ns.workspaceName == workspaceName)).count()), name: \"newSpecsInThisWorkspace\"}" ]
   }
 }
 ```
@@ -419,6 +498,24 @@ false
 
 //-- result --
 true
+```
+
+```java
+(valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 2, workspaceName: "my"}], specIds: [], workspaceName: "my"})
+
+
+//-- result --
+true
+```
+
+Cannot create an non-ephemeral spec "on top" of an ephemeral spec.
+
+```java
+(valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "C", specVersion: 2, workspaceName: "my"}], specIds: [], workspaceName: "my"})
+
+
+//-- result --
+false
 ```
 
 ```java
