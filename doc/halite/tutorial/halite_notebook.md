@@ -518,9 +518,14 @@ A notebook contains spec references. This is modeled as the results of having pa
    {:fields {:notebooks [:Vec :tutorials.notebook/Notebook$v1],
              :registrySpecIds [:Vec :tutorials.notebook/SpecId$v1],
              :specIds [:Vec :tutorials.notebook/SpecId$v1],
-             :tests [:Vec :tutorials.notebook/RegressionTest$v1]},
+             :tests [:Vec :tutorials.notebook/RegressionTest$v1],
+             :workspaceName :String},
     :constraints
-      #{'{:name "specIdsDisjoint",
+      #{'{:name "privateSpecIdsInThisWorkspace",
+          :expr (= 0
+                   (count (filter [si specIds]
+                            (not= (get si :workspaceName) workspaceName))))}
+        '{:name "specIdsDisjoint",
           :expr (= 0
                    (count (intersection (concat #{} registrySpecIds)
                                         (concat #{} specIds))))}
@@ -556,7 +561,8 @@ A notebook contains spec references. This is modeled as the results of having pa
             :specName "A",
             :specVersion 2,
             :workspaceName "my"}],
- :tests []}
+ :tests [],
+ :workspaceName "my"}
 ```
 
 ```clojure
@@ -582,7 +588,8 @@ A notebook contains spec references. This is modeled as the results of having pa
             :specName "A",
             :specVersion 2,
             :workspaceName "my"}],
- :tests []}
+ :tests [],
+ :workspaceName "my"}
 
 
 ;-- result --
@@ -614,7 +621,8 @@ A notebook contains spec references. This is modeled as the results of having pa
             :specName "A",
             :specVersion 2,
             :workspaceName "my"}],
- :tests []}
+ :tests [],
+ :workspaceName "my"}
 
 
 ;-- result --
@@ -1083,6 +1091,7 @@ true
                    {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
                     :workspace
                       {:$type :tutorials.notebook/Workspace$v1,
+                       :workspaceName (get workspace :workspaceName),
                        :registrySpecIds (get workspace :registrySpecIds),
                        :specIds (concat (get workspace :specIds) new-spec-ids),
                        :notebooks (conj (filter [nb (get workspace :notebooks)]
@@ -1134,11 +1143,9 @@ true
                                       (= (get nb :version) notebookVersion)))]
                   (if (> (count filtered) 0)
                     (let [nb (first filtered)]
-                      (valid?
-                        {:$type :tutorials.notebook/ResolveRefs$v1,
-                         :specIds (concat (get workspace :specIds)
-                                          (get workspace :registrySpecIds)),
-                         :items (get nb :items)}))
+                      (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
+                               :specIds (get workspace :registrySpecIds),
+                               :items (get nb :items)}))
                     true))}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
@@ -1154,6 +1161,7 @@ true
                                  :notebookVersion notebookVersion}]
                    {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
                     :workspace {:$type :tutorials.notebook/Workspace$v1,
+                                :workspaceName (get workspace :workspaceName),
                                 :registrySpecIds (get workspace
                                                       :registrySpecIds),
                                 :specIds (get workspace :specIds),
@@ -1228,6 +1236,7 @@ true
                    {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
                     :workspace
                       {:$type :tutorials.notebook/Workspace$v1,
+                       :workspaceName (get workspace :workspaceName),
                        :registrySpecIds (get workspace :registrySpecIds),
                        :specIds (get workspace :specIds),
                        :notebooks (get workspace :notebooks),
@@ -1264,6 +1273,7 @@ true
          {:name "newWorkspaceAndEffects",
           :expr '{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
                   :workspace {:$type :tutorials.notebook/Workspace$v1,
+                              :workspaceName (get workspace :workspaceName),
                               :registrySpecIds (get workspace :registrySpecIds),
                               :specIds (get workspace :specIds),
                               :notebooks
@@ -1297,6 +1307,7 @@ true
 
 ```clojure
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
+          :workspaceName "my",
           :registrySpecIds [],
           :specIds [{:$type :tutorials.notebook/SpecId$v1,
                      :workspaceName "my",
@@ -1340,6 +1351,7 @@ If all of the new specs in the notebooks are ephemeral, then it cannot be applie
 
 ```clojure
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
+          :workspaceName "my",
           :registrySpecIds [],
           :specIds [{:$type :tutorials.notebook/SpecId$v1,
                      :workspaceName "my",
@@ -1382,6 +1394,7 @@ false
 
 ```clojure
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
+          :workspaceName "my",
           :registrySpecIds [],
           :specIds [{:$type :tutorials.notebook/SpecId$v1,
                      :workspaceName "my",
@@ -1416,6 +1429,7 @@ false
 ```clojure
 (refine-to {:$type :tutorials.notebook/WriteNotebook$v1,
             :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
                         :registrySpecIds [],
                         :specIds [],
                         :notebooks [],
@@ -1438,13 +1452,15 @@ false
                           :version 1}],
              :registrySpecIds [],
              :specIds [],
-             :tests []}}
+             :tests [],
+             :workspaceName "my"}}
 ```
 
 ```clojure
 (refine-to
   {:$type :tutorials.notebook/ApplyNotebook$v1,
    :workspace {:$type :tutorials.notebook/Workspace$v1,
+               :workspaceName "my",
                :registrySpecIds [],
                :specIds [{:$type :tutorials.notebook/SpecId$v1,
                           :workspaceName "my",
@@ -1559,12 +1575,14 @@ false
                :specName "A",
                :specVersion 3,
                :workspaceName "my"}],
-    :tests []}}
+    :tests [],
+    :workspaceName "my"}}
 ```
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1,
             :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
                         :registrySpecIds [],
                         :specIds [],
                         :notebooks [{:$type :tutorials.notebook/Notebook$v1,
@@ -1591,12 +1609,14 @@ false
              :specIds [],
              :tests [{:$type :tutorials.notebook/RegressionTest$v1,
                       :notebookName "notebook1",
-                      :notebookVersion 1}]}}
+                      :notebookVersion 1}],
+             :workspaceName "my"}}
 ```
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1,
             :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
                         :registrySpecIds [],
                         :specIds [],
                         :notebooks [{:$type :tutorials.notebook/Notebook$v1,
@@ -1620,6 +1640,7 @@ false
 ```clojure
 (refine-to {:$type :tutorials.notebook/UpdateRegressionTest$v1,
             :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
                         :registrySpecIds [],
                         :specIds [],
                         :notebooks [{:$type :tutorials.notebook/Notebook$v1,
@@ -1649,6 +1670,7 @@ false
              :specIds [],
              :tests [{:$type :tutorials.notebook/RegressionTest$v1,
                       :notebookName "notebook1",
-                      :notebookVersion 9}]}}
+                      :notebookVersion 9}],
+             :workspaceName "my"}}
 ```
 

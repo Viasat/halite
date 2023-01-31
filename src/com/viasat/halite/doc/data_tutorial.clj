@@ -339,7 +339,8 @@
                                                         :version notebookVersion})}}}
 
                        :tutorials.notebook/Workspace$v1
-                       {:fields {:registrySpecIds [:Vec :tutorials.notebook/SpecId$v1]
+                       {:fields {:workspaceName :String
+                                 :registrySpecIds [:Vec :tutorials.notebook/SpecId$v1]
                                  :specIds [:Vec :tutorials.notebook/SpecId$v1]
                                  :notebooks [:Vec :tutorials.notebook/Notebook$v1]
                                  :tests [:Vec :tutorials.notebook/RegressionTest$v1]}
@@ -352,6 +353,9 @@
                                        {:name "specIdsDisjoint"
                                         :expr '(= 0 (count (intersection (concat #{} registrySpecIds)
                                                                          (concat #{} specIds))))}
+                                       {:name "privateSpecIdsInThisWorkspace"
+                                        :expr '(= 0 (count (filter [si specIds]
+                                                                   (not= (get si :workspaceName) workspaceName))))}
                                        {:name "uniqueNotebookNames"
                                         :expr '(= (count (concat #{} (map [n notebooks]
                                                                           (get n :name))))
@@ -362,6 +366,7 @@
                                                   (count tests))}}}}}
 
      {:code '{:$type :tutorials.notebook/Workspace$v1
+              :workspaceName "my"
               :registrySpecIds []
               :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                         {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -372,6 +377,7 @@
                            :items []}]
               :tests []}}
      {:code '{:$type :tutorials.notebook/Workspace$v1
+              :workspaceName "my"
               :registrySpecIds []
               :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                         {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -384,6 +390,7 @@
               :tests []}
       :throws :auto}
      {:code '{:$type :tutorials.notebook/Workspace$v1
+              :workspaceName "my"
               :registrySpecIds []
               :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                         {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -610,6 +617,7 @@
                       :expr
                       '{:$type :tutorials.notebook/WorkspaceAndEffects$v1
                         :workspace {:$type :tutorials.notebook/Workspace$v1
+                                    :workspaceName (get workspace :workspaceName)
                                     :registrySpecIds (get workspace :registrySpecIds)
                                     :specIds (get workspace :specIds)
                                     :notebooks (conj (get workspace :notebooks)
@@ -706,6 +714,7 @@
                                                                 true))}]
                              {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                               :workspace {:$type :tutorials.notebook/Workspace$v1
+                                          :workspaceName (get workspace :workspaceName)
                                           :registrySpecIds (get workspace :registrySpecIds)
                                           :specIds (concat (get workspace :specIds)
                                                            new-spec-ids)
@@ -762,7 +771,7 @@
               (if (> (count filtered) 0)
                 (let [nb (first filtered)]
                   (valid? {:$type :tutorials.notebook/ResolveRefs$v1
-                           :specIds (concat (get workspace :specIds) (get workspace :registrySpecIds))
+                           :specIds (get workspace :registrySpecIds)
                            :items (get nb :items)}))
                 true))}}
         :refines-to {:tutorials.notebook/WorkspaceAndEffects$v1
@@ -780,6 +789,7 @@
                                            :notebookVersion notebookVersion}]
                              {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                               :workspace {:$type :tutorials.notebook/Workspace$v1
+                                          :workspaceName (get workspace :workspaceName)
                                           :registrySpecIds (get workspace :registrySpecIds)
                                           :specIds (get workspace :specIds)
                                           :notebooks (get workspace :notebooks)
@@ -855,6 +865,7 @@
                                            :notebookVersion notebookVersion}]
                              {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                               :workspace {:$type :tutorials.notebook/Workspace$v1
+                                          :workspaceName (get workspace :workspaceName)
                                           :registrySpecIds (get workspace :registrySpecIds)
                                           :specIds (get workspace :specIds)
                                           :notebooks (get workspace :notebooks)
@@ -867,6 +878,7 @@
                                          :notebookVersion (get new-test :notebookVersion)}]})))}}}}}
 
      {:code '(let [ws {:$type :tutorials.notebook/Workspace$v1
+                       :workspaceName "my"
                        :registrySpecIds []
                        :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                  {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -893,6 +905,7 @@
      "If all of the new specs in the notebooks are ephemeral, then it cannot be applied."
      {:code
       '(let [ws {:$type :tutorials.notebook/Workspace$v1
+                 :workspaceName "my"
                  :registrySpecIds []
                  :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                            {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -912,6 +925,7 @@
 
      {:code
       '(let [ws {:$type :tutorials.notebook/Workspace$v1
+                 :workspaceName "my"
                  :registrySpecIds []
                  :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                            {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -930,6 +944,7 @@
      {:code
       '(refine-to {:$type :tutorials.notebook/WriteNotebook$v1
                    :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :workspaceName "my"
                                :registrySpecIds []
                                :specIds []
                                :notebooks []
@@ -940,6 +955,7 @@
                   :tutorials.notebook/WorkspaceAndEffects$v1)
       :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                :workspace {:$type :tutorials.notebook/Workspace$v1
+                           :workspaceName "my"
                            :registrySpecIds []
                            :specIds []
                            :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 1, :items []}]
@@ -951,6 +967,7 @@
      {:code
       '(refine-to {:$type :tutorials.notebook/ApplyNotebook$v1
                    :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :workspaceName "my"
                                :registrySpecIds []
                                :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                          {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
@@ -975,6 +992,7 @@
                   :tutorials.notebook/WorkspaceAndEffects$v1)
       :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                :workspace {:$type :tutorials.notebook/Workspace$v1
+                           :workspaceName "my"
                            :registrySpecIds []
                            :specIds [{:$type :tutorials.notebook/SpecId$v1, :workspaceName "my" :specName "A", :specVersion 1}
                                      {:$type :tutorials.notebook/SpecId$v1, :workspaceName "my" :specName "B", :specVersion 1}
@@ -1002,6 +1020,7 @@
      {:code
       '(refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1
                    :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :workspaceName "my"
                                :registrySpecIds []
                                :specIds []
                                :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 1, :items []}]
@@ -1011,6 +1030,7 @@
                   :tutorials.notebook/WorkspaceAndEffects$v1)
       :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                :workspace {:$type :tutorials.notebook/Workspace$v1
+                           :workspaceName "my"
                            :registrySpecIds []
                            :specIds []
                            :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 1, :items []}]
@@ -1020,6 +1040,7 @@
      {:code
       '(refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1
                    :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :workspaceName "my"
                                :registrySpecIds []
                                :specIds []
                                :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 2, :items []}]
@@ -1032,6 +1053,7 @@
      {:code
       '(refine-to {:$type :tutorials.notebook/UpdateRegressionTest$v1
                    :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :workspaceName "my"
                                :registrySpecIds []
                                :specIds []
                                :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 9, :items []}]
@@ -1042,6 +1064,7 @@
                   :tutorials.notebook/WorkspaceAndEffects$v1)
       :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                :workspace {:$type :tutorials.notebook/Workspace$v1
+                           :workspaceName "my"
                            :registrySpecIds []
                            :specIds []
                            :notebooks [{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 9, :items []}]
