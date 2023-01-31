@@ -846,7 +846,8 @@ false
 ```clojure
 {:tutorials.notebook/ApplicableNewSpecs$v1
    {:fields {:newSpecs [:Vec :tutorials.notebook/NewSpec$v1],
-             :specIds [:Vec :tutorials.notebook/SpecId$v1]},
+             :specIds [:Vec :tutorials.notebook/SpecId$v1],
+             :workspaceName :String},
     :constraints
       #{'{:name "newSpecsInOrder",
           :expr
@@ -879,11 +880,17 @@ false
                   (every? [pair
                            (map [i (range 0 (dec (count versions)))]
                              [(get versions i) (get versions (inc i))])]
-                          (= (inc (get pair 0)) (get pair 1))))))}}}}
+                          (= (inc (get pair 0)) (get pair 1))))))}
+        '{:name "newSpecsInThisWorkspace",
+          :expr (= 0
+                   (count (filter [ns newSpecs]
+                            (not (= (get ns :workspaceName)
+                                    workspaceName)))))}}}}
 ```
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
+         :workspaceName "my",
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
                     :workspaceName "my",
                     :specName "A",
@@ -908,6 +915,7 @@ false
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
+         :workspaceName "my",
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
                     :workspaceName "my",
                     :specName "A",
@@ -932,6 +940,7 @@ false
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
+         :workspaceName "my",
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
                     :workspaceName "my",
                     :specName "A",
@@ -956,6 +965,7 @@ false
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
+         :workspaceName "my",
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
                     :workspaceName "my",
                     :specName "A",
@@ -1028,6 +1038,7 @@ true
                     (let [nb (first filtered)]
                       (valid?
                         {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
+                         :workspaceName (get workspace :workspaceName),
                          :specIds (concat (get workspace :specIds)
                                           (get workspace :registrySpecIds)),
                          :newSpecs

@@ -509,10 +509,14 @@
 
      {:spec-map-merge
       {:tutorials.notebook/ApplicableNewSpecs$v1
-       {:fields {:specIds [:Vec :tutorials.notebook/SpecId$v1]
+       {:fields {:workspaceName :String
+                 :specIds [:Vec :tutorials.notebook/SpecId$v1]
                  :newSpecs [:Vec :tutorials.notebook/NewSpec$v1]}
         :constraints
-        #{{:name "newSpecsInOrder"
+        #{{:name "newSpecsInThisWorkspace"
+           :expr '(= 0 (count (filter [ns newSpecs]
+                                      (not (= (get ns :workspaceName) workspaceName)))))}
+          {:name "newSpecsInOrder"
            :expr
            '(let [all-spec-names (reduce [a #{}] [ns newSpecs]
                                          (if (contains? a [(get ns :workspaceName) (get ns :specName)])
@@ -537,24 +541,28 @@
                                 (= (inc (get pair 0)) (get pair 1))))))}}}}}
 
      {:code '(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
+                      :workspaceName "my"
                       :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 2}]
                       :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "A" :specVersion 4}]})
       :result false}
      {:code '(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
+                      :workspaceName "my"
                       :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 2}]
                       :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "C" :specVersion 4}]})
       :result false}
      {:code '(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
+                      :workspaceName "my"
                       :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 2}]
                       :newSpecs [{:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "A" :specVersion 2}]})
       :result false}
      {:code '(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
+                      :workspaceName "my"
                       :specIds [{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 2}]
@@ -669,6 +677,7 @@
               (if (> (count filtered) 0)
                 (let [nb (first filtered)]
                   (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
+                           :workspaceName (get workspace :workspaceName)
                            :specIds (concat (get workspace :specIds) (get workspace :registrySpecIds))
                            :newSpecs (map [item (filter [item (get nb :items)]
                                                         (refines-to? item :tutorials.notebook/NewSpec$v1))]
