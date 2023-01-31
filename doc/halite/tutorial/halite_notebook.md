@@ -10,13 +10,15 @@
 {:tutorials.notebook/AbstractNotebookItem$v1 {:abstract? true},
  :tutorials.notebook/SpecId$v1
    {:fields {:specName :String,
-             :specVersion :Integer},
+             :specVersion :Integer,
+             :workspaceName :String},
     :constraints #{'{:name "positiveVersion",
                      :expr (valid? {:$type :tutorials.notebook/Version$v1,
                                     :version specVersion})}}},
  :tutorials.notebook/SpecRef$v1
    {:fields {:specName :String,
-             :specVersion [:Maybe :Integer]},
+             :specVersion [:Maybe :Integer],
+             :workspaceName :String},
     :constraints #{'{:name "positiveVersion",
                      :expr (valid? {:$type :tutorials.notebook/Version$v1,
                                     :version specVersion})}},
@@ -28,6 +30,7 @@
                    {:name "specId",
                     :expr '(when-value specVersion
                                        {:$type :tutorials.notebook/SpecId$v1,
+                                        :workspaceName workspaceName,
                                         :specName specName,
                                         :specVersion specVersion})}}},
  :tutorials.notebook/Version$v1
@@ -38,20 +41,23 @@
 
 ```clojure
 {:$type :tutorials.notebook/SpecRef$v1,
- :specName "my/A",
- :specVersion 1}
+ :specName "A",
+ :specVersion 1,
+ :workspaceName "my"}
 ```
 
 ```clojure
 {:$type :tutorials.notebook/SpecRef$v1,
- :specName "my/A"}
+ :specName "A",
+ :workspaceName "my"}
 ```
 
 ```clojure
 {:tutorials.notebook/NewSpec$v1
    {:fields {:isEphemeral [:Maybe :Boolean],
              :specName :String,
-             :specVersion :Integer},
+             :specVersion :Integer,
+             :workspaceName :String},
     :constraints #{'{:name "ephemeralFlag",
                      :expr (if-value isEphemeral isEphemeral true)}
                    '{:name "positiveVersion",
@@ -64,20 +70,23 @@
                  :tutorials.notebook/SpecId$v1
                    {:name "specId",
                     :expr '{:$type :tutorials.notebook/SpecId$v1,
+                            :workspaceName workspaceName,
                             :specName specName,
                             :specVersion specVersion}}}}}
 ```
 
 ```clojure
 {:$type :tutorials.notebook/NewSpec$v1,
- :specName "my/A",
- :specVersion 1}
+ :specName "A",
+ :specVersion 1,
+ :workspaceName "my"}
 ```
 
 ```clojure
 {:$type :tutorials.notebook/NewSpec$v1,
- :specName "my/A",
- :specVersion 0}
+ :specName "A",
+ :specVersion 0,
+ :workspaceName "my"}
 
 
 ;-- result --
@@ -89,15 +98,17 @@
 ```clojure
 {:$type :tutorials.notebook/NewSpec$v1,
  :isEphemeral true,
- :specName "my/A",
- :specVersion 1}
+ :specName "A",
+ :specVersion 1,
+ :workspaceName "my"}
 ```
 
 ```clojure
 {:$type :tutorials.notebook/NewSpec$v1,
  :isEphemeral false,
- :specName "my/A",
- :specVersion 1}
+ :specName "A",
+ :specVersion 1,
+ :workspaceName "my"}
 
 
 ;-- result --
@@ -108,32 +119,38 @@
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/NewSpec$v1,
-            :specName "my/A",
+            :workspaceName "my",
+            :specName "A",
             :specVersion 1}
            :tutorials.notebook/SpecId$v1)
 
 
 ;-- result --
 {:$type :tutorials.notebook/SpecId$v1,
- :specName "my/A",
- :specVersion 1}
+ :specName "A",
+ :specVersion 1,
+ :workspaceName "my"}
 ```
 
 ```clojure
 {:tutorials.notebook/FMaxSpecVersion$v1
    {:fields {:specIds [:Vec :tutorials.notebook/SpecId$v1],
-             :specName :String},
+             :specName :String,
+             :workspaceName :String},
     :refines-to
       {:tutorials.notebook/RInteger$v1
          {:name "result",
           :expr '{:$type :tutorials.notebook/RInteger$v1,
-                  :result (let [result
-                                  (reduce [a 0]
-                                    [si specIds]
-                                    (cond (not= (get si :specName) specName) a
-                                          (> (get si :specVersion) a)
-                                            (get si :specVersion)
-                                          a))]
+                  :result (let [result (reduce [a 0]
+                                         [si specIds]
+                                         (cond (or (not= (get si :workspaceName)
+                                                         workspaceName)
+                                                   (not= (get si :specName)
+                                                         specName))
+                                                 a
+                                               (> (get si :specVersion) a)
+                                                 (get si :specVersion)
+                                               a))]
                             (when (not= 0 result) result))}}}},
  :tutorials.notebook/RInteger$v1 {:fields {:result [:Maybe :Integer]}}}
 ```
@@ -141,15 +158,19 @@
 ```clojure
 (refine-to {:$type :tutorials.notebook/FMaxSpecVersion$v1,
             :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/A",
+                       :workspaceName "my",
+                       :specName "A",
                        :specVersion 1}
                       {:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/B",
+                       :workspaceName "my",
+                       :specName "B",
                        :specVersion 1}
                       {:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/A",
+                       :workspaceName "my",
+                       :specName "A",
                        :specVersion 2}],
-            :specName "my/A"}
+            :workspaceName "my",
+            :specName "A"}
            :tutorials.notebook/RInteger$v1)
 
 
@@ -161,15 +182,19 @@
 ```clojure
 (refine-to {:$type :tutorials.notebook/FMaxSpecVersion$v1,
             :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/A",
+                       :workspaceName "my",
+                       :specName "A",
                        :specVersion 1}
                       {:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/B",
+                       :workspaceName "my",
+                       :specName "B",
                        :specVersion 1}
                       {:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/A",
+                       :workspaceName "my",
+                       :specName "A",
                        :specVersion 2}],
-            :specName "my/B"}
+            :workspaceName "my",
+            :specName "B"}
            :tutorials.notebook/RInteger$v1)
 
 
@@ -181,15 +206,19 @@
 ```clojure
 (refine-to {:$type :tutorials.notebook/FMaxSpecVersion$v1,
             :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/A",
+                       :workspaceName "my",
+                       :specName "A",
                        :specVersion 1}
                       {:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/B",
+                       :workspaceName "my",
+                       :specName "B",
                        :specVersion 1}
                       {:$type :tutorials.notebook/SpecId$v1,
-                       :specName "my/A",
+                       :workspaceName "my",
+                       :specName "A",
                        :specVersion 2}],
-            :specName "my/C"}
+            :workspaceName "my",
+            :specName "C"}
            :tutorials.notebook/RInteger$v1)
 
 
@@ -217,16 +246,20 @@
                                          :tutorials.notebook/SpecId$v1)]
                    (when (contains? (concat #{} all-spec-ids) result) result))
                  (let [max-version-in-context
-                         (get (refine-to
-                                {:$type :tutorials.notebook/FMaxSpecVersion$v1,
-                                 :specIds all-spec-ids,
-                                 :specName (get inputSpecRef :specName)}
-                                :tutorials.notebook/RInteger$v1)
-                              :result)]
-                   (when-value max-version-in-context
-                               {:$type :tutorials.notebook/SpecId$v1,
-                                :specName (get inputSpecRef :specName),
-                                :specVersion max-version-in-context}))))}}}}
+                         (get
+                           (refine-to
+                             {:$type :tutorials.notebook/FMaxSpecVersion$v1,
+                              :specIds all-spec-ids,
+                              :workspaceName (get inputSpecRef :workspaceName),
+                              :specName (get inputSpecRef :specName)}
+                             :tutorials.notebook/RInteger$v1)
+                           :result)]
+                   (when-value
+                     max-version-in-context
+                     {:$type :tutorials.notebook/SpecId$v1,
+                      :workspaceName (get inputSpecRef :workspaceName),
+                      :specName (get inputSpecRef :specName),
+                      :specVersion max-version-in-context}))))}}}}
 ```
 
 ```clojure
@@ -234,7 +267,8 @@
               :existingSpecIds [],
               :newSpecs [],
               :inputSpecRef {:$type :tutorials.notebook/SpecRef$v1,
-                             :specName "my/A",
+                             :workspaceName "my",
+                             :specName "A",
                              :specVersion 1}}
              :tutorials.notebook/SpecId$v1)
 
@@ -246,141 +280,175 @@ false
 ```clojure
 (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1,
             :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/A",
+                               :workspaceName "my",
+                               :specName "A",
                                :specVersion 1}
                               {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/B",
+                               :workspaceName "my",
+                               :specName "B",
                                :specVersion 1}
                               {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/A",
+                               :workspaceName "my",
+                               :specName "A",
                                :specVersion 2}],
             :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                        :specName "my/C",
+                        :workspaceName "my",
+                        :specName "C",
                         :specVersion 1,
                         :isEphemeral true}
                        {:$type :tutorials.notebook/NewSpec$v1,
-                        :specName "my/A",
+                        :workspaceName "my",
+                        :specName "A",
                         :specVersion 3}],
             :inputSpecRef {:$type :tutorials.notebook/SpecRef$v1,
-                           :specName "my/A"}}
+                           :workspaceName "my",
+                           :specName "A"}}
            :tutorials.notebook/SpecId$v1)
 
 
 ;-- result --
 {:$type :tutorials.notebook/SpecId$v1,
- :specName "my/A",
- :specVersion 3}
+ :specName "A",
+ :specVersion 3,
+ :workspaceName "my"}
 ```
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1,
             :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/A",
+                               :workspaceName "my",
+                               :specName "A",
                                :specVersion 1}
                               {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/B",
+                               :workspaceName "my",
+                               :specName "B",
                                :specVersion 1}
                               {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/A",
+                               :workspaceName "my",
+                               :specName "A",
                                :specVersion 2}],
             :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                        :specName "my/C",
+                        :workspaceName "my",
+                        :specName "C",
                         :specVersion 1,
                         :isEphemeral true}
                        {:$type :tutorials.notebook/NewSpec$v1,
-                        :specName "my/A",
+                        :workspaceName "my",
+                        :specName "A",
                         :specVersion 3}],
             :inputSpecRef {:$type :tutorials.notebook/SpecRef$v1,
-                           :specName "my/B"}}
+                           :workspaceName "my",
+                           :specName "B"}}
            :tutorials.notebook/SpecId$v1)
 
 
 ;-- result --
 {:$type :tutorials.notebook/SpecId$v1,
- :specName "my/B",
- :specVersion 1}
+ :specName "B",
+ :specVersion 1,
+ :workspaceName "my"}
 ```
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1,
             :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/A",
+                               :workspaceName "my",
+                               :specName "A",
                                :specVersion 1}
                               {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/B",
+                               :workspaceName "my",
+                               :specName "B",
                                :specVersion 1}
                               {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/A",
+                               :workspaceName "my",
+                               :specName "A",
                                :specVersion 2}],
             :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                        :specName "my/C",
+                        :workspaceName "my",
+                        :specName "C",
                         :specVersion 1,
                         :isEphemeral true}
                        {:$type :tutorials.notebook/NewSpec$v1,
-                        :specName "my/A",
+                        :workspaceName "my",
+                        :specName "A",
                         :specVersion 3}],
             :inputSpecRef {:$type :tutorials.notebook/SpecRef$v1,
-                           :specName "my/B",
+                           :workspaceName "my",
+                           :specName "B",
                            :specVersion 1}}
            :tutorials.notebook/SpecId$v1)
 
 
 ;-- result --
 {:$type :tutorials.notebook/SpecId$v1,
- :specName "my/B",
- :specVersion 1}
+ :specName "B",
+ :specVersion 1,
+ :workspaceName "my"}
 ```
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/SpecRefResolver$v1,
             :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/A",
+                               :workspaceName "my",
+                               :specName "A",
                                :specVersion 1}
                               {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/B",
+                               :workspaceName "my",
+                               :specName "B",
                                :specVersion 1}
                               {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "my/A",
+                               :workspaceName "my",
+                               :specName "A",
                                :specVersion 2}],
             :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                        :specName "my/C",
+                        :workspaceName "my",
+                        :specName "C",
                         :specVersion 1,
                         :isEphemeral true}
                        {:$type :tutorials.notebook/NewSpec$v1,
-                        :specName "my/A",
+                        :workspaceName "my",
+                        :specName "A",
                         :specVersion 3}],
             :inputSpecRef {:$type :tutorials.notebook/SpecRef$v1,
-                           :specName "my/C",
+                           :workspaceName "my",
+                           :specName "C",
                            :specVersion 1}}
            :tutorials.notebook/SpecId$v1)
 
 
 ;-- result --
 {:$type :tutorials.notebook/SpecId$v1,
- :specName "my/C",
- :specVersion 1}
+ :specName "C",
+ :specVersion 1,
+ :workspaceName "my"}
 ```
 
 ```clojure
 (refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1,
               :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
-                                 :specName "my/A",
+                                 :workspaceName "my",
+                                 :specName "A",
                                  :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1,
-                                 :specName "my/B",
+                                 :workspaceName "my",
+                                 :specName "B",
                                  :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1,
-                                 :specName "my/A",
+                                 :workspaceName "my",
+                                 :specName "A",
                                  :specVersion 2}],
               :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                          :specName "my/C",
+                          :workspaceName "my",
+                          :specName "C",
                           :specVersion 1,
                           :isEphemeral true}
                          {:$type :tutorials.notebook/NewSpec$v1,
-                          :specName "my/A",
+                          :workspaceName "my",
+                          :specName "A",
                           :specVersion 3}],
               :inputSpecRef {:$type :tutorials.notebook/SpecRef$v1,
-                             :specName "my/C",
+                             :workspaceName "my",
+                             :specName "C",
                              :specVersion 2}}
              :tutorials.notebook/SpecId$v1)
 
@@ -392,23 +460,29 @@ false
 ```clojure
 (refines-to? {:$type :tutorials.notebook/SpecRefResolver$v1,
               :existingSpecIds [{:$type :tutorials.notebook/SpecId$v1,
-                                 :specName "my/A",
+                                 :workspaceName "my",
+                                 :specName "A",
                                  :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1,
-                                 :specName "my/B",
+                                 :workspaceName "my",
+                                 :specName "B",
                                  :specVersion 1}
                                 {:$type :tutorials.notebook/SpecId$v1,
-                                 :specName "my/A",
+                                 :workspaceName "my",
+                                 :specName "A",
                                  :specVersion 2}],
               :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                          :specName "my/C",
+                          :workspaceName "my",
+                          :specName "C",
                           :specVersion 1,
                           :isEphemeral true}
                          {:$type :tutorials.notebook/NewSpec$v1,
-                          :specName "my/A",
+                          :workspaceName "my",
+                          :specName "A",
                           :specVersion 3}],
               :inputSpecRef {:$type :tutorials.notebook/SpecRef$v1,
-                             :specName "my/X",
+                             :workspaceName "my",
+                             :specName "X",
                              :specVersion 1}}
              :tutorials.notebook/SpecId$v1)
 
@@ -471,14 +545,17 @@ A notebook contains spec references. This is modeled as the results of having pa
               :version 1}],
  :registrySpecIds [],
  :specIds [{:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 1}
+            :specName "A",
+            :specVersion 1,
+            :workspaceName "my"}
            {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/B",
-            :specVersion 1}
+            :specName "B",
+            :specVersion 1,
+            :workspaceName "my"}
            {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 2}],
+            :specName "A",
+            :specVersion 2,
+            :workspaceName "my"}],
  :tests []}
 ```
 
@@ -490,17 +567,21 @@ A notebook contains spec references. This is modeled as the results of having pa
               :version 1}],
  :registrySpecIds [],
  :specIds [{:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 1}
+            :specName "A",
+            :specVersion 1,
+            :workspaceName "my"}
            {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/B",
-            :specVersion 1}
+            :specName "B",
+            :specVersion 1,
+            :workspaceName "my"}
            {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 2}
+            :specName "A",
+            :specVersion 2,
+            :workspaceName "my"}
            {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 2}],
+            :specName "A",
+            :specVersion 2,
+            :workspaceName "my"}],
  :tests []}
 
 
@@ -522,14 +603,17 @@ A notebook contains spec references. This is modeled as the results of having pa
               :version 2}],
  :registrySpecIds [],
  :specIds [{:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 1}
+            :specName "A",
+            :specVersion 1,
+            :workspaceName "my"}
            {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/B",
-            :specVersion 1}
+            :specName "B",
+            :specVersion 1,
+            :workspaceName "my"}
            {:$type :tutorials.notebook/SpecId$v1,
-            :specName "my/A",
-            :specVersion 2}],
+            :specName "A",
+            :specVersion 2,
+            :workspaceName "my"}],
  :tests []}
 
 
@@ -614,13 +698,16 @@ A notebook contains spec references. This is modeled as the results of having pa
 ```clojure
 (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
+                    :workspaceName "my",
+                    :specName "B",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 2}],
          :items []})
 
@@ -632,16 +719,20 @@ true
 ```clojure
 (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
+                    :workspaceName "my",
+                    :specName "B",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 2}],
          :items [{:$type :tutorials.notebook/SpecRef$v1,
-                  :specName "my/A",
+                  :workspaceName "my",
+                  :specName "A",
                   :specVersion 1}]})
 
 
@@ -652,19 +743,24 @@ true
 ```clojure
 (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
+                    :workspaceName "my",
+                    :specName "B",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 2}],
          :items [{:$type :tutorials.notebook/NewSpec$v1,
-                  :specName "my/A",
+                  :workspaceName "my",
+                  :specName "A",
                   :specVersion 3}
                  {:$type :tutorials.notebook/SpecRef$v1,
-                  :specName "my/A",
+                  :workspaceName "my",
+                  :specName "A",
                   :specVersion 3}]})
 
 
@@ -675,19 +771,24 @@ true
 ```clojure
 (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
+                    :workspaceName "my",
+                    :specName "B",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 2}],
          :items [{:$type :tutorials.notebook/SpecRef$v1,
-                  :specName "my/A",
+                  :workspaceName "my",
+                  :specName "A",
                   :specVersion 3}
                  {:$type :tutorials.notebook/NewSpec$v1,
-                  :specName "my/A",
+                  :workspaceName "my",
+                  :specName "A",
                   :specVersion 3}]})
 
 
@@ -698,32 +799,40 @@ false
 ```clojure
 (get (refine-to {:$type :tutorials.notebook/ResolveRefs$v1,
                  :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                            :specName "my/A",
+                            :workspaceName "my",
+                            :specName "A",
                             :specVersion 1}
                            {:$type :tutorials.notebook/SpecId$v1,
-                            :specName "my/B",
+                            :workspaceName "my",
+                            :specName "B",
                             :specVersion 1}
                            {:$type :tutorials.notebook/SpecId$v1,
-                            :specName "my/A",
+                            :workspaceName "my",
+                            :specName "A",
                             :specVersion 2}],
                  :items [{:$type :tutorials.notebook/SpecRef$v1,
-                          :specName "my/A"}
+                          :workspaceName "my",
+                          :specName "A"}
                          {:$type :tutorials.notebook/NewSpec$v1,
-                          :specName "my/A",
+                          :workspaceName "my",
+                          :specName "A",
                           :specVersion 3}
                          {:$type :tutorials.notebook/SpecRef$v1,
-                          :specName "my/A"}]}
+                          :workspaceName "my",
+                          :specName "A"}]}
                 :tutorials.notebook/RSpecIds$v1)
      :result)
 
 
 ;-- result --
 [{:$type :tutorials.notebook/SpecId$v1,
-  :specName "my/A",
-  :specVersion 2}
+  :specName "A",
+  :specVersion 2,
+  :workspaceName "my"}
  {:$type :tutorials.notebook/SpecId$v1,
-  :specName "my/A",
-  :specVersion 3}]
+  :specName "A",
+  :specVersion 3,
+  :workspaceName "my"}]
 ```
 
 ```clojure
@@ -733,25 +842,32 @@ false
     :constraints
       #{'{:name "newSpecsInOrder",
           :expr
-            (let [all-spec-names (reduce [a #{}]
-                                   [ns newSpecs]
-                                   (if (contains? a (get ns :specName))
-                                     a
-                                     (conj a (get ns :specName))))]
+            (let [all-spec-names
+                    (reduce [a #{}]
+                      [ns newSpecs]
+                      (if (contains? a
+                                     [(get ns :workspaceName)
+                                      (get ns :specName)])
+                        a
+                        (conj a [(get ns :workspaceName) (get ns :specName)])))]
               (every?
                 [n all-spec-names]
                 (let [max-version
                         (get (refine-to
                                {:$type :tutorials.notebook/FMaxSpecVersion$v1,
                                 :specIds specIds,
-                                :specName n}
+                                :workspaceName (get n 0),
+                                :specName (get n 1)}
                                :tutorials.notebook/RInteger$v1)
                              :result)
-                      versions (concat [(if-value max-version max-version 0)]
-                                       (map [ns
-                                             (filter [ns newSpecs]
-                                               (= n (get ns :specName)))]
-                                         (get ns :specVersion)))]
+                      versions
+                        (concat
+                          [(if-value max-version max-version 0)]
+                          (map [ns
+                                (filter [ns newSpecs]
+                                  (and (= (get n 0) (get ns :workspaceName))
+                                       (= (get n 1) (get ns :specName))))]
+                            (get ns :specVersion)))]
                   (every? [pair
                            (map [i (range 0 (dec (count versions)))]
                              [(get versions i) (get versions (inc i))])]
@@ -761,16 +877,20 @@ false
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
+                    :workspaceName "my",
+                    :specName "B",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 2}],
          :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 4}]})
 
 
@@ -781,16 +901,20 @@ false
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
+                    :workspaceName "my",
+                    :specName "B",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 2}],
          :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                     :specName "my/C",
+                     :workspaceName "my",
+                     :specName "C",
                      :specVersion 4}]})
 
 
@@ -801,16 +925,20 @@ false
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
+                    :workspaceName "my",
+                    :specName "B",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 2}],
          :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 2}]})
 
 
@@ -821,25 +949,32 @@ false
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
          :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/B",
+                    :workspaceName "my",
+                    :specName "B",
                     :specVersion 1}
                    {:$type :tutorials.notebook/SpecId$v1,
-                    :specName "my/A",
+                    :workspaceName "my",
+                    :specName "A",
                     :specVersion 2}],
          :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 3}
                     {:$type :tutorials.notebook/NewSpec$v1,
-                     :specName "my/B",
+                     :workspaceName "my",
+                     :specName "B",
                      :specVersion 2}
                     {:$type :tutorials.notebook/NewSpec$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 4}
                     {:$type :tutorials.notebook/NewSpec$v1,
-                     :specName "my/C",
+                     :workspaceName "my",
+                     :specName "C",
                      :specVersion 1}]})
 
 
@@ -1164,19 +1299,23 @@ true
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
           :registrySpecIds [],
           :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 1}
                     {:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/B",
+                     :workspaceName "my",
+                     :specName "B",
                      :specVersion 1}
                     {:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 2}],
           :notebooks [{:$type :tutorials.notebook/Notebook$v1,
                        :name "notebook1",
                        :version 1,
                        :items [{:$type :tutorials.notebook/NewSpec$v1,
-                                :specName "my/A",
+                                :workspaceName "my",
+                                :specName "A",
                                 :specVersion 3}]}],
           :tests []}]
   [(valid? {:$type :tutorials.notebook/ApplyNotebook$v1,
@@ -1203,26 +1342,32 @@ If all of the new specs in the notebooks are ephemeral, then it cannot be applie
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
           :registrySpecIds [],
           :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 1}
                     {:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/B",
+                     :workspaceName "my",
+                     :specName "B",
                      :specVersion 1}
                     {:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 2}],
           :notebooks [{:$type :tutorials.notebook/Notebook$v1,
                        :name "notebook1",
                        :version 1,
                        :items [{:$type :tutorials.notebook/NewSpec$v1,
-                                :specName "my/A",
+                                :workspaceName "my",
+                                :specName "A",
                                 :specVersion 3,
                                 :isEphemeral true}
                                {:$type :tutorials.notebook/SpecRef$v1,
-                                :specName "my/A",
+                                :workspaceName "my",
+                                :specName "A",
                                 :specVersion 1}
                                {:$type :tutorials.notebook/SpecRef$v1,
-                                :specName "my/A",
+                                :workspaceName "my",
+                                :specName "A",
                                 :specVersion 3}]}],
           :tests []}]
   (valid? {:$type :tutorials.notebook/ApplyNotebook$v1,
@@ -1239,19 +1384,23 @@ false
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
           :registrySpecIds [],
           :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 1}
                     {:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/B",
+                     :workspaceName "my",
+                     :specName "B",
                      :specVersion 1}
                     {:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/A",
+                     :workspaceName "my",
+                     :specName "A",
                      :specVersion 2}],
           :notebooks [{:$type :tutorials.notebook/Notebook$v1,
                        :name "notebook1",
                        :version 1,
                        :items [{:$type :tutorials.notebook/SpecRef$v1,
-                                :specName "my/A",
+                                :workspaceName "my",
+                                :specName "A",
                                 :specVersion 1}]}],
           :tests []}]
   (valid? {:$type :tutorials.notebook/ApplyNotebook$v1,
@@ -1298,41 +1447,51 @@ false
    :workspace {:$type :tutorials.notebook/Workspace$v1,
                :registrySpecIds [],
                :specIds [{:$type :tutorials.notebook/SpecId$v1,
-                          :specName "my/A",
+                          :workspaceName "my",
+                          :specName "A",
                           :specVersion 1}
                          {:$type :tutorials.notebook/SpecId$v1,
-                          :specName "my/B",
+                          :workspaceName "my",
+                          :specName "B",
                           :specVersion 1}
                          {:$type :tutorials.notebook/SpecId$v1,
-                          :specName "my/A",
+                          :workspaceName "my",
+                          :specName "A",
                           :specVersion 2}],
                :notebooks [{:$type :tutorials.notebook/Notebook$v1,
                             :name "notebook1",
                             :version 1,
                             :items [{:$type :tutorials.notebook/NewSpec$v1,
-                                     :specName "my/A",
+                                     :workspaceName "my",
+                                     :specName "A",
                                      :specVersion 3}
                                     {:$type :tutorials.notebook/NewSpec$v1,
-                                     :specName "my/C",
+                                     :workspaceName "my",
+                                     :specName "C",
                                      :specVersion 1,
                                      :isEphemeral true}
                                     {:$type :tutorials.notebook/SpecRef$v1,
-                                     :specName "my/A",
+                                     :workspaceName "my",
+                                     :specName "A",
                                      :specVersion 1}
                                     {:$type :tutorials.notebook/SpecRef$v1,
-                                     :specName "my/A",
+                                     :workspaceName "my",
+                                     :specName "A",
                                      :specVersion 3}]}
                            {:$type :tutorials.notebook/Notebook$v1,
                             :name "notebook2",
                             :version 3,
                             :items [{:$type :tutorials.notebook/NewSpec$v1,
-                                     :specName "my/B",
+                                     :workspaceName "my",
+                                     :specName "B",
                                      :specVersion 1}
                                     {:$type :tutorials.notebook/SpecRef$v1,
-                                     :specName "my/A",
+                                     :workspaceName "my",
+                                     :specName "A",
                                      :specVersion 1}
                                     {:$type :tutorials.notebook/SpecRef$v1,
-                                     :specName "my/B",
+                                     :workspaceName "my",
+                                     :specName "B",
                                      :specVersion 1}]}],
                :tests []},
    :notebookName "notebook1",
@@ -1344,8 +1503,9 @@ false
 {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
  :effects [{:$type :tutorials.notebook/WriteSpecEffect$v1,
             :specId {:$type :tutorials.notebook/SpecId$v1,
-                     :specName "my/A",
-                     :specVersion 3}}
+                     :specName "A",
+                     :specVersion 3,
+                     :workspaceName "my"}}
            {:$type :tutorials.notebook/WriteNotebookEffect$v1,
             :notebookName "notebook1",
             :notebookVersion 2}],
@@ -1354,41 +1514,51 @@ false
     :notebooks [{:name "notebook2",
                  :$type :tutorials.notebook/Notebook$v1,
                  :items [{:$type :tutorials.notebook/NewSpec$v1,
-                          :specName "my/B",
-                          :specVersion 1}
+                          :specName "B",
+                          :specVersion 1,
+                          :workspaceName "my"}
                          {:$type :tutorials.notebook/SpecRef$v1,
-                          :specName "my/A",
-                          :specVersion 1}
+                          :specName "A",
+                          :specVersion 1,
+                          :workspaceName "my"}
                          {:$type :tutorials.notebook/SpecRef$v1,
-                          :specName "my/B",
-                          :specVersion 1}],
+                          :specName "B",
+                          :specVersion 1,
+                          :workspaceName "my"}],
                  :version 3}
                 {:name "notebook1",
                  :$type :tutorials.notebook/Notebook$v1,
                  :items [{:$type :tutorials.notebook/NewSpec$v1,
                           :isEphemeral true,
-                          :specName "my/C",
-                          :specVersion 1}
+                          :specName "C",
+                          :specVersion 1,
+                          :workspaceName "my"}
                          {:$type :tutorials.notebook/SpecRef$v1,
-                          :specName "my/A",
-                          :specVersion 1}
+                          :specName "A",
+                          :specVersion 1,
+                          :workspaceName "my"}
                          {:$type :tutorials.notebook/SpecRef$v1,
-                          :specName "my/A",
-                          :specVersion 3}],
+                          :specName "A",
+                          :specVersion 3,
+                          :workspaceName "my"}],
                  :version 2}],
     :registrySpecIds [],
     :specIds [{:$type :tutorials.notebook/SpecId$v1,
-               :specName "my/A",
-               :specVersion 1}
+               :specName "A",
+               :specVersion 1,
+               :workspaceName "my"}
               {:$type :tutorials.notebook/SpecId$v1,
-               :specName "my/B",
-               :specVersion 1}
+               :specName "B",
+               :specVersion 1,
+               :workspaceName "my"}
               {:$type :tutorials.notebook/SpecId$v1,
-               :specName "my/A",
-               :specVersion 2}
+               :specName "A",
+               :specVersion 2,
+               :workspaceName "my"}
               {:$type :tutorials.notebook/SpecId$v1,
-               :specName "my/A",
-               :specVersion 3}],
+               :specName "A",
+               :specVersion 3,
+               :workspaceName "my"}],
     :tests []}}
 ```
 
