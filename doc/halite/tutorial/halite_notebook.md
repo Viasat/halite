@@ -545,13 +545,6 @@ A reference to a completely unknown spec name does not resolve.
 false
 ```
 
-Make a spec to hold the result of resolving all spec references in a notebook.
-
-```clojure
-{:tutorials.notebook/ResolvedSpecRefs$v1
-   {:fields {:specRefs [:Vec :tutorials.notebook/SpecId$v1]}}}
-```
-
 A notebook contains items. This is modeled as the results of having parsed the references out of the contents of the notebook. This is a vector, because the order of the items matters when resolving spec references mixed in with the creation of new specs.
 
 ```clojure
@@ -712,13 +705,22 @@ Previously we created a spec to resolve a spec reference. Now we build on that b
                              :items items}
                             :tutorials.notebook/RSpecIds$v1)
                           :result)))}},
-    :refines-to {:tutorials.notebook/RSpecIds$v1
-                   {:name "resolve",
-                    :expr '(refine-to
-                             {:$type :tutorials.notebook/ResolveRefsDirect$v1,
-                              :specIds specIds,
-                              :items items}
-                             :tutorials.notebook/RSpecIds$v1)}}},
+    :refines-to
+      {:tutorials.notebook/RSpecIds$v1
+         {:name "resolve",
+          :expr '(refine-to
+                   {:$type :tutorials.notebook/ResolveRefsDirect$v1,
+                    :specIds specIds,
+                    :items (filter [item items]
+                             (if (refines-to? item
+                                              :tutorials.notebook/SpecRef$v1)
+                               (let [spec-ref (refine-to
+                                                item
+                                                :tutorials.notebook/SpecRef$v1)
+                                     spec-version (get spec-ref :specVersion)]
+                                 (if-value spec-version false true))
+                               true))}
+                   :tutorials.notebook/RSpecIds$v1)}}},
  :tutorials.notebook/ResolveRefsDirect$v1
    {:fields {:items [:Vec :tutorials.notebook/AbstractNotebookItem$v1],
              :specIds [:Set :tutorials.notebook/SpecId$v1]},
@@ -1191,6 +1193,7 @@ Now start to model operations on workspaces. As a result of these operations, th
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
              :registrySpecs [:Maybe :Boolean],
+             :resolvedSpecIds [:Vec :tutorials.notebook/SpecId$v1],
              :workspaceSpecs [:Maybe :Boolean]},
     :constraints
       #{'{:name "exclusiveFlags",
@@ -1346,18 +1349,27 @@ The following specs define the operations involving notebooks in workspaces.
                                                     notebookVersion)))
                                         new-notebook),
                        :tests (get workspace :tests)},
-                    :effects (concat
-                               (map [si new-spec-ids]
-                                 {:$type :tutorials.notebook/WriteSpecEffect$v1,
-                                  :specId si})
-                               [{:$type
-                                   :tutorials.notebook/WriteNotebookEffect$v1,
-                                 :notebookName (get new-notebook :name),
-                                 :notebookVersion (get new-notebook :version)}
-                                {:$type :tutorials.notebook/RunTestsEffect$v1,
-                                 :notebookName notebookName,
-                                 :notebookVersion notebookVersion,
-                                 :workspaceSpecs true}])})))}}},
+                    :effects
+                      (concat
+                        (map [si new-spec-ids]
+                          {:$type :tutorials.notebook/WriteSpecEffect$v1,
+                           :specId si})
+                        [{:$type :tutorials.notebook/WriteNotebookEffect$v1,
+                          :notebookName (get new-notebook :name),
+                          :notebookVersion (get new-notebook :version)}
+                         {:$type :tutorials.notebook/RunTestsEffect$v1,
+                          :notebookName notebookName,
+                          :notebookVersion notebookVersion,
+                          :workspaceSpecs true,
+                          :resolvedSpecIds
+                            (get (refine-to
+                                   {:$type :tutorials.notebook/ResolveRefs$v1,
+                                    :specIds (concat (get workspace
+                                                          :registrySpecIds)
+                                                     (get workspace :specIds)),
+                                    :items (get nb :items)}
+                                   :tutorials.notebook/RSpecIds$v1)
+                                 :result)}])})))}}},
  :tutorials.notebook/CreateRegressionTest$v1
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
@@ -1424,7 +1436,14 @@ The following specs define the operations involving notebooks in workspaces.
                        {:$type :tutorials.notebook/RunTestsEffect$v1,
                         :notebookName notebookName,
                         :notebookVersion notebookVersion,
-                        :registrySpecs true}]})))}}},
+                        :registrySpecs true,
+                        :resolvedSpecIds
+                          (get (refine-to
+                                 {:$type :tutorials.notebook/ResolveRefs$v1,
+                                  :specIds (get workspace :registrySpecIds),
+                                  :items (get nb :items)}
+                                 :tutorials.notebook/RSpecIds$v1)
+                               :result)}]})))}}},
  :tutorials.notebook/DeleteNotebook$v1
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
@@ -1565,7 +1584,14 @@ The following specs define the operations involving notebooks in workspaces.
                        {:$type :tutorials.notebook/RunTestsEffect$v1,
                         :notebookName notebookName,
                         :notebookVersion notebookVersion,
-                        :registrySpecs true}]})))}}},
+                        :registrySpecs true,
+                        :resolvedSpecIds
+                          (get (refine-to
+                                 {:$type :tutorials.notebook/ResolveRefs$v1,
+                                  :specIds (get workspace :registrySpecIds),
+                                  :items (get nb :items)}
+                                 :tutorials.notebook/RSpecIds$v1)
+                               :result)}]})))}}},
  :tutorials.notebook/WriteNotebook$v1
    {:fields {:notebookItems [:Vec :tutorials.notebook/AbstractNotebookItem$v1],
              :notebookName :String,
@@ -1798,7 +1824,7 @@ If a notebook contains no new specs then it cannot be applied.
 false
 ```
 
-A more complicated example of applying a notebook. This one includes an ephemeral new spec as well as a references to a new spec.
+A more complicated example of applying a notebook. This one includes an ephemeral new spec as well as a references to a new spec. Note that the effect to run the tests includes the results of resolving all of the floating references in the notebook.
 
 ```clojure
 (refine-to
@@ -1819,6 +1845,35 @@ A more complicated example of applying a notebook. This one includes an ephemera
                            :specName "A",
                            :specVersion 1}},
                :notebooks #{{:$type :tutorials.notebook/Notebook$v1,
+                             :name "notebook1",
+                             :version 1,
+                             :items [{:$type :tutorials.notebook/SpecRef$v1,
+                                      :workspaceName "my",
+                                      :specName "A"}
+                                     {:$type :tutorials.notebook/NewSpec$v1,
+                                      :workspaceName "my",
+                                      :specName "A",
+                                      :specVersion 3}
+                                     {:$type :tutorials.notebook/NewSpec$v1,
+                                      :workspaceName "my",
+                                      :specName "C",
+                                      :specVersion 1,
+                                      :isEphemeral true}
+                                     {:$type :tutorials.notebook/SpecRef$v1,
+                                      :workspaceName "my",
+                                      :specName "C"}
+                                     {:$type :tutorials.notebook/SpecRef$v1,
+                                      :workspaceName "my",
+                                      :specName "A",
+                                      :specVersion 1}
+                                     {:$type :tutorials.notebook/SpecRef$v1,
+                                      :workspaceName "my",
+                                      :specName "A"}
+                                     {:$type :tutorials.notebook/SpecRef$v1,
+                                      :workspaceName "my",
+                                      :specName "A",
+                                      :specVersion 3}]}
+                            {:$type :tutorials.notebook/Notebook$v1,
                              :name "notebook2",
                              :version 3,
                              :items [{:$type :tutorials.notebook/NewSpec$v1,
@@ -1832,27 +1887,7 @@ A more complicated example of applying a notebook. This one includes an ephemera
                                      {:$type :tutorials.notebook/SpecRef$v1,
                                       :workspaceName "my",
                                       :specName "B",
-                                      :specVersion 1}]}
-                            {:$type :tutorials.notebook/Notebook$v1,
-                             :name "notebook1",
-                             :version 1,
-                             :items [{:$type :tutorials.notebook/NewSpec$v1,
-                                      :workspaceName "my",
-                                      :specName "A",
-                                      :specVersion 3}
-                                     {:$type :tutorials.notebook/NewSpec$v1,
-                                      :workspaceName "my",
-                                      :specName "C",
-                                      :specVersion 1,
-                                      :isEphemeral true}
-                                     {:$type :tutorials.notebook/SpecRef$v1,
-                                      :workspaceName "my",
-                                      :specName "A",
-                                      :specVersion 1}
-                                     {:$type :tutorials.notebook/SpecRef$v1,
-                                      :workspaceName "my",
-                                      :specName "A",
-                                      :specVersion 3}]}},
+                                      :specVersion 1}]}},
                :tests #{}},
    :notebookName "notebook1",
    :notebookVersion 1}
@@ -1872,19 +1907,40 @@ A more complicated example of applying a notebook. This one includes an ephemera
            {:$type :tutorials.notebook/RunTestsEffect$v1,
             :notebookName "notebook1",
             :notebookVersion 1,
+            :resolvedSpecIds [{:$type :tutorials.notebook/SpecId$v1,
+                               :specName "A",
+                               :specVersion 2,
+                               :workspaceName "my"}
+                              {:$type :tutorials.notebook/SpecId$v1,
+                               :specName "C",
+                               :specVersion 1,
+                               :workspaceName "my"}
+                              {:$type :tutorials.notebook/SpecId$v1,
+                               :specName "A",
+                               :specVersion 3,
+                               :workspaceName "my"}],
             :workspaceSpecs true}],
  :workspace
    {:$type :tutorials.notebook/Workspace$v1,
     :notebooks #{{:name "notebook1",
                   :$type :tutorials.notebook/Notebook$v1,
-                  :items [{:$type :tutorials.notebook/NewSpec$v1,
+                  :items [{:$type :tutorials.notebook/SpecRef$v1,
+                           :specName "A",
+                           :workspaceName "my"}
+                          {:$type :tutorials.notebook/NewSpec$v1,
                            :isEphemeral true,
                            :specName "C",
                            :specVersion 1,
                            :workspaceName "my"}
                           {:$type :tutorials.notebook/SpecRef$v1,
+                           :specName "C",
+                           :workspaceName "my"}
+                          {:$type :tutorials.notebook/SpecRef$v1,
                            :specName "A",
                            :specVersion 1,
+                           :workspaceName "my"}
+                          {:$type :tutorials.notebook/SpecRef$v1,
+                           :specName "A",
                            :workspaceName "my"}
                           {:$type :tutorials.notebook/SpecRef$v1,
                            :specName "A",
@@ -1953,7 +2009,8 @@ A notebook can be used as the basis for a regression test suite.
            {:$type :tutorials.notebook/RunTestsEffect$v1,
             :notebookName "notebook1",
             :notebookVersion 1,
-            :registrySpecs true}],
+            :registrySpecs true,
+            :resolvedSpecIds []}],
  :workspace {:$type :tutorials.notebook/Workspace$v1,
              :notebooks #{{:name "notebook1",
                            :$type :tutorials.notebook/Notebook$v1,
@@ -2128,7 +2185,8 @@ A regression test can be updated to reflect a later version of a notebook.
            {:$type :tutorials.notebook/RunTestsEffect$v1,
             :notebookName "notebook1",
             :notebookVersion 9,
-            :registrySpecs true}],
+            :registrySpecs true,
+            :resolvedSpecIds []}],
  :workspace {:$type :tutorials.notebook/Workspace$v1,
              :notebooks #{{:name "notebook1",
                            :$type :tutorials.notebook/Notebook$v1,
