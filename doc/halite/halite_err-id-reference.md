@@ -54,6 +54,19 @@ The 'first' operation cannot be invoked on an empty collection.
 * [`first`](halite_full-reference.md#first)
 
 ---
+### <a name="h-err/argument-not-collection"></a>h-err/argument-not-collection
+
+The operation can only be invoked on a collection.
+
+#### Error message template:
+
+> Argument to ':op' must be a collection
+
+#### Produced by operators:
+
+* [`first`](halite_full-reference.md#first)
+
+---
 ### <a name="h-err/argument-not-set-or-vector"></a>h-err/argument-not-set-or-vector
 
 The operation must be invoked a collection.
@@ -77,7 +90,6 @@ The operation can only be invoked on a vector.
 
 #### Produced by operators:
 
-* [`first`](halite_full-reference.md#first)
 * [`rest`](halite_full-reference.md#rest)
 
 ---
@@ -652,6 +664,19 @@ When the first argument to 'concat' is a vector, the second must also be a vecto
 #### Produced by operators:
 
 * [`concat`](halite_full-reference.md#concat)
+
+---
+### <a name="h-err/not-set-with-single-value"></a>h-err/not-set-with-single-value
+
+The operation cannot be invoked on a set if the set contains more than one value. This applies to the 'first' operation which can only be used to retrieve an item from a set with a single value.
+
+#### Error message template:
+
+> The first item cannot be obtained from a set that contains multiple values.
+
+#### Produced by operators:
+
+* [`first`](halite_full-reference.md#first)
 
 ---
 ### <a name="h-err/not-sortable-body"></a>h-err/not-sortable-body

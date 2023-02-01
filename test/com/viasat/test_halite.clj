@@ -642,7 +642,7 @@
     '(first) #"Wrong number of arguments"
     '(first [] []) #"Wrong number of arguments"
     '(first []) #"Argument to first is empty"
-    '(first 12) #"must be a vector"
+    '(first 12) #"must be a collection"
     '(rest) #"Wrong number of arguments"
     '(rest #{}) #"must be a vector"
     '(conj) #"Wrong number of arguments"

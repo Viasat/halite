@@ -812,7 +812,7 @@
                                                         (= (get nb :version)
                                                            notebookVersion)))]
                               (if (> (count filtered) 0)
-                                (let [nb (first (sort-by [n filtered] 1))]
+                                (let [nb (first filtered)]
                                   (> (count (filter [ns (map [item (filter [item (get nb :items)]
                                                                            (refines-to? item :tutorials.notebook/NewSpec$v1))]
                                                              (refine-to item :tutorials.notebook/NewSpec$v1))]
@@ -828,7 +828,7 @@
                                                         (= (get nb :version)
                                                            notebookVersion)))]
                               (if (> (count filtered) 0)
-                                (let [nb (first (sort-by [n filtered] 1))]
+                                (let [nb (first filtered)]
                                   (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1
                                            :workspaceName (get workspace :workspaceName)
                                            :specIds (concat (get workspace :specIds) (get workspace :registrySpecIds))
@@ -844,7 +844,7 @@
                                                         (= (get nb :version)
                                                            notebookVersion)))]
                               (if (> (count filtered) 0)
-                                (let [nb (first (sort-by [n filtered] 1))]
+                                (let [nb (first filtered)]
                                   (valid? {:$type :tutorials.notebook/ResolveRefs$v1
                                            :specIds (concat (get workspace :specIds) (get workspace :registrySpecIds))
                                            :items (get nb :items)}))
@@ -858,7 +858,7 @@
                                                                    (= (get nb :version)
                                                                       notebookVersion)))]
                                          (when (> (count filtered) 0)
-                                           (let [nb (first (sort-by [n filtered] 1))
+                                           (let [nb (first filtered)
                                                  new-spec-ids (map [ns (filter [ns (map [item (filter [item (get nb :items)]
                                                                                                       (refines-to? item :tutorials.notebook/NewSpec$v1))]
                                                                                         (refine-to item :tutorials.notebook/NewSpec$v1))]
@@ -919,7 +919,7 @@
                                                         (= (get nb :version)
                                                            notebookVersion)))]
                               (if (> (count filtered) 0)
-                                (let [nb (first (sort-by [n filtered] 1))]
+                                (let [nb (first filtered)]
                                   (= (count (filter [ns (map [item (filter [item (get nb :items)]
                                                                            (refines-to? item :tutorials.notebook/NewSpec$v1))]
                                                              (refine-to item :tutorials.notebook/NewSpec$v1))]
@@ -935,7 +935,7 @@
                                                         (= (get nb :version)
                                                            notebookVersion)))]
                               (if (> (count filtered) 0)
-                                (let [nb (first (sort-by [n filtered] 1))]
+                                (let [nb (first filtered)]
                                   (valid? {:$type :tutorials.notebook/ResolveRefs$v1
                                            :specIds (get workspace :registrySpecIds)
                                            :items (get nb :items)}))
@@ -949,7 +949,7 @@
                                                                    (= (get nb :version)
                                                                       notebookVersion)))]
                                          (when (> (count filtered) 0)
-                                           (let [nb (first (sort-by [n filtered] 1))
+                                           (let [nb (first filtered)
                                                  new-test {:$type :tutorials.notebook/RegressionTest$v1
                                                            :notebookName notebookName
                                                            :notebookVersion notebookVersion}]
@@ -990,7 +990,7 @@
                                                                       notebookName)
                                                                    (= (get t :notebookVersion)
                                                                       notebookVersion)))]
-                                         (let [to-remove (first (sort-by [n filtered] 1))]
+                                         (let [to-remove (first filtered)]
                                            {:$type :tutorials.notebook/WorkspaceAndEffects$v1
                                             :workspace {:$type :tutorials.notebook/Workspace$v1
                                                         :workspaceName (get workspace :workspaceName)
@@ -1033,7 +1033,7 @@
                                                         (= (get nb :version)
                                                            notebookVersion)))]
                               (if (> (count filtered) 0)
-                                (let [nb (first (sort-by [n filtered] 1))]
+                                (let [nb (first filtered)]
                                   (= (count (filter [ns (map [item (filter [item (get nb :items)]
                                                                            (refines-to? item :tutorials.notebook/NewSpec$v1))]
                                                              (refine-to item :tutorials.notebook/NewSpec$v1))]
@@ -1049,7 +1049,7 @@
                                                         (= (get nb :version)
                                                            notebookVersion)))]
                               (if (> (count filtered) 0)
-                                (let [nb (first (sort-by [n filtered] 1))]
+                                (let [nb (first filtered)]
                                   (valid? {:$type :tutorials.notebook/ResolveRefs$v1
                                            :specIds (concat (get workspace :specIds) (get workspace :registrySpecIds))
                                            :items (get nb :items)}))
@@ -1063,7 +1063,7 @@
                                                                    (= (get nb :version)
                                                                       notebookVersion)))]
                                          (when (> (count filtered) 0)
-                                           (let [nb (first (sort-by [n filtered] 1))
+                                           (let [nb (first filtered)
                                                  new-test {:$type :tutorials.notebook/RegressionTest$v1
                                                            :notebookName notebookName
                                                            :notebookVersion notebookVersion}]

@@ -40,7 +40,7 @@ Produce a new collection which contains only the elements from the original coll
 
 #### [`first`](halite_full-reference.md#first)
 
-Produce the first element from a vector.
+Produce the first element from a vector or from a set. However, it can only be applied to a set if the set contains a single value. Otherwise, since a set is not ordered, the notion of "first" does not apply.
 
 #### [`get`](halite_full-reference.md#get)
 

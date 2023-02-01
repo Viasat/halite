@@ -1247,7 +1247,7 @@ The following specs define the operations involving notebooks in workspaces.
                              (and (= (get nb :name) notebookName)
                                   (= (get nb :version) notebookVersion)))]
               (if (> (count filtered) 0)
-                (let [nb (first (sort-by [n filtered] 1))]
+                (let [nb (first filtered)]
                   (> (count
                        (filter
                          [ns
@@ -1270,7 +1270,7 @@ The following specs define the operations involving notebooks in workspaces.
                                  (and (= (get nb :name) notebookName)
                                       (= (get nb :version) notebookVersion)))]
                   (if (> (count filtered) 0)
-                    (let [nb (first (sort-by [n filtered] 1))]
+                    (let [nb (first filtered)]
                       (valid?
                         {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
                          :workspaceName (get workspace :workspaceName),
@@ -1289,7 +1289,7 @@ The following specs define the operations involving notebooks in workspaces.
                                  (and (= (get nb :name) notebookName)
                                       (= (get nb :version) notebookVersion)))]
                   (if (> (count filtered) 0)
-                    (let [nb (first (sort-by [n filtered] 1))]
+                    (let [nb (first filtered)]
                       (valid?
                         {:$type :tutorials.notebook/ResolveRefs$v1,
                          :specIds (concat (get workspace :specIds)
@@ -1304,7 +1304,7 @@ The following specs define the operations involving notebooks in workspaces.
                               (and (= (get nb :name) notebookName)
                                    (= (get nb :version) notebookVersion)))]
                (when (> (count filtered) 0)
-                 (let [nb (first (sort-by [n filtered] 1))
+                 (let [nb (first filtered)
                        new-spec-ids
                          (map
                            [ns
@@ -1369,7 +1369,7 @@ The following specs define the operations involving notebooks in workspaces.
                              (and (= (get nb :name) notebookName)
                                   (= (get nb :version) notebookVersion)))]
               (if (> (count filtered) 0)
-                (let [nb (first (sort-by [n filtered] 1))]
+                (let [nb (first filtered)]
                   (= (count
                        (filter
                          [ns
@@ -1392,7 +1392,7 @@ The following specs define the operations involving notebooks in workspaces.
                                  (and (= (get nb :name) notebookName)
                                       (= (get nb :version) notebookVersion)))]
                   (if (> (count filtered) 0)
-                    (let [nb (first (sort-by [n filtered] 1))]
+                    (let [nb (first filtered)]
                       (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
                                :specIds (get workspace :registrySpecIds),
                                :items (get nb :items)}))
@@ -1405,7 +1405,7 @@ The following specs define the operations involving notebooks in workspaces.
                               (and (= (get nb :name) notebookName)
                                    (= (get nb :version) notebookVersion)))]
                (when (> (count filtered) 0)
-                 (let [nb (first (sort-by [n filtered] 1))
+                 (let [nb (first filtered)
                        new-test {:$type :tutorials.notebook/RegressionTest$v1,
                                  :notebookName notebookName,
                                  :notebookVersion notebookVersion}]
@@ -1475,7 +1475,7 @@ The following specs define the operations involving notebooks in workspaces.
                               (and (= (get t :notebookName) notebookName)
                                    (= (get t :notebookVersion)
                                       notebookVersion)))]
-               (let [to-remove (first (sort-by [n filtered] 1))]
+               (let [to-remove (first filtered)]
                  {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
                   :workspace {:$type :tutorials.notebook/Workspace$v1,
                               :workspaceName (get workspace :workspaceName),
@@ -1500,7 +1500,7 @@ The following specs define the operations involving notebooks in workspaces.
                              (and (= (get nb :name) notebookName)
                                   (= (get nb :version) notebookVersion)))]
               (if (> (count filtered) 0)
-                (let [nb (first (sort-by [n filtered] 1))]
+                (let [nb (first filtered)]
                   (= (count
                        (filter
                          [ns
@@ -1523,7 +1523,7 @@ The following specs define the operations involving notebooks in workspaces.
                                  (and (= (get nb :name) notebookName)
                                       (= (get nb :version) notebookVersion)))]
                   (if (> (count filtered) 0)
-                    (let [nb (first (sort-by [n filtered] 1))]
+                    (let [nb (first filtered)]
                       (valid?
                         {:$type :tutorials.notebook/ResolveRefs$v1,
                          :specIds (concat (get workspace :specIds)
@@ -1544,7 +1544,7 @@ The following specs define the operations involving notebooks in workspaces.
                               (and (= (get nb :name) notebookName)
                                    (= (get nb :version) notebookVersion)))]
                (when (> (count filtered) 0)
-                 (let [nb (first (sort-by [n filtered] 1))
+                 (let [nb (first filtered)
                        new-test {:$type :tutorials.notebook/RegressionTest$v1,
                                  :notebookName notebookName,
                                  :notebookVersion notebookVersion}]

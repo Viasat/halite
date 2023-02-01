@@ -926,14 +926,8 @@
     (h (= "a" "") :Boolean false "(\"a\" == \"\")" "false")
     (h (= "a" "b") :Boolean false "(\"a\" == \"b\")" "false")
     (h (= "a" "a") :Boolean true "(\"a\" == \"a\")" "true")
-    (h
-     (first "")
-     [:throws
-      "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
-    (h
-     (first "a")
-     [:throws
-      "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
+    (h (first "") [:throws "h-err/argument-not-collection 0-0 : Argument to 'first' must be a collection"])
+    (h (first "a") [:throws "h-err/argument-not-collection 0-0 : Argument to 'first' must be a collection"])
     (h
      (rest "ab")
      [:throws
@@ -1264,14 +1258,9 @@
    (difference)
    [:throws
     "h-err/wrong-arg-count 0-0 : Wrong number of arguments to 'difference': expected 2, but got 0"])
-  (h
-   (first #{})
-   [:throws
-    "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
-  (h
-   (first #{1})
-   [:throws
-    "h-err/argument-not-vector 0-0 : Argument to 'first' must be a vector"])
+  (h (first #{}) [:throws "h-err/argument-empty 0-0 : Argument to first is empty"])
+  (h (first #{1}) :Integer 1 "#{1}.first()" "1")
+  (h (first #{1 2}) :Integer [:throws "h-err/not-set-with-single-value 0-0 : The first item cannot be obtained from a set that contains multiple values."] "#{1, 2}.first()" [:throws "h-err/not-set-with-single-value 0-0 : The first item cannot be obtained from a set that contains multiple values."])
   (h (first (sort #{1})) :Integer 1 "#{1}.sort().first()" "1")
   (h (first (reduce (a []) [x (sort #{1})] (conj a x)))
      [:syntax-check-throws "h-err/unknown-function-or-operator 0-0 : Unknown function or operator: a"])

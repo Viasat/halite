@@ -14,7 +14,9 @@
    'h-err/argument-empty {:doc "The 'first' operation cannot be invoked on an empty collection."}
    'h-err/argument-not-set-or-vector {:doc "The operation must be invoked a collection."}
    'h-err/argument-not-vector {:doc "The operation can only be invoked on a vector."}
+   'h-err/argument-not-collection {:doc "The operation can only be invoked on a collection."}
    'h-err/arguments-not-sets {:doc "The operation can only be invoked on set arguments."}
+   'h-err/not-set-with-single-value {:doc "The operation cannot be invoked on a set if the set contains more than one value. This applies to the 'first' operation which can only be used to retrieve an item from a set with a single value."}
    'h-err/binding-target-must-be-bare-symbol {:doc "In binding forms, the first value of each pair must be a symbol without a namespace. This symbol is an identifier that will be bound to the value of the second item in the pair."}
    'h-err/cannot-bind-reserved-word {:doc "There are a small number of symbols that are reserved for system use and cannot be used by users in bindings."}
    'h-err/cannot-conj-unset {:doc "Only actual values can be added into collections. Specifically 'unset' cannot be added into a collection."}

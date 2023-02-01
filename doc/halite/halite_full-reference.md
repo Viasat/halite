@@ -1414,15 +1414,17 @@ See also: [`map`](#map)
 ---
 ### <a name="first"></a>first
 
-Produce the first element from a vector.
+Produce the first element from a vector or from a set. However, it can only be applied to a set if the set contains a single value. Otherwise, since a set is not ordered, the notion of "first" does not apply.
 
 ![["vector" "value"]](../halite-bnf-diagrams/op/first-0.svg)
 
+![["set" "value"]](../halite-bnf-diagrams/op/first-1.svg)
+
 #### Basic elements:
 
-[`value`](halite_basic-syntax-reference.md#value), [`vector`](halite_basic-syntax-reference.md#vector)
+[`set`](halite_basic-syntax-reference.md#set), [`value`](halite_basic-syntax-reference.md#value), [`vector`](halite_basic-syntax-reference.md#vector)
 
-To avoid runtime errors, if the vector might be empty, use 'count' to check the length first.
+To avoid runtime errors, if the collection might be empty, use 'count' to check the length first.
 
 #### Examples:
 
@@ -1444,18 +1446,46 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 h-err/argument-empty
 ```
 
+</td><td colspan="1">
+
+```clojure
+(first #{10})
+
+;-- result --
+10
+```
+
+</td><td colspan="2">
+
+```clojure
+(first #{10 20 30})
+
+;-- result --
+h-err/not-set-with-single-value
+```
+
+</td></tr><tr><td colspan="1">
+
+```clojure
+(first #{})
+
+;-- result --
+h-err/argument-empty
+```
+
 </td></tr></table>
 
 #### Possible errors:
 
 * [`h-err/argument-empty`](halite_err-id-reference.md#h-err/argument-empty)
-* [`h-err/argument-not-vector`](halite_err-id-reference.md#h-err/argument-not-vector)
+* [`h-err/argument-not-collection`](halite_err-id-reference.md#h-err/argument-not-collection)
+* [`h-err/not-set-with-single-value`](halite_err-id-reference.md#h-err/not-set-with-single-value)
 
 See also: [`count`](#count) [`rest`](#rest)
 
 #### Tags:
 
- [Vector operations](halite_vector-op-reference.md)
+ [Set operations](halite_set-op-reference.md),  [Vector operations](halite_vector-op-reference.md)
 
 ---
 ### <a name="get"></a>get

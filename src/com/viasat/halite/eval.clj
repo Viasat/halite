@@ -589,8 +589,11 @@
                                'union (reduce set/union (map eval-in-env (rest expr)))
                                'intersection (reduce set/intersection (map eval-in-env (rest expr)))
                                'difference (apply set/difference (map eval-in-env (rest expr)))
-                               'first (or (first (eval-in-env (second expr)))
-                                          (throw-err (h-err/argument-empty {:form expr})))
+                               'first (let [c (eval-in-env (second expr))]
+                                        (when (and (set? c) (> (count c) 1))
+                                          (throw-err (h-err/not-set-with-single-value {:form expr})))
+                                        (or (first c)
+                                            (throw-err (h-err/argument-empty {:form expr}))))
                                'rest (let [arg (eval-in-env (second expr))]
                                        (if (empty? arg) [] (subvec arg 1)))
                                'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))

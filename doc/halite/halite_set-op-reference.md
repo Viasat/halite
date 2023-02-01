@@ -46,6 +46,10 @@ Evaluates to true if the boolean-expression is true when the symbol is bound to 
 
 Produce a new collection which contains only the elements from the original collection for which the boolean-expression is true. When applied to a vector, the order of the elements in the result preserves the order from the original vector.
 
+#### [`first`](halite_full-reference.md#first)
+
+Produce the first element from a vector or from a set. However, it can only be applied to a set if the set contains a single value. Otherwise, since a set is not ordered, the notion of "first" does not apply.
+
 #### [`intersection`](halite_full-reference.md#intersection)
 
 Compute the set intersection of the sets.

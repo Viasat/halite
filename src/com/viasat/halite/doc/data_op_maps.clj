@@ -471,18 +471,30 @@
                      'h-err/binding-target-must-be-bare-symbol
                      'h-err/not-boolean-body]
             :op-ref ['map]}
-   'first {:sigs [["vector" "value"]]
-           :sigs-j [["vector '.' 'first()'" "value"]]
-           :tags #{:vector-op}
-           :basic-ref ['vector 'value]
-           :doc "Produce the first element from a vector."
-           :comment "To avoid runtime errors, if the vector might be empty, use 'count' to check the length first."
+   'first {:sigs [["vector" "value"]
+                  ["set" "value"]]
+           :sigs-j [["vector '.' 'first()'" "value"]
+                    ["set '.' 'first()'" "value"]]
+           :tags #{:vector-op :set-op}
+           :basic-ref ['vector 'value 'set]
+           :doc "Produce the first element from a vector or from a set. However, it can only be applied to a set if the set contains a single value. Otherwise, since a set is not ordered, the notion of \"first\" does not apply."
+           :comment "To avoid runtime errors, if the collection might be empty, use 'count' to check the length first."
            :throws ['h-err/argument-empty
-                    'h-err/argument-not-vector]
+                    'h-err/argument-not-collection
+                    'h-err/not-set-with-single-value]
            :examples [{:expr-str "(first [10 20 30])"
                        :expr-str-j :auto
                        :result :auto}
                       {:expr-str "(first [])"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(first #{10})"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(first #{10 20 30})"
+                       :expr-str-j :auto
+                       :result :auto}
+                      {:expr-str "(first #{})"
                        :expr-str-j :auto
                        :result :auto}]
            :op-ref ['count 'rest]}

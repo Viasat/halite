@@ -1976,15 +1976,17 @@ See also: [`map`](#map)
 ---
 ### <a name="first"></a>first
 
-Produce the first element from a vector.
+Produce the first element from a vector or from a set. However, it can only be applied to a set if the set contains a single value. Otherwise, since a set is not ordered, the notion of "first" does not apply.
 
 ![["vector '.' 'first()'" "value"]](../halite-bnf-diagrams/op/first-0-j.svg)
 
+![["set '.' 'first()'" "value"]](../halite-bnf-diagrams/op/first-1-j.svg)
+
 #### Basic elements:
 
-[`value`](halite_basic-syntax-reference-j.md#value), [`vector`](halite_basic-syntax-reference-j.md#vector)
+[`set`](halite_basic-syntax-reference-j.md#set), [`value`](halite_basic-syntax-reference-j.md#value), [`vector`](halite_basic-syntax-reference-j.md#vector)
 
-To avoid runtime errors, if the vector might be empty, use 'count' to check the length first.
+To avoid runtime errors, if the collection might be empty, use 'count' to check the length first.
 
 #### Examples:
 
@@ -2006,18 +2008,46 @@ To avoid runtime errors, if the vector might be empty, use 'count' to check the 
 h-err/argument-empty
 ```
 
+</td><td colspan="1">
+
+```java
+#{10}.first()
+
+//-- result --
+10
+```
+
+</td><td colspan="2">
+
+```java
+#{10, 20, 30}.first()
+
+//-- result --
+h-err/not-set-with-single-value
+```
+
+</td></tr><tr><td colspan="1">
+
+```java
+#{}.first()
+
+//-- result --
+h-err/argument-empty
+```
+
 </td></tr></table>
 
 #### Possible errors:
 
 * [`h-err/argument-empty`](halite_err-id-reference-j.md#h-err/argument-empty)
-* [`h-err/argument-not-vector`](halite_err-id-reference-j.md#h-err/argument-not-vector)
+* [`h-err/argument-not-collection`](halite_err-id-reference-j.md#h-err/argument-not-collection)
+* [`h-err/not-set-with-single-value`](halite_err-id-reference-j.md#h-err/not-set-with-single-value)
 
 See also: [`count`](#count) [`rest`](#rest)
 
 #### Tags:
 
- [Vector operations](halite_vector-op-reference-j.md)
+ [Set operations](halite_set-op-reference-j.md),  [Vector operations](halite_vector-op-reference-j.md)
 
 ---
 ### <a name="if"></a>if

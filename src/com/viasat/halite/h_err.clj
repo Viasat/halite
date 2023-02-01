@@ -155,6 +155,12 @@
 (deferr argument-not-vector [data]
         {:template "Argument to ':op' must be a vector"})
 
+(deferr argument-not-collection [data]
+        {:template "Argument to ':op' must be a collection"})
+
+(deferr not-set-with-single-value [data]
+        {:template "The first item cannot be obtained from a set that contains multiple values."})
+
 (deferr argument-empty [data]
         {:template "Argument to first is empty"})
 

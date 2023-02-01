@@ -414,9 +414,11 @@
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 1 expr)
   (let [arg-type (type-check* ctx (second expr))]
-    (when-not (types/subtype? arg-type (types/vector-type :Value))
-      (throw-err (h-err/argument-not-vector {:op 'first, :form expr})))
-    (when (types/empty-vectors arg-type)
+    (when-not (or (types/subtype? arg-type (types/vector-type :Value))
+                  (types/subtype? arg-type (types/set-type :Value)))
+      (throw-err (h-err/argument-not-collection {:op 'first, :form expr})))
+    (when (or (types/empty-vectors arg-type)
+              (= types/empty-set arg-type))
       (throw-err (h-err/argument-empty {:form expr})))
     (second arg-type)))
 
