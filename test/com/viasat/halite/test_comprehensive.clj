@@ -8815,6 +8815,7 @@
    [2 3]
    "(map(x in [#{1, 2}, #{3, 4, 5}])x.count())"
    "[2, 3]")
+  (h (map [x #{1 4 3 2}] (div x 2)) [:Set :Integer] #{0 1 2} "(map(x in #{1, 2, 3, 4})(x / 2))" "#{0, 1, 2}")
   (h
    (map [x [1]] (when false 2))
    [:throws
