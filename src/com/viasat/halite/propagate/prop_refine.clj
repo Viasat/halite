@@ -93,9 +93,13 @@
                                     (map #(ssa/form-from-ssa spec (-> % val :expr)) intrinsics))]
       (when (and (seq refinement-fields)
                  (not (contains? form (first (keys refinement-fields)))))
-        (let [field-kws (keys (dissoc form :$type))
+        (let [field-kws (-> #{}
+                            (into (keys (dissoc form :$type))) ;; required fields
+                            (into (keys (filter (fn [[_ t]] ;; optional fields
+                                                  (types/maybe-type? t))
+                                                (:fields spec)))))
               original-as-bindings (vec (mapcat (fn [kw]
-                                                  [(symbol kw) (form kw)])
+                                                  [(symbol kw) (form kw '$no-value)])
                                                 field-kws))
               original-fields (zipmap field-kws (map symbol field-kws))
 

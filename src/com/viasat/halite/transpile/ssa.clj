@@ -459,6 +459,14 @@
                                     (form-to-ssa (if (= else unguarded-id) no-value-id else)))]
         (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (list 'if guard-id then-id else-id))))))
 
+(s/defn ^:private if-to-ssa :- NodeInGraph
+  [{:keys [ssa-graph] :as ctx} :- SSACtx, [_ pred then else :as form]]
+  (if (and (seq? pred) (= '$value? (first pred)))
+    (let [[ssa-graph unguarded-id] (form-to-ssa ctx (second pred))]
+      (if-value-to-ssa (assoc ctx :ssa-graph ssa-graph)
+                       (list 'if-value unguarded-id then else)))
+    (app-to-ssa ctx form)))
+
 (s/defn ^:private get-to-ssa :- NodeInGraph
   [{:keys [ssa-graph senv] :as ctx} :- SSACtx, [_ subexpr var-kw-or-idx :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)
@@ -530,6 +538,8 @@
   (let [[ssa-graph arg-id] (form-to-ssa ctx (second form))
         [subform htype] (deref-id ssa-graph arg-id)]
     (when (= :Unset htype)
+      ;; ($value! $no-value) may appear as an s-expr when guareded with
+      ;; (if-value $no-value ...), which is handled in if-value-to-ssa and if-to-ssa
       (throw (ex-info "Invalid $value! form: type of inner expression is :Unset"
                       {:ssa-graph ssa-graph :form form :subform subform})))
     (ensure-node ssa-graph (list '$value! arg-id) (types/no-maybe htype))))
@@ -652,6 +662,7 @@
                                    (app-to-ssa ctx (list* 'or (map #(list '= % expr) coll)))
                                    (throw (ex-info (format "TBD: `contains?` only currently supported on literal sets")))))
                     'valid (form-to-ssa ctx (list 'when (list 'valid? (first args)) (first args)))
+                    'if (if-to-ssa ctx form)
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)
@@ -1099,5 +1110,8 @@
   [sctx :- SpecCtx]
   (-> sctx (update-vals spec-from-ssa) (envs/spec-env)))
 
+(defn sort-ssa-graph [ssa-graph]
+  (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph)))
+
 (defn pprint-ssa-graph [ssa-graph]
-  (pp/pprint (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph))))
+  (pp/pprint (sort-ssa-graph ssa-graph)))

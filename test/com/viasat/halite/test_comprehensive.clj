@@ -861,6 +861,9 @@
    [:throws
     "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'if-value' must be a bare symbol"])
   (h
+   (if-value $no-value 1 2)
+   [:throws "l-err/first-argument-not-optional 0-0 : First argument to 'if-value' must have an optional type"])
+  (h
    (when-value 3 1)
    [:throws
     "h-err/if-value-must-be-bare-symbol 0-0 : First argument to 'when-value' must be a bare symbol"])

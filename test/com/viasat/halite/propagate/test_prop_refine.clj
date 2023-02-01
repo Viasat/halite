@@ -308,19 +308,27 @@
 (deftest test-refine-optional
   ;; The 'features' that interact here: valid? and instance literals w/ unassigned variables.
   (let [sctx (ssa/spec-map-to-ssa
-              '{:my/A {:abstract? true
-                       :fields {:a1 [:Maybe :Integer]
+              '{:my/A {:fields {:a1 [:Maybe :Integer]
                                 :a2 [:Maybe :Integer]}
                        :constraints [["a1_pos" (if-value a1 (> a1 0) true)]
                                      ["a2_pos" (if-value a2 (> a2 0) true)]]}
-                :my/B {:abstract? false
-                       :fields {:b :Integer}
-                       :refines-to {:my/A {:expr {:$type :my/A, :a1 b}}}}})]
+                :my/B {:fields {:b :Integer
+                                :ob [:Maybe :Integer]}
+                       :refines-to {:my/A {:expr {:$type :my/A,
+                                                  :a1 (if-value ob
+                                                                (+ b ob)
+                                                                b)}}}}
+                :my/C {:constraints [["touch B"
+                                      (< 3 (get {:$type :my/B, :b 5} :b))]]}})]
 
     (is (= {:$type :my/B
             :b {:$in [1 100]}
+            :ob 0
             :$refines-to {:my/A {:a1 {:$in [1 100]}, :a2 :Unset}}}
-           (prop-twice sctx {:$type :my/B :b {:$in [-100 100]}})))))
+           (prop-twice sctx {:$type :my/B :b {:$in [-100 100]} :ob 0})))
+
+    (is (= {:$type :my/C}
+           (prop-twice sctx {:$type :my/C})))))
 
 (deftest test-basic-refines-to-bounds
   (let [specs (ssa/spec-map-to-ssa
@@ -711,16 +719,18 @@
                              :c1 :Integer}
                     :constraints
                     [["$all" (= a
-                                (get (let [v1 (get {:$type :my/C,
-                                                    :c1 c1
-                                                    :>my$B (if (< c1 5)
-                                                             (let [v1 (+ 5 c1)]
-                                                               {:$type :my/B
-                                                                :b1 v1
-                                                                :>my$A {:$type :my/A,
-                                                                        :a1 (+ 10 v1)}})
-                                                             $no-value)}
-                                                   :>my$B)]
+                                (get (let [v1 (get
+                                               (let [v1 $no-value]
+                                                 {:$type :my/C,
+                                                  :c1 c1
+                                                  :>my$B (if (< c1 5)
+                                                           (let [v2 (+ 5 c1)]
+                                                             {:$type :my/B
+                                                              :b1 v2
+                                                              :>my$A {:$type :my/A,
+                                                                      :a1 (+ 10 v2)}})
+                                                           v1)})
+                                               :>my$B)]
                                        (if-value v1
                                                  v1
                                                  (error "No active refinement path")))

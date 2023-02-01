@@ -471,7 +471,9 @@
   [t :- HaliteType]
   (if (strict-maybe-type? t)
     (second t)
-    t))
+    (if (= :Unset t)
+      :Nothing
+      t)))
 
 (s/defn maybe-type :- HaliteType
   "Construct a type representing values that are 'maybe' of the given type."

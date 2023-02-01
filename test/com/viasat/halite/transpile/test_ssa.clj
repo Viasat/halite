@@ -338,12 +338,13 @@
       ;; may be produced by rewrite rules.
       '[(if ($value? w) ($value! w) 1)]
       '{$1 [w [:Maybe :Integer]]
-        $2 [($value? $1) :Boolean $3]
-        $3 [(not $2) :Boolean $2]
-        $4 [($value! $1) :Integer]
-        $5 [1 :Integer]
-        $6 [(if $2 $4 $5) :Integer]}
-      '[$6]
+        $2 [:Unset :Unset]
+        $3 [($value? $1) :Boolean $4]
+        $4 [(not $3) :Boolean $3]
+        $5 [($value! $1) :Integer]
+        $6 [1 :Integer]
+        $7 [(if $3 $5 $6) :Integer]}
+      '[$7]
 
       '[(= v w)]
       '{$1 [v [:Maybe :Integer]]
