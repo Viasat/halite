@@ -4,7 +4,7 @@
 
 ## Model a notebook mechanism
 
-
+Model a notebook mechanism
 
 The following is an extended example of implementing a non-trivial amount of logic in a set of specs. It is a bit "meta", but in this case the model will include specs that exist in workspaces where each spec has a version separate from its name. 
 
@@ -979,7 +979,7 @@ false
                                (map [i (range 0 (dec (count ephemeral-values)))]
                                  [(get ephemeral-values i)
                                   (get ephemeral-values (inc i))])]
-                              (or (get pair 1) (and (not (get pair 0))))))))}}}}
+                              (or (get pair 1) (not (get pair 0)))))))}}}}
 ```
 
 ```clojure

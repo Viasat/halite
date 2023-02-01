@@ -11,7 +11,7 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 ### tutorials.notebook
 
 * Model a notebook mechanism [(Halite)](halite/tutorial/halite_notebook.md) [(Jadeite)](jadeite/tutorial/halite_notebook-j.md)
-  * 
+  * Model a notebook mechanism
 
 ### tutorials.vending
 
