@@ -1311,6 +1311,28 @@
                            :tests #{{:$type :tutorials.notebook/RegressionTest$v1 :notebookName "notebook1" :notebookVersion 1}}}
                :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1 :notebookName "notebook1" :notebookVersion 2}]}}
 
+     "Once a notebook is deleted, then when it written again the version numbering starts over. This happens even if it was used as a regression test."
+     {:code
+      '(refine-to {:$type :tutorials.notebook/WriteNotebook$v1
+                   :workspace {:$type :tutorials.notebook/Workspace$v1
+                               :workspaceName "my"
+                               :registrySpecIds #{}
+                               :specIds #{}
+                               :notebooks #{}
+                               :tests #{{:$type :tutorials.notebook/RegressionTest$v1 :notebookName "notebook1" :notebookVersion 2}}}
+                   :notebookName "notebook1"
+                   :notebookVersion 1
+                   :notebookItems []}
+                  :tutorials.notebook/WorkspaceAndEffects$v1)
+      :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
+               :workspace {:$type :tutorials.notebook/Workspace$v1
+                           :workspaceName "my"
+                           :registrySpecIds #{}
+                           :specIds #{}
+                           :notebooks #{{:$type :tutorials.notebook/Notebook$v1, :name "notebook1", :version 1, :items []}}
+                           :tests #{{:$type :tutorials.notebook/RegressionTest$v1 :notebookName "notebook1" :notebookVersion 2}}}
+               :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1 :notebookName "notebook1" :notebookVersion 1}]}}
+
      "Only one version at a time of a given notebook name can be used as a regression test."
      {:code
       '(refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1

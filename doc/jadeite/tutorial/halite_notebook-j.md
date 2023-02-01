@@ -832,6 +832,16 @@ The notebook when it is deleted may be a different version than that used to cre
 {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}
 ```
 
+Once a notebook is deleted, then when it written again the version numbering starts over. This happens even if it was used as a regression test.
+
+```java
+{$type: tutorials.notebook/WriteNotebook$v1, notebookItems: [], notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 2}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+
+
+//-- result --
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 2}}, workspaceName: "my"}}
+```
+
 Only one version at a time of a given notebook name can be used as a regression test.
 
 ```java

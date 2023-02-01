@@ -2037,6 +2037,42 @@ The notebook when it is deleted may be a different version than that used to cre
              :workspaceName "my"}}
 ```
 
+Once a notebook is deleted, then when it written again the version numbering starts over. This happens even if it was used as a regression test.
+
+```clojure
+(refine-to {:$type :tutorials.notebook/WriteNotebook$v1,
+            :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
+                        :registrySpecIds #{},
+                        :specIds #{},
+                        :notebooks #{},
+                        :tests #{{:$type :tutorials.notebook/RegressionTest$v1,
+                                  :notebookName "notebook1",
+                                  :notebookVersion 2}}},
+            :notebookName "notebook1",
+            :notebookVersion 1,
+            :notebookItems []}
+           :tutorials.notebook/WorkspaceAndEffects$v1)
+
+
+;-- result --
+{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+ :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 1}],
+ :workspace {:$type :tutorials.notebook/Workspace$v1,
+             :notebooks #{{:name "notebook1",
+                           :$type :tutorials.notebook/Notebook$v1,
+                           :items [],
+                           :version 1}},
+             :registrySpecIds #{},
+             :specIds #{},
+             :tests #{{:$type :tutorials.notebook/RegressionTest$v1,
+                       :notebookName "notebook1",
+                       :notebookVersion 2}},
+             :workspaceName "my"}}
+```
+
 Only one version at a time of a given notebook name can be used as a regression test.
 
 ```clojure
