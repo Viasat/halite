@@ -374,6 +374,8 @@ Example of a workspace that violates a notebook name constraint.
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/Workspace$v1', violates constraints \"tutorials.notebook/Workspace$v1/uniqueNotebookNames\""]
 ```
 
+Previously we created a spec to resolve a spec reference. Now we build on that by creating specs which can walk through a sequence of items in a notebook and resolve refs, in context, as they are encountered.
+
 ```java
 {
   "tutorials.notebook/ResolveRefsState$v1" : {
@@ -415,6 +417,8 @@ Example of a workspace that violates a notebook name constraint.
 }
 ```
 
+If the instance can be created, then the references are valid. A degenerate case of no items is valid.
+
 ```java
 (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: [], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}})
 
@@ -422,6 +426,8 @@ Example of a workspace that violates a notebook name constraint.
 //-- result --
 true
 ```
+
+A fixed reference in a list of items is valid.
 
 ```java
 (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}})
@@ -431,6 +437,8 @@ true
 true
 ```
 
+Creating a spec and then referencing it in a later item is valid.
+
 ```java
 (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}})
 
@@ -438,6 +446,8 @@ true
 //-- result --
 true
 ```
+
+Referencing a new spec before it is created is not valid.
 
 ```java
 (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}})
@@ -447,6 +457,8 @@ true
 false
 ```
 
+If the instance is valid, then the refinement can be invoked to produce the sequence of resolved references from the items.
+
 ```java
 {$type: tutorials.notebook/ResolveRefs$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}}.refineTo( tutorials.notebook/RSpecIds$v1 ).result
 
@@ -454,6 +466,8 @@ false
 //-- result --
 [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}]
 ```
+
+When new specs are created in items, they must be numbered in a way that corresponds to their context. This allows a CAS check to be performed to ensure the specs have not been modified under the notebook. The following spec is for assessing whether a sequence of new specs are properly numbered in context both of each other and the existing specs.
 
 ```java
 {
@@ -468,6 +482,8 @@ false
 }
 ```
 
+The new spec in this instance is not numbered to be the next sequential version of the existing spec.
+
 ```java
 (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 4, workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, workspaceName: "my"})
 
@@ -475,6 +491,8 @@ false
 //-- result --
 false
 ```
+
+An initial version for a spec whose name does not yet exist, needs to be '1'.
 
 ```java
 (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "C", specVersion: 4, workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, workspaceName: "my"})
@@ -484,6 +502,8 @@ false
 false
 ```
 
+This new spec would clobber an existing spec version.
+
 ```java
 (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 2, workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, workspaceName: "my"})
 
@@ -491,6 +511,8 @@ false
 //-- result --
 false
 ```
+
+This example has all valid new specs.
 
 ```java
 (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "B", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 4, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "C", specVersion: 1, workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, workspaceName: "my"})
@@ -500,6 +522,18 @@ false
 true
 ```
 
+An ephemeral spec can be created on top of an existing spec.
+
+```java
+(valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "A", specVersion: 2, workspaceName: "my"}], specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}}, workspaceName: "my"})
+
+
+//-- result --
+true
+```
+
+An ephemeral new spec can be created on top of a non-ephemeral new spec.
+
 ```java
 (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 2, workspaceName: "my"}], specIds: #{}, workspaceName: "my"})
 
@@ -508,7 +542,7 @@ true
 true
 ```
 
-Cannot create an non-ephemeral spec "on top" of an ephemeral spec.
+Cannot create an non-ephemeral spec on top of an ephemeral spec.
 
 ```java
 (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "C", specVersion: 2, workspaceName: "my"}], specIds: #{}, workspaceName: "my"})
@@ -517,6 +551,8 @@ Cannot create an non-ephemeral spec "on top" of an ephemeral spec.
 //-- result --
 false
 ```
+
+Now start to model operations on workspaces. As a result of these operations, the model will indicate some external side effects that are to be applied. The following specs model the side effects.
 
 ```java
 {
@@ -596,13 +632,27 @@ false
         "expr" : "{$type: tutorials.notebook/Effect$v1}"
       }
     }
-  },
+  }
+}
+```
+
+The result of applying an operation to a workspace is a new workspace and any effects to be applied.
+
+```java
+{
   "tutorials.notebook/WorkspaceAndEffects$v1" : {
     "fields" : {
       "workspace" : "tutorials.notebook/Workspace$v1",
       "effects" : [ "Vec", "tutorials.notebook/Effect$v1" ]
     }
-  },
+  }
+}
+```
+
+The following specs define the operations involving notebooks in workspaces.
+
+```java
+{
   "tutorials.notebook/WriteNotebook$v1" : {
     "fields" : {
       "workspace" : "tutorials.notebook/Workspace$v1",
@@ -692,6 +742,28 @@ false
 }
 ```
 
+Exercise the operation of writing a notebook to a workspace.
+
+```java
+{$type: tutorials.notebook/WriteNotebook$v1, notebookItems: [], notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+
+
+//-- result --
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}
+```
+
+Exercise the operation to delete a notebook.
+
+```java
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+
+
+//-- result --
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}
+```
+
+Exercise the constraints on the operation to apply a notebook. If an operation instance is valid, then the pre-conditions for the operation have been met.
+
 ```java
 ({ ws = {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}; [(valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: ws}), (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 2, workspace: ws}), (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook2", notebookVersion: 1, workspace: ws})] })
 
@@ -710,6 +782,8 @@ If all of the new specs in the notebooks are ephemeral, then it cannot be applie
 false
 ```
 
+If a notebook contains no new specs then it cannot be applied.
+
 ```java
 ({ ws = {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}; (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: ws}) })
 
@@ -718,21 +792,7 @@ false
 false
 ```
 
-```java
-{$type: tutorials.notebook/WriteNotebook$v1, notebookItems: [], notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
-
-
-//-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}
-```
-
-```java
-{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
-
-
-//-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}
-```
+A more complicated example of applying a notebook. This one includes an ephemeral new spec as well as a references to a new spec.
 
 ```java
 {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "B", specVersion: 1, workspaceName: "my"}], name: "notebook2", version: 3}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
@@ -742,6 +802,8 @@ false
 {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteSpecEffect$v1, specId: {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}}, {$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 1, workspaceSpecs: true}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 2}, {$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "B", specVersion: 1, workspaceName: "my"}], name: "notebook2", version: 3}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}}
 ```
 
+A notebook can be used as the basis for a regression test suite.
+
 ```java
 {$type: tutorials.notebook/CreateRegressionTest$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
@@ -749,6 +811,28 @@ false
 //-- result --
 {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 1}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 1, registrySpecs: true}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}
 ```
+
+A notebook can be deleted even if it was used to create a regression test.
+
+```java
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+
+
+//-- result --
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}
+```
+
+The notebook when it is deleted may be a different version than that used to create the regression test.
+
+```java
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 2, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 2}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+
+
+//-- result --
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}
+```
+
+Only one version at a time of a given notebook name can be used as a regression test.
 
 ```java
 {$type: tutorials.notebook/CreateRegressionTest$v1, notebookName: "notebook1", notebookVersion: 2, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 2}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
@@ -758,6 +842,8 @@ false
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/CreateRegressionTest$v1', violates constraints \"tutorials.notebook/Workspace$v1/uniqueTestNames\""]
 ```
 
+A regression test can be updated to reflect a later version of a notebook.
+
 ```java
 {$type: tutorials.notebook/UpdateRegressionTest$v1, lastNotebookVersion: 1, notebookName: "notebook1", notebookVersion: 9, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
@@ -765,6 +851,8 @@ false
 //-- result --
 {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 9}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 9, registrySpecs: true}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 9}}, workspaceName: "my"}}
 ```
+
+A regression test can be removed from a workspace.
 
 ```java
 {$type: tutorials.notebook/DeleteRegressionTest$v1, notebookName: "notebook1", notebookVersion: 9, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 9}, {$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook2", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )

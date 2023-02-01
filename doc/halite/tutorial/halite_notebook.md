@@ -693,6 +693,8 @@ Example of a workspace that violates a notebook name constraint.
  :h-err/invalid-instance]
 ```
 
+Previously we created a spec to resolve a spec reference. Now we build on that by creating specs which can walk through a sequence of items in a notebook and resolve refs, in context, as they are encountered.
+
 ```clojure
 {:tutorials.notebook/RSpecIds$v1
    {:fields {:result [:Vec :tutorials.notebook/SpecId$v1]}},
@@ -765,6 +767,8 @@ Example of a workspace that violates a notebook name constraint.
              :resolved [:Vec :tutorials.notebook/SpecId$v1]}}}
 ```
 
+If the instance can be created, then the references are valid. A degenerate case of no items is valid.
+
 ```clojure
 (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
          :specIds #{{:$type :tutorials.notebook/SpecId$v1,
@@ -785,6 +789,8 @@ Example of a workspace that violates a notebook name constraint.
 ;-- result --
 true
 ```
+
+A fixed reference in a list of items is valid.
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
@@ -809,6 +815,8 @@ true
 ;-- result --
 true
 ```
+
+Creating a spec and then referencing it in a later item is valid.
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
@@ -838,6 +846,8 @@ true
 true
 ```
 
+Referencing a new spec before it is created is not valid.
+
 ```clojure
 (valid? {:$type :tutorials.notebook/ResolveRefs$v1,
          :specIds #{{:$type :tutorials.notebook/SpecId$v1,
@@ -865,6 +875,8 @@ true
 ;-- result --
 false
 ```
+
+If the instance is valid, then the refinement can be invoked to produce the sequence of resolved references from the items.
 
 ```clojure
 (get (refine-to {:$type :tutorials.notebook/ResolveRefs$v1,
@@ -904,6 +916,8 @@ false
   :specVersion 3,
   :workspaceName "my"}]
 ```
+
+When new specs are created in items, they must be numbered in a way that corresponds to their context. This allows a CAS check to be performed to ensure the specs have not been modified under the notebook. The following spec is for assessing whether a sequence of new specs are properly numbered in context both of each other and the existing specs.
 
 ```clojure
 {:tutorials.notebook/ApplicableNewSpecs$v1
@@ -975,6 +989,8 @@ false
                               (or (get pair 1) (not (get pair 0)))))))}}}}
 ```
 
+The new spec in this instance is not numbered to be the next sequential version of the existing spec.
+
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
          :workspaceName "my",
@@ -999,6 +1015,8 @@ false
 ;-- result --
 false
 ```
+
+An initial version for a spec whose name does not yet exist, needs to be '1'.
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
@@ -1025,6 +1043,8 @@ false
 false
 ```
 
+This new spec would clobber an existing spec version.
+
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
          :workspaceName "my",
@@ -1049,6 +1069,8 @@ false
 ;-- result --
 false
 ```
+
+This example has all valid new specs.
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
@@ -1087,6 +1109,28 @@ false
 true
 ```
 
+An ephemeral spec can be created on top of an existing spec.
+
+```clojure
+(valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
+         :workspaceName "my",
+         :specIds #{{:$type :tutorials.notebook/SpecId$v1,
+                     :workspaceName "my",
+                     :specName "A",
+                     :specVersion 1}},
+         :newSpecs [{:$type :tutorials.notebook/NewSpec$v1,
+                     :workspaceName "my",
+                     :specName "A",
+                     :specVersion 2,
+                     :isEphemeral true}]})
+
+
+;-- result --
+true
+```
+
+An ephemeral new spec can be created on top of a non-ephemeral new spec.
+
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
          :workspaceName "my",
@@ -1106,7 +1150,7 @@ true
 true
 ```
 
-Cannot create an non-ephemeral spec "on top" of an ephemeral spec.
+Cannot create an non-ephemeral spec on top of an ephemeral spec.
 
 ```clojure
 (valid? {:$type :tutorials.notebook/ApplicableNewSpecs$v1,
@@ -1126,6 +1170,70 @@ Cannot create an non-ephemeral spec "on top" of an ephemeral spec.
 ;-- result --
 false
 ```
+
+Now start to model operations on workspaces. As a result of these operations, the model will indicate some external side effects that are to be applied. The following specs model the side effects.
+
+```clojure
+{:tutorials.notebook/DeleteNotebookEffect$v1
+   {:fields {:notebookName :String,
+             :notebookVersion :Integer},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
+ :tutorials.notebook/DeleteRegressionTestEffect$v1
+   {:fields {:notebookName :String,
+             :notebookVersion :Integer},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
+ :tutorials.notebook/Effect$v1 {:abstract? true},
+ :tutorials.notebook/RunTestsEffect$v1
+   {:fields {:notebookName :String,
+             :notebookVersion :Integer,
+             :registrySpecs [:Maybe :Boolean],
+             :workspaceSpecs [:Maybe :Boolean]},
+    :constraints
+      #{'{:name "exclusiveFlags",
+          :expr (and (or (if-value registrySpecs registrySpecs false)
+                         (if-value workspaceSpecs workspaceSpecs false))
+                     (not (and
+                            (if-value registrySpecs registrySpecs false)
+                            (if-value workspaceSpecs workspaceSpecs false))))}
+        '{:name "registrySpecsFlag",
+          :expr (if-value registrySpecs registrySpecs true)}
+        '{:name "workspaceSpecsFlag",
+          :expr (if-value workspaceSpecs workspaceSpecs true)}},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
+ :tutorials.notebook/WriteNotebookEffect$v1
+   {:fields {:notebookName :String,
+             :notebookVersion :Integer},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
+ :tutorials.notebook/WriteRegressionTestEffect$v1
+   {:fields {:notebookName :String,
+             :notebookVersion :Integer},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
+ :tutorials.notebook/WriteSpecEffect$v1
+   {:fields {:specId :tutorials.notebook/SpecId$v1},
+    :refines-to {:tutorials.notebook/Effect$v1
+                   {:name "effect",
+                    :expr '{:$type :tutorials.notebook/Effect$v1}}}}}
+```
+
+The result of applying an operation to a workspace is a new workspace and any effects to be applied.
+
+```clojure
+{:tutorials.notebook/WorkspaceAndEffects$v1
+   {:fields {:effects [:Vec :tutorials.notebook/Effect$v1],
+             :workspace :tutorials.notebook/Workspace$v1}}}
+```
+
+The following specs define the operations involving notebooks in workspaces.
 
 ```clojure
 {:tutorials.notebook/ApplyNotebook$v1
@@ -1349,12 +1457,6 @@ false
                   :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1,
                              :notebookName notebookName,
                              :notebookVersion notebookVersion}]}}}},
- :tutorials.notebook/DeleteNotebookEffect$v1
-   {:fields {:notebookName :String,
-             :notebookVersion :Integer},
-    :refines-to {:tutorials.notebook/Effect$v1
-                   {:name "effect",
-                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
  :tutorials.notebook/DeleteRegressionTest$v1
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
@@ -1386,32 +1488,6 @@ false
                     [{:$type :tutorials.notebook/DeleteRegressionTestEffect$v1,
                       :notebookName (get to-remove :notebookName),
                       :notebookVersion (get to-remove :notebookVersion)}]}))}}},
- :tutorials.notebook/DeleteRegressionTestEffect$v1
-   {:fields {:notebookName :String,
-             :notebookVersion :Integer},
-    :refines-to {:tutorials.notebook/Effect$v1
-                   {:name "effect",
-                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
- :tutorials.notebook/Effect$v1 {:abstract? true},
- :tutorials.notebook/RunTestsEffect$v1
-   {:fields {:notebookName :String,
-             :notebookVersion :Integer,
-             :registrySpecs [:Maybe :Boolean],
-             :workspaceSpecs [:Maybe :Boolean]},
-    :constraints
-      #{'{:name "exclusiveFlags",
-          :expr (and (or (if-value registrySpecs registrySpecs false)
-                         (if-value workspaceSpecs workspaceSpecs false))
-                     (not (and
-                            (if-value registrySpecs registrySpecs false)
-                            (if-value workspaceSpecs workspaceSpecs false))))}
-        '{:name "registrySpecsFlag",
-          :expr (if-value registrySpecs registrySpecs true)}
-        '{:name "workspaceSpecsFlag",
-          :expr (if-value workspaceSpecs workspaceSpecs true)}},
-    :refines-to {:tutorials.notebook/Effect$v1
-                   {:name "effect",
-                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
  :tutorials.notebook/UpdateRegressionTest$v1
    {:fields {:lastNotebookVersion :Integer,
              :notebookName :String,
@@ -1490,9 +1566,6 @@ false
                         :notebookName notebookName,
                         :notebookVersion notebookVersion,
                         :registrySpecs true}]})))}}},
- :tutorials.notebook/WorkspaceAndEffects$v1
-   {:fields {:effects [:Vec :tutorials.notebook/Effect$v1],
-             :workspace :tutorials.notebook/Workspace$v1}},
  :tutorials.notebook/WriteNotebook$v1
    {:fields {:notebookItems [:Vec :tutorials.notebook/AbstractNotebookItem$v1],
              :notebookName :String,
@@ -1527,25 +1600,80 @@ false
                               :tests (get workspace :tests)},
                   :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1,
                              :notebookName notebookName,
-                             :notebookVersion notebookVersion}]}}}},
- :tutorials.notebook/WriteNotebookEffect$v1
-   {:fields {:notebookName :String,
-             :notebookVersion :Integer},
-    :refines-to {:tutorials.notebook/Effect$v1
-                   {:name "effect",
-                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
- :tutorials.notebook/WriteRegressionTestEffect$v1
-   {:fields {:notebookName :String,
-             :notebookVersion :Integer},
-    :refines-to {:tutorials.notebook/Effect$v1
-                   {:name "effect",
-                    :expr '{:$type :tutorials.notebook/Effect$v1}}}},
- :tutorials.notebook/WriteSpecEffect$v1
-   {:fields {:specId :tutorials.notebook/SpecId$v1},
-    :refines-to {:tutorials.notebook/Effect$v1
-                   {:name "effect",
-                    :expr '{:$type :tutorials.notebook/Effect$v1}}}}}
+                             :notebookVersion notebookVersion}]}}}}}
 ```
+
+Exercise the operation of writing a notebook to a workspace.
+
+```clojure
+(refine-to {:$type :tutorials.notebook/WriteNotebook$v1,
+            :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
+                        :registrySpecIds #{},
+                        :specIds #{},
+                        :notebooks #{},
+                        :tests #{}},
+            :notebookName "notebook1",
+            :notebookVersion 1,
+            :notebookItems []}
+           :tutorials.notebook/WorkspaceAndEffects$v1)
+
+
+;-- result --
+{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+ :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 1}],
+ :workspace {:$type :tutorials.notebook/Workspace$v1,
+             :notebooks #{{:name "notebook1",
+                           :$type :tutorials.notebook/Notebook$v1,
+                           :items [],
+                           :version 1}},
+             :registrySpecIds #{},
+             :specIds #{},
+             :tests #{},
+             :workspaceName "my"}}
+```
+
+Exercise the operation to delete a notebook.
+
+```clojure
+(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1,
+            :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
+                        :registrySpecIds #{},
+                        :specIds #{},
+                        :notebooks #{{:$type :tutorials.notebook/Notebook$v1,
+                                      :name "notebook1",
+                                      :version 1,
+                                      :items []}
+                                     {:$type :tutorials.notebook/Notebook$v1,
+                                      :name "notebook2",
+                                      :version 1,
+                                      :items []}},
+                        :tests #{}},
+            :notebookName "notebook1",
+            :notebookVersion 1}
+           :tutorials.notebook/WorkspaceAndEffects$v1)
+
+
+;-- result --
+{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+ :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 1}],
+ :workspace {:$type :tutorials.notebook/Workspace$v1,
+             :notebooks #{{:name "notebook2",
+                           :$type :tutorials.notebook/Notebook$v1,
+                           :items [],
+                           :version 1}},
+             :registrySpecIds #{},
+             :specIds #{},
+             :tests #{},
+             :workspaceName "my"}}
+```
+
+Exercise the constraints on the operation to apply a notebook. If an operation instance is valid, then the pre-conditions for the operation have been met.
 
 ```clojure
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
@@ -1634,6 +1762,8 @@ If all of the new specs in the notebooks are ephemeral, then it cannot be applie
 false
 ```
 
+If a notebook contains no new specs then it cannot be applied.
+
 ```clojure
 (let [ws {:$type :tutorials.notebook/Workspace$v1,
           :workspaceName "my",
@@ -1668,71 +1798,7 @@ false
 false
 ```
 
-```clojure
-(refine-to {:$type :tutorials.notebook/WriteNotebook$v1,
-            :workspace {:$type :tutorials.notebook/Workspace$v1,
-                        :workspaceName "my",
-                        :registrySpecIds #{},
-                        :specIds #{},
-                        :notebooks #{},
-                        :tests #{}},
-            :notebookName "notebook1",
-            :notebookVersion 1,
-            :notebookItems []}
-           :tutorials.notebook/WorkspaceAndEffects$v1)
-
-
-;-- result --
-{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
- :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1,
-            :notebookName "notebook1",
-            :notebookVersion 1}],
- :workspace {:$type :tutorials.notebook/Workspace$v1,
-             :notebooks #{{:name "notebook1",
-                           :$type :tutorials.notebook/Notebook$v1,
-                           :items [],
-                           :version 1}},
-             :registrySpecIds #{},
-             :specIds #{},
-             :tests #{},
-             :workspaceName "my"}}
-```
-
-```clojure
-(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1,
-            :workspace {:$type :tutorials.notebook/Workspace$v1,
-                        :workspaceName "my",
-                        :registrySpecIds #{},
-                        :specIds #{},
-                        :notebooks #{{:$type :tutorials.notebook/Notebook$v1,
-                                      :name "notebook1",
-                                      :version 1,
-                                      :items []}
-                                     {:$type :tutorials.notebook/Notebook$v1,
-                                      :name "notebook2",
-                                      :version 1,
-                                      :items []}},
-                        :tests #{}},
-            :notebookName "notebook1",
-            :notebookVersion 1}
-           :tutorials.notebook/WorkspaceAndEffects$v1)
-
-
-;-- result --
-{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
- :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1,
-            :notebookName "notebook1",
-            :notebookVersion 1}],
- :workspace {:$type :tutorials.notebook/Workspace$v1,
-             :notebooks #{{:name "notebook2",
-                           :$type :tutorials.notebook/Notebook$v1,
-                           :items [],
-                           :version 1}},
-             :registrySpecIds #{},
-             :specIds #{},
-             :tests #{},
-             :workspaceName "my"}}
-```
+A more complicated example of applying a notebook. This one includes an ephemeral new spec as well as a references to a new spec.
 
 ```clojure
 (refine-to
@@ -1861,6 +1927,8 @@ false
     :workspaceName "my"}}
 ```
 
+A notebook can be used as the basis for a regression test suite.
+
 ```clojure
 (refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1,
             :workspace {:$type :tutorials.notebook/Workspace$v1,
@@ -1899,6 +1967,78 @@ false
              :workspaceName "my"}}
 ```
 
+A notebook can be deleted even if it was used to create a regression test.
+
+```clojure
+(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1,
+            :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
+                        :registrySpecIds #{},
+                        :specIds #{},
+                        :notebooks #{{:$type :tutorials.notebook/Notebook$v1,
+                                      :name "notebook1",
+                                      :version 1,
+                                      :items []}},
+                        :tests #{{:$type :tutorials.notebook/RegressionTest$v1,
+                                  :notebookName "notebook1",
+                                  :notebookVersion 1}}},
+            :notebookName "notebook1",
+            :notebookVersion 1}
+           :tutorials.notebook/WorkspaceAndEffects$v1)
+
+
+;-- result --
+{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+ :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 1}],
+ :workspace {:$type :tutorials.notebook/Workspace$v1,
+             :notebooks #{},
+             :registrySpecIds #{},
+             :specIds #{},
+             :tests #{{:$type :tutorials.notebook/RegressionTest$v1,
+                       :notebookName "notebook1",
+                       :notebookVersion 1}},
+             :workspaceName "my"}}
+```
+
+The notebook when it is deleted may be a different version than that used to create the regression test.
+
+```clojure
+(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1,
+            :workspace {:$type :tutorials.notebook/Workspace$v1,
+                        :workspaceName "my",
+                        :registrySpecIds #{},
+                        :specIds #{},
+                        :notebooks #{{:$type :tutorials.notebook/Notebook$v1,
+                                      :name "notebook1",
+                                      :version 2,
+                                      :items []}},
+                        :tests #{{:$type :tutorials.notebook/RegressionTest$v1,
+                                  :notebookName "notebook1",
+                                  :notebookVersion 1}}},
+            :notebookName "notebook1",
+            :notebookVersion 2}
+           :tutorials.notebook/WorkspaceAndEffects$v1)
+
+
+;-- result --
+{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+ :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 2}],
+ :workspace {:$type :tutorials.notebook/Workspace$v1,
+             :notebooks #{},
+             :registrySpecIds #{},
+             :specIds #{},
+             :tests #{{:$type :tutorials.notebook/RegressionTest$v1,
+                       :notebookName "notebook1",
+                       :notebookVersion 1}},
+             :workspaceName "my"}}
+```
+
+Only one version at a time of a given notebook name can be used as a regression test.
+
 ```clojure
 (refine-to {:$type :tutorials.notebook/CreateRegressionTest$v1,
             :workspace {:$type :tutorials.notebook/Workspace$v1,
@@ -1922,6 +2062,8 @@ false
  "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/CreateRegressionTest$v1', violates constraints \"tutorials.notebook/Workspace$v1/uniqueTestNames\""
  :h-err/invalid-instance]
 ```
+
+A regression test can be updated to reflect a later version of a notebook.
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/UpdateRegressionTest$v1,
@@ -1963,6 +2105,8 @@ false
                        :notebookVersion 9}},
              :workspaceName "my"}}
 ```
+
+A regression test can be removed from a workspace.
 
 ```clojure
 (refine-to {:$type :tutorials.notebook/DeleteRegressionTest$v1,
