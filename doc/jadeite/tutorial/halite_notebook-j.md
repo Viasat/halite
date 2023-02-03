@@ -325,13 +325,13 @@ Finally, we can create a top-level spec that represents a workspace and the item
 {
   "tutorials.notebook/Workspace$v1" : {
     "fields" : {
-      "workspaceName" : "String",
-      "registrySpecIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
-      "specIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
-      "notebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
-      "tests" : [ "Set", "tutorials.notebook/RegressionTest$v1" ]
+      "workspaceName" : [ "Maybe", "String" ],
+      "registrySpecIds" : [ "Maybe", [ "Set", "tutorials.notebook/SpecId$v1" ] ],
+      "specIds" : [ "Maybe", [ "Set", "tutorials.notebook/SpecId$v1" ] ],
+      "notebooks" : [ "Maybe", [ "Set", "tutorials.notebook/Notebook$v1" ] ],
+      "tests" : [ "Maybe", [ "Set", "tutorials.notebook/RegressionTest$v1" ] ]
     },
-    "constraints" : [ "{expr: ((map(n in notebooks)n.name).count() == notebooks.count()), name: \"uniqueNotebookNames\"}", "{expr: ((map(t in tests)t.notebookName).count() == tests.count()), name: \"uniqueTestNames\"}", "{expr: (0 == registrySpecIds.intersection(specIds).count()), name: \"specIdsDisjoint\"}", "{expr: (0 == (filter(si in specIds)(si.workspaceName != workspaceName)).count()), name: \"privateSpecIdsInThisWorkspace\"}" ]
+    "constraints" : [ "{expr: (ifValue(notebooks) {((map(n in notebooks)n.name).count() == notebooks.count())} else {true}), name: \"uniqueNotebookNames\"}", "{expr: (ifValue(registrySpecIds) {(ifValue(specIds) {(0 == registrySpecIds.intersection(specIds).count())} else {true})} else {true}), name: \"specIdsDisjoint\"}", "{expr: (ifValue(tests) {((map(t in tests)t.notebookName).count() == tests.count())} else {true}), name: \"uniqueTestNames\"}", "{expr: (ifValue(specIds) {(ifValue(workspaceName) {(0 == (filter(si in specIds)(si.workspaceName != workspaceName)).count())} else {true})} else {true}), name: \"privateSpecIdsInThisWorkspace\"}" ]
   }
 }
 ```
@@ -644,87 +644,95 @@ The following specs define the operations involving notebooks in workspaces.
 {
   "tutorials.notebook/WriteNotebook$v1" : {
     "fields" : {
-      "workspace" : "tutorials.notebook/Workspace$v1",
+      "workspaceNotebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer",
       "notebookItems" : [ "Vec", "tutorials.notebook/AbstractNotebookItem$v1" ]
     },
-    "constraints" : [ "{expr: (if((notebookVersion > 1)) {({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == (notebookVersion - 1)))); (filtered.count() == 1) })} else {true}), name: \"priorNotebookExists\"}", "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}" ],
+    "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (if((notebookVersion > 1)) {({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == (notebookVersion - 1)))); (filtered.count() == 1) })} else {true}), name: \"priorNotebookExists\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspace.notebooks.conj({$type: tutorials.notebook/Notebook$v1, items: notebookItems, name: notebookName, version: notebookVersion}), registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: workspace.tests, workspaceName: workspace.workspaceName}}"
+        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspaceNotebooks.conj({$type: tutorials.notebook/Notebook$v1, items: notebookItems, name: notebookName, version: notebookVersion})}}"
       }
     }
   },
   "tutorials.notebook/DeleteNotebook$v1" : {
     "fields" : {
-      "workspace" : "tutorials.notebook/Workspace$v1",
+      "workspaceNotebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: (if((notebookVersion > 1)) {({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (filtered.count() == 1) })} else {true}), name: \"notebookExists\"}", "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}" ],
+    "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (if((notebookVersion > 1)) {({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (filtered.count() == 1) })} else {true}), name: \"notebookExists\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspace.notebooks)(!(nb.name == notebookName) || !(nb.version == notebookVersion))), registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: workspace.tests, workspaceName: workspace.workspaceName}}"
+        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspaceNotebooks)(!(nb.name == notebookName) || !(nb.version == notebookVersion)))}}"
       }
     }
   },
   "tutorials.notebook/ApplyNotebook$v1" : {
     "fields" : {
-      "workspace" : "tutorials.notebook/Workspace$v1",
+      "workspaceName" : "String",
+      "workspaceRegistrySpecIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
+      "workspaceSpecIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
+      "workspaceNotebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspace.specIds.concat(workspace.registrySpecIds)}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ((filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() > 0) })} else {true}) }), name: \"notebookContainsNonEphemeralNewSpecs\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )), specIds: workspace.specIds.concat(workspace.registrySpecIds), workspaceName: workspace.workspaceName}) })} else {true}) }), name: \"specsApplicable\"}" ],
+    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ApplicableNewSpecs$v1, newSpecs: (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )), specIds: workspaceSpecIds.concat(workspaceRegistrySpecIds), workspaceName: workspaceName}) })} else {true}) }), name: \"specsApplicable\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspaceSpecIds.concat(workspaceRegistrySpecIds)}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() > 0) })} else {true}) }), name: \"notebookContainsNonEphemeralNewSpecs\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (when((filtered.count() > 0)) {({ nb = filtered.first(); 'new-spec-ids' = (map(ns in (filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })))ns.refineTo( tutorials.notebook/SpecId$v1 )); 'new-notebook' = {$type: tutorials.notebook/Notebook$v1, items: (filter(item in nb.items)(if(item.refinesTo?( tutorials.notebook/NewSpec$v1 )) {({ ns = item.refineTo( tutorials.notebook/NewSpec$v1 ); 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {true} else {false}) })} else {true})), name: nb.name, version: (nb.version + 1)}; {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: (map(si in 'new-spec-ids'){$type: tutorials.notebook/WriteSpecEffect$v1, specId: si}).concat([{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: 'new-notebook'.name, notebookVersion: 'new-notebook'.version}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion, resolvedSpecIds: {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspace.registrySpecIds.concat(workspace.specIds)}.refineTo( tutorials.notebook/RSpecIds$v1 ).result, workspaceSpecs: true}]), workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspace.notebooks)((nb.name != notebookName) || (nb.version != notebookVersion))).conj('new-notebook'), registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds.concat('new-spec-ids'), tests: workspace.tests, workspaceName: workspace.workspaceName}} })}) })"
+        "expr" : "({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (when((filtered.count() > 0)) {({ nb = filtered.first(); 'new-spec-ids' = (map(ns in (filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })))ns.refineTo( tutorials.notebook/SpecId$v1 )); 'new-notebook' = {$type: tutorials.notebook/Notebook$v1, items: (filter(item in nb.items)(if(item.refinesTo?( tutorials.notebook/NewSpec$v1 )) {({ ns = item.refineTo( tutorials.notebook/NewSpec$v1 ); 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {true} else {false}) })} else {true})), name: nb.name, version: (nb.version + 1)}; {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: (map(si in 'new-spec-ids'){$type: tutorials.notebook/WriteSpecEffect$v1, specId: si}).concat([{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: 'new-notebook'.name, notebookVersion: 'new-notebook'.version}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion, resolvedSpecIds: {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspaceRegistrySpecIds.concat(workspaceSpecIds)}.refineTo( tutorials.notebook/RSpecIds$v1 ).result, workspaceSpecs: true}]), workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspaceNotebooks)((nb.name != notebookName) || (nb.version != notebookVersion))).conj('new-notebook'), specIds: workspaceSpecIds.concat('new-spec-ids')}} })}) })"
       }
     }
   },
   "tutorials.notebook/CreateRegressionTest$v1" : {
     "fields" : {
-      "workspace" : "tutorials.notebook/Workspace$v1",
+      "workspaceRegistrySpecIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
+      "workspaceNotebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
+      "workspaceTests" : [ "Set", "tutorials.notebook/RegressionTest$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspace.registrySpecIds}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ((filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() == 0) })} else {true}) }), name: \"notebookCannotContainNewNonEphemeralSpecs\"}" ],
+    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() == 0) })} else {true}) }), name: \"notebookCannotContainNewNonEphemeralSpecs\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspaceRegistrySpecIds}) })} else {true}) }), name: \"specsValidRefs\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (when((filtered.count() > 0)) {({ nb = filtered.first(); 'new-test' = {$type: tutorials.notebook/RegressionTest$v1, notebookName: notebookName, notebookVersion: notebookVersion}; {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: 'new-test'.notebookName, notebookVersion: 'new-test'.notebookVersion}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion, registrySpecs: true, resolvedSpecIds: {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspace.registrySpecIds}.refineTo( tutorials.notebook/RSpecIds$v1 ).result}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspace.notebooks, registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: workspace.tests.conj('new-test'), workspaceName: workspace.workspaceName}} })}) })"
+        "expr" : "({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (when((filtered.count() > 0)) {({ nb = filtered.first(); 'new-test' = {$type: tutorials.notebook/RegressionTest$v1, notebookName: notebookName, notebookVersion: notebookVersion}; {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: 'new-test'.notebookName, notebookVersion: 'new-test'.notebookVersion}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion, registrySpecs: true, resolvedSpecIds: {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspaceRegistrySpecIds}.refineTo( tutorials.notebook/RSpecIds$v1 ).result}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: workspaceTests.conj('new-test')}} })}) })"
       }
     }
   },
   "tutorials.notebook/DeleteRegressionTest$v1" : {
     "fields" : {
-      "workspace" : "tutorials.notebook/Workspace$v1",
+      "workspaceTests" : [ "Set", "tutorials.notebook/RegressionTest$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: ((filter(t in workspace.tests)((t.notebookName == notebookName) && (t.notebookVersion == notebookVersion))).count() > 0), name: \"testExists\"}" ],
+    "constraints" : [ "{expr: ((filter(t in workspaceTests)((t.notebookName == notebookName) && (t.notebookVersion == notebookVersion))).count() > 0), name: \"testExists\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "({ filtered = (filter(t in workspace.tests)((t.notebookName == notebookName) && (t.notebookVersion == notebookVersion))); ({ 'to-remove' = filtered.first(); {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteRegressionTestEffect$v1, notebookName: 'to-remove'.notebookName, notebookVersion: 'to-remove'.notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspace.notebooks, registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: (filter(t in workspace.tests)(t != 'to-remove')), workspaceName: workspace.workspaceName}} }) })"
+        "expr" : "({ filtered = (filter(t in workspaceTests)((t.notebookName == notebookName) && (t.notebookVersion == notebookVersion))); ({ 'to-remove' = filtered.first(); {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteRegressionTestEffect$v1, notebookName: 'to-remove'.notebookName, notebookVersion: 'to-remove'.notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: (filter(t in workspaceTests)(t != 'to-remove'))}} }) })"
       }
     }
   },
   "tutorials.notebook/UpdateRegressionTest$v1" : {
     "fields" : {
-      "workspace" : "tutorials.notebook/Workspace$v1",
+      "workspaceRegistrySpecIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
+      "workspaceSpecIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
+      "workspaceNotebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
+      "workspaceTests" : [ "Set", "tutorials.notebook/RegressionTest$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer",
       "lastNotebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspace.specIds.concat(workspace.registrySpecIds)}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ((filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}", "{expr: ({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() == 0) })} else {true}) }), name: \"notebookCannotContainNewNonEphemeralSpecs\"}", "{expr: ((filter(t in workspace.tests)((t.notebookName == notebookName) && (t.notebookVersion == lastNotebookVersion))).count() > 0), name: \"testExists\"}" ],
+    "constraints" : [ "{expr: ((filter(t in workspaceTests)((t.notebookName == notebookName) && (t.notebookVersion == lastNotebookVersion))).count() > 0), name: \"testExists\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); (valid? {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspaceSpecIds.concat(workspaceRegistrySpecIds)}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); ((filter(ns in (map(item in (filter(item in nb.items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() == 0) })} else {true}) }), name: \"notebookCannotContainNewNonEphemeralSpecs\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "({ filtered = (filter(nb in workspace.notebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (when((filtered.count() > 0)) {({ nb = filtered.first(); 'new-test' = {$type: tutorials.notebook/RegressionTest$v1, notebookName: notebookName, notebookVersion: notebookVersion}; {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: 'new-test'.notebookName, notebookVersion: 'new-test'.notebookVersion}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion, registrySpecs: true, resolvedSpecIds: {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspace.registrySpecIds}.refineTo( tutorials.notebook/RSpecIds$v1 ).result}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspace.notebooks, registrySpecIds: workspace.registrySpecIds, specIds: workspace.specIds, tests: (filter(t in workspace.tests)(t.notebookName != notebookName)).conj('new-test'), workspaceName: workspace.workspaceName}} })}) })"
+        "expr" : "({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (when((filtered.count() > 0)) {({ nb = filtered.first(); 'new-test' = {$type: tutorials.notebook/RegressionTest$v1, notebookName: notebookName, notebookVersion: notebookVersion}; {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: 'new-test'.notebookName, notebookVersion: 'new-test'.notebookVersion}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion, registrySpecs: true, resolvedSpecIds: {$type: tutorials.notebook/ResolveRefs$v1, items: nb.items, specIds: workspaceRegistrySpecIds}.refineTo( tutorials.notebook/RSpecIds$v1 ).result}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: (filter(t in workspaceTests)(t.notebookName != notebookName)).conj('new-test')}} })}) })"
       }
     }
   }
@@ -734,27 +742,27 @@ The following specs define the operations involving notebooks in workspaces.
 Exercise the operation of writing a notebook to a workspace.
 
 ```java
-{$type: tutorials.notebook/WriteNotebook$v1, notebookItems: [], notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/WriteNotebook$v1, notebookItems: [], notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}}}
 ```
 
 Exercise the operation to delete a notebook.
 
 ```java
-{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}}}
 ```
 
 Exercise the constraints on the operation to apply a notebook. If an operation instance is valid, then the pre-conditions for the operation have been met.
 
 ```java
-({ ws = {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}; [(valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: ws}), (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 2, workspace: ws}), (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook2", notebookVersion: 1, workspace: ws})] })
+({ sis = #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}; nbs = #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}; [(valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceName: "my", workspaceNotebooks: nbs, workspaceRegistrySpecIds: #{}, workspaceSpecIds: sis}), (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 2, workspaceName: "my", workspaceNotebooks: nbs, workspaceRegistrySpecIds: #{}, workspaceSpecIds: sis}), (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook2", notebookVersion: 1, workspaceName: "my", workspaceNotebooks: nbs, workspaceRegistrySpecIds: #{}, workspaceSpecIds: sis})] })
 
 
 //-- result --
@@ -764,7 +772,7 @@ Exercise the constraints on the operation to apply a notebook. If an operation i
 If all of the new specs in the notebooks are ephemeral, then it cannot be applied.
 
 ```java
-({ ws = {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}; (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: ws}) })
+({ sis = #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}; nbs = #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}; (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceName: "my", workspaceNotebooks: nbs, workspaceRegistrySpecIds: #{}, workspaceSpecIds: sis}) })
 
 
 //-- result --
@@ -774,7 +782,7 @@ false
 If a notebook contains no new specs then it cannot be applied.
 
 ```java
-({ ws = {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}; (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: ws}) })
+({ sis = #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}; nbs = #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}], name: "notebook1", version: 1}}; (valid? {$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceName: "my", workspaceNotebooks: nbs, workspaceRegistrySpecIds: #{}, workspaceSpecIds: sis}) })
 
 
 //-- result --
@@ -784,57 +792,57 @@ false
 A more complicated example of applying a notebook. This one includes an ephemeral new spec as well as a references to a new spec. Note that the effect to run the tests includes the results of resolving all of the floating references in the notebook.
 
 ```java
-{$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "B", specVersion: 1, workspaceName: "my"}], name: "notebook2", version: 3}, {$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "C", workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/ApplyNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceName: "my", workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "B", specVersion: 1, workspaceName: "my"}], name: "notebook2", version: 3}, {$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "C", workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}, workspaceRegistrySpecIds: #{}, workspaceSpecIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteSpecEffect$v1, specId: {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}}, {$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 1, resolvedSpecIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}], workspaceSpecs: true}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "B", specVersion: 1, workspaceName: "my"}], name: "notebook2", version: 3}, {$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "C", workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 2}}, registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteSpecEffect$v1, specId: {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}}, {$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 1, resolvedSpecIds: [{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}], workspaceSpecs: true}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "B", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "B", specVersion: 1, workspaceName: "my"}], name: "notebook2", version: 3}, {$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "C", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "C", workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", workspaceName: "my"}, {$type: tutorials.notebook/SpecRef$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 2}}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 3, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}}}
 ```
 
 A notebook can be used as the basis for a regression test suite.
 
 ```java
-{$type: tutorials.notebook/CreateRegressionTest$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/CreateRegressionTest$v1, notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, workspaceRegistrySpecIds: #{}, workspaceTests: #{}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 1}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 1, registrySpecs: true, resolvedSpecIds: []}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 1}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 1, registrySpecs: true, resolvedSpecIds: []}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}}}
 ```
 
 A notebook can be deleted even if it was used to create a regression test.
 
 ```java
-{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}}}
 ```
 
 The notebook when it is deleted may be a different version than that used to create the regression test.
 
 ```java
-{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 2, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 2}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 2, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 2}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}}}
 ```
 
 Once a notebook is deleted, then when it written again the version numbering starts over. This happens even if it was used as a regression test.
 
 ```java
-{$type: tutorials.notebook/WriteNotebook$v1, notebookItems: [], notebookName: "notebook1", notebookVersion: 1, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 2}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/WriteNotebook$v1, notebookItems: [], notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 2}}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}}}
 ```
 
 Only one version at a time of a given notebook name can be used as a regression test.
 
 ```java
-{$type: tutorials.notebook/CreateRegressionTest$v1, notebookName: "notebook1", notebookVersion: 2, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 2}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/CreateRegressionTest$v1, notebookName: "notebook1", notebookVersion: 2, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 2}}, workspaceRegistrySpecIds: #{}, workspaceTests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
@@ -844,20 +852,20 @@ Only one version at a time of a given notebook name can be used as a regression 
 A regression test can be updated to reflect a later version of a notebook.
 
 ```java
-{$type: tutorials.notebook/UpdateRegressionTest$v1, lastNotebookVersion: 1, notebookName: "notebook1", notebookVersion: 9, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/UpdateRegressionTest$v1, lastNotebookVersion: 1, notebookName: "notebook1", notebookVersion: 9, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, workspaceRegistrySpecIds: #{}, workspaceSpecIds: #{}, workspaceTests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 9}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 9, registrySpecs: true, resolvedSpecIds: []}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 9}}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 9}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 9, registrySpecs: true, resolvedSpecIds: []}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 9}}}}
 ```
 
 A regression test can be removed from a workspace.
 
 ```java
-{$type: tutorials.notebook/DeleteRegressionTest$v1, notebookName: "notebook1", notebookVersion: 9, workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 9}, {$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook2", notebookVersion: 1}}, workspaceName: "my"}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/DeleteRegressionTest$v1, notebookName: "notebook1", notebookVersion: 9, workspaceTests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 9}, {$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook2", notebookVersion: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 9}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, registrySpecIds: #{}, specIds: #{}, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook2", notebookVersion: 1}}, workspaceName: "my"}}
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 9}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook2", notebookVersion: 1}}}}
 ```
 
