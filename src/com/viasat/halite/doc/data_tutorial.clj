@@ -743,6 +743,14 @@
                         #{{:name "positiveVersion"
                            :expr '(valid? {:$type :tutorials.notebook/Version$v1
                                            :version notebookVersion})}
+                          {:name "priorNotebookDoesNotExist"
+                           :expr
+                           '(if (= notebookVersion 1)
+                              (let [filtered (filter [nb workspaceNotebooks]
+                                                     (= (get nb :name)
+                                                        notebookName))]
+                                (= (count filtered) 0))
+                              true)}
                           {:name "priorNotebookExists"
                            :expr
                            '(if (> notebookVersion 1)
@@ -758,7 +766,8 @@
                                       :expr
                                       '{:$type :tutorials.notebook/WorkspaceAndEffects$v1
                                         :workspace {:$type :tutorials.notebook/Workspace$v1
-                                                    :notebooks (conj workspaceNotebooks
+                                                    :notebooks (conj (filter [nb workspaceNotebooks]
+                                                                             (not= (get nb :name) notebookName))
                                                                      {:$type :tutorials.notebook/Notebook$v1
                                                                       :name notebookName
                                                                       :version notebookVersion})}

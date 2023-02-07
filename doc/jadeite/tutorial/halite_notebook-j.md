@@ -648,11 +648,11 @@ The following specs define the operations involving notebooks in workspaces.
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (if((notebookVersion > 1)) {({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == (notebookVersion - 1)))); (filtered.count() == 1) })} else {true}), name: \"priorNotebookExists\"}" ],
+    "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (if((notebookVersion > 1)) {({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == (notebookVersion - 1)))); (filtered.count() == 1) })} else {true}), name: \"priorNotebookExists\"}", "{expr: (if((notebookVersion == 1)) {({ filtered = (filter(nb in workspaceNotebooks)(nb.name == notebookName)); (filtered.count() == 0) })} else {true}), name: \"priorNotebookDoesNotExist\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: workspaceNotebooks.conj({$type: tutorials.notebook/Notebook$v1, name: notebookName, version: notebookVersion})}}"
+        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspaceNotebooks)(nb.name != notebookName)).conj({$type: tutorials.notebook/Notebook$v1, name: notebookName, version: notebookVersion})}}"
       }
     }
   },
