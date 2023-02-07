@@ -113,11 +113,11 @@
     false))
 
 (s/defn ^:private replace-all
-  [{:keys [constraints refines-to ssa-graph] :as spec} replacements]
+  [{:keys [constraints refines-to ssa-graph] :as spec} senv replacements]
   (as-> spec spec
     (reduce
      (fn [{:keys [ssa-graph] :as spec} [cname cid]]
-       (let [[ssa-graph cid'] (ssa/replace-in-expr ssa-graph cid replacements)]
+       (let [[ssa-graph cid'] (ssa/replace-in-expr senv ssa-graph cid replacements)]
          (-> spec
              (update :constraints conj [cname cid'])
              (assoc :ssa-graph ssa-graph))))
@@ -125,7 +125,7 @@
      constraints)
     (reduce-kv
      (fn [{:keys [ssa-graph] :as spec} spec-id {:keys [expr]}]
-       (let [[ssa-graph id'] (ssa/replace-in-expr ssa-graph expr replacements)]
+       (let [[ssa-graph id'] (ssa/replace-in-expr senv ssa-graph expr replacements)]
          (-> spec
              (assoc :ssa-graph ssa-graph)
              (assoc-in [:refines-to spec-id :expr] id'))))
@@ -176,7 +176,7 @@
               ;; replace all abstract variable occurrences
               var-node-id (ssa/find-form (:ssa-graph ctx) (symbol var-kw))
               spec (cond-> spec
-                     (some? var-node-id) (replace-all {var-node-id lowered-expr-id}))
+                     (some? var-node-id) (replace-all senv {var-node-id lowered-expr-id}))
 
               ;; add constraints tying discriminator to alt vars
               spec (reduce

@@ -544,6 +544,13 @@
                              'valid? (type-check-valid? ctx expr)
                              'sort-by (type-check-sort-by ctx expr)
                              'reduce (type-check-reduce ctx expr)
+
+                             ;; halite transpile internal forms; disallowed by lint
+                             '$value? :Boolean
+                             '$value! (types/no-maybe (type-check* ctx (second expr)))
+                             '$do! (last (map (partial type-check* ctx) (rest expr)))
+
+                             ;; else:
                              (type-check-fn-application ctx expr))
                (coll? expr) (type-check-coll type-check* :form ctx expr)
                :else (throw-err (h-err/syntax-error {:form expr, :form-class (class expr)})))]

@@ -575,8 +575,14 @@
                                         elems)]
     (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (apply list 'conj coll-id elem-ids))))
 
+(defn type-check-form-in-graph [senv ssa-graph new-form]
+  (let [tenv (reify envs/TypeEnv
+               (lookup-type* [self sym]
+                 (node-type (deref-id ssa-graph sym))))]
+    (type-check/type-check senv tenv new-form)))
+
 (s/defn replace-in-expr :- NodeInGraph
-  [ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
+  [senv, ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
   (let [node (deref-id ssa-graph id), form (node-form node), htype (node-type node)]
     (if-let [new-id (replacements id)]
       [ssa-graph new-id]
@@ -590,16 +596,18 @@
                           [ssa-graph new-args] (reduce
                                                 (fn [[ssa-graph args] term]
                                                   (if (symbol? term)
-                                                    (let [[ssa-graph id] (replace-in-expr ssa-graph term replacements)]
+                                                    (let [[ssa-graph id] (replace-in-expr senv ssa-graph term replacements)]
                                                       [ssa-graph (conj args id)])
                                                     [ssa-graph (conj args term)]))
                                                 [ssa-graph []]
-                                                args)]
-                      (ensure-node ssa-graph (apply list op new-args) htype))
+                                                args)
+                          new-form (cons op new-args)
+                          new-type (type-check-form-in-graph senv ssa-graph new-form)]
+                      (ensure-node ssa-graph new-form new-type))
         (map? form) (let [spec-id (:$type form)
                           [ssa-graph inst] (reduce
                                             (fn [[ssa-graph inst] [var-kw var-id]]
-                                              (let [[ssa-graph id] (replace-in-expr ssa-graph var-id replacements)]
+                                              (let [[ssa-graph id] (replace-in-expr senv ssa-graph var-id replacements)]
                                                 [ssa-graph (assoc inst var-kw id)]))
                                             [ssa-graph {:$type (:$type form)}]
                                             (dissoc form :$type))]

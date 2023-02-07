@@ -45,7 +45,7 @@
        first))
 
 (s/defn bubble-up-do-expr
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [senv ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (cond
     (map? form)
     (let [[match? done-ids inst]
@@ -76,7 +76,7 @@
               ;; Yikes... we need to rewrite the then branch such that ($value! ($do! ... v)) becomes ($value! v).
               ;; We don't need to rewrite the else branch, because in SSA form all the references to the tested
               ;; value are replaced with $no-value in the else branch.
-              (let [[ssa-graph' new-then-id] (ssa/replace-in-expr ssa-graph then-id {inner-id (last inner-form)})]
+              (let [[ssa-graph' new-then-id] (ssa/replace-in-expr senv ssa-graph then-id {inner-id (last inner-form)})]
                 (vary-meta
                  (make-do
                   (butlast (rest inner-form))
@@ -455,7 +455,7 @@
                     (apply list op (assoc (vec arg-ids) i else-id))))))))))
 
 (s/defn push-if-value-into-if-in-expr
-  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
+  [{{:keys [senv ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when (and (seq? form) (= 'if (first form)))
     (let [[_if val?-id then-id else-id] form
           [val?-form] (ssa/deref-id ssa-graph val?-id)]
@@ -470,11 +470,18 @@
                                    <nested-else-id>) :- <nested-if-id>) :- <val?-id>
                         <then-id>
                         <else-id>)
+                  #_#_=> (if <nested-pred-id>
+                           (if ($value? <nested-then-id>)
+                             rewritten-<then-id>, replacing <nested-if-id> with <nested-then-id>
+                             <else-id>)
+                           (if ($value? <nested-else-id>)
+                             rewritten-<then-id>, replacing <nested-if-id> with <nested-else-id>
+                             <else-id>))
                   rewrite-branch (fn [ssa-graph branch-id]
                                    (let [[_ branch-htype] (ssa/deref-id ssa-graph branch-id)]
                                      (cond
                                        (types/strict-maybe-type? branch-htype)
-                                       (let [[ssa-graph rewritten-then-id] (ssa/replace-in-expr ssa-graph then-id {nested-if-id branch-id})]
+                                       (let [[ssa-graph rewritten-then-id] (ssa/replace-in-expr senv ssa-graph then-id {nested-if-id branch-id})]
                                          (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph)
                                                           (list 'if (list '$value? branch-id)
                                                                 rewritten-then-id
@@ -485,7 +492,7 @@
 
                                        :else
                                        (if value!-nested-if-id
-                                         (ssa/replace-in-expr ssa-graph then-id {value!-nested-if-id branch-id})
+                                         (ssa/replace-in-expr senv ssa-graph then-id {value!-nested-if-id branch-id})
                                          [ssa-graph then-id]))))
                   [ssa-graph new-then-id] (rewrite-branch ssa-graph nested-then-id)
                   [ssa-graph new-else-id] (rewrite-branch ssa-graph nested-else-id)]

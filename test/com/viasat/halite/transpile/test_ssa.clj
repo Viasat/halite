@@ -1048,7 +1048,7 @@
                              (assoc ctx :ssa-graph ssa-graph1)
                              '(+ x y))
         ;;_ (clojure.pprint/pprint (sort-by #(Integer/parseInt (subs (name (first %)) 1)) dgraph2))
-        [ssa-graph3 new-id] (ssa/replace-in-expr ssa-graph2 orig-id {old-add-id add-id})]
+        [ssa-graph3 new-id] (ssa/replace-in-expr senv ssa-graph2 orig-id {old-add-id add-id})]
     (is (= '(let [v1 (+ x y)]
               (or p
                   (< v1 24)
