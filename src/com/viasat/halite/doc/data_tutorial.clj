@@ -771,9 +771,14 @@
                                                                      {:$type :tutorials.notebook/Notebook$v1
                                                                       :name notebookName
                                                                       :version notebookVersion})}
-                                        :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1
-                                                   :notebookName notebookName
-                                                   :notebookVersion notebookVersion}]}}}}
+                                        :effects (conj (if (> notebookVersion 1)
+                                                         [{:$type :tutorials.notebook/DeleteNotebookEffect$v1
+                                                           :notebookName notebookName
+                                                           :notebookVersion (dec notebookVersion)}]
+                                                         [])
+                                                       {:$type :tutorials.notebook/WriteNotebookEffect$v1
+                                                        :notebookName notebookName
+                                                        :notebookVersion notebookVersion})}}}}
 
                        :tutorials.notebook/DeleteNotebook$v1
                        {:fields {:workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1]
@@ -1181,6 +1186,25 @@
                :workspace {:$type :tutorials.notebook/Workspace$v1
                            :notebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 1}}}
                :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1 :notebookName "notebook1" :notebookVersion 1}]}}
+     "Trying to write the first version of a notebook when it already exists fails."
+     {:code
+      '{:$type :tutorials.notebook/WriteNotebook$v1
+        :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 1}}
+        :notebookName "notebook1"
+        :notebookVersion 1}
+      :throws :auto}
+     "Writing a new version of a notebook succeeds"
+     {:code
+      '(refine-to {:$type :tutorials.notebook/WriteNotebook$v1
+                   :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 1}}
+                   :notebookName "notebook1"
+                   :notebookVersion 2}
+                  :tutorials.notebook/WorkspaceAndEffects$v1)
+      :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
+               :workspace {:$type :tutorials.notebook/Workspace$v1
+                           :notebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 2}}}
+               :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1 :notebookName "notebook1" :notebookVersion 1}
+                         {:$type :tutorials.notebook/WriteNotebookEffect$v1 :notebookName "notebook1" :notebookVersion 2}]}}
 
      "Exercise the operation to delete a notebook."
      {:code

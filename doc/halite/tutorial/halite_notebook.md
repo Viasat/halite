@@ -1700,9 +1700,16 @@ The following specs define the operations involving notebooks in workspaces.
                                       {:$type :tutorials.notebook/Notebook$v1,
                                        :name notebookName,
                                        :version notebookVersion})},
-                  :effects [{:$type :tutorials.notebook/WriteNotebookEffect$v1,
-                             :notebookName notebookName,
-                             :notebookVersion notebookVersion}]}}}}}
+                  :effects (conj
+                             (if (> notebookVersion 1)
+                               [{:$type
+                                   :tutorials.notebook/DeleteNotebookEffect$v1,
+                                 :notebookName notebookName,
+                                 :notebookVersion (dec notebookVersion)}]
+                               [])
+                             {:$type :tutorials.notebook/WriteNotebookEffect$v1,
+                              :notebookName notebookName,
+                              :notebookVersion notebookVersion})}}}}}
 ```
 
 Exercise the operation of writing a notebook to a workspace.
@@ -1724,6 +1731,49 @@ Exercise the operation of writing a notebook to a workspace.
              :notebooks #{{:name "notebook1",
                            :$type :tutorials.notebook/Notebook$v1,
                            :version 1}}}}
+```
+
+Trying to write the first version of a notebook when it already exists fails.
+
+```clojure
+{:$type :tutorials.notebook/WriteNotebook$v1,
+ :notebookName "notebook1",
+ :notebookVersion 1,
+ :workspaceNotebooks #{{:name "notebook1",
+                        :$type :tutorials.notebook/Notebook$v1,
+                        :version 1}}}
+
+
+;-- result --
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/WriteNotebook$v1', violates constraints \"tutorials.notebook/WriteNotebook$v1/priorNotebookDoesNotExist\""
+ :h-err/invalid-instance]
+```
+
+Writing a new version of a notebook succeeds
+
+```clojure
+(refine-to {:$type :tutorials.notebook/WriteNotebook$v1,
+            :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1,
+                                   :name "notebook1",
+                                   :version 1}},
+            :notebookName "notebook1",
+            :notebookVersion 2}
+           :tutorials.notebook/WorkspaceAndEffects$v1)
+
+
+;-- result --
+{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+ :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 1}
+           {:$type :tutorials.notebook/WriteNotebookEffect$v1,
+            :notebookName "notebook1",
+            :notebookVersion 2}],
+ :workspace {:$type :tutorials.notebook/Workspace$v1,
+             :notebooks #{{:name "notebook1",
+                           :$type :tutorials.notebook/Notebook$v1,
+                           :version 2}}}}
 ```
 
 Exercise the operation to delete a notebook.

@@ -652,7 +652,7 @@ The following specs define the operations involving notebooks in workspaces.
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspaceNotebooks)(nb.name != notebookName)).conj({$type: tutorials.notebook/Notebook$v1, name: notebookName, version: notebookVersion})}}"
+        "expr" : "{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: (if((notebookVersion > 1)) {[{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: notebookName, notebookVersion: (notebookVersion - 1)}]} else {[]}).conj({$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: notebookName, notebookVersion: notebookVersion}), workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: (filter(nb in workspaceNotebooks)(nb.name != notebookName)).conj({$type: tutorials.notebook/Notebook$v1, name: notebookName, version: notebookVersion})}}"
       }
     }
   },
@@ -746,6 +746,26 @@ Exercise the operation of writing a notebook to a workspace.
 
 //-- result --
 {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, name: "notebook1", version: 1}}}}
+```
+
+Trying to write the first version of a notebook when it already exists fails.
+
+```java
+{$type: tutorials.notebook/WriteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, name: "notebook1", version: 1}}}
+
+
+//-- result --
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/WriteNotebook$v1', violates constraints \"tutorials.notebook/WriteNotebook$v1/priorNotebookDoesNotExist\""]
+```
+
+Writing a new version of a notebook succeeds
+
+```java
+{$type: tutorials.notebook/WriteNotebook$v1, notebookName: "notebook1", notebookVersion: 2, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, name: "notebook1", version: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+
+
+//-- result --
+{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}, {$type: tutorials.notebook/WriteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, name: "notebook1", version: 2}}}}
 ```
 
 Exercise the operation to delete a notebook.
