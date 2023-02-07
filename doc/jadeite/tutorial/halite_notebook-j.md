@@ -662,7 +662,7 @@ The following specs define the operations involving notebooks in workspaces.
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (if((notebookVersion > 1)) {({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (filtered.count() == 1) })} else {true}), name: \"notebookExists\"}" ],
+    "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() == 1), name: \"notebookExists\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
@@ -776,6 +776,16 @@ Exercise the operation to delete a notebook.
 
 //-- result --
 {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}}}
+```
+
+Cannot delete a notebook that does not exist.
+
+```java
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 12, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}}
+
+
+//-- result --
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/DeleteNotebook$v1', violates constraints \"tutorials.notebook/DeleteNotebook$v1/notebookExists\""]
 ```
 
 Exercise the constraints on the operation to apply a notebook. If an operation instance is valid, then the pre-conditions for the operation have been met.

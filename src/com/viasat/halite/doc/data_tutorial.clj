@@ -791,14 +791,11 @@
                                            :version notebookVersion})}
                           {:name "notebookExists"
                            :expr
-                           '(if (> notebookVersion 1)
-                              (let [filtered (filter [nb workspaceNotebooks]
-                                                     (and (= (get nb :name)
-                                                             notebookName)
-                                                          (= (get nb :version)
-                                                             notebookVersion)))]
-                                (= (count filtered) 1))
-                              true)}}
+                           '(= (count (filter [nb workspaceNotebooks]
+                                              (and (= (get nb :name)
+                                                      notebookName)
+                                                   (= (get nb :version)
+                                                      notebookVersion)))) 1)}}
                         :refines-to {:tutorials.notebook/WorkspaceAndEffects$v1
                                      {:name "newWorkspaceAndEffects"
                                       :expr
@@ -1218,6 +1215,15 @@
                :workspace {:$type :tutorials.notebook/Workspace$v1
                            :notebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook2" :version 1 :items []}}}
                :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1 :notebookName "notebook1" :notebookVersion 1}]}}
+
+     "Cannot delete a notebook that does not exist."
+     {:code
+      '{:$type :tutorials.notebook/DeleteNotebook$v1
+        :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 1 :items []}
+                              {:$type :tutorials.notebook/Notebook$v1 :name "notebook2" :version 1 :items []}}
+        :notebookName "notebook1"
+        :notebookVersion 12}
+      :throws :auto}
 
      "Exercise the constraints on the operation to apply a notebook. If an operation instance is valid, then the pre-conditions for the operation have been met."
      {:code '(let [sis #{{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}

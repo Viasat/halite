@@ -1510,17 +1510,15 @@ The following specs define the operations involving notebooks in workspaces.
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
              :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1]},
-    :constraints
-      #{'{:name "notebookExists",
-          :expr (if (> notebookVersion 1)
-                  (let [filtered (filter [nb workspaceNotebooks]
-                                   (and (= (get nb :name) notebookName)
-                                        (= (get nb :version) notebookVersion)))]
-                    (= (count filtered) 1))
-                  true)}
-        '{:name "positiveVersion",
-          :expr (valid? {:$type :tutorials.notebook/Version$v1,
-                         :version notebookVersion})}},
+    :constraints #{'{:name "notebookExists",
+                     :expr (= (count
+                                (filter [nb workspaceNotebooks]
+                                  (and (= (get nb :name) notebookName)
+                                       (= (get nb :version) notebookVersion))))
+                              1)}
+                   '{:name "positiveVersion",
+                     :expr (valid? {:$type :tutorials.notebook/Version$v1,
+                                    :version notebookVersion})}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
@@ -1803,6 +1801,28 @@ Exercise the operation to delete a notebook.
                            :$type :tutorials.notebook/Notebook$v1,
                            :items [],
                            :version 1}}}}
+```
+
+Cannot delete a notebook that does not exist.
+
+```clojure
+{:$type :tutorials.notebook/DeleteNotebook$v1,
+ :notebookName "notebook1",
+ :notebookVersion 12,
+ :workspaceNotebooks #{{:name "notebook1",
+                        :$type :tutorials.notebook/Notebook$v1,
+                        :items [],
+                        :version 1}
+                       {:name "notebook2",
+                        :$type :tutorials.notebook/Notebook$v1,
+                        :items [],
+                        :version 1}}}
+
+
+;-- result --
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/DeleteNotebook$v1', violates constraints \"tutorials.notebook/DeleteNotebook$v1/notebookExists\""
+ :h-err/invalid-instance]
 ```
 
 Exercise the constraints on the operation to apply a notebook. If an operation instance is valid, then the pre-conditions for the operation have been met.
