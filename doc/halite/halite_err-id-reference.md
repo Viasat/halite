@@ -625,6 +625,15 @@ There was no refinement path found to convert a specific instance to a target sp
 * [`refine-to`](halite_full-reference.md#refine-to)
 
 ---
+### <a name="h-err/no-valid-instance-in-bound"></a>h-err/no-valid-instance-in-bound
+
+
+
+#### Error message template:
+
+> No valid instance exists within the given initial-bound: ':initial-bound'
+
+---
 ### <a name="h-err/not-boolean-body"></a>h-err/not-boolean-body
 
 Either an 'any?', 'every?', or 'filter' call was attempted but the expression to evaluate for each element in the collection did not produce a boolean value.

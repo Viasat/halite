@@ -7,6 +7,8 @@
   and no refinements."
   (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.h-err :as h-err]
+            [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
@@ -78,9 +80,12 @@
   ([spec :- ssa/SpecInfo, initial-bound :- SpecBound]
    (propagate spec default-options initial-bound))
   ([spec :- ssa/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
-   (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
-     (-> spec
-         (ssa/spec-from-ssa)
-         (lower-spec)
-         (choco-clj/propagate (lower-spec-bound initial-bound))
-         (raise-spec-bound)))))
+   (try
+     (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
+       (-> spec
+           (ssa/spec-from-ssa)
+           (lower-spec)
+           (choco-clj/propagate (lower-spec-bound initial-bound))
+           (raise-spec-bound)))
+     (catch org.chocosolver.solver.exception.ContradictionException ex
+       (throw-err (h-err/no-valid-instance-in-bound {:initial-bound initial-bound}))))))

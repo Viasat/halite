@@ -230,6 +230,9 @@
 (deferr invalid-refines-to-bound-conflict [data]
         {:template "Cannot provide $refines-to bounds for ':spec-id' that is both required and unset"})
 
+(deferr no-valid-instance-in-bound [data]
+        {:template "No valid instance exists within the given initial-bound: ':initial-bound'"})
+
 (merge-field-map {:actual-arg-count s/Int
                   :actual-count s/Int
                   :coll-type-string s/Symbol

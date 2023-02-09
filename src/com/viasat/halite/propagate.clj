@@ -6,7 +6,9 @@
   (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-fixed-decimal :as prop-fixed-decimal]
-            [schema.core :as s]))
+            [com.viasat.halite.lib.format-errors :refer [throw-err]]
+            [schema.core :as s]
+            [com.viasat.halite.h-err :as h-err]))
 
 (set! *warn-on-reflection* true)
 
@@ -25,5 +27,11 @@
    (let [spec-map (if (map? senv)
                     senv
                     (envs/build-spec-map senv (:$type initial-bound)))]
-     (prop-fixed-decimal/propagate spec-map opts initial-bound))))
-
+     (try
+       (prop-fixed-decimal/propagate spec-map opts initial-bound)
+       (catch Exception ex
+         (if (not= :h-err/no-valid-instance-in-bound (:err-id (ex-data ex)))
+           (throw ex)
+           (throw-err (h-err/no-valid-instance-in-bound
+                       (assoc (ex-data ex) :initial-bound initial-bound))
+                      ex)))))))

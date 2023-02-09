@@ -9,6 +9,8 @@
   variables that represent the results of comparisons."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.h-err :as h-err]
+            [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [com.viasat.halite.propagate.prop-choco :as prop-choco]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
@@ -20,8 +22,7 @@
             [loom.derived :as loom-derived]
             [loom.graph :as loom-graph]
             [loom.label :as loom-label]
-            [schema.core :as s])
-  (:import [org.chocosolver.solver.exception ContradictionException]))
+            [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
@@ -393,11 +394,8 @@
     (apply dissoc bound str-var-kws)))
 
 (defn throw-contradiction
-  "For now, we're throwing a choco ContradictionException so that at least there's a consistent
-  way to catch these exceptions. Really though, we need a way to signal contradiction in general that is
-  decoupled from Choco."
-  []
-  (throw (ContradictionException.)))
+  [initial-bound]
+  (throw-err (h-err/no-valid-instance-in-bound {:initial-bound initial-bound})))
 
 (s/defn ^:private raise-spec-bound :- SpecBound
   [bound :- prop-choco/SpecBound scg initial-bound :- SpecBound]
@@ -440,7 +438,7 @@
                        (cond
                          ;; if a and b must be equal, but must also be different
                          (and (string? a-bound) (string? b-bound) (not= a-bound b-bound))
-                         (throw-contradiction)
+                         (throw-contradiction initial-bound)
 
                          ;; otherwise, if b is a specific value, then so must be a
                          (string? b-bound)
@@ -449,7 +447,7 @@
                          ;; if a has been narrowed to a specific value, and b cannot be that value, contradiction
                          (string? a-bound)
                          (if (contains? disproved-vals a-bound)
-                           (throw-contradiction)
+                           (throw-contradiction initial-bound)
                            new-bound)
 
                          ;; if a has been narrowed to a specific set of values, we can remove
@@ -457,7 +455,7 @@
                          (and (map? a-bound) (every? string? (:$in a-bound)))
                          (let [remaining (set/difference (:$in a-bound) disproved-vals)]
                            (when (empty? remaining)
-                             (throw-contradiction))
+                             (throw-contradiction initial-bound))
                            (assoc new-bound a-kw (simplify-atom-bound {:$in remaining})))
 
                          :else new-bound)))

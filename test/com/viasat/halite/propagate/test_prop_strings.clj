@@ -8,7 +8,7 @@
             [loom.label :as loom-label]
             [schema.core :as s]
             [schema.test])
-  (:import [org.chocosolver.solver.exception ContradictionException])
+  (:import [clojure.lang ExceptionInfo])
   (:use clojure.test))
 
 (use-fixtures :once schema.test/validate-schemas)
@@ -146,8 +146,11 @@
         scg (compute-string-comparison-graph spec)]
     (are [in out]
          (= out (try (raise-spec-bound in scg {})
-                     (catch ContradictionException ex
-                       :contradiction)))
+                     (catch ExceptionInfo ex
+                       (if (= :h-err/no-valid-instance-in-bound
+                              (:err-id (ex-data ex)))
+                         :contradiction
+                         (throw ex)))))
 
       ;; bounds derived directly from alts
       {:$s1 {:$in #{0 :Unset}}, :$s1=s2 true, :$s1=s3 false, :$s2 {:$in #{0 1}}, :$s3 :Unset}
@@ -171,8 +174,11 @@
   (let [spec (ssa/spec-to-ssa {} simple-example)]
     (are [in out]
          (= out (try (prop-strings/propagate spec in)
-                     (catch ContradictionException ex
-                       :contradiction)))
+                     (catch ExceptionInfo ex
+                       (if (= :h-err/no-valid-instance-in-bound
+                              (:err-id (ex-data ex)))
+                         :contradiction
+                         (throw ex)))))
 
       {} {:s1 :String :s2 "bar" :s3 :String}
       {:s2 {:$in #{"bar" "baz"}}} {:s1 "bar" :s2 "bar" :s3 :String})))
@@ -193,8 +199,11 @@
     (schema.core/without-fn-validation
      (are [in out]
           (= out (try (prop-strings/propagate spec in)
-                      (catch ContradictionException ex
-                        :contradiction)))
+                      (catch ExceptionInfo ex
+                        (if (= :h-err/no-valid-instance-in-bound
+                               (:err-id (ex-data ex)))
+                          :contradiction
+                          (throw ex)))))
 
        {}
        {:n {:$in [0 10]}, :p {:$in #{false true}}, :s1 :String, :s2 {:$in #{"bar" "baz" "foo"}}}
@@ -333,8 +342,11 @@
         scg (compute-string-comparison-graph spec)]
     (are [in out]
          (= out (try (raise-spec-bound in scg {})
-                     (catch ContradictionException ex
-                       :contradiction)))
+                     (catch ExceptionInfo ex
+                       (if (= :h-err/no-valid-instance-in-bound
+                              (:err-id (ex-data ex)))
+                         :contradiction
+                         (throw ex)))))
 
       {:$s1 {:$in #{0 1}}, :$s2 {:$in #{0 :Unset}}, :$s1=s2 {:$in #{true false}}}
       {:s1 {:$in #{:Unset "foo"}} :s2 :String}))

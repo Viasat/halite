@@ -5,6 +5,7 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.test :as t :refer [deftest is are testing]]
             [com.viasat.halite.eval :as eval]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.propagate.prop-composition :as pc]
@@ -436,7 +437,7 @@
                             :a2 {:$in [8 14]}}}}
     #_;; check against eval:
       (prn :eval
-           (eval/eval-expr* {:senv specs :env (halite/env {})}
+           (eval/eval-expr* {:senv specs :env (envs/env {})}
                             '(let [d {:$type :my/D, :d1 3}]
                                [d (refine-to d :my/A) (refine-to d :my/B)])))))
 
@@ -522,7 +523,7 @@
               :$refines-to {:my/A {:a1 {:$in [1 1000]},
                                    :a2 {:$in [8 992 :Unset]}}}}}
       #_(prn :eval
-             (eval/eval-expr* {:senv specs :env (halite/env {})}
+             (eval/eval-expr* {:senv specs :env (envs/env {})}
                               '(refine-to {:$type :my/B :b1 991} :my/A))))))
 
 (deftest test-refines-to-bounds-errors
@@ -853,7 +854,7 @@
                                              :my/D {:$type :my/D}}})))
 
     #_(prn :eval
-           (eval/eval-expr* {:senv specs :env (com.viasat.halite/env {})}
+           (eval/eval-expr* {:senv specs :env (envs/env {})}
                             '(refine-to {:$type :my/A :x 13} :my/C)))))
 
 (deftest test-mix-guarded-chain
@@ -910,12 +911,12 @@
     (s/with-fn-validation
       ;; Spot-check the bounds above against eval; A.x = 7 cannot refine to D, but 24 can:
       (is (thrown-with-msg? Exception #"no-refinement-path"
-                            (eval/eval-expr* {:senv specs :env (com.viasat.halite/env {})}
+                            (eval/eval-expr* {:senv specs :env (envs/env {})}
                                              '(refine-to {:$type :my/A
                                                           :x 7} :my/D))))
 
       (is (= {:$type :my/D, :x 3}
-             (eval/eval-expr* {:senv specs :env (com.viasat.halite/env {})}
+             (eval/eval-expr* {:senv specs :env (envs/env {})}
                               '(refine-to {:$type :my/A
                                            :x 24} :my/D)))))
 
@@ -939,7 +940,7 @@
                  (let [spec (ssa/spec-from-ssa (:spec-info t))
                        specs (assoc specs spec-id spec)]
                    (prn :eval (eval/eval-expr* {:senv specs
-                                                :env (com.viasat.halite/env {})}
+                                                :env (envs/env {})}
                                                expr))
                    (prn)
                    (rewriting/print-trace-item t)))))))
