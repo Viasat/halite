@@ -146,19 +146,20 @@
    [form htype]]
   (when-let [[_ expr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
     (let [from-spec-id (->> expr-id (ssa/deref-id ssa-graph) ssa/node-type types/spec-id)]
-      (if (= from-spec-id to-spec-id)
-        expr-id
-        (let [path (rest (loom.alg/shortest-path rgraph from-spec-id to-spec-id))]
-          (when (empty? path)
-            (throw (ex-info "No static refinement path"
-                            {:from from-spec-id, :to to-spec-id, :form form})))
-          (reduce (fn [expr to-spec-id]
-                    (list 'let ['inst (list 'get expr (refinement-field to-spec-id))]
-                          (list 'if-value 'inst
-                                'inst
-                                (list 'error "No active refinement path"))))
-                  expr-id
-                  path))))))
+      (when from-spec-id ;; nil when the expr type is [:Instance :*]
+        (if (= from-spec-id to-spec-id)
+          expr-id
+          (let [path (rest (loom.alg/shortest-path rgraph from-spec-id to-spec-id))]
+            (when (empty? path)
+              (throw (ex-info "No static refinement path"
+                              {:from from-spec-id, :to to-spec-id, :form form})))
+            (reduce (fn [expr to-spec-id]
+                      (list 'let ['inst (list 'get expr (refinement-field to-spec-id))]
+                            (list 'if-value 'inst
+                                  'inst
+                                  (list 'error "No active refinement path"))))
+                    expr-id
+                    path)))))))
 
 (defn- disallow-unsupported-refinements
   "Our refinement lowering code is not currently correct when the refinements
