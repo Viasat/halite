@@ -713,7 +713,7 @@ The following specs define the operations involving notebooks in workspaces.
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
-        "expr" : "({ filtered = (filter(t in workspaceTests)((t.notebookName == notebookName) && (t.notebookVersion == notebookVersion))); ({ 'to-remove' = filtered.first(); {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteRegressionTestEffect$v1, notebookName: 'to-remove'.notebookName, notebookVersion: 'to-remove'.notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: (filter(t in workspaceTests)(t != 'to-remove'))}} }) })"
+        "expr" : "({ filtered = (filter(t in workspaceTests)((t.notebookName == notebookName) && (t.notebookVersion == notebookVersion))); (when((filtered.count() > 0)) {({ 'to-remove' = filtered.first(); {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteRegressionTestEffect$v1, notebookName: 'to-remove'.notebookName, notebookVersion: 'to-remove'.notebookVersion}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: (filter(t in workspaceTests)(t != 'to-remove'))}} })}) })"
       }
     }
   },

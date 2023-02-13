@@ -1057,14 +1057,15 @@
                                                                       notebookName)
                                                                    (= (get t :notebookVersion)
                                                                       notebookVersion)))]
-                                         (let [to-remove (first filtered)]
-                                           {:$type :tutorials.notebook/WorkspaceAndEffects$v1
-                                            :workspace {:$type :tutorials.notebook/Workspace$v1
-                                                        :tests (filter [t workspaceTests]
-                                                                       (not= t to-remove))}
-                                            :effects [{:$type :tutorials.notebook/DeleteRegressionTestEffect$v1
-                                                       :notebookName (get to-remove :notebookName)
-                                                       :notebookVersion (get to-remove :notebookVersion)}]}))}}}
+                                         (when (> (count filtered) 0)
+                                           (let [to-remove (first filtered)]
+                                             {:$type :tutorials.notebook/WorkspaceAndEffects$v1
+                                              :workspace {:$type :tutorials.notebook/Workspace$v1
+                                                          :tests (filter [t workspaceTests]
+                                                                         (not= t to-remove))}
+                                              :effects [{:$type :tutorials.notebook/DeleteRegressionTestEffect$v1
+                                                         :notebookName (get to-remove :notebookName)
+                                                         :notebookVersion (get to-remove :notebookVersion)}]})))}}}
 
                        :tutorials.notebook/UpdateRegressionTest$v1
                        {:fields {:workspaceRegistrySpecIds [:Set :tutorials.notebook/SpecId$v1]

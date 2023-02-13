@@ -1545,20 +1545,22 @@ The following specs define the operations involving notebooks in workspaces.
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
-          :expr
-            '(let [filtered (filter [t workspaceTests]
-                              (and (= (get t :notebookName) notebookName)
-                                   (= (get t :notebookVersion)
-                                      notebookVersion)))]
-               (let [to-remove (first filtered)]
-                 {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
-                  :workspace {:$type :tutorials.notebook/Workspace$v1,
-                              :tests (filter [t workspaceTests]
-                                       (not= t to-remove))},
-                  :effects
-                    [{:$type :tutorials.notebook/DeleteRegressionTestEffect$v1,
-                      :notebookName (get to-remove :notebookName),
-                      :notebookVersion (get to-remove :notebookVersion)}]}))}}},
+          :expr '(let [filtered (filter [t workspaceTests]
+                                  (and (= (get t :notebookName) notebookName)
+                                       (= (get t :notebookVersion)
+                                          notebookVersion)))]
+                   (when (> (count filtered) 0)
+                     (let [to-remove (first filtered)]
+                       {:$type :tutorials.notebook/WorkspaceAndEffects$v1,
+                        :workspace {:$type :tutorials.notebook/Workspace$v1,
+                                    :tests (filter [t workspaceTests]
+                                             (not= t to-remove))},
+                        :effects
+                          [{:$type
+                              :tutorials.notebook/DeleteRegressionTestEffect$v1,
+                            :notebookName (get to-remove :notebookName),
+                            :notebookVersion (get to-remove
+                                                  :notebookVersion)}]})))}}},
  :tutorials.notebook/UpdateRegressionTest$v1
    {:fields {:lastNotebookVersion :Integer,
              :notebookName :String,
