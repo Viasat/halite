@@ -5,7 +5,6 @@
   "Functions to facilitate rewriting of halite specs."
   (:require [clojure.set :as set]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecInfo SpecCtx SSACtx]]
             [com.viasat.halite.transpile.util :refer [fixpoint]]
@@ -173,7 +172,7 @@
           (throw ex))))))
 
 (s/defn add-constraint :- SpecInfo
-  [rule-name :- s/Str, sctx :- SpecCtx, spec-id :- interface-model/NamespacedKeyword, spec-info :- SpecInfo, cname :- base/ConstraintName, expr]
+  [rule-name :- s/Str, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword, spec-info :- SpecInfo, cname :- base/ConstraintName, expr]
   (let [ctx (ssa/make-ssa-ctx sctx spec-info)
         [ssa-graph id] (ssa/form-to-ssa ctx expr)
         spec-info' (-> spec-info
@@ -215,7 +214,7 @@
       spec-info)))
 
 (s/defn rewrite-reachable :- SpecInfo
-  [rules :- [RewriteRule], sctx :- SpecCtx, spec-id :- interface-model/NamespacedKeyword]
+  [rules :- [RewriteRule], sctx :- SpecCtx, spec-id :- types/NamespacedKeyword]
   (let [spec-info (get sctx spec-id)
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (envs/tenv-keys tenv)]
@@ -235,7 +234,7 @@
       spec-info)))
 
 (s/defn rewrite-spec-constraints :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- interface-model/NamespacedKeyword spec-info]
+  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (envs/tenv-keys tenv)]
     (->> (:constraints spec-info)
@@ -245,7 +244,7 @@
          (#(ssa/prune-ssa-graph % false)))))
 
 (s/defn ^:private rewrite-ssa-graph :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- interface-model/NamespacedKeyword spec-info]
+  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (envs/tenv-keys tenv)
         reachable? (ssa/reachable-nodes spec-info)]
@@ -255,7 +254,7 @@
      reachable?)))
 
 (s/defn rewrite-spec :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- interface-model/NamespacedKeyword, spec-info]
+  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword, spec-info]
   ((condp = (:nodes rule)
      :all rewrite-ssa-graph
      :constraints rewrite-spec-constraints

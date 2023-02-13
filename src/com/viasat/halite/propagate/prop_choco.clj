@@ -6,7 +6,6 @@
   Specifically: single specs with (possibly optional) boolean or integer variables,
   and no refinements."
   (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.types :as types]
@@ -24,7 +23,7 @@
           [(s/one s/Int :lower) (s/one s/Int :upper) (s/optional (s/enum :Unset) :Unset)])}))
 
 (s/defschema SpecBound
-  {interface-model/BareKeyword AtomBound})
+  {types/BareKeyword AtomBound})
 
 (s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
   [var-type :- types/HaliteType]

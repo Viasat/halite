@@ -7,7 +7,6 @@
   refines to. As long as there is at least one abstract spec in the :$refines-to field of the spec
   this layer is not needed."
   (:require [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.propagate.prop-top-abstract :as prop-top-abstract]
@@ -56,13 +55,13 @@
   (keyword (namespace spec-id)
            (str "$prop-top-concrete" (name spec-id))))
 
-(s/defn propagate :- interface-model/SpecBound
+(s/defn propagate :- prop-abstract/SpecBound
   ([sctx :- ssa/SpecCtx
-    initial-bound :- interface-model/SpecBound]
+    initial-bound :- prop-abstract/SpecBound]
    (propagate sctx prop-composition/default-options initial-bound))
   ([sctx :- ssa/SpecCtx
     opts :- prop-composition/Opts
-    initial-bound :- interface-model/SpecBound]
+    initial-bound :- prop-abstract/SpecBound]
    (let [{:keys [$refines-to $type]} initial-bound
          pass-through #(prop-top-abstract/propagate sctx opts initial-bound)]
      (if (or

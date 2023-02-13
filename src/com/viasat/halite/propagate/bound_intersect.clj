@@ -4,7 +4,6 @@
 (ns com.viasat.halite.propagate.bound-intersect
   "Logic for computing the intersection of two bounds."
   (:require [clojure.set :as set]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.propagate.prop-strings :as prop-strings]
@@ -36,8 +35,8 @@
 (declare combine-bounds)
 
 (s/defn ^:private combine-abstract-$in-bounds
-  [a-in :- interface-model/SpecIdToBoundWithRefinesTo
-   b-in :- interface-model/SpecIdToBoundWithRefinesTo]
+  [a-in :- prop-abstract/SpecIdToBoundWithRefinesTo
+   b-in :- prop-abstract/SpecIdToBoundWithRefinesTo]
   ;; TODO: this code is WRONG!, it needs to be taking the union of the keys
   (let [common-spec-ids (set/intersection (set (keys a-in))
                                           (set (keys b-in)))]
@@ -49,13 +48,13 @@
                 (select-keys b-in common-spec-ids))))
 
 (s/defn ^:private combine-untyped-spec-bounds
-  [a :- interface-model/UntypedSpecBound
-   b :- interface-model/UntypedSpecBound]
+  [a :- prop-abstract/UntypedSpecBound
+   b :- prop-abstract/UntypedSpecBound]
   (merge-with combine-bounds a b))
 
 (s/defn ^:private combine-abstract-spec-bounds
-  [a :- interface-model/AbstractSpecBound
-   b :- interface-model/AbstractSpecBound]
+  [a :- prop-abstract/AbstractSpecBound
+   b :- prop-abstract/AbstractSpecBound]
   (let [{a-refines-to :$refines-to
          a-in :$in} a
         {b-refines-to :$refines-to
@@ -93,7 +92,7 @@
                    :Unset unsettable?})}))
 
 (s/defn ^:private bound-object
-  [bound :- interface-model/Bound]
+  [bound :- prop-abstract/Bound]
   (cond
     (:$type bound) {:bound (concrete-spec-bound-to-AbstractSpecBound bound)
                     :bound-type :prop-abstract/AbstractSpecBound}
@@ -105,13 +104,13 @@
            :bound-type :prop-abstract/AbstractSpecBound}))
 
 (s/defn ^:private primitive?
-  [bound :- interface-model/AtomBound]
+  [bound :- prop-strings/AtomBound]
   (or (integer? bound)
       (boolean? bound)
       (string? bound)))
 
 (s/defn ^:private atom-bound-object
-  [bound :- interface-model/AtomBound]
+  [bound :- prop-strings/AtomBound]
   (cond
     (primitive? bound) {:bound {:$in #{bound}}
                         :bound-type :enum}
@@ -123,7 +122,7 @@
                             :bound-type :range}
     :default (throw (ex-info "unknown atom bound" {:bound bound}))))
 
-(s/defn ^:private simplify-enum :- interface-model/AtomBound
+(s/defn ^:private simplify-enum :- prop-strings/AtomBound
   [enum :- #{s/Any}]
   (cond
     (empty? enum) (prop-strings/throw-contradiction)
@@ -167,8 +166,8 @@
     bound))
 
 (s/defn combine-bounds
-  [a :- interface-model/Bound
-   b :- interface-model/Bound]
+  [a :- prop-abstract/Bound
+   b :- prop-abstract/Bound]
   (let [bound-objects (map bound-object (remove #(= :Unset %) [a b]))
         bound-types (map :bound-type bound-objects)]
     (when (> (count (set bound-types)) 1)

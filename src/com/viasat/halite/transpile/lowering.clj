@@ -6,7 +6,6 @@
   features down into lower-level features."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as rewriting]
             [com.viasat.halite.transpile.simplify :refer [simplify always-evaluates?]]
             [com.viasat.halite.transpile.ssa :as ssa :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
@@ -163,7 +162,7 @@
 
 ;;;;;;;;; Lower valid? ;;;;;;;;;;;;;;;;;
 
-(s/defn ^:private deps-via-instance-literal :- #{interface-model/NamespacedKeyword}
+(s/defn ^:private deps-via-instance-literal :- #{types/NamespacedKeyword}
   [spec-info :- SpecInfo]
   (->> spec-info
        :ssa-graph

@@ -9,7 +9,6 @@
   variables that represent the results of comparisons."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.propagate.prop-choco :as prop-choco]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
@@ -25,6 +24,23 @@
   (:import [org.chocosolver.solver.exception ContradictionException]))
 
 (set! *warn-on-reflection* true)
+
+;;;;; Bounds, extended with Strings ;;;;;
+(s/defschema AtomBound
+  (s/cond-pre
+   s/Int
+   s/Bool
+   s/Str
+   (s/enum :Unset :String)
+   {:$in (s/cond-pre
+          #{(s/cond-pre s/Int s/Bool s/Str (s/enum :Unset :String))}
+          [(s/one s/Int :lower) (s/one s/Int :upper) (s/optional (s/enum :Unset) :Unset)])}))
+
+(s/defschema StringBound
+  (s/cond-pre s/Str (s/enum :Unset :String) {:$in #{(s/cond-pre s/Str (s/enum :String :Unset))}}))
+
+(s/defschema SpecBound
+  {types/BareKeyword AtomBound})
 
 ;;;;;;; String expression simplification ;;;;;;;;
 
@@ -323,21 +339,21 @@
 ;;;;;;;;;;; Bounds ;;;;;;;;;;;;;;;;;
 
 (s/defn ^:private disjoint-string-bounds? :- s/Bool
-  [a :- interface-model/StringBound, b :- interface-model/StringBound]
+  [a :- StringBound, b :- StringBound]
   (cond
     (or (= a :String) (= b :String)) false
     (string? a) (recur {:$in #{a}} b)
     (string? b) (recur a {:$in #{b}})
     :else (empty? (set/intersection (:$in a) (:$in b)))))
 
-(s/defn ^:private simplify-atom-bound :- interface-model/AtomBound
-  [a :- interface-model/AtomBound]
+(s/defn ^:private simplify-atom-bound :- AtomBound
+  [a :- AtomBound]
   (if (and (map? a) (= 1 (count (:$in a))))
     (first (:$in a))
     a))
 
-(s/defn ^:private lower-spec-bound :- interface-model/SpecBound
-  [initial-bound :- interface-model/SpecBound scg]
+(s/defn ^:private lower-spec-bound :- prop-choco/SpecBound
+  [initial-bound :- SpecBound scg]
   (let [str-var-kws (->> scg loom-graph/nodes (filter symbol?) (map keyword))
         ;; first, lower the user-supplied bounds into bounds for the alts vars
         bound (->> str-var-kws
@@ -383,8 +399,8 @@
   []
   (throw (ContradictionException.)))
 
-(s/defn ^:private raise-spec-bound :- interface-model/SpecBound
-  [bound :- prop-choco/SpecBound scg initial-bound :- interface-model/SpecBound]
+(s/defn ^:private raise-spec-bound :- SpecBound
+  [bound :- prop-choco/SpecBound scg initial-bound :- SpecBound]
   (let [str-vars (->> scg loom-graph/nodes (filter symbol?))
         ;; expressions proven to be equal
         eq-g (loom-derived/edges-filtered-by
@@ -459,10 +475,10 @@
 
 (def default-options prop-choco/default-options)
 
-(s/defn propagate :- interface-model/SpecBound
-  ([spec :- ssa/SpecInfo, initial-bound :- interface-model/SpecBound]
+(s/defn propagate :- SpecBound
+  ([spec :- ssa/SpecInfo, initial-bound :- SpecBound]
    (propagate spec default-options initial-bound))
-  ([spec :- ssa/SpecInfo, opts :- Opts, initial-bound :- interface-model/SpecBound]
+  ([spec :- ssa/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
    (let [spec (simplify-string-exprs spec)
          scg (-> spec compute-string-comparison-graph)
          spec' (lower-spec spec scg)]

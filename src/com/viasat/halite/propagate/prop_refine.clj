@@ -4,7 +4,6 @@
 (ns com.viasat.halite.propagate.prop-refine
   (:require [clojure.walk :refer [postwalk]]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [com.viasat.halite.propagate.prop-composition :as prop-composition :refer [unwrap-maybe]]
             [com.viasat.halite.transpile.lowering :as lowering]
@@ -45,6 +44,35 @@
 
 ;; TODO: extrinsic refinements
 ;; TODO: refines-to? support
+
+(def AtomBound prop-composition/AtomBound)
+
+(declare ConcreteBound)
+
+(s/defschema SpecIdBound
+  (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one types/NamespacedKeyword :type)]
+              types/NamespacedKeyword))
+
+(s/defschema RefinementBound
+  {types/NamespacedKeyword
+   (s/conditional
+    map? {(s/optional-key :$type) SpecIdBound
+          types/BareKeyword (s/recursive #'ConcreteBound)}
+    :else (s/enum :Unset))})
+
+;; this is not the place to interpret a missing :$type field as either T or
+;; [:Maybe T] -- such a feature should be at an earlier lowering layer so that
+;; the policy is in one place and all these later layers can assume a :$type
+;; field exists.
+(s/defschema ConcreteSpecBound
+  {:$type SpecIdBound
+   (s/optional-key :$refines-to) RefinementBound
+   types/BareKeyword (s/recursive #'ConcreteBound)})
+
+(s/defschema ConcreteBound
+  (s/conditional
+   :$type ConcreteSpecBound
+   :else AtomBound))
 
 (s/defschema Graph
   (s/protocol loom-graph/Graph))
@@ -172,7 +200,7 @@
 ;;; raise and lower bounds
 
 (s/defn update-spec-bounds
-  [bound :- interface-model/ConcreteSpecBound
+  [bound :- ConcreteSpecBound
    f]
   (postwalk #(if-not (and (map? %) (:$type %))
                %
@@ -223,7 +251,7 @@
 (s/defn lower-bound
   [sctx :- SpecCtx
    rgraph :- Graph
-   bound :- interface-model/ConcreteSpecBound]
+   bound :- ConcreteSpecBound]
   (update-spec-bounds
    bound
    (fn [spec-id spec-bound]
@@ -238,7 +266,7 @@
 
 (s/defn raise-bound
   [sctx :- SpecCtx
-   bound :- interface-model/ConcreteSpecBound]
+   bound :- ConcreteSpecBound]
   (update-spec-bounds
    bound
    (fn [spec-id spec-bound]
@@ -276,10 +304,10 @@
   [sctx :- SpecCtx]
   (loom-graph/digraph (update-vals sctx (comp keys :refines-to))))
 
-(s/defn propagate :- interface-model/ConcreteSpecBound
-  ([sctx :- SpecCtx, initial-bound :- interface-model/ConcreteSpecBound]
+(s/defn propagate :- ConcreteSpecBound
+  ([sctx :- SpecCtx, initial-bound :- ConcreteSpecBound]
    (propagate sctx default-options initial-bound))
-  ([sctx :- SpecCtx, opts :- Opts, initial-bound :- interface-model/ConcreteSpecBound]
+  ([sctx :- SpecCtx, opts :- Opts, initial-bound :- ConcreteSpecBound]
    (let [rgraph (make-rgraph sctx)]
      (->> (lower-bound sctx rgraph initial-bound)
           (prop-composition/propagate (lower-spec-refinements sctx rgraph) opts)

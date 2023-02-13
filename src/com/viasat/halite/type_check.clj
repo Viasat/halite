@@ -5,7 +5,6 @@
   "halite type checker"
   (:require [clojure.set :as set]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.h-err :as h-err]
@@ -104,7 +103,7 @@
                             (drop (count arg-types) actual-types)))))))
 
 (s/defn ^:private type-check-fn-application :- types/HaliteType
-  [ctx :- TypeContext, form :- [(s/one interface-model/BareSymbol :op) s/Any]]
+  [ctx :- TypeContext, form :- [(s/one types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
         {:keys [signatures impl] :as builtin} (get eval/builtins op)

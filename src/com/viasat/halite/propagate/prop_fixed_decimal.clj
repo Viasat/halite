@@ -7,7 +7,6 @@
             [com.viasat.halite.analysis :as analysis]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.propagate.prop-top-concrete :as prop-top-concrete]
@@ -94,7 +93,7 @@
 
 (s/defn ^:private walk-concrete-spec-bound
   [context
-   bound :- interface-model/ConcreteSpecBound]
+   bound :- prop-composition/ConcreteSpecBound]
   (let [context' (context-into-type context (:$type bound))]
     (merge (no-nil {:$type (walk-spec-id context (:$type bound))
                     :$refines-to (some->> (:$refines-to bound)
@@ -104,7 +103,7 @@
 
 (s/defn ^:private walk-atom-bound
   [context
-   bound :- interface-model/AtomBound]
+   bound :- prop-composition/AtomBound]
   (cond
     (integer? bound) (if (:g context)
                        ((:g context) context bound)
@@ -150,14 +149,14 @@
 
 (s/defn ^:private walk-spec-id-to-bound-with-refines-to
   [context
-   bound :- interface-model/SpecIdToBoundWithRefinesTo]
+   bound :- prop-abstract/SpecIdToBoundWithRefinesTo]
   (merge bound
          (-> (dissoc bound :Unset)
              (update-map (partial walk-refines-to context)))))
 
 (s/defn ^:private walk-abstract-spec-bound
   [context
-   bound :- interface-model/AbstractSpecBound]
+   bound :- prop-abstract/AbstractSpecBound]
   (no-nil {:$in (some->> (:$in bound)
                          (walk-spec-id-to-bound-with-refines-to context))
            :$if (some->> (:$if bound)
@@ -167,7 +166,7 @@
 
 (s/defn ^:private walk-concrete-bound
   [context
-   bound :- interface-model/ConcreteSpecBound]
+   bound :- prop-composition/ConcreteSpecBound]
   (cond
     (:$type bound) (walk-concrete-spec-bound context bound)
     :default (walk-atom-bound context bound)))
@@ -257,10 +256,10 @@
         lower-fixed-decimal-types
         lower-fixed-decimal-values)))
 
-(s/defn propagate :- interface-model/SpecBound
+(s/defn propagate :- prop-abstract/SpecBound
   [spec-map :- envs/SpecMap
    opts :- prop-abstract/Opts
-   initial-bound :- interface-model/SpecBound]
+   initial-bound :- prop-abstract/SpecBound]
   (->> (prop-top-concrete/propagate (lowered-spec-context spec-map)
                                     opts
                                     (->> initial-bound

@@ -5,7 +5,6 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.propagate.prop-refine :as prop-refine]
             [com.viasat.halite.propagate.bound-union :refer [union-refines-to-bounds]]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
@@ -41,6 +40,40 @@
 ;;
 ;;
 
+(declare Bound)
+
+(s/defschema UntypedSpecBound {types/BareKeyword (s/recursive #'Bound)})
+
+(s/defschema SpecIdToBound
+  {types/NamespacedKeyword UntypedSpecBound})
+
+(s/defschema SpecIdToBoundWithRefinesTo
+  {types/NamespacedKeyword {(s/optional-key :$refines-to) SpecIdToBound
+                            types/BareKeyword (s/recursive #'Bound)}
+   (s/optional-key :Unset) s/Bool})
+
+(s/defschema AbstractSpecBound
+  (s/constrained
+   {(s/optional-key :$in) SpecIdToBoundWithRefinesTo
+    (s/optional-key :$if) SpecIdToBoundWithRefinesTo
+    (s/optional-key :$refines-to) SpecIdToBound}
+   #(< (count (select-keys % [:$in :$if])) 2)
+   "$in-and-$if-mutually-exclusive"))
+
+;; Despite the name, this can appear at the position of a field whose declared
+;; type is an abstract spec, though the :$type actually identified in this
+;; bounds will always be concrete.
+(s/defschema ConcreteSpecBound2
+  {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one types/NamespacedKeyword :type)]
+                      types/NamespacedKeyword)
+   (s/optional-key :$refines-to) SpecIdToBound
+   types/BareKeyword (s/recursive #'Bound)})
+
+(s/defschema SpecBound
+  (s/conditional
+   :$type ConcreteSpecBound2
+   :else AbstractSpecBound))
+
 (defn- concrete-spec-bound? [bound]
   (:$type bound))
 
@@ -53,6 +86,14 @@
 (defn- abstract-spec-bound? [bound]
   (and (not (concrete-spec-bound? bound))
        (not (atom-bound? bound))))
+
+(s/defschema Bound
+  (s/conditional
+   :$type prop-refine/ConcreteBound
+   #(or (not (map? %))
+        (and (contains? % :$in)
+             (not (map? (:$in %))))) prop-refine/AtomBound
+   :else AbstractSpecBound))
 
 (def Opts prop-refine/Opts)
 
@@ -190,7 +231,7 @@
   "Takes an AbstractSpecBound and converts it into bounds on new variables in the parent bound.
   $if and $type fields are normalized into $in values. Lifts all of the $in values into the parent-bound as different alternatives."
   [senv
-   parent-spec-ids :- [interface-model/NamespacedKeyword]
+   parent-spec-ids :- [types/NamespacedKeyword]
    alternatives var-kw optional-var? alts-for-spec {:keys [$if $in $type $refines-to] :as abstract-bound} parent-bound]
   (cond
     $if (let [b {:$in (merge (zipmap (keys alts-for-spec) (repeat {})) $if)}
@@ -236,9 +277,9 @@
 (defn- recursive-parentage? [parent-spec-ids spec-id]
   (some #(= % spec-id) parent-spec-ids))
 
-(s/defn ^:private lower-abstract-bounds :- interface-model/ConcreteSpecBound2
-  [parent-spec-ids :- [interface-model/NamespacedKeyword]
-   spec-bound :- interface-model/SpecBound
+(s/defn ^:private lower-abstract-bounds :- ConcreteSpecBound2
+  [parent-spec-ids :- [types/NamespacedKeyword]
+   spec-bound :- SpecBound
    senv :- (s/protocol envs/SpecEnv)
    alternatives]
   (let [spec-id (:$type spec-bound)
@@ -322,8 +363,8 @@
         (assoc parent-bound var-kw (assoc bound :$type spec-id)))
       parent-bound)))
 
-(s/defn ^:private raise-abstract-bounds :- interface-model/SpecBound
-  [spec-bound :- interface-model/ConcreteSpecBound2, senv :- (s/protocol envs/SpecEnv), alternatives]
+(s/defn ^:private raise-abstract-bounds :- SpecBound
+  [spec-bound :- ConcreteSpecBound2, senv :- (s/protocol envs/SpecEnv), alternatives]
   (let [spec-id (:$type spec-bound)
         spec-id (cond-> spec-id (vector? spec-id) second)
         {:keys [fields]} (envs/lookup-spec senv spec-id)]
@@ -342,10 +383,10 @@
             spec-bound)))
       spec-bound))))
 
-(s/defn propagate :- interface-model/SpecBound
-  ([sctx :- ssa/SpecCtx, initial-bound :- interface-model/SpecBound]
+(s/defn propagate :- SpecBound
+  ([sctx :- ssa/SpecCtx, initial-bound :- SpecBound]
    (propagate sctx prop-refine/default-options initial-bound))
-  ([sctx :- ssa/SpecCtx, opts :- prop-refine/Opts, initial-bound :- interface-model/SpecBound]
+  ([sctx :- ssa/SpecCtx, opts :- prop-refine/Opts, initial-bound :- SpecBound]
    (let [abstract? #(-> % sctx :abstract? true?)
          refn-graph (spec-context-to-inverted-refinement-graph sctx)
          alternatives (reduce

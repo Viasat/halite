@@ -8,7 +8,6 @@
   (:require [clojure.pprint :as pp]
             [clojure.set :as set]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.transpile.util :refer [mk-junct]]
@@ -51,7 +50,7 @@
 (s/defschema SSAForm
   (s/conditional
    ;; instance literals
-   map? {:$type interface-model/NamespacedKeyword
+   map? {:$type types/NamespacedKeyword
          s/Keyword NodeId}
    ;; vector literals
    vector? [NodeId]
@@ -115,7 +114,7 @@
   (assoc envs/SpecInfo
          :ssa-graph SSAGraph
          (s/optional-key :constraints) [[(s/one base/ConstraintName :cname) (s/one NodeId :node)]]
-         (s/optional-key :refines-to) {interface-model/NamespacedKeyword
+         (s/optional-key :refines-to) {types/NamespacedKeyword
                                        (assoc envs/Refinement :expr NodeId)}))
 
 (s/defn contains-id? :- s/Bool
@@ -701,7 +700,7 @@
 
 (s/defschema SpecCtx
   "A map of spec ids to specs in SSA form."
-  {interface-model/NamespacedKeyword SpecInfo})
+  {types/NamespacedKeyword SpecInfo})
 
 (s/defn as-spec-env :- (s/protocol envs/SpecEnv)
   "Adapt a SpecCtx to a SpecEnv. WARNING! The resulting spec env does NOT return
@@ -715,14 +714,14 @@
 
 (s/defn add-spec-to-context :- SpecCtx
   [sctx :- SpecCtx
-   spec-id :- interface-model/NamespacedKeyword
+   spec-id :- types/NamespacedKeyword
    spec-info :- SpecInfo]
   (assoc sctx spec-id spec-info))
 
 (s/defn build-spec-ctx :- SpecCtx
   "Starting from root-spec-id and looking up specs from senv, build and return a SpecContext
   containing the root spec and every spec transitively referenced from it, in SSA form."
-  [senv :- (s/protocol envs/SpecEnv), root-spec-id :- interface-model/NamespacedKeyword]
+  [senv :- (s/protocol envs/SpecEnv), root-spec-id :- types/NamespacedKeyword]
   (-> senv
       (envs/build-spec-map root-spec-id)
       (update-vals (partial spec-to-ssa senv))))

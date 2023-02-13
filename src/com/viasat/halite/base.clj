@@ -2,8 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.base
-  (:require [com.viasat.halite.interface-model :as interface-model]
-            [com.viasat.halite.h-err :as h-err]
+  (:require [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :refer [throw-err]]
             [com.viasat.halite.types :as types]
@@ -21,7 +20,7 @@
 
 ;;;;
 
-(s/defschema UserConstraintName interface-model/BareKeyword)
+(s/defschema UserConstraintName types/BareKeyword)
 
 (def ConstraintName s/Str)
 

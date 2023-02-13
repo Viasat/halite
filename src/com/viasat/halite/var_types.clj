@@ -6,7 +6,6 @@
   (:require [clojure.set :as set]
             [clojure.string :as string]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.types :as types]
@@ -28,7 +27,7 @@
    vector? [(s/one (s/enum :Set :Vec) "coll-kind")
             (s/one (s/recursive #'VarInnerType) "elem-type")]
    types/bare-keyword? VarTypeAtom
-   :else interface-model/NamespacedKeyword))
+   :else types/NamespacedKeyword))
 
 (s/defschema VarType
   (s/conditional
@@ -73,15 +72,15 @@
 
 ;;
 
-(s/defschema UserSpecVars {interface-model/BareKeyword VarType})
+(s/defschema UserSpecVars {types/BareKeyword VarType})
 
 (s/defschema UserSpecInfo
   (assoc envs/SpecInfo
-         (s/optional-key :fields) {interface-model/BareKeyword VarType}
+         (s/optional-key :fields) {types/BareKeyword VarType}
          (s/optional-key :constraints) #{envs/Constraint}))
 
 (s/defschema UserSpecMap
-  {interface-model/NamespacedKeyword UserSpecInfo})
+  {types/NamespacedKeyword UserSpecInfo})
 
 ;;
 
@@ -89,7 +88,7 @@
   "Lookup whether the given spec is abstract. Produce nil if the spec does not exist. This function
   avoids enforcing a schema on the spec specifically so that it can be used when the spec
   environment is being converted between formats."
-  [senv :- (s/protocol envs/SpecEnv), spec-id :- interface-model/NamespacedKeyword]
+  [senv :- (s/protocol envs/SpecEnv), spec-id :- types/NamespacedKeyword]
   (when-let [spec (envs/lookup-spec* senv spec-id)]
     (boolean (:abstract? spec))))
 
@@ -139,7 +138,7 @@
         spec-info))))
 
 (s/defn halite-spec-env :- (s/protocol envs/SpecEnv)
-  [spec-info-map :- {interface-model/NamespacedKeyword UserSpecInfo}]
+  [spec-info-map :- {types/NamespacedKeyword UserSpecInfo}]
   (-> spec-info-map
       (update-vals (partial to-halite-spec spec-info-map))
       envs/->SpecEnvImpl))

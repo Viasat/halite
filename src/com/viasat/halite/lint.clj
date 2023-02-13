@@ -7,7 +7,6 @@
   (:require [clojure.string :as string]
             [clojure.set :as set]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.h-err :as h-err]
@@ -30,7 +29,7 @@
 
 (s/defn ^:private type-check-fn-application :- types/HaliteType
   [ctx :- TypeContext
-   form :- [(s/one interface-model/BareSymbol :op) s/Any]]
+   form :- [(s/one types/BareSymbol :op) s/Any]]
   (let [[op & args] form
         nargs (count args)
         {:keys [signatures impl deprecated?] :as builtin} (get eval/builtins op)
