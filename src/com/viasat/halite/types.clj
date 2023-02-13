@@ -7,6 +7,7 @@
   relation and compute meets and joins."
   (:require [clojure.set :as set]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
+            [com.viasat.halite.interface-model :as interface-model]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -89,31 +90,16 @@
     (spit "types.dot" (edges-dot @*edges))
     (clojure.java.shell/sh "dot" "-Tpng" "-O" "types.dot"))
 
-;;;;
-
-(s/defn ^:private bare? :- s/Bool
-  "true if the symbol or keyword lacks a namespace component, false otherwise"
-  [sym-or-kw :- (s/cond-pre s/Keyword s/Symbol)]
-  (nil? (namespace sym-or-kw)))
-
-(def ^:private namespaced?
-  "true if the symbol or keyword has a namespace component, false otherwise"
-  (complement bare?))
-
 (defn bare-keyword? [x]
   (and (keyword? x)
-       (bare? x)))
+       (interface-model/bare? x)))
 
 (defn bare-symbol? [x]
   (and (symbol? x)
-       (bare? x)))
-
-(s/defschema BareKeyword (s/constrained s/Keyword bare?))
-(s/defschema NamespacedKeyword (s/constrained s/Keyword namespaced?))
-(s/defschema BareSymbol (s/constrained s/Symbol bare?))
+       (interface-model/bare? x)))
 
 (s/defn namespaced-keyword? [kw]
-  (and (keyword? kw) (namespaced? kw)))
+  (and (keyword? kw) (interface-model/namespaced? kw)))
 
 (s/defn spec-type? :- s/Bool
   "True if t is a type structure representing a spec type, false otherwise"
@@ -122,7 +108,7 @@
        (= :Instance (first t))
        (and (not= :* (second t)))))
 
-(s/defn inner-spec-type :- (s/maybe NamespacedKeyword)
+(s/defn inner-spec-type :- (s/maybe interface-model/NamespacedKeyword)
   [t]
   (when (spec-type? t)
     (second t)))
@@ -146,9 +132,9 @@
   (s/conditional
    #(and (vector? %) (= :Instance (first %))) [(s/one (s/eq :Instance) "instance-keyword")
                                                (s/one (s/cond-pre (s/eq :*)
-                                                                  NamespacedKeyword)
+                                                                  interface-model/NamespacedKeyword)
                                                       "instance-type")
-                                               (s/optional #{NamespacedKeyword} "refines-to-set")]
+                                               (s/optional #{interface-model/NamespacedKeyword} "refines-to-set")]
    #(and (vector? %) (= :Decimal (first %))) Decimal
    vector? [(s/one (s/enum :Set :Vec :Coll) "coll-kind")
             (s/one (s/recursive #'InnerType) "elem-type")]
@@ -248,7 +234,7 @@
       (first (:r2 s))
       (:arg s))))
 
-(s/defn spec-id :- (s/maybe NamespacedKeyword)
+(s/defn spec-id :- (s/maybe interface-model/NamespacedKeyword)
   [s :- HaliteType]
   (spec-id-ptn (type-ptn s)))
 

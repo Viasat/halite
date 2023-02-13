@@ -6,6 +6,7 @@
   a field of the type of one of the abstract specs referenced in the bound. Does not handle the case
   where all of the specs in the :$refines-to field of the bound are concrete."
   (:require [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
@@ -49,13 +50,13 @@
   (keyword (namespace spec-id)
            (str "$prop-top-abstract" (name spec-id))))
 
-(s/defn propagate :- prop-abstract/SpecBound
+(s/defn propagate :- interface-model/SpecBound
   ([sctx :- ssa/SpecCtx
-    initial-bound :- prop-abstract/SpecBound]
+    initial-bound :- interface-model/SpecBound]
    (propagate sctx prop-composition/default-options initial-bound))
   ([sctx :- ssa/SpecCtx
     opts :- prop-composition/Opts
-    initial-bound :- prop-abstract/SpecBound]
+    initial-bound :- interface-model/SpecBound]
    (let [{:keys [$refines-to $type]} initial-bound]
      (if (or
           ;; the bound is a concrete bound

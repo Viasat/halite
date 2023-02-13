@@ -5,6 +5,7 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.choco-clj-opt :as choco-clj]
+            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.propagate.prop-strings :as prop-strings]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
@@ -18,20 +19,7 @@
 
 (set! *warn-on-reflection* true)
 
-(declare ConcreteBound)
 
-(s/defschema ConcreteSpecBound
-  {:$type (s/cond-pre [(s/one (s/enum :Maybe) :maybe) (s/one types/NamespacedKeyword :type)]
-                      types/NamespacedKeyword)
-   types/BareKeyword (s/recursive #'ConcreteBound)})
-
-(s/defschema AtomBound
-  prop-strings/AtomBound)
-
-(s/defschema ConcreteBound
-  (s/conditional
-   :$type ConcreteSpecBound
-   :else AtomBound))
 
 ;;;;;;;;; Bound Spec-ification ;;;;;;;;;;;;;;;;
 
@@ -39,7 +27,7 @@
 (s/defschema ^:private PrimitiveMaybeType [(s/one (s/enum :Maybe) :maybe) (s/one PrimitiveType :inner)])
 
 (s/defschema ^:private FlattenedVar
-  [(s/one types/BareKeyword :var-kw)
+  [(s/one interface-model/BareKeyword :var-kw)
    (s/one (s/cond-pre PrimitiveMaybeType PrimitiveType) :type)])
 
 ;; A FlattenedVar represents a mapping from a ConcerteSpecBound with vars that are
@@ -49,9 +37,9 @@
 ;; with each ConcreteSpecBound's :$type the same as its corresponding FV's ::spec-id,
 ;; and every var of that Spec appearing as a key in the FV.
 (s/defschema ^:private FlattenedVars
-  {::mandatory #{types/BareKeyword}
-   ::spec-id types/NamespacedKeyword
-   types/BareKeyword (s/cond-pre FlattenedVar (s/recursive #'FlattenedVars))})
+  {::mandatory #{interface-model/BareKeyword}
+   ::spec-id interface-model/NamespacedKeyword
+   interface-model/BareKeyword (s/cond-pre FlattenedVar (s/recursive #'FlattenedVars))})
 
 (defn- primitive-maybe-type?
   [htype]
@@ -64,13 +52,13 @@
     (and (vector? htype) (= :Maybe (first htype))) second))
 
 (s/defn ^:private flatten-vars :- FlattenedVars
-  ([sctx :- ssa/SpecCtx, spec-bound :- ConcreteSpecBound]
+  ([sctx :- ssa/SpecCtx, spec-bound :- interface-model/ConcreteSpecBound]
    (flatten-vars sctx [] "" false spec-bound))
   ([sctx :- ssa/SpecCtx
-    parent-spec-ids :- [types/NamespacedKeyword]
+    parent-spec-ids :- [interface-model/NamespacedKeyword]
     prefix :- s/Str
     already-optional? :- s/Bool
-    spec-bound :- ConcreteSpecBound]
+    spec-bound :- interface-model/ConcreteSpecBound]
    (let [spec-id (->> spec-bound :$type unwrap-maybe)
          senv (ssa/as-spec-env sctx)]
      (reduce
@@ -117,10 +105,10 @@
 
 (declare lower-spec-bound)
 
-(s/defn ^:private lower-spec-bound :- prop-strings/SpecBound
-  ([vars :- FlattenedVars, spec-bound :- ConcreteSpecBound]
+(s/defn ^:private lower-spec-bound :- interface-model/SpecBound
+  ([vars :- FlattenedVars, spec-bound :- interface-model/ConcreteSpecBound]
    (lower-spec-bound vars false spec-bound))
-  ([vars :- FlattenedVars, optional-context? :- s/Bool, spec-bound :- ConcreteSpecBound]
+  ([vars :- FlattenedVars, optional-context? :- s/Bool, spec-bound :- interface-model/ConcreteSpecBound]
    (reduce
     (fn [choco-bounds [var-kw bound]]
       (let [composite-var? (map? (vars var-kw))
@@ -249,14 +237,14 @@
   can be translated into a valid instance of the bound.
   However, the expressed bound is generally not 'tight': there will usually be valid instances of the bound
   that do not correspond to any valid instance of the bounded spec."
-  [sctx :- ssa/SpecCtx, spec-bound :- ConcreteSpecBound]
+  [sctx :- ssa/SpecCtx, spec-bound :- interface-model/ConcreteSpecBound]
   ;; First, flatten out the variables we'll need.
   (spec-ify-bound* (flatten-vars sctx spec-bound) sctx spec-bound))
 
 ;;;;;;;;;; Convert choco bounds to spec bounds ;;;;;;;;;
 
-(s/defn ^:private simplify-atom-bound :- AtomBound
-  [bound :- AtomBound]
+(s/defn ^:private simplify-atom-bound :- interface-model/AtomBound
+  [bound :- interface-model/AtomBound]
   (if-let [in (:$in bound)]
     (cond
       (and (set? in) (= 1 (count in))) (first in)
@@ -264,8 +252,8 @@
       :else bound)
     bound))
 
-(s/defn ^:private to-atom-bound :- AtomBound
-  [choco-bounds :- prop-strings/SpecBound
+(s/defn ^:private to-atom-bound :- interface-model/AtomBound
+  [choco-bounds :- interface-model/SpecBound
    var-type :- types/HaliteType
    [var-kw _] :- FlattenedVar]
   (let [bound (-> var-kw choco-bounds)]
@@ -281,9 +269,9 @@
               (set? bound) (disj bound :Unset)))})))))
 
 (s/defn ^:private to-spec-bound :- (s/conditional
-                                    map? ConcreteSpecBound
+                                    map? interface-model/ConcreteSpecBound
                                     :else (s/eq :Unset))
-  [choco-bounds :- prop-strings/SpecBound
+  [choco-bounds :- interface-model/SpecBound
    senv :- (s/protocol envs/SpecEnv)
    flattened-vars :- FlattenedVars]
   (let [spec-id (::spec-id flattened-vars)
@@ -318,10 +306,10 @@
    {}
    sctx))
 
-(s/defn propagate :- ConcreteSpecBound
-  ([sctx :- ssa/SpecCtx, initial-bound :- ConcreteSpecBound]
+(s/defn propagate :- interface-model/ConcreteSpecBound
+  ([sctx :- ssa/SpecCtx, initial-bound :- interface-model/ConcreteSpecBound]
    (propagate sctx default-options initial-bound))
-  ([sctx :- ssa/SpecCtx, opts :- Opts, initial-bound :- ConcreteSpecBound]
+  ([sctx :- ssa/SpecCtx, opts :- Opts, initial-bound :- interface-model/ConcreteSpecBound]
    (let [flattened-vars (flatten-vars sctx initial-bound)
          lowered-bounds (lower-spec-bound flattened-vars initial-bound)
          spec-ified-bound (spec-ify-bound* flattened-vars sctx initial-bound)]

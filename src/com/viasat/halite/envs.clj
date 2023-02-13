@@ -5,6 +5,7 @@
   "Halite spec, type, and eval environment abstractions."
   (:require [clojure.set :as set]
             [com.viasat.halite.base :as base]
+            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
 
@@ -18,7 +19,7 @@
 (s/defschema NamedConstraint
   [(s/one base/ConstraintName :name) (s/one s/Any :expr)])
 
-(s/defschema RefinesTo {types/NamespacedKeyword Refinement})
+(s/defschema RefinesTo {interface-model/NamespacedKeyword Refinement})
 
 (s/defschema Constraint {:name base/ConstraintName
                          :expr s/Any})
@@ -29,9 +30,9 @@
                          :else Constraint))
 
 (s/defschema SpecInfo
-  {(s/optional-key :fields) {types/BareKeyword types/HaliteType}
+  {(s/optional-key :fields) {interface-model/BareKeyword types/HaliteType}
    (s/optional-key :constraints) [NamedConstraint]
-   (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
+   (s/optional-key :refines-to) {interface-model/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
 (defprotocol SpecEnv
@@ -40,7 +41,7 @@
 (s/defn lookup-spec :- (s/maybe SpecInfo)
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
-  [senv :- (s/protocol SpecEnv), spec-id :- types/NamespacedKeyword]
+  [senv :- (s/protocol SpecEnv), spec-id :- interface-model/NamespacedKeyword]
   (lookup-spec* senv spec-id))
 
 (deftype SpecEnvImpl [spec-info-map]
@@ -48,7 +49,7 @@
   (lookup-spec* [self spec-id] (spec-info-map spec-id)))
 
 (s/defn spec-env :- (s/protocol SpecEnv)
-  [spec-info-map :- {types/NamespacedKeyword SpecInfo}]
+  [spec-info-map :- {interface-model/NamespacedKeyword SpecInfo}]
   (->SpecEnvImpl spec-info-map))
 
 (defprotocol TypeEnv
@@ -56,32 +57,32 @@
   (lookup-type* [self sym])
   (extend-scope* [self sym t]))
 
-(s/defn scope :- {types/BareSymbol types/HaliteType}
+(s/defn scope :- {interface-model/BareSymbol types/HaliteType}
   "The scope of the current type environment."
   [tenv :- (s/protocol TypeEnv)]
   (scope* tenv))
 
-(s/defn tenv-keys :- #{types/BareSymbol}
+(s/defn tenv-keys :- #{interface-model/BareSymbol}
   [tenv :- (s/protocol TypeEnv)]
   (->> tenv scope* keys set))
 
 (s/defn extend-scope :- (s/protocol TypeEnv)
   "Produce a new type environment, extending the current scope by mapping the given symbol to the given type."
-  [tenv :- (s/protocol TypeEnv), sym :- types/BareSymbol, t :- types/HaliteType]
+  [tenv :- (s/protocol TypeEnv), sym :- interface-model/BareSymbol, t :- types/HaliteType]
   (extend-scope* tenv sym t))
 
 (defprotocol Env
   (bindings* [self])
   (bind* [self sym value]))
 
-(s/defn bindings :- {types/BareSymbol s/Any}
+(s/defn bindings :- {interface-model/BareSymbol s/Any}
   "The bindings of the current environment."
   [env :- (s/protocol Env)]
   (bindings* env))
 
 (s/defn bind :- (s/protocol Env)
   "The environment produced by extending env with sym mapped to value."
-  [env :- (s/protocol Env), sym :- types/BareSymbol, value :- s/Any]
+  [env :- (s/protocol Env), sym :- interface-model/BareSymbol, value :- s/Any]
   (bind* env sym value))
 
 (deftype TypeEnvImpl [scope]
@@ -91,7 +92,7 @@
   (extend-scope* [self sym t] (TypeEnvImpl. (assoc scope sym t))))
 
 (s/defn type-env :- (s/protocol TypeEnv)
-  [scope :- {types/BareSymbol types/HaliteType}]
+  [scope :- {interface-model/BareSymbol types/HaliteType}]
   (->TypeEnvImpl (merge '{;; for backwards compatibility
                           no-value :Unset}
                         scope)))
@@ -111,12 +112,12 @@
   (bind* [self sym value] (EnvImpl. (assoc bindings sym value))))
 
 (s/defn env :- (s/protocol Env)
-  [bindings :- {types/BareSymbol s/Any}]
+  [bindings :- {interface-model/BareSymbol s/Any}]
   (->EnvImpl (merge '{;; for backwards compatibility
                       no-value :Unset} bindings)))
 
 (s/defn env-from-field-keys :- (s/protocol Env)
-  [field-keys :- [types/BareKeyword]
+  [field-keys :- [interface-model/BareKeyword]
    inst]
   (env
    (reduce
@@ -145,7 +146,7 @@
 ;; opt-in to the operations they want to use and deal with the implications of their choice
 
 (s/defschema SpecMap
-  {types/NamespacedKeyword SpecInfo})
+  {interface-model/NamespacedKeyword SpecInfo})
 
 (defn- spec-ref-from-type [htype]
   (cond
@@ -173,7 +174,7 @@
                     (apply set/union (map spec-refs-from-expr args))))
     :else (throw (ex-info "BUG! Can't extract spec refs from form" {:form expr}))))
 
-(s/defn spec-refs :- #{types/NamespacedKeyword}
+(s/defn spec-refs :- #{interface-model/NamespacedKeyword}
   "The set of spec ids referenced by the given spec, as variable types or in constraint/refinement expressions."
   [{:keys [fields refines-to constraints] :as spec-info} :- SpecInfo]
   (->> fields
@@ -189,7 +190,7 @@
 
 (s/defn build-spec-map :- SpecMap
   "Return a map of spec-id to SpecInfo, for all specs in senv reachable from the identified root spec."
-  [senv :- (s/protocol SpecEnv), root-spec-id :- types/NamespacedKeyword]
+  [senv :- (s/protocol SpecEnv), root-spec-id :- interface-model/NamespacedKeyword]
   (loop [spec-map {}
          next-spec-ids [root-spec-id]]
     (if-let [[spec-id & next-spec-ids] next-spec-ids]

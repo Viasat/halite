@@ -4,15 +4,16 @@
 (ns com.viasat.halite.propagate
   "Constraint propagation for halite."
   (:require [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-fixed-decimal :as prop-fixed-decimal]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
-(def Bound prop-abstract/Bound)
+(def Bound interface-model/Bound)
 
-(def SpecBound prop-abstract/SpecBound)
+(def SpecBound interface-model/SpecBound)
 
 (def Opts prop-abstract/Opts)
 

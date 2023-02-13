@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022,2023 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.propagate.test-prop-composition
+(ns com.viasat.halite.propagate.test-bound-union
   (:require [com.viasat.halite.propagate.bound-union :refer [union-bounds]]
             [schema.core :as s]
             [schema.test]
@@ -10,7 +10,7 @@
 ;; Prismatic schema validation is too slow to leave on by default for these tests.
 ;; If you're debugging a test failure, and the problem is a 'type' error,
 ;; turning schema validation on is likely to help you track it down.
-;; (use-fixtures :once schema.test/validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-union-bounds
   (are [a b result]

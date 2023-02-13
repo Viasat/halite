@@ -7,6 +7,7 @@
             [clojure.set :as set]
             [clojure.string :as string]
             [com.viasat.halite.base :as base]
+            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
@@ -135,7 +136,7 @@
   [ctx :- EvalContext
    tenv :- (s/protocol envs/TypeEnv)
    bool-expr
-   spec-id :- types/NamespacedKeyword
+   spec-id :- interface-model/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
   (with-exception-data {:form bool-expr
                         :constraint-name constraint-name
@@ -147,7 +148,7 @@
   or nil if the guards prevent this projection."
   [ctx :- EvalContext
    tenv :- (s/protocol envs/TypeEnv)
-   spec-id :- types/NamespacedKeyword
+   spec-id :- interface-model/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
   (with-exception-data {:form expr

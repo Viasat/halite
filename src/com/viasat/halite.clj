@@ -7,6 +7,7 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.analysis :as analysis]
             [com.viasat.halite.base :as base]
+            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.h-err :as h-err]
@@ -28,7 +29,7 @@
   [ctx :- eval/EvalContext
    tenv :- (s/protocol envs/TypeEnv)
    bool-expr
-   spec-id :- types/NamespacedKeyword
+   spec-id :- interface-model/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
   (with-exception-data {:form bool-expr
                         :spec-id spec-id
@@ -41,7 +42,7 @@
   or nil if the guards prevent this projection."
   [ctx :- eval/EvalContext
    tenv :- (s/protocol envs/TypeEnv)
-   spec-id :- types/NamespacedKeyword
+   spec-id :- interface-model/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
   (if (contains? eval/*refinements* spec-id)
@@ -182,11 +183,11 @@
   "Look up the spec with the given id in the given type environment, returning variable type information.
   Returns nil when the spec is not found."
   [senv :- (s/protocol envs/SpecEnv)
-   spec-id :- types/NamespacedKeyword]
+   spec-id :- interface-model/NamespacedKeyword]
   (envs/lookup-spec* senv spec-id))
 
 (s/defn spec-env :- (s/protocol envs/SpecEnv)
-  [spec-info-map :- {types/NamespacedKeyword var-types/UserSpecInfo}]
+  [spec-info-map :- {interface-model/NamespacedKeyword var-types/UserSpecInfo}]
   (var-types/halite-spec-env spec-info-map))
 
 (s/defn type-env-from-spec :- (s/protocol envs/TypeEnv)

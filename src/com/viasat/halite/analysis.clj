@@ -4,6 +4,7 @@
 (ns com.viasat.halite.analysis
   (:require [clojure.set :as set]
             [com.viasat.halite.base :as base]
+            [com.viasat.halite.interface-model :as interface-model]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.graph :as graph]
@@ -929,12 +930,12 @@
 
 ;;;;
 
-(s/defschema TailSpecRef {:tail types/NamespacedKeyword
+(s/defschema TailSpecRef {:tail interface-model/NamespacedKeyword
                           (s/optional-key :sym) [s/Symbol]})
 
 (s/defschema SpecRef (s/conditional
                       map? TailSpecRef
-                      :else types/NamespacedKeyword))
+                      :else interface-model/NamespacedKeyword))
 
 (s/defn ^:private tail-ref? :- Boolean
   [expr :- SpecRef]
@@ -946,16 +947,16 @@
 (declare find-spec-refs)
 
 (s/defn ^:private wrap-tail :- TailSpecRef
-  [expr :- types/NamespacedKeyword]
+  [expr :- interface-model/NamespacedKeyword]
   {:tail expr})
 
-(s/defn ^:private unwrap-tail :- types/NamespacedKeyword
+(s/defn ^:private unwrap-tail :- interface-model/NamespacedKeyword
   [expr :- SpecRef]
   (if (tail-ref? expr)
     (:tail expr)
     expr))
 
-(s/defn ^:private unwrap-tail-set :- #{types/NamespacedKeyword}
+(s/defn ^:private unwrap-tail-set :- #{interface-model/NamespacedKeyword}
   [s :- (s/maybe #{SpecRef})]
   (->> s
        (map unwrap-tail)
@@ -1090,7 +1091,7 @@
 
 (s/defn find-spec-refs :- (s/maybe #{(s/conditional
                                       map? TailSpecRef
-                                      :else types/NamespacedKeyword)})
+                                      :else interface-model/NamespacedKeyword)})
   "Return a set of spec-ids for specs that are referenced by the expr. If a spec-id is referenced in a
   tail position then wrap it in a map that indicates this."
   ([expr]
@@ -1120,9 +1121,9 @@
 
 ;;;;
 
-(s/defn ^:private get-field-dependencies :- (s/maybe {types/NamespacedKeyword #{types/NamespacedKeyword}})
+(s/defn ^:private get-field-dependencies :- (s/maybe {interface-model/NamespacedKeyword #{interface-model/NamespacedKeyword}})
   [spec-map :- envs/SpecMap
-   spec-id :- types/NamespacedKeyword
+   spec-id :- interface-model/NamespacedKeyword
    [_ var-type]]
   (let [ts (->> var-type
                 types/innermost-types
@@ -1132,20 +1133,20 @@
     (when-not (empty? ts)
       {spec-id ts})))
 
-(s/defn ^:private get-constraint-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
-  [spec-id :- types/NamespacedKeyword
+(s/defn ^:private get-constraint-dependencies :- {interface-model/NamespacedKeyword #{interface-model/NamespacedKeyword}}
+  [spec-id :- interface-model/NamespacedKeyword
    [_ expr]]
   {spec-id (unwrap-tail-set (find-spec-refs expr))})
 
-(s/defn ^:private get-refines-to-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
-  [spec-id :- types/NamespacedKeyword
+(s/defn ^:private get-refines-to-dependencies :- {interface-model/NamespacedKeyword #{interface-model/NamespacedKeyword}}
+  [spec-id :- interface-model/NamespacedKeyword
    [other-spec-id {:keys [expr]}]]
   (let [spec-refs (unwrap-tail-set (find-spec-refs expr))]
     {spec-id (into #{other-spec-id} spec-refs)}))
 
-(s/defn ^:private get-spec-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
+(s/defn ^:private get-spec-dependencies :- {interface-model/NamespacedKeyword #{interface-model/NamespacedKeyword}}
   [spec-map :- envs/SpecMap
-   spec-id :- types/NamespacedKeyword
+   spec-id :- interface-model/NamespacedKeyword
    spec-info :- envs/SpecInfo]
   (let [{:keys [fields constraints refines-to]} spec-info]
     (->> [(map (partial get-field-dependencies spec-map spec-id) fields)
@@ -1155,7 +1156,7 @@
          (reduce into [])
          (reduce (partial merge-with into) {}))))
 
-(s/defn get-spec-map-dependencies :- {types/NamespacedKeyword #{types/NamespacedKeyword}}
+(s/defn get-spec-map-dependencies :- {interface-model/NamespacedKeyword #{interface-model/NamespacedKeyword}}
   [spec-map :- envs/SpecMap]
   (->> spec-map
        (map (fn [[k v]] (get-spec-dependencies spec-map k v)))
