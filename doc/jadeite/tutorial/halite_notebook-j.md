@@ -720,14 +720,13 @@ The following specs define the operations involving notebooks in workspaces.
   "tutorials.notebook/UpdateRegressionTest$v1" : {
     "fields" : {
       "workspaceRegistrySpecIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
-      "workspaceSpecIds" : [ "Set", "tutorials.notebook/SpecId$v1" ],
       "workspaceNotebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
       "workspaceTests" : [ "Set", "tutorials.notebook/RegressionTest$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer",
       "lastNotebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); items = nb.items; (ifValue(items) {((filter(ns in (map(item in (filter(item in items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() == 0)} else {true}) })} else {true}) }), name: \"notebookCannotContainNewNonEphemeralSpecs\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); items = nb.items; (ifValue(items) {(valid? {$type: tutorials.notebook/ResolveRefs$v1, items: items, specIds: workspaceSpecIds.concat(workspaceRegistrySpecIds)})} else {true}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); items = nb.items; (ifValue(items) {true} else {false}) })} else {true}) }), name: \"notebookContainsItems\"}", "{expr: ((filter(t in workspaceTests)((t.notebookName == notebookName) && (t.notebookVersion == lastNotebookVersion))).count() > 0), name: \"testExists\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}" ],
+    "constraints" : [ "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); items = nb.items; (ifValue(items) {((filter(ns in (map(item in (filter(item in items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() == 0)} else {true}) })} else {true}) }), name: \"notebookCannotContainNewNonEphemeralSpecs\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); items = nb.items; (ifValue(items) {true} else {false}) })} else {true}) }), name: \"notebookContainsItems\"}", "{expr: ((filter(t in workspaceTests)((t.notebookName == notebookName) && (t.notebookVersion == lastNotebookVersion))).count() > 0), name: \"testExists\"}", "{expr: ({ filtered = (filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))); (if((filtered.count() > 0)) {({ nb = filtered.first(); items = nb.items; (ifValue(items) {(valid? {$type: tutorials.notebook/ResolveRefs$v1, items: items, specIds: workspaceRegistrySpecIds})} else {true}) })} else {true}) }), name: \"specsValidRefs\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() > 0), name: \"notebookExists\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
@@ -881,7 +880,7 @@ Only one version at a time of a given notebook name can be used as a regression 
 A regression test can be updated to reflect a later version of a notebook.
 
 ```java
-{$type: tutorials.notebook/UpdateRegressionTest$v1, lastNotebookVersion: 1, notebookName: "notebook1", notebookVersion: 9, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, workspaceRegistrySpecIds: #{}, workspaceSpecIds: #{}, workspaceTests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/UpdateRegressionTest$v1, lastNotebookVersion: 1, notebookName: "notebook1", notebookVersion: 9, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 9}}, workspaceRegistrySpecIds: #{}, workspaceTests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --

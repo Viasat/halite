@@ -1068,7 +1068,6 @@
 
                        :tutorials.notebook/UpdateRegressionTest$v1
                        {:fields {:workspaceRegistrySpecIds [:Set :tutorials.notebook/SpecId$v1]
-                                 :workspaceSpecIds [:Set :tutorials.notebook/SpecId$v1]
                                  :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1]
                                  :workspaceTests [:Set :tutorials.notebook/RegressionTest$v1]
                                  :notebookName :String
@@ -1134,7 +1133,7 @@
                                       items (get nb :items)]
                                   (if-value items
                                             (valid? {:$type :tutorials.notebook/ResolveRefs$v1
-                                                     :specIds (concat workspaceSpecIds workspaceRegistrySpecIds)
+                                                     :specIds workspaceRegistrySpecIds
                                                      :items items})
                                             true))
                                 true))}}
@@ -1417,7 +1416,6 @@
      {:code
       '(refine-to {:$type :tutorials.notebook/UpdateRegressionTest$v1
                    :workspaceRegistrySpecIds #{}
-                   :workspaceSpecIds #{}
                    :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 9 :items []}}
                    :workspaceTests #{{:$type :tutorials.notebook/RegressionTest$v1 :notebookName "notebook1" :notebookVersion 1}}
                    :notebookName "notebook1"
