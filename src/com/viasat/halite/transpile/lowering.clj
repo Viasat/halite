@@ -316,6 +316,7 @@
                       'valid? 'true
                       'get (validity-guard sctx ctx (first args))
                       'refine-to (validity-guard sctx ctx (first args))
+                      'refines-to? 'true
                       'if (validity-guard-if sctx ctx form)
                       'when (validity-guard-when sctx ctx form)
                       (validity-guard-app sctx ctx args)))
@@ -340,18 +341,19 @@
 
 (s/defn push-refine-to-into-if
   [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id [form htype]]
-  (when-let [[_ subexpr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
+  (when-let [[_ subexpr-id to-spec-id] (and (seq? form) (or (= 'refine-to (first form)) (= 'refines-to? (first form))) form)]
     (let [subexpr-node (ssa/deref-id ssa-graph subexpr-id), subexpr (ssa/node-form subexpr-node)]
       (when-let [[_ pred-id then-id else-id] (and (seq? subexpr) (= 'if (first subexpr)) subexpr)]
         (let [then (ssa/deref-id ssa-graph then-id), then-type (ssa/node-type then)
-              else (ssa/deref-id ssa-graph else-id), else-type (ssa/node-type else)]
+              else (ssa/deref-id ssa-graph else-id), else-type (ssa/node-type else)
+              op (first form)]
           (list 'if pred-id
                 (if (= :Nothing then-type)
                   then-id
-                  (list 'refine-to then-id to-spec-id))
+                  (list op then-id to-spec-id))
                 (if (= :Nothing else-type)
                   else-id
-                  (list 'refine-to else-id to-spec-id))))))))
+                  (list op else-id to-spec-id))))))))
 
 ;;;;;;;;;; Lowering Optionality ;;;;;;;;;;;;
 

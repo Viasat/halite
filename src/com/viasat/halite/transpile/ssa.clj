@@ -21,7 +21,7 @@
 (def ^:private supported-halite-ops
   (into
    '#{dec inc + - * < <= > >= and or not => div mod expt abs = cond if not= let get
-      valid valid? refine-to if-value when-value when error
+      valid valid? refine-to refines-to? if-value when-value when error
       count range every? any? concat conj map contains?
       ;; introduced just so the fixed-decimal lowering can be performed on ssa form
       rescale
@@ -498,6 +498,14 @@
                       {:form form :spec-id spec-id})))
     (ensure-node ssa-graph (list 'refine-to id spec-id) (types/concrete-spec-type spec-id))))
 
+(s/defn ^:private refines-to?-to-ssa :- NodeInGraph
+  [ctx :- SSACtx, [_ subexpr spec-id :as form]]
+  (let [[ssa-graph id] (form-to-ssa ctx subexpr)]
+    (when (nil? (envs/lookup-spec (:senv ctx) spec-id))
+      (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
+                      {:form form :spec-id spec-id})))
+    (ensure-node ssa-graph (list 'refines-to? id spec-id) :Boolean)))
+
 (s/defn ^:private inst-literal-to-ssa :- NodeInGraph
   [ctx :- SSACtx, form]
   (let [spec-id (:$type form)
@@ -656,6 +664,7 @@
                                                   (reverse (partition 2 (rest form)))))
                     'get (get-to-ssa ctx form)
                     'refine-to (refine-to-to-ssa ctx form)
+                    'refines-to? (refines-to?-to-ssa ctx form)
                     '$do! (do!-to-ssa ctx form)
                     'if-value (if-value-to-ssa ctx form)
                     'when-value (if-value-to-ssa ctx (concat ['if-value] (rest form) ['$no-value]))
@@ -805,7 +814,7 @@
                     (cond
                       (= '$local op) result
                       (and (= 'get op) (keyword? (last form))) (compute-guards* ssa-graph current result (first args))
-                      (= 'refine-to op) (compute-guards* ssa-graph current result (first args))
+                      (#{'refine-to 'refines-to?} op) (compute-guards* ssa-graph current result (first args))
                       (= 'when op) (let [[pred-id then-id] args
                                          not-pred-id (negated ssa-graph pred-id)]
                                      (as-> result result
@@ -901,8 +910,8 @@
                       (and (= 'get (first form)) (keyword? (last form)))
                       (list 'get (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
 
-                      (= 'refine-to (first form))
-                      (list 'refine-to (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
+                      (#{'refine-to 'refines-to?} (first form))
+                      (list (first form) (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
 
                       ;; Don't emit useless ($do! $1 $1) -- should this be a simplify rule instead?
                       (and (= '$do! (first form)) (apply = (rest form)))

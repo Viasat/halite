@@ -161,6 +161,32 @@
                     expr-id
                     path)))))))
 
+(s/defn lower-refines-to?-expr
+  [rgraph :- Graph
+   {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- rewriting/RewriteFnCtx
+   id
+   [form htype]]
+  (when-let [[_ expr-id to-spec-id] (and (seq? form) (= 'refines-to? (first form)) form)]
+    (let [from-spec-id (->> expr-id (ssa/deref-id ssa-graph) ssa/node-type types/spec-id)]
+      (when from-spec-id
+        (if (= from-spec-id to-spec-id)
+          'true
+          (let [path (rest (loom.alg/shortest-path rgraph from-spec-id to-spec-id))]
+            (if (empty? path)
+              'false
+              (let [first-level-expr (reduce (fn [expr to-spec-id]
+                                               (list 'let ['previous-inst expr]
+                                                     (list 'if-value 'previous-inst
+                                                           (list 'get 'previous-inst (refinement-field to-spec-id))
+                                                           '$no-value)))
+                                             expr-id
+                                             path)]
+
+                (list 'let ['inst first-level-expr]
+                      (list 'if-value 'inst
+                            'true
+                            'false))))))))))
+
 (defn- disallow-unsupported-refinements
   "Our refinement lowering code is not currently correct when the refinements
   are optional, or when refinements are extrinsic.
@@ -194,6 +220,9 @@
         ;; This rule needs access to the refinement graph, so we don't use the rule macro.
         {:rule-name "lower-refine-to"
          :rewrite-fn (partial lower-refine-to-expr rgraph)
+         :nodes :all}
+        {:rule-name "lower-refines-to?"
+         :rewrite-fn (partial lower-refines-to?-expr rgraph)
          :nodes :all}])
       simplify/simplify))
 
