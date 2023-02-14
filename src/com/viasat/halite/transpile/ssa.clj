@@ -149,6 +149,8 @@
   {(s/optional-key :include-negations?) s/Bool
    (s/optional-key :conditionally?) s/Bool})
 
+(declare sort-ssa-graph)
+
 (s/defn root-ids :- [NodeId]
   "Return the SSA graph node ids of all entrypoints into the SSA graph: specifically,
   all constraint and refinement expressions."
@@ -586,9 +588,15 @@
     (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (apply list 'conj coll-id elem-ids))))
 
 (defn type-check-form-in-graph [senv ssa-graph new-form]
-  (let [tenv (reify envs/TypeEnv
+  (let [debug-seq (delay (map #(update % 1 node-type)
+                              (sort-ssa-graph ssa-graph)))
+        tenv (reify envs/TypeEnv
                (lookup-type* [self sym]
-                 (node-type (deref-id ssa-graph sym))))]
+                 (node-type (deref-id ssa-graph sym)))
+               clojure.lang.ISeq
+               (seq [self] @debug-seq)
+               (first [_] (first @debug-seq))
+               (next [_] (next @debug-seq)))]
     (type-check/type-check senv tenv new-form)))
 
 (s/defn replace-in-expr :- NodeInGraph
@@ -708,9 +716,14 @@
   This function is a hack to allow using a spec context to construct type environments.
   It ought to be refactored away in favor of something less likely to lead to errors!"
   [sctx :- SpecCtx]
-  (reify envs/SpecEnv
-    (lookup-spec* [self spec-id] (when spec-id
-                                   (some-> sctx spec-id (dissoc :ssa-graph))))))
+  (let [debug-seq (delay (seq (update-vals sctx :fields)))]
+    (reify envs/SpecEnv
+      (lookup-spec* [self spec-id] (when spec-id
+                                     (some-> sctx spec-id (dissoc :ssa-graph))))
+      clojure.lang.ISeq
+      (seq [_] @debug-seq)
+      (first [_] (first @debug-seq))
+      (next [_] (next @debug-seq)))))
 
 (s/defn add-spec-to-context :- SpecCtx
   [sctx :- SpecCtx
