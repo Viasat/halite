@@ -550,7 +550,6 @@
   [{:keys [ssa-graph] :as ctx} :- SSACtx form]
   (when-not (or (string? (second form))
                 (and (symbol? (second form))
-                     (contains? ssa-graph (second form))
                      (string? (first (deref-id ssa-graph (second form))))))
     (throw (ex-info "Only string literals currently allowed in error forms" {:form form :ssa-graph ssa-graph})))
   (let [[ssa-graph arg-id] (form-to-ssa ctx (second form))]

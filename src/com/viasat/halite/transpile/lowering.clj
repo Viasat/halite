@@ -546,9 +546,11 @@
 (s/defn cancel-get-of-instance-literal-expr
   [{{:keys [ssa-graph]} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
   (when-let [[_get coll-id var-kw] (and (seq? form) (= 'get (first form)) form)]
-    (let [[coll] (ssa/deref-id ssa-graph coll-id)]
-      (when (map? coll)
-        (get coll var-kw '$no-value)))))
+    (let [[coll coll-type] (ssa/deref-id ssa-graph coll-id)]
+      (if (= :Nothing coll-type)
+        coll
+        (when (map? coll)
+          (get coll var-kw '$no-value))))))
 
 (s/defn cancel-get-of-instance-literal :- SpecCtx
   "Replace (get {... :k <subexpr>} :k) with <subexpr>. Not semantics preserving, in that

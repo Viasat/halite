@@ -156,6 +156,9 @@
   (when *lookup-f*
     (*lookup-f* subexpr-type index))
   (cond
+    (= :Nothing subexpr-type)
+    :Nothing
+
     (types/halite-vector-type? subexpr-type)
     (do
       (when (keyword? index)

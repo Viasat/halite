@@ -917,7 +917,19 @@
       (is (= {:$type :my/D, :x 3}
              (eval/eval-expr* {:senv specs :env (com.viasat.halite/env {})}
                               '(refine-to {:$type :my/A
-                                           :x 24} :my/D)))))))
+                                           :x 24} :my/D)))))
+
+    (testing "lower refine-to with mixed guarded chain"
+      (let [e-specs (merge specs
+                           '{:my/E {:fields {:ex :Integer}
+                                    :constraints [["must refine"
+                                                   (let [a {:$type :my/A
+                                                            :x (- ex 10)}
+                                                         d (refine-to a :my/D)]
+                                                     (< 10 (get d :x)))]]}})
+            e-sctx (ssa/spec-map-to-ssa e-specs)]
+        (is (= {:$type :my/E, :ex {:$in [98 1000]}}
+               (pr/propagate e-sctx {:$type :my/E})))))))
 
 (defn eval-all-traces! [specs traces spec-id expr]
   (let [specs (merge specs (update-vals traces #(ssa/spec-from-ssa (:spec-info (first %)))))]
