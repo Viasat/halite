@@ -251,174 +251,175 @@
           _ (if (contains? (set @*instance-path-atom*) spec-id)
               (throw-err (h-err/spec-cycle-runtime {:spec-id-path (->> (conj @*instance-path-atom* spec-id)
                                                                        (mapv symbol))}))
-              (swap! *instance-path-atom* conj spec-id))
-          spec-id-0 spec-id
-          {:keys [fields refines-to] :as spec-info} (envs/lookup-spec senv spec-id)
-          spec-tenv (envs/type-env-from-spec spec-info)
-          env (envs/env-from-inst spec-info inst)
-          ctx {:senv senv, :env env}
-          constraint-f (fn [{cname :name :keys [expr] :as constraint}]
-                         {:constraint constraint
-                          :result (try
-                                    (boolean (*eval-predicate-fn* ctx spec-tenv expr spec-id cname))
-                                    (catch ExceptionInfo ex
-                                      ;; handle this as data so that it produces all errors, not just the "first" one
-                                      ex))})]
+              (swap! *instance-path-atom* conj spec-id))]
+      (try
+        (let [spec-id-0 spec-id
+              {:keys [fields refines-to] :as spec-info} (envs/lookup-spec senv spec-id)
+              spec-tenv (envs/type-env-from-spec spec-info)
+              env (envs/env-from-inst spec-info inst)
+              ctx {:senv senv, :env env}
+              constraint-f (fn [{cname :name :keys [expr] :as constraint}]
+                             {:constraint constraint
+                              :result (try
+                                        (boolean (*eval-predicate-fn* ctx spec-tenv expr spec-id cname))
+                                        (catch ExceptionInfo ex
+                                          ;; handle this as data so that it produces all errors, not just the "first" one
+                                          ex))})]
 
-      ;; check that all variables have values that are concrete and that conform to the
-      ;; types declared in the parent resource spec
-      (let [instance-errors (->> (sort (dissoc inst :$type))
-                                 (mapcat (fn [[kw v]]
-                                           (let [declared-type (kw fields)
-                                                 spec-id (:$type inst)]
-                                             ;; TODO: consider letting instances of abstract spec contain abstract values
-                                             (into [(when-not (concrete? senv v)
-                                                      (try
-                                                        (throw-err (h-err/no-abstract {:value v
-                                                                                       :field kw
-                                                                                       :spec-id (symbol spec-id)}))
-                                                        (catch Throwable e
-                                                          e)))]
-                                                   (check-against-declared-type spec-id kw declared-type v)))))
-                                 (remove nil?))]
-        (when (seq instance-errors)
-          (throw-err (h-err/instance-threw
-                      {:instance inst
-                       :instance-errors instance-errors
-                       :instance-error-str (string/join "; "
-                                                        (no-empty
-                                                         (mapv #(or (:instance-error-str (ex-data %))
-                                                                    (format-long-msg (ex-data %)))
-                                                               instance-errors)))}))))
+          ;; check that all variables have values that are concrete and that conform to the
+          ;; types declared in the parent resource spec
+          (let [instance-errors (->> (sort (dissoc inst :$type))
+                                     (mapcat (fn [[kw v]]
+                                               (let [declared-type (kw fields)
+                                                     spec-id (:$type inst)]
+                                                 ;; TODO: consider letting instances of abstract spec contain abstract values
+                                                 (into [(when-not (concrete? senv v)
+                                                          (try
+                                                            (throw-err (h-err/no-abstract {:value v
+                                                                                           :field kw
+                                                                                           :spec-id (symbol spec-id)}))
+                                                            (catch Throwable e
+                                                              e)))]
+                                                       (check-against-declared-type spec-id kw declared-type v)))))
+                                     (remove nil?))]
+            (when (seq instance-errors)
+              (throw-err (h-err/instance-threw
+                          {:instance inst
+                           :instance-errors instance-errors
+                           :instance-error-str (string/join "; "
+                                                            (no-empty
+                                                             (mapv #(or (:instance-error-str (ex-data %))
+                                                                        (format-long-msg (ex-data %)))
+                                                                   instance-errors)))}))))
 
-      ;; check all constraints
-      (let [constraint-results {:category :constraint
-                                :detail (->> spec-info
-                                             :constraints
-                                             (map (fn [[cname expr]]
-                                                    {:spec-id spec-id
-                                                     :name cname
-                                                     :expr expr}))
-                                             ;; produce constraint results in consistent order regardless of
-                                             ;; order the constraints are defined in
-                                             (sort-by :name)
-                                             (mapv constraint-f)
-                                             (remove #(= (:result %) true)))}]
+          ;; check all constraints
+          (let [constraint-results {:category :constraint
+                                    :detail (->> spec-info
+                                                 :constraints
+                                                 (map (fn [[cname expr]]
+                                                        {:spec-id spec-id
+                                                         :name cname
+                                                         :expr expr}))
+                                                 ;; produce constraint results in consistent order regardless of
+                                                 ;; order the constraints are defined in
+                                                 (sort-by :name)
+                                                 (mapv constraint-f)
+                                                 (remove #(= (:result %) true)))}]
 
-        ;; fully explore all active refinement paths, and store the results
-        (let [{:keys [transitive-refinements exs]}
-              (->> refines-to
-                   (sort-by first)
-                   (reduce
-                    (fn [{:keys [transitive-refinements exs]} [refines-to-spec-id {rname :name :keys [expr extrinsic?]} :as r]]
-                      (binding [*refinements* transitive-refinements]
-                        (let [{:keys [inst ex]} (try
-                                                  {:inst (*eval-refinement-fn* ctx
-                                                                               spec-tenv
-                                                                               refines-to-spec-id
-                                                                               expr
-                                                                               rname)}
-                                                  (catch ExceptionInfo ex
-                                                    (if extrinsic?
-                                                      {:inst ex}
-                                                      {:ex {:constraint {:spec-id (if extrinsic?
-                                                                                    refines-to-spec-id
-                                                                                    spec-id)
-                                                                         :name (if rname
-                                                                                 ;; the rname has the spec qualifier on it already
-                                                                                 (name (symbol (name (symbol rname))))
-                                                                                 (str "<refine-to-" refines-to-spec-id ">"))
-                                                                         :expr expr}
-                                                            :result ex}})))]
-                          (when (not= :Unset inst)
-                            (when (not (empty? (set/intersection (set (keys transitive-refinements))
-                                                                 (conj (set (keys (:refinements (meta inst)))) refines-to-spec-id))))
-                              (throw-err (h-err/refinement-diamond {:spec-id (symbol spec-id-0)
-                                                                    :current-refinements (mapv symbol (keys transitive-refinements))
-                                                                    :additional-refinements (mapv symbol (keys (:refinements (meta inst))))
-                                                                    :referred-spec-id (symbol refines-to-spec-id)}))))
-                          {:transitive-refinements (cond-> transitive-refinements
-                                                     (not= :Unset inst) (->
-                                                                         (merge (:refinements (meta inst)))
-                                                                         (assoc refines-to-spec-id inst)))
-                           :exs (if ex
-                                  (conj exs ex)
-                                  exs)})))
-                    {:transitive-refinements {}
-                     :exs []}))
-              refinement-results {:category :refinement
-                                  :detail exs}
-              reduced-results (->> [constraint-results refinement-results]
-                                   (reduce (fn [reduced-results {:keys [category detail]}]
-                                             (update reduced-results category into (or detail [])))
-                                           {:constraint []
-                                            :refinement []}))
-              reduced-results (update-vals reduced-results #(sort-by (comp (fn [{:keys [spec-id name]}]
-                                                                             [spec-id name]) :constraint) %))
-              violated-constraints (filter (comp #(or (boolean? %)
-                                                      (and (instance? ExceptionInfo %)
-                                                           (= :constraint-violation (:halite-error (ex-data %)))))
-                                                 :result) (reduce into []
-                                                                  [(:constraint reduced-results)
-                                                                   (filter (comp #(instance? Throwable %) :result)
-                                                                           (:refinement reduced-results))]))
-              error-constraints (filter (comp #(and (instance? Throwable %)
-                                                    (not (and (instance? ExceptionInfo %)
-                                                              (= :constraint-violation (:halite-error (ex-data %))))))
-                                              :result) (reduce into []
-                                                               [(:constraint reduced-results)
-                                                                (:refinement reduced-results)]))]
-          (when (and (empty? violated-constraints)
-                     (= 1 (count error-constraints)))
-            (throw (:result (first error-constraints))))
-          (when (or (seq violated-constraints)
-                    (seq error-constraints))
-            (throw-err ((if (and (seq violated-constraints)
-                                 (not (seq error-constraints)))
-                          h-err/invalid-instance
-                          h-err/spec-threw)
-                        (let [constraint-errors (no-empty (mapv :result error-constraints))
-                              violated-constraints-for-ex-data (->> violated-constraints
-                                                                    (mapcat #(let [{:keys [constraint result]} %]
-                                                                               (if (and (instance? ExceptionInfo result)
-                                                                                        (= :constraint-violation (:halite-error (ex-data result))))
-                                                                                 (:violated-constraints (ex-data result))
-                                                                                 [(constraint-to-ex-data-form constraint)])))
-                                                                    (sort-by (fn [{:keys [spec-id constraint-name]}]
-                                                                               [spec-id constraint-name]))
-                                                                    vec
-                                                                    no-empty)]
-                          (no-nil {:spec-id (symbol spec-id)
-                                   :violated-constraints violated-constraints-for-ex-data
-                                   :violated-constraint-labels (->> violated-constraints-for-ex-data
-                                                                    (mapv constraint-name-to-string)
-                                                                    no-empty)
-                                   :error-constraints (->> error-constraints
-                                                           (map (comp constraint-to-ex-data-form :constraint))
-                                                           (sort-by (fn [{:keys [spec-id constraint-name]}]
-                                                                      [spec-id constraint-name]))
-                                                           vec
-                                                           no-empty)
-                                   :constraint-errors constraint-errors
-                                   :constraint-error-strs (no-empty
-                                                           (mapv #(or (:spec-error-str (ex-data %))
-                                                                      (format-long-msg (ex-data %)))
-                                                                 constraint-errors))
-                                   :spec-error-str (when (not (and (seq violated-constraints)
-                                                                   (not (seq error-constraints))))
-                                                     (string/join "; "
-                                                                  (no-empty
-                                                                   (mapv #(or (:spec-error-str (ex-data %))
-                                                                              (format-long-msg (ex-data %)))
-                                                                         constraint-errors))))
-                                   :value inst
-                                   :halite-error (when (and (seq violated-constraints)
-                                                            (not (seq error-constraints)))
-                                                   :constraint-violation)})))))
-          (swap! *instance-path-atom* rest)
-          (with-meta
-            inst
-            {:refinements transitive-refinements}))))))
+            ;; fully explore all active refinement paths, and store the results
+            (let [{:keys [transitive-refinements exs]}
+                  (->> refines-to
+                       (sort-by first)
+                       (reduce
+                        (fn [{:keys [transitive-refinements exs]} [refines-to-spec-id {rname :name :keys [expr extrinsic?]} :as r]]
+                          (binding [*refinements* transitive-refinements]
+                            (let [{:keys [inst ex]} (try
+                                                      {:inst (*eval-refinement-fn* ctx
+                                                                                   spec-tenv
+                                                                                   refines-to-spec-id
+                                                                                   expr
+                                                                                   rname)}
+                                                      (catch ExceptionInfo ex
+                                                        (if extrinsic?
+                                                          {:inst ex}
+                                                          {:ex {:constraint {:spec-id (if extrinsic?
+                                                                                        refines-to-spec-id
+                                                                                        spec-id)
+                                                                             :name (if rname
+                                                                                     ;; the rname has the spec qualifier on it already
+                                                                                     (name (symbol (name (symbol rname))))
+                                                                                     (str "<refine-to-" refines-to-spec-id ">"))
+                                                                             :expr expr}
+                                                                :result ex}})))]
+                              (when (not= :Unset inst)
+                                (when (not (empty? (set/intersection (set (keys transitive-refinements))
+                                                                     (conj (set (keys (:refinements (meta inst)))) refines-to-spec-id))))
+                                  (throw-err (h-err/refinement-diamond {:spec-id (symbol spec-id-0)
+                                                                        :current-refinements (mapv symbol (keys transitive-refinements))
+                                                                        :additional-refinements (mapv symbol (keys (:refinements (meta inst))))
+                                                                        :referred-spec-id (symbol refines-to-spec-id)}))))
+                              {:transitive-refinements (cond-> transitive-refinements
+                                                         (not= :Unset inst) (->
+                                                                             (merge (:refinements (meta inst)))
+                                                                             (assoc refines-to-spec-id inst)))
+                               :exs (if ex
+                                      (conj exs ex)
+                                      exs)})))
+                        {:transitive-refinements {}
+                         :exs []}))
+                  refinement-results {:category :refinement
+                                      :detail exs}
+                  reduced-results (->> [constraint-results refinement-results]
+                                       (reduce (fn [reduced-results {:keys [category detail]}]
+                                                 (update reduced-results category into (or detail [])))
+                                               {:constraint []
+                                                :refinement []}))
+                  reduced-results (update-vals reduced-results #(sort-by (comp (fn [{:keys [spec-id name]}]
+                                                                                 [spec-id name]) :constraint) %))
+                  violated-constraints (filter (comp #(or (boolean? %)
+                                                          (and (instance? ExceptionInfo %)
+                                                               (= :constraint-violation (:halite-error (ex-data %)))))
+                                                     :result) (reduce into []
+                                                                      [(:constraint reduced-results)
+                                                                       (filter (comp #(instance? Throwable %) :result)
+                                                                               (:refinement reduced-results))]))
+                  error-constraints (filter (comp #(and (instance? Throwable %)
+                                                        (not (and (instance? ExceptionInfo %)
+                                                                  (= :constraint-violation (:halite-error (ex-data %))))))
+                                                  :result) (reduce into []
+                                                                   [(:constraint reduced-results)
+                                                                    (:refinement reduced-results)]))]
+              (when (and (empty? violated-constraints)
+                         (= 1 (count error-constraints)))
+                (throw (:result (first error-constraints))))
+              (when (or (seq violated-constraints)
+                        (seq error-constraints))
+                (throw-err ((if (and (seq violated-constraints)
+                                     (not (seq error-constraints)))
+                              h-err/invalid-instance
+                              h-err/spec-threw)
+                            (let [constraint-errors (no-empty (mapv :result error-constraints))
+                                  violated-constraints-for-ex-data (->> violated-constraints
+                                                                        (mapcat #(let [{:keys [constraint result]} %]
+                                                                                   (if (and (instance? ExceptionInfo result)
+                                                                                            (= :constraint-violation (:halite-error (ex-data result))))
+                                                                                     (:violated-constraints (ex-data result))
+                                                                                     [(constraint-to-ex-data-form constraint)])))
+                                                                        (sort-by (fn [{:keys [spec-id constraint-name]}]
+                                                                                   [spec-id constraint-name]))
+                                                                        vec
+                                                                        no-empty)]
+                              (no-nil {:spec-id (symbol spec-id)
+                                       :violated-constraints violated-constraints-for-ex-data
+                                       :violated-constraint-labels (->> violated-constraints-for-ex-data
+                                                                        (mapv constraint-name-to-string)
+                                                                        no-empty)
+                                       :error-constraints (->> error-constraints
+                                                               (map (comp constraint-to-ex-data-form :constraint))
+                                                               (sort-by (fn [{:keys [spec-id constraint-name]}]
+                                                                          [spec-id constraint-name]))
+                                                               vec
+                                                               no-empty)
+                                       :constraint-errors constraint-errors
+                                       :constraint-error-strs (no-empty
+                                                               (mapv #(or (:spec-error-str (ex-data %))
+                                                                          (format-long-msg (ex-data %)))
+                                                                     constraint-errors))
+                                       :spec-error-str (when (not (and (seq violated-constraints)
+                                                                       (not (seq error-constraints))))
+                                                         (string/join "; "
+                                                                      (no-empty
+                                                                       (mapv #(or (:spec-error-str (ex-data %))
+                                                                                  (format-long-msg (ex-data %)))
+                                                                             constraint-errors))))
+                                       :value inst
+                                       :halite-error (when (and (seq violated-constraints)
+                                                                (not (seq error-constraints)))
+                                                       :constraint-violation)})))))
+              (with-meta
+                inst
+                {:refinements transitive-refinements}))))
+        (finally (swap! *instance-path-atom* rest))))))
 
 (declare eval-expr*)
 

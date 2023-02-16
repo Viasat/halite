@@ -118,8 +118,8 @@ Some examples of 'new specs'.
 
 ;-- result --
 [:throws
- "h-err/spec-threw 0-0 : Spec threw error: \"h-err/spec-cycle-runtime 0-0 : Loop detected in spec dependencies\""
- :h-err/spec-threw]
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/NewSpec$v1', violates constraints \"tutorials.notebook/NewSpec$v1/positiveVersion\", \"tutorials.notebook/SpecId$v1/positiveVersion\""
+ :h-err/invalid-instance]
 ```
 
 ```clojure
@@ -573,6 +573,7 @@ Finally, we can create a top-level spec that represents a workspace and the item
 ```clojure
 {:tutorials.notebook/Workspace$v1
    {:fields {:notebooks [:Maybe [:Set :tutorials.notebook/Notebook$v1]],
+             :registryHeaderNotebookName [:Maybe :String],
              :registrySpecIds [:Maybe [:Set :tutorials.notebook/SpecId$v1]],
              :specIds [:Maybe [:Set :tutorials.notebook/SpecId$v1]],
              :tests [:Maybe [:Set :tutorials.notebook/RegressionTest$v1]],
@@ -586,6 +587,15 @@ Finally, we can create a top-level spec that represents a workspace and the item
                                                 (not= (get si :workspaceName)
                                                       workspaceName))))
                                     true)
+                          true)}
+        '{:name "registryHeaderNotebookExists",
+          :expr (if-value registryHeaderNotebookName
+                          (if-value notebooks
+                                    (> (count (filter [nb notebooks]
+                                                (= (get nb :name)
+                                                   registryHeaderNotebookName)))
+                                       0)
+                                    false)
                           true)}
         '{:name "specIdsDisjoint",
           :expr (if-value registrySpecIds
@@ -1208,7 +1218,6 @@ Now start to model operations on workspaces. As a result of these operations, th
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
              :registrySpecs [:Maybe :Boolean],
-             :resolvedSpecIds [:Vec :tutorials.notebook/SpecId$v1],
              :workspaceSpecs [:Maybe :Boolean]},
     :constraints
       #{'{:name "exclusiveFlags",
@@ -1337,7 +1346,13 @@ The following specs define the operations involving notebooks in workspaces.
                                                     workspaceRegistrySpecIds),
                                    :items items})
                                 true))
-                    true))}},
+                    true))}
+        '{:name "validWorkspace",
+          :expr (valid? {:$type :tutorials.notebook/Workspace$v1,
+                         :workspaceName workspaceName,
+                         :registrySpecIds workspaceRegistrySpecIds,
+                         :specIds workspaceSpecIds,
+                         :notebooks workspaceNotebooks})}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
@@ -1402,16 +1417,7 @@ The following specs define the operations involving notebooks in workspaces.
                              {:$type :tutorials.notebook/RunTestsEffect$v1,
                               :notebookName notebookName,
                               :notebookVersion notebookVersion,
-                              :workspaceSpecs true,
-                              :resolvedSpecIds
-                                (get
-                                  (refine-to
-                                    {:$type :tutorials.notebook/ResolveRefs$v1,
-                                     :specIds (concat workspaceRegistrySpecIds
-                                                      workspaceSpecIds),
-                                     :items items}
-                                    :tutorials.notebook/RSpecIds$v1)
-                                  :result)}])})))))}}},
+                              :workspaceSpecs true}])})))))}}},
  :tutorials.notebook/CreateRegressionTest$v1
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
@@ -1470,7 +1476,12 @@ The following specs define the operations involving notebooks in workspaces.
                                    :specIds workspaceRegistrySpecIds,
                                    :items items})
                                 true))
-                    true))}},
+                    true))}
+        '{:name "validWorkspace",
+          :expr (valid? {:$type :tutorials.notebook/Workspace$v1,
+                         :registrySpecIds workspaceRegistrySpecIds,
+                         :notebooks workspaceNotebooks,
+                         :tests workspaceTests})}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
@@ -1498,27 +1509,31 @@ The following specs define the operations involving notebooks in workspaces.
                            {:$type :tutorials.notebook/RunTestsEffect$v1,
                             :notebookName notebookName,
                             :notebookVersion notebookVersion,
-                            :registrySpecs true,
-                            :resolvedSpecIds
-                              (get (refine-to
-                                     {:$type :tutorials.notebook/ResolveRefs$v1,
-                                      :specIds workspaceRegistrySpecIds,
-                                      :items items}
-                                     :tutorials.notebook/RSpecIds$v1)
-                                   :result)}]})))))}}},
+                            :registrySpecs true}]})))))}}},
  :tutorials.notebook/DeleteNotebook$v1
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
-             :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1]},
+             :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1],
+             :workspaceRegistryHeaderNotebookName [:Maybe :String]},
     :constraints #{'{:name "notebookExists",
                      :expr (= (count
                                 (filter [nb workspaceNotebooks]
                                   (and (= (get nb :name) notebookName)
                                        (= (get nb :version) notebookVersion))))
                               1)}
+                   '{:name "notebookNotRegistryHeader",
+                     :expr (if-value workspaceRegistryHeaderNotebookName
+                                     (not= notebookName
+                                           workspaceRegistryHeaderNotebookName)
+                                     true)}
                    '{:name "positiveVersion",
                      :expr (valid? {:$type :tutorials.notebook/Version$v1,
-                                    :version notebookVersion})}},
+                                    :version notebookVersion})}
+                   '{:name "validWorkspace",
+                     :expr (valid? {:$type :tutorials.notebook/Workspace$v1,
+                                    :registryHeaderNotebookName
+                                      workspaceRegistryHeaderNotebookName,
+                                    :notebooks workspaceNotebooks})}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
@@ -1541,7 +1556,10 @@ The following specs define the operations involving notebooks in workspaces.
           :expr (> (count (filter [t workspaceTests]
                             (and (= (get t :notebookName) notebookName)
                                  (= (get t :notebookVersion) notebookVersion))))
-                   0)}},
+                   0)}
+        '{:name "validWorkspace",
+          :expr (valid? {:$type :tutorials.notebook/Workspace$v1,
+                         :tests workspaceTests})}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
@@ -1626,7 +1644,12 @@ The following specs define the operations involving notebooks in workspaces.
                      (filter [t workspaceTests]
                        (and (= (get t :notebookName) notebookName)
                             (= (get t :notebookVersion) lastNotebookVersion))))
-                   0)}},
+                   0)}
+        '{:name "validWorkspace",
+          :expr (valid? {:$type :tutorials.notebook/Workspace$v1,
+                         :registrySpecIds workspaceRegistrySpecIds,
+                         :notebooks workspaceNotebooks,
+                         :tests workspaceTests})}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
@@ -1657,18 +1680,12 @@ The following specs define the operations involving notebooks in workspaces.
                            {:$type :tutorials.notebook/RunTestsEffect$v1,
                             :notebookName notebookName,
                             :notebookVersion notebookVersion,
-                            :registrySpecs true,
-                            :resolvedSpecIds
-                              (get (refine-to
-                                     {:$type :tutorials.notebook/ResolveRefs$v1,
-                                      :specIds workspaceRegistrySpecIds,
-                                      :items items}
-                                     :tutorials.notebook/RSpecIds$v1)
-                                   :result)}]})))))}}},
+                            :registrySpecs true}]})))))}}},
  :tutorials.notebook/WriteNotebook$v1
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
-             :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1]},
+             :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1],
+             :workspaceRegistryHeaderNotebookName [:Maybe :String]},
     :constraints #{'{:name "positiveVersion",
                      :expr (valid? {:$type :tutorials.notebook/Version$v1,
                                     :version notebookVersion})}
@@ -1686,7 +1703,12 @@ The following specs define the operations involving notebooks in workspaces.
                                                    (= (get nb :version)
                                                       (dec notebookVersion))))]
                                (= (count filtered) 1))
-                             true)}},
+                             true)}
+                   '{:name "validWorkspace",
+                     :expr (valid? {:$type :tutorials.notebook/Workspace$v1,
+                                    :registryHeaderNotebookName
+                                      workspaceRegistryHeaderNotebookName,
+                                    :notebooks workspaceNotebooks})}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
@@ -1698,16 +1720,29 @@ The following specs define the operations involving notebooks in workspaces.
                                       {:$type :tutorials.notebook/Notebook$v1,
                                        :name notebookName,
                                        :version notebookVersion})},
-                  :effects (conj
-                             (if (> notebookVersion 1)
-                               [{:$type
-                                   :tutorials.notebook/DeleteNotebookEffect$v1,
+                  :effects
+                    (let [effects
+                            (conj
+                              (if (> notebookVersion 1)
+                                [{:$type
+                                    :tutorials.notebook/DeleteNotebookEffect$v1,
+                                  :notebookName notebookName,
+                                  :notebookVersion (dec notebookVersion)}]
+                                [])
+                              {:$type
+                                 :tutorials.notebook/WriteNotebookEffect$v1,
+                               :notebookName notebookName,
+                               :notebookVersion notebookVersion})]
+                      (if-value
+                        workspaceRegistryHeaderNotebookName
+                        (if (= notebookName workspaceRegistryHeaderNotebookName)
+                          (conj effects
+                                {:$type :tutorials.notebook/RunTestsEffect$v1,
                                  :notebookName notebookName,
-                                 :notebookVersion (dec notebookVersion)}]
-                               [])
-                             {:$type :tutorials.notebook/WriteNotebookEffect$v1,
-                              :notebookName notebookName,
-                              :notebookVersion notebookVersion})}}}}}
+                                 :notebookVersion notebookVersion,
+                                 :registrySpecs true})
+                          effects)
+                        effects))}}}}}
 ```
 
 Exercise the operation of writing a notebook to a workspace.
@@ -2034,18 +2069,6 @@ A more complicated example of applying a notebook. This one includes an ephemera
            {:$type :tutorials.notebook/RunTestsEffect$v1,
             :notebookName "notebook1",
             :notebookVersion 1,
-            :resolvedSpecIds [{:$type :tutorials.notebook/SpecId$v1,
-                               :specName "A",
-                               :specVersion 2,
-                               :workspaceName "my"}
-                              {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "C",
-                               :specVersion 1,
-                               :workspaceName "my"}
-                              {:$type :tutorials.notebook/SpecId$v1,
-                               :specName "A",
-                               :specVersion 3,
-                               :workspaceName "my"}],
             :workspaceSpecs true}],
  :workspace
    {:$type :tutorials.notebook/Workspace$v1,
@@ -2130,8 +2153,7 @@ A notebook can be used as the basis for a regression test suite.
            {:$type :tutorials.notebook/RunTestsEffect$v1,
             :notebookName "notebook1",
             :notebookVersion 1,
-            :registrySpecs true,
-            :resolvedSpecIds []}],
+            :registrySpecs true}],
  :workspace {:$type :tutorials.notebook/Workspace$v1,
              :tests #{{:$type :tutorials.notebook/RegressionTest$v1,
                        :notebookName "notebook1",
@@ -2252,8 +2274,7 @@ A regression test can be updated to reflect a later version of a notebook.
            {:$type :tutorials.notebook/RunTestsEffect$v1,
             :notebookName "notebook1",
             :notebookVersion 9,
-            :registrySpecs true,
-            :resolvedSpecIds []}],
+            :registrySpecs true}],
  :workspace {:$type :tutorials.notebook/Workspace$v1,
              :tests #{{:$type :tutorials.notebook/RegressionTest$v1,
                        :notebookName "notebook1",
