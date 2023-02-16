@@ -973,7 +973,9 @@
 
                       :else
                       (apply list (first form) (map #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %) (rest form))))
-        (map? form) (-> form (dissoc :$type) (update-vals #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %)) (assoc :$type (:$type form)))
+        (map? form) (-> form (update-vals #(if (keyword? %)
+                                             %
+                                             (form-from-ssa* ssa-graph ordering guards bound? curr-guard %))))
         (vector? form) (mapv #(form-from-ssa* ssa-graph ordering guards bound? curr-guard %) form)
         :else (throw (ex-info "BUG! Cannot reconstruct form from SSA representation"
                               {:id id :form form :ssa-graph ssa-graph :guards guards :bound? bound? :curr-guard curr-guard}))))))
