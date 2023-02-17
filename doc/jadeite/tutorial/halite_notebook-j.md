@@ -332,7 +332,7 @@ Finally, we can create a top-level spec that represents a workspace and the item
       "notebooks" : [ "Maybe", [ "Set", "tutorials.notebook/Notebook$v1" ] ],
       "tests" : [ "Maybe", [ "Set", "tutorials.notebook/RegressionTest$v1" ] ]
     },
-    "constraints" : [ "{expr: (ifValue(notebooks) {((map(n in notebooks)n.name).count() == notebooks.count())} else {true}), name: \"uniqueNotebookNames\"}", "{expr: (ifValue(registrySpecIds) {(ifValue(specIds) {(0 == registrySpecIds.intersection(specIds).count())} else {true})} else {true}), name: \"specIdsDisjoint\"}", "{expr: (ifValue(tests) {((map(t in tests)t.notebookName).count() == tests.count())} else {true}), name: \"uniqueTestNames\"}", "{expr: (ifValue(specIds) {(ifValue(workspaceName) {(0 == (filter(si in specIds)(si.workspaceName != workspaceName)).count())} else {true})} else {true}), name: \"privateSpecIdsInThisWorkspace\"}", "{expr: (ifValue(registryHeaderNotebookName) {(ifValue(notebooks) {((filter(nb in notebooks)(nb.name == registryHeaderNotebookName)).count() > 0)} else {false})} else {true}), name: \"registryHeaderNotebookExists\"}" ]
+    "constraints" : [ "{expr: (ifValue(notebooks) {((map(n in notebooks)n.name).count() == notebooks.count())} else {true}), name: \"uniqueNotebookNames\"}", "{expr: (ifValue(registrySpecIds) {(ifValue(specIds) {(0 == registrySpecIds.intersection(specIds).count())} else {true})} else {true}), name: \"specIdsDisjoint\"}", "{expr: (ifValue(registryHeaderNotebookName) {(ifValue(notebooks) {({ filtered = (filter(nb in notebooks)(nb.name == registryHeaderNotebookName)); (if((filtered.count() > 0)) {({ nb = filtered.first(); items = nb.items; (ifValue(items) {((filter(ns in (map(item in (filter(item in items)item.refinesTo?( tutorials.notebook/NewSpec$v1 )))item.refineTo( tutorials.notebook/NewSpec$v1 )))({ 'is-ephemeral' = ns.isEphemeral; (ifValue('is-ephemeral') {false} else {true}) })).count() == 0)} else {true}) })} else {true}) })} else {true})} else {true}), name: \"registryHeaderNotebookCannotContainNewNonEphemeralSpecs\"}", "{expr: (ifValue(tests) {((map(t in tests)t.notebookName).count() == tests.count())} else {true}), name: \"uniqueTestNames\"}", "{expr: (ifValue(specIds) {(ifValue(workspaceName) {(0 == (filter(si in specIds)(si.workspaceName != workspaceName)).count())} else {true})} else {true}), name: \"privateSpecIdsInThisWorkspace\"}", "{expr: (ifValue(registryHeaderNotebookName) {(ifValue(notebooks) {((filter(nb in notebooks)(nb.name == registryHeaderNotebookName)).count() > 0)} else {false})} else {true}), name: \"registryHeaderNotebookExists\"}" ]
   }
 }
 ```
@@ -361,6 +361,26 @@ Example of a workspace that violates a notebook name constraint.
 
 //-- result --
 [:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/Workspace$v1', violates constraints \"tutorials.notebook/Workspace$v1/uniqueNotebookNames\""]
+```
+
+Example of a workspace with a valid registry header notebook.
+
+```java
+(valid? {$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, isEphemeral: true, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}, registryHeaderNotebookName: "notebook1", registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"})
+
+
+//-- result --
+true
+```
+
+Example of a workspace with an invalid registry header notebook.
+
+```java
+{$type: tutorials.notebook/Workspace$v1, notebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [{$type: tutorials.notebook/NewSpec$v1, specName: "A", specVersion: 3, workspaceName: "my"}], name: "notebook1", version: 1}}, registryHeaderNotebookName: "notebook1", registrySpecIds: #{}, specIds: #{{$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 1, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "A", specVersion: 2, workspaceName: "my"}, {$type: tutorials.notebook/SpecId$v1, specName: "B", specVersion: 1, workspaceName: "my"}}, tests: #{}, workspaceName: "my"}
+
+
+//-- result --
+[:throws "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/Workspace$v1', violates constraints \"tutorials.notebook/Workspace$v1/registryHeaderNotebookCannotContainNewNonEphemeralSpecs\""]
 ```
 
 Previously we created a spec to resolve a spec reference. Now we build on that by creating specs which can walk through a sequence of items in a notebook and resolve refs, in context, as they are encountered.

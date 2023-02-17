@@ -359,46 +359,67 @@
                                                         :version notebookVersion})}}}}}
 
      "Finally, we can create a top-level spec that represents a workspace and the items it contains. Two separate fields are used to represent the specs that are available in a workspace. One captures all of those that are registered. The other captures, just the \"private\" specs that are defined in this workspace, but not made available in the registry."
-     {:spec-map-merge {:tutorials.notebook/Workspace$v1
-                       {:fields {:workspaceName [:Maybe :String]
-                                 :registryHeaderNotebookName [:Maybe :String]
-                                 :registrySpecIds [:Maybe [:Set :tutorials.notebook/SpecId$v1]]
-                                 :specIds [:Maybe [:Set :tutorials.notebook/SpecId$v1]]
-                                 :notebooks [:Maybe [:Set :tutorials.notebook/Notebook$v1]]
-                                 :tests [:Maybe [:Set :tutorials.notebook/RegressionTest$v1]]}
-                        :constraints #{{:name "specIdsDisjoint"
-                                        :expr '(if-value registrySpecIds
-                                                         (if-value specIds
-                                                                   (= 0 (count (intersection registrySpecIds specIds)))
-                                                                   true)
-                                                         true)}
-                                       {:name "privateSpecIdsInThisWorkspace"
-                                        :expr '(if-value specIds
-                                                         (if-value workspaceName
-                                                                   (= 0 (count (filter [si specIds]
-                                                                                       (not= (get si :workspaceName) workspaceName))))
-                                                                   true)
-                                                         true)}
-                                       {:name "uniqueNotebookNames"
-                                        :expr '(if-value notebooks
-                                                         (= (count (map [n notebooks]
-                                                                        (get n :name)))
-                                                            (count notebooks))
-                                                         true)}
-                                       {:name "uniqueTestNames"
-                                        :expr '(if-value tests
-                                                         (= (count (map [t tests]
-                                                                        (get t :notebookName)))
-                                                            (count tests))
-                                                         true)}
-                                       {:name "registryHeaderNotebookExists"
-                                        :expr '(if-value registryHeaderNotebookName
-                                                         (if-value notebooks
-                                                                   (> (count (filter [nb notebooks]
-                                                                                     (= (get nb :name) registryHeaderNotebookName)))
-                                                                      0)
-                                                                   false)
-                                                         true)}}}}}
+     {:spec-map-merge
+      {:tutorials.notebook/Workspace$v1
+       {:fields {:workspaceName [:Maybe :String]
+                 :registryHeaderNotebookName [:Maybe :String]
+                 :registrySpecIds [:Maybe [:Set :tutorials.notebook/SpecId$v1]]
+                 :specIds [:Maybe [:Set :tutorials.notebook/SpecId$v1]]
+                 :notebooks [:Maybe [:Set :tutorials.notebook/Notebook$v1]]
+                 :tests [:Maybe [:Set :tutorials.notebook/RegressionTest$v1]]}
+        :constraints #{{:name "specIdsDisjoint"
+                        :expr '(if-value registrySpecIds
+                                         (if-value specIds
+                                                   (= 0 (count (intersection registrySpecIds specIds)))
+                                                   true)
+                                         true)}
+                       {:name "privateSpecIdsInThisWorkspace"
+                        :expr '(if-value specIds
+                                         (if-value workspaceName
+                                                   (= 0 (count (filter [si specIds]
+                                                                       (not= (get si :workspaceName) workspaceName))))
+                                                   true)
+                                         true)}
+                       {:name "uniqueNotebookNames"
+                        :expr '(if-value notebooks
+                                         (= (count (map [n notebooks]
+                                                        (get n :name)))
+                                            (count notebooks))
+                                         true)}
+                       {:name "uniqueTestNames"
+                        :expr '(if-value tests
+                                         (= (count (map [t tests]
+                                                        (get t :notebookName)))
+                                            (count tests))
+                                         true)}
+                       {:name "registryHeaderNotebookExists"
+                        :expr '(if-value registryHeaderNotebookName
+                                         (if-value notebooks
+                                                   (> (count (filter [nb notebooks]
+                                                                     (= (get nb :name) registryHeaderNotebookName)))
+                                                      0)
+                                                   false)
+                                         true)}
+                       {:name "registryHeaderNotebookCannotContainNewNonEphemeralSpecs"
+                        :expr
+                        '(if-value registryHeaderNotebookName
+                                   (if-value notebooks
+                                             (let [filtered (filter [nb notebooks]
+                                                                    (= (get nb :name) registryHeaderNotebookName))]
+                                               (if (> (count filtered) 0)
+                                                 (let [nb (first filtered)
+                                                       items (get nb :items)]
+                                                   (if-value items
+                                                             (= (count (filter [ns (map [item (filter [item items]
+                                                                                                      (refines-to? item :tutorials.notebook/NewSpec$v1))]
+                                                                                        (refine-to item :tutorials.notebook/NewSpec$v1))]
+                                                                               (let [is-ephemeral (get ns :isEphemeral)]
+                                                                                 (if-value is-ephemeral false true))))
+                                                                0)
+                                                             true))
+                                                 true))
+                                             true)
+                                   true)}}}}}
 
      "An example of a valid workspace instance."
      {:code '{:$type :tutorials.notebook/Workspace$v1
@@ -443,6 +464,36 @@
                             :name "notebook1"
                             :version 2
                             :items []}}
+              :tests #{}}
+      :throws :auto}
+
+     "Example of a workspace with a valid registry header notebook."
+     {:code '(valid? {:$type :tutorials.notebook/Workspace$v1
+                      :workspaceName "my"
+                      :registryHeaderNotebookName "notebook1"
+                      :registrySpecIds #{}
+                      :specIds #{{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
+                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
+                                 {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 2}}
+                      :notebooks #{{:$type :tutorials.notebook/Notebook$v1
+                                    :name "notebook1"
+                                    :version 1
+                                    :items [{:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "A" :specVersion 3 :isEphemeral true}]}}
+                      :tests #{}})
+      :result true}
+
+     "Example of a workspace with an invalid registry header notebook."
+     {:code '{:$type :tutorials.notebook/Workspace$v1
+              :workspaceName "my"
+              :registryHeaderNotebookName "notebook1"
+              :registrySpecIds #{}
+              :specIds #{{:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 1}
+                         {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "B" :specVersion 1}
+                         {:$type :tutorials.notebook/SpecId$v1 :workspaceName "my" :specName "A" :specVersion 2}}
+              :notebooks #{{:$type :tutorials.notebook/Notebook$v1
+                            :name "notebook1"
+                            :version 1
+                            :items [{:$type :tutorials.notebook/NewSpec$v1 :workspaceName "my" :specName "A" :specVersion 3}]}}
               :tests #{}}
       :throws :auto}
 

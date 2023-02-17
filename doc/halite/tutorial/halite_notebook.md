@@ -588,6 +588,36 @@ Finally, we can create a top-level spec that represents a workspace and the item
                                                       workspaceName))))
                                     true)
                           true)}
+        '{:name "registryHeaderNotebookCannotContainNewNonEphemeralSpecs",
+          :expr
+            (if-value
+              registryHeaderNotebookName
+              (if-value
+                notebooks
+                (let [filtered (filter [nb notebooks]
+                                 (= (get nb :name) registryHeaderNotebookName))]
+                  (if (> (count filtered) 0)
+                    (let [nb (first filtered)
+                          items (get nb :items)]
+                      (if-value
+                        items
+                        (= (count
+                             (filter
+                               [ns
+                                (map [item
+                                      (filter [item items]
+                                        (refines-to?
+                                          item
+                                          :tutorials.notebook/NewSpec$v1))]
+                                  (refine-to item
+                                             :tutorials.notebook/NewSpec$v1))]
+                               (let [is-ephemeral (get ns :isEphemeral)]
+                                 (if-value is-ephemeral false true))))
+                           0)
+                        true))
+                    true))
+                true)
+              true)}
         '{:name "registryHeaderNotebookExists",
           :expr (if-value registryHeaderNotebookName
                           (if-value notebooks
@@ -708,6 +738,75 @@ Example of a workspace that violates a notebook name constraint.
 ;-- result --
 [:throws
  "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/Workspace$v1', violates constraints \"tutorials.notebook/Workspace$v1/uniqueNotebookNames\""
+ :h-err/invalid-instance]
+```
+
+Example of a workspace with a valid registry header notebook.
+
+```clojure
+(valid? {:$type :tutorials.notebook/Workspace$v1,
+         :workspaceName "my",
+         :registryHeaderNotebookName "notebook1",
+         :registrySpecIds #{},
+         :specIds #{{:$type :tutorials.notebook/SpecId$v1,
+                     :workspaceName "my",
+                     :specName "A",
+                     :specVersion 2}
+                    {:$type :tutorials.notebook/SpecId$v1,
+                     :workspaceName "my",
+                     :specName "B",
+                     :specVersion 1}
+                    {:$type :tutorials.notebook/SpecId$v1,
+                     :workspaceName "my",
+                     :specName "A",
+                     :specVersion 1}},
+         :notebooks #{{:$type :tutorials.notebook/Notebook$v1,
+                       :name "notebook1",
+                       :version 1,
+                       :items [{:$type :tutorials.notebook/NewSpec$v1,
+                                :workspaceName "my",
+                                :specName "A",
+                                :specVersion 3,
+                                :isEphemeral true}]}},
+         :tests #{}})
+
+
+;-- result --
+true
+```
+
+Example of a workspace with an invalid registry header notebook.
+
+```clojure
+{:$type :tutorials.notebook/Workspace$v1,
+ :notebooks #{{:name "notebook1",
+               :$type :tutorials.notebook/Notebook$v1,
+               :items [{:$type :tutorials.notebook/NewSpec$v1,
+                        :specName "A",
+                        :specVersion 3,
+                        :workspaceName "my"}],
+               :version 1}},
+ :registryHeaderNotebookName "notebook1",
+ :registrySpecIds #{},
+ :specIds #{{:$type :tutorials.notebook/SpecId$v1,
+             :specName "A",
+             :specVersion 1,
+             :workspaceName "my"}
+            {:$type :tutorials.notebook/SpecId$v1,
+             :specName "A",
+             :specVersion 2,
+             :workspaceName "my"}
+            {:$type :tutorials.notebook/SpecId$v1,
+             :specName "B",
+             :specVersion 1,
+             :workspaceName "my"}},
+ :tests #{},
+ :workspaceName "my"}
+
+
+;-- result --
+[:throws
+ "h-err/invalid-instance 0-0 : Invalid instance of 'tutorials.notebook/Workspace$v1', violates constraints \"tutorials.notebook/Workspace$v1/registryHeaderNotebookCannotContainNewNonEphemeralSpecs\""
  :h-err/invalid-instance]
 ```
 
