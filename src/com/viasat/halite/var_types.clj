@@ -151,5 +151,4 @@
     (update-vals senv (partial to-halite-spec senv))
     (reify envs/SpecEnv
       (lookup-spec* [_ spec-id]
-        (prn "lookup-spec*" spec-id)            
         (to-halite-spec senv (envs/lookup-spec* senv spec-id))))))

@@ -24,7 +24,6 @@
   ([senv :- (s/protocol envs/SpecEnv), initial-bound :- SpecBound]
    (propagate senv default-options initial-bound))
   ([senv :- (s/protocol envs/SpecEnv), opts :- prop-abstract/Opts, initial-bound :- SpecBound]
-   (prn "propagate! " initial-bound)
    (let [spec-map (if (map? senv)
                     senv
                     (envs/build-spec-map senv (:$type initial-bound)))]
