@@ -342,10 +342,10 @@
       (insert-node ssa-graph ssa-form htype))))
 
 (s/defn ^:private invoke-type-check :- types/HaliteType
-  [ctx :- SSACtx
+  [senv :- (s/protocol envs/SpecEnv)
+   ssa-graph :- SSAGraph
    form]
-  (let [{:keys [senv ssa-graph]} ctx
-        tenv (reify envs/TypeEnv
+  (let [tenv (reify envs/TypeEnv
                (scope* [_]
                  (throw (ex-info "BUG: scope* not implemented" {:ssa-graph ssa-graph})))
                (lookup-type* [_ sym]
@@ -358,13 +358,13 @@
 (s/defn ^:private ensure-node-with-type :- NodeInGraph
   [ctx :- SSACtx
    ssa-form :- SSAForm]
-  (let [{:keys [ssa-graph]} ctx]
-    (ensure-node ssa-graph ssa-form (invoke-type-check ctx ssa-form))))
+  (let [{:keys [senv ssa-graph]} ctx]
+    (ensure-node ssa-graph ssa-form (invoke-type-check senv ssa-graph ssa-form))))
 
 (s/defn ^:private ensure-node-for-app :- NodeInGraph
   [ctx :- SSACtx,
    [op & args :as form] :- SSAForm]
-  (let [{:keys [ssa-graph]} ctx]
+  (let [{:keys [senv ssa-graph]} ctx]
     (ensure-node
      ssa-graph
      (cons op args)
@@ -372,11 +372,13 @@
        ('#{+ - * div mod expt abs count dec
            if when concat conj
            < <= > >= and or not => = not= valid?
-           range} op) (invoke-type-check ctx form)
+           range} op) (invoke-type-check senv ssa-graph form)
        ('#{$value?} op) :Boolean
        ('#{rescale} op) (let [[_ target-id scale-id] form]
                           ;; the 2nd arg to rescale must be an integer literal, i.e. not a symbol
-                          (invoke-type-check ctx (list 'rescale target-id (node-form (deref-id ssa-graph scale-id)))))
+                          (invoke-type-check
+                           senv ssa-graph
+                           (list 'rescale target-id (node-form (deref-id ssa-graph scale-id)))))
        :else (throw (ex-info (format  "BUG! Couldn't determine type of function application for '%s'" op)
                              {:form form}))))))
 
@@ -594,18 +596,6 @@
                                         elems)]
     (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (apply list 'conj coll-id elem-ids))))
 
-(defn type-check-form-in-graph [senv ssa-graph new-form]
-  (let [debug-seq (delay (map #(update % 1 node-type)
-                              (sort-ssa-graph ssa-graph)))
-        tenv (reify envs/TypeEnv
-               (lookup-type* [self sym]
-                 (node-type (deref-id ssa-graph sym)))
-               clojure.lang.ISeq
-               (seq [self] @debug-seq)
-               (first [_] (first @debug-seq))
-               (next [_] (next @debug-seq)))]
-    (type-check/type-check senv tenv new-form)))
-
 (s/defn replace-in-expr :- NodeInGraph
   [senv, ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
   (let [node (deref-id ssa-graph id), form (node-form node), htype (node-type node)]
@@ -627,7 +617,7 @@
                                                 [ssa-graph []]
                                                 args)
                           new-form (cons op new-args)
-                          new-type (type-check-form-in-graph senv ssa-graph new-form)]
+                          new-type (invoke-type-check senv ssa-graph new-form)]
                       (ensure-node ssa-graph new-form new-type))
         (map? form) (let [spec-id (:$type form)
                           [ssa-graph inst] (reduce
