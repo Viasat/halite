@@ -138,7 +138,7 @@
               [ssa-graph' id'] (ssa/form-to-ssa ctx form)
               spec-info' #_(-> (assoc spec-info :ssa-graph ssa-graph') (ssa/replace-node id id'))
               (cond-> (assoc spec-info :ssa-graph ssa-graph')
-                (= :all nodes) (ssa/replace-node id id')
+                (= :all nodes) (ssa/replace-node (:senv ctx) id id')
                 (= :constraints nodes) (update :constraints #(map (fn [[cname cid]] [cname (if (= cid id) id' cid)]) %)))
               end-nanos (System/nanoTime)
               rule-ms (/ (- rule-nanos start-nanos) 1000000.0)

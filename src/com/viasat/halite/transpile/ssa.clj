@@ -741,13 +741,37 @@
   [spec-map :- envs/SpecMap]
   (update-vals spec-map (partial spec-to-ssa spec-map)))
 
+(defn cascade-types [ssa-graph senv type-ids-to-do]
+  (let [deps (ssa-graph->dep-graph ssa-graph)]
+    (loop [type-ids-to-do type-ids-to-do
+           ssa-graph ssa-graph]
+      (if (empty? type-ids-to-do)
+        ssa-graph
+        (let [id (first type-ids-to-do)
+              type-ids-to-do (disj type-ids-to-do id)
+              node (deref-id ssa-graph id)
+              new-type (invoke-type-check senv ssa-graph (node-form node))]
+          (if (= new-type (node-type node))
+            (recur type-ids-to-do ssa-graph)
+            (do
+              (when (= :Boolean new-type)
+                (throw (ex-info "BUG! ssa/replace-node may not replace with :Boolean correctly"
+                                {:from-type (node-type node), :id id, :ssa-graph ssa-graph})))
+              (recur (into type-ids-to-do
+                           (dep/immediate-dependents deps id))
+                     (assoc-in ssa-graph [:dgraph id 1] new-type)))))))))
+
 (s/defn replace-node :- SpecInfo
   "Replace node-id with replacement-id in spec-info."
-  [{:keys [ssa-graph constraints refines-to] :as spec-info} :- SpecInfo node-id replacement-id]
+  [{:keys [ssa-graph constraints refines-to] :as spec-info} :- SpecInfo
+   senv
+   node-id
+   replacement-id]
   (assoc
    spec-info
    :ssa-graph (loop [dgraph (transient (:dgraph ssa-graph))
                      form-ids (transient (:form-ids ssa-graph))
+                     type-ids-to-do #{}
                      entries (:dgraph ssa-graph)]
                 (if (seq entries)
                   (let [entry (first entries)
@@ -759,6 +783,7 @@
                         (recur
                          (assoc! dgraph id (cond-> [new-form htype] neg-id (conj neg-id)))
                          (-> form-ids (dissoc! form) (assoc! new-form id))
+                         (conj type-ids-to-do id)
                          (rest entries)))
 
                       (and (map? form) (some #(= node-id %) (vals form)))
@@ -766,12 +791,16 @@
                         (recur
                          (assoc! dgraph id (cond-> [new-form htype] neg-id (conj neg-id)))
                          (-> form-ids (dissoc! form) (assoc! new-form id))
+                         (conj type-ids-to-do id)
                          (rest entries)))
                       :else
-                      (recur dgraph form-ids (rest entries))))
-                  {:dgraph (persistent! dgraph)
-                   :form-ids (persistent! form-ids)
-                   :next-id (:next-id ssa-graph)}))
+                      (recur dgraph form-ids type-ids-to-do (rest entries))))
+                  (-> {:dgraph (persistent! dgraph)
+                       :form-ids (persistent! form-ids)
+                       :next-id (:next-id ssa-graph)}
+                      (cond-> (not= (node-type (deref-id ssa-graph node-id))
+                                    (node-type (deref-id ssa-graph replacement-id)))
+                        (cascade-types senv type-ids-to-do)))))
    :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints)
    :refines-to (update-vals refines-to
                             (fn [r] (update r :expr #(if (= % node-id) replacement-id %))))))
