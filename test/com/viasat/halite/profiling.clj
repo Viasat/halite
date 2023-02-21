@@ -3,6 +3,8 @@
 
 (ns com.viasat.halite.profiling)
 
+(set! *warn-on-reflection* true)
+
 ;; Tools for collecting timing information on clojure functions. See comment
 ;; form at the end for usage examples.
 
@@ -50,6 +52,7 @@
              label (symbol (-> v meta :ns ns-name str)
                            (-> v meta :name str))
              offset (register-offset! label)
+             *running? (doto (ThreadLocal.) (.set false))
              new-fn (if (:in-out? opts)
                       (fn profiling [& args]
                         (let [start (System/nanoTime)]
@@ -63,11 +66,15 @@
                             (finally
                               (tally! offset (inc offset) start)))))
                       (fn profiling [& args]
-                        (let [start (System/nanoTime)]
-                          (try
-                            (apply orig args)
-                            (finally
-                              (tally! offset (inc offset) start))))))]
+                        (if (.get *running?)
+                          (apply orig args)
+                          (let [start (System/nanoTime)]
+                            (.set *running? true)
+                            (try
+                              (apply orig args)
+                              (finally
+                                (.set *running? false)
+                                (tally! offset (inc offset) start)))))))]
          (vary-meta new-fn assoc ::orig orig))))))
 
 (defn unprof-var [v]
@@ -84,8 +91,8 @@
             (when (pos? calls)
               {:label label :calls calls
                :total-ms (/ (quot nanos 100000) 10.0)
-               :avg-ms (/ (quot (quot nanos calls) 100000)
-                          10.0)})))
+               :avg-ms (/ (quot (quot nanos calls) 1000)
+                          1000.0)})))
         (sort-by #(-> % key str) @*labels)))
 
 (comment
@@ -94,23 +101,17 @@
            '[com.viasat.halite.types :as types])
 
   (unprof-all-vars)
-  (run! prof-var [#'types/meet
-
-                  #'ssa/find-form
-                  #'ssa/form-to-ssa
-                  #'ssa/form-from-ssa
+  (run! prof-var [#'ssa/find-form
                   #'ssa/ensure-node
-                  #'ssa/let-to-ssa
-                  #'ssa/if-to-ssa
-                  #'ssa/refine-to-to-ssa
-                  #'ssa/do!-to-ssa
-                  #'ssa/error-to-ssa
-                  #'ssa/app-to-ssa
-                  #'ssa/prune-ssa-graph]))
+                  #'ssa/type-check-form-in-graph
+                  #'ssa/invoke-type-check
+                  #'ssa/replace-in-expr
+                  #'ssa/replace-node
+                  #'ssa/cascade-types]))
 
 (comment
 
-  (clojure.pprint/print-table (jibe.util.prof/report))
+  (clojure.pprint/print-table (com.viasat.halite.profiling/report))
 
   (->> @jibe.util.prof/*in-out
        (filter #(= #'xtdb.api/q (:var %)))
