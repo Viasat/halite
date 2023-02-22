@@ -97,6 +97,34 @@
     (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
       (concat (take i form) (rest nested-do-form) (drop (inc i) form)))))
 
+;;;;;;;;; Remove $typecast forms ;;;;;;;
+
+;; Replaces every $typecast form with its parameter expression, and then
+;; recomputes types for all dependent node. There's no reason to think the
+;; resulting graph will typecheck unless the layer applying this rule
+;; has adjusted spec variable types, literals, etc. correctly.
+(s/defn remove-$typecasts
+  [sctx :- SpecCtx]
+  (let [senv (ssa/as-spec-env sctx)]
+    (update-vals
+     sctx
+     (fn [spec-info]
+       (let [replacement-map (->> spec-info
+                                  :ssa-graph
+                                  :dgraph
+                                  (keep (fn [[id [form]]]
+                                          (when (and (seq? form) (= '$typecast (first form)))
+                                            [id (second form)])))
+                                  (into {}))
+             spec-info' (ssa/replace-nodes spec-info senv replacement-map)]
+         (rewriting/trace!
+          sctx
+          {:op :rewrite
+           :rule "remove-$typecasts"
+           :spec-info spec-info
+           :spec-info' spec-info'})
+         spec-info')))))
+
 ;;;;;;;;; Comparisons known to be true/false, by argument type ;;;;;;;
 
 (s/defn lower-comparison-exprs-with-incompatible-types

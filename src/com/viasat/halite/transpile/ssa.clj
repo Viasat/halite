@@ -23,6 +23,7 @@
    '#{dec inc + - * < <= > >= and or not => div mod expt abs = cond if not= let get
       valid valid? refine-to refines-to? if-value when-value when error
       count range every? any? concat conj map contains?
+      $typecast
       ;; introduced just so the fixed-decimal lowering can be performed on ssa form
       rescale
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
@@ -149,7 +150,35 @@
   {(s/optional-key :include-negations?) s/Bool
    (s/optional-key :conditionally?) s/Bool})
 
-(declare sort-ssa-graph)
+(s/defn ^:private ssa-graph->dep-graph :- (s/protocol dep/DependencyGraph)
+  "Return a weavejester.dependency graph of the given ssa-graph, where
+  the nodes are node ids."
+  [ssa-graph :- SSAGraph]
+  (->> ssa-graph
+       :dgraph
+       (reduce
+        (fn [g [id d]]
+          (reduce #(dep/depend %1 id %2) g (child-nodes d)))
+        (dep/graph))))
+
+(s/defn cycle? :- s/Bool
+  "Returns true iff the given dgraph contains a cycle. dgraphs with
+  cycles are incorrect!"
+  [ssa-graph :- SSAGraph]
+  (try
+    (ssa-graph->dep-graph ssa-graph)
+    false
+    (catch clojure.lang.ExceptionInfo ex
+      (if (-> ex ex-data :reason (= ::dep/circular-dependency))
+        true
+        (throw ex)))))
+
+(s/defn topo-sort :- [NodeId]
+  [ssa-graph :- SSAGraph]
+  (dep/topo-sort (ssa-graph->dep-graph ssa-graph)))
+
+(defn sort-ssa-graph [ssa-graph]
+  (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph)))
 
 (s/defn root-ids :- [NodeId]
   "Return the SSA graph node ids of all entrypoints into the SSA graph: specifically,
@@ -596,6 +625,13 @@
                                         elems)]
     (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) (apply list 'conj coll-id elem-ids))))
 
+(s/defn ^:private typecast-to-ssa :- NodeInGraph
+  [ctx :- SSACtx
+   form]
+  (let [[_ expr cast-to] form
+        [ssa-graph expr-id] (form-to-ssa ctx expr)]
+    (ensure-node ssa-graph (list '$typecast expr-id cast-to) cast-to)))
+
 (s/defn replace-in-expr :- NodeInGraph
   [senv, ssa-graph :- SSAGraph, id, replacements :- {NodeId NodeId}]
   (let [node (deref-id ssa-graph id), form (node-form node), htype (node-type node)]
@@ -669,6 +705,7 @@
                                    (throw (ex-info (format "TBD: `contains?` only currently supported on literal sets")))))
                     'valid (form-to-ssa ctx (list 'when (list 'valid? (first args)) (first args)))
                     'if (if-to-ssa ctx form)
+                    '$typecast (typecast-to-ssa ctx form)
                     (app-to-ssa ctx form)))
     (map? form) (inst-literal-to-ssa ctx form)
     (vector? form) (vec-literal-to-ssa ctx form)
@@ -761,12 +798,12 @@
                            (dep/immediate-dependents deps id))
                      (assoc-in ssa-graph [:dgraph id 1] new-type)))))))))
 
-(s/defn replace-node :- SpecInfo
-  "Replace node-id with replacement-id in spec-info."
+(s/defn replace-nodes :- SpecInfo
+  "Replace each key in replacement-map with its correspending value, and
+  recompute node types as needed."
   [{:keys [ssa-graph constraints refines-to] :as spec-info} :- SpecInfo
    senv
-   node-id
-   replacement-id]
+   replacement-map]
   (assoc
    spec-info
    :ssa-graph (loop [dgraph (transient (:dgraph ssa-graph))
@@ -778,16 +815,16 @@
                         id (key entry)
                         [form htype neg-id] (val entry)]
                     (cond
-                      (and (seq? form) (some #(= node-id %) (rest form)))
-                      (let [new-form (map #(if (= % node-id) replacement-id %) form)]
+                      (and (seq? form) (some replacement-map (rest form)))
+                      (let [new-form (map #(get replacement-map % %) form)]
                         (recur
                          (assoc! dgraph id (cond-> [new-form htype] neg-id (conj neg-id)))
                          (-> form-ids (dissoc! form) (assoc! new-form id))
                          (conj type-ids-to-do id)
                          (rest entries)))
 
-                      (and (map? form) (some #(= node-id %) (vals form)))
-                      (let [new-form (update-vals form #(if (= % node-id) replacement-id %))]
+                      (and (map? form) (some replacement-map (vals form)))
+                      (let [new-form (update-vals form #(get replacement-map % %))]
                         (recur
                          (assoc! dgraph id (cond-> [new-form htype] neg-id (conj neg-id)))
                          (-> form-ids (dissoc! form) (assoc! new-form id))
@@ -798,12 +835,13 @@
                   (-> {:dgraph (persistent! dgraph)
                        :form-ids (persistent! form-ids)
                        :next-id (:next-id ssa-graph)}
-                      (cond-> (not= (node-type (deref-id ssa-graph node-id))
-                                    (node-type (deref-id ssa-graph replacement-id)))
+                      (cond-> (some #(not= (node-type (deref-id ssa-graph (key %)))
+                                           (node-type (deref-id ssa-graph (val %))))
+                                    replacement-map)
                         (cascade-types senv type-ids-to-do)))))
-   :constraints (mapv (fn [[cname cid]] [cname (if (= cid node-id) replacement-id cid)]) constraints)
+   :constraints (mapv (fn [[cname cid]] [cname (get replacement-map cid cid)]) constraints)
    :refines-to (update-vals refines-to
-                            (fn [r] (update r :expr #(if (= % node-id) replacement-id %))))))
+                            (fn [r] (update r :expr #(get replacement-map % %))))))
 
 ;;;;;;;; Guards ;;;;;;;;;;;;;;
 
@@ -871,33 +909,6 @@
     (if (some (fn [negated-terms] (every? #(contains? guards #{%}) negated-terms)) negated-clauses)
       #{#{}} ; true
       guards)))
-
-(s/defn ^:private ssa-graph->dep-graph :- (s/protocol dep/DependencyGraph)
-  "Return a weavejester.dependency graph of the given ssa-graph, where
-  the nodes are node ids."
-  [ssa-graph :- SSAGraph]
-  (->> ssa-graph
-       :dgraph
-       (reduce
-        (fn [g [id d]]
-          (reduce #(dep/depend %1 id %2) g (child-nodes d)))
-        (dep/graph))))
-
-(s/defn cycle? :- s/Bool
-  "Returns true iff the given dgraph contains a cycle. dgraphs with
-  cycles are incorrect!"
-  [ssa-graph :- SSAGraph]
-  (try
-    (ssa-graph->dep-graph ssa-graph)
-    false
-    (catch clojure.lang.ExceptionInfo ex
-      (if (-> ex ex-data :reason (= ::dep/circular-dependency))
-        true
-        (throw ex)))))
-
-(s/defn topo-sort :- [NodeId]
-  [ssa-graph :- SSAGraph]
-  (dep/topo-sort (ssa-graph->dep-graph ssa-graph)))
 
 (s/defn compute-guards :- Guards
   [ssa-graph :- SSAGraph, roots :- #{NodeId}]
@@ -1152,8 +1163,26 @@
   [sctx :- SpecCtx]
   (-> sctx (update-vals spec-from-ssa) (envs/spec-env)))
 
-(defn sort-ssa-graph [ssa-graph]
-  (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph)))
+(def ^:dynamic *unvisited-ids*)
+
+(defn nest-ssa-node [ssa-graph id]
+  (when (thread-bound? #'*unvisited-ids*)
+    (set! *unvisited-ids* (disj *unvisited-ids* id)))
+  (let [[form :as node] (get-in ssa-graph [:dgraph id] [id])
+        expr (cond
+               (seq? form) (doall (map (partial nest-ssa-node ssa-graph) form))
+               :else form)]
+    (if (and (instance? clojure.lang.IObj expr) (not (symbol? expr)))
+      (with-meta expr {:tag id})
+      expr)))
+
+(defn nest-ssa-graph [ssa-graph]
+  (let [ids (topo-sort ssa-graph)]
+    (binding [*unvisited-ids* (set ids)]
+      (vec (mapcat (fn [id]
+                     (when (contains? *unvisited-ids* id)
+                       [(nest-ssa-node ssa-graph id)]))
+                   (reverse ids))))))
 
 (defn pprint-ssa-graph [ssa-graph]
   (pp/pprint (sort-ssa-graph ssa-graph)))

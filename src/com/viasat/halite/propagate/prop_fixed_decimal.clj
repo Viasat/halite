@@ -10,6 +10,7 @@
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.propagate.prop-top-concrete :as prop-top-concrete]
+            [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx] :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
@@ -195,7 +196,9 @@
   (let [shift (- target-scale new-scale)]
     (if (= shift 0)
       target-form
-      (list (if (> shift 0) 'div '*) target-form (->> shift abs (math/pow 10) long)))))
+      (list (if (> shift 0) 'div '*)
+            (list '$typecast target-form (types/decimal-type new-scale))
+            (->> shift abs (math/pow 10) long)))))
 
 (s/defn ^:private lower-rescale-expr
   [{ctx :ctx} :- rewriting/RewriteFnCtx
@@ -254,7 +257,8 @@
         lower-rescale
         lower-spec-field-types
         lower-fixed-decimal-types
-        lower-fixed-decimal-values)))
+        lower-fixed-decimal-values
+        lowering/remove-$typecasts)))
 
 (s/defn propagate :- prop-abstract/SpecBound
   [spec-map :- envs/SpecMap

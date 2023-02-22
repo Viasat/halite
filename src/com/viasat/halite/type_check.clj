@@ -552,6 +552,7 @@
                              '$value? :Boolean
                              '$value! (types/no-maybe (type-check* ctx (second expr)))
                              '$do! (last (map (partial type-check* ctx) (rest expr)))
+                             '$typecast (do (partial type-check* (nth expr 1)) (nth expr 2))
 
                              ;; else:
                              (type-check-fn-application ctx expr))
