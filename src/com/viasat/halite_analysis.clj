@@ -22,5 +22,5 @@
 
 (potemkin/import-vars
  [analysis
-  find-spec-refs-but-tail Range Natural gather-referenced-spec-ids gather-free-vars compute-tlfc-map
+  find-spec-refs-but-tail find-spec-refs-including-tail Range Natural gather-referenced-spec-ids gather-free-vars compute-tlfc-map
   replace-free-vars make-fixed-decimal-string encode-fixed-decimals])

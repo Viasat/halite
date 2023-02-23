@@ -1118,6 +1118,12 @@
        (map unwrap-tail)
        set))
 
+(defn find-spec-refs-including-tail
+  [expr]
+  (->> (find-spec-refs {} expr)
+       (map unwrap-tail)
+       set))
+
 ;;;;
 
 (s/defn ^:private get-field-dependencies :- (s/maybe {types/NamespacedKeyword #{types/NamespacedKeyword}})
