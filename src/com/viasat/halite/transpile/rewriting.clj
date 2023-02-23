@@ -16,7 +16,10 @@
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic *rewrite-traces* nil)
-(def ^:dynamic *typecheck-trace* true)
+
+;; If true, type check the input and output graph of every rewrite rule
+;; execution when tracing is on. See `type-check-traces` as an alternative.
+(def ^:dynamic *typecheck-trace* false)
 
 (defmacro with-tracing
   [[traces-sym] & body]
@@ -34,10 +37,42 @@
 
 (def type-error-item (atom nil))
 
+(defn type-check-graph [senv ssa-graph stage item & {:keys [verbose?]}]
+  (try
+    (binding [ssa/*hide-non-halite-ops* true]
+      (type-check/type-check-spec senv (ssa/spec-from-ssa ssa-graph))
+      (when verbose? (println "ok" stage (:rule item))))
+    (catch Exception ex
+      (reset! type-error-item item)
+      (let [msg (format "Found type error %s %s %s"
+                        (:spec-id item) stage (:rule item))]
+        (println msg)
+        (throw (ex-info msg {:error-in-spec-id (:spec-id item)} ex))))))
+
+(defn type-check-trace [senv trace]
+  (let [senv (or senv
+                 (-> trace meta :senv)
+                 (throw (ex-info "senv is required for type-check")))]
+    (->> (cons nil trace)
+         (partition-all 2 1)
+         (run! (fn [[previous item]]
+                 ;; type check :ssa-graph only if we didn't in the
+                 ;; previous step
+                 (when (and (:ssa-graph item)
+                            (not= (:ssa-graph item)
+                                  (:ssa-graph' previous)))
+                   (type-check-graph
+                    senv (:ssa-graph item) :before item :verbose? true))
+                 (type-check-graph
+                  senv (:ssa-graph' item) :after item :verbose? true))))))
+
+(defn type-check-traces [traces]
+  (->> (vals traces)
+       (run! (partial type-check-trace nil))))
+
 (defn type-check-trace-item
   [senv
-   {:keys [op rule spec-info spec-info'] :as item}
-   & {:keys [verbose?]}]
+   {:keys [rule spec-info spec-info'] :as item}]
   (when (and rule spec-info')
     (let [report-err
           (fn [stage ex]
@@ -49,19 +84,8 @@
                             {:error-in-spec-id (:spec-id item)}
                             ex)))]
       (when spec-info
-        (try
-          (binding [ssa/*hide-non-halite-ops* true]
-            (type-check/type-check-spec senv (ssa/spec-from-ssa spec-info))
-            (when verbose? (println "ok before" rule)))
-          (catch Exception ex
-            (report-err "before" ex))))
-
-      (try
-        (binding [ssa/*hide-non-halite-ops* true]
-          (type-check/type-check-spec senv (ssa/spec-from-ssa spec-info')))
-        (when verbose? (println "ok after" rule))
-        (catch Exception ex
-          (report-err "after" ex))))))
+        (type-check-graph senv spec-info :before item))
+      (type-check-graph senv spec-info' :after item))))
 
 (defmacro trace! [sctx item-form]
   `(when *rewrite-traces*
@@ -108,9 +132,6 @@
          ~body
          (finally
            (print-trace-summary (get @traces# spec-id#)))))))
-
-(defn type-check-trace [senv trace]
-  (run! #(type-check-trace-item senv % :verbose? true) trace))
 
 (s/defschema RewriteFnCtx
   {:sctx SpecCtx :ctx SSACtx})
