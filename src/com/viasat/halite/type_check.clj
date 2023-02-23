@@ -237,7 +237,9 @@
   (arg-count-exactly 3 expr)
   (let [[pred-type s t] (mapv (partial type-check* ctx) (rest expr))]
     (when (not= :Boolean pred-type)
-      (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'if :expected-type-description (text "boolean") :expr expr}))))
+      (throw-err (h-err/arg-type-mismatch (add-position 0 {:op 'if
+                                                           :actual-type pred-type
+                                                           :expected-type-description (text "boolean") :expr expr}))))
     (types/meet s t)))
 
 (s/defn ^:private type-check-cond :- types/HaliteType
@@ -367,7 +369,9 @@
         unset-type
         (let [inner-type (types/no-maybe sym-type)
               set-type (type-check* (update ctx :tenv envs/extend-scope sym inner-type) set-expr)]
-          (types/meet set-type unset-type))))))
+          (if (not (types/maybe-type? sym-type))
+            set-type
+            (types/meet set-type unset-type)))))))
 
 (s/defn ^:private type-check-if-value-let :- types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]

@@ -21,11 +21,6 @@
 ;; This layer adds to each Spec one field for each direct intrinsic refinement,
 ;; expressing refinement in terms of composition (the next layer down).
 ;;
-;; Extrinsic refinements are not included because instances need to be created
-;; even if extrinsic refinements fail. Therefore those refinement expressions
-;; are substituted in place at the site of `refine-to` and `refines-to?` calls.
-;; [this isn't right yet -- where to put bounds for these extrinsic refinements?]
-;;
 ;; Transitive refinements are not included directly either. Imagine a chain of
 ;; intrinsic refinements A -> B -> C.  If transitives were included instances of
 ;; A would have fields for B and C, but A's B would not need a field for C
@@ -41,9 +36,6 @@
 ;; transitive refinement is guarded, but the input bound requires it to have a
 ;; value, then every instance in the chain to it from the root must also be
 ;; required.
-
-;; TODO: extrinsic refinements
-;; TODO: refines-to? support
 
 (def AtomBound prop-composition/AtomBound)
 
@@ -144,7 +136,7 @@
    {{:keys [ssa-graph] :as ctx} :ctx sctx :sctx} :- rewriting/RewriteFnCtx
    id
    [form htype]]
-  (when-let [[_ expr-id to-spec-id] (and (seq? form) (= 'refine-to (first form)) form)]
+  (when-let [[_ expr-id to-spec-id] (and (seq? form) (#{'refine-to '$refine-to-step} (first form)) form)]
     (let [from-spec-id (->> expr-id (ssa/deref-id ssa-graph) ssa/node-type types/spec-id)]
       (when from-spec-id ;; nil when the expr type is [:Instance :*]
         (if (= from-spec-id to-spec-id)

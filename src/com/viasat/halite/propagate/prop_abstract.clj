@@ -5,7 +5,7 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.propagate.prop-refine :as prop-refine]
+            [com.viasat.halite.propagate.prop-extrinsic :as prop-extrinsic]
             [com.viasat.halite.propagate.bound-union :refer [union-refines-to-bounds]]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.lowering :as lowering]
@@ -89,15 +89,15 @@
 
 (s/defschema Bound
   (s/conditional
-   :$type prop-refine/ConcreteBound
+   :$type prop-extrinsic/ConcreteBound
    #(or (not (map? %))
         (and (contains? % :$in)
-             (not (map? (:$in %))))) prop-refine/AtomBound
+             (not (map? (:$in %))))) prop-extrinsic/AtomBound
    :else AbstractSpecBound))
 
-(def Opts prop-refine/Opts)
+(def Opts prop-extrinsic/Opts)
 
-(def default-options prop-refine/default-options)
+(def default-options prop-extrinsic/default-options)
 
 (defn- discriminator-var-name [var-kw] (str (name var-kw) "$type"))
 (defn- discriminator-var-kw [var-kw] (keyword (discriminator-var-name var-kw)))
@@ -385,8 +385,8 @@
 
 (s/defn propagate :- SpecBound
   ([sctx :- ssa/SpecCtx, initial-bound :- SpecBound]
-   (propagate sctx prop-refine/default-options initial-bound))
-  ([sctx :- ssa/SpecCtx, opts :- prop-refine/Opts, initial-bound :- SpecBound]
+   (propagate sctx prop-extrinsic/default-options initial-bound))
+  ([sctx :- ssa/SpecCtx, opts :- prop-extrinsic/Opts, initial-bound :- SpecBound]
    (let [abstract? #(-> % sctx :abstract? true?)
          refn-graph (spec-context-to-inverted-refinement-graph sctx)
          alternatives (reduce
@@ -394,7 +394,7 @@
                          (->> spec-id
                               (loom-derived/subgraph-reachable-from refn-graph)
                               loom-graph/nodes
-                              (filter (complement abstract?))
+                              (remove abstract?)
                               sort
                               (#(zipmap % (range)))
                               (assoc alts spec-id)))
@@ -402,5 +402,5 @@
                        (keys sctx))
          senv (ssa/as-spec-env sctx)]
      (-> (reduce-kv (fn [acc spec-id spec] (lower-abstract-vars acc alternatives spec-id spec)) sctx sctx)
-         (prop-refine/propagate opts (lower-abstract-bounds [] initial-bound senv alternatives))
+         (prop-extrinsic/propagate opts (lower-abstract-bounds [] initial-bound senv alternatives))
          (raise-abstract-bounds senv alternatives)))))

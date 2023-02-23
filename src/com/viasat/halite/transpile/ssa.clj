@@ -26,6 +26,9 @@
       $typecast
       ;; introduced just so the fixed-decimal lowering can be performed on ssa form
       rescale
+      ;; a partially lowered refinement op that only can handle a single step
+      ;; refinement, not a path through the graph:
+      $refine-to-step
       ;; Introduced by let and rewriting rules to prevent expression pruning and preserve semantics.
       $do!
       ;; These are not available to halite users; they serve as the internal representation of if-value forms.
@@ -364,7 +367,8 @@
     (let [node (deref-id ssa-graph id)]
       (if (not= htype (node-type (deref-id ssa-graph id)))
         (throw (ex-info (format "BUG! Tried to add node %s, but that form already recorded as %s" [ssa-form htype] node)
-                        {:node node :ssa-graph ssa-graph}))
+                        {:node node
+                         :ssa-graph ssa-graph}))
         [ssa-graph id]))
     (if (= :Boolean htype)
       (ensure-boolean-node ssa-graph ssa-form)
@@ -522,12 +526,12 @@
     (ensure-node-with-type (assoc ctx :ssa-graph ssa-graph) form-to-add)))
 
 (s/defn ^:private refine-to-to-ssa :- NodeInGraph
-  [ctx :- SSACtx, [_ subexpr spec-id :as form]]
+  [ctx :- SSACtx, [op subexpr spec-id :as form]]
   (let [[ssa-graph id] (form-to-ssa ctx subexpr)]
     (when (nil? (envs/lookup-spec (:senv ctx) spec-id))
       (throw (ex-info (format "BUG! Spec '%s' not found" spec-id)
                       {:form form :spec-id spec-id})))
-    (ensure-node ssa-graph (list 'refine-to id spec-id) (types/concrete-spec-type spec-id))))
+    (ensure-node ssa-graph (list op id spec-id) (types/concrete-spec-type spec-id))))
 
 (s/defn ^:private refines-to?-to-ssa :- NodeInGraph
   [ctx :- SSACtx, [_ subexpr spec-id :as form]]
@@ -690,6 +694,7 @@
                                                   (reverse (partition 2 (rest form)))))
                     'get (get-to-ssa ctx form)
                     'refine-to (refine-to-to-ssa ctx form)
+                    '$refine-to-step (refine-to-to-ssa ctx form)
                     'refines-to? (refines-to?-to-ssa ctx form)
                     '$do! (do!-to-ssa ctx form)
                     'if-value (if-value-to-ssa ctx form)
@@ -871,7 +876,8 @@
                     (cond
                       (= '$local op) result
                       (and (= 'get op) (keyword? (last form))) (compute-guards* ssa-graph current result (first args))
-                      (#{'refine-to 'refines-to?} op) (compute-guards* ssa-graph current result (first args))
+                      (#{'refine-to '$refine-to-step 'refines-to?} op) (compute-guards*
+                                                                        ssa-graph current result (first args))
                       (= 'when op) (let [[pred-id then-id] args
                                          not-pred-id (negated ssa-graph pred-id)]
                                      (as-> result result
@@ -928,7 +934,7 @@
   [ssa-graph :- SSAGraph, ordering :- {NodeId s/Int}, guards :- Guards, bound? :- #{s/Symbol}, curr-guard :- #{NodeId}, id]
   (if (bound? id)
     id
-    (let [node (or (deref-id ssa-graph id) (throw (ex-info "BUG! Node not found" {:id id :ssa-graph ssa-graph})))
+    (let [node (deref-id ssa-graph id)
           form (node-form node)]
       (cond
         (or (integer? form) (boolean? form) (string? form) (base/fixed-decimal? form)) form
@@ -942,6 +948,10 @@
 
                       (#{'refine-to 'refines-to?} (first form))
                       (list (first form) (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
+
+                      (= '$refine-to-step (first form))
+                      (list (if *hide-non-halite-ops* 'refine-to '$refine-to-step)
+                            (form-from-ssa* ssa-graph ordering guards bound? curr-guard (second form)) (last form))
 
                       ;; Don't emit useless ($do! $1 $1) -- should this be a simplify rule instead?
                       (and (= '$do! (first form)) (apply = (rest form)))
