@@ -1187,19 +1187,6 @@
      '{x {:enum #{7100}}}
      '{x {:enum #{7100}}}]))
 
-(deftest test-encode-fixed-decimals
-  (is (= 100
-         (analysis/encode-fixed-decimals #d "1.00")))
-
-  (is (= '(let [x 100
-                y [21 0]
-                z #{1}]
-            12)
-         (analysis/encode-fixed-decimals '(let [x #d "1.00"
-                                                y [#d "2.1" #d "0.0"]
-                                                z #{#d "0.0001"}]
-                                            #d "1.2")))))
-
 (deftest test-find-spec-refs
   (is (= #{}
          (analysis/find-spec-refs '1)))
