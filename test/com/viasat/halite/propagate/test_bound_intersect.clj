@@ -16,6 +16,12 @@
                                          {:$type :spec/B})))
   (is (= {:$type :spec/A}
          (bound-intersect/combine-bounds {:$type :spec/A}
-                                         {:$type :spec/A}))))
+                                         {:$type :spec/A})))
+  (is (= {:$type :spec/A
+          :x 2}
+         (bound-intersect/combine-bounds {:$type :spec/A
+                                          :x 2}
+                                         {:$type :spec/A
+                                          :x {:$in #{2}}}))))
 
 ;; (clojure.test/run-tests)

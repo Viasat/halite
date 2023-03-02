@@ -35,17 +35,26 @@
 (declare combine-bounds)
 
 (s/defn ^:private combine-abstract-$in-bounds
-  [a-in :- prop-abstract/SpecIdToBoundWithRefinesTo
-   b-in :- prop-abstract/SpecIdToBoundWithRefinesTo]
-  ;; TODO: this code is WRONG!, it needs to be taking the union of the keys
-  (let [common-spec-ids (set/intersection (set (keys a-in))
-                                          (set (keys b-in)))]
-    (when-not (seq common-spec-ids)
-      (prop-strings/throw-contradiction))
-    (merge-with combine-bounds
-                ;; in an obscure way this handles :Unset boolean values in the bounds
-                (select-keys a-in common-spec-ids)
-                (select-keys b-in common-spec-ids))))
+  [a-in ;; :- (s/maybe prop-abstract/SpecIdToBoundWithRefinesTo)
+   b-in ;; :- (s/maybe prop-abstract/SpecIdToBoundWithRefinesTo)
+   ]
+  (cond
+    (and (seq a-in) (seq b-in))
+    ;; TODO: this code is WRONG!, it needs to be taking the union of the keys
+    (let [common-spec-ids (set/intersection (set (keys a-in))
+                                            (set (keys b-in)))]
+      (when-not (seq common-spec-ids)
+        (prop-strings/throw-contradiction))
+      (merge-with combine-bounds
+                  ;; in an obscure way this handles :Unset boolean values in the bounds
+                  (select-keys a-in common-spec-ids)
+                  (select-keys b-in common-spec-ids)))
+
+    (seq a-in)
+    a-in
+
+    (seq b-in)
+    b-in))
 
 (s/defn ^:private combine-untyped-spec-bounds
   [a :- prop-abstract/UntypedSpecBound
@@ -53,8 +62,9 @@
   (merge-with combine-bounds a b))
 
 (s/defn ^:private combine-abstract-spec-bounds
-  [a :- prop-abstract/AbstractSpecBound
-   b :- prop-abstract/AbstractSpecBound]
+  [a ;; :- prop-abstract/AbstractSpecBound
+   b ;; :- prop-abstract/AbstractSpecBound
+   ]
   (let [{a-refines-to :$refines-to
          a-in :$in} a
         {b-refines-to :$refines-to
@@ -68,14 +78,18 @@
                           (key (first combined-in-bounds)))]
     (if (= single-in-bound :Unset)
       :Unset
-      (merge (no-nil {:$type (when single-in-bound
-                               single-in-bound)
-                      :$refines-to (no-empty
-                                    ;; TODO: consider detecting whether there are any specs that refine to the combined results
-                                    ;; or has that already been accounted for?
-                                    (merge-with combine-untyped-spec-bounds a-refines-to b-refines-to))
-                      :$in (when-not single-in-bound
-                             combined-in-bounds)})
+      (merge (no-nil (let [base {:$type (when single-in-bound
+                                          single-in-bound)
+                                 :$refines-to (no-empty
+                                               ;; TODO: consider detecting whether there are any specs that refine to the combined results
+                                               ;; or has that already been accounted for?
+                                               (merge-with combine-untyped-spec-bounds a-refines-to b-refines-to))
+                                 :$in (when-not single-in-bound
+                                        combined-in-bounds)}]
+                       ;; is this right?
+                       (if single-in-bound
+                         (merge base (combined-in-bounds single-in-bound))
+                         base)))
              (combine-untyped-spec-bounds (dissoc a :$in :$if :$type :$refines-to)
                                           (dissoc b :$in :$if :$type :$refines-to))))))
 
@@ -92,7 +106,8 @@
                    :Unset unsettable?})}))
 
 (s/defn ^:private bound-object
-  [bound :- prop-abstract/Bound]
+  [bound ;; :- prop-abstract/Bound
+   ]
   (cond
     (:$type bound) {:bound (concrete-spec-bound-to-AbstractSpecBound bound)
                     :bound-type :prop-abstract/AbstractSpecBound}
@@ -166,8 +181,9 @@
     bound))
 
 (s/defn combine-bounds
-  [a :- prop-abstract/Bound
-   b :- prop-abstract/Bound]
+  [a ;; :- prop-abstract/Bound
+   b ;; :- prop-abstract/Bound
+   ]
   (let [bound-objects (map bound-object (remove #(= :Unset %) [a b]))
         bound-types (map :bound-type bound-objects)]
     (when (> (count (set bound-types)) 1)
