@@ -71,17 +71,21 @@
 (defn- union-spec-bounds [a b]
   (when (not= (:$type a) (:$type b))
     (throw (ex-info "BUG! Tried to union bounds for different spec types" {:a a :b b})))
-  (let [refines-to (union-refines-to-bounds (:$refines-to a) (:$refines-to b))]
-    (reduce
-     (fn [result var-kw]
-       (assoc result var-kw
-              (cond
-                (and (contains? a var-kw) (contains? b var-kw)) (union-bounds (var-kw a) (var-kw b))
-                (contains? a var-kw) (var-kw a)
-                :else (var-kw b))))
-     (cond-> {:$type (:$type a)}
-       (not (empty? refines-to)) (assoc :$refines-to refines-to))
-     (disj (set (concat (keys a) (keys b))) :$type :$refines-to))))
+
+  ;; TODO: should not need to special case this
+  (if (and (= a :String) (= b :String))
+    :String
+    (let [refines-to (union-refines-to-bounds (:$refines-to a) (:$refines-to b))]
+      (reduce
+       (fn [result var-kw]
+         (assoc result var-kw
+                (cond
+                  (and (contains? a var-kw) (contains? b var-kw)) (union-bounds (var-kw a) (var-kw b))
+                  (contains? a var-kw) (var-kw a)
+                  :else (var-kw b))))
+       (cond-> {:$type (:$type a)}
+         (not (empty? refines-to)) (assoc :$refines-to refines-to))
+       (disj (set (concat (keys a) (keys b))) :$type :$refines-to)))))
 
 (defn- allows-unset? [bound]
   (or
@@ -111,6 +115,8 @@
 
     (and (map? bound) (contains? bound :$type))
     (update bound :$type #(cond-> % (vector? %) second))
+
+    (= :String bound) bound
 
     :else (throw (ex-info "BUG! Unrecognized bound" {:bound bound}))))
 
