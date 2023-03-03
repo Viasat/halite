@@ -127,6 +127,20 @@
   (when (spec-type? t)
     (second t)))
 
+(s/defn abstract-spec-type? :- s/Bool
+  [t]
+  (and (vector? t)
+       (= :Instance (first t))
+       (and (= :* (second t)))))
+
+(s/defn inner-abstract-spec-type :- (s/maybe NamespacedKeyword)
+  [t]
+  (when (abstract-spec-type? t)
+    (let [spec-ids (nth t 2)]
+      (when-not (= (count spec-ids) 1)
+        (throw (ex-info "cannot compute inner abstract spec type" {:t t})))
+      (first spec-ids))))
+
 (s/defschema TypeAtom
   "Type atoms are always unqualified keywords."
   (s/enum :Integer :String :Boolean :Value :Nothing :Any :Unset :PreInstance))

@@ -383,6 +383,33 @@
             spec-bound)))
       spec-bound))))
 
+(def ^:dynamic *senv* nil)
+(def ^:dynamic *alternatives* nil)
+
+(s/defn ^:private lower-instance-literals
+  [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx
+   _
+   [form]]
+  (let [senv *senv*
+        alternatives *alternatives*]
+    (when (map? form)
+      (let [spec-id (:$type form)
+            {:keys [fields]} (envs/lookup-spec senv spec-id)]
+        (->> fields
+             (reduce (fn [form [var-kw var-type :as var-entry]]
+                       (if (abstract-var? senv var-entry)
+                         (let [var-spec-id (-> var-type types/no-maybe types/inner-abstract-spec-type)
+                               field-value (var-kw form)
+                               [_ field-type] (ssa/deref-id ssa-graph field-value)
+                               field-spec-id (-> field-type types/no-maybe types/inner-spec-type)
+                               i (get-in alternatives [var-spec-id field-spec-id])]
+                           (-> form
+                               (dissoc var-kw)
+                               (assoc (discriminator-var-kw var-kw) i)
+                               (assoc (keyword (str (name var-kw) "$" i)) field-value)))
+                         form))
+                     form))))))
+
 (s/defn propagate :- SpecBound
   ([sctx :- ssa/SpecCtx, initial-bound :- SpecBound]
    (propagate sctx prop-extrinsic/default-options initial-bound))
@@ -400,7 +427,11 @@
                               (assoc alts spec-id)))
                        {}
                        (keys sctx))
-         senv (ssa/as-spec-env sctx)]
+         senv (ssa/as-spec-env sctx)
+         rewrite-sctx-f #(binding [*senv* senv
+                                   *alternatives* alternatives]
+                           (rewriting/rewrite-sctx % lower-instance-literals))]
      (-> (reduce-kv (fn [acc spec-id spec] (lower-abstract-vars acc alternatives spec-id spec)) sctx sctx)
+         rewrite-sctx-f
          (prop-extrinsic/propagate opts (lower-abstract-bounds [] initial-bound senv alternatives))
          (raise-abstract-bounds senv alternatives)))))

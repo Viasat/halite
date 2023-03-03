@@ -52,7 +52,7 @@
 (defn type-check-trace [senv trace]
   (let [senv (or senv
                  (-> trace meta :senv)
-                 (throw (ex-info "senv is required for type-check")))]
+                 (throw (ex-info "senv is required for type-check" {})))]
     (->> (cons nil trace)
          (partition-all 2 1)
          (run! (fn [[previous item]]
