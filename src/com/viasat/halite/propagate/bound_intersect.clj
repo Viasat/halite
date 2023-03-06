@@ -140,7 +140,7 @@
 (s/defn ^:private simplify-enum :- prop-strings/AtomBound
   [enum :- #{s/Any}]
   (cond
-    (empty? enum) (prop-strings/throw-contradiction)
+    (empty? enum) (prop-strings/throw-contradiction enum)
     (= 1 (count enum)) (first enum)
     :default {:$in enum}))
 
