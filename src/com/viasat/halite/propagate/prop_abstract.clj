@@ -383,6 +383,19 @@
             spec-bound)))
       spec-bound))))
 
+(s/defn ^:private raise-abstract-bounds-top :- SpecBound
+  [spec-bound :- ConcreteSpecBound2, senv :- (s/protocol envs/SpecEnv), alternatives]
+  (let [spec-bound' (if (:$refines-to spec-bound)
+                      (assoc spec-bound
+                             :$refines-to (->> (:$refines-to spec-bound)
+                                               (mapcat (fn [[k v]]
+                                                         [k (-> (assoc v :$type k)
+                                                                (raise-abstract-bounds senv alternatives)
+                                                                (dissoc :$type))]))
+                                               (apply hash-map)))
+                      spec-bound)]
+    (raise-abstract-bounds spec-bound' senv alternatives)))
+
 (def ^:dynamic *senv* nil)
 (def ^:dynamic *alternatives* nil)
 
@@ -434,4 +447,4 @@
      (-> (reduce-kv (fn [acc spec-id spec] (lower-abstract-vars acc alternatives spec-id spec)) sctx sctx)
          rewrite-sctx-f
          (prop-extrinsic/propagate opts (lower-abstract-bounds [] initial-bound senv alternatives))
-         (raise-abstract-bounds senv alternatives)))))
+         (raise-abstract-bounds-top senv alternatives)))))
