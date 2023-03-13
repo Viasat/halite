@@ -680,12 +680,12 @@ The following specs define the operations involving notebooks in workspaces.
   "tutorials.notebook/DeleteNotebook$v1" : {
     "fields" : {
       "workspaceRegistryHeaderNotebookName" : [ "Maybe", "String" ],
-      "workspaceTests" : [ "Set", "tutorials.notebook/RegressionTest$v1" ],
       "workspaceNotebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
+      "workspaceTests" : [ "Set", "tutorials.notebook/RegressionTest$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: !(any?(t in workspaceTests)(t.notebookName == notebookName)), name: \"notebookNotRegressionTest\"}", "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (ifValue(workspaceRegistryHeaderNotebookName) {(notebookName != workspaceRegistryHeaderNotebookName)} else {true}), name: \"notebookNotRegistryHeader\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() == 1), name: \"notebookExists\"}", "{expr: (valid? {$type: tutorials.notebook/Workspace$v1, notebooks: workspaceNotebooks, registryHeaderNotebookName: workspaceRegistryHeaderNotebookName}), name: \"validWorkspace\"}" ],
+    "constraints" : [ "{expr: !(any?(t in workspaceTests)(t.notebookName == notebookName)), name: \"notebookNotRegressionTest\"}", "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (ifValue(workspaceRegistryHeaderNotebookName) {(notebookName != workspaceRegistryHeaderNotebookName)} else {true}), name: \"notebookNotRegistryHeader\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() == 1), name: \"notebookExists\"}", "{expr: (valid? {$type: tutorials.notebook/Workspace$v1, notebooks: workspaceNotebooks, registryHeaderNotebookName: workspaceRegistryHeaderNotebookName, tests: workspaceTests}), name: \"validWorkspace\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",

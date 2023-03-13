@@ -856,8 +856,8 @@
 
                        :tutorials.notebook/DeleteNotebook$v1
                        {:fields {:workspaceRegistryHeaderNotebookName [:Maybe :String]
-                                 :workspaceTests [:Set :tutorials.notebook/RegressionTest$v1]
                                  :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1]
+                                 :workspaceTests [:Set :tutorials.notebook/RegressionTest$v1]
                                  :notebookName :String
                                  :notebookVersion :Integer}
 
@@ -885,7 +885,8 @@
                            :expr
                            '(valid? {:$type :tutorials.notebook/Workspace$v1
                                      :registryHeaderNotebookName workspaceRegistryHeaderNotebookName
-                                     :notebooks workspaceNotebooks})}}
+                                     :notebooks workspaceNotebooks
+                                     :tests workspaceTests})}}
                         :refines-to {:tutorials.notebook/WorkspaceAndEffects$v1
                                      {:name "newWorkspaceAndEffects"
                                       :expr

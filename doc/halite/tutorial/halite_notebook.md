@@ -1636,7 +1636,8 @@ The following specs define the operations involving notebooks in workspaces.
                      :expr (valid? {:$type :tutorials.notebook/Workspace$v1,
                                     :registryHeaderNotebookName
                                       workspaceRegistryHeaderNotebookName,
-                                    :notebooks workspaceNotebooks})}},
+                                    :notebooks workspaceNotebooks,
+                                    :tests workspaceTests})}},
     :refines-to
       {:tutorials.notebook/WorkspaceAndEffects$v1
          {:name "newWorkspaceAndEffects",
