@@ -1613,7 +1613,8 @@ The following specs define the operations involving notebooks in workspaces.
    {:fields {:notebookName :String,
              :notebookVersion :Integer,
              :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1],
-             :workspaceRegistryHeaderNotebookName [:Maybe :String]},
+             :workspaceRegistryHeaderNotebookName [:Maybe :String],
+             :workspaceTests [:Set :tutorials.notebook/RegressionTest$v1]},
     :constraints #{'{:name "notebookExists",
                      :expr (= (count
                                 (filter [nb workspaceNotebooks]
@@ -1625,6 +1626,9 @@ The following specs define the operations involving notebooks in workspaces.
                                      (not= notebookName
                                            workspaceRegistryHeaderNotebookName)
                                      true)}
+                   '{:name "notebookNotRegressionTest",
+                     :expr (not (any? [t workspaceTests]
+                                      (= (get t :notebookName) notebookName)))}
                    '{:name "positiveVersion",
                      :expr (valid? {:$type :tutorials.notebook/Version$v1,
                                     :version notebookVersion})}
@@ -1920,6 +1924,7 @@ Exercise the operation to delete a notebook.
                                    :name "notebook2",
                                    :version 1,
                                    :items []}},
+            :workspaceTests #{},
             :notebookName "notebook1",
             :notebookVersion 1}
            :tutorials.notebook/WorkspaceAndEffects$v1)
@@ -1950,7 +1955,8 @@ Cannot delete a notebook that does not exist.
                        {:name "notebook2",
                         :$type :tutorials.notebook/Notebook$v1,
                         :items [],
-                        :version 1}}}
+                        :version 1}},
+ :workspaceTests #{}}
 
 
 ;-- result --
@@ -2259,48 +2265,23 @@ A notebook can be used as the basis for a regression test suite.
                        :notebookVersion 1}}}}
 ```
 
-A notebook can be deleted even if it was used to create a regression test.
+A notebook cannot be deleted if it was used to create a regression test.
 
 ```clojure
-(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1,
-            :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1,
-                                   :name "notebook1",
-                                   :version 1,
-                                   :items []}},
-            :notebookName "notebook1",
-            :notebookVersion 1}
-           :tutorials.notebook/WorkspaceAndEffects$v1)
+(valid? {:$type :tutorials.notebook/DeleteNotebook$v1,
+         :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1,
+                                :name "notebook1",
+                                :version 1,
+                                :items []}},
+         :workspaceTests #{{:$type :tutorials.notebook/RegressionTest$v1,
+                            :notebookName "notebook1",
+                            :notebookVersion 1}},
+         :notebookName "notebook1",
+         :notebookVersion 1})
 
 
 ;-- result --
-{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
- :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1,
-            :notebookName "notebook1",
-            :notebookVersion 1}],
- :workspace {:$type :tutorials.notebook/Workspace$v1,
-             :notebooks #{}}}
-```
-
-The notebook when it is deleted may be a different version than that used to create the regression test.
-
-```clojure
-(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1,
-            :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1,
-                                   :name "notebook1",
-                                   :version 2,
-                                   :items []}},
-            :notebookName "notebook1",
-            :notebookVersion 2}
-           :tutorials.notebook/WorkspaceAndEffects$v1)
-
-
-;-- result --
-{:$type :tutorials.notebook/WorkspaceAndEffects$v1,
- :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1,
-            :notebookName "notebook1",
-            :notebookVersion 2}],
- :workspace {:$type :tutorials.notebook/Workspace$v1,
-             :notebooks #{}}}
+false
 ```
 
 Once a notebook is deleted, then when it written again the version numbering starts over. This happens even if it was used as a regression test.

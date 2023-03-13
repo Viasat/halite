@@ -680,11 +680,12 @@ The following specs define the operations involving notebooks in workspaces.
   "tutorials.notebook/DeleteNotebook$v1" : {
     "fields" : {
       "workspaceRegistryHeaderNotebookName" : [ "Maybe", "String" ],
+      "workspaceTests" : [ "Set", "tutorials.notebook/RegressionTest$v1" ],
       "workspaceNotebooks" : [ "Set", "tutorials.notebook/Notebook$v1" ],
       "notebookName" : "String",
       "notebookVersion" : "Integer"
     },
-    "constraints" : [ "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (ifValue(workspaceRegistryHeaderNotebookName) {(notebookName != workspaceRegistryHeaderNotebookName)} else {true}), name: \"notebookNotRegistryHeader\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() == 1), name: \"notebookExists\"}", "{expr: (valid? {$type: tutorials.notebook/Workspace$v1, notebooks: workspaceNotebooks, registryHeaderNotebookName: workspaceRegistryHeaderNotebookName}), name: \"validWorkspace\"}" ],
+    "constraints" : [ "{expr: !(any?(t in workspaceTests)(t.notebookName == notebookName)), name: \"notebookNotRegressionTest\"}", "{expr: (valid? {$type: tutorials.notebook/Version$v1, version: notebookVersion}), name: \"positiveVersion\"}", "{expr: (ifValue(workspaceRegistryHeaderNotebookName) {(notebookName != workspaceRegistryHeaderNotebookName)} else {true}), name: \"notebookNotRegistryHeader\"}", "{expr: ((filter(nb in workspaceNotebooks)((nb.name == notebookName) && (nb.version == notebookVersion))).count() == 1), name: \"notebookExists\"}", "{expr: (valid? {$type: tutorials.notebook/Workspace$v1, notebooks: workspaceNotebooks, registryHeaderNotebookName: workspaceRegistryHeaderNotebookName}), name: \"validWorkspace\"}" ],
     "refines-to" : {
       "tutorials.notebook/WorkspaceAndEffects$v1" : {
         "name" : "newWorkspaceAndEffects",
@@ -792,7 +793,7 @@ Writing a new version of a notebook succeeds
 Exercise the operation to delete a notebook.
 
 ```java
-{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}, workspaceTests: #{}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
 
 
 //-- result --
@@ -802,7 +803,7 @@ Exercise the operation to delete a notebook.
 Cannot delete a notebook that does not exist.
 
 ```java
-{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 12, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}}
+{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 12, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}, {$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook2", version: 1}}, workspaceTests: #{}}
 
 
 //-- result --
@@ -859,24 +860,14 @@ A notebook can be used as the basis for a regression test suite.
 {$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/WriteRegressionTestEffect$v1, notebookName: "notebook1", notebookVersion: 1}, {$type: tutorials.notebook/RunTestsEffect$v1, notebookName: "notebook1", notebookVersion: 1, registrySpecs: true}], workspace: {$type: tutorials.notebook/Workspace$v1, tests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}}}
 ```
 
-A notebook can be deleted even if it was used to create a regression test.
+A notebook cannot be deleted if it was used to create a regression test.
 
 ```java
-{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
+(valid? {$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 1, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 1}}, workspaceTests: #{{$type: tutorials.notebook/RegressionTest$v1, notebookName: "notebook1", notebookVersion: 1}}})
 
 
 //-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 1}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}}}
-```
-
-The notebook when it is deleted may be a different version than that used to create the regression test.
-
-```java
-{$type: tutorials.notebook/DeleteNotebook$v1, notebookName: "notebook1", notebookVersion: 2, workspaceNotebooks: #{{$type: tutorials.notebook/Notebook$v1, items: [], name: "notebook1", version: 2}}}.refineTo( tutorials.notebook/WorkspaceAndEffects$v1 )
-
-
-//-- result --
-{$type: tutorials.notebook/WorkspaceAndEffects$v1, effects: [{$type: tutorials.notebook/DeleteNotebookEffect$v1, notebookName: "notebook1", notebookVersion: 2}], workspace: {$type: tutorials.notebook/Workspace$v1, notebooks: #{}}}
+false
 ```
 
 Once a notebook is deleted, then when it written again the version numbering starts over. This happens even if it was used as a regression test.

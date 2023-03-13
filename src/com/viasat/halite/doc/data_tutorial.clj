@@ -856,6 +856,7 @@
 
                        :tutorials.notebook/DeleteNotebook$v1
                        {:fields {:workspaceRegistryHeaderNotebookName [:Maybe :String]
+                                 :workspaceTests [:Set :tutorials.notebook/RegressionTest$v1]
                                  :workspaceNotebooks [:Set :tutorials.notebook/Notebook$v1]
                                  :notebookName :String
                                  :notebookVersion :Integer}
@@ -876,6 +877,10 @@
                            '(if-value workspaceRegistryHeaderNotebookName
                                       (not= notebookName workspaceRegistryHeaderNotebookName)
                                       true)}
+                          {:name "notebookNotRegressionTest"
+                           :expr
+                           '(not (any? [t workspaceTests]
+                                       (= (get t :notebookName) notebookName)))}
                           {:name "validWorkspace"
                            :expr
                            '(valid? {:$type :tutorials.notebook/Workspace$v1
@@ -1301,6 +1306,7 @@
       '(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1
                    :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 1 :items []}
                                          {:$type :tutorials.notebook/Notebook$v1 :name "notebook2" :version 1 :items []}}
+                   :workspaceTests #{}
                    :notebookName "notebook1"
                    :notebookVersion 1}
                   :tutorials.notebook/WorkspaceAndEffects$v1)
@@ -1314,6 +1320,7 @@
       '{:$type :tutorials.notebook/DeleteNotebook$v1
         :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 1 :items []}
                               {:$type :tutorials.notebook/Notebook$v1 :name "notebook2" :version 1 :items []}}
+        :workspaceTests #{}
         :notebookName "notebook1"
         :notebookVersion 12}
       :throws :auto}
@@ -1455,29 +1462,16 @@
                :effects [{:$type :tutorials.notebook/WriteRegressionTestEffect$v1 :notebookName "notebook1" :notebookVersion 1}
                          {:$type :tutorials.notebook/RunTestsEffect$v1 :notebookName "notebook1" :notebookVersion 1 :registrySpecs true}]}}
 
-     "A notebook can be deleted even if it was used to create a regression test."
+     "A notebook cannot be deleted if it was used to create a regression test."
      {:code
-      '(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1
-                   :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 1 :items []}}
-                   :notebookName "notebook1"
-                   :notebookVersion 1}
-                  :tutorials.notebook/WorkspaceAndEffects$v1)
-      :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
-               :workspace {:$type :tutorials.notebook/Workspace$v1
-                           :notebooks #{}}
-               :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1 :notebookName "notebook1" :notebookVersion 1}]}}
-
-     "The notebook when it is deleted may be a different version than that used to create the regression test."
-     {:code
-      '(refine-to {:$type :tutorials.notebook/DeleteNotebook$v1
-                   :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 2 :items []}}
-                   :notebookName "notebook1"
-                   :notebookVersion 2}
-                  :tutorials.notebook/WorkspaceAndEffects$v1)
-      :result {:$type :tutorials.notebook/WorkspaceAndEffects$v1
-               :workspace {:$type :tutorials.notebook/Workspace$v1
-                           :notebooks #{}}
-               :effects [{:$type :tutorials.notebook/DeleteNotebookEffect$v1 :notebookName "notebook1" :notebookVersion 2}]}}
+      '(valid? {:$type :tutorials.notebook/DeleteNotebook$v1
+                :workspaceNotebooks #{{:$type :tutorials.notebook/Notebook$v1 :name "notebook1" :version 1 :items []}}
+                :workspaceTests #{{:$type :tutorials.notebook/RegressionTest$v1
+                                   :notebookName "notebook1"
+                                   :notebookVersion 1}}
+                :notebookName "notebook1"
+                :notebookVersion 1})
+      :result false}
 
      "Once a notebook is deleted, then when it written again the version numbering starts over. This happens even if it was used as a regression test."
      {:code
