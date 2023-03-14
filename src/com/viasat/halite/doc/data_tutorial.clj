@@ -1577,7 +1577,10 @@
                                    :beverageCount 10
                                    :snackCount 15}
                                   :tutorials.vending/State$v1)
-                :result :auto}
+                :result {:$type :tutorials.vending/State$v1
+                         :balance #d "0.00"
+                         :beverageCount 10
+                         :snackCount 15}}
 
                "The following is not a valid initial state."
                {:code '{:$type :tutorials.vending/InitialState$v1
@@ -1720,7 +1723,26 @@
                                 {:$type :tutorials.vending/VendEvent$v1
                                  :item "beverage"}]]
                             (refine-to e :tutorials.vending/AbstractEvent$v1))
-                :result :auto}
+                :result [{:$type :tutorials.vending/AbstractEvent$v1,
+                          :balanceDelta #d "0.05",
+                          :beverageDelta 0,
+                          :snackDelta 0}
+                         {:$type :tutorials.vending/AbstractEvent$v1,
+                          :balanceDelta #d "0.10",
+                          :beverageDelta 0,
+                          :snackDelta 0}
+                         {:$type :tutorials.vending/AbstractEvent$v1,
+                          :balanceDelta #d "0.25",
+                          :beverageDelta 0,
+                          :snackDelta 0}
+                         {:$type :tutorials.vending/AbstractEvent$v1,
+                          :balanceDelta #d "-0.50",
+                          :beverageDelta 0,
+                          :snackDelta -1}
+                         {:$type :tutorials.vending/AbstractEvent$v1,
+                          :balanceDelta #d "-1.00",
+                          :beverageDelta -1,
+                          :snackDelta 0}]}
                "As the next step, we add a spec which will take a vending machine state and and event as input to produce a new vending machine state as output."
                {:spec-map-merge {:tutorials.vending/EventHandler$v1 {:fields {:current :tutorials.vending/State$v1
                                                                               :event :tutorials.vending/AbstractEvent$v1}
@@ -1750,7 +1772,9 @@
                                    :event {:$type :tutorials.vending/CoinEvent$v1
                                            :denomination "quarter"}}
                                   :tutorials.vending/Transition$v1)
-                :result :auto}
+                :result {:$type :tutorials.vending/Transition$v1
+                         :current {:$type :tutorials.vending/State$v1, :balance #d "0.10", :beverageCount 5, :snackCount 6},
+                         :next {:$type :tutorials.vending/State$v1, :balance #d "0.35", :beverageCount 5, :snackCount 6}}}
 
                "If we try to process an event that cannot be handled then the state is unchanged."
                {:code '(refine-to {:$type :tutorials.vending/EventHandler$v1
@@ -1761,7 +1785,10 @@
                                    :event {:$type :tutorials.vending/VendEvent$v1
                                            :item "snack"}}
                                   :tutorials.vending/Transition$v1)
-                :result :auto}
+                :result {:$type :tutorials.vending/Transition$v1,
+                         :current
+                         {:$type :tutorials.vending/State$v1, :balance #d "0.10", :beverageCount 5, :snackCount 6},
+                         :next {:$type :tutorials.vending/State$v1, :balance #d "0.10", :beverageCount 5, :snackCount 6}}}
 
                "We have come this far we might as well add one more spec that ties it all together via an initial state and a sequence of events."
                {:spec-map-merge {:tutorials.vending/Behavior$v1 {:fields {:initial :tutorials.vending/InitialState$v1
@@ -1810,7 +1837,7 @@
                                             {:$type :tutorials.vending/VendEvent$v1
                                              :item "beverage"}]}
                                   :tutorials.vending/State$v1)
-                :result :auto}
+                :result {:$type :tutorials.vending/State$v1, :balance #d "0.15", :beverageCount 9, :snackCount 14}}
                "Note that some of the vend events were effectively ignored because the balance was too low."]}
 
    :tutorials.sudoku/sudoku
@@ -1832,7 +1859,7 @@
                                    [3 4 1 2]
                                    [4 3 2 1]
                                    [2 1 4 3]]}}
-               "In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, & 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row."
+               "In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, and 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row."
                {:spec-map {:tutorials.sudoku/Sudoku$v2 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                         :constraints #{{:name "row_1" :expr '(= (concat #{} (get solution 0))
                                                                                                 #{1 2 3 4})}
@@ -1848,7 +1875,7 @@
                                    [3 4 1 2]
                                    [4 3 2 1]
                                    [2 1 4 3]]}
-                :result :auto}
+                :result {:$type :tutorials.sudoku/Sudoku$v2, :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}}
                "However, this attempt to create an instance fails. It tells us specifically which constraint failed."
                {:code '{:$type :tutorials.sudoku/Sudoku$v2
                         :solution [[1 2 3 4]
@@ -1867,7 +1894,7 @@
                                    [3 4 1 2]
                                    [4 3 2 1]
                                    [2 1 4 3]]}
-                :result :auto}
+                :result {:$type :tutorials.sudoku/Sudoku$v3, :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}}
                "While invalid solutions fail"
                {:code '{:$type :tutorials.sudoku/Sudoku$v3
                         :solution [[1 2 3 4]
@@ -1892,7 +1919,7 @@
                                    [3 4 1 2]
                                    [4 3 2 1]
                                    [2 1 4 3]]}
-                :result :auto}
+                :result {:$type :tutorials.sudoku/Sudoku$v4, :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}}
                "Now confirm that an invalid solution fails. Notice that the error indicates that both constraints are violated."
                {:code '{:$type :tutorials.sudoku/Sudoku$v4
                         :solution [[1 2 3 4]
@@ -1906,7 +1933,7 @@
                                    [4 1 2 3]
                                    [3 4 1 2]
                                    [2 3 4 1]]}
-                :result :auto}
+                :result {:$type :tutorials.sudoku/Sudoku$v4, :solution [[1 2 3 4] [4 1 2 3] [3 4 1 2] [2 3 4 1]]}}
                "Let's add the quadrant checks."
                {:spec-map {:tutorials.sudoku/Sudoku$v5 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                         :constraints #{{:name "rows" :expr '(every? [r solution]
@@ -1951,7 +1978,7 @@
                                    [3 4 1 2]
                                    [4 3 2 1]
                                    [2 1 4 3]]}
-                :result :auto}
+                :result {:$type :tutorials.sudoku/Sudoku$v5, :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}}
                "Let's combine the quadrant checks into one."
                {:spec-map {:tutorials.sudoku/Sudoku$v6 {:fields {:solution [:Vec [:Vec :Integer]]}
                                                         :constraints #{{:name "rows" :expr '(every? [r solution]
@@ -1977,7 +2004,7 @@
                                    [3 4 1 2]
                                    [4 3 2 1]
                                    [2 1 4 3]]}
-                :result :auto}
+                :result {:$type :tutorials.sudoku/Sudoku$v6, :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}}
                "Invalid solution fails."
                {:code '{:$type :tutorials.sudoku/Sudoku$v6
                         :solution [[1 2 3 4]
@@ -2010,7 +2037,7 @@
                                    [3 4 1 2]
                                    [4 3 2 1]
                                    [2 1 4 3]]}
-                :result :auto}
+                :result {:$type :tutorials.sudoku/Sudoku$v7, :solution [[1 2 3 4] [3 4 1 2] [4 3 2 1] [2 1 4 3]]}}
                "Invalid solution fails."
                {:code '{:$type :tutorials.sudoku/Sudoku$v7
                         :solution [[1 2 3 4]
@@ -2025,19 +2052,19 @@
                                            [3 4 1 2]
                                            [4 3 2 1]
                                            [2 1 4 3]]})
-                :result :auto}
+                :result true}
                {:code '(valid? {:$type :tutorials.sudoku/Sudoku$v7
                                 :solution [[1 2 3 4]
                                            [3 4 1 2]
                                            [4 3 2 2]
                                            [2 1 4 3]]})
-                :result :auto}
+                :result false}
                {:code '(valid? {:$type :tutorials.sudoku/Sudoku$v7
                                 :solution [[1 2 3 4]
                                            [4 1 2 3]
                                            [3 4 1 2]
                                            [2 3 4 1]]})
-                :result :auto}]}
+                :result false}]}
 
    :tutorials.grocery/grocery
    {:label "Model a grocery delivery business"
@@ -2174,5 +2201,8 @@
                                              :usesPerMonth 1}}
                                    :subscriberCountry {:$type :tutorials.grocery/Country$v1
                                                        :name "Canada"}} :tutorials.grocery/GroceryStoreSubscription$v1)
-                :result :auto}
+                :result {:$type :tutorials.grocery/GroceryStoreSubscription$v1,
+                         :name "Acme Foods",
+                         :storeCountry {:$type :tutorials.grocery/Country$v1, :name "Canada"},
+                         :perkIds [101]}}
                "This final object is now in a form that the grocery store understands."]}})

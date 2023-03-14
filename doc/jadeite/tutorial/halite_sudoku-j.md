@@ -30,7 +30,7 @@ An instance of this spec can be constructed as:
 {$type: tutorials.sudoku/Sudoku$v1, solution: [[1, 2, 3, 4], [3, 4, 1, 2], [4, 3, 2, 1], [2, 1, 4, 3]]}
 ```
 
-In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, & 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row.
+In order to be a valid solution, certain properties must be met: each row, column, and quadrant must consist of the values 1, 2, 3, and 4. That is each number appears once and only once in each of these divisions of the grid. These necessary properties can be expressed as constraints on the spec. Let's start by expressing the constraints on each row.
 
 ```java
 {
