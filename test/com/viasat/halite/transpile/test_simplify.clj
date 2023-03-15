@@ -5,7 +5,7 @@
   (:require [clojure.test :refer :all]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.simplify :refer [simplify]]
+            [com.viasat.halite.transpile.simplify :as simplify]
             [schema.test]))
 
 (use-fixtures :once schema.test/validate-schemas)
@@ -20,7 +20,7 @@
                   (update-in [:ws/A :constraints] conj ["c" expr])
                   (envs/spec-env)
                   (ssa/build-spec-ctx :ws/A)
-                  (simplify)
+                  (simplify/simplify)
                   :ws/A
                   (ssa/spec-from-ssa)
                   :constraints

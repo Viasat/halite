@@ -4,9 +4,9 @@
 (ns com.viasat.gen-docs
   (:require [clojure.test :as test :refer :all]
             [com.viasat.halite-docs :as halite-docs]
-            [schema.test :refer [validate-schemas]]))
+            [schema.test :as schema.test]))
 
-;; (use-fixtures :once validate-schemas)
+;; (use-fixtures :once schema.test/validate-schemas)
 
 (deftest gen-docs
   (#'halite-docs/generate-local-docs))

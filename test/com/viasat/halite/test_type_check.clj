@@ -5,11 +5,11 @@
   (:require [clojure.test :refer :all]
             [com.viasat.halite.type-check :as type-check]
             [schema.core :as s]
-            [schema.test :refer [validate-schemas]]))
+            [schema.test :as schema.test]))
 
 (set! *warn-on-reflection* true)
 
-(use-fixtures :once validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-find-field-accesses
   (is (= #{{:spec-id :ws/D$v1

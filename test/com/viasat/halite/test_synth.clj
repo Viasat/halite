@@ -5,10 +5,10 @@
   (:require [clojure.test :refer :all]
             [com.viasat.halite :as halite]
             [com.viasat.halite.synth :as synth]
-            [schema.test :refer [validate-schemas]])
+            [schema.test :as schema.test])
   (:import [clojure.lang ExceptionInfo]))
 
-(use-fixtures :once validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-basic
   (let [spec-map

@@ -14,10 +14,10 @@
             [com.viasat.halite.syntax-check :as syntax-check]
             [com.viasat.halite.type-of :as type-of]
             [com.viasat.halite.var-types :as var-types]
-            [schema.test :refer [validate-schemas]])
+            [schema.test :as schema.test])
   (:import [clojure.lang ExceptionInfo]))
 
-(use-fixtures :once validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (envs/init)
 

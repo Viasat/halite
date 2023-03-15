@@ -11,12 +11,12 @@
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.lint :as lint]
             [com.viasat.jadeite :as jadeite]
-            [schema.test :refer [validate-schemas]])
+            [schema.test :as schema.test])
   (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
 
-(use-fixtures :once validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (defmacro h
   [expr & args]

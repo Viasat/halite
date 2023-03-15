@@ -6,13 +6,11 @@
   features down into lower-level features."
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as rewriting]
-            [com.viasat.halite.transpile.simplify :refer [simplify always-evaluates?]]
-            [com.viasat.halite.transpile.ssa :as ssa :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
+            [com.viasat.halite.transpile.rewriting :as rewriting]
+            [com.viasat.halite.transpile.simplify :as simplify]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.transpile-util :as transpile-util]
             [com.viasat.halite.types :as types]
-            [loom.alg]
-            [loom.graph]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -104,7 +102,7 @@
 ;; resulting graph will typecheck unless the layer applying this rule
 ;; has adjusted spec variable types, literals, etc. correctly.
 (s/defn remove-$typecasts
-  [sctx :- SpecCtx]
+  [sctx :- ssa/SpecCtx]
   (let [senv (ssa/as-spec-env sctx)]
     (update-vals
      sctx
@@ -161,9 +159,9 @@
                                (map #(list 'get %1 var-kw) arg-ids))))
                  (transpile-util/mk-junct logical-op))))))))
 
-(s/defn lower-instance-comparisons :- SpecCtx
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx lower-instance-comparison-expr))
+(s/defn lower-instance-comparisons :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
+  (rewriting/rewrite-sctx sctx lower-instance-comparison-expr))
 
 ;;;;;;;;; Push gets inside instance-valued ifs ;;;;;;;;;;;
 
@@ -184,14 +182,14 @@
                   else-id
                   (list 'get else-id var-kw))))))))
 
-(s/defn push-gets-into-ifs :- SpecCtx
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx push-gets-into-ifs-expr))
+(s/defn push-gets-into-ifs :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
+  (rewriting/rewrite-sctx sctx push-gets-into-ifs-expr))
 
 ;;;;;;;;; Lower valid? ;;;;;;;;;;;;;;;;;
 
 (s/defn ^:private deps-via-instance-literal :- #{types/NamespacedKeyword}
-  [spec-info :- SpecInfo]
+  [spec-info :- ssa/SpecInfo]
   (->> spec-info
        :ssa-graph
        :dgraph
@@ -251,7 +249,7 @@
 (declare validity-guard)
 
 (s/defn ^:private validity-guard-inst
-  [sctx :- SpecCtx, ctx :- ssa/SSACtx, inst]
+  [sctx :- ssa/SpecCtx, ctx :- ssa/SSACtx, inst]
   (let [{:keys [fields ssa-graph constraints] :as spec-info} (sctx (:$type inst))
         inst-entries (dissoc inst :$type)
         scope (->> fields keys (map symbol) set)
@@ -279,7 +277,7 @@
       (list 'if sub-guards result false))))
 
 (s/defn ^:private validity-guard-if
-  [sctx :- SpecCtx, ctx :- ssa/SSACtx, [_if pred-id then-id else-id]]
+  [sctx :- ssa/SpecCtx, ctx :- ssa/SSACtx, [_if pred-id then-id else-id]]
   (let [pred-guard (validity-guard sctx ctx pred-id)
         then-guard (validity-guard sctx ctx then-id)
         else-guard (validity-guard sctx ctx else-id)
@@ -293,7 +291,7 @@
             false))))
 
 (s/defn ^:private validity-guard-when
-  [sctx :- SpecCtx, ctx :- ssa/SSACtx, [_when pred-id then-id]]
+  [sctx :- ssa/SpecCtx, ctx :- ssa/SSACtx, [_when pred-id then-id]]
   (let [pred-guard (validity-guard sctx ctx pred-id)
         then-guard (validity-guard sctx ctx then-id)]
     (if (true? pred-guard)
@@ -303,7 +301,7 @@
             false))))
 
 (s/defn ^:private validity-guard-app
-  [sctx :- SpecCtx, ctx :- ssa/SSACtx, args]
+  [sctx :- ssa/SpecCtx, ctx :- ssa/SSACtx, args]
   (->> args
        (map (partial validity-guard sctx ctx))
        (remove true?)
@@ -334,7 +332,7 @@
        (let [<...kw_i (or expr_i $no-value)>]
          <inlined constraints>)
        false)"
-  [sctx :- SpecCtx, {:keys [ssa-graph] :as ctx} :- ssa/SSACtx, id :- NodeId]
+  [sctx :- ssa/SpecCtx, {:keys [ssa-graph] :as ctx} :- ssa/SSACtx, id :- ssa/NodeId]
   (let [[form htype :as node] (ssa/deref-id ssa-graph id)]
     (cond
       (or (int? form) (boolean? form) (= :Unset form) (symbol? form) (string? form)) 'true
@@ -356,8 +354,8 @@
     (let [[_valid? expr-id] form]
       (validity-guard sctx ctx expr-id))))
 
-(s/defn lower-valid? :- SpecCtx
-  [sctx :- SpecCtx]
+(s/defn lower-valid? :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
   (rewriting/rewrite-in-dependency-order*
    {:rule-name "lower-valid?"
     :rewrite-fn lower-valid?-expr
@@ -398,9 +396,9 @@
          (->> args (remove no-value-literal?) (map (comp (partial nth arg-ids) first)))
          (every? #(= :Unset (second (second %))) args))))))
 
-(s/defn lower-no-value-comparisons :- SpecCtx
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx lower-no-value-comparison-expr))
+(s/defn lower-no-value-comparisons :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
+  (rewriting/rewrite-sctx sctx lower-no-value-comparison-expr))
 
 (s/defn lower-maybe-comparison-expr
   [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
@@ -460,9 +458,9 @@
                                                   (= op 'not=)
                                                   (not= op 'not=)))))))))))
 
-(s/defn lower-maybe-comparisons :- SpecCtx
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx lower-maybe-comparison-expr))
+(s/defn lower-maybe-comparisons :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
+  (rewriting/rewrite-sctx sctx lower-maybe-comparison-expr))
 
 (s/defn push-comparison-into-nonprimitive-if-in-expr
   [{{:keys [ssa-graph] :as ctx} :ctx} :- rewriting/RewriteFnCtx, id, [form htype]]
@@ -528,16 +526,16 @@
                   [ssa-graph new-else-id] (rewrite-branch ssa-graph nested-else-id)]
               (with-meta (list 'if nested-pred-id new-then-id new-else-id) {:ssa-graph ssa-graph}))))))))
 
-(s/defn push-if-value-into-if :- SpecCtx
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx push-if-value-into-if-in-expr))
+(s/defn push-if-value-into-if :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
+  (rewriting/rewrite-sctx sctx push-if-value-into-if-in-expr))
 
 ;;;;;;;;;; Combine semantics-preserving passes ;;;;;;;;;;;;;
 
-(s/defn lower :- SpecCtx
+(s/defn lower :- ssa/SpecCtx
   "Return a semantically equivalent spec context containing specs that have been reduced to
   a minimal subset of halite."
-  [sctx :- SpecCtx]
+  [sctx :- ssa/SpecCtx]
   (-> sctx
       (lower-valid?)
       (rewriting/rewrite-reachable-sctx
@@ -549,7 +547,7 @@
         (rewriting/rule lower-no-value-comparison-expr)
         (rewriting/rule push-comparison-into-nonprimitive-if-in-expr)
         (rewriting/rule push-if-value-into-if-in-expr)])
-      (simplify)))
+      (simplify/simplify)))
 
 ;;;;;;;;;; Semantics-modifying passes ;;;;;;;;;;;;;;;;
 
@@ -559,12 +557,12 @@
     (when (not (true? guard))
       (list 'if guard id false))))
 
-(s/defn eliminate-runtime-constraint-violations :- SpecCtx
+(s/defn eliminate-runtime-constraint-violations :- ssa/SpecCtx
   "Rewrite the constraints of every spec to eliminate the possibility of runtime constraint
   violations (but NOT runtime errors in general!). This is not a semantics-preserving operation.
 
   Every constraint expression <expr> is rewritten as (if <(validity-guard expr)> <expr> false)."
-  [sctx :- SpecCtx]
+  [sctx :- ssa/SpecCtx]
   (->> sctx
       ;; Does this actually have to be done in dependency order? Why or why not?
        (rewriting/rewrite-in-dependency-order*
@@ -582,11 +580,11 @@
         (when (map? coll)
           (get coll var-kw '$no-value))))))
 
-(s/defn cancel-get-of-instance-literal :- SpecCtx
+(s/defn cancel-get-of-instance-literal :- ssa/SpecCtx
   "Replace (get {... :k <subexpr>} :k) with <subexpr>. Not semantics preserving, in that
   the possible runtime constraint violations of the instance literal are eliminated."
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx cancel-get-of-instance-literal-expr))
+  [sctx :- ssa/SpecCtx]
+  (rewriting/rewrite-sctx sctx cancel-get-of-instance-literal-expr))
 
 (s/defn eliminate-do-expr
   [rctx :- rewriting/RewriteFnCtx, id, [form htype]]
@@ -594,9 +592,9 @@
     (let [tail-id (last form)]
       tail-id)))
 
-(s/defn eliminate-dos :- SpecCtx
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx eliminate-do-expr))
+(s/defn eliminate-dos :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
+  (rewriting/rewrite-sctx sctx eliminate-do-expr))
 
 (defn- find-error-ids [ssa-graph]
   (->> ssa-graph
@@ -605,7 +603,7 @@
        (map first)))
 
 (s/defn ^:private add-error-guards-as-constraints
-  [sctx :- SpecCtx {:keys [ssa-graph constraints] :as spec-info} :- SpecInfo]
+  [sctx :- ssa/SpecCtx {:keys [ssa-graph constraints] :as spec-info} :- ssa/SpecInfo]
   (let [guards (ssa/compute-guards ssa-graph (set (map second constraints)))
         ctx (ssa/make-ssa-ctx sctx spec-info)]
     (->> (find-error-ids ssa-graph)
@@ -649,7 +647,7 @@
         :else nil))))
 
 (s/defn ^:private drop-branches-containing-unguarded-errors
-  [sctx :- SpecCtx spec-id {:keys [ssa-graph constraints] :as spec-info}]
+  [sctx :- ssa/SpecCtx spec-id {:keys [ssa-graph constraints] :as spec-info}]
   ;; TODO: This is dumb. Refactor rewriting machinery so that we can compute spec-level info that is passed to rewriting rule.
   (let [guards (ssa/compute-guards ssa-graph (set (map second constraints)))
         error-ids (set (find-error-ids ssa-graph))
@@ -666,8 +664,8 @@
       spec-id
       spec-info))))
 
-(s/defn eliminate-error-forms :- SpecCtx
-  [sctx :- SpecCtx]
+(s/defn eliminate-error-forms :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
   (let [sctx (update-vals sctx (partial add-error-guards-as-constraints sctx))]
     (transpile-util/fixpoint #(reduce-kv drop-branches-containing-unguarded-errors % %) sctx)))
 
@@ -686,7 +684,7 @@
         node (ssa/deref-id ssa-graph id), form (ssa/node-form node), htype (ssa/node-type node)
         rewrite-child-exprs (fn [child-exprs]
                               (-> child-exprs
-                                  (->> (remove #(->> % (ssa/deref-id ssa-graph) ssa/node-form (always-evaluates? ssa-graph)))
+                                  (->> (remove #(->> % (ssa/deref-id ssa-graph) ssa/node-form (simplify/always-evaluates? ssa-graph)))
                                        (mapcat #(let [node (ssa/deref-id ssa-graph %)
                                                       form (ssa/node-form node)
                                                       htype (ssa/node-type node)]
@@ -755,8 +753,8 @@
 
   Note that instance literal constraints are ignored! This pass should only be applied
   after all constraints implied by instance literals have been made explicit."
-  [sctx :- SpecCtx]
-  (rewrite-sctx sctx eliminate-unused-instance-valued-exprs-in-do-expr))
+  [sctx :- ssa/SpecCtx]
+  (rewriting/rewrite-sctx sctx eliminate-unused-instance-valued-exprs-in-do-expr))
 
 (s/defn ^:private rewrite-no-value-do-child
   [{:keys [ctx] :as rctx} :- rewriting/RewriteFnCtx, id]

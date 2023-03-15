@@ -10,7 +10,7 @@
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.propagate.prop-top-abstract :as prop-top-abstract]
-            [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [loom.alg]
             [schema.core :as s]))
 

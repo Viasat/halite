@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.synth
   (:require [clojure.set :as set :refer [subset?]]
-            [clojure.walk :refer [postwalk]]
+            [clojure.walk :as walk]
             [loom.alg]
             [loom.graph]
             [schema.core :as s]))
@@ -23,11 +23,11 @@
 ;;  - others?
 
 (defn strip-ns [form]
-  (postwalk (fn [x]
-              (if (symbol? x)
-                (symbol (name x))
-                x))
-            form))
+  (walk/postwalk (fn [x]
+                   (if (symbol? x)
+                     (symbol (name x))
+                     x))
+                 form))
 
 (s/defschema SpecFnMap
   {:valid?-fn (s/pred seq?)

@@ -8,9 +8,9 @@
             [clojure.test.check.properties :as prop]
             [com.viasat.halite.types :as types]
             [schema.core :as s]
-            [schema.test :refer [validate-schemas]]))
+            [schema.test :as schema.test]))
 
-(use-fixtures :once validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (deftest type-ptn
   (let [T 'T]

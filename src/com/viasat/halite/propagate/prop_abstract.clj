@@ -5,11 +5,8 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-extrinsic :as prop-extrinsic]
-            [com.viasat.halite.propagate.bound-union :refer [union-refines-to-bounds]]
-            [com.viasat.halite.propagate.prop-composition :as prop-composition]
-            [com.viasat.halite.transpile.lowering :as lowering]
+            [com.viasat.halite.propagate.bound-union :as bound-union]
             [com.viasat.halite.transpile.rewriting :as rewriting]
-            [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.types :as types]
             [loom.derived :as loom-derived]
@@ -346,7 +343,7 @@
                           (cond-> (dissoc parent-bound alt-var-kw)
                             (not= :Unset alt-bound)
                             (-> (assoc-in [var-kw :$in spec-id] (-> alt-bound (raise-abstract-bounds senv alternatives) (dissoc :$type)))
-                                (update-in [var-kw :$refines-to] union-refines-to-bounds (:$refines-to alt-bound))))))
+                                (update-in [var-kw :$refines-to] bound-union/union-refines-to-bounds (:$refines-to alt-bound))))))
                       (-> parent-bound
                           (assoc var-kw (if (= :Unset (discrim-kw parent-bound))
                                           :Unset

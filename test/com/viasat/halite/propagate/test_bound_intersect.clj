@@ -4,11 +4,11 @@
 (ns com.viasat.halite.propagate.test-bound-intersect
   (:require [clojure.test :refer :all]
             [com.viasat.halite.propagate.bound-intersect :as bound-intersect]
-            [schema.test :refer [validate-schemas]])
+            [schema.test :as schema.test])
   (:import [clojure.lang ExceptionInfo]
            [org.chocosolver.solver.exception ContradictionException]))
 
-(use-fixtures :once validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-bound-intersect
   (is (= {:$in {}}

@@ -2,14 +2,14 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.prop-refine
-  (:require [clojure.walk :refer [postwalk]]
+  (:require [clojure.walk :as walk]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.simplify :as simplify]
-            [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.types :as types]
             [loom.alg :as loom-alg]
             [loom.graph :as loom-graph]
@@ -98,7 +98,7 @@
           (list 'let original-as-bindings instance-literal))))))
 
 (s/defn realize-intrisic-refinements
-  [sctx :- SpecCtx]
+  [sctx :- ssa/SpecCtx]
   (rewriting/squash-trace!
    {:rule "realize-intrisic-refinements"}
    (-> sctx
@@ -192,7 +192,7 @@
   sctx)
 
 (s/defn lower-spec-refinements
-  [sctx :- SpecCtx
+  [sctx :- ssa/SpecCtx
    rgraph :- Graph]
   (-> sctx
       (disallow-unsupported-refinements)
@@ -222,10 +222,10 @@
 (s/defn update-spec-bounds
   [bound :- ConcreteSpecBound
    f]
-  (postwalk #(if-not (and (map? %) (:$type %))
-               %
-               (f (prop-composition/unwrap-maybe (:$type %)) %))
-            bound))
+  (walk/postwalk #(if-not (and (map? %) (:$type %))
+                    %
+                    (f (prop-composition/unwrap-maybe (:$type %)) %))
+                 bound))
 
 (defn maybe? [spec-bound-type]
   (and (vector? spec-bound-type) (= :Maybe (first spec-bound-type))))
@@ -269,7 +269,7 @@
          :$type (:$type base-bound)))
 
 (s/defn lower-bound
-  [sctx :- SpecCtx
+  [sctx :- ssa/SpecCtx
    rgraph :- Graph
    bound :- ConcreteSpecBound]
   (update-spec-bounds
@@ -285,7 +285,7 @@
              (:$refines-to spec-bound)))))
 
 (s/defn raise-bound
-  [sctx :- SpecCtx
+  [sctx :- ssa/SpecCtx
    bound :- ConcreteSpecBound]
   (update-spec-bounds
    bound
@@ -321,13 +321,13 @@
                to-spec-ids)))))
 
 (s/defn make-rgraph :- Graph
-  [sctx :- SpecCtx]
+  [sctx :- ssa/SpecCtx]
   (loom-graph/digraph (update-vals sctx (comp keys :refines-to))))
 
 (s/defn propagate :- ConcreteSpecBound
-  ([sctx :- SpecCtx, initial-bound :- ConcreteSpecBound]
+  ([sctx :- ssa/SpecCtx, initial-bound :- ConcreteSpecBound]
    (propagate sctx default-options initial-bound))
-  ([sctx :- SpecCtx, opts :- Opts, initial-bound :- ConcreteSpecBound]
+  ([sctx :- ssa/SpecCtx, opts :- Opts, initial-bound :- ConcreteSpecBound]
    (let [rgraph (make-rgraph sctx)]
      (->> (lower-bound sctx rgraph initial-bound)
           (prop-composition/propagate (lower-spec-refinements sctx rgraph) opts)

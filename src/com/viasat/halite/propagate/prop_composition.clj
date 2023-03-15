@@ -7,12 +7,10 @@
             [com.viasat.halite.propagate.prop-strings :as prop-strings]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
-            [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
-            [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
+            [com.viasat.halite.transpile.simplify :as simplify]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.transpile-util :as transpile-util]
             [com.viasat.halite.types :as types]
-            [loom.derived :as loom-derived]
-            [loom.graph :as loom-graph]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -340,8 +338,8 @@
           [(rewriting/rule simplify/simplify-do)
            (rewriting/rule lowering/bubble-up-do-expr)
            (rewriting/rule lowering/flatten-do-expr)
-           (rewriting/rule simplify-redundant-value!)
-           (rewriting/rule simplify-statically-known-value?)
+           (rewriting/rule simplify/simplify-redundant-value!)
+           (rewriting/rule simplify/simplify-statically-known-value?)
            (rewriting/rule lowering/cancel-get-of-instance-literal-expr)
            (rewriting/rule lowering/lower-comparison-exprs-with-incompatible-types)
            (rewriting/rule lowering/lower-instance-comparison-expr)

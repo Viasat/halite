@@ -7,11 +7,11 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.var-types :as var-types]
             [schema.core :as s]
-            [schema.test :refer [validate-schemas]]))
+            [schema.test :as schema.test]))
 
 (set! *warn-on-reflection* true)
 
-(use-fixtures :once validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-schema
   (s/check analysis/EnumConstraint {:enum #{100}})

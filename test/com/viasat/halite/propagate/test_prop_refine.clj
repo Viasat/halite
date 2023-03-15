@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-refine
-  (:require [clojure.pprint :refer [pprint]]
+  (:require [clojure.pprint :as pprint]
             [clojure.test :refer :all]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.envs :as envs]
@@ -968,7 +968,7 @@
 
 (defn eval-all-traces! [specs traces spec-id expr]
   (let [specs (merge specs (update-vals traces #(ssa/spec-from-ssa (:spec-info (first %)))))]
-    (pprint specs)
+    (pprint/pprint specs)
     (->> traces spec-id
          (run! (fn [t]
                  (let [spec (ssa/spec-from-ssa (:spec-info t))

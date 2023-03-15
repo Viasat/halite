@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-composition
-  (:require [com.viasat.halite.propagate.bound-union :refer [union-bounds]]
+  (:require [com.viasat.halite.propagate.bound-union :as bound-union]
             [schema.core :as s]
             [schema.test]
             [clojure.test :refer :all]))
@@ -14,7 +14,7 @@
 
 (deftest test-union-bounds
   (are [a b result]
-       (= result (union-bounds a b))
+       (= result (bound-union/union-bounds a b))
 
     :Unset :Unset :Unset
 
@@ -62,3 +62,5 @@
     {:$type :ws/A} {:$type [:Maybe :ws/A]} {:$type [:Maybe :ws/A]}
     {:$type [:Maybe :ws/A]} {:$type :ws/A} {:$type [:Maybe :ws/A]}
     :Unset {:$type :ws/A} {:$type [:Maybe :ws/A]}))
+
+;; (run-tests)

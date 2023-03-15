@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.eval
   "Evaluator for halite"
-  (:require [clojure.math.numeric-tower :refer [expt]]
+  (:require [clojure.math.numeric-tower :as numeric-tower]
             [clojure.set :as set]
             [clojure.string :as string]
             [com.viasat.halite.base :as base]
@@ -97,7 +97,7 @@
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
                            (format-errors/throw-err (h-err/invalid-exponent {:exponent p})))
-                         (let [result (expt x p)]
+                         (let [result (numeric-tower/expt x p)]
                            (when (instance? BigInt result)
                              (format-errors/throw-err (h-err/overflow {})))
                            result))

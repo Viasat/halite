@@ -3,8 +3,7 @@
 
 (ns com.viasat.halite.propagate.bound-union
   (:require [clojure.set :as set]
-            [com.viasat.halite.propagate.prop-refine
-             :refer [ConcreteBound RefinementBound]]
+            [com.viasat.halite.propagate.prop-refine :as prop-refine]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -51,12 +50,12 @@
 
 (declare union-bounds)
 
-(s/defn union-refines-to-bounds :- RefinementBound
+(s/defn union-refines-to-bounds :- prop-refine/RefinementBound
   "The union of two :$refines-to bounds is the union of bounds for each spec-id
   that appears in BOTH. Including a spec-id that appeared in only `a` would
   cause the resulting bound to be narrower than `b`, because :$refines-to is a
   kind of conjunction."
-  [a :- (s/maybe RefinementBound), b :- (s/maybe RefinementBound)]
+  [a :- (s/maybe prop-refine/RefinementBound), b :- (s/maybe prop-refine/RefinementBound)]
   (reduce
    (fn [result spec-id]
      (assoc result spec-id
@@ -136,8 +135,8 @@
 
     :else (throw (ex-info "BUG! Unrecognized bound" {:bound bound}))))
 
-(s/defn union-bounds :- ConcreteBound
-  [a :- ConcreteBound, b :- ConcreteBound]
+(s/defn union-bounds :- prop-refine/ConcreteBound
+  [a :- prop-refine/ConcreteBound, b :- prop-refine/ConcreteBound]
   (if (and (= :Unset a) (= :Unset b))
     :Unset
     (let [unset? (or (allows-unset? a) (allows-unset? b))

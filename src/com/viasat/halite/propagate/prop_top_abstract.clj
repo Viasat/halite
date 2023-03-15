@@ -8,7 +8,7 @@
   (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
-            [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
 

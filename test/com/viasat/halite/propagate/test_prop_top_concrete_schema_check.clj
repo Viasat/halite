@@ -5,9 +5,9 @@
   "This namespace exists to provide a test case for propagate that runs with schema validation on."
   (:require [clojure.test :refer :all]
             [com.viasat.halite.propagate :as propagate]
-            [schema.test :refer [validate-schemas]]))
+            [schema.test :as schema.test]))
 
-(use-fixtures :once validate-schemas)
+(use-fixtures :once schema.test/validate-schemas)
 
 (deftest test-top-level-refines-to-concrete-spec-with-refinement
   (is (= {:$in {:ws/A {:$refines-to {}}

@@ -5,7 +5,7 @@
   (:require [com.viasat.halite.propagate.prop-refine :as prop-refine]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
-            [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.types :as types]
             [loom.alg :as loom-alg]
             [loom.graph :as loom-graph]
@@ -29,8 +29,8 @@
 (defn guard-field [to-spec-id]
   (keyword (str ">?" (namespace to-spec-id) "$" (name to-spec-id) "?")))
 
-(s/defn add-extrinsic-guard-fields :- SpecCtx
-  [sctx :- SpecCtx]
+(s/defn add-extrinsic-guard-fields :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
   (update-vals
    sctx
    (fn [spec]
@@ -41,8 +41,8 @@
                       (map (fn [[to-spec-id {:keys [expr]}]]
                              [(guard-field to-spec-id) [:Maybe :Boolean]]))))))))
 
-(s/defn guard-extrinsic-refinements :- SpecCtx
-  [sctx :- SpecCtx]
+(s/defn guard-extrinsic-refinements :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
   (update-vals
    sctx
    (fn [spec]
@@ -98,8 +98,8 @@
                              (list '$refine-to-step expr' to-spec-id)))
                          expr-id))))))))
 
-(s/defn lower-specs :- SpecCtx
-  [sctx :- SpecCtx]
+(s/defn lower-specs :- ssa/SpecCtx
+  [sctx :- ssa/SpecCtx]
   (let [rgraph (prop-refine/make-rgraph sctx)]
     (-> sctx
         (add-extrinsic-guard-fields)
@@ -115,7 +115,7 @@
         (guard-extrinsic-refinements))))
 
 (s/defn raise-bound :- ConcreteSpecBound
-  [sctx :- SpecCtx
+  [sctx :- ssa/SpecCtx
    bound :- ConcreteSpecBound]
   (prop-refine/update-spec-bounds
    bound
@@ -128,9 +128,9 @@
           (apply dissoc spec-bound)))))
 
 (s/defn propagate
-  ([sctx :- SpecCtx, initial-bound]
+  ([sctx :- ssa/SpecCtx, initial-bound]
    (propagate sctx default-options initial-bound))
-  ([sctx :- SpecCtx, opts :- Opts, initial-bound]
+  ([sctx :- ssa/SpecCtx, opts :- Opts, initial-bound]
    (->>
     (prop-refine/propagate (lower-specs sctx)
                            opts

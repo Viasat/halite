@@ -5,9 +5,6 @@
   (:require [clojure.test :refer :all]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
-            [com.viasat.halite.transpile.lowering :as lowering]
-            [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
-            [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.ssa :as ssa]
             [schema.core :as s]
             [schema.test]))

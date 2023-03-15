@@ -7,19 +7,19 @@
             [clojure.pprint :as pprint]
             [clojure.string :as string]
             [com.viasat.halite.doc.bnf-diagrams :as bnf-diagrams]
-            [com.viasat.halite.doc.data-basic-bnf :refer [basic-bnf-vector]]
+            [com.viasat.halite.doc.data-basic-bnf :as data-basic-bnf]
             [com.viasat.halite.doc.data-err-maps :as data-err-maps]
-            [com.viasat.halite.doc.data-explanation :refer [explanations]]
-            [com.viasat.halite.doc.data-how-tos :refer [how-tos]]
+            [com.viasat.halite.doc.data-explanation :as data-explanation]
+            [com.viasat.halite.doc.data-how-tos :as data-how-tos]
             [com.viasat.halite.doc.data-op-maps :as data-op-maps]
             [com.viasat.halite.doc.data-spec-bnf :as data-spec-bnf]
-            [com.viasat.halite.doc.data-tag-def-map :refer [tag-def-map]]
-            [com.viasat.halite.doc.data-tutorial :refer [tutorials]]
+            [com.viasat.halite.doc.data-tag-def-map :as data-tag-def-map]
+            [com.viasat.halite.doc.data-tutorial :as data-tutorial]
             [com.viasat.halite.doc.md-basic :as md-basic]
             [com.viasat.halite.doc.md-err :as md-err]
             [com.viasat.halite.doc.md-full :as md-full]
             [com.viasat.halite.doc.md-how-to :as md-how-to]
-            [com.viasat.halite.doc.md-outline :refer [produce-outline]]
+            [com.viasat.halite.doc.md-outline :as md-outline]
             [com.viasat.halite.doc.md-spec :as md-spec]
             [com.viasat.halite.doc.md-tag :as md-tag]
             [com.viasat.halite.doc.doc-run :as doc-run]
@@ -137,7 +137,7 @@
 
 (def ^:private misc-notes-halite ["For halite, whitespace also includes the comma. The comma can be used as an optional delimiter in sequences to improve readability."])
 
-(def ^:private basic-bnf (expand-examples-vector "com.viasat.halite.doc.data-basic-bnf" basic-bnf-vector))
+(def ^:private basic-bnf (expand-examples-vector "com.viasat.halite.doc.data-basic-bnf" data-basic-bnf/basic-bnf-vector))
 
 (def ^:private op-maps (expand-examples-map "com.viasat.halite.doc.data-op-maps" data-op-maps/op-maps))
 
@@ -213,7 +213,7 @@
 (defn- tag-md-filename [lang tag]
   (str (:prefix *run-config*) tag "-reference" (doc-util/get-language-modifier lang) ".md"))
 
-(assert (= (set (keys tag-def-map))
+(assert (= (set (keys data-tag-def-map/tag-def-map))
            (set (concat (map keyword (mapcat :tags (take-nth 2 (next basic-bnf))))
                         (mapcat :tags (vals op-maps)))))
         "Mismatch between defined tags and used tags.")
@@ -221,7 +221,7 @@
 (defn produce-full-md [lang]
   (let [titles {:halite "Halite Full Reference"
                 :jadeite "Jadeite Full Reference"}
-        info {:tag-def-map tag-def-map}
+        info {:tag-def-map data-tag-def-map/tag-def-map}
         {:keys [menu-file prefix append-to-menu-f]} *run-config*]
 
     (when menu-file
@@ -245,7 +245,7 @@
 (defn- produce-basic-md [lang]
   (let [titles {:halite "Halite Basic Syntax Reference"
                 :jadeite "Jadeite Basic Syntax Reference"}
-        info {:tag-def-map tag-def-map}
+        info {:tag-def-map data-tag-def-map/tag-def-map}
         {:keys [menu-file prefix append-to-menu-f]} *run-config*]
     (when menu-file
       (append-to-menu-f lang prefix [lang :reference] (lang titles) "basic-syntax"))
@@ -377,14 +377,14 @@
    [#'op-maps #(do (alter-var-root #'op-maps-j (constantly (translate-op-maps-to-jadeite op-maps)))
                    (produce-full-md :halite)
                    (produce-full-md :jadeite))]
-   [#'basic-bnf-vector #(alter-var-root #'basic-bnf (constantly (expand-examples-vector "com.viasat.halite.doc.data-basic-bnf" basic-bnf-vector)))]
+   [#'data-basic-bnf/basic-bnf-vector #(alter-var-root #'basic-bnf (constantly (expand-examples-vector "com.viasat.halite.doc.data-basic-bnf" data-basic-bnf/basic-bnf-vector)))]
    [#'basic-bnf #(do (bnf-diagrams/produce-basic-bnf-diagrams *run-config* "basic-all.svg" "basic-all-j.svg" basic-bnf)
                      (produce-basic-md :halite)
                      (produce-basic-md :jadeite))]
-   [#'explanations #(do (run! (partial explanation-md :halite)  explanations)
-                        (run! (partial explanation-md :jadeite) explanations))]
-   [#'tutorials #(do (run! (partial tutorial-md :halite) tutorials)
-                     (run! (partial tutorial-md :jadeite) tutorials))]])
+   [#'data-explanation/explanations #(do (run! (partial explanation-md :halite) data-explanation/explanations)
+                                         (run! (partial explanation-md :jadeite) data-explanation/explanations))]
+   [#'data-tutorial/tutorials #(do (run! (partial tutorial-md :halite) data-tutorial/tutorials)
+                                   (run! (partial tutorial-md :jadeite) data-tutorial/tutorials))]])
 
 (def ^:dynamic *running-gen-doc* #{})
 
@@ -421,7 +421,7 @@
 
     (bnf-diagrams/produce-basic-bnf-diagrams run-config "basic-all.svg" "basic-all-j.svg" basic-bnf)
     (bnf-diagrams/produce-bnf-diagrams run-config op-maps op-maps-j "halite.svg" "jadeite.svg")
-    (->> (keys tag-def-map)
+    (->> (keys data-tag-def-map/tag-def-map)
          (map produce-bnf-diagram-for-tag)
          dorun)
 
@@ -429,19 +429,19 @@
     (produce-basic-md :halite)
     (produce-err-md :halite)
 
-    (->> tag-def-map
+    (->> data-tag-def-map/tag-def-map
          (map (partial produce-tag-md :halite))
          dorun)
 
-    (->> explanations
+    (->> data-explanation/explanations
          (map (partial explanation-md :halite))
          dorun)
 
-    (->> how-tos
+    (->> data-how-tos/how-tos
          (map (partial how-to-md :halite))
          dorun)
 
-    (->> tutorials
+    (->> data-tutorial/tutorials
          (map (partial tutorial-md :halite))
          dorun)
 
@@ -449,19 +449,19 @@
     (produce-basic-md :jadeite)
     (produce-err-md :jadeite)
 
-    (->> tag-def-map
+    (->> data-tag-def-map/tag-def-map
          (map (partial produce-tag-md :jadeite))
          dorun)
 
-    (->> explanations
+    (->> data-explanation/explanations
          (map (partial explanation-md :jadeite))
          dorun)
 
-    (->> how-tos
+    (->> data-how-tos/how-tos
          (map (partial how-to-md :jadeite))
          dorun)
 
-    (->> tutorials
+    (->> data-tutorial/tutorials
          (map (partial tutorial-md :jadeite))
          dorun)
 
@@ -470,14 +470,14 @@
 
     (doc-util/spit-dir (str (:root-dir run-config)
                             "/" (:prefix run-config) "outline.md")
-                       (produce-outline {:tag-def-map tag-def-map
-                                         :tutorials tutorials
-                                         :tutorial-filename tutorial-reference
-                                         :how-tos how-tos
-                                         :explanations explanations
-                                         :explanation-filename explanation-reference
-                                         :how-to-filename how-to-reference}
-                                        run-config))))
+                       (md-outline/produce-outline {:tag-def-map data-tag-def-map/tag-def-map
+                                                    :tutorials data-tutorial/tutorials
+                                                    :tutorial-filename tutorial-reference
+                                                    :how-tos data-how-tos/how-tos
+                                                    :explanations data-explanation/explanations
+                                                    :explanation-filename explanation-reference
+                                                    :how-to-filename how-to-reference}
+                                                   run-config))))
 
 (defn generate-local-docs []
   (generate-docs local-doc-config))

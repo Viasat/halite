@@ -6,7 +6,7 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.transpile.ssa :as ssa :refer [SpecInfo SpecCtx SSACtx]]
+            [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.transpile-util :as transpile-util]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
@@ -134,7 +134,7 @@
            (print-trace-summary (get @traces# spec-id#)))))))
 
 (s/defschema RewriteFnCtx
-  {:sctx SpecCtx :ctx SSACtx})
+  {:sctx ssa/SpecCtx :ctx ssa/SSACtx})
 
 (s/defschema RewriteRule
   {:rule-name s/Str
@@ -192,8 +192,8 @@
             :error ex})
           (throw ex))))))
 
-(s/defn add-constraint :- SpecInfo
-  [rule-name :- s/Str, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword, spec-info :- SpecInfo, cname :- base/ConstraintName, expr]
+(s/defn add-constraint :- ssa/SpecInfo
+  [rule-name :- s/Str, sctx :- ssa/SpecCtx, spec-id :- types/NamespacedKeyword, spec-info :- ssa/SpecInfo, cname :- base/ConstraintName, expr]
   (let [ctx (ssa/make-ssa-ctx sctx spec-info)
         [ssa-graph id] (ssa/form-to-ssa ctx expr)
         spec-info' (-> spec-info
@@ -210,7 +210,7 @@
       :spec-info' spec-info'})
     spec-info'))
 
-(s/defn apply-to-reachable :- (s/maybe SpecInfo)
+(s/defn apply-to-reachable :- (s/maybe ssa/SpecInfo)
   [sctx ctx scope spec-id spec-info
    roots,
    rules :- [RewriteRule]]
@@ -234,8 +234,8 @@
           spec-info))
       spec-info)))
 
-(s/defn rewrite-reachable :- SpecInfo
-  [rules :- [RewriteRule], sctx :- SpecCtx, spec-id :- types/NamespacedKeyword]
+(s/defn rewrite-reachable :- ssa/SpecInfo
+  [rules :- [RewriteRule], sctx :- ssa/SpecCtx, spec-id :- types/NamespacedKeyword]
   (let [spec-info (get sctx spec-id)
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (envs/tenv-keys tenv)]
@@ -254,8 +254,8 @@
       (first result)
       spec-info)))
 
-(s/defn rewrite-spec-constraints :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword spec-info]
+(s/defn rewrite-spec-constraints :- ssa/SpecInfo
+  [rule :- RewriteRule, sctx :- ssa/SpecCtx, spec-id :- types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (envs/tenv-keys tenv)]
     (->> (:constraints spec-info)
@@ -264,8 +264,8 @@
                  spec-info)
          (#(ssa/prune-ssa-graph % false)))))
 
-(s/defn ^:private rewrite-ssa-graph :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword spec-info]
+(s/defn ^:private rewrite-ssa-graph :- ssa/SpecInfo
+  [rule :- RewriteRule, sctx :- ssa/SpecCtx, spec-id :- types/NamespacedKeyword spec-info]
   (let [{:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (envs/tenv-keys tenv)
         reachable? (ssa/reachable-nodes spec-info)]
@@ -274,8 +274,8 @@
      spec-info
      reachable?)))
 
-(s/defn rewrite-spec :- SpecInfo
-  [rule :- RewriteRule, sctx :- SpecCtx, spec-id :- types/NamespacedKeyword, spec-info]
+(s/defn rewrite-spec :- ssa/SpecInfo
+  [rule :- RewriteRule, sctx :- ssa/SpecCtx, spec-id :- types/NamespacedKeyword, spec-info]
   ((condp = (:nodes rule)
      :all rewrite-ssa-graph
      :constraints rewrite-spec-constraints
@@ -283,16 +283,16 @@
                      {:rule rule})))
    rule sctx spec-id spec-info))
 
-(s/defn rewrite-sctx* :- SpecCtx
-  [rule :- RewriteRule, sctx :- SpecCtx]
+(s/defn rewrite-sctx* :- ssa/SpecCtx
+  [rule :- RewriteRule, sctx :- ssa/SpecCtx]
   (reduce-kv
    (fn [m spec-id spec-info]
      (ssa/add-spec-to-context m spec-id (rewrite-spec rule sctx spec-id spec-info)))
    sctx
    sctx))
 
-(s/defn rewrite-in-dependency-order* :- SpecCtx
-  [rule :- RewriteRule, deps-fn :- (s/pred ifn?), sctx :- SpecCtx]
+(s/defn rewrite-in-dependency-order* :- ssa/SpecCtx
+  [rule :- RewriteRule, deps-fn :- (s/pred ifn?), sctx :- ssa/SpecCtx]
   (as-> (dependency/graph) dg
     ;; ensure that everything is in the dependency graph, depending on :nothing
     (reduce #(dependency/depend %1 %2 :nothing) dg (keys sctx))
