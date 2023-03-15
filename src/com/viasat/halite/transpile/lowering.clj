@@ -9,7 +9,7 @@
             [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as rewriting]
             [com.viasat.halite.transpile.simplify :refer [simplify always-evaluates?]]
             [com.viasat.halite.transpile.ssa :as ssa :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
-            [com.viasat.halite.transpile.util :as transpile-util]
+            [com.viasat.halite.transpile.transpile-util :as transpile-util]
             [com.viasat.halite.types :as types]
             [loom.alg]
             [loom.graph]

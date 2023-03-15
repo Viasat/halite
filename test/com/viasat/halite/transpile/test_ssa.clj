@@ -6,7 +6,7 @@
             [com.viasat.halite :as halite]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.util :as transpile-util]
+            [com.viasat.halite.transpile.transpile-util :as transpile-util]
             [com.viasat.halite.var-types :as var-types]
             [schema.core :as s]
             [schema.test]))

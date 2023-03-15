@@ -3,13 +3,13 @@
 
 (ns com.viasat.halite.doc.md-how-to
   (:require [clojure.string :as string]
-            [com.viasat.halite.doc.run :as doc-run]
-            [com.viasat.halite.doc.utils :as doc-utils]
+            [com.viasat.halite.doc.doc-run :as doc-run]
+            [com.viasat.halite.doc.doc-util :as doc-util]
             [com.viasat.halite.propagate :as propagate]
             [com.viasat.halite.var-types :as var-types]
             [com.viasat.jadeite :as jadeite]
             [com.viasat.halite.transpile.rewriting :as rewriting])
-  (:import [com.viasat.halite.doc.run HCInfo]))
+  (:import [com.viasat.halite.doc.doc_run HCInfo]))
 
 (set! *warn-on-reflection* true)
 
@@ -41,7 +41,7 @@
                                                                                (str ({:halite  "\n\n;-- result --\n"
                                                                                       :jadeite "\n\n//-- result --\n"}
                                                                                      lang)
-                                                                                    ({:halite (doc-utils/pprint-halite h-result)
+                                                                                    ({:halite (doc-util/pprint-halite h-result)
                                                                                       :jadeite (str h-result "\n")} lang))))]
                                                        (recur more-c
                                                               spec-map-to-use
@@ -84,7 +84,7 @@
                                                                nil
                                                                (code-snippet-f
                                                                 lang
-                                                                (str ({:halite (doc-utils/pprint-halite h-expr)
+                                                                (str ({:halite (doc-util/pprint-halite h-expr)
                                                                        :jadeite (str j-expr "\n")} lang)
                                                                      (when (or (contains? c :result)
                                                                                (:throws c))
@@ -96,7 +96,7 @@
                                                                                        (not= (:result c) h-result))
                                                                               (throw (ex-info "results do not match" {:c c
                                                                                                                       :h-result h-result})))
-                                                                            ({:halite (doc-utils/pprint-halite h-result)
+                                                                            ({:halite (doc-util/pprint-halite h-result)
                                                                               :jadeite (str j-result "\n")} lang)))))))))
               (and (map c) (:propagate c)) (recur
                                             more-c
@@ -105,7 +105,7 @@
                                             (conj results
                                                   (let [comment ({:halite  ";;" :jadeite "//"} lang)
                                                         ;;code-str #(translate-spec-map-to-f lang % "") ;; Prettier jadeite, but doesn't handle fixed decimals
-                                                        code-str ({:halite doc-utils/pprint-halite
+                                                        code-str ({:halite doc-util/pprint-halite
                                                                    :jadeite #(str (jadeite/to-jadeite %) "\n")}
                                                                   lang)]
                                                     (spec-snippet-f lang
@@ -135,7 +135,7 @@
         (let [basic-ref-links (get-reference-links-f lang prefix  "../" how-to)
               op-refs (some->> (:op-ref how-to)
                                (map ({:halite identity
-                                      :jadeite doc-utils/translate-op-name-to-jadeite} lang)))
+                                      :jadeite doc-util/translate-op-name-to-jadeite} lang)))
               how-to-refs (:how-to-ref how-to)
               tutorial-refs (:tutorial-ref how-to)
               explanation-refs (:explanation-ref how-to)]
@@ -150,7 +150,7 @@
              ["#### Operator reference:\n\n"
               (for [a (sort op-refs)]
                 (str "* " "[`" a "`](" (get-link-f lang prefix "../" "full-reference")
-                     "#" (doc-utils/safe-op-anchor a) ")" "\n"))
+                     "#" (doc-util/safe-op-anchor a) ")" "\n"))
               "\n\n"])
            (when how-to-refs
              ["#### How Tos:\n\n"

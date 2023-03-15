@@ -7,7 +7,7 @@
             [clojure.test :refer :all]
             [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.doc.run :as doc-run]
+            [com.viasat.halite.doc.doc-run :as doc-run]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.lint :as lint]
             [com.viasat.jadeite :as jadeite]

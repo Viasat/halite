@@ -3,7 +3,6 @@
 
 (ns com.viasat.halite.propagate.test-prop-abstract
   (:require [clojure.test :refer :all]
-            [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.transpile.lowering :as lowering]

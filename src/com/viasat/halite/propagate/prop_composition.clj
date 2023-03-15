@@ -9,7 +9,7 @@
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
-            [com.viasat.halite.transpile.util :as transpile-util]
+            [com.viasat.halite.transpile.transpile-util :as transpile-util]
             [com.viasat.halite.types :as types]
             [loom.derived :as loom-derived]
             [loom.graph :as loom-graph]

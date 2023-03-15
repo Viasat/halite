@@ -4,7 +4,7 @@
 (ns com.viasat.halite.doc.md-full
   (:require [clojure.string :as string]
             [com.viasat.halite.doc.md-basic :as md-basic]
-            [com.viasat.halite.doc.utils :as doc-utils]
+            [com.viasat.halite.doc.doc-util :as doc-util]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -23,12 +23,12 @@
 (s/defn full-md
   [{:keys [lang tag-def-map]} {:keys [prefix get-link-f get-svg-link-f get-table-data-f get-reference-links-f]} op-name op]
   (->> ["### "
-        "<a name=\"" (doc-utils/safe-op-anchor op-name) "\"></a>"
+        "<a name=\"" (doc-util/safe-op-anchor op-name) "\"></a>"
         op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
         (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
         (map-indexed
          (fn [i sig]
-           (get-svg-link-f "halite-bnf-diagrams/op/" (str (doc-utils/url-encode (doc-utils/safe-op-name op-name)) "-" i (doc-utils/get-language-modifier lang)) sig))
+           (get-svg-link-f "halite-bnf-diagrams/op/" (str (doc-util/url-encode (doc-util/safe-op-name op-name)) "-" i (doc-util/get-language-modifier lang)) sig))
          (op ({:halite :sigs, :jadeite :sigs-j} lang)))
         (when-let [md-links (get-reference-links-f lang prefix "" op)]
           ["#### Basic elements:\n\n" (interpose ", " md-links) "\n\n"])
@@ -36,7 +36,7 @@
         (when-let [es (:examples op)]
           ["#### Examples:\n\n"
            "<table>"
-           (for [row (doc-utils/text-tile-rows (map (partial doc-utils/example-text lang) es))]
+           (for [row (doc-util/text-tile-rows (map (partial doc-util/example-text lang) es))]
              ["<tr>"
               (for [tile (:tiles row)]
                 (get-table-data-f lang tile))
@@ -47,12 +47,12 @@
            (for [msg (sort t)]
              (str "* " "[`" msg "`]("
                   (get-link-f lang prefix "" "err-id-reference")
-                  "#" (doc-utils/safe-op-anchor msg) ")" "\n"))
+                  "#" (doc-util/safe-op-anchor msg) ")" "\n"))
            "\n"])
         (when-let [alsos (:op-ref op)]
           ["See also:"
            (for [a (sort (remove #(= op-name %) alsos))]
-             [" [`" a "`](#" (doc-utils/safe-op-anchor a) ")"])
+             [" [`" a "`](#" (doc-util/safe-op-anchor a) ")"])
            "\n\n"])
         (when-let [how-to-refs (:how-to-ref op)]
           ["#### How tos:\n\n"
@@ -82,9 +82,9 @@
 
 (s/defn full-md-all
   [{:keys [lang] :as info} {:keys [generate-hdr-f get-svg-link-f] :as config} op-maps]
-  (->> [(generate-hdr-f "Halite Full Reference" (str "halite_full-reference" (doc-utils/get-language-modifier lang)) (str "/" (name lang)) "Halite operator reference (all operators)")
+  (->> [(generate-hdr-f "Halite Full Reference" (str "halite_full-reference" (doc-util/get-language-modifier lang)) (str "/" (name lang)) "Halite operator reference (all operators)")
         "# "
-        (doc-utils/lang-str lang)
+        (doc-util/lang-str lang)
         " operator reference (all operators)\n\n"
         (full-intro lang get-svg-link-f)
         (->> op-maps

@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022,2023 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.transpile.util
+(ns com.viasat.halite.transpile.transpile-util
   "Simple, self-contained utility functions for manipulating halite expressions."
   (:require [schema.core :as s]))
 

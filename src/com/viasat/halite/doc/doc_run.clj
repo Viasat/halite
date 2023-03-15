@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022,2023 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.doc.run
+(ns com.viasat.halite.doc.doc-run
   (:require [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.lib.format-errors :as format-errors]

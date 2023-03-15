@@ -1,7 +1,7 @@
 ;; Copyright (c) 2022,2023 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.doc.utils
+(ns com.viasat.halite.doc.doc-util
   (:require [cheshire.core :as json]
             [clojure.edn :as edn]
             [clojure.java.io :as io]

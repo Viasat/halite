@@ -7,7 +7,7 @@
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecInfo SpecCtx SSACtx]]
-            [com.viasat.halite.transpile.util :as transpile-util]
+            [com.viasat.halite.transpile.transpile-util :as transpile-util]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
             [schema.core :as s]

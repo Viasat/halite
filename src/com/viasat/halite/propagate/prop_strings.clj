@@ -16,7 +16,7 @@
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.simplify :as simplify]
-            [com.viasat.halite.transpile.util :as transpile-util]
+            [com.viasat.halite.transpile.transpile-util :as transpile-util]
             [com.viasat.halite.types :as types]
             [loom.alg :as loom-alg]
             [loom.derived :as loom-derived]
