@@ -2,17 +2,15 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-composition
-  (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
+  (:require [clojure.test :refer :all]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.propagate.prop-composition :as pc]
+            [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
-            [schema.test])
-  (:use clojure.test))
+            [schema.test]))
 
 ;; Prismatic schema validation is too slow to leave on by default for these tests.
 ;; If you're debugging a test failure, and the problem is a 'type' error,
@@ -30,7 +28,7 @@
 
     (is (= '{:fields {:x :Integer, :y :Integer, :b :Boolean}
              :constraints [["vars" (valid? {:$type :ws/A :x x :y y :b b})]]}
-           (pc/spec-ify-bound specs {:$type :ws/A})))))
+           (prop-composition/spec-ify-bound specs {:$type :ws/A})))))
 
 (deftest test-spec-ify-bound-with-composite-specs
   (testing "simple composition"
@@ -45,7 +43,7 @@
                :constraints [["vars" (valid? {:$type :ws/B
                                               :a1 {:$type :ws/A :x a1|x :y a1|y}
                                               :a2 {:$type :ws/A :x a2|x :y a2|y}})]]}
-             (pc/spec-ify-bound specs {:$type :ws/B}))))))
+             (prop-composition/spec-ify-bound specs {:$type :ws/B}))))))
 
 (deftest test-propagation-of-trivial-spec
   (let [specs (ssa/spec-map-to-ssa
@@ -58,7 +56,7 @@
                                       ["oddSum" (= oddSum (= 1 (mod (+ x y) 2)))]]}})
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
-         (= out (pc/propagate specs opts in))
+         (= out (prop-composition/propagate specs opts in))
 
       {:$type :ws/A} {:$type :ws/A, :x {:$in [1 99]}, :y {:$in [2 100]}, :oddSum {:$in #{true false}}}
 
@@ -79,7 +77,7 @@
         opts {:default-int-bounds [-100 100]}]
 
     (are [in out]
-         (= out (pc/propagate specs opts in))
+         (= out (prop-composition/propagate specs opts in))
 
       {:$type :ws/B}
       {:$type :ws/B
@@ -118,7 +116,7 @@
                   :constraints [["c3" (= cx (get {:$type :ws/A :ax cx} :ax))]]}})
         opts {:default-int-bounds [-100 100]}]
     (are [in out]
-         (= out (pc/propagate specs opts in))
+         (= out (prop-composition/propagate specs opts in))
 
       {:$type :ws/C} {:$type :ws/C :cx {:$in [1 9]}}
       {:$type :ws/B} {:$type :ws/B :by {:$in [1 4]} :bz {:$in [1 4]}}
@@ -133,7 +131,7 @@
 
     (is (= '{:fields {:an :Integer, :aw [:Maybe :Integer], :p :Boolean}
              :constraints [["vars" (valid? {:$type :ws/A :an an :aw aw :p p})]]}
-           (pc/spec-ify-bound specs {:$type :ws/A})))))
+           (prop-composition/spec-ify-bound specs {:$type :ws/A})))))
 
 (deftest test-propagate-for-primitive-optionals
   (let [specs (ssa/spec-map-to-ssa
@@ -143,7 +141,7 @@
         opts {:default-int-bounds [-10 10]}]
 
     (are [in out]
-         (= out (pc/propagate specs opts in))
+         (= out (prop-composition/propagate specs opts in))
 
       {:$type :ws/A}            {:$type :ws/A, :an {:$in [-10 10]}, :aw {:$in [-10 10 :Unset]}, :p {:$in #{false true}}}
       {:$type :ws/A :p true}    {:$type :ws/A :an {:$in [-10 10]} :aw {:$in [-10 10]}, :p true}
@@ -163,7 +161,7 @@
                     :cw [:Maybe :Integer]}}
     :ws/D {:fields {:dx :Integer}}})
 
-(def flatten-vars #'pc/flatten-vars)
+(def flatten-vars #'prop-composition/flatten-vars)
 
 (deftest test-flatten-vars-for-nested-optionals
   (let [sctx (ssa/spec-map-to-ssa nested-optionals-spec-env)]
@@ -171,151 +169,151 @@
          (= expected (flatten-vars sctx bound))
 
       {:$type :ws/C}
-      {::pc/spec-id :ws/C
+      {::prop-composition/spec-id :ws/C
        :cx [:cx :Integer]
        :cw [:cw [:Maybe :Integer]]
-       ::pc/mandatory #{}}
+       ::prop-composition/mandatory #{}}
 
       {:$type :ws/B}
-      {::pc/spec-id :ws/B
+      {::prop-composition/spec-id :ws/B
        :bx [:bx :Integer]
        :bw [:bw [:Maybe :Integer]]
        :bp [:bp :Boolean]
-       :c1 {::pc/spec-id :ws/C
+       :c1 {::prop-composition/spec-id :ws/C
             :cx [:c1|cx :Integer]
             :cw [:c1|cw [:Maybe :Integer]]
-            ::pc/mandatory #{}}
-       :c2 {::pc/spec-id :ws/C
+            ::prop-composition/mandatory #{}}
+       :c2 {::prop-composition/spec-id :ws/C
             :$witness [:c2? :Boolean]
             :cx [:c2|cx [:Maybe :Integer]]
             :cw [:c2|cw [:Maybe :Integer]]
-            ::pc/mandatory #{:c2|cx}}
-       ::pc/mandatory #{}}
+            ::prop-composition/mandatory #{:c2|cx}}
+       ::prop-composition/mandatory #{}}
 
       {:$type :ws/B
        :c1 {:$type [:Maybe :ws/C]
             :cw 10}}
-      {::pc/spec-id :ws/B
+      {::prop-composition/spec-id :ws/B
        :bx [:bx :Integer]
        :bw [:bw [:Maybe :Integer]]
        :bp [:bp :Boolean]
-       :c1 {::pc/spec-id :ws/C
+       :c1 {::prop-composition/spec-id :ws/C
             :cx [:c1|cx :Integer]
             :cw [:c1|cw [:Maybe :Integer]]
-            ::pc/mandatory #{}}
-       :c2 {::pc/spec-id :ws/C
+            ::prop-composition/mandatory #{}}
+       :c2 {::prop-composition/spec-id :ws/C
             :$witness [:c2? :Boolean]
             :cx [:c2|cx [:Maybe :Integer]]
             :cw [:c2|cw [:Maybe :Integer]]
-            ::pc/mandatory #{:c2|cx}}
-       ::pc/mandatory #{}}
+            ::prop-composition/mandatory #{:c2|cx}}
+       ::prop-composition/mandatory #{}}
 
       {:$type :ws/A}
-      {::pc/spec-id :ws/A
-       :b1 {::pc/spec-id :ws/B
+      {::prop-composition/spec-id :ws/A
+       :b1 {::prop-composition/spec-id :ws/B
             :$witness [:b1? :Boolean]
             :bx [:b1|bx [:Maybe :Integer]]
             :bw [:b1|bw [:Maybe :Integer]]
             :bp [:b1|bp [:Maybe :Boolean]]
-            :c1 {::pc/spec-id :ws/C
+            :c1 {::prop-composition/spec-id :ws/C
                  :cx [:b1|c1|cx [:Maybe :Integer]]
                  :cw [:b1|c1|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b1|c1|cx}}
-            :c2 {::pc/spec-id :ws/C
+                 ::prop-composition/mandatory #{:b1|c1|cx}}
+            :c2 {::prop-composition/spec-id :ws/C
                  :$witness [:b1|c2? :Boolean]
                  :cx [:b1|c2|cx [:Maybe :Integer]]
                  :cw [:b1|c2|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b1|c2|cx}}
-            ::pc/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
-       :b2 {::pc/spec-id :ws/B
+                 ::prop-composition/mandatory #{:b1|c2|cx}}
+            ::prop-composition/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
+       :b2 {::prop-composition/spec-id :ws/B
             :$witness [:b2? :Boolean]
             :bx [:b2|bx [:Maybe :Integer]]
             :bw [:b2|bw [:Maybe :Integer]]
             :bp [:b2|bp [:Maybe :Boolean]]
-            :c1 {::pc/spec-id :ws/C
+            :c1 {::prop-composition/spec-id :ws/C
                  :cx [:b2|c1|cx [:Maybe :Integer]]
                  :cw [:b2|c1|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b2|c1|cx}}
-            :c2 {::pc/spec-id :ws/C
+                 ::prop-composition/mandatory #{:b2|c1|cx}}
+            :c2 {::prop-composition/spec-id :ws/C
                  :$witness [:b2|c2? :Boolean]
                  :cx [:b2|c2|cx [:Maybe :Integer]]
                  :cw [:b2|c2|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b2|c2|cx}}
-            ::pc/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
+                 ::prop-composition/mandatory #{:b2|c2|cx}}
+            ::prop-composition/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
        :ap [:ap :Boolean]
-       ::pc/mandatory #{}}
+       ::prop-composition/mandatory #{}}
 
       {:$type :ws/A :b1 {:$type [:Maybe :ws/B]}}
-      {::pc/spec-id :ws/A
-       :b1 {::pc/spec-id :ws/B
+      {::prop-composition/spec-id :ws/A
+       :b1 {::prop-composition/spec-id :ws/B
             :$witness [:b1? :Boolean]
             :bx [:b1|bx [:Maybe :Integer]]
             :bw [:b1|bw [:Maybe :Integer]]
             :bp [:b1|bp [:Maybe :Boolean]]
-            :c1 {::pc/spec-id :ws/C
+            :c1 {::prop-composition/spec-id :ws/C
                  :cx [:b1|c1|cx [:Maybe :Integer]]
                  :cw [:b1|c1|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b1|c1|cx}}
-            :c2 {::pc/spec-id :ws/C
+                 ::prop-composition/mandatory #{:b1|c1|cx}}
+            :c2 {::prop-composition/spec-id :ws/C
                  :$witness [:b1|c2? :Boolean]
                  :cx [:b1|c2|cx [:Maybe :Integer]]
                  :cw [:b1|c2|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b1|c2|cx}}
-            ::pc/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
-       :b2 {::pc/spec-id :ws/B
+                 ::prop-composition/mandatory #{:b1|c2|cx}}
+            ::prop-composition/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
+       :b2 {::prop-composition/spec-id :ws/B
             :$witness [:b2? :Boolean]
             :bx [:b2|bx [:Maybe :Integer]]
             :bw [:b2|bw [:Maybe :Integer]]
             :bp [:b2|bp [:Maybe :Boolean]]
-            :c1 {::pc/spec-id :ws/C
+            :c1 {::prop-composition/spec-id :ws/C
                  :cx [:b2|c1|cx [:Maybe :Integer]]
                  :cw [:b2|c1|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b2|c1|cx}}
-            :c2 {::pc/spec-id :ws/C
+                 ::prop-composition/mandatory #{:b2|c1|cx}}
+            :c2 {::prop-composition/spec-id :ws/C
                  :$witness [:b2|c2? :Boolean]
                  :cx [:b2|c2|cx [:Maybe :Integer]]
                  :cw [:b2|c2|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b2|c2|cx}}
-            ::pc/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
+                 ::prop-composition/mandatory #{:b2|c2|cx}}
+            ::prop-composition/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
        :ap [:ap :Boolean]
-       ::pc/mandatory #{}}
+       ::prop-composition/mandatory #{}}
 
       {:$type :ws/A :b1 :Unset}
-      {::pc/spec-id :ws/A
-       :b1 {::pc/spec-id :ws/B
+      {::prop-composition/spec-id :ws/A
+       :b1 {::prop-composition/spec-id :ws/B
             :$witness [:b1? :Boolean]
             :bx [:b1|bx [:Maybe :Integer]]
             :bw [:b1|bw [:Maybe :Integer]]
             :bp [:b1|bp [:Maybe :Boolean]]
-            :c1 {::pc/spec-id :ws/C
+            :c1 {::prop-composition/spec-id :ws/C
                  :cx [:b1|c1|cx [:Maybe :Integer]]
                  :cw [:b1|c1|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b1|c1|cx}}
-            :c2 {::pc/spec-id :ws/C
+                 ::prop-composition/mandatory #{:b1|c1|cx}}
+            :c2 {::prop-composition/spec-id :ws/C
                  :$witness [:b1|c2? :Boolean]
                  :cx [:b1|c2|cx [:Maybe :Integer]]
                  :cw [:b1|c2|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b1|c2|cx}}
-            ::pc/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
-       :b2 {::pc/spec-id :ws/B
+                 ::prop-composition/mandatory #{:b1|c2|cx}}
+            ::prop-composition/mandatory #{:b1|c1|cx :b1|bx :b1|bp}}
+       :b2 {::prop-composition/spec-id :ws/B
             :$witness [:b2? :Boolean]
             :bx [:b2|bx [:Maybe :Integer]]
             :bw [:b2|bw [:Maybe :Integer]]
             :bp [:b2|bp [:Maybe :Boolean]]
-            :c1 {::pc/spec-id :ws/C
+            :c1 {::prop-composition/spec-id :ws/C
                  :cx [:b2|c1|cx [:Maybe :Integer]]
                  :cw [:b2|c1|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b2|c1|cx}}
-            :c2 {::pc/spec-id :ws/C
+                 ::prop-composition/mandatory #{:b2|c1|cx}}
+            :c2 {::prop-composition/spec-id :ws/C
                  :$witness [:b2|c2? :Boolean]
                  :cx [:b2|c2|cx [:Maybe :Integer]]
                  :cw [:b2|c2|cw [:Maybe :Integer]]
-                 ::pc/mandatory #{:b2|c2|cx}}
-            ::pc/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
+                 ::prop-composition/mandatory #{:b2|c2|cx}}
+            ::prop-composition/mandatory #{:b2|c1|cx :b2|bx :b2|bp}}
        :ap [:ap :Boolean]
-       ::pc/mandatory #{}})))
+       ::prop-composition/mandatory #{}})))
 
-(def lower-spec-bound #'pc/lower-spec-bound)
+(def lower-spec-bound #'prop-composition/lower-spec-bound)
 
 (deftest test-lower-spec-bound-for-nested-optionals
   (let [sctx (ssa/spec-map-to-ssa nested-optionals-spec-env)]
@@ -356,7 +354,7 @@
 
         {:$type :ws/B :c1 {:$type [:Maybe :ws/C] :cw 10}} {:c1|cw 10}))))
 
-(def optionality-constraint #'pc/optionality-constraint)
+(def optionality-constraint #'prop-composition/optionality-constraint)
 
 (deftest test-constraints-for-composite-optional
   (let [specs nested-optionals-spec-env
@@ -384,7 +382,7 @@
         specs (ssa/spec-map-to-ssa nested-optionals-spec-env)]
 
     (are [in out]
-         (= out (pc/propagate specs opts in))
+         (= out (prop-composition/propagate specs opts in))
 
       {:$type :ws/A}
       {:$type :ws/A,
@@ -537,12 +535,12 @@
                                                      $no-value))})]
                            ["$b2?" (and (= b2? (if-value b2|bx true false))
                                         (=> (if-value b2|by true false) b2?))]]}
-           (pc/spec-ify-bound specs {:$type :ws/A})))
+           (prop-composition/spec-ify-bound specs {:$type :ws/A})))
 
     (is (= '{:$type :ws/A,
              :b1 {:$type :ws/B, :bx {:$in [1 1000]}, :by {:$in [-1000 1000 :Unset]}},
              :b2 {:$type :ws/B, :bx {:$in [1 1000]}, :by {:$in [-1000 1000 :Unset]}}}
-           (pc/propagate specs {:$type :ws/A})))))
+           (prop-composition/propagate specs {:$type :ws/A})))))
 
 (deftest test-propagate-with-errors
   (let [specs (ssa/spec-map-to-ssa
@@ -554,7 +552,7 @@
                                               (= ap (when (< an 20)
                                                       (error "not big enough"))))]]}})]
     (are [in out]
-         (= out (pc/propagate specs in))
+         (= out (prop-composition/propagate specs in))
 
       {:$type :ws/A} {:$type :ws/A, :an {:$in [-1000 1000]}, :ap {:$in #{true :Unset}}}
       {:$type :ws/A :an {:$in (set (range 7 22))}} {:$type :ws/A,:an {:$in #{7 8 9 20 21}},:ap {:$in #{true :Unset}}}
@@ -574,7 +572,7 @@
                  :ws/B {:fields {:bm :Integer :bn :Integer}
                         :constraints [["b1" (and (<= -3 bn) (<= bn 3))]]}})]
     (is (= {:$type :ws/A :an {:$in #{-3 -2 -1 1 2 3}}}
-           (pc/propagate specs {:$type :ws/A :an {:$in (set (range -5 6))}})))))
+           (prop-composition/propagate specs {:$type :ws/A :an {:$in (set (range -5 6))}})))))
 
 (deftest test-short-circuiting-ifs
   (let [specs (specs-to-ssa
@@ -587,17 +585,17 @@
     (is (= {:$type :ws/A
             :an {:$in (set (range -3 4))}
             :ap {:$in #{true false}}}
-           (pc/propagate specs {:$type :ws/A :an {:$in (set (range -5 6))}})))
+           (prop-composition/propagate specs {:$type :ws/A :an {:$in (set (range -5 6))}})))
 
     (is (= {:$type :ws/A
             :an {:$in (disj (set (range -3 4)) 0)}
             :ap true}
-           (pc/propagate specs {:$type :ws/A :an {:$in (set (range -5 6))} :ap true})))
+           (prop-composition/propagate specs {:$type :ws/A :an {:$in (set (range -5 6))} :ap true})))
 
     (is (= {:$type :ws/A
             :an 0
             :ap false}
-           (pc/propagate specs {:$type :ws/A :an 0})))))
+           (prop-composition/propagate specs {:$type :ws/A :an 0})))))
 
 (deftest test-instance-if-comparison
   (let [specs (specs-to-ssa
@@ -608,9 +606,9 @@
              :a {:$type :ws/A :an 3}
              :p {:$in #{true false}}
              :bn {:$in [-10 10]}}
-           (pc/propagate specs {:$type :ws/B
-                                :a {:$type :ws/A :an 3}
-                                :bn {:$in [-10 10]}})))))
+           (prop-composition/propagate specs {:$type :ws/B
+                                              :a {:$type :ws/A :an 3}
+                                              :bn {:$in [-10 10]}})))))
 
 (deftest test-abstract-type-instance-comparisons
   (let [specs (specs-to-ssa
@@ -622,6 +620,6 @@
     (is (= '{:$type :ws/D :p true
              :a {:$type :ws/A :an {:$in [-1000 1000]}}
              :b {:$type :ws/B :bn {:$in [-1000 1000]}}}
-           (pc/propagate specs {:$type :ws/D})))))
+           (prop-composition/propagate specs {:$type :ws/D})))))
 
 ;; (run-tests)

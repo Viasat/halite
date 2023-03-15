@@ -10,7 +10,7 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.lib.format-errors :refer [throw-err with-exception-data]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.lint :as lint]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.type-of :as type-of]
@@ -30,9 +30,9 @@
    bool-expr
    spec-id :- types/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
-  (with-exception-data {:form bool-expr
-                        :spec-id spec-id
-                        :constraint-name (name constraint-name)}
+  (format-errors/with-exception-data {:form bool-expr
+                                      :spec-id spec-id
+                                      :constraint-name (name constraint-name)}
     (type-check/type-check-constraint-expr (:senv ctx) tenv bool-expr))
   (eval/eval-predicate ctx tenv bool-expr spec-id constraint-name))
 
@@ -47,9 +47,9 @@
   (if (contains? eval/*refinements* spec-id)
     (eval/*refinements* spec-id) ;; cache hit
     (do
-      (with-exception-data {:form expr
-                            :spec-id spec-id
-                            :refinement-name refinement-name}
+      (format-errors/with-exception-data {:form expr
+                                          :spec-id spec-id
+                                          :refinement-name refinement-name}
         (type-check/type-check-refinement-expr (:senv ctx) tenv spec-id expr))
       (eval/eval-refinement ctx tenv spec-id expr refinement-name))))
 
@@ -76,7 +76,7 @@
         unbound-symbols (set/difference declared-symbols bound-symbols)
         empty-env (envs/env {})]
     (when (seq unbound-symbols)
-      (throw-err (h-err/symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
+      (format-errors/throw-err (h-err/symbols-not-bound {:unbound-symbols unbound-symbols, :tenv tenv, :env env})))
     (doseq [sym declared-symbols]
       (let [declared-type (envs/lookup-type* tenv sym)
             ;; it is not necessary to setup the eval bindings for the following because the
@@ -84,7 +84,7 @@
             value (eval/eval-expr* {:env empty-env :senv senv} (get (envs/bindings env) sym))
             actual-type (type-of/type-of senv tenv value)]
         (when-not (types/subtype? actual-type declared-type)
-          (throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))))
+          (format-errors/throw-err (h-err/value-of-wrong-type {:variable sym :value value :expected declared-type :actual actual-type})))))))
 
 (defmacro optionally-with-eval-bindings [flag form]
   `(if ~flag
@@ -127,9 +127,9 @@
      (binding [base/*limits* (or limits base/*limits*)]
        (when check-for-spec-cycles?
          (when (not (map? senv))
-           (throw-err (h-err/spec-map-needed {})))
+           (format-errors/throw-err (h-err/spec-map-needed {})))
          (when-let [cycle (analysis/find-cycle-in-dependencies senv)]
-           (throw-err (h-err/spec-cycle {:cycle cycle}))))
+           (format-errors/throw-err (h-err/spec-cycle {:cycle cycle}))))
        (when type-check-expr?
          ;; it is not necessary to setup the eval bindings here because type-check does not invoke the
          ;; evaluator

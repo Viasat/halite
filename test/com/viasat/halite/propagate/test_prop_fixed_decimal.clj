@@ -2,13 +2,13 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-fixed-decimal
-  (:require [com.viasat.halite.propagate.prop-fixed-decimal :as prop-fixed-decimal]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.propagate.prop-fixed-decimal :as prop-fixed-decimal]
             [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite :as halite]
             [com.viasat.halite.var-types :as var-types]
-            [schema.test :refer [validate-schemas]])
-  (:use clojure.test))
+            [schema.test :refer [validate-schemas]]))
 
 (deftest test-lower-fixed-decimal
   (let [spec-1 {:$type :spec/A

@@ -12,7 +12,7 @@
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.l-err :as l-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.lib.format-errors :as format-errors :refer [throw-err with-exception-data text]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
@@ -36,15 +36,15 @@
         actual-types (map (partial type-check* ctx) args)]
     (doseq [[arg t] (map vector args actual-types)]
       (when (types/nothing-like? t)
-        (throw-err (l-err/disallowed-nothing {:form form
-                                              :nothing-arg arg}))))
+        (format-errors/throw-err (l-err/disallowed-nothing {:form form
+                                                            :nothing-arg arg}))))
     ;; linter has tighter signature requirements on some builtin functions
     (when-let [lint-signatures (get lint-builtins-signatures op)]
       (when-not (some #(type-check/matches-signature? % actual-types) lint-signatures)
-        (throw-err (h-err/no-matching-signature {:form form
-                                                 :op (name op)
-                                                 :actual-types actual-types
-                                                 :signatures lint-signatures}))))
+        (format-errors/throw-err (h-err/no-matching-signature {:form form
+                                                               :op (name op)
+                                                               :actual-types actual-types
+                                                               :signatures lint-signatures}))))
     (loop [[sig & more] signatures]
       (cond
         (type-check/matches-signature? sig actual-types) (:return-type sig)
@@ -59,7 +59,7 @@
       (when (and (= :Unset t)
                  (not (or (= 'no-value sym)
                           (= '$no-value sym))))
-        (throw-err (l-err/disallowed-unset-variable {:form sym})))
+        (format-errors/throw-err (l-err/disallowed-unset-variable {:form sym})))
       t)))
 
 (defn ^:private type-check-lookup [ctx form subexpr-type index]
@@ -67,7 +67,7 @@
     (types/halite-vector-type? subexpr-type)
     (let [index-type (type-check* ctx index)]
       (when (types/empty-vectors subexpr-type)
-        (throw-err (h-err/index-out-of-bounds {:form form :index index :length 0})))
+        (format-errors/throw-err (h-err/index-out-of-bounds {:form form :index index :length 0})))
       (types/elem-type subexpr-type))
 
     (and (types/spec-type? subexpr-type)
@@ -87,7 +87,7 @@
    form]
   (let [[_ subexpr indexes] form]
     (when (empty? indexes)
-      (throw-err (l-err/get-in-path-empty {:form form})))
+      (format-errors/throw-err (l-err/get-in-path-empty {:form form})))
     (reduce (partial type-check-lookup ctx form) (type-check* ctx subexpr) indexes)))
 
 (s/defn ^:private type-check-equals :- types/HaliteType
@@ -98,9 +98,9 @@
      (fn [s t]
        (let [j (types/join s t)]
          (when (types/nothing-like? j)
-           (throw-err (l-err/result-always-known {:op (first expr)
-                                                  :value (if (= '= (first expr)) 'false 'true)
-                                                  :form expr})))
+           (format-errors/throw-err (l-err/result-always-known {:op (first expr)
+                                                                :value (if (= '= (first expr)) 'false 'true)
+                                                                :form expr})))
          j))
      arg-types))
   :Boolean)
@@ -141,17 +141,17 @@
    expr :- s/Any]
   (let [[bindings body] (rest expr)]
     (when (zero? (count bindings))
-      (throw-err (l-err/let-bindings-empty {:form expr})))
+      (format-errors/throw-err (l-err/let-bindings-empty {:form expr})))
     (type-check*
      (reduce
       (fn [ctx [sym body]]
         (when (re-find #"^[$]" (name sym))
-          (throw-err (l-err/binding-target-invalid-symbol {:form expr :sym sym :op 'let})))
+          (format-errors/throw-err (l-err/binding-target-invalid-symbol {:form expr :sym sym :op 'let})))
         (let [t (type-check* ctx body)]
           (when (= t :Unset)
-            (throw-err (l-err/cannot-bind-unset {:form expr :sym sym :body body})))
+            (format-errors/throw-err (l-err/cannot-bind-unset {:form expr :sym sym :body body})))
           (when (types/nothing-like? t)
-            (throw-err (l-err/cannot-bind-nothing {:form expr :sym sym :body body})))
+            (format-errors/throw-err (l-err/cannot-bind-nothing {:form expr :sym sym :body body})))
           (update ctx :tenv envs/extend-scope sym t)))
       ctx
       (partition 2 bindings))
@@ -162,7 +162,7 @@
    expr]
   (let [[op [sym expr :as bindings] body] expr]
     (when (re-find #"^[$]" (name sym))
-      (throw-err (l-err/binding-target-invalid-symbol {:op op :form expr :sym sym})))
+      (format-errors/throw-err (l-err/binding-target-invalid-symbol {:op op :form expr :sym sym})))
     (let [coll-type (type-check* ctx expr)
           et (types/elem-type coll-type)
           body-type (type-check* (update ctx :tenv envs/extend-scope sym et) body)]
@@ -217,7 +217,7 @@
                        :Unset
                        (type-check* (update ctx :tenv envs/extend-scope sym :Unset) unset-expr))]
       (when-not (types/strict-maybe-type? sym-type)
-        (throw-err (l-err/first-argument-not-optional {:op op :form sym :expected (types/maybe-type :Any) :actual sym-type})))
+        (format-errors/throw-err (l-err/first-argument-not-optional {:op op :form sym :expected (types/maybe-type :Any) :actual sym-type})))
       (let [inner-type (types/no-maybe sym-type)
             set-type (type-check* (update ctx :tenv envs/extend-scope sym inner-type) set-expr)]
         (types/meet set-type unset-type)))))
@@ -231,7 +231,7 @@
                       :Unset
                       (type-check* (update ctx :tenv envs/extend-scope sym :Unset) else-expr))]
       (when-not (types/strict-maybe-type? maybe-type)
-        (throw-err (l-err/binding-expression-not-optional {:op op :form maybe-expr :expected (types/maybe-type :Any) :actual maybe-type})))
+        (format-errors/throw-err (l-err/binding-expression-not-optional {:op op :form maybe-expr :expected (types/maybe-type :Any) :actual maybe-type})))
       (let [inner-type (types/no-maybe maybe-type)
             then-type (type-check* (update ctx :tenv envs/extend-scope sym inner-type) then-expr)]
         (types/meet then-type else-type)))))

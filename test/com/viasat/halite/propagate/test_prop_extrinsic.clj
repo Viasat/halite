@@ -2,18 +2,18 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-extrinsic
-  (:require [clojure.test :as t :refer [deftest is are testing]]
+  (:require [clojure.test :refer :all]
             [com.viasat.halite.eval :as eval]
-            [com.viasat.halite.propagate.prop-extrinsic :as pe]
+            [com.viasat.halite.propagate.prop-extrinsic :as prop-extrinsic]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [schema.core :as s]))
 
 (defn prop-twice
-  ([sctx bound] (prop-twice sctx pe/default-options bound))
+  ([sctx bound] (prop-twice sctx prop-extrinsic/default-options bound))
   ([sctx opts bound]
-   (let [out1 (pe/propagate sctx opts bound)
-         out2 (pe/propagate sctx opts out1)]
+   (let [out1 (prop-extrinsic/propagate sctx opts bound)
+         out2 (prop-extrinsic/propagate sctx opts out1)]
      (testing "re-propagate"
        (is (= out2 out1)))
      out1)))
@@ -35,7 +35,7 @@
                                                       :bn (+ 1 an)})}}}}]
     (s/with-fn-validation
       (is (= low-specs
-             (update-vals (pe/lower-specs (ssa/spec-map-to-ssa high-specs))
+             (update-vals (prop-extrinsic/lower-specs (ssa/spec-map-to-ssa high-specs))
                           ssa/spec-from-ssa))))))
 
 (deftest test-extrinsic-basic
@@ -130,10 +130,10 @@
               :x {:$in [10 50]},
               :$refines-to {:my/D {:x {:$in [1 6]}},
                             :my/E {:x {:$in [102 112]}}}}
-             (pe/propagate sctx {:$type :my/Ref
-                                 :x {:$in [10 50]}}))))))
+             (prop-extrinsic/propagate sctx {:$type :my/Ref
+                                             :x {:$in [10 50]}}))))))
 
-;; (time (t/run-tests))
+;; (time (run-tests))
 
 ;; Should be tested:
 ;; - guarded extrinsic refinement

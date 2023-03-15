@@ -3,22 +3,22 @@
 
 (ns com.viasat.halite.propagate.test-prop-refine
   (:require [clojure.pprint :refer [pprint]]
-            [clojure.test :as t :refer [deftest is are testing]]
+            [clojure.test :refer :all]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.rewriting :as rewriting]
-            [com.viasat.halite.propagate.prop-composition :as pc]
-            [com.viasat.halite.propagate.prop-refine :as pr]
+            [com.viasat.halite.propagate.prop-composition :as prop-composition]
+            [com.viasat.halite.propagate.prop-refine :as prop-refine]
             [schema.core :as s]))
 
-(def lower-spec-bound #'pc/lower-spec-bound)
+(def lower-spec-bound #'prop-composition/lower-spec-bound)
 
 (defn prop-twice
-  ([sctx bound] (prop-twice sctx pr/default-options bound))
+  ([sctx bound] (prop-twice sctx prop-refine/default-options bound))
   ([sctx opts bound]
-   (let [out1 (pr/propagate sctx opts bound)
-         out2 (pr/propagate sctx opts out1)]
+   (let [out1 (prop-refine/propagate sctx opts bound)
+         out2 (prop-refine/propagate sctx opts out1)]
      (testing "re-propagate"
        (is (= out2 out1)))
      out1)))
@@ -30,18 +30,18 @@
                     :>spec$C {:$type [:Maybe :spec/C],
                               :>spec$D {:$type [:Maybe :spec/D],
                                         :dn 7}}}}
-         (pr/assoc-in-refn-path {:$type :spec/A, :an 5}
-                                [:spec/A :spec/B :spec/C :spec/D]
-                                {:$type [:Maybe :spec/D], :dn 7})))
+         (prop-refine/assoc-in-refn-path {:$type :spec/A, :an 5}
+                                         [:spec/A :spec/B :spec/C :spec/D]
+                                         {:$type [:Maybe :spec/D], :dn 7})))
   (is (= {:$type :spec/A,
           :an 5,
           :>spec$B {:$type :spec/B,
                     :>spec$C {:$type :spec/C,
                               :>spec$D {:$type :spec/D,
                                         :dn 7}}}}
-         (pr/assoc-in-refn-path {:$type :spec/A, :an 5}
-                                [:spec/A :spec/B :spec/C :spec/D]
-                                {:$type :spec/D, :dn 7}))))
+         (prop-refine/assoc-in-refn-path {:$type :spec/A, :an 5}
+                                         [:spec/A :spec/B :spec/C :spec/D]
+                                         {:$type :spec/D, :dn 7}))))
 
 (deftest test-basics
   (let [sctx (ssa/spec-map-to-ssa
@@ -62,9 +62,9 @@
                       :>my$A {:$type :my/A,
                               :a1 {:$in [1 19]}}}}
 
-             (pr/lower-bound
+             (prop-refine/lower-bound
               sctx
-              (pr/make-rgraph sctx)
+              (prop-refine/make-rgraph sctx)
               {:$type :my/C,
                :c1 {:$in [-14 1000]},
                :$refines-to {:my/B {:b1 {:$in [-9 9]}}
@@ -75,7 +75,7 @@
               :$refines-to {:my/B {:b1 {:$in [-9 9]}}
                             :my/A {:a1 {:$in [1 19]}}}}
 
-             (pr/raise-bound
+             (prop-refine/raise-bound
               sctx
               {:$type :my/C,
                :c1 {:$in [-14 1000]},
@@ -85,9 +85,9 @@
                                :a1 {:$in [1 19]}}}})))
 
       (is (thrown-with-msg? Exception #"No.*refinement path"
-                            (pr/lower-bound
+                            (prop-refine/lower-bound
                              sctx
-                             (pr/make-rgraph sctx)
+                             (prop-refine/make-rgraph sctx)
                              {:$type :my/C,
                               :$refines-to {:my/D {}}}))))
 
@@ -137,7 +137,7 @@
                                           :>my$B)
                                          :>my$A)))]],
                     :refines-to {}}}
-           (update-vals (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
+           (update-vals (prop-refine/lower-spec-refinements sctx (prop-refine/make-rgraph sctx))
                         ssa/spec-from-ssa)))
 
     (is (= {:$type :my/D,
@@ -230,7 +230,7 @@
     (is (= {:$type :ws/C
             :b :Unset
             :cn {:$in [-1000 1000]}}
-           (pr/propagate
+           (prop-refine/propagate
             sctx
             {:$type :ws/C
              :b {:$type [:Maybe :ws/B]
@@ -239,7 +239,7 @@
     (is (= {:$type :ws/D
             :b :Unset
             :cn {:$in [-1000 1000]}}
-           (pr/propagate
+           (prop-refine/propagate
             sctx
             {:$type :ws/D
              :b {:$type [:Maybe :ws/B]
@@ -260,7 +260,7 @@
                          :refines-to {}}})]
 
       (are [in out]
-           (= out (pr/lower-bound sctx (pr/make-rgraph sctx) in))
+           (= out (prop-refine/lower-bound sctx (prop-refine/make-rgraph sctx) in))
 
         {:$type :ws/C :b {:$type [:Maybe :ws/B] :$refines-to {:ws/A {:an 12}}}}
         {:$type :ws/C :b {:$type [:Maybe :ws/B] :>ws$A {:$type :ws/A, :an 12}}}
@@ -503,8 +503,8 @@
                                                :>my$C {:$type :my/C, :cn ab|>my$C|cn}}
                                               $no-value))})]
                            ["$ab?" (= ab? (if-value ab|>my$C|cn true false))]]}
-           (pc/spec-ify-bound (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
-                              {:$type :my/A})))
+           (prop-composition/spec-ify-bound (prop-refine/lower-spec-refinements sctx (prop-refine/make-rgraph sctx))
+                                            {:$type :my/A})))
 
     (is (= {:$type :my/A,
             :ab {:$type [:Maybe :my/B], :$refines-to #:my{:C {:cn 5}}}}
@@ -639,7 +639,7 @@
                                           :bn v1}}
                                  :an))))
 
-           (-> (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
+           (-> (prop-refine/lower-spec-refinements sctx (prop-refine/make-rgraph sctx))
                :ws/D
                (ssa/spec-from-ssa)
                :constraints first second)))))
@@ -654,7 +654,7 @@
                        :refines-to {:my/B {:expr (when (< c1 5)
                                                    {:$type :my/B, :b1 (+ 5 c1)})}}}
                 :my/D {:refines-to {:my/A {:expr {:$type :my/A, :a1 10}}}}})
-        rgraph (pr/make-rgraph sctx)]
+        rgraph (prop-refine/make-rgraph sctx)]
 
     (s/with-fn-validation
       (is (= '{:my/A {:fields {:a1 :Integer},
@@ -675,7 +675,7 @@
                :my/D {:constraints [["$all" (= >my$A {:a1 10, :$type :my/A})]],
                       :fields {:>my$A [:Instance :my/A]},
                       :refines-to {}}}
-             (update-vals (pr/lower-spec-refinements sctx rgraph) ssa/spec-from-ssa)))
+             (update-vals (prop-refine/lower-spec-refinements sctx rgraph) ssa/spec-from-ssa)))
 
       (is (= {:$type :my/C,
               :c1 {:$in [-14 1000]},
@@ -684,22 +684,22 @@
                       :>my$A {:$type :my/A,
                               :a1 {:$in [1 19]}}}}
 
-             (pr/lower-bound sctx rgraph
-                             {:$type :my/C,
-                              :c1 {:$in [-14 1000]},
-                              :$refines-to {:my/B {:$type [:Maybe :my/B],
-                                                   :b1 {:$in [-9 9]}}
-                                            :my/A {:$type :my/A,
-                                                   :a1 {:$in [1 19]}}}})))
+             (prop-refine/lower-bound sctx rgraph
+                                      {:$type :my/C,
+                                       :c1 {:$in [-14 1000]},
+                                       :$refines-to {:my/B {:$type [:Maybe :my/B],
+                                                            :b1 {:$in [-9 9]}}
+                                                     :my/A {:$type :my/A,
+                                                            :a1 {:$in [1 19]}}}})))
       (is (= {:$type :my/C, :>my$B :Unset}
-             (pr/lower-bound sctx rgraph
-                             {:$type :my/C,
-                              :$refines-to {:my/B :Unset}})))
+             (prop-refine/lower-bound sctx rgraph
+                                      {:$type :my/C,
+                                       :$refines-to {:my/B :Unset}})))
 
       (is (thrown-with-msg? Exception #"No.*refinement path"
-                            (pr/lower-bound sctx rgraph
-                                            {:$type :my/A,
-                                             :$refines-to {:my/B {:$type :my/B}}}))))
+                            (prop-refine/lower-bound sctx rgraph
+                                                     {:$type :my/A,
+                                                      :$refines-to {:my/B {:$type :my/B}}}))))
 
     (is (= {:$type :my/C,
             :c1 {:$in [-14 1000]},
@@ -723,7 +723,7 @@
                        :constraints [["rto" (= a (refine-to {:$type :my/C
                                                              :c1 c1}
                                                             :my/A))]]}})
-        rgraph (pr/make-rgraph sctx)]
+        rgraph (prop-refine/make-rgraph sctx)]
 
     (is (= '{:my/A {:fields {:a1 :Integer}
                     :constraints [["$all" (< 0 a1)]],
@@ -765,7 +765,7 @@
                                      :>my$A))]],
                     :refines-to {}}}
            (update-vals (s/with-fn-validation
-                          (pr/lower-spec-refinements sctx rgraph))
+                          (prop-refine/lower-spec-refinements sctx rgraph))
                         ssa/spec-from-ssa)))
 
     (is (= {:$type :my/D,
@@ -786,29 +786,29 @@
 
     (s/with-fn-validation
       (is (= {:$type :my/A, :>my$B {:$type [:Maybe :my/B], :>my$C :Unset}}
-             (pr/lower-bound sctx (pr/make-rgraph sctx)
-                             {:$type :my/A
-                              :$refines-to {:my/C :Unset}})))
+             (prop-refine/lower-bound sctx (prop-refine/make-rgraph sctx)
+                                      {:$type :my/A
+                                       :$refines-to {:my/C :Unset}})))
       (is (thrown-with-msg? Exception #"conflict.*my/C"
-                            (pr/lower-bound sctx (pr/make-rgraph sctx)
-                                            {:$type :my/A
-                                             :$refines-to {:my/D {}
-                                                           :my/C :Unset}})))
+                            (prop-refine/lower-bound sctx (prop-refine/make-rgraph sctx)
+                                                     {:$type :my/A
+                                                      :$refines-to {:my/D {}
+                                                                    :my/C :Unset}})))
       (is (= {:$type :my/A, :>my$B {:$type [:Maybe :my/B], :>my$C :Unset}}
-             (pr/lower-bound sctx (pr/make-rgraph sctx)
-                             {:$type :my/A
-                              :$refines-to {:my/D :Unset
-                                            :my/C :Unset}})))
+             (prop-refine/lower-bound sctx (prop-refine/make-rgraph sctx)
+                                      {:$type :my/A
+                                       :$refines-to {:my/D :Unset
+                                                     :my/C :Unset}})))
       (is (thrown-with-msg? Exception #"conflict.*my/C"
-                            (pr/lower-bound sctx (pr/make-rgraph sctx)
-                                            {:$type :my/A
-                                             :$refines-to {:my/C :Unset
-                                                           :my/D {}}})))
+                            (prop-refine/lower-bound sctx (prop-refine/make-rgraph sctx)
+                                                     {:$type :my/A
+                                                      :$refines-to {:my/C :Unset
+                                                                    :my/D {}}})))
       (is (= {:$type :my/A, :>my$B {:$type [:Maybe :my/B], :>my$C :Unset}}
-             (pr/lower-bound sctx (pr/make-rgraph sctx)
-                             {:$type :my/A
-                              :$refines-to {:my/C :Unset
-                                            :my/D :Unset}}))))
+             (prop-refine/lower-bound sctx (prop-refine/make-rgraph sctx)
+                                      {:$type :my/A
+                                       :$refines-to {:my/C :Unset
+                                                     :my/D :Unset}}))))
 
     (is (= {:$type :my/A,
             :x {:$in [-1000 1000]},
@@ -868,17 +868,17 @@
             :$refines-to #:my{:B {:x {:$in [12 500]}},
                               :C {:x {:$in [6 250]}},
                               :D {:x {:$in [2 125]}}}}
-           (pr/propagate sctx {:$type :my/A
-                               :$refines-to {:my/D {}}})))
+           (prop-refine/propagate sctx {:$type :my/A
+                                        :$refines-to {:my/D {}}})))
 
     (is (= {:$type :my/A,
             :x {:$in [24 1000]},
             :$refines-to {:my/B {:x {:$in [12 500]}},
                           :my/C {:x {:$in [6 250]}},
                           :my/D {:x {:$in [2 125]}}}}
-           (pr/propagate sctx {:$type :my/A
-                               :$refines-to {:my/C {:$type [:Maybe :my/C]}
-                                             :my/D {:$type :my/D}}})))
+           (prop-refine/propagate sctx {:$type :my/A
+                                        :$refines-to {:my/C {:$type [:Maybe :my/C]}
+                                                      :my/D {:$type :my/D}}})))
 
     #_(prn :eval
            (eval/eval-expr* {:senv specs :env (envs/env {})}
@@ -895,12 +895,12 @@
         sctx (ssa/spec-map-to-ssa specs)]
 
     (s/with-fn-validation
-      (pr/lower-bound sctx (pr/make-rgraph sctx)
-                      {:$type :my/A,
-                       :x {:$in [-1000 1000]},
-                       :$refines-to {:my/B {:$type [:Maybe :my/B], :x {:$in [3 500]}},
-                                     :my/C {:$type [:Maybe :my/C], :x {:$in [1 250]}},
-                                     :my/D {:$type [:Maybe :my/D], :x {:$in [-1000 1000]}}}}))
+      (prop-refine/lower-bound sctx (prop-refine/make-rgraph sctx)
+                               {:$type :my/A,
+                                :x {:$in [-1000 1000]},
+                                :$refines-to {:my/B {:$type [:Maybe :my/B], :x {:$in [3 500]}},
+                                              :my/C {:$type [:Maybe :my/C], :x {:$in [1 250]}},
+                                              :my/D {:$type [:Maybe :my/D], :x {:$in [-1000 1000]}}}}))
 
     (is (= {:$type :my/A,
             :x {:$in [-1000 1000]},
@@ -932,8 +932,8 @@
             :$refines-to {:my/B {:x {:$in [4 500]}},
                           :my/C {:x {:$in [2 250]}},
                           :my/D {:x {:$in [2 125]}}}}
-           (pr/propagate sctx {:$type :my/A
-                               :$refines-to {:my/D {}}})))
+           (prop-refine/propagate sctx {:$type :my/A
+                                        :$refines-to {:my/D {}}})))
 
     (s/with-fn-validation
       ;; Spot-check the bounds above against eval; A.x = 7 cannot refine to D, but 24 can:
@@ -961,10 +961,10 @@
                                                                  :x (- ex 10)} :my/D)]]}})
             e-sctx (ssa/spec-map-to-ssa e-specs)]
         (is (= {:$type :my/E, :ex {:$in [98 1000]}}
-               (pr/propagate e-sctx {:$type :my/E})))
+               (prop-refine/propagate e-sctx {:$type :my/E})))
 
         (is (= {:$type :my/F, :ex {:$in [34 1000]}}
-               (pr/propagate e-sctx {:$type :my/F})))))))
+               (prop-refine/propagate e-sctx {:$type :my/F})))))))
 
 (defn eval-all-traces! [specs traces spec-id expr]
   (let [specs (merge specs (update-vals traces #(ssa/spec-from-ssa (:spec-info (first %)))))]
@@ -1134,7 +1134,7 @@
                                               (when-value v1 (get v1 :>my$A)))]
                                      (if-value v1 true false))]],
                     :refines-to {}}}
-           (update-vals (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
+           (update-vals (prop-refine/lower-spec-refinements sctx (prop-refine/make-rgraph sctx))
                         ssa/spec-from-ssa)))
 
     (is (= {:$type :my/D,
@@ -1174,7 +1174,7 @@
     (is (= {:$type :t/D :x {:$in [-1000 1000]}}
            (prop-twice sctx {:$type :t/D})))
 
-    #_(prn (update-vals (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
+    #_(prn (update-vals (prop-refine/lower-spec-refinements sctx (prop-refine/make-rgraph sctx))
                         ssa/spec-from-ssa))
 
     #_(prn :eval
@@ -1232,7 +1232,7 @@
     (is (= {:$type :t/G :x {:$in [-1000 1000]}}
            (prop-twice sctx {:$type :t/G})))
 
-    #_(prn (update-vals (pr/lower-spec-refinements sctx (pr/make-rgraph sctx))
+    #_(prn (update-vals (prop-refine/lower-spec-refinements sctx (prop-refine/make-rgraph sctx))
                         ssa/spec-from-ssa))
 
     #_(prn :eval
@@ -1242,4 +1242,4 @@
                                  (refines-to? {:$type :t/C, :cn 79}
                                               :t/A))))))
 
-;; (time (t/run-tests))
+;; (time (run-tests))

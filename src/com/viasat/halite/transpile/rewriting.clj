@@ -7,11 +7,11 @@
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecInfo SpecCtx SSACtx]]
-            [com.viasat.halite.transpile.util :refer [fixpoint]]
+            [com.viasat.halite.transpile.util :as transpile-util]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
             [schema.core :as s]
-            [weavejester.dependency :as dep]))
+            [weavejester.dependency :as dependency]))
 
 (set! *warn-on-reflection* true)
 
@@ -239,11 +239,11 @@
   (let [spec-info (get sctx spec-id)
         {:keys [tenv] :as ctx} (ssa/make-ssa-ctx sctx spec-info)
         scope (envs/tenv-keys tenv)]
-    (fixpoint #(apply-to-reachable sctx ctx scope spec-id %
-                                   (concat (map second (:constraints %))
-                                           (map (comp :expr val) (:refines-to %)))
-                                   rules)
-              spec-info)))
+    (transpile-util/fixpoint #(apply-to-reachable sctx ctx scope spec-id %
+                                                  (concat (map second (:constraints %))
+                                                          (map (comp :expr val) (:refines-to %)))
+                                                  rules)
+                             spec-info)))
 
 (defn rewrite-reachable-sctx [sctx rules]
   (->> sctx keys (map #(vector % (rewrite-reachable rules sctx %))) (into {})))
@@ -293,18 +293,18 @@
 
 (s/defn rewrite-in-dependency-order* :- SpecCtx
   [rule :- RewriteRule, deps-fn :- (s/pred ifn?), sctx :- SpecCtx]
-  (as-> (dep/graph) dg
+  (as-> (dependency/graph) dg
     ;; ensure that everything is in the dependency graph, depending on :nothing
-    (reduce #(dep/depend %1 %2 :nothing) dg (keys sctx))
+    (reduce #(dependency/depend %1 %2 :nothing) dg (keys sctx))
     ;; add the deps for each spec
     (reduce
      (fn [dg [spec-id spec]]
-       (reduce #(dep/depend %1 spec-id %2) dg (deps-fn spec)))
+       (reduce #(dependency/depend %1 spec-id %2) dg (deps-fn spec)))
      dg
      sctx)
     ;; rewrite in the correct order
     (->> dg
-         (dep/topo-sort)
+         (dependency/topo-sort)
          (remove #(= :nothing %))
          (reduce
           (fn [sctx spec-id]

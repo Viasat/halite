@@ -2,14 +2,14 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-strings
-  (:require [com.viasat.halite.propagate.prop-strings :as prop-strings]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.propagate.prop-strings :as prop-strings]
             [com.viasat.halite.transpile.ssa :as ssa]
             [loom.graph :as loom-graph]
             [loom.label :as loom-label]
             [schema.core :as s]
             [schema.test])
-  (:import [clojure.lang ExceptionInfo])
-  (:use clojure.test))
+  (:import [clojure.lang ExceptionInfo]))
 
 (use-fixtures :once schema.test/validate-schemas)
 

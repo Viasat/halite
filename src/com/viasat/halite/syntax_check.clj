@@ -5,7 +5,7 @@
   "Syntax checker for halite"
   (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.lib.format-errors :refer [throw-err]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -35,22 +35,22 @@
             (str expr)
             (subs (str expr) 1))]
     (when-not (re-matches symbol-regex s)
-      (throw-err ((if (symbol? expr)
-                    h-err/invalid-symbol-char
-                    h-err/invalid-keyword-char) {:form expr})))
+      (format-errors/throw-err ((if (symbol? expr)
+                                  h-err/invalid-symbol-char
+                                  h-err/invalid-keyword-char) {:form expr})))
     (when-not (<= (count s) max-symbol-length)
-      (throw-err ((if (symbol? expr)
-                    h-err/invalid-symbol-length
-                    h-err/invalid-keyword-length) {:form expr
-                                                   :length (count s)
-                                                   :limit max-symbol-length})))))
+      (format-errors/throw-err ((if (symbol? expr)
+                                  h-err/invalid-symbol-length
+                                  h-err/invalid-keyword-length) {:form expr
+                                                                 :length (count s)
+                                                                 :limit max-symbol-length})))))
 
 (defn check-n [object-type n v error-context]
   (when (and n
              (> v n))
-    (throw-err (h-err/limit-exceeded {:object-type object-type
-                                      :value v
-                                      :limit n}))))
+    (format-errors/throw-err (h-err/limit-exceeded {:object-type object-type
+                                                    :value v
+                                                    :limit n}))))
 
 (s/defn syntax-check
   ([expr]
@@ -66,7 +66,7 @@
      (keyword? expr) (do (check-symbol-string expr) true)
 
      (map? expr) (and (or (:$type expr)
-                          (throw-err (h-err/missing-type-field {:expr expr})))
+                          (format-errors/throw-err (h-err/missing-type-field {:expr expr})))
                       (->> expr
                            (mapcat identity)
                            (map (partial syntax-check (inc depth)))
@@ -103,8 +103,8 @@
                           'when-value
                           'when-value-let} (first expr))
                        (base/builtin-symbols (first expr))
-                       (throw-err (h-err/unknown-function-or-operator {:op (first expr)
-                                                                       :expr expr})))
+                       (format-errors/throw-err (h-err/unknown-function-or-operator {:op (first expr)
+                                                                                     :expr expr})))
                    (base/check-limit :list-literal-count expr)
                    (->> (rest expr)
                         (map (partial syntax-check (inc depth)))
@@ -116,4 +116,4 @@
                                               (set? expr) :set-literal-count)
                                             expr)
                           (->> (map (partial syntax-check (inc depth)) expr) dorun))
-     :else (throw-err (h-err/syntax-error {:form expr :form-class (class expr)})))))
+     :else (format-errors/throw-err (h-err/syntax-error {:form expr :form-class (class expr)})))))

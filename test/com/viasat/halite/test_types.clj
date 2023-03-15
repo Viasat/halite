@@ -2,15 +2,15 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-types
-  (:require [clojure.test :as t :refer [deftest is are]]
-            [clojure.test.check.clojure-test :refer [defspec]]
+  (:require [clojure.test :refer :all]
+            [clojure.test.check.clojure-test :refer :all]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [com.viasat.halite.types :as types]
             [schema.core :as s]
             [schema.test :refer [validate-schemas]]))
 
-(clojure.test/use-fixtures :once validate-schemas)
+(use-fixtures :once validate-schemas)
 
 (deftest type-ptn
   (let [T 'T]
@@ -599,4 +599,4 @@
          ((juxt #'types/spec-id-ptn #'types/needs-refinement?-ptn)
           {:maybe? false :kind :Instance :arg :ws/A :r2 #{:ws/B}}))))
 
-;; (time (t/run-tests))
+;; (time (run-tests))

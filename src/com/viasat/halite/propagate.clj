@@ -6,7 +6,7 @@
   (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.propagate.prop-fixed-decimal :as prop-fixed-decimal]
-            [com.viasat.halite.lib.format-errors :refer [throw-err]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [schema.core :as s]
             [com.viasat.halite.h-err :as h-err]))
 
@@ -32,6 +32,6 @@
        (catch Exception ex
          (if (not= :h-err/no-valid-instance-in-bound (:err-id (ex-data ex)))
            (throw ex)
-           (throw-err (h-err/no-valid-instance-in-bound
-                       (assoc (ex-data ex) :initial-bound initial-bound))
-                      ex)))))))
+           (format-errors/throw-err (h-err/no-valid-instance-in-bound
+                                     (assoc (ex-data ex) :initial-bound initial-bound))
+                                    ex)))))))

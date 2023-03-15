@@ -4,7 +4,7 @@
 (ns com.viasat.halite.doc.bnf-diagrams
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [com.viasat.halite.doc.utils :as utils])
+            [com.viasat.halite.doc.utils :as doc-utils])
   (:import [net.nextencia.rrdiagram.grammar.model GrammarToRRDiagram BNFToGrammar]
            [net.nextencia.rrdiagram.grammar.rrdiagram RRDiagramToSVG]))
 
@@ -27,7 +27,7 @@
   (str "<!--\n" rule-str "\n-->\n" svg))
 
 (defn get-source-id [filename]
-  (if (.exists (clojure.java.io/file filename))
+  (if (.exists (io/file filename))
     (with-open [r (io/reader filename)]
       (->> (line-seq r)
            next
@@ -49,7 +49,7 @@
                         first
                         adjust-connector-style
                         (insert-source-id rule-str))]
-      (utils/spit-dir out-file-name rule-svg))))
+      (doc-utils/spit-dir out-file-name rule-svg))))
 
 (defn- rule-from-partitioned-bnf [partitioned-bnf k-f]
   (str "RULE = "
@@ -84,7 +84,7 @@
          (map (fn [[n bnf-map]]
                 (let [bnf-j (get bnf-map :bnf-j (:bnf bnf-map))]
                   (when bnf-j
-                    (produce-diagram (str dir-path (utils/translate-op-name-to-jadeite n) "-j" ".svg")
+                    (produce-diagram (str dir-path (doc-utils/translate-op-name-to-jadeite n) "-j" ".svg")
                                      (str "RULE = " "(" bnf-j ")" ";"))))))
          dorun)))
 
@@ -172,9 +172,9 @@
       (produce-diagram (str dir-path all-filename-j) rule-str))
     (->> rules-strs
          (map (fn [{:keys [op-name sig-index ^String rule-str]}]
-                (produce-diagram (str dir-path "op/" (str (utils/safe-op-name op-name) "-" sig-index ".svg")) rule-str)))
+                (produce-diagram (str dir-path "op/" (str (doc-utils/safe-op-name op-name) "-" sig-index ".svg")) rule-str)))
          dorun)
     (->> rules-strs-j
          (map (fn [{:keys [op-name sig-index ^String rule-str]}]
-                (produce-diagram (str dir-path "op/" (str (utils/safe-op-name op-name) "-" sig-index "-j" ".svg")) rule-str)))
+                (produce-diagram (str dir-path "op/" (str (doc-utils/safe-op-name op-name) "-" sig-index "-j" ".svg")) rule-str)))
          dorun)))

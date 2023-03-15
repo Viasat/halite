@@ -2,17 +2,16 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-abstract
-  (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.propagate.prop-abstract :as pa]
+            [com.viasat.halite.propagate.prop-abstract :as prop-abstract]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
             [schema.test])
-  (:use clojure.test)
   (:import [clojure.lang ExceptionInfo]))
 
 (def simplest-abstract-var-example
@@ -39,7 +38,7 @@
    '{:fields {:w [:Maybe [:Instance :ws/W]] :cn :Integer}
      :constraints [["c1" (< cn (if-value w (get (refine-to w :ws/W) :wn) 10))]]}))
 
-(def lower-abstract-vars #'pa/lower-abstract-vars)
+(def lower-abstract-vars #'prop-abstract/lower-abstract-vars)
 
 (deftest test-lower-abstract-vars
   (s/with-fn-validation
@@ -85,7 +84,7 @@
                  :ws/C
                  (ssa/spec-from-ssa {})))))))
 
-(def lower-abstract-bounds #'pa/lower-abstract-bounds)
+(def lower-abstract-bounds #'prop-abstract/lower-abstract-bounds)
 
 (deftest test-lower-abstract-bounds
   (s/with-fn-validation
@@ -199,7 +198,7 @@
         {:$type :ws/C :w :Unset}
         {:$type :ws/C :w$type :Unset}))))
 
-(def raise-abstract-bounds #'pa/raise-abstract-bounds)
+(def raise-abstract-bounds #'prop-abstract/raise-abstract-bounds)
 
 (deftest test-raise-abstract-bounds
   (s/with-fn-validation
@@ -273,7 +272,7 @@
 (deftest test-propagate-for-abstract-variables
   (let [sctx (ssa/spec-map-to-ssa simplest-abstract-var-example)]
     (are [in out]
-         (= out (pa/propagate sctx in))
+         (= out (prop-abstract/propagate sctx in))
 
       {:$type :ws/C}
       {:$type :ws/C
@@ -300,7 +299,7 @@
 (deftest test-propagate-for-optional-abstract-variables
   (let [sctx (ssa/spec-map-to-ssa optional-abstract-var-example)]
     (are [in out]
-         (= out (pa/propagate sctx in))
+         (= out (prop-abstract/propagate sctx in))
 
       {:$type :ws/C}
       {:$type :ws/C
@@ -414,7 +413,7 @@
 (deftest test-propagate-for-nested-abstracts
   (let [sctx (ssa/spec-map-to-ssa nested-abstracts-example)]
     (are [in out]
-         (= out (pa/propagate sctx in))
+         (= out (prop-abstract/propagate sctx in))
 
       {:$type :ws/E :v {:$refines-to {:ws/V {:vn 12}}}}
       {:$type :ws/E,
@@ -448,7 +447,7 @@
 (deftest test-abstract-refinement-chain
   (let [sctx (ssa/spec-map-to-ssa abstract-refinement-chain-example)]
     (are [in out]
-         (= out (pa/propagate sctx in))
+         (= out (prop-abstract/propagate sctx in))
 
       {:$type :ws/B}
       {:$type :ws/B,
@@ -519,7 +518,7 @@
                 :ws/B
                 {}})]
     (is (= {:$type :ws/A :b1 {:$type :ws/B}}
-           (pa/propagate sctx {:$type :ws/A})))))
+           (prop-abstract/propagate sctx {:$type :ws/A})))))
 
 (deftest test-test-abstract-spec-bound-on-concrete-field
   (let [sctx (ssa/spec-map-to-ssa
@@ -530,58 +529,58 @@
                   :b {:$type :ws/B
                       :$refines-to {:ws/A {}}}}]
     (is (= expected
-           (pa/propagate sctx {:$type :ws/C
-                               :b {:$type :ws/B
-                                   :$refines-to {:ws/A {}}}})))
+           (prop-abstract/propagate sctx {:$type :ws/C
+                                          :b {:$type :ws/B
+                                              :$refines-to {:ws/A {}}}})))
     (is (= expected
-           (pa/propagate sctx {:$type :ws/C
-                               :b {;; omit the $type field
-                                   :$refines-to {:ws/A {}}}})))
+           (prop-abstract/propagate sctx {:$type :ws/C
+                                          :b {;; omit the $type field
+                                              :$refines-to {:ws/A {}}}})))
     (is (thrown-with-msg? ExceptionInfo #"Invalid bound for"
-                          (pa/propagate sctx {:$type :ws/C
-                                              :b {;; omit the $type field
-                                                  :$refines-to {:ws/A {}}
+                          (prop-abstract/propagate sctx {:$type :ws/C
+                                                         :b {;; omit the $type field
+                                                             :$refines-to {:ws/A {}}
                                                   ;; with the :$if field, it cannot be promoted to a concrete bound
-                                                  :$if {}}})))
+                                                             :$if {}}})))
     (is (thrown-with-msg? ExceptionInfo #"Invalid bound for"
-                          (pa/propagate sctx {:$type :ws/C
-                                              :b {;; omit the $type field
-                                                  :$refines-to {:ws/A {}}
+                          (prop-abstract/propagate sctx {:$type :ws/C
+                                                         :b {;; omit the $type field
+                                                             :$refines-to {:ws/A {}}
                                                   ;; with the :$in field, it cannot be promoted to a concrete bound
-                                                  :$in {}}})))))
+                                                             :$in {}}})))))
 
 (deftest test-no-concrete-spec-for-abstract-spec
   (is (= {:$type :ws/A
           :x {:$in {:Unset true
                     :ws/Y {:$refines-to #:ws{:X {}}}}
               :$refines-to #:ws{:X {}}}}
-         (pa/propagate (ssa/spec-map-to-ssa
-                        '{:ws/X {:abstract? true}
-                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                          :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}})
-                       {:$type :ws/A}))
+         (prop-abstract/propagate (ssa/spec-map-to-ssa
+                                   '{:ws/X {:abstract? true}
+                                     :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                                     :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}})
+                                  {:$type :ws/A}))
       "Base case where an optional field does have concrete specs to satisfy it")
   (is (= {:$type :ws/A
           :x :Unset}
-         (pa/propagate (ssa/spec-map-to-ssa
-                        '{:ws/X {:abstract? true}
-                          :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}})
-                       {:$type :ws/A}))
+         (prop-abstract/propagate (ssa/spec-map-to-ssa
+                                   '{:ws/X {:abstract? true}
+                                     :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}})
+                                  {:$type :ws/A}))
       "Case where an optional field has no concrete specs to satisfy it")
   (is (= {:$type :ws/A
           :x {:$refines-to #:ws{:X {}}
               :$type :ws/Y}}
-         (pa/propagate (ssa/spec-map-to-ssa
-                        '{:ws/X {:abstract? true}
-                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                          :ws/A {:fields {:x [:Instance :* #{:ws/X}]}}})
-                       {:$type :ws/A}))
+         (prop-abstract/propagate (ssa/spec-map-to-ssa
+                                   '{:ws/X {:abstract? true}
+                                     :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                                     :ws/A {:fields {:x [:Instance :* #{:ws/X}]}}})
+                                  {:$type :ws/A}))
       "Case where a mandatory field does have concrete specs to satisfy it")
   (is (thrown-with-msg? ExceptionInfo #"has empty domain"
-                        (pa/propagate (ssa/spec-map-to-ssa
-                                       '{:ws/X {:abstract? true}
-                                         :ws/A {:fields {:x [:Instance :* #{:ws/X}]}}})
-                                      {:$type :ws/A}))
+                        (prop-abstract/propagate (ssa/spec-map-to-ssa
+                                                  '{:ws/X {:abstract? true}
+                                                    :ws/A {:fields {:x [:Instance :* #{:ws/X}]}}})
+                                                 {:$type :ws/A}))
       "Case where a mandatory field has no concrete specs to satisfy it"))
 
 (deftest test-concrete-above-abstract
@@ -590,24 +589,24 @@
               :x {:$refines-to {:ws/X {}}
                   :$in {:Unset true
                         :ws/Y {:$refines-to {:ws/X {}}}}}}}
-         (pa/propagate (ssa/spec-map-to-ssa
-                        '{:ws/X {:abstract? true}
-                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                          :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}
-                          :ws/P {:fields {:a [:Instance :ws/A]}}})
-                       {:$type :ws/P})))
+         (prop-abstract/propagate (ssa/spec-map-to-ssa
+                                   '{:ws/X {:abstract? true}
+                                     :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                                     :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}
+                                     :ws/P {:fields {:a [:Instance :ws/A]}}})
+                                  {:$type :ws/P})))
   (is (= {:$type :ws/P
           :a {:$type :ws/A
               :x {:$refines-to {:ws/X {}}
                   :$in {:Unset true
                         :ws/Y {:$refines-to {:ws/X {}}}}}}}
-         (pa/propagate (ssa/spec-map-to-ssa
-                        '{:ws/X {:abstract? true}
-                          :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
-                          :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}
-                          :ws/P {:fields {:a [:Instance :ws/A]}}})
-                       {:$type :ws/P
-                        :a {:$type :ws/A}}))))
+         (prop-abstract/propagate (ssa/spec-map-to-ssa
+                                   '{:ws/X {:abstract? true}
+                                     :ws/Y {:refines-to {:ws/X {:expr {:$type :ws/X}}}}
+                                     :ws/A {:fields {:x [:Maybe [:Instance :* #{:ws/X}]]}}
+                                     :ws/P {:fields {:a [:Instance :ws/A]}}})
+                                  {:$type :ws/P
+                                   :a {:$type :ws/A}}))))
 
 (deftest test-refines-to-self
   (let [sctx (ssa/spec-map-to-ssa
@@ -624,27 +623,27 @@
                       :ws/Y {:$refines-to {:ws/X {:n 5},
                                            :ws/A {}}}},
                 :$refines-to {:ws/A {}}}}
-           (pa/propagate sctx
-                         {:$type :ws/T
-                          :a {:$refines-to {:ws/X {:n 5}}}})))
+           (prop-abstract/propagate sctx
+                                    {:$type :ws/T
+                                     :a {:$refines-to {:ws/X {:n 5}}}})))
 
     (is (= {:$type :ws/T
             :a {:$in {:Unset true
                       :ws/X {:$refines-to {:ws/A {}}
                              :n 6}}
                 :$refines-to {:ws/A {}}}}
-           (pa/propagate sctx
-                         {:$type :ws/T
-                          :a {:$refines-to {:ws/X {:n 6}}}})))
+           (prop-abstract/propagate sctx
+                                    {:$type :ws/T
+                                     :a {:$refines-to {:ws/X {:n 6}}}})))
 
     (is (= {:$type :ws/T,
             :a {:$in {:Unset true,
                       :ws/Y {:$refines-to {:ws/A {},
                                            :ws/X {:n 5}}}}
                 :$refines-to {}}}
-           (pa/propagate sctx
-                         {:$type :ws/T
-                          :a {:$refines-to {:ws/Y {}}}})))
+           (prop-abstract/propagate sctx
+                                    {:$type :ws/T
+                                     :a {:$refines-to {:ws/Y {}}}})))
 
     (is (= {:$type :ws/T,
             :a {:$in {:Unset true,
@@ -653,31 +652,31 @@
                       :ws/Y {:$refines-to {:ws/X {:n 5},
                                            :ws/A {}}}},
                 :$refines-to {:ws/A {}}}}
-           (pa/propagate sctx
-                         {:$type :ws/T})))
+           (prop-abstract/propagate sctx
+                                    {:$type :ws/T})))
 
     (is (thrown-with-msg? Exception #"not yet supported"
-                          (pa/propagate sctx
-                                        {:$type :ws/T
-                                         :a {:$in {:ws/X {:n {:$in [0 5]}}
-                                                   :ws/Y {}}
-                                             :$refines-to {:ws/X {:n {:$in [4 10]}}}}})))))
+                          (prop-abstract/propagate sctx
+                                                   {:$type :ws/T
+                                                    :a {:$in {:ws/X {:n {:$in [0 5]}}
+                                                              :ws/Y {}}
+                                                        :$refines-to {:ws/X {:n {:$in [4 10]}}}}})))))
 
 (deftest test-recursive-structure
   ;; TODO: currently produces NPE in prop-composition
   #_(do
-      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
-                                                               :next [:Maybe :spec/Cell]}}})
-                    {:$type :spec/Cell})
-      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
-                                                               :next [:Maybe :spec/Cell]}}})
-                    {:$type :spec/Cell
-                     :next {:$type :spec/Cell}})
-      (pa/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
-                                                               :next [:Maybe :spec/Cell]}}})
-                    {:$type :spec/Cell
-                     :next {:$type :spec/Cell
-                            :next {:$type :spec/Cell}}})))
+      (prop-abstract/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
+                                                                          :next [:Maybe :spec/Cell]}}})
+                               {:$type :spec/Cell})
+      (prop-abstract/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
+                                                                          :next [:Maybe :spec/Cell]}}})
+                               {:$type :spec/Cell
+                                :next {:$type :spec/Cell}})
+      (prop-abstract/propagate (ssa/spec-map-to-ssa {:spec/Cell {:fields {:value "Integer"
+                                                                          :next [:Maybe :spec/Cell]}}})
+                               {:$type :spec/Cell
+                                :next {:$type :spec/Cell
+                                       :next {:$type :spec/Cell}}})))
 
 (comment "
 Stuff to do/remember regarding abstractness!

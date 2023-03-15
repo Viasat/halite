@@ -3,7 +3,6 @@
 
 (ns com.viasat.halite.propagate.prop-abstract
   (:require [clojure.set :as set]
-            [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.propagate.prop-extrinsic :as prop-extrinsic]
             [com.viasat.halite.propagate.bound-union :refer [union-refines-to-bounds]]
@@ -12,7 +11,6 @@
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.util :refer [fixpoint mk-junct]]
             [com.viasat.halite.types :as types]
             [loom.derived :as loom-derived]
             [loom.graph :as loom-graph]

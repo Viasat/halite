@@ -7,6 +7,7 @@
             [clojure.tools.logging :as log]
             [schema.core :as s])
   (:import [clojure.lang Namespace]
+           [java.io Writer]
            [java.lang StackTraceElement]))
 
 (set! *warn-on-reflection* true)
@@ -221,7 +222,7 @@
   (toString [_]
     s))
 
-(defn print-text [t ^java.io.Writer writer]
+(defn print-text [t ^Writer writer]
   (.write writer (str t)))
 
 (defmethod print-method Text [t writer]

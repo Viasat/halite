@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test_comprehensive
-  (:require [clojure.string :as string]
+  (:require [clojure.pprint :as pprint]
+            [clojure.string :as string]
             [clojure.test :refer :all]
             [com.viasat.halite :as halite]
             [com.viasat.halite.base :as base]
@@ -15,7 +16,7 @@
 
 (set! *warn-on-reflection* true)
 
-(clojure.test/use-fixtures :once validate-schemas)
+(use-fixtures :once validate-schemas)
 
 (defmacro h
   [expr & args]
@@ -10847,7 +10848,7 @@ b\""))))
                                        t)))
                               doall))))))
        (remove nil?)
-       (map #(with-out-str (clojure.pprint/pprint %)))
+       (map #(with-out-str (pprint/pprint %)))
        (string/join "\n")
        (spit "test/jibe/halite_guide2.clj")))
 

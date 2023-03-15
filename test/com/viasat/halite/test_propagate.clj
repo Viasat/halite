@@ -2,16 +2,14 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-propagate
-  (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
+  (:require [clojure.test :refer :all]
             [com.viasat.halite.propagate :as propagate]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting :refer [with-summarized-trace-for]]
             [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.util :refer [fixpoint]]
             [schema.core :as s]
-            [schema.test])
-  (:use clojure.test))
+            [schema.test]))
 
 (def strings-and-abstract-specs-example
   '{:ws/Painted

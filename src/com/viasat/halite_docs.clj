@@ -8,10 +8,10 @@
             [clojure.string :as string]
             [com.viasat.halite.doc.bnf-diagrams :as bnf-diagrams]
             [com.viasat.halite.doc.data-basic-bnf :refer [basic-bnf-vector]]
-            [com.viasat.halite.doc.data-err-maps :as err-maps]
+            [com.viasat.halite.doc.data-err-maps :as data-err-maps]
             [com.viasat.halite.doc.data-explanation :refer [explanations]]
             [com.viasat.halite.doc.data-how-tos :refer [how-tos]]
-            [com.viasat.halite.doc.data-op-maps :as op-maps]
+            [com.viasat.halite.doc.data-op-maps :as data-op-maps]
             [com.viasat.halite.doc.data-spec-bnf :as data-spec-bnf]
             [com.viasat.halite.doc.data-tag-def-map :refer [tag-def-map]]
             [com.viasat.halite.doc.data-tutorial :refer [tutorials]]
@@ -23,7 +23,7 @@
             [com.viasat.halite.doc.md-spec :as md-spec]
             [com.viasat.halite.doc.md-tag :as md-tag]
             [com.viasat.halite.doc.run :as doc-run]
-            [com.viasat.halite.doc.utils :as utils]
+            [com.viasat.halite.doc.utils :as doc-utils]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.jadeite :as jadeite])
@@ -59,7 +59,7 @@
                                      (if expr-str
                                        (let [{:keys [h-result j-result j-expr]}
                                              (if spec-map
-                                               (let [h-expr (utils/read-edn expr-str)
+                                               (let [h-expr (doc-utils/read-edn expr-str)
                                                      ^HCInfo i (doc-run/hc-body
                                                                 spec-map
                                                                 h-expr)]
@@ -67,7 +67,7 @@
                                                   :j-result (.-j-result i)
                                                   :j-expr (jadeite/to-jadeite h-expr)})
                                                (if spec-map-f
-                                                 (let [h-expr (utils/read-edn expr-str)
+                                                 (let [h-expr (doc-utils/read-edn expr-str)
                                                        spec-map (spec-map-f h-expr)
                                                        ^HCInfo i (doc-run/hc-body
                                                                   spec-map
@@ -78,7 +78,7 @@
                                                     :j-result (.-j-result i)
                                                     :j-expr (jadeite/to-jadeite h-expr)})
                                                  (let [i (doc-run/h*
-                                                          (utils/read-edn expr-str)
+                                                          (doc-utils/read-edn expr-str)
                                                           true)]
                                                    {:h-result (.-h-result i)
                                                     :j-result (.-j-result i)
@@ -139,7 +139,7 @@
 
 (def ^:private basic-bnf (expand-examples-vector "com.viasat.halite.doc.data-basic-bnf" basic-bnf-vector))
 
-(def ^:private op-maps (expand-examples-map "com.viasat.halite.doc.data-op-maps" op-maps/op-maps))
+(def ^:private op-maps (expand-examples-map "com.viasat.halite.doc.data-op-maps" data-op-maps/op-maps))
 
 (def ^:private jadeite-ommitted-ops #{'dec 'inc})
 
@@ -163,7 +163,7 @@
                    [err-id (let [err (if-let [thrown-by (thrown-by-map err-id)]
                                        (assoc err
                                               :thrown-by (vec thrown-by)
-                                              :thrown-by-j (vec (mapcat utils/translate-op-name-to-jadeite-plural
+                                              :thrown-by-j (vec (mapcat doc-utils/translate-op-name-to-jadeite-plural
                                                                         (remove jadeite-ommitted-ops thrown-by))))
                                        err)
                                  err (if-let [thrown-by (thrown-by-basic-map err-id)]
@@ -175,20 +175,20 @@
                            (#{'com.viasat.halite.l-err 'com.viasat.halite.h-err} (:ns-name err)))
                          (merge-with merge
                                      @format-errors/error-atom
-                                     err-maps/err-maps)))))
+                                     data-err-maps/err-maps)))))
 
 (defn- translate-op-maps-to-jadeite [op-maps]
   (let [op-maps (-> op-maps
                     (update-vals (fn [op]
                                    (if (:op-ref op)
                                      (update-in op [:op-ref] #(->> %
-                                                                   (mapcat utils/translate-op-name-to-jadeite-plural)
+                                                                   (mapcat doc-utils/translate-op-name-to-jadeite-plural)
                                                                    sort
                                                                    vec))
                                      op))))]
     (->> op-maps
          (mapcat (fn [[k v]]
-                   (->> (utils/translate-op-name-to-jadeite-plural k)
+                   (->> (doc-utils/translate-op-name-to-jadeite-plural k)
                         (mapcat (fn [k']
                                   [k' (cond
                                         (#{'== '!=} k') (update-in v [:sigs-j] (comp vector second))
@@ -211,7 +211,7 @@
                               (apply merge-with into)))
 
 (defn- tag-md-filename [lang tag]
-  (str (:prefix *run-config*) tag "-reference" (utils/get-language-modifier lang) ".md"))
+  (str (:prefix *run-config*) tag "-reference" (doc-utils/get-language-modifier lang) ".md"))
 
 (assert (= (set (keys tag-def-map))
            (set (concat (map keyword (mapcat :tags (take-nth 2 (next basic-bnf))))
@@ -230,17 +230,17 @@
       (->> op-maps
            sort
            (md-full/full-md-all (assoc info :lang :halite) *run-config*)
-           (utils/spit-dir (str (:root-dir *run-config*)
-                                "/halite/"
-                                (tag-md-filename lang "full"))))
+           (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                    "/halite/"
+                                    (tag-md-filename lang "full"))))
       (->> op-maps-j
            sort
            (remove (fn [[k _]]
                      (jadeite-ommitted-ops k)))
            (md-full/full-md-all (assoc info :lang :jadeite) *run-config*)
-           (utils/spit-dir (str (:root-dir *run-config*)
-                                "/jadeite/"
-                                (tag-md-filename lang "full")))))))
+           (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                    "/jadeite/"
+                                    (tag-md-filename lang "full")))))))
 
 (defn- produce-basic-md [lang]
   (let [titles {:halite "Halite Basic Syntax Reference"
@@ -251,13 +251,13 @@
       (append-to-menu-f lang prefix [lang :reference] (lang titles) "basic-syntax"))
     (if (= :halite lang)
       (->> (md-basic/produce-basic-core-md (assoc info :lang :halite) *run-config* basic-bnf)
-           (utils/spit-dir (str (:root-dir *run-config*)
-                                "/halite/"
-                                (tag-md-filename lang "basic-syntax"))))
+           (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                    "/halite/"
+                                    (tag-md-filename lang "basic-syntax"))))
       (->> (md-basic/produce-basic-core-md (assoc info :lang :jadeite) *run-config* basic-bnf)
-           (utils/spit-dir (str (:root-dir *run-config*)
-                                "/jadeite/"
-                                (tag-md-filename lang "basic-syntax")))))))
+           (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                    "/jadeite/"
+                                    (tag-md-filename lang "basic-syntax")))))))
 
 (defn- produce-err-md [lang]
   (let [titles {:halite "Halite Error ID Reference"
@@ -269,15 +269,15 @@
       (->> err-maps
            sort
            (md-err/err-md-all :halite *run-config*)
-           (utils/spit-dir (str (:root-dir *run-config*)
-                                "/halite/"
-                                (tag-md-filename lang "err-id"))))
+           (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                    "/halite/"
+                                    (tag-md-filename lang "err-id"))))
       (->> err-maps
            sort
            (md-err/err-md-all :jadeite *run-config*)
-           (utils/spit-dir (str (:root-dir *run-config*)
-                                "/jadeite/"
-                                (tag-md-filename lang "err-id")))))))
+           (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                    "/jadeite/"
+                                    (tag-md-filename lang "err-id")))))))
 
 (defn- produce-tag-md [lang [tag-name tag]]
   (let [{:keys [menu-file prefix append-to-menu-f]} *run-config*
@@ -291,12 +291,12 @@
                                  :tag-map tag-map
                                  :tag-map-j tag-map-j}
                                 *run-config*)
-         (utils/spit-dir (str (:root-dir *run-config*)
-                              "/" (name lang)
-                              "/" (tag-md-filename lang (name tag-name)))))))
+         (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                  "/" (name lang)
+                                  "/" (tag-md-filename lang (name tag-name)))))))
 
 (defn- how-to-filename [lang id]
-  (str "how-to/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
+  (str "how-to/" (str (:prefix *run-config*) (name id) (doc-utils/get-language-modifier lang))))
 
 (defn- how-to-reference [lang id]
   (let [{:keys [prefix get-link-f]} *run-config*]
@@ -304,12 +304,12 @@
 
 (defn- how-to-md [lang [id how-to]]
   (->> (md-how-to/how-to-md lang *run-config* [id how-to :how-to (how-to-reference lang id)])
-       (utils/spit-dir (str (:root-dir *run-config*)
-                            "/" (name lang)
-                            "/" (how-to-filename lang id) ".md"))))
+       (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                "/" (name lang)
+                                "/" (how-to-filename lang id) ".md"))))
 
 (defn- tutorial-filename [lang id]
-  (str "tutorial/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
+  (str "tutorial/" (str (:prefix *run-config*) (name id) (doc-utils/get-language-modifier lang))))
 
 (defn- tutorial-reference [lang id]
   (let [{:keys [prefix get-link-f]} *run-config*]
@@ -317,12 +317,12 @@
 
 (defn- tutorial-md [lang [id tutorial]]
   (->> (md-how-to/how-to-md lang *run-config* [id tutorial :tutorial (tutorial-reference lang id)])
-       (utils/spit-dir (str (:root-dir *run-config*)
-                            "/" (name lang)
-                            "/" (tutorial-filename lang id) ".md"))))
+       (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                "/" (name lang)
+                                "/" (tutorial-filename lang id) ".md"))))
 
 (defn- explanation-filename [lang id]
-  (str "explanation/" (str (:prefix *run-config*) (name id) (utils/get-language-modifier lang))))
+  (str "explanation/" (str (:prefix *run-config*) (name id) (doc-utils/get-language-modifier lang))))
 
 (defn- explanation-reference [lang id]
   (let [{:keys [prefix get-link-f]} *run-config*]
@@ -330,9 +330,9 @@
 
 (defn- explanation-md [lang [id explanation]]
   (->> (md-how-to/how-to-md lang *run-config* [id explanation :explanation (explanation-reference lang id)])
-       (utils/spit-dir (str (:root-dir *run-config*)
-                            "/" (name lang)
-                            "/" (explanation-filename lang id) ".md"))))
+       (doc-utils/spit-dir (str (:root-dir *run-config*)
+                                "/" (name lang)
+                                "/" (explanation-filename lang id) ".md"))))
 
 ;;
 
@@ -355,17 +355,17 @@
   {:root-dir "doc"
    :image-dir "doc"
    :prefix "halite_"
-   :generate-hdr-f utils/generate-hdr
-   :generate-how-to-hdr-f utils/generate-hdr
-   :code-snippet-f utils/code-snippet
-   :spec-snippet-f utils/code-snippet
-   :embed-bnf-f utils/embed-bnf
-   :get-link-f utils/get-link
-   :get-image-link-f utils/get-image-link
-   :get-svg-link-f utils/get-svg-link
-   :get-table-data-f utils/get-table-data
-   :get-reference-links-f utils/get-reference-links
-   :translate-spec-map-to-f utils/translate-spec-map})
+   :generate-hdr-f doc-utils/generate-hdr
+   :generate-how-to-hdr-f doc-utils/generate-hdr
+   :code-snippet-f doc-utils/code-snippet
+   :spec-snippet-f doc-utils/code-snippet
+   :embed-bnf-f doc-utils/embed-bnf
+   :get-link-f doc-utils/get-link
+   :get-image-link-f doc-utils/get-image-link
+   :get-svg-link-f doc-utils/get-svg-link
+   :get-table-data-f doc-utils/get-table-data
+   :get-reference-links-f doc-utils/get-reference-links
+   :translate-spec-map-to-f doc-utils/translate-spec-map})
 
 ;; A list of vector pairs [data-var fn] indicating a document-generation
 ;; function that should be run whenever the data-var is updated, by installing
@@ -373,7 +373,7 @@
 ;; will be removed from data-var. This is incomplete -- add entries as needed
 ;; for your documentation tasks:
 (def ^:private gen-doc-fns
-  [[#'op-maps/op-maps #(alter-var-root #'op-maps (constantly (expand-examples-map "com.viasat.halite.doc.data-op-maps" op-maps/op-maps)))]
+  [[#'data-op-maps/op-maps #(alter-var-root #'op-maps (constantly (expand-examples-map "com.viasat.halite.doc.data-op-maps" data-op-maps/op-maps)))]
    [#'op-maps #(do (alter-var-root #'op-maps-j (constantly (translate-op-maps-to-jadeite op-maps)))
                    (produce-full-md :halite)
                    (produce-full-md :jadeite))]
@@ -416,8 +416,8 @@
     (produce-spec-bnf-diagrams run-config)
 
     (->> (md-spec/spec-md run-config)
-         (utils/spit-dir (str (:root-dir run-config)
-                              "/" (:prefix run-config) "spec-syntax-reference.md")))
+         (doc-utils/spit-dir (str (:root-dir run-config)
+                                  "/" (:prefix run-config) "spec-syntax-reference.md")))
 
     (bnf-diagrams/produce-basic-bnf-diagrams run-config "basic-all.svg" "basic-all-j.svg" basic-bnf)
     (bnf-diagrams/produce-bnf-diagrams run-config op-maps op-maps-j "halite.svg" "jadeite.svg")
@@ -466,18 +466,18 @@
          dorun)
 
     (if-let [menu-file (:menu-file run-config)]
-      (utils/spit-dir menu-file ((:produce-menu-f run-config) @(:menu-atom run-config)) true))
+      (doc-utils/spit-dir menu-file ((:produce-menu-f run-config) @(:menu-atom run-config)) true))
 
-    (utils/spit-dir (str (:root-dir run-config)
-                         "/" (:prefix run-config) "outline.md")
-                    (produce-outline {:tag-def-map tag-def-map
-                                      :tutorials tutorials
-                                      :tutorial-filename tutorial-reference
-                                      :how-tos how-tos
-                                      :explanations explanations
-                                      :explanation-filename explanation-reference
-                                      :how-to-filename how-to-reference}
-                                     run-config))))
+    (doc-utils/spit-dir (str (:root-dir run-config)
+                             "/" (:prefix run-config) "outline.md")
+                        (produce-outline {:tag-def-map tag-def-map
+                                          :tutorials tutorials
+                                          :tutorial-filename tutorial-reference
+                                          :how-tos how-tos
+                                          :explanations explanations
+                                          :explanation-filename explanation-reference
+                                          :how-to-filename how-to-reference}
+                                         run-config))))
 
 (defn generate-local-docs []
   (generate-docs local-doc-config))

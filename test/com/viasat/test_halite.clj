@@ -3,7 +3,7 @@
 
 (ns com.viasat.test-halite
   (:require [clojure.edn :as edn]
-            [clojure.test :as test :refer [deftest is are test-vars]]
+            [clojure.test :refer :all]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
@@ -17,7 +17,7 @@
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 
-(clojure.test/use-fixtures :once validate-schemas)
+(use-fixtures :once validate-schemas)
 
 (envs/init)
 
@@ -1047,19 +1047,19 @@
                            {:$type :ws/JsonStr :s "there"}}}}))))
 
 (deftest test-embedding-env
-  (test/testing "Initial scope may bind plain symbols"
+  (testing "Initial scope may bind plain symbols"
     (let [tenv (-> tenv (envs/extend-scope 'that :Integer))
           env (-> empty-env (envs/bind 'that 71))]
       (is (= :Integer (halite/type-check-and-lint senv tenv '(+ that 25))))
       (is (= 96 (halite/eval-expr senv tenv env '(+ that 25))))))
 
-  (test/testing "Initial scope may bind external-reserved-words"
+  (testing "Initial scope may bind external-reserved-words"
     (let [tenv (-> tenv (envs/extend-scope '$this :Integer))
           env (-> empty-env (envs/bind '$this 71))]
       (is (= :Integer (halite/type-check-and-lint senv tenv '(+ $this 25))))
       (is (= 96 (halite/eval-expr senv tenv env '(+ $this 25))))))
 
-  (test/testing "Initial scope may not bind arbitrary $-words"
+  (testing "Initial scope may not bind arbitrary $-words"
     (let [tenv (-> tenv (envs/extend-scope '$foo :Integer))]
       (is (thrown-with-msg? ExceptionInfo #"disallowed symbol.*[$]foo"
                             (halite/type-check-and-lint senv tenv '(+ $foo 25)))))))
@@ -1073,4 +1073,4 @@
        (catch ExceptionInfo ex
          (is (= [:spec/Self :spec/Self] (:cycle (ex-data ex)))))))
 
-;; (time (clojure.test/run-tests))
+;; (time (run-tests))

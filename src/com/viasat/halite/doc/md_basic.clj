@@ -3,7 +3,7 @@
 
 (ns com.viasat.halite.doc.md-basic
   (:require [clojure.string :as string]
-            [com.viasat.halite.doc.utils :as utils]
+            [com.viasat.halite.doc.utils :as doc-utils]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -26,17 +26,17 @@
                     (:bnf op))))]
     (when bnf
       (->> ["## "
-            "<a name=\"" (utils/safe-op-anchor op-name) "\"></a>"
+            "<a name=\"" (doc-utils/safe-op-anchor op-name) "\"></a>"
             op-name "\n\n" (if (= :halite lang) (:doc op) (or (:doc-j op) (:doc op))) "\n\n"
             (when-let [d2 (:doc-2 op)] [d2 "\n\n"])
-            (get-svg-link-f "halite-bnf-diagrams/basic-syntax/" (str (utils/url-encode (utils/safe-op-name op-name)) (utils/get-language-modifier lang)) (pr-str bnf))
+            (get-svg-link-f "halite-bnf-diagrams/basic-syntax/" (str (doc-utils/url-encode (doc-utils/safe-op-name op-name)) (doc-utils/get-language-modifier lang)) (pr-str bnf))
             (let [c-1 (if (= :halite lang) (:comment op) (or (:comment-j op) (:comment op)))
                   c-2 (if (= :halite lang) (:comment-2 op) (or (:comment-2-j op) (:comment-2 op)))
                   c-3 (if (= :halite lang) (:comment-3 op) (or (:comment-3-j op) (:comment-3 op)))]
               (when (or c-1 c-2 c-3) [(string/join " " [c-1 c-2 c-3]) "\n\n"]))
             (when-let [es (:examples op)]
               ["<table>"
-               (for [row (utils/text-tile-rows (map (partial utils/example-text lang) es))]
+               (for [row (doc-utils/text-tile-rows (map (partial doc-utils/example-text lang) es))]
                  ["<tr>"
                   (for [tile (:tiles row)]
                     (get-table-data-f lang tile))
@@ -47,7 +47,7 @@
                (for [msg (sort t)]
                  (str "* " "[`" msg "`]("
                       (get-link-f lang prefix "" "err-id-reference")
-                      "#" (utils/safe-op-anchor msg) ")" "\n"))
+                      "#" (doc-utils/safe-op-anchor msg) ")" "\n"))
                "\n"])
             (when-let [tags (seq (or (when (= :jadeite lang)
                                        (:tags-j op))
@@ -81,9 +81,9 @@
 
 (s/defn produce-basic-core-md [{:keys [lang] :as info} {:keys [generate-hdr-f get-image-link-f] :as config} basic-bnf]
   (str
-   (generate-hdr-f "Halite Basic Syntax Reference" (str "halite_basic-syntax-reference" (utils/get-language-modifier lang)) (str "/" (name lang)) "Halite basic syntax reference")
+   (generate-hdr-f "Halite Basic Syntax Reference" (str "halite_basic-syntax-reference" (doc-utils/get-language-modifier lang)) (str "/" (name lang)) "Halite basic syntax reference")
    "# "
-   (utils/lang-str lang)
+   (doc-utils/lang-str lang)
    " basic syntax and types reference\n\n"
    (diagram-description "elements")
    element-name-description

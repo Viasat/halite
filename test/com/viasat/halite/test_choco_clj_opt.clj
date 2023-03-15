@@ -2,13 +2,13 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-choco-clj-opt
-  (:require [com.viasat.halite.choco-clj-opt :as cco]
-            [schema.test])
-  (:use clojure.test))
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.choco-clj-opt :as choco-clj-opt]
+            [schema.test]))
 
 (use-fixtures :once schema.test/validate-schemas)
 
-(def lower-expr #'cco/lower-expr)
+(def lower-expr #'choco-clj-opt/lower-expr)
 
 (deftest test-lower-expr
   (let [witness-map '{x x?}]
@@ -28,8 +28,8 @@
       '(let [z (if p x y)] z) :error
       '(let [y x] y) :error)))
 
-(def lower-spec #'cco/lower-spec)
-(def lower-bounds #'cco/lower-bounds)
+(def lower-spec #'choco-clj-opt/lower-spec)
+(def lower-bounds #'choco-clj-opt/lower-bounds)
 
 (deftest test-single-optional-var
   (let [spec '{:vars {x :Int, y :Int, p :Bool}
@@ -39,7 +39,7 @@
                  (< y 10)
                  (if-value x (not p) true)}}]
 
-    (binding [cco/*default-int-bounds* [-20 20]]
+    (binding [choco-clj-opt/*default-int-bounds* [-20 20]]
       (is (= '[{:vars {x :Int, x? :Bool, y :Int, p :Bool}
                 :constraints
                 #{(< (if x? x 1) y)
@@ -59,7 +59,7 @@
         '{x [1 10]}               '{x [1 10], x? true})
 
       (are [in out]
-           (= out (cco/propagate spec in))
+           (= out (choco-clj-opt/propagate spec in))
 
         '{}             '{x [-20 8 :Unset], y [-19 9], p #{true false}}
         '{x :Unset}     '{x :Unset,         y [2 9],   p #{true false}}
@@ -79,7 +79,7 @@
                            true)}}]
 
     (are [in out]
-         (= out (cco/propagate spec in))
+         (= out (choco-clj-opt/propagate spec in))
 
       '{} '{x [0 100], y [2 100 :Unset], z [0 100 :Unset]}
       '{x 12} '{x 12, y [13 100 :Unset], z [0 23 :Unset]}
@@ -92,9 +92,9 @@
                :constraints #{(=> p (if-value w true false))
                               (=> (not p) (if-value w false true))
                               (=> p (if-value w (< w 0) true))}}]
-    (is (= '{w :Unset, p false} (cco/propagate spec)))))
+    (is (= '{w :Unset, p false} (choco-clj-opt/propagate spec)))))
 
 (deftest test-optional-var-with-empty-initial-bound
   (is (thrown? clojure.lang.ExceptionInfo
-               (cco/propagate '{:vars {x :Int} :optionals #{x} :constraints #{}}
-                              '{x #{}}))))
+               (choco-clj-opt/propagate '{:vars {x :Int} :optionals #{x} :constraints #{}}
+                                        '{x #{}}))))

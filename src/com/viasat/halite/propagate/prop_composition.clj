@@ -4,13 +4,12 @@
 (ns com.viasat.halite.propagate.prop-composition
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.choco-clj-opt :as choco-clj]
             [com.viasat.halite.propagate.prop-strings :as prop-strings]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.simplify :as simplify :refer [simplify-redundant-value! simplify-statically-known-value?]]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx SpecInfo]]
-            [com.viasat.halite.transpile.util :refer [fixpoint mk-junct]]
+            [com.viasat.halite.transpile.util :as transpile-util]
             [com.viasat.halite.types :as types]
             [loom.derived :as loom-derived]
             [loom.graph :as loom-graph]
@@ -193,8 +192,8 @@
                                              (list 'if-value (symbol (first info)) true false)
                                              (symbol (first (:$witness info))))
                                            witness-var))))]
-    (mk-junct 'and (cond->> optional-clauses
-                     mandatory-clause (cons mandatory-clause)))))
+    (transpile-util/mk-junct 'and (cond->> optional-clauses
+                                    mandatory-clause (cons mandatory-clause)))))
 
 (s/defn ^:private optionality-constraints :- envs/SpecInfo
   [senv :- (s/protocol envs/SpecEnv), flattened-vars :- FlattenedVars, spec-info :- envs/SpecInfo]

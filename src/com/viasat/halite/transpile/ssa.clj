@@ -5,16 +5,16 @@
   "Rewrite halite specs such that their expressions are stored in a single directed graph
   that is reminiscent of the single static assignment (SSA) representation often used
   in compilers."
-  (:require [clojure.pprint :as pp]
+  (:require [clojure.pprint :as pprint]
             [clojure.set :as set]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.transpile.util :refer [mk-junct]]
+            [com.viasat.halite.transpile.util :as transpile-util]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
             [schema.core :as s]
-            [weavejester.dependency :as dep]))
+            [weavejester.dependency :as dependency]))
 
 (set! *warn-on-reflection* true)
 
@@ -153,7 +153,7 @@
   {(s/optional-key :include-negations?) s/Bool
    (s/optional-key :conditionally?) s/Bool})
 
-(s/defn ^:private ssa-graph->dep-graph :- (s/protocol dep/DependencyGraph)
+(s/defn ^:private ssa-graph->dep-graph :- (s/protocol dependency/DependencyGraph)
   "Return a weavejester.dependency graph of the given ssa-graph, where
   the nodes are node ids."
   [ssa-graph :- SSAGraph]
@@ -161,8 +161,8 @@
        :dgraph
        (reduce
         (fn [g [id d]]
-          (reduce #(dep/depend %1 id %2) g (child-nodes d)))
-        (dep/graph))))
+          (reduce #(dependency/depend %1 id %2) g (child-nodes d)))
+        (dependency/graph))))
 
 (s/defn cycle? :- s/Bool
   "Returns true iff the given dgraph contains a cycle. dgraphs with
@@ -172,13 +172,13 @@
     (ssa-graph->dep-graph ssa-graph)
     false
     (catch clojure.lang.ExceptionInfo ex
-      (if (-> ex ex-data :reason (= ::dep/circular-dependency))
+      (if (-> ex ex-data :reason (= ::dependency/circular-dependency))
         true
         (throw ex)))))
 
 (s/defn topo-sort :- [NodeId]
   [ssa-graph :- SSAGraph]
-  (dep/topo-sort (ssa-graph->dep-graph ssa-graph)))
+  (dependency/topo-sort (ssa-graph->dep-graph ssa-graph)))
 
 (defn sort-ssa-graph [ssa-graph]
   (sort-by #(Integer/parseInt (subs (name (key %)) 1)) (:dgraph ssa-graph)))
@@ -800,7 +800,7 @@
                 (throw (ex-info "BUG! ssa/replace-node may not replace with :Boolean correctly"
                                 {:from-type (node-type node), :id id, :ssa-graph ssa-graph})))
               (recur (into type-ids-to-do
-                           (dep/immediate-dependents deps id))
+                           (dependency/immediate-dependents deps id))
                      (assoc-in ssa-graph [:dgraph id 1] new-type)))))))))
 
 (s/defn replace-nodes :- SpecInfo
@@ -1153,7 +1153,7 @@
          scope (->> fields keys (map symbol) set)
          ssa-ctx (init-ssa-ctx (envs/spec-env {}) (envs/type-env {}) ssa-graph)
          constraints (if conjoin-constraints?
-                       (let [[ssa-graph id] (->> constraints (map second) (mk-junct 'and) (form-to-ssa ssa-ctx))]
+                       (let [[ssa-graph id] (->> constraints (map second) (transpile-util/mk-junct 'and) (form-to-ssa ssa-ctx))]
                          [["$all" (form-from-ssa scope ssa-graph id)]])
                        (->> constraints
                             (mapv (fn [[cname cid]]
@@ -1195,4 +1195,4 @@
                    (reverse ids))))))
 
 (defn pprint-ssa-graph [ssa-graph]
-  (pp/pprint (sort-ssa-graph ssa-graph)))
+  (pprint/pprint (sort-ssa-graph ssa-graph)))

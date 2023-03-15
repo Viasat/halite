@@ -4,7 +4,7 @@
 (ns com.viasat.halite.base
   (:require [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.lib.format-errors :refer [throw-err]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [clojure.lang ExceptionInfo]))
@@ -44,10 +44,10 @@
 
 (s/defn check-count [object-type count-limit c context]
   (when (> (count c) count-limit)
-    (throw-err (h-err/size-exceeded (merge context {:object-type object-type
-                                                    :actual-count (count c)
-                                                    :count-limit count-limit
-                                                    :value c}))))
+    (format-errors/throw-err (h-err/size-exceeded (merge context {:object-type object-type
+                                                                  :actual-count (count c)
+                                                                  :count-limit count-limit
+                                                                  :value c}))))
   c)
 
 (s/defn check-limit [limit-key v]
@@ -114,21 +114,21 @@
 (def hquot (math-f (fn [x y]
                      (if (and (= x Long/MIN_VALUE)
                               (= y -1))
-                       (throw-err (h-err/overflow {}))
+                       (format-errors/throw-err (h-err/overflow {}))
                        (quot x y)))
                    (fn [x y]
                      (try
                        (fixed-decimal/fquot x y)
                        (catch ExceptionInfo ex
                          (if (:overflow? (ex-data ex))
-                           (throw-err (h-err/overflow {}))
+                           (format-errors/throw-err (h-err/overflow {}))
                            (throw ex)))))))
 (def habs  (comp #(if (hneg? %)
-                    (throw-err (h-err/abs-failure {:value %}))
+                    (format-errors/throw-err (h-err/abs-failure {:value %}))
                     %)
                  (math-f abs #(try (fixed-decimal/fabs %)
                                    (catch NumberFormatException ex
-                                     (throw-err (h-err/abs-failure {:value %})))))))
+                                     (format-errors/throw-err (h-err/abs-failure {:value %})))))))
 (def h<=   (math-f <=   fixed-decimal/f<=))
 (def h>=   (math-f >=   fixed-decimal/f>=))
 (def h<    (math-f <    fixed-decimal/f<))

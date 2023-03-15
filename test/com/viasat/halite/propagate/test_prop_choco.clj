@@ -2,9 +2,9 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-choco
-  (:require [com.viasat.halite.propagate.prop-choco :as prop-choco]
-            [com.viasat.halite.transpile.ssa :as ssa])
-  (:use clojure.test))
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.propagate.prop-choco :as prop-choco]
+            [com.viasat.halite.transpile.ssa :as ssa]))
 
 (deftest test-propagate
   (let [spec (ssa/spec-to-ssa

@@ -4,13 +4,12 @@
 (ns com.viasat.halite.propagate.prop-refine
   (:require [clojure.walk :refer [postwalk]]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.lib.format-errors :refer [throw-err]]
-            [com.viasat.halite.propagate.prop-composition :as prop-composition :refer [unwrap-maybe]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
+            [com.viasat.halite.propagate.prop-composition :as prop-composition]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.ssa :as ssa :refer [SpecCtx]]
-            [com.viasat.halite.transpile.util :refer [fixpoint]]
             [com.viasat.halite.types :as types]
             [loom.alg :as loom-alg]
             [loom.graph :as loom-graph]
@@ -225,7 +224,7 @@
    f]
   (postwalk #(if-not (and (map? %) (:$type %))
                %
-               (f (unwrap-maybe (:$type %)) %))
+               (f (prop-composition/unwrap-maybe (:$type %)) %))
             bound))
 
 (defn maybe? [spec-bound-type]
@@ -236,15 +235,15 @@
   (cond
     (= :Unset base-bound) (if maybe-leaf?
                             :Unset
-                            (throw-err (h-err/invalid-refines-to-bound-conflict
-                                        {:spec-id (symbol spec-id)})))
+                            (format-errors/throw-err (h-err/invalid-refines-to-bound-conflict
+                                                      {:spec-id (symbol spec-id)})))
     (empty? more-path) (if (= :Unset leaf-bound)
                          (if (or (maybe? (:$type base-bound))
                                  (= :Unset base-bound)
                                  (nil? base-bound))
                            :Unset
-                           (throw-err (h-err/invalid-refines-to-bound-conflict
-                                       {:spec-id (symbol spec-id)})))
+                           (format-errors/throw-err (h-err/invalid-refines-to-bound-conflict
+                                                     {:spec-id (symbol spec-id)})))
                          ;; default mandatory, unless user bound provided a
                          ;; :$type like [:Maybe ...]
                          (merge {:$type spec-id} leaf-bound))
@@ -279,9 +278,9 @@
      (reduce (fn [spec-bound [to-spec-id inner-bound]]
                (if-let [path (loom-alg/shortest-path rgraph spec-id to-spec-id)]
                  (assoc-in-refn-path spec-bound path inner-bound)
-                 (throw-err (h-err/invalid-refines-to-bound
-                             {:spec-id (symbol (unwrap-maybe (:$type spec-bound)))
-                              :to-spec-id (symbol to-spec-id)}))))
+                 (format-errors/throw-err (h-err/invalid-refines-to-bound
+                                           {:spec-id (symbol (prop-composition/unwrap-maybe (:$type spec-bound)))
+                                            :to-spec-id (symbol to-spec-id)}))))
              (dissoc spec-bound :$refines-to)
              (:$refines-to spec-bound)))))
 

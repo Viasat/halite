@@ -11,7 +11,7 @@
 
 (set! *warn-on-reflection* true)
 
-(clojure.test/use-fixtures :once validate-schemas)
+(use-fixtures :once validate-schemas)
 
 (deftest test-schema
   (s/check analysis/EnumConstraint {:enum #{100}})

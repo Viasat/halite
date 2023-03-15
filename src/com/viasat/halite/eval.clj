@@ -10,8 +10,7 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.h-err :as h-err]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.lib.format-errors
-             :refer [throw-err with-exception-data format-long-msg]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [clojure.lang BigInt ExceptionInfo]))
@@ -65,7 +64,7 @@
   (fn [& args]
     (try (apply f args)
          (catch ArithmeticException _
-           (throw-err (h-err/overflow {}))))))
+           (format-errors/throw-err (h-err/overflow {}))))))
 
 (def builtins
   (s/with-fn-validation
@@ -89,18 +88,18 @@
      'dec (mk-builtin (handle-overflow dec)  [:Integer] :Integer)
      'div (apply mk-builtin (fn [num divisor]
                               (when (= 0 divisor)
-                                (throw-err (h-err/divide-by-zero {:num num})))
+                                (format-errors/throw-err (h-err/divide-by-zero {:num num})))
                               (base/hquot num divisor)) (into [[:Integer :Integer] :Integer] decimal-sigs-binary))
      'mod (mk-builtin (fn [num divisor]
                         (when (= 0 divisor)
-                          (throw-err (h-err/divide-by-zero {:num num})))
+                          (format-errors/throw-err (h-err/divide-by-zero {:num num})))
                         (mod num divisor)) [:Integer :Integer] :Integer)
      'expt (mk-builtin (fn [x p]
                          (when (neg? p)
-                           (throw-err (h-err/invalid-exponent {:exponent p})))
+                           (format-errors/throw-err (h-err/invalid-exponent {:exponent p})))
                          (let [result (expt x p)]
                            (when (instance? BigInt result)
-                             (throw-err (h-err/overflow {})))
+                             (format-errors/throw-err (h-err/overflow {})))
                            result))
                        [:Integer :Integer] :Integer)
      'abs (apply mk-builtin base/habs (into [[:Integer] :Integer] decimal-sigs-unary))
@@ -120,7 +119,7 @@
                         [:Integer :Integer :Integer] (types/vector-type :Integer)
                         [:Integer :Integer] (types/vector-type :Integer)
                         [:Integer] (types/vector-type :Integer))
-     'error (mk-builtin #(throw-err (h-err/spec-threw {:spec-error-str %}))
+     'error (mk-builtin #(format-errors/throw-err (h-err/spec-threw {:spec-error-str %}))
                         [:String] :Nothing)}))
 
 (assert (= base/builtin-symbols (set (keys builtins))))
@@ -137,9 +136,9 @@
    bool-expr
    spec-id :- types/NamespacedKeyword
    constraint-name :- (s/maybe base/ConstraintName)]
-  (with-exception-data {:form bool-expr
-                        :constraint-name constraint-name
-                        :spec-id spec-id}
+  (format-errors/with-exception-data {:form bool-expr
+                                      :constraint-name constraint-name
+                                      :spec-id spec-id}
     (true? (eval-expr* ctx bool-expr))))
 
 (s/defn eval-refinement :- (s/maybe s/Any)
@@ -150,9 +149,9 @@
    spec-id :- types/NamespacedKeyword
    expr
    refinement-name :- (s/maybe String)]
-  (with-exception-data {:form expr
-                        :spec-id spec-id
-                        :refinement refinement-name}
+  (format-errors/with-exception-data {:form expr
+                                      :spec-id spec-id
+                                      :refinement refinement-name}
     (eval-expr* ctx expr)))
 
 (def ^:dynamic *eval-predicate-fn* eval-predicate) ;; short-term, until we remove the dependency from evaluator to type checker
@@ -188,12 +187,12 @@
   (let [declared-type (types/no-maybe declared-type)]
     (cond
       (types/spec-id declared-type) (when-not (refines-to? v declared-type)
-                                      [(try (throw-err (h-err/no-refinement-path
-                                                        {:type (symbol (:$type v))
-                                                         :value v
-                                                         :target-type (symbol (types/spec-id declared-type))
-                                                         :field field
-                                                         :spec-id (symbol spec-id)}))
+                                      [(try (format-errors/throw-err (h-err/no-refinement-path
+                                                                      {:type (symbol (:$type v))
+                                                                       :value v
+                                                                       :target-type (symbol (types/spec-id declared-type))
+                                                                       :field field
+                                                                       :spec-id (symbol spec-id)}))
                                             (catch Throwable e
                                               e))])
       :else (if-let [elem-type (types/elem-type declared-type)]
@@ -249,8 +248,8 @@
                                    (atom '()))]
     (let [spec-id (:$type inst)
           _ (if (contains? (set @*instance-path-atom*) spec-id)
-              (throw-err (h-err/spec-cycle-runtime {:spec-id-path (->> (conj @*instance-path-atom* spec-id)
-                                                                       (mapv symbol))}))
+              (format-errors/throw-err (h-err/spec-cycle-runtime {:spec-id-path (->> (conj @*instance-path-atom* spec-id)
+                                                                                     (mapv symbol))}))
               (swap! *instance-path-atom* conj spec-id))]
       (try
         (let [spec-id-0 spec-id
@@ -275,22 +274,22 @@
                                                  ;; TODO: consider letting instances of abstract spec contain abstract values
                                                  (into [(when-not (concrete? senv v)
                                                           (try
-                                                            (throw-err (h-err/no-abstract {:value v
-                                                                                           :field kw
-                                                                                           :spec-id (symbol spec-id)}))
+                                                            (format-errors/throw-err (h-err/no-abstract {:value v
+                                                                                                         :field kw
+                                                                                                         :spec-id (symbol spec-id)}))
                                                             (catch Throwable e
                                                               e)))]
                                                        (check-against-declared-type spec-id kw declared-type v)))))
                                      (remove nil?))]
             (when (seq instance-errors)
-              (throw-err (h-err/instance-threw
-                          {:instance inst
-                           :instance-errors instance-errors
-                           :instance-error-str (string/join "; "
-                                                            (no-empty
-                                                             (mapv #(or (:instance-error-str (ex-data %))
-                                                                        (format-long-msg (ex-data %)))
-                                                                   instance-errors)))}))))
+              (format-errors/throw-err (h-err/instance-threw
+                                        {:instance inst
+                                         :instance-errors instance-errors
+                                         :instance-error-str (string/join "; "
+                                                                          (no-empty
+                                                                           (mapv #(or (:instance-error-str (ex-data %))
+                                                                                      (format-errors/format-long-msg (ex-data %)))
+                                                                                 instance-errors)))}))))
 
           ;; check all constraints
           (let [constraint-results {:category :constraint
@@ -334,10 +333,10 @@
                               (when (not= :Unset inst)
                                 (when (not (empty? (set/intersection (set (keys transitive-refinements))
                                                                      (conj (set (keys (:refinements (meta inst)))) refines-to-spec-id))))
-                                  (throw-err (h-err/refinement-diamond {:spec-id (symbol spec-id-0)
-                                                                        :current-refinements (mapv symbol (keys transitive-refinements))
-                                                                        :additional-refinements (mapv symbol (keys (:refinements (meta inst))))
-                                                                        :referred-spec-id (symbol refines-to-spec-id)}))))
+                                  (format-errors/throw-err (h-err/refinement-diamond {:spec-id (symbol spec-id-0)
+                                                                                      :current-refinements (mapv symbol (keys transitive-refinements))
+                                                                                      :additional-refinements (mapv symbol (keys (:refinements (meta inst))))
+                                                                                      :referred-spec-id (symbol refines-to-spec-id)}))))
                               {:transitive-refinements (cond-> transitive-refinements
                                                          (not= :Unset inst) (->
                                                                              (merge (:refinements (meta inst)))
@@ -374,48 +373,48 @@
                 (throw (:result (first error-constraints))))
               (when (or (seq violated-constraints)
                         (seq error-constraints))
-                (throw-err ((if (and (seq violated-constraints)
-                                     (not (seq error-constraints)))
-                              h-err/invalid-instance
-                              h-err/spec-threw)
-                            (let [constraint-errors (no-empty (mapv :result error-constraints))
-                                  violated-constraints-for-ex-data (->> violated-constraints
-                                                                        (mapcat #(let [{:keys [constraint result]} %]
-                                                                                   (if (and (instance? ExceptionInfo result)
-                                                                                            (= :constraint-violation (:halite-error (ex-data result))))
-                                                                                     (:violated-constraints (ex-data result))
-                                                                                     [(constraint-to-ex-data-form constraint)])))
-                                                                        (sort-by (fn [{:keys [spec-id constraint-name]}]
-                                                                                   [spec-id constraint-name]))
-                                                                        vec
-                                                                        no-empty)]
-                              (no-nil {:spec-id (symbol spec-id)
-                                       :violated-constraints violated-constraints-for-ex-data
-                                       :violated-constraint-labels (->> violated-constraints-for-ex-data
-                                                                        (mapv constraint-name-to-string)
-                                                                        no-empty)
-                                       :error-constraints (->> error-constraints
-                                                               (map (comp constraint-to-ex-data-form :constraint))
-                                                               (sort-by (fn [{:keys [spec-id constraint-name]}]
-                                                                          [spec-id constraint-name]))
-                                                               vec
-                                                               no-empty)
-                                       :constraint-errors constraint-errors
-                                       :constraint-error-strs (no-empty
-                                                               (mapv #(or (:spec-error-str (ex-data %))
-                                                                          (format-long-msg (ex-data %)))
-                                                                     constraint-errors))
-                                       :spec-error-str (when (not (and (seq violated-constraints)
-                                                                       (not (seq error-constraints))))
-                                                         (string/join "; "
-                                                                      (no-empty
-                                                                       (mapv #(or (:spec-error-str (ex-data %))
-                                                                                  (format-long-msg (ex-data %)))
-                                                                             constraint-errors))))
-                                       :value inst
-                                       :halite-error (when (and (seq violated-constraints)
-                                                                (not (seq error-constraints)))
-                                                       :constraint-violation)})))))
+                (format-errors/throw-err ((if (and (seq violated-constraints)
+                                                   (not (seq error-constraints)))
+                                            h-err/invalid-instance
+                                            h-err/spec-threw)
+                                          (let [constraint-errors (no-empty (mapv :result error-constraints))
+                                                violated-constraints-for-ex-data (->> violated-constraints
+                                                                                      (mapcat #(let [{:keys [constraint result]} %]
+                                                                                                 (if (and (instance? ExceptionInfo result)
+                                                                                                          (= :constraint-violation (:halite-error (ex-data result))))
+                                                                                                   (:violated-constraints (ex-data result))
+                                                                                                   [(constraint-to-ex-data-form constraint)])))
+                                                                                      (sort-by (fn [{:keys [spec-id constraint-name]}]
+                                                                                                 [spec-id constraint-name]))
+                                                                                      vec
+                                                                                      no-empty)]
+                                            (no-nil {:spec-id (symbol spec-id)
+                                                     :violated-constraints violated-constraints-for-ex-data
+                                                     :violated-constraint-labels (->> violated-constraints-for-ex-data
+                                                                                      (mapv constraint-name-to-string)
+                                                                                      no-empty)
+                                                     :error-constraints (->> error-constraints
+                                                                             (map (comp constraint-to-ex-data-form :constraint))
+                                                                             (sort-by (fn [{:keys [spec-id constraint-name]}]
+                                                                                        [spec-id constraint-name]))
+                                                                             vec
+                                                                             no-empty)
+                                                     :constraint-errors constraint-errors
+                                                     :constraint-error-strs (no-empty
+                                                                             (mapv #(or (:spec-error-str (ex-data %))
+                                                                                        (format-errors/format-long-msg (ex-data %)))
+                                                                                   constraint-errors))
+                                                     :spec-error-str (when (not (and (seq violated-constraints)
+                                                                                     (not (seq error-constraints))))
+                                                                       (string/join "; "
+                                                                                    (no-empty
+                                                                                     (mapv #(or (:spec-error-str (ex-data %))
+                                                                                                (format-errors/format-long-msg (ex-data %)))
+                                                                                           constraint-errors))))
+                                                     :value inst
+                                                     :halite-error (when (and (seq violated-constraints)
+                                                                              (not (seq error-constraints)))
+                                                                     :constraint-violation)})))))
               (with-meta
                 inst
                 {:refinements transitive-refinements}))))
@@ -426,9 +425,9 @@
 (defn- get-from-vector [ctx expr target index-expr]
   (let [index (eval-expr* ctx index-expr)]
     (when-not (< -1 index (count target))
-      (throw-err (h-err/index-out-of-bounds {:form expr
-                                             :index index
-                                             :length (count target)})))
+      (format-errors/throw-err (h-err/index-out-of-bounds {:form expr
+                                                           :index index
+                                                           :length (count target)})))
     (nth target index)))
 
 (s/defn ^:private eval-get :- s/Any
@@ -455,9 +454,9 @@
    (reduce
     (fn [ctx [sym body]]
       (when (base/reserved-words sym)
-        (throw-err (h-err/cannot-bind-reserved-word {:sym sym
-                                                     :bindings bindings
-                                                     :body body})))
+        (format-errors/throw-err (h-err/cannot-bind-reserved-word {:sym sym
+                                                                   :bindings bindings
+                                                                   :body body})))
       (update ctx :env envs/bind sym (eval-expr* ctx body)))
     ctx
     (partition 2 bindings))
@@ -520,8 +519,8 @@
         result (cond-> inst
                  (not= t (:$type inst)) (-> meta :refinements t))]
     (cond
-      (instance? Exception result) (throw-err (h-err/refinement-error (make-refinement-error inst expr result)))
-      (nil? result) (throw-err (h-err/no-refinement-path {:type (symbol (:$type inst)), :value inst, :target-type (symbol t), :form expr}))
+      (instance? Exception result) (format-errors/throw-err (h-err/refinement-error (make-refinement-error inst expr result)))
+      (nil? result) (format-errors/throw-err (h-err/no-refinement-path {:type (symbol (:$type inst)), :value inst, :target-type (symbol t), :form expr}))
       :else result)))
 
 (s/defn ^:private refines-to? :- Boolean
@@ -531,7 +530,7 @@
         result (cond-> inst
                  (not= t (:$type inst)) (-> meta :refinements t))]
     (cond
-      (instance? Exception result) (throw-err (h-err/refinement-error (make-refinement-error inst nil result)))
+      (instance? Exception result) (format-errors/throw-err (h-err/refinement-error (make-refinement-error inst nil result)))
       (nil? result) false
       :else true)))
 
@@ -556,8 +555,8 @@
                                   (let [b (envs/bindings (:env ctx))]
                                     (if (contains? b expr)
                                       (get b expr)
-                                      (throw-err (h-err/symbol-undefined {:form expr})))))
-                 (map? expr) (with-exception-data {:form expr}
+                                      (format-errors/throw-err (h-err/symbol-undefined {:form expr})))))
+                 (map? expr) (format-errors/with-exception-data {:form expr}
                                (->> (dissoc expr :$type)
                                     (map (fn [[k v]] [k (eval-in-env v)]))
                                     (remove (fn [[k v]] (= :Unset v)))
@@ -592,9 +591,9 @@
                                'difference (apply set/difference (map eval-in-env (rest expr)))
                                'first (let [c (eval-in-env (second expr))]
                                         (when (and (set? c) (> (count c) 1))
-                                          (throw-err (h-err/not-set-with-single-value {:form expr})))
+                                          (format-errors/throw-err (h-err/not-set-with-single-value {:form expr})))
                                         (or (first c)
-                                            (throw-err (h-err/argument-empty {:form expr}))))
+                                            (format-errors/throw-err (h-err/argument-empty {:form expr}))))
                                'rest (let [arg (eval-in-env (second expr))]
                                        (if (empty? arg) [] (subvec arg 1)))
                                'conj (check-collection-runtime-count (apply conj (map eval-in-env (rest expr))))
@@ -602,13 +601,13 @@
                                'refine-to (eval-refine-to ctx expr)
                                'refines-to? (let [[subexpr kw] (rest expr)
                                                   inst (eval-in-env subexpr)]
-                                              (with-exception-data {:form expr}
+                                              (format-errors/with-exception-data {:form expr}
                                                 (refines-to? inst (types/concrete-spec-type kw))))
                                'every? (every? identity (eval-quantifier-bools ctx (rest expr)))
                                'any? (boolean (some identity (eval-quantifier-bools ctx (rest expr))))
                                'map (let [[coll result] (eval-comprehend ctx (rest expr))]
                                       (when (some #(= :Unset %) result)
-                                        (throw-err (h-err/must-produce-value {:form expr})))
+                                        (format-errors/throw-err (h-err/must-produce-value {:form expr})))
                                       (into (empty coll) result))
                                'filter (let [[coll bools] (eval-comprehend ctx (rest expr))]
                                          (into (empty coll) (filter some? (map #(when %1 %2) bools coll))))
@@ -622,8 +621,8 @@
                                'sort-by (let [[coll indexes] (eval-comprehend ctx (rest expr))]
                                           (when-not (= (count (set indexes))
                                                        (count indexes))
-                                            (throw-err (h-err/sort-value-collision {:form expr
-                                                                                    :coll coll})))
+                                            (format-errors/throw-err (h-err/sort-value-collision {:form expr
+                                                                                                  :coll coll})))
                                           (mapv #(nth % 1) (if (and (pos? (count indexes))
                                                                     (fixed-decimal/fixed-decimal? (first indexes)))
                                                              (sort-by
@@ -631,14 +630,14 @@
                                                               (map vector indexes coll))
                                                              (sort (map vector indexes coll)))))
                                'reduce (eval-reduce ctx expr)
-                               (with-exception-data {:form expr}
+                               (format-errors/with-exception-data {:form expr}
                                  (apply (or (:impl (get builtins (first expr)))
-                                            (throw-err (h-err/unknown-function-or-operator {:op (first expr), :form expr})))
+                                            (format-errors/throw-err (h-err/unknown-function-or-operator {:op (first expr), :form expr})))
                                         (mapv eval-in-env (rest expr)))))
                  (vector? expr) (mapv eval-in-env expr)
                  (set? expr) (set (map eval-in-env expr))
                  (= :Unset expr) :Unset
-                 :else (throw-err (h-err/invalid-expression {:form expr})))]
+                 :else (format-errors/throw-err (h-err/invalid-expression {:form expr})))]
     (when *debug*)
     (if (:debug (meta expr))
       (println result)

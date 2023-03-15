@@ -2,13 +2,13 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-top-concrete
-  (:require [com.viasat.halite.propagate :as propagate]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.propagate :as propagate]
             [schema.test :refer [validate-schemas]])
-  (:use clojure.test)
   (:import [clojure.lang ExceptionInfo]
            [org.chocosolver.solver.exception ContradictionException]))
 
-;; (clojure.test/use-fixtures :once validate-schemas)
+;; (use-fixtures :once validate-schemas)
 
 (deftest test-top-level-refines-to-concrete-spec
   (is (= {:$type :ws/A
@@ -93,4 +93,4 @@
                                                     :ws/X {:expr {:$type :ws/X}}}}}
                               {:$refines-to {:ws/A {} :ws/X {}}}))))
 
-;; (time (clojure.test/run-tests))
+;; (time (run-tests))

@@ -10,13 +10,13 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.lib.format-errors :refer [throw-err]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.propagate.prop-choco :as prop-choco]
             [com.viasat.halite.transpile.lowering :as lowering]
             [com.viasat.halite.transpile.rewriting :as rewriting]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.simplify :as simplify]
-            [com.viasat.halite.transpile.util :as util]
+            [com.viasat.halite.transpile.util :as transpile-util]
             [com.viasat.halite.types :as types]
             [loom.alg :as loom-alg]
             [loom.derived :as loom-derived]
@@ -92,7 +92,7 @@
                                                         (rest r)
                                                         [r]))
                                                     [%]))))
-                                  (util/make-do true)))]
+                                  (transpile-util/make-do true)))]
     (when-not (string-compatible-type? htype)
       (throw (ex-info "BUG! Called rewrite-string-valued-do-child with expr that can never evaluate to a string."
                       {:ssa-graph ssa-graph :id id :form form :htype htype})))
@@ -128,7 +128,7 @@
     (when (and (seq? form) (= '$do! (first form)))
       (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]
         (when (some string-compatible-type? child-htypes)
-          (util/make-do
+          (transpile-util/make-do
            (mapv (fn [child htype]
                    (cond->> child
                      (string-compatible-type? htype) (rewrite-string-valued-do-child rctx)))
@@ -144,7 +144,7 @@
           (cond->>
            (->> (rest args)
                 (map #(list '= %1 %2) args)
-                (util/mk-junct 'and))
+                (transpile-util/mk-junct 'and))
             (= 'not= (first form)) (list 'not)))))))
 
 (s/defn ^:private simplify-string-exprs :- ssa/SpecInfo
@@ -395,7 +395,7 @@
 
 (defn throw-contradiction
   [initial-bound]
-  (throw-err (h-err/no-valid-instance-in-bound {:initial-bound initial-bound})))
+  (format-errors/throw-err (h-err/no-valid-instance-in-bound {:initial-bound initial-bound})))
 
 (s/defn ^:private raise-spec-bound :- SpecBound
   [bound :- prop-choco/SpecBound scg initial-bound :- SpecBound]

@@ -9,7 +9,7 @@
             [com.viasat.halite.transpile.rewriting :refer [rewrite-sctx ->>rewrite-sctx] :as rewriting]
             [com.viasat.halite.transpile.simplify :refer [simplify always-evaluates?]]
             [com.viasat.halite.transpile.ssa :as ssa :refer [NodeId SSAGraph SpecInfo SpecCtx make-ssa-ctx]]
-            [com.viasat.halite.transpile.util :refer [fixpoint mk-junct make-do]]
+            [com.viasat.halite.transpile.util :as transpile-util]
             [com.viasat.halite.types :as types]
             [loom.alg]
             [loom.graph]
@@ -58,7 +58,7 @@
              [false [] (select-keys form [:$type])]
              (sort-by key (dissoc form :$type)))]
       (when match?
-        (make-do done-ids inst)))
+        (transpile-util/make-do done-ids inst)))
 
     ;; We *cannot* pull $do! forms out of valid? or the branches of if, but we can
     ;; pull it out of the predicates of ifs.
@@ -67,8 +67,8 @@
           pred (ssa/node-form (ssa/deref-id ssa-graph pred-id))]
       ;; We need to handle if and if-value as separate sub-cases.
       (if (do-form? pred)
-        (make-do (butlast (rest pred))
-                 (list 'if (last pred) then-id else-id))
+        (transpile-util/make-do (butlast (rest pred))
+                                (list 'if (last pred) then-id else-id))
         (when (and (seq? pred) (= '$value? (first pred)))
           (let [inner-id (second pred)
                 inner-form (ssa/node-form (ssa/deref-id ssa-graph inner-id))]
@@ -78,7 +78,7 @@
               ;; value are replaced with $no-value in the else branch.
               (let [[ssa-graph' new-then-id] (ssa/replace-in-expr senv ssa-graph then-id {inner-id (last inner-form)})]
                 (vary-meta
-                 (make-do
+                 (transpile-util/make-do
                   (butlast (rest inner-form))
                   (list 'if (list '$value? (last inner-form)) new-then-id else-id))
                  assoc :ssa-graph ssa-graph')))))))
@@ -87,7 +87,7 @@
     (when-let [[i [nested-do-form]] (first-nested-do ctx form)]
       (let [side-effects (->> nested-do-form rest butlast)
             body (seq (assoc (vec form) i (last nested-do-form)))]
-        (make-do side-effects body)))))
+        (transpile-util/make-do side-effects body)))))
 
 ;; Finally, we can 'flatten' $do! forms.
 
@@ -159,7 +159,7 @@
                  (map (fn [var-kw]
                         (apply list comparison-op
                                (map #(list 'get %1 var-kw) arg-ids))))
-                 (mk-junct logical-op))))))))
+                 (transpile-util/mk-junct logical-op))))))))
 
 (s/defn lower-instance-comparisons :- SpecCtx
   [sctx :- SpecCtx]
@@ -259,21 +259,21 @@
                                  (map (fn [[cname id]]
                                         (binding [ssa/*hide-non-halite-ops* false]
                                           (ssa/form-from-ssa scope ssa-graph id))))
-                                 (mk-junct 'and)
+                                 (transpile-util/mk-junct 'and)
                                  (replace-in-expr
                                   (-> fields (update-vals (constantly '$no-value)) (merge inst-entries) (update-keys symbol))))
         sub-guards (->> inst-entries
                         (vals)
                         (map (partial validity-guard sctx ctx))
                         (remove true?)
-                        (mk-junct 'and))
+                        (transpile-util/mk-junct 'and))
         unused-field-vals (reduce
                            disj
                            (->> inst-entries vals set)
                            (->> inlined-constraints
                                 (tree-seq coll? seq)
                                 (filter symbol?)))
-        result (make-do unused-field-vals inlined-constraints)]
+        result (transpile-util/make-do unused-field-vals inlined-constraints)]
     (if (true? sub-guards)
       result
       (list 'if sub-guards result false))))
@@ -307,7 +307,7 @@
   (->> args
        (map (partial validity-guard sctx ctx))
        (remove true?)
-       (mk-junct 'and)))
+       (transpile-util/mk-junct 'and)))
 
 (s/defn validity-guard
   "Given an expression <expr>, the function validity-guard computes an expression that
@@ -394,7 +394,7 @@
           no-value-literal? #(= :Unset (first (second %)))
           maybe-typed-args (filter #(and (types/maybe-type? (second (second %))) (not= :Unset (second (second %)))) args)]
       (when (and (seq no-value-args) (empty? maybe-typed-args))
-        (make-do
+        (transpile-util/make-do
          (->> args (remove no-value-literal?) (map (comp (partial nth arg-ids) first)))
          (every? #(= :Unset (second (second %))) args))))))
 
@@ -419,32 +419,32 @@
           (cond
             (and (seq no-value-args) (seq valued-args))
             (let [no-value-ids (set (map (comp (partial nth arg-ids) first) no-value-args))]
-              (make-do (->> arg-ids (remove no-value-ids)) (= 'not= op)))
+              (transpile-util/make-do (->> arg-ids (remove no-value-ids)) (= 'not= op)))
 
             (and (seq no-value-args) (= 1 (count opt-args)))
             (let [[i [form htype]] (first opt-args)
                   no-value-ids (->> no-value-args (remove no-value-literal?) (map (comp (partial nth arg-ids) first)))]
-              (make-do no-value-ids
-                       (list 'if (list '$value? (nth arg-ids i)) (= 'not= op) (not= 'not= op))))
+              (transpile-util/make-do no-value-ids
+                                      (list 'if (list '$value? (nth arg-ids i)) (= 'not= op) (not= 'not= op))))
 
             (seq no-value-args)
             (let [[i [form htype]] (first opt-args)
                   opt-arg-id (nth arg-ids i)
                   excluded-ids (->> no-value-args (map (comp (partial nth arg-ids) first)) (cons (nth arg-ids i)) set)
                   other-arg-ids (->> arg-ids (remove excluded-ids))]
-              (make-do other-arg-ids
-                       (list 'if (list '$value? opt-arg-id)
-                             (= op 'not=)
-                             (apply list op (nth arg-ids (ffirst no-value-args)) other-arg-ids))))
+              (transpile-util/make-do other-arg-ids
+                                      (list 'if (list '$value? opt-arg-id)
+                                            (= op 'not=)
+                                            (apply list op (nth arg-ids (ffirst no-value-args)) other-arg-ids))))
 
             (= 1 (count opt-args))
             (let [[i [form htype]] (first opt-args)
                   opt-arg-id (nth arg-ids i)
                   other-arg-ids (concat (take i arg-ids) (drop (inc i) arg-ids))]
-              (make-do other-arg-ids
-                       (list 'if (list '$value? opt-arg-id)
-                             (apply list op (list '$value! opt-arg-id) other-arg-ids)
-                             (= op 'not=))))
+              (transpile-util/make-do other-arg-ids
+                                      (list 'if (list '$value? opt-arg-id)
+                                            (apply list op (list '$value! opt-arg-id) other-arg-ids)
+                                            (= op 'not=))))
 
             (< 1 (count opt-args))
             (let [opt-pair (take 2 opt-args)
@@ -453,12 +453,12 @@
                   other-arg-ids (concat (take i1 arg-ids) (drop (inc i1) arg-ids))
                   [i2 [form2 htype2]] (second opt-pair)
                   opt-id2 (nth arg-ids i2)]
-              (make-do other-arg-ids
-                       (list 'if (list '$value? opt-id1)
-                             (apply list op (list '$value! opt-id1) other-arg-ids)
-                             (list 'if (list '$value? opt-id2)
-                                   (= op 'not=)
-                                   (not= op 'not=)))))))))))
+              (transpile-util/make-do other-arg-ids
+                                      (list 'if (list '$value? opt-id1)
+                                            (apply list op (list '$value! opt-id1) other-arg-ids)
+                                            (list 'if (list '$value? opt-id2)
+                                                  (= op 'not=)
+                                                  (not= op 'not=)))))))))))
 
 (s/defn lower-maybe-comparisons :- SpecCtx
   [sctx :- SpecCtx]
@@ -616,7 +616,7 @@
                   ;; with anything other than string literals inside.
                   [message] (ssa/deref-id ssa-graph subexpr-id)
                   guard (guards error-id)
-                  guard-form (->> guard (map (comp (partial mk-junct 'and) seq)) (mk-junct 'or))
+                  guard-form (->> guard (map (comp (partial transpile-util/mk-junct 'and) seq)) (transpile-util/mk-junct 'or))
                   [ssa-graph' guard-id] (ssa/form-to-ssa (assoc ctx :ssa-graph ssa-graph) guard-form)
                   cid (ssa/negated ssa-graph' guard-id)
                   spec-info' (-> spec-info
@@ -669,7 +669,7 @@
 (s/defn eliminate-error-forms :- SpecCtx
   [sctx :- SpecCtx]
   (let [sctx (update-vals sctx (partial add-error-guards-as-constraints sctx))]
-    (fixpoint #(reduce-kv drop-branches-containing-unguarded-errors % %) sctx)))
+    (transpile-util/fixpoint #(reduce-kv drop-branches-containing-unguarded-errors % %) sctx)))
 
 (s/defn ^:private instance-compatible-type? :- s/Bool
   "Returns true if there exists an expression of type htype that could evaluate to an instance, and false otherwise."
@@ -696,7 +696,7 @@
                                                         (rest r)
                                                         [r]))
                                                     [%]))))
-                                  (make-do true)))]
+                                  (transpile-util/make-do true)))]
     (when-not (instance-compatible-type? htype)
       (throw (ex-info "BUG! Called rewrite-instance-valued-do-child with expr that can never evaluate to an instance."
                       {:ssa-graph ssa-graph :id id :form form :htype htype})))
@@ -740,7 +740,7 @@
     (when (and (seq? form) (= '$do! (first form)))
       (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]
         (when (some instance-compatible-type? child-htypes)
-          (make-do
+          (transpile-util/make-do
            (mapv (fn [child htype]
                    (cond->> child
                      (instance-compatible-type? htype) (rewrite-instance-valued-do-child rctx)))
@@ -789,7 +789,7 @@
     (when (and (seq? form) (= '$do! (first form)))
       (let [child-htypes (mapv #(ssa/node-type (ssa/deref-id ssa-graph %)) (rest form))]
         (when (some #(types/subtype? :Unset %) child-htypes)
-          (make-do
+          (transpile-util/make-do
            (mapv (fn [child htype]
                    (cond->> child
                      (types/maybe-type? htype) (rewrite-no-value-do-child rctx)))

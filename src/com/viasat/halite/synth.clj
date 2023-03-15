@@ -49,10 +49,10 @@
                                            keys)]
                  (if (= (count mandatory-fields) (count (:fields spec)))
                    `[(= ~(into #{:$type} (keys (:fields spec))) (set (keys $this)))]
-                   [`(set/subset? (set (keys $this))
-                                  ~(into #{:$type} (keys (:fields spec))))
-                    `(set/subset? ~(into #{:$type} mandatory-fields)
-                                  (set (keys $this)))]))
+                   [`(subset? (set (keys $this))
+                              ~(into #{:$type} (keys (:fields spec))))
+                    `(subset? ~(into #{:$type} mandatory-fields)
+                              (set (keys $this)))]))
 
              ;; constraints
              ~@(if (:constraints spec)

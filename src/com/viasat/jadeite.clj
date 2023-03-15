@@ -2,13 +2,13 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.jadeite
-  (:require [clojure.core.match :as match :refer [match]]
+  (:require [clojure.core.match :as match]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [instaparse.core :as insta]))
+            [instaparse.core :as instaparse]))
 
 (set! *warn-on-reflection* true)
 
@@ -76,7 +76,7 @@
 (defn toh
   "Translate from tree of expression objects created by instaparse (hiccup) into halite"
   [tree]
-  (-> (match [tree]
+  (-> (match/match [tree]
         [[:conditional op a b c]]      (combine-ifs (list (if (= "if" op) 'if 'if-value) (toh a) (toh b) (toh c)))
         [[:if-value-let sym m t e]]    (list 'if-value-let [(toh sym) (toh m)] (toh t) (toh e))
         [[:when-value-let sym m t]]    (list 'when-value-let [(toh sym) (toh m)] (toh t))
@@ -90,7 +90,7 @@
         [[:equality a "!=" b]]         (list 'not= (toh a) (toh b))
         [[:relational a op b]]         (list (symbol op) (toh a) (toh b))
         [[:add a op b]] (let [hb (toh b)]
-                          (match [op hb]
+                          (match/match [op hb]
                             ["+" 1] (list 'inc (toh a))
                             ["-" 1] (list 'dec (toh a))
                             :else (list (symbol op) (toh a) hb)))
@@ -143,19 +143,19 @@
       (add-source-metadata-when-possible tree)))
 
 (def whitespace-or-comments
-  (insta/parser
+  (instaparse/parser
    "ws-or-comments = #'\\s+' | comment+
     comment = #'\\s*//.*(\\n\\s*|$)'"))
 
 (def parse
-  (insta/parser (io/resource "com/viasat/jadeite.bnf")
-                :auto-whitespace whitespace-or-comments))
+  (instaparse/parser (io/resource "com/viasat/jadeite.bnf")
+                     :auto-whitespace whitespace-or-comments))
 
 (defn to-halite [jadeite-string]
   (let [tree (->> jadeite-string
                   parse
-                  (insta/add-line-and-column-info-to-metadata jadeite-string))]
-    (when (insta/failure? tree)
+                  (instaparse/add-line-and-column-info-to-metadata jadeite-string))]
+    (when (instaparse/failure? tree)
       (throw (ex-info (pr-str tree) {:parse-failure tree})))
     (toh tree)))
 

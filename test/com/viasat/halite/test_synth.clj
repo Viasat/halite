@@ -2,13 +2,13 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-synth
-  (:require [clojure.test :as t :refer [deftest is]]
+  (:require [clojure.test :refer :all]
             [com.viasat.halite :as halite]
-            [com.viasat.halite.synth :refer [synth spec-map-eval] :as synth]
+            [com.viasat.halite.synth :as synth]
             [schema.test :refer [validate-schemas]])
   (:import [clojure.lang ExceptionInfo]))
 
-(clojure.test/use-fixtures :once validate-schemas)
+(use-fixtures :once validate-schemas)
 
 (deftest test-basic
   (let [spec-map
@@ -31,22 +31,22 @@
                                           true)))
                      :refine-fns {:spec/A '(fn [$this]
                                              (user-eval $this '{:$type :spec/A}))}}}
-           (synth spec-map)))
+           (synth/synth spec-map)))
 
     (is (= {:$type :spec/B}
-           (spec-map-eval spec-map '{:$type :spec/B})))
+           (synth/spec-map-eval spec-map '{:$type :spec/B})))
 
     (is (= {:$type :spec/A}
-           (spec-map-eval spec-map '(refine-to {:$type :spec/B} :spec/A))))
+           (synth/spec-map-eval spec-map '(refine-to {:$type :spec/B} :spec/A))))
 
     (is (= true
-           (spec-map-eval spec-map '(refines-to? {:$type :spec/B} :spec/A))))
+           (synth/spec-map-eval spec-map '(refines-to? {:$type :spec/B} :spec/A))))
 
     (is (= {:$type :spec/B}
-           (spec-map-eval spec-map '(valid {:$type :spec/B}))))
+           (synth/spec-map-eval spec-map '(valid {:$type :spec/B}))))
 
     (is (= true
-           (spec-map-eval spec-map '(valid? {:$type :spec/B}))))))
+           (synth/spec-map-eval spec-map '(valid? {:$type :spec/B}))))))
 
 (deftest test-transitive-refinements
   (let [spec-map
@@ -83,11 +83,11 @@
                                                   (refine* :spec/B :spec/A)))
                                   :spec/B '(fn [$this]
                                              (user-eval $this '{:$type :spec/B}))}}}
-           (synth spec-map)))
+           (synth/synth spec-map)))
     (is (= {:$type :spec/A}
-           (spec-map-eval spec-map '(refine-to {:$type :spec/C} :spec/A))))
+           (synth/spec-map-eval spec-map '(refine-to {:$type :spec/C} :spec/A))))
     (is (= true
-           (spec-map-eval spec-map '(refines-to? {:$type :spec/C} :spec/A))))))
+           (synth/spec-map-eval spec-map '(refines-to? {:$type :spec/C} :spec/A))))))
 
 (deftest test-transitive-refinements-with-invalid-extrinsic-step
   (let [spec-map
@@ -129,11 +129,11 @@
                                                          (when (not (valid?* :spec/Falsey next))
                                                            (throw (ex-info "failed in refinement" {})))
                                                          (refine* :spec/Falsey :spec/Object next)))}}}
-           (synth spec-map)))
+           (synth/synth spec-map)))
     (is (thrown-with-msg? ExceptionInfo #"failed in refinement"
-                          (spec-map-eval spec-map '(refine-to {:$type :spec/Truthy :t true} :spec/Object))))
+                          (synth/spec-map-eval spec-map '(refine-to {:$type :spec/Truthy :t true} :spec/Object))))
     (is (thrown-with-msg? ExceptionInfo #"instance is invalid"
-                          (spec-map-eval spec-map '(refine-to {:$type :spec/Truthy :t true} :spec/Falsey))))))
+                          (synth/spec-map-eval spec-map '(refine-to {:$type :spec/Truthy :t true} :spec/Falsey))))))
 
 (deftest test-constraints
   (is (= {:spec/A {:valid?-fn '(fn [$this]
@@ -143,8 +143,8 @@
                                   (= #{:$type :x} (set (keys $this)))
                                   (and (user-eval $this '(> x 12)))))
                    :refine-fns {}}}
-         (synth {:spec/A {:fields {:x :Integer}
-                          :constraints #{{:name "c" :expr '(> x 12)}}}})))
+         (synth/synth {:spec/A {:fields {:x :Integer}
+                                :constraints #{{:name "c" :expr '(> x 12)}}}})))
   (is (= {:spec/A {:valid?-fn '(fn [$this]
                                  (and
                                   (map? $this)
@@ -153,9 +153,9 @@
                                   (and (user-eval $this '(> x 12))
                                        (user-eval $this '(< x 24)))))
                    :refine-fns {}}}
-         (synth {:spec/A {:fields {:x :Integer}
-                          :constraints #{{:name "c" :expr '(> x 12)}
-                                         {:name "c2" :expr '(< x 24)}}}}))))
+         (synth/synth {:spec/A {:fields {:x :Integer}
+                                :constraints #{{:name "c" :expr '(> x 12)}
+                                               {:name "c2" :expr '(< x 24)}}}}))))
 
 (deftest test-optional-field
   (let [spec-map {:spec/A {:fields {:x [:Maybe :Integer]}}}]
@@ -166,13 +166,13 @@
                                     (subset? (set (keys $this)) #{:$type :x})
                                     (subset? #{:$type} (set (keys $this)))))
                      :refine-fns {}}}
-           (synth spec-map)))
+           (synth/synth spec-map)))
     (is (= {:$type :spec/A}
-           (spec-map-eval spec-map '{:$type :spec/A})))
+           (synth/spec-map-eval spec-map '{:$type :spec/A})))
     (is (= {:$type :spec/A :x 1}
-           (spec-map-eval spec-map '{:$type :spec/A :x 1})))
+           (synth/spec-map-eval spec-map '{:$type :spec/A :x 1})))
     (is (nil?
-         (spec-map-eval spec-map '(valid {:$type :spec/A :x 1 :y 0})))))
+         (synth/spec-map-eval spec-map '(valid {:$type :spec/A :x 1 :y 0})))))
 
   (let [spec-map {:spec/A {:fields {:x [:Maybe :Integer]
                                     :y :Integer}}}]
@@ -183,13 +183,13 @@
                                     (subset? (set (keys $this)) #{:$type :x :y})
                                     (subset? #{:$type :y} (set (keys $this)))))
                      :refine-fns {}}}
-           (synth spec-map)))
+           (synth/synth spec-map)))
     (is (= {:$type :spec/A :y 0}
-           (spec-map-eval spec-map '{:$type :spec/A :y 0})))
+           (synth/spec-map-eval spec-map '{:$type :spec/A :y 0})))
     (is (= {:$type :spec/A :x 1 :y 0}
-           (spec-map-eval spec-map {:$type :spec/A :x 1 :y 0})))
+           (synth/spec-map-eval spec-map {:$type :spec/A :x 1 :y 0})))
     (is (nil?
-         (spec-map-eval spec-map '(valid {:$type :spec/A :x 1 :y 0 :z 2}))))))
+         (synth/spec-map-eval spec-map '(valid {:$type :spec/A :x 1 :y 0 :z 2}))))))
 
 (defn halite-user-eval [spec-map $this expr]
   (let [spec-info (get spec-map (:$type $this))]
@@ -207,9 +207,9 @@
                                         :expr '{:$type :spec/B}}}}}]
 
     (is (= {:$type :spec/A}
-           (spec-map-eval spec-map
-                          (partial halite-user-eval spec-map)
-                          '(refine-to {:$type :spec/C} :spec/A))))))
+           (synth/spec-map-eval spec-map
+                                (partial halite-user-eval spec-map)
+                                '(refine-to {:$type :spec/C} :spec/A))))))
 
 (defn halite-eval [spec-map expr]
   (halite/eval-expr spec-map
@@ -221,7 +221,7 @@
   `(is (= (try (halite-eval ~spec-map ~expr)
                (catch Throwable t#
                  [:throws]))
-          (try (spec-map-eval ~spec-map ~expr)
+          (try (synth/spec-map-eval ~spec-map ~expr)
                (catch Throwable t#
                  [:throws])))))
 
@@ -253,4 +253,4 @@
 
 ;; TODO: test whether errors in extrinsic refinements are handled properly by refines-to?
 
-;; (t/run-tests)
+;; (run-tests)

@@ -2,11 +2,11 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-envs
-  (:require [com.viasat.halite :as halite]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite :as halite]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.var-types :as var-types])
-  (:import [clojure.lang ExceptionInfo])
-  (:use [clojure.test]))
+  (:import [clojure.lang ExceptionInfo]))
 
 (deftest test-halite-type-from-var-type
   (let [senv {:ws/A {:abstract? true}

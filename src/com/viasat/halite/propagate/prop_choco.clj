@@ -5,10 +5,10 @@
   "Handles propagation for single specs that can be directly mapped to com.viasat.halite.choco-clj-opt.
   Specifically: single specs with (possibly optional) boolean or integer variables,
   and no refinements."
-  (:require [com.viasat.halite.choco-clj-opt :as choco-clj]
+  (:require [com.viasat.halite.choco-clj-opt :as choco-clj-opt]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.lib.format-errors :refer [throw-err]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
@@ -27,7 +27,7 @@
 (s/defschema SpecBound
   {types/BareKeyword AtomBound})
 
-(s/defn ^:private to-choco-type :- choco-clj/ChocoVarType
+(s/defn ^:private to-choco-type :- choco-clj-opt/ChocoVarType
   [var-type :- types/HaliteType]
   (cond
     (= :Integer (types/no-maybe var-type)) :Int
@@ -47,7 +47,7 @@
     (vector? form) (mapv error->unsatisfiable form)
     :else form))
 
-(s/defn ^:private lower-spec :- choco-clj/ChocoSpec
+(s/defn ^:private lower-spec :- choco-clj-opt/ChocoSpec
   [spec :- envs/SpecInfo]
   {:vars (-> spec :fields (update-keys symbol) (update-vals to-choco-type))
    :optionals (->> spec :fields
@@ -56,16 +56,16 @@
                    (map (comp symbol key)) set)
    :constraints (->> spec :constraints (map (comp error->unsatisfiable second)) set)})
 
-(s/defn ^:private lower-atom-bound :- choco-clj/VarBound
+(s/defn ^:private lower-atom-bound :- choco-clj-opt/VarBound
   [b :- AtomBound]
   (cond-> b (map? b) :$in))
 
-(s/defn ^:private lower-spec-bound :- choco-clj/VarBounds
+(s/defn ^:private lower-spec-bound :- choco-clj-opt/VarBounds
   [bound :- SpecBound]
   (-> bound (update-vals lower-atom-bound) (update-keys symbol)))
 
 (s/defn ^:private raise-spec-bound :- SpecBound
-  [bound :- choco-clj/VarBounds]
+  [bound :- choco-clj-opt/VarBounds]
   (-> bound (update-keys keyword) (update-vals #(cond->> % (coll? %) (hash-map :$in)))))
 
 (s/defschema Opts
@@ -81,11 +81,11 @@
    (propagate spec default-options initial-bound))
   ([spec :- ssa/SpecInfo, opts :- Opts, initial-bound :- SpecBound]
    (try
-     (binding [choco-clj/*default-int-bounds* (:default-int-bounds opts)]
+     (binding [choco-clj-opt/*default-int-bounds* (:default-int-bounds opts)]
        (-> spec
            (ssa/spec-from-ssa)
            (lower-spec)
-           (choco-clj/propagate (lower-spec-bound initial-bound))
+           (choco-clj-opt/propagate (lower-spec-bound initial-bound))
            (raise-spec-bound)))
      (catch org.chocosolver.solver.exception.ContradictionException ex
-       (throw-err (h-err/no-valid-instance-in-bound {:initial-bound initial-bound}))))))
+       (format-errors/throw-err (h-err/no-valid-instance-in-bound {:initial-bound initial-bound}))))))

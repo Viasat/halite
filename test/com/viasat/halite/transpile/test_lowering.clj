@@ -2,31 +2,32 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.transpile.test-lowering
-  (:require [com.viasat.halite :as halite]
+  (:require [clojure.pprint :as pprint]
+            [clojure.test :refer :all]
+            [com.viasat.halite :as halite]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.lowering :as lowering]
-            [com.viasat.halite.transpile.rewriting :as rewriting :refer [rewrite-reachable-sctx rule]]
-            [com.viasat.halite.transpile.simplify :refer [simplify]]
+            [com.viasat.halite.transpile.rewriting :as rewriting]
+            [com.viasat.halite.transpile.simplify :as simplify]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.util :refer [fixpoint]]
+            [com.viasat.halite.transpile.util :as transpile-util]
             [com.viasat.halite.var-types :as var-types]
             [schema.core :as s]
-            [schema.test])
-  (:use clojure.test))
+            [schema.test]))
 
 (use-fixtures :once schema.test/validate-schemas)
 
 (defn- troubleshoot* [trace]
   (let [last-item (last trace)]
-    (clojure.pprint/pprint
+    (pprint/pprint
      (->> trace
           (map (fn [{:keys [op] :as item}]
                  (condp = op
                    :rewrite (select-keys item [:rule :form :form'])
                    :prune (select-keys item [:pruned]))))))
     (when-let [spec-info (:spec-info last-item)]
-      (clojure.pprint/pprint
+      (pprint/pprint
        (ssa/spec-from-ssa spec-info)))
     (ssa/pprint-ssa-graph (:ssa-graph (:spec-info' last-item)))))
 
@@ -173,11 +174,11 @@
                          (not= (get v1 :x) (get v2 :x))
                          (not= (get v1 :y) (get v2 :y)))))]]
            (->> sctx
-                (fixpoint lower-instance-comparisons)
+                (transpile-util/fixpoint lower-instance-comparisons)
                 :ws/A ssa/spec-from-ssa :constraints)))
     (is (= '[["$all" (= b1 b2)]]
            (->> (ssa/build-spec-ctx senv :ws/D)
-                (fixpoint lower-instance-comparisons)
+                (transpile-util/fixpoint lower-instance-comparisons)
                 :ws/D ssa/spec-from-ssa :constraints)))))
 
 (def replace-in-expr #'lowering/replace-in-expr)
@@ -349,7 +350,7 @@
                                               {:fields {:n :Integer}}}))
         sctx (ssa/build-spec-ctx senv :ws/A)]
     (is (= '[["$all" (= 12 (if a (if b (get b1 :n) (get b2 :n)) (if b (get b3 :n) (get b4 :n))))]]
-           (->> sctx (fixpoint push-gets-into-ifs)
+           (->> sctx (transpile-util/fixpoint push-gets-into-ifs)
                 :ws/A ssa/spec-from-ssa :constraints)))))
 
 (deftest test-push-gets-into-ifs-ignores-nothing-branches
@@ -387,7 +388,7 @@
                       (= (get (get b :c) :cn) 12)
                       (let [v1 $no-value] (if-value v1 (< v1 3) false))
                       (< an (+ 1 an)))]]
-           (->> sctx (fixpoint cancel-get-of-instance-literal) :ws/A ssa/spec-from-ssa :constraints)))))
+           (->> sctx (transpile-util/fixpoint cancel-get-of-instance-literal) :ws/A ssa/spec-from-ssa :constraints)))))
 
 (deftest test-eliminate-runtime-constraint-violations
   (let [senv (envs/spec-env
@@ -412,7 +413,7 @@
                    (< an 10)))
            (-> sctx
                (lowering/eliminate-runtime-constraint-violations)
-               (simplify)
+               (simplify/simplify)
                :ws/A
                (ssa/spec-from-ssa)
                :constraints first second)))))
@@ -566,7 +567,7 @@
                    true)))
              (-> sctx
                  (update :ws/A assoc :ssa-graph ssa-graph :constraints [["c" cid]])
-                 (->> (fixpoint lower-maybe-comparisons))
+                 (->> (transpile-util/fixpoint lower-maybe-comparisons))
                  :ws/A
                  (#(binding [ssa/*hide-non-halite-ops* false] (ssa/spec-from-ssa %)))
                  :constraints
@@ -623,7 +624,7 @@
                    (update-in [:ws/A :constraints] conj ["c" expr])
                    (envs/spec-env)
                    (ssa/build-spec-ctx :ws/A)
-                   (->> (fixpoint #(rewriting/rewrite-sctx % lowering/push-comparison-into-nonprimitive-if-in-expr)))
+                   (->> (transpile-util/fixpoint #(rewriting/rewrite-sctx % lowering/push-comparison-into-nonprimitive-if-in-expr)))
                    :ws/A
                    (ssa/spec-from-ssa)
                    :constraints first second)))))))
@@ -1037,7 +1038,7 @@
            num-to-check 10000
            pprint-spec (fn [sctx spec-id]
                          (binding [ssa/*hide-non-halite-ops* false]
-                           (clojure.pprint/pprint (ssa/spec-from-ssa (get sctx spec-id)))))]
+                           (pprint/pprint (ssa/spec-from-ssa (get sctx spec-id)))))]
        (reset! *results* {:checked 0 :failed 0 :failures [] :valid 0 :invalid 0 :runtime-error 0})
        (doseq [a (take num-to-check (shuffle a-seq))]
          (let [r1 (check-a senv a)

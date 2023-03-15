@@ -7,7 +7,7 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.eval :as eval]
             [com.viasat.halite.h-err :as h-err]
-            [com.viasat.halite.lib.format-errors :refer [throw-err]]
+            [com.viasat.halite.lib.format-errors :as format-errors]
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
             [schema.core :as s]))
@@ -27,7 +27,7 @@
                    (eval/validate-instance (:senv ctx) value)
                    t)
     (coll? value) (type-check/type-check-coll type-of* :value ctx value)
-    :else (throw-err (h-err/invalid-value {:value value}))))
+    :else (format-errors/throw-err (h-err/invalid-value {:value value}))))
 
 (s/defn type-of :- types/HaliteType
   "Return the type of the given runtime value, or throw an error if the value is invalid and cannot be typed.

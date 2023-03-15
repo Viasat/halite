@@ -9,7 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
-(clojure.test/use-fixtures :once validate-schemas)
+(use-fixtures :once validate-schemas)
 
 (deftest test-find-field-accesses
   (is (= #{{:spec-id :ws/D$v1

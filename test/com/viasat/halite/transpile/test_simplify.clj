@@ -2,11 +2,11 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.transpile.test-simplify
-  (:require [com.viasat.halite.envs :as envs]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
             [com.viasat.halite.transpile.simplify :refer [simplify]]
-            [schema.test])
-  (:use clojure.test))
+            [schema.test]))
 
 (use-fixtures :once schema.test/validate-schemas)
 

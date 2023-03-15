@@ -2,8 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.propagate.test-prop-top-abstract
-  (:require [com.viasat.halite.propagate :as propagate])
-  (:use clojure.test)
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite.propagate :as propagate])
   (:import [clojure.lang ExceptionInfo]
            [org.chocosolver.solver.exception ContradictionException]))
 
@@ -245,4 +245,4 @@
 
                                 {:$refines-to {:ws/A {}}}))))
 
-;; (clojure.test/run-tests)
+;; (run-tests)

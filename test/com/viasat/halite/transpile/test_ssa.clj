@@ -2,14 +2,14 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.transpile.test-ssa
-  (:require [com.viasat.halite :as halite]
+  (:require [clojure.test :refer :all]
+            [com.viasat.halite :as halite]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.transpile.ssa :as ssa]
-            [com.viasat.halite.transpile.util :refer [mk-junct]]
+            [com.viasat.halite.transpile.util :as transpile-util]
             [com.viasat.halite.var-types :as var-types]
             [schema.core :as s]
-            [schema.test])
-  (:use clojure.test))
+            [schema.test]))
 
 (use-fixtures :once schema.test/validate-schemas)
 
@@ -581,8 +581,8 @@
            (fn [guards]
              (if (seq guards)
                (->> guards
-                    (map #(->> % (map (partial form-from-ssa* ssa-graph ordering {} bound #{})) (mk-junct 'and)))
-                    (mk-junct 'or))
+                    (map #(->> % (map (partial form-from-ssa* ssa-graph ordering {} bound #{})) (transpile-util/mk-junct 'and)))
+                    (transpile-util/mk-junct 'or))
                true)))))))
 
 (deftest test-compute-guards
