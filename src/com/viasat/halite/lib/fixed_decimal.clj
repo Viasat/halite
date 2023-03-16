@@ -292,3 +292,7 @@
       (> shift scale) (throw (ex-info (str "invalid scale") {:f f :shift shift}))
       (= shift scale) n
       :else (package-long (- scale shift) n))))
+
+(defn init []
+  ;; this is here for other modules to call to force this namespace to be loaded
+  )

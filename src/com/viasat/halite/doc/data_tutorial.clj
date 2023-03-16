@@ -1,9 +1,12 @@
 ;; Copyright (c) 2022,2023 Viasat, Inc.
 ;; Licensed under the MIT license
 
-(ns com.viasat.halite.doc.data-tutorial)
+(ns com.viasat.halite.doc.data-tutorial
+  (:require [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]))
 
 (set! *warn-on-reflection* true)
+
+(fixed-decimal/init)
 
 (def tutorials
   {:tutorials.notebook/notebook
