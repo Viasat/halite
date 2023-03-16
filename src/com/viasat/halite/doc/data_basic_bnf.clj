@@ -108,7 +108,7 @@
 
    'instance {:bnf "'{' ':$type' keyword:spec-id {keyword value} '}' "
               :bnf-j "'{' '$type' ':' symbol:spec-id {',' symbol ':' value } '}'"
-              :doc "Represents an instance of a specification."
+              :doc "An object that is an assignment of values to the variables defined by a specification. This represents one of the probably many possible instances that exist in the state space defined by the specification."
               :comment "The contents of the instance are specified in pair-wise fashion with alternating field names and field values."
               :comment-2 "The special field name ':$type' is mandatory but cannot be used as the other fields are."
               :comment-2-j "The special field name '$type' is mandatory but cannot be used as the other fields are."

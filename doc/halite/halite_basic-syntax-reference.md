@@ -317,7 +317,7 @@ Signed numeric values with decimal places. The scale (i.e. the number of digits 
 ---
 ## <a name="instance"></a>instance
 
-Represents an instance of a specification.
+An object that is an assignment of values to the variables defined by a specification. This represents one of the probably many possible instances that exist in the state space defined by the specification.
 
 !["'{' ':$type' keyword:spec-id {keyword value} '}' "](../halite-bnf-diagrams/basic-syntax/instance.svg)
 
