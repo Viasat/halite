@@ -1,4 +1,4 @@
-;; Copyright (c) 2022 Viasat, Inc.
+;; Copyright (c) 2022,2023 Viasat, Inc.
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.lib.test-format-errors
