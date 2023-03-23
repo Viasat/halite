@@ -24,7 +24,7 @@
                   :string-out {:label "Produce strings"
                                :doc "Operations that produce string values"
                                :type 'string
-                               :type-mode 'op
+                               :type-mode 'out
                                :basic-ref 'string}
                   :integer-op {:label "Integer operations"
                                :doc "Operations that operate on integer values."

@@ -210,9 +210,9 @@ All features are available in both Halite (s-expression) syntax and Jadeite (C-l
 </td><td>
 
  <a href="halite/halite_string-op-reference.md">H</a> <a href="jadeite/halite_string-op-reference-j.md">J</a>
- <a href="halite/halite_string-out-reference.md">H</a> <a href="jadeite/halite_string-out-reference-j.md">J</a>
 </td><td>
 
+ <a href="halite/halite_string-out-reference.md">H</a> <a href="jadeite/halite_string-out-reference-j.md">J</a>
 </td></tr><tr><th>vector</th><td>
 
 </td><td>
