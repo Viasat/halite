@@ -64,7 +64,7 @@
                        {:expr-str "\"\\u263A\""
                         :expr-str-j "\"\\u263A\""
                         :result :auto}]
-            :tags #{'string-op}
+            :tags #{'string-out 'string-op}
             :throws ['h-err/size-exceeded]}
    'integer {:bnf "[plus-minus-character] '0-9' {'0-9'}"
              :doc "Signed, eight byte numeric integer values. Alternative integer representations may work, but the only representation that is guaranteed to work on an ongoing basis is that documented here. The largest positive integer is 9223372036854775807. The most negative integer is -9223372036854775808.\n\nSome language targets (eg. bounds-propagation) may use 4 instead of 8 bytes. On overflow, math operations never wrap; instead the evaluator will throw a runtime error."

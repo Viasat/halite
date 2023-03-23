@@ -130,7 +130,7 @@
        :sigs-j [["'equalTo' '(' value ',' value {',' value} ')'" "boolean"]
                 ["value '==' value" "boolean"]]
        :tags #{:integer-op :fixed-decimal-op :set-op :vector-op :boolean-out :boolean-op :instance-op
-               :optional-op}
+               :optional-op :string-op}
        :basic-ref ['value 'boolean]
        :doc "Determine if values are equivalent. For vectors and sets this performs a comparison of their contents."
        :throws ['l-err/result-always-known]
@@ -979,7 +979,7 @@
                     {:expr-str "(str \"a\" \"\" \"c\")"
                      :expr-str-j :auto
                      :result :auto}]
-         :tags #{:string-op}
+         :tags #{:string-out :string-op}
          :throws ['h-err/size-exceeded]}
    'subset? {:sigs [["set set" "boolean"]]
              :sigs-j [["set '.' 'subset?' '(' set ')'" "boolean"]]

@@ -186,7 +186,7 @@ Strings are sequences of characters. Strings can be multi-line. Quotation marks 
 
 ### Tags:
 
- [String operations](halite_string-op-reference.md)
+ [String operations](halite_string-op-reference.md),  [Produce strings](halite_string-out-reference.md)
 
 ---
 ## <a name="integer"></a>integer

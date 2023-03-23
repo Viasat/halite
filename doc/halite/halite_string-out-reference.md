@@ -2,17 +2,13 @@
   This markdown file was generated. Do not edit.
   -->
 
-# Halite reference: String operations
+# Halite reference: Produce strings
 
-Operations that operate on string values.
+Operations that produce string values
 
 For basic syntax of this data type see: [`string`](halite_basic-syntax-reference.md#string)
 
-!["string-op"](../halite-bnf-diagrams/string-op.svg)
-
-#### [`=`](halite_full-reference.md#_E)
-
-Determine if values are equivalent. For vectors and sets this performs a comparison of their contents.
+!["string-out"](../halite-bnf-diagrams/string-out.svg)
 
 #### [`str`](halite_full-reference.md#str)
 

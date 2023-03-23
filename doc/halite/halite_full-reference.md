@@ -488,7 +488,7 @@ See also: [`not=`](#not_E)
 
 #### Tags:
 
- [Boolean operations](halite_boolean-op-reference.md),  [Produce booleans](halite_boolean-out-reference.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference.md),  [Instance operations](halite_instance-op-reference.md),  [Integer operations](halite_integer-op-reference.md),  [Optional operations](halite_optional-op-reference.md),  [Set operations](halite_set-op-reference.md),  [Vector operations](halite_vector-op-reference.md)
+ [Boolean operations](halite_boolean-op-reference.md),  [Produce booleans](halite_boolean-out-reference.md),  [Fixed-decimal operations](halite_fixed-decimal-op-reference.md),  [Instance operations](halite_instance-op-reference.md),  [Integer operations](halite_integer-op-reference.md),  [Optional operations](halite_optional-op-reference.md),  [Set operations](halite_set-op-reference.md),  [String operations](halite_string-op-reference.md),  [Vector operations](halite_vector-op-reference.md)
 
 ---
 ### <a name="_E_G"></a>=>
@@ -2742,7 +2742,7 @@ Combine all of the input strings together in sequence to produce a new string.
 
 #### Tags:
 
- [String operations](halite_string-op-reference.md)
+ [String operations](halite_string-op-reference.md),  [Produce strings](halite_string-out-reference.md)
 
 ---
 ### <a name="subset_Q"></a>subset?
