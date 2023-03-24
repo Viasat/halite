@@ -14,7 +14,7 @@
            [org.chocosolver.util ESat]
            [org.chocosolver.util.tools VariableUtils]))
 
-(set! *warn-on-reflection* true)
+;; (set! *warn-on-reflection* true)
 
 (s/defschema IntRange
   [(s/one s/Int :lower) (s/one s/Int :upper)])
@@ -86,7 +86,9 @@
 
 (defn- arithmetic ^"[Lorg.chocosolver.solver.expression.discrete.arithmetic.ArExpression;"
   [args]
-  (into-array ArExpression args))
+  (if (= 1 (count args))
+    (first args)
+    (into-array ArExpression args)))
 
 (defn- relational ^"[Lorg.chocosolver.solver.expression.discrete.relational.ReExpression;"
   [args]
@@ -190,8 +192,11 @@
     :else (throw (ex-info "Not an IntVar" {:v expr}))))
 
 (defn- force-initialization [var-or-expr]
-  (var-from-expr var-or-expr)
-  var-or-expr)
+  (if (instance? Long 1)
+    var-or-expr
+    (do
+      (var-from-expr var-or-expr)
+      var-or-expr)))
 
 (defn- unsatisfiable
   [^Model m ^ReExpression guard]
@@ -204,6 +209,19 @@
     bvar))
 
 (def ^:dynamic *expr-stack* nil)
+
+(defn- switch-arg-order [& args]
+  (if (and (or (instance? Long (first args))
+               (instance? Boolean (first args)))
+           (not (or (instance? Long (second args))
+                    (instance? Boolean (second args)))))
+    (into [(second args) (first args)] (drop 2 args))
+    args))
+
+(defn- ensure-var [m x]
+  (if (instance? Long x)
+    (force-initialization (.intVar m (int x)))
+    x))
 
 (defn- make-expr
   "Add a Choco variable to the model m whose value represents the value of the given form,
@@ -222,7 +240,7 @@
                   (true? form) (.boolVar m true)
                   (false? form) (.boolVar m false)
                   (symbol? form) (get vars form)
-                  (int? form) (.intVar m (int form))
+                  (int? form) form
                   (list? form) (let [op (first form)]
                                  (cond
                                    ;; (- x y z) => (- (- x y) z)
@@ -247,8 +265,8 @@
                                          not-pred (.not pred)
                                          then (make-expr m vars (.and guard (relational [pred])) then-form)
                                          else (make-expr m vars (.and guard (relational [not-pred])) else-form)]
-                                     (let [then-var (var-from-expr then)
-                                           else-var (var-from-expr else)
+                                     (let [then-var (var-from-expr (ensure-var m then))
+                                           else-var (var-from-expr (ensure-var m else))
                                            pred-var (.boolVar ^ReExpression pred)
                                            lb (min (.getLB then-var) (.getLB else-var))
                                            ub (max (.getUB then-var) (.getUB else-var))
@@ -261,33 +279,77 @@
                                    (unsatisfiable m guard)
 
                                    :else
-                                   (let [[arg1 & other-args] (mapv (partial make-expr m vars guard) (rest form))]
+                                   (let [[arg1 & other-args] (mapv (partial make-expr m vars guard) (rest form))
+                                         [arg1' & other-args'] (apply switch-arg-order arg1 other-args)
+                                         switch? (not= arg1 arg1')
+                                         switch-arg1 (if switch? arg1' arg1)
+                                         switch-other-args (if switch? other-args' other-args)]
                                      (condp = op
-                                       '+ (.add ^ArExpression arg1 (arithmetic other-args))
-                                       '- (.sub ^ArExpression arg1 ^ArExpression (first other-args))
-                                       '* (.mul ^ArExpression arg1 (arithmetic other-args))
-                                       '< (.lt ^ArExpression arg1 ^ArExpression (first other-args))
-                                       '<= (.le ^ArExpression arg1 ^ArExpression (first other-args))
-                                       '> (.gt ^ArExpression arg1 ^ArExpression (first other-args))
-                                       '>= (.ge ^ArExpression arg1 ^ArExpression (first other-args))
-                                       '= (.eq ^ArExpression arg1 (arithmetic other-args))
+                                       '+ (.add ;; ^ArExpression
+                                           (ensure-var m switch-arg1) (arithmetic switch-other-args))
+                                       '- (.sub ^ArExpression (ensure-var m arg1) ^ArExpression (ensure-var m (first other-args)))
+                                       '* (.mul ;; ^ArExpression
+                                           (ensure-var m arg1)
+                                           (->> other-args
+                                                (map (partial ensure-var m))
+                                                arithmetic))
+                                       '< (if switch?
+                                            (.gt ;; ^ArExpression
+                                             arg1'
+                                             ;; ^ArExpression
+                                             (first other-args'))
+                                            (.lt ;; ^ArExpression
+                                             (ensure-var m arg1)
+                                             ;; ^ArExpression
+                                             (first other-args)))
+                                       '<= (if switch?
+                                             (.ge ;; ^ArExpression
+                                              arg1'
+                                              ;; ^ArExpression
+                                              (first other-args'))
+                                             (.le ;; ^ArExpression
+                                              (ensure-var m arg1)
+                                                  ;; ^ArExpression
+                                              (first other-args)))
+                                       '> (if switch?
+                                            (.lt ;; ^ArExpression
+                                             arg1'
+                                                 ;; ^ArExpression
+                                             (first other-args'))
+                                            (.gt ;; ^ArExpression
+                                             arg1
+                                                 ;; ^ArExpression
+                                             (first other-args)))
+                                       '>= (if switch?
+                                             (.le ;; ^ArExpression
+                                              arg1'
+                                              ;; ^ArExpression
+                                              (first other-args'))
+                                             (.ge ;; ^ArExpression
+                                              (ensure-var m arg1)
+                                              ;; ^ArExpression
+                                              (first other-args)))
+                                       '= (.eq ;; ^ArExpression
+                                           (ensure-var m switch-arg1)
+                                           (arithmetic switch-other-args))
                                        'and (.and ^ReExpression arg1 (relational other-args))
                                        'or (do
                                              (swap! *expr-stack* conj ['or arg1 (relational other-args)])
                                              (.or ^ReExpression arg1 (relational other-args)))
                                        'not (.not ^ReExpression arg1)
                                        '=> (.imp ^ReExpression arg1 ^ReExpression (first other-args))
-                                       'div (let [avar (.intVar ^ArExpression arg1), bvar (.intVar ^ArExpression (first other-args))
+                                       'div (let [avar (.intVar ^ArExpression (ensure-var m arg1))
+                                                  bvar (.intVar ^ArExpression (ensure-var m (first other-args)))
                                                   [lb ub] (VariableUtils/boundsForDivision avar bvar)
                                                   rvar (.intVar m (.generateName m (str form)) (int lb) (int ub))]
                                               (post-guarded guard (.div m avar bvar rvar))
                                               rvar)
                                        ;; TODO: Implement our own mod propagators?
                                        ;;'mod (.mod (.abs ^ArExpression arg1) ^ArExpression (first other-args))
-                                       'mod (mod-workaround m guard arg1 (first other-args))
-                                       'expt (pow-workaround m guard arg1 (first other-args))
+                                       'mod (mod-workaround m guard (ensure-var m arg1) (ensure-var m (first other-args)))
+                                       'expt (pow-workaround m guard (ensure-var m arg1) (ensure-var m (first other-args)))
                                        ;;'expt (.pow ^ArExpression arg1 ^ArExpression (first other-args))
-                                       'abs (.abs ^ArExpression arg1)
+                                       'abs (.abs ^ArExpression (ensure-var m arg1))
                                        (throw (ex-info (format "Unsupported operator '%s'" (pr-str op)) {:form form}))))))
                   :else (throw (ex-info (format "Unsupported constraint: '%s'" (pr-str form)) {:form form}))))]
     (swap! *expr-stack* conj

@@ -98,3 +98,5 @@
   (is (thrown? clojure.lang.ExceptionInfo
                (choco-clj-opt/propagate '{:vars {x :Int} :optionals #{x} :constraints #{}}
                                         '{x #{}}))))
+
+;; (run-tests)

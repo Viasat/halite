@@ -309,3 +309,5 @@
   ;; This test minimally demonstrates that problem.
   (let [spec '{:vars {} :constraints #{(= 3 (if true 3 3))}}]
     (is (= '{} (choco-clj/propagate spec)))))
+
+;; (run-tests)
