@@ -203,6 +203,8 @@
     (post-guarded guard (Constraint. "UNSAT" props))
     bvar))
 
+(def ^:dynamic *expr-stack* nil)
+
 (defn- make-expr
   "Add a Choco variable to the model m whose value represents the value of the given form,
   and return a ReExpression or ArExpression (often, but not always, just the variable itself)
@@ -215,77 +217,89 @@
   Partial functions (e.g. div) should be turned into constraints that are implied when guard is true, such
   that they do not unconditionally constraint their arguments."
   [^Model m vars ^ReExpression guard form]
-  (force-initialization
-   (cond
-     (true? form) (.boolVar m true)
-     (false? form) (.boolVar m false)
-     (symbol? form) (get vars form)
-     (int? form) (.intVar m (int form))
-     (list? form) (let [op (first form)]
-                    (cond
-                      ;; (- x y z) => (- (- x y) z)
-                      (and (= op '-) (< 3 (count form)))
-                      (make-expr m vars guard (apply list '- (apply list (take 3 form)) (drop 3 form)))
+  (let [result (force-initialization
+                (cond
+                  (true? form) (.boolVar m true)
+                  (false? form) (.boolVar m false)
+                  (symbol? form) (get vars form)
+                  (int? form) (.intVar m (int form))
+                  (list? form) (let [op (first form)]
+                                 (cond
+                                   ;; (- x y z) => (- (- x y) z)
+                                   (and (= op '-) (< 3 (count form)))
+                                   (make-expr m vars guard (apply list '- (apply list (take 3 form)) (drop 3 form)))
 
-                      (= op 'dec) (make-expr m vars guard (list '- (second form) 1))
-                      (= op 'inc) (make-expr m vars guard (list '+ (second form) 1))
+                                   (= op 'dec) (make-expr m vars guard (list '- (second form) 1))
+                                   (= op 'inc) (make-expr m vars guard (list '+ (second form) 1))
 
-                      (= op 'not=) (make-expr m vars guard (list 'not (apply list '= (rest form))))
+                                   (= op 'not=) (make-expr m vars guard (list 'not (apply list '= (rest form))))
 
-                      (= op 'let)
-                      (let [[bindings body] (rest form)]
-                        (if (empty? bindings)
-                          (make-expr m vars guard body)
-                          (let [[var expr & bindings] bindings]
-                            (make-expr m (assoc vars var (make-expr m vars guard expr)) guard (list 'let bindings body)))))
+                                   (= op 'let)
+                                   (let [[bindings body] (rest form)]
+                                     (if (empty? bindings)
+                                       (make-expr m vars guard body)
+                                       (let [[var expr & bindings] bindings]
+                                         (make-expr m (assoc vars var (make-expr m vars guard expr)) guard (list 'let bindings body)))))
 
-                      (= op 'if)
-                      (let [[pred-form then-form else-form] (rest form)
-                            ^ReExpression pred (make-expr m vars guard pred-form)
-                            not-pred (.not pred)
-                            then (make-expr m vars (.and guard (relational [pred])) then-form)
-                            else (make-expr m vars (.and guard (relational [not-pred])) else-form)]
-                        (let [then-var (var-from-expr then)
-                              else-var (var-from-expr else)
-                              pred-var (.boolVar ^ReExpression pred)
-                              lb (min (.getLB then-var) (.getLB else-var))
-                              ub (max (.getUB then-var) (.getUB else-var))
-                              rvar (.intVar m (str form) (int lb) (int ub))]
-                          (.post
-                           (.element m rvar (int-vars [else-var then-var]) pred-var 0))
-                          rvar))
+                                   (= op 'if)
+                                   (let [[pred-form then-form else-form] (rest form)
+                                         ^ReExpression pred (make-expr m vars guard pred-form)
+                                         not-pred (.not pred)
+                                         then (make-expr m vars (.and guard (relational [pred])) then-form)
+                                         else (make-expr m vars (.and guard (relational [not-pred])) else-form)]
+                                     (let [then-var (var-from-expr then)
+                                           else-var (var-from-expr else)
+                                           pred-var (.boolVar ^ReExpression pred)
+                                           lb (min (.getLB then-var) (.getLB else-var))
+                                           ub (max (.getUB then-var) (.getUB else-var))
+                                           rvar (.intVar m (str form) (int lb) (int ub))]
+                                       (.post
+                                        (.element m rvar (int-vars [else-var then-var]) pred-var 0))
+                                       rvar))
 
-                      (= op 'unsatisfiable)
-                      (unsatisfiable m guard)
+                                   (= op 'unsatisfiable)
+                                   (unsatisfiable m guard)
 
-                      :else
-                      (let [[arg1 & other-args] (mapv (partial make-expr m vars guard) (rest form))]
-                        (condp = op
-                          '+ (.add ^ArExpression arg1 (arithmetic other-args))
-                          '- (.sub ^ArExpression arg1 ^ArExpression (first other-args))
-                          '* (.mul ^ArExpression arg1 (arithmetic other-args))
-                          '< (.lt ^ArExpression arg1 ^ArExpression (first other-args))
-                          '<= (.le ^ArExpression arg1 ^ArExpression (first other-args))
-                          '> (.gt ^ArExpression arg1 ^ArExpression (first other-args))
-                          '>= (.ge ^ArExpression arg1 ^ArExpression (first other-args))
-                          '= (.eq ^ArExpression arg1 (arithmetic other-args))
-                          'and (.and ^ReExpression arg1 (relational other-args))
-                          'or (.or ^ReExpression arg1 (relational other-args))
-                          'not (.not ^ReExpression arg1)
-                          '=> (.imp ^ReExpression arg1 ^ReExpression (first other-args))
-                          'div (let [avar (.intVar ^ArExpression arg1), bvar (.intVar ^ArExpression (first other-args))
-                                     [lb ub] (VariableUtils/boundsForDivision avar bvar)
-                                     rvar (.intVar m (.generateName m (str form)) (int lb) (int ub))]
-                                 (post-guarded guard (.div m avar bvar rvar))
-                                 rvar)
-                          ;; TODO: Implement our own mod propagators?
-                          ;;'mod (.mod (.abs ^ArExpression arg1) ^ArExpression (first other-args))
-                          'mod (mod-workaround m guard arg1 (first other-args))
-                          'expt (pow-workaround m guard arg1 (first other-args))
-                          ;;'expt (.pow ^ArExpression arg1 ^ArExpression (first other-args))
-                          'abs (.abs ^ArExpression arg1)
-                          (throw (ex-info (format "Unsupported operator '%s'" (pr-str op)) {:form form}))))))
-     :else (throw (ex-info (format "Unsupported constraint: '%s'" (pr-str form)) {:form form})))))
+                                   :else
+                                   (let [[arg1 & other-args] (mapv (partial make-expr m vars guard) (rest form))]
+                                     (condp = op
+                                       '+ (.add ^ArExpression arg1 (arithmetic other-args))
+                                       '- (.sub ^ArExpression arg1 ^ArExpression (first other-args))
+                                       '* (.mul ^ArExpression arg1 (arithmetic other-args))
+                                       '< (.lt ^ArExpression arg1 ^ArExpression (first other-args))
+                                       '<= (.le ^ArExpression arg1 ^ArExpression (first other-args))
+                                       '> (.gt ^ArExpression arg1 ^ArExpression (first other-args))
+                                       '>= (.ge ^ArExpression arg1 ^ArExpression (first other-args))
+                                       '= (.eq ^ArExpression arg1 (arithmetic other-args))
+                                       'and (.and ^ReExpression arg1 (relational other-args))
+                                       'or (do
+                                             (swap! *expr-stack* conj ['or arg1 (relational other-args)])
+                                             (.or ^ReExpression arg1 (relational other-args)))
+                                       'not (.not ^ReExpression arg1)
+                                       '=> (.imp ^ReExpression arg1 ^ReExpression (first other-args))
+                                       'div (let [avar (.intVar ^ArExpression arg1), bvar (.intVar ^ArExpression (first other-args))
+                                                  [lb ub] (VariableUtils/boundsForDivision avar bvar)
+                                                  rvar (.intVar m (.generateName m (str form)) (int lb) (int ub))]
+                                              (post-guarded guard (.div m avar bvar rvar))
+                                              rvar)
+                                       ;; TODO: Implement our own mod propagators?
+                                       ;;'mod (.mod (.abs ^ArExpression arg1) ^ArExpression (first other-args))
+                                       'mod (mod-workaround m guard arg1 (first other-args))
+                                       'expt (pow-workaround m guard arg1 (first other-args))
+                                       ;;'expt (.pow ^ArExpression arg1 ^ArExpression (first other-args))
+                                       'abs (.abs ^ArExpression arg1)
+                                       (throw (ex-info (format "Unsupported operator '%s'" (pr-str op)) {:form form}))))))
+                  :else (throw (ex-info (format "Unsupported constraint: '%s'" (pr-str form)) {:form form}))))]
+    (swap! *expr-stack* conj
+           (cond
+             (true? form) [:boolean]
+             (false? form) [:boolean]
+             (symbol? form) [:symbol]
+             (int? form) [:int]
+             (list? form) (let [op (first form)]
+                            (when-not (#{'or 'let} op)
+                              [op]))))
+    result))
 
 (defn- bool-var-as-expr ^ReExpression
   [^ReExpression expr]
@@ -294,10 +308,21 @@
     expr))
 
 (defn- make-constraint [^Model m vars form]
-  (let [^ReExpression expr (bool-var-as-expr (make-expr m vars (.boolVar m true) form))
-        constraint (.decompose expr)]
-    (.post constraint)
-    {:form expr :constraint constraint}))
+  (binding [*expr-stack* (atom '())]
+    (let [base-expr (make-expr m vars (.boolVar m true) form)
+          [op arg1 other-args] (->> *expr-stack* deref (remove nil?) first)]
+      (if (= op 'or)
+        (do
+          (.addConstructiveDisjunction m
+                                       (into-array Constraint
+                                                   (into
+                                                    [(.decompose ^ReExpression arg1)]
+                                                    (map (fn [x] (.decompose ^ReExpression x)) other-args))))
+          nil)
+        (let [^ReExpression expr (bool-var-as-expr base-expr)
+              constraint (.decompose expr)]
+          (.post constraint)
+          {:form expr :constraint constraint})))))
 
 (s/defschema ChocoModel
   {:model Model
