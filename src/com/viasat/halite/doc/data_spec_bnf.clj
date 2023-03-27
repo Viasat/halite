@@ -9,7 +9,7 @@
   ['fixed-decimal-scale {:bnf "0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18"}
    'fixed-decimal-type {:bnf "'[' ':Decimal' fixed-decimal-scale ']'"}
    'primitive-type {:bnf "':Integer' | ':String' | ':Boolean' | fixed-decimal-type "}
-   'collection-type {:bnf "primitive-type | '[' { ':Vec' | ':Set' } primitive-type ']'"}
+   'collection-type {:bnf "primitive-type | '[' ( ':Vec' | ':Set' ) collection-type ']'"}
    'maybe-type {:bnf "collection-type | '[' ':Maybe' collection-type ']'"}])
 
 (def field-map-bnf
