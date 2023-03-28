@@ -201,3 +201,11 @@
   "Take all meta-fields out of instance."
   [instance :- InstanceBomOrValue]
   (apply dissoc instance meta-fields))
+
+;;
+
+(s/defn get-type
+  [instance]
+  (or (:$refines-to instance)
+      (:$instance-of instance)
+      (:$type instance)))

@@ -52,12 +52,6 @@
 
 ;;;;
 
-(s/defn get-type
-  [instance]
-  (or (:$refines-to instance)
-      (:$instance-of instance)
-      (:$type instance)))
-
 (s/defn set-concrete-spec-type :- bom/InstanceBom
   "Produce a new instance by specifying the new type."
   [instance :- bom/InstanceBom
@@ -77,11 +71,11 @@
 
 (s/defn to-concrete :- bom/InstanceBom
   [instance :- bom/InstanceBom]
-  (set-concrete-spec-type instance (get-type instance)))
+  (set-concrete-spec-type instance (bom/get-type instance)))
 
 (s/defn to-abstract :- bom/InstanceBom
   [instance :- bom/InstanceBom]
-  (set-abstract-spec-type instance (get-type instance)))
+  (set-abstract-spec-type instance (bom/get-type instance)))
 
 (declare sample-bom-op)
 
