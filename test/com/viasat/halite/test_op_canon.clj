@@ -90,6 +90,23 @@
   (is (= {:$instance-of :ws/A$v1
           :x #d "1.1"}
          (op-canon/canon-op {:$instance-of :ws/A$v1
-                             :x {:$ranges #{[#d "1.1" #d "1.2"]}}}))))
+                             :x {:$ranges #{[#d "1.1" #d "1.2"]}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x [1 2 3]}
+         (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :x {:$enum #{[1 2 3]}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x #{1 2 3}}
+         (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :x {:$enum #{#{1 2 3}}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :b {:$refines-to :ws/B$v1
+              :x #{1 3 2}}}
+         (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :b {:$refines-to :ws/B$v1
+                                 :x {:$enum #{#{1 2 3}}}}}))))
 
 ;; (run-tests)
