@@ -99,6 +99,41 @@
                                                                     :ws/E$v1 {:$instance-of :ws/E$v1
                                                                               :z 100}}})))
 
+  (is (= {:$instance-of :ws/A$v1
+          :$refinements
+          {:ws/B$v1 {:$instance-of :ws/B$v1
+                     :$refinements
+                     {:ws/C$v1 {:$instance-of :ws/C$v1
+                                :x {:$enum #{1 2}}}
+                      :ws/D$v1 {:$instance-of :ws/D$v1
+                                :y 12
+                                :$refinements
+                                {:ws/E$v1 {:$instance-of :ws/E$v1
+                                           :z 100
+                                           :$refinements
+                                           {:ws/F$v1 {:$instance-of :ws/F$v1
+                                                      :$refinements
+                                                      {:ws/G$v1 {:$instance-of :ws/G$v1
+                                                                 ;; :p 99
+                                                                 :q 100}}}}}}}}}}}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                                     :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}
+                                                                            :ws/D$v1 {:expr nil}}}
+                                                     :ws/D$v1 {:refines-to {:ws/E$v1 {:expr nil}}}
+                                                     :ws/E$v1 {:refines-to {:ws/F$v1 {:expr nil}}}
+                                                     :ws/F$v1 {:refines-to {:ws/G$v1 {:expr nil}}}}
+                                                    {:$instance-of :ws/A$v1
+                                                     :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                                                              :x {:$enum #{1 2}}}
+                                                                    :ws/D$v1 {:$instance-of :ws/D$v1
+                                                                              :y 12
+                                                                              :$refinements {:ws/G$v1 {:$instance-of :ws/G$v1
+                                                                                                       :p 99}}}
+                                                                    :ws/E$v1 {:$instance-of :ws/E$v1
+                                                                              :z 100
+                                                                              :$refinements {:ws/G$v1 {:$instance-of :ws/G$v1
+                                                                                                       :q 100}}}}})))
+
   (is (thrown-with-msg? ExceptionInfo #"does not match schema"
                         (op-canon-refinements/canon-refinements-op {}
                                                                    {:$refines-to :ws/A$v1
