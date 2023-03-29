@@ -150,10 +150,10 @@
 
 (def NoValueBom {:$value? (s/eq false)})
 
+(def no-value-bom {:$value? false})
+
 (s/defn is-no-value-bom? [bom]
-  (and (map? bom)
-       (= 1 (count bom))
-       (= false (:$value? bom))))
+  (= no-value-bom bom))
 
 (def BareInstanceBom {VariableKeyword VariableValueBom})
 
