@@ -40,20 +40,43 @@
     (->> field-name
          (get fields))))
 
-(s/defn find-refinement-path :- (s/maybe [types/NamespacedKeyword])
+(def Refinement {:to-spec-id types/NamespacedKeyword
+                 (s/optional-key :extrinsic?) (s/eq true)})
+
+(s/defn find-refinement-path :- (s/maybe [Refinement])
   [spec-env
    from-spec-id :- types/NamespacedKeyword
    to-spec-id :- types/NamespacedKeyword]
-  (let [graph (loop [[spec-id & more-spec-ids] #{from-spec-id}
-                     spec-id-graph {}]
-                (if spec-id
-                  (let [{:keys [refines-to]} (envs/lookup-spec spec-env spec-id)
-                        found (set (keys refines-to))
-                        new-graph (assoc spec-id-graph spec-id found)]
-                    (recur (set/union (set more-spec-ids)
-                                      (set/difference found (->> new-graph keys set)))
-                           new-graph))
-                  spec-id-graph))]
-    (-> graph
-        loom.graph/digraph
-        (loom.alg/shortest-path from-spec-id to-spec-id))))
+  (let [{:keys [spec-id-graph
+                refinement-objects]} (loop [[spec-id & more-spec-ids] #{from-spec-id}
+                                            spec-id-graph {}
+                                            refinement-objects {}]
+                                       (if spec-id
+                                         (let [{:keys [refines-to]} (envs/lookup-spec spec-env spec-id)
+                                               found (set (keys refines-to))
+                                               new-graph (assoc spec-id-graph spec-id found)]
+                                           (recur (set/union (set more-spec-ids)
+                                                             (set/difference found (->> new-graph keys set)))
+                                                  new-graph
+                                                  (reduce (fn [refinement-objects arg2]
+                                                            (let [[to-spec-id {:keys [extrinsic?]}] arg2]
+                                                              (assoc-in refinement-objects
+                                                                        [spec-id to-spec-id]
+                                                                        (if (= true extrinsic?)
+                                                                          {:extrinsic? true}
+                                                                          nil))))
+                                                          refinement-objects
+                                                          refines-to)))
+                                         {:spec-id-graph spec-id-graph
+                                          :refinement-objects refinement-objects}))]
+    (loop [spec-id-path (-> spec-id-graph
+                            loom.graph/digraph
+                            (loom.alg/shortest-path from-spec-id to-spec-id))
+           refinement-object-path nil]
+      (if (> (count spec-id-path) 1)
+        (let [[from-spec-id to-spec-id] spec-id-path]
+          (recur (rest spec-id-path)
+                 (conj (or refinement-object-path [])
+                       (assoc (get-in refinement-objects [from-spec-id to-spec-id])
+                              :to-spec-id to-spec-id))))
+        refinement-object-path))))

@@ -43,20 +43,25 @@
                               (when (nil? refinement-path)
                                 (throw (ex-info "no refinement path" {:bom bom})))
                               ;; need to fill all the map entries on the path
-                              (let [bom''' (loop [remaining-path (rest refinement-path)
+                              (let [bom''' (loop [remaining-path refinement-path
                                                   bom'' bom']
                                              (if (seq remaining-path)
                                                (recur (butlast remaining-path)
                                                       (update-in bom''
                                                                  (interleave (repeat :$refinements)
-                                                                             remaining-path)
+                                                                             (map :to-spec-id remaining-path))
                                                                  merge
-                                                                 {:$instance-of (last remaining-path)}))
+                                                                 (let [to-add {:$instance-of (:to-spec-id (last remaining-path))}]
+                                                                   (if (and (not (bom/is-a-no-value-bom? refinement-bom))
+                                                                            (:extrinsic? (last remaining-path)))
+                                                                     ;; what if accessed field has already been set to false?
+                                                                     (assoc to-add :$accessed? true)
+                                                                     to-add))))
                                                bom''))]
                                 ;; now at the end of the refinement path, put the refinement-bom
                                 (update-in bom'''
                                            (interleave (repeat :$refinements)
-                                                       (rest refinement-path))
+                                                       (->> refinement-path (map :to-spec-id)))
                                            merge
                                            (canon-refinements-op spec-env refinement-bom)))))
                           (assoc bom :$refinements {})

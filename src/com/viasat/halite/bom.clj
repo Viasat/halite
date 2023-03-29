@@ -155,6 +155,11 @@
 (s/defn is-no-value-bom? [bom]
   (= no-value-bom bom))
 
+(s/defn is-a-no-value-bom?
+  "This handles concrete instance boms which also have a field indicating type."
+  [bom]
+  (= false (:$value? bom)))
+
 (def BareInstanceBom {VariableKeyword VariableValueBom})
 
 (def ConcreteInstanceBom
@@ -162,6 +167,7 @@
          :$instance-of SpecId
          (s/optional-key :$enum) #{InstanceValue}
          (s/optional-key :$value?) BooleanBom
+         (s/optional-key :$accessed?) BooleanBom
          (s/optional-key :$refinements) {SpecId (s/recursive #'ConcreteInstanceBom)}))
 
 (def AbstractInstanceBom
