@@ -79,6 +79,16 @@
                                                      {:$instance-of :ws/A$v1
                                                       :b {:$refines-to :ws/B$v1}})))
 
+  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:b [:Instance :* #{:ws/B$v1}]}}}
+                                                     {:$instance-of :ws/A$v1
+                                                      :b {:$instance-of :ws/B$v1}})))
+
+  (let [bom {:$instance-of :ws/A$v1
+             :b {:$refines-to :ws/B$v1}}]
+    (is (= bom
+           (op-type-check/type-check-op {:ws/A$v1 {:fields {:b [:Instance :* #{:ws/B$v1}]}}} bom))))
+
   (is (thrown-with-msg? ExceptionInfo #"only optional"
                         (op-type-check/type-check-op {:ws/A$v1 {:fields {:b [:Instance :ws/B$v1]}}}
                                                      {:$instance-of :ws/A$v1
@@ -96,6 +106,34 @@
   (is (thrown-with-msg? ExceptionInfo #"does not match schema"
                         (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}}
                                                      {:$refines-to :ws/A$v1
-                                                      :y "hi"}))))
+                                                      :y "hi"})))
+
+  (let [bom {:$refines-to :ws/A$v1
+             :x {:$enum #{[1 2] [3 4]}}}]
+    (is (= bom
+           (op-type-check/type-check-op {:ws/A$v1 {:fields {:x [:Vec :Integer]}}} bom))))
+
+  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:x [:Vec :Integer]}}}
+                                                     {:$refines-to :ws/A$v1
+                                                      :x {:$enum #{[#d "1.0" #d "2.0"] [#d "3.0" #d "4.0"]}}})))
+  (is (thrown-with-msg? ExceptionInfo #"do not match"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:x [:Vec :Integer]}}}
+                                                     {:$refines-to :ws/A$v1
+                                                      :x {:$enum #{[#d "1.0" #d "2.0"] [#d "3.0" #d "4.01"]}}})))
+
+  (let [bom {:$refines-to :ws/A$v1
+             :x {:$enum #{#{1 2} #{3 4}}}}]
+    (is (= bom
+           (op-type-check/type-check-op {:ws/A$v1 {:fields {:x [:Set :Integer]}}} bom))))
+
+  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:x [:Set :Integer]}}}
+                                                     {:$refines-to :ws/A$v1
+                                                      :x {:$enum #{#{#d "1.0" #d "2.0"} #{#d "3.0" #d "4.0"}}}})))
+  (is (thrown-with-msg? ExceptionInfo #"do not match"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:x [:Set :Integer]}}}
+                                                     {:$refines-to :ws/A$v1
+                                                      :x {:$enum #{#{#d "1.0" #d "2.0"} #{#d "3.0" #d "4.01"}}}}))))
 
 ;; (run-tests)

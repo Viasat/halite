@@ -56,7 +56,7 @@
                    (map get-bom-type)
                    set)]
     (when (> (count types) 1)
-      (format-errors/throw-err b-err/type-mismatch-collection-elements {:set bom}))
+      (format-errors/throw-err (b-err/type-mismatch-collection-elements {:set bom})))
     (->> types
          first
          types/set-type))
@@ -67,7 +67,7 @@
                    distinct
                    vec)]
     (when (> (count types) 1)
-      (format-errors/throw-err b-err/type-mismatch-collection-elements {:vec bom}))
+      (format-errors/throw-err (b-err/type-mismatch-collection-elements {:vec bom})))
     (->> types
          first
          types/vector-type))

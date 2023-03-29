@@ -100,7 +100,9 @@
                string? String
                boolean? Boolean
                base/fixed-decimal? FixedDecimal
-               is-instance-value? (s/recursive #'InstanceValue)))
+               is-instance-value? (s/recursive #'InstanceValue)
+               set? #{(s/recursive #'BomValue)}
+               vector? [(s/recursive #'BomValue)]))
 
 (defn is-bom-value? [x]
   (nil? (s/check BomValue x)))
