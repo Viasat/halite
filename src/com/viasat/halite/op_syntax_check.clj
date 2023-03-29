@@ -35,13 +35,13 @@
     (syntax-check-op spec-env variable-value)
     (if (nil? spec-variable)
       (format-errors/throw-err (b-err/variable-does-not-exist {:spec-id (symbol spec-id)
-                                                 :variable (symbol variable-key)}))
+                                                               :variable (symbol variable-key)}))
       spec-variable)))
 
 (s/defn ^:private syntax-check-spec
   "Return spec if syntax correct, else an exception is generated"
   [spec-env bom]
-  (let [spec-id (bom/get-type bom)
+  (let [spec-id (bom/get-spec-id bom)
         recursive-bom (bom/to-bare-instance-bom bom)
         filtered-spec (verify-spec-exists spec-env spec-id)
         variables (->> recursive-bom

@@ -131,3 +131,25 @@
     `(do (defmulti ~f-name (fn [& args#]
                              (bom-dispatch-f (last args#))))
          (def-bom-multimethod* ~f-name ~args ~@bodies))))
+
+;;;;
+
+(def-bom-multimethod bom-assumes-optional?
+  "Answer the question of whether this bom presupposes that the field is optional."
+  [bom]
+  #{Integer
+    FixedDecimal
+    String
+    Boolean
+    bom/InstanceValue
+    #{}
+    []}
+  false
+
+  bom/NoValueBom
+  true
+
+  #{bom/PrimitiveBom
+    bom/ConcreteInstanceBom
+    bom/AbstractInstanceBom}
+  (contains? bom :$value?))

@@ -266,6 +266,7 @@
 
 (potemkin/import-vars
  [types
+  primitive-types
   HaliteType decimal-type decimal-type? decimal-scale namespaced-keyword? abstract-spec-type concrete-spec-type
   halite-set-type? halite-vector-type?
   nothing-like? join])
@@ -273,7 +274,6 @@
 (potemkin/import-vars
  [var-types
   elem-type
-  primitive-types
   halite-type-from-var-type
   VarType UserSpecVars UserSpecInfo UserSpecMap
   ;; more advanced

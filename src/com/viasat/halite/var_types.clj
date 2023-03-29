@@ -13,13 +13,9 @@
 
 (set! *warn-on-reflection* true)
 
-(def primitive-types [:String :Integer :Boolean])
-
-(def primitive-types-set (set primitive-types))
-
 (s/defschema VarTypeAtom
   "Type atoms are always unqualified keywords."
-  (apply s/enum primitive-types))
+  (apply s/enum types/primitive-types))
 
 (s/defschema VarInnerType
   (s/conditional
@@ -102,7 +98,7 @@
     (cond
       (types/bare-keyword? var-type)
       (cond
-        (primitive-types-set var-type) var-type
+        (types/primitive-types-set var-type) var-type
         :default (throw (ex-info (format "Unrecognized primitive type: %s" var-type) {:var-type var-type})))
 
       (types/decimal-type? var-type)

@@ -4,6 +4,7 @@
 (ns com.viasat.halite.bom
   (:require [clojure.string :as string]
             [com.viasat.halite.base :as base]
+            [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [clojure.lang Atom]
            [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
@@ -204,8 +205,29 @@
 
 ;;
 
-(s/defn get-type
-  [instance]
-  (or (:$refines-to instance)
-      (:$instance-of instance)
-      (:$type instance)))
+(s/defn get-spec-id :- SpecId
+  [bom :- InstanceBomOrValue]
+  (or (:$refines-to bom)
+      (:$instance-of bom)
+      (:$type bom)))
+
+(s/defn instance-bom-halite-type :- types/HaliteType
+  [bom :- InstanceBomOrValue]
+  ((cond
+     (is-concrete-instance-bom? bom) types/concrete-spec-type
+     (is-abstract-instance-bom? bom) types/abstract-spec-type
+     (is-instance-value? bom) types/concrete-spec-type
+     :default (throw (ex-info "unknown bom type" {:bom bom})))
+   (get-spec-id bom)))
+
+;;
+
+(def PrimitiveType (apply s/enum types/primitive-types))
+
+(def VariableType (s/conditional
+                   string? PrimitiveType
+                   vector? (s/constrained [(s/recursive #'VariableType)]
+                                          #(pos? (count %)))
+                   set? (s/constrained #{(s/recursive #'VariableType)}
+                                       #(pos? (count %)))
+                   :else SpecId))

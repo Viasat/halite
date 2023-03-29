@@ -5,10 +5,15 @@
   (:require [clojure.test :refer :all]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
-            [schema.core :as s])
+            [schema.core :as s]
+            [schema.test])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
+
+(def fixtures (join-fixtures [schema.test/validate-schemas]))
+
+(use-fixtures :each fixtures)
 
 (bom-op/def-bom-multimethod sample-multimethod
   "This is a sample to show the syntax."
@@ -71,11 +76,11 @@
 
 (s/defn to-concrete :- bom/InstanceBom
   [instance :- bom/InstanceBom]
-  (set-concrete-spec-type instance (bom/get-type instance)))
+  (set-concrete-spec-type instance (bom/get-spec-id instance)))
 
 (s/defn to-abstract :- bom/InstanceBom
   [instance :- bom/InstanceBom]
-  (set-abstract-spec-type instance (bom/get-type instance)))
+  (set-abstract-spec-type instance (bom/get-spec-id instance)))
 
 (declare sample-bom-op)
 

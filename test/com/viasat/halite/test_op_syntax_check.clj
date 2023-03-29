@@ -6,11 +6,16 @@
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
-            [schema.core :as s])
+            [schema.core :as s]
+            [schema.test])
   (:import [clojure.lang ExceptionInfo]
            [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
+
+(def fixtures (join-fixtures [schema.test/validate-schemas]))
+
+(use-fixtures :each fixtures)
 
 (deftest test-basic
   (is (thrown-with-msg? ExceptionInfo #"Spec not found"
@@ -33,8 +38,8 @@
 
 (deftest test-nested
   (is (thrown-with-msg? ExceptionInfo #"Spec not found"
-                        (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:b :ws/B$v1
-                                                                             :c [:Instance :* :ws/C$v1]}}
+                        (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:b [:Instance :ws/B$v1]
+                                                                             :c [:Instance :* #{:ws/C$v1}]}}
                                                           :ws/B$v1 {:fields {:b1 :Integer}}
                                                           :ws/C$v1 {:fields {:x :Integer}}}
                                                          {:$instance-of :ws/A$v1
@@ -44,8 +49,8 @@
                                                               :c1 {:$instance-of :ws/D$v1}}})))
 
   (is (thrown-with-msg? ExceptionInfo #"Variable does not exist"
-                        (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:b :ws/B$v1
-                                                                             :c [:Instance :* :ws/C$v1]}}
+                        (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:b [:Instance :ws/B$v1]
+                                                                             :c [:Instance :* #{:ws/C$v1}]}}
                                                           :ws/B$v1 {:fields {:b1 :Integer}}
                                                           :ws/C$v1 {:fields {:c1 :Integer}}
                                                           :ws/D$v1 {}}
@@ -63,8 +68,8 @@
                  :c1 {:$instance-of :ws/D$v1
                       :d1 "hi"}}}]
     (is (= bom
-           (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:b :ws/B$v1
-                                                                :c [:Instance :* :ws/C$v1]}}
+           (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:b [:Instance :ws/B$v1]
+                                                                :c [:Instance :* #{:ws/C$v1}]}}
                                              :ws/B$v1 {:fields {:b1 :Integer}}
                                              :ws/C$v1 {:fields {:c1 :Integer}}
                                              :ws/D$v1 {:fields {:d1 :String}}}

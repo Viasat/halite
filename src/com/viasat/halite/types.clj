@@ -561,3 +561,10 @@
 
 (s/defn nothing-like? [t]
   (#{:Nothing :PreInstance} t))
+
+;;
+
+(def primitive-types (into [:String :Integer :Boolean]
+                           (map decimal-type (range 1 (inc fixed-decimal/max-scale)))))
+
+(def primitive-types-set (set primitive-types))
