@@ -173,7 +173,9 @@
   (-> ConcreteInstanceBom
       (dissoc :$instance-of)
       (assoc :$refines-to SpecId
-             (s/optional-key :$concrete-choices) {SpecId ConcreteInstanceBom})))
+             (s/optional-key :$concrete-choices) {SpecId (s/conditional
+                                                          is-concrete-instance-bom? ConcreteInstanceBom
+                                                          :else InstanceValue)})))
 
 (def InstanceBom (s/conditional
                   is-abstract-instance-bom? AbstractInstanceBom

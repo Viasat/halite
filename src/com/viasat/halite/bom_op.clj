@@ -46,6 +46,15 @@
         bom/NoValueBom 'bom/NoValueBom}
        d d))
 
+(defn type-of-bom [bom]
+  (->> bom
+       bom-dispatch-f))
+
+(defn type-symbol-of-bom [bom]
+  (->> bom
+       bom-dispatch-f
+       dispatch-values-symbols))
+
 (defn- verify-all-dispatch-values-listed [bodies]
   (let [dispatch-values-raw (->> (take-nth 2 bodies)
                                  (map #(if (and (set? %)

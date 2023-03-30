@@ -3,6 +3,7 @@
 
 (ns com.viasat.halite.op-lift-refinements
   (:require [com.viasat.halite.bom :as bom]
+            [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
@@ -32,15 +33,11 @@
                                                             (let [lifted-child (lift-refinements-op refinement-bom)]
                                                               (:$refinements lifted-child))))
                                                      (reduce (fn [refinements child-refinements]
-                                                               (merge-with (fn [r1 r2]
-                                                                             ;; TODO: merge the two results here properly
-                                                                             (merge r2 r1))
+                                                               (merge-with bom-analysis/merge-boms
                                                                            refinements
                                                                            child-refinements))
                                                              {}))]
-                  (assoc bom :$refinements (merge-with (fn [r1 r2]
-                                                         ;; TODO: merge the two results here properly
-                                                         (merge r2 r1))
+                  (assoc bom :$refinements (merge-with bom-analysis/merge-boms
                                                        (-> refinements
                                                            (update-vals #(dissoc % :$refinements)))
                                                        refinements-from-children)))))]

@@ -48,12 +48,12 @@
                                                                                                      :q 2}}
                                                                             :y 3}}})))
 
-  ;; notice that one of the fields gets clobbered by the merge
+  ;; notice that one of the fields becomes no-value because the values are conflicting
   (is (= {:$instance-of :ws/A$v1
           :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
                                    :b 100}
                          :ws/F$v1 {:$instance-of :ws/F$v1
-                                   :x 98}
+                                   :x {:$value? false}}
                          :ws/G$v1 {:$instance-of :ws/G$v1
                                    :q 2}}}
          (op-lift-refinements/lift-refinements-op {:$instance-of :ws/A$v1
