@@ -3,11 +3,8 @@
 
 (ns com.viasat.halite.test-op-lift-refinements
   (:require [clojure.test :refer :all]
-            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.op-lift-refinements :as op-lift-refinements]
-            [schema.core :as s]
-            [schema.test])
-  (:import [clojure.lang ExceptionInfo]))
+            [schema.test]))
 
 (set! *warn-on-reflection* true)
 

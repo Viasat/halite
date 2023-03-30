@@ -2,18 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-lift-refinements
-  (:require [clojure.set :as set]
-            [com.viasat.halite.analysis :as analysis]
-            [com.viasat.halite.b-err :as b-err]
-            [com.viasat.halite.base :as base]
-            [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
-            [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.lib.format-errors :as format-errors]
-            [com.viasat.halite.spec :as spec]
-            [com.viasat.halite.type-check :as type-check]
-            [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 

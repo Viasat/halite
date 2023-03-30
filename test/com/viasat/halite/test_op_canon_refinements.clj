@@ -3,9 +3,7 @@
 
 (ns com.viasat.halite.test-op-canon-refinements
   (:require [clojure.test :refer :all]
-            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
-            [schema.core :as s]
             [schema.test])
   (:import [clojure.lang ExceptionInfo]))
 

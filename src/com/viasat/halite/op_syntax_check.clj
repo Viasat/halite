@@ -2,8 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-syntax-check
-  (:require [com.viasat.halite.base :as base]
-            [com.viasat.halite.b-err :as b-err]
+  (:require [com.viasat.halite.b-err :as b-err]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]

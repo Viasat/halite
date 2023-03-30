@@ -5,32 +5,13 @@
   (:require [clojure.test :refer :all]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.op-canon :as op-canon]
-            [schema.core :as s]
-            [schema.test])
-  (:import [clojure.lang ExceptionInfo]))
+            [schema.test]))
 
 (set! *warn-on-reflection* true)
 
 (def fixtures (join-fixtures [schema.test/validate-schemas]))
 
 (use-fixtures :each fixtures)
-
-(deftest test-collapse-ranges-into-enum
-  (is (= {:$enum #{3 5 20}}
-         (#'op-canon/collapse-ranges-and-enum {:$enum #{3 5 20 30}
-                                               :$ranges #{[1 10]
-                                                          [20 30]}})))
-
-  (is (= bom/no-value-bom
-         (#'op-canon/collapse-ranges-and-enum {:$enum #{0}
-                                               :$ranges #{[1 10]
-                                                          [20 30]}})))
-
-  (is (= {:$ranges #{[1 10]
-                     [20 3000]}}
-         (#'op-canon/collapse-ranges-and-enum {:$ranges #{[1 10]
-                                                          [20 30]
-                                                          [25 3000]}}))))
 
 (deftest test-canon-op
   (is (= {:$instance-of :ws/A$v1

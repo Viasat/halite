@@ -2,8 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.bom
-  (:require [clojure.string :as string]
-            [com.viasat.halite.base :as base]
+  (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [clojure.lang Atom]

@@ -4,7 +4,6 @@
 (ns com.viasat.halite.test-op-type-check
   (:require [clojure.test :refer :all]
             [com.viasat.halite.op-type-check :as op-type-check]
-            [schema.core :as s]
             [schema.test])
   (:import [clojure.lang ExceptionInfo]))
 

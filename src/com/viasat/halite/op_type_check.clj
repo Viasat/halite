@@ -2,8 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-type-check
-  (:require [clojure.set :as set]
-            [com.viasat.halite.b-err :as b-err]
+  (:require [com.viasat.halite.b-err :as b-err]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]

@@ -3,13 +3,9 @@
 
 (ns com.viasat.halite.test-op-syntax-check
   (:require [clojure.test :refer :all]
-            [com.viasat.halite.bom :as bom]
-            [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
-            [schema.core :as s]
             [schema.test])
-  (:import [clojure.lang ExceptionInfo]
-           [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
+  (:import [clojure.lang ExceptionInfo]))
 
 (set! *warn-on-reflection* true)
 
