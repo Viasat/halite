@@ -285,8 +285,16 @@
           #{bom/ConcreteInstanceBom bom/AbstractInstanceBom}} bom-types)
       (let [[a b] (if (bom/is-abstract-instance-bom? a) [b a] [a b])
             current-choice (get-in b [:$concrete-choices (bom/get-spec-id a)])]
-        (assoc b :$concrete-choices {(bom/get-spec-id a) (if current-choice
-                                                           (merge-boms current-choice a)
-                                                           a)}))
+        (cond
+          (and (:$concrete-choices b) current-choice)
+          (assoc b :$concrete-choices {(bom/get-spec-id a) (merge-boms current-choice a)})
+
+          (and (:$concrete-choices b) (not current-choice))
+          (if (or (= true (:$value? a)) (= true (:$value? b)))
+            bom/impossible-bom
+            bom/no-value-bom)
+
+          :default
+          (assoc b :$concrete-choices {(bom/get-spec-id a) a})))
 
       :default bom/impossible-bom)))

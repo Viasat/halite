@@ -105,8 +105,45 @@
                                                                                                  :x 3}}
                                                                                        :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1}}}))))
 
-(deftest test-merge-abstract-instances
+(deftest test-merge-abstract-instances-with-instance-values
+  (is (= {:$refines-to :ws/A$v1
+          :$concrete-choices {:ws/B$v1 {:$type :ws/B$v1}}}
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1}
+                                  {:$type :ws/B$v1})))
+  (is (= bom/no-value-bom
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :$concrete-choices {}}
+                                  {:$type :ws/B$v1})))
+
+  (is (= {:$refines-to :ws/A$v1
+          :$concrete-choices {:ws/B$v1 {:$type :ws/B$v1
+                                        :x 1}}}
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                                 :x 1}}}
+                                  {:$type :ws/B$v1})))
+
+  (is (= {:$refines-to :ws/A$v1
+          :$concrete-choices {:ws/B$v1 {:$type :ws/B$v1
+                                        :x bom/impossible-bom}}}
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                                 :x 1}}}
+                                  {:$type :ws/B$v1
+                                   :x 2})))
+  (is (= bom/no-value-bom
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :$concrete-choices {:ws/C$v1 {:$instance-of :ws/C$v1}}}
+                                  {:$type :ws/B$v1})))
+  (is (= bom/impossible-bom
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :$value? true
+                                   :$concrete-choices {:ws/C$v1 {:$instance-of :ws/C$v1}}}
+                                  {:$type :ws/B$v1}))))
+
+(deftest test-merge-two-abstract-instances
   (is (= {:$refines-to :ws/A$v1} (bom-analysis/merge-boms {:$refines-to :ws/A$v1} {:$refines-to :ws/A$v1})))
+
   (is (thrown-with-msg? ExceptionInfo #"not supported"
                         (bom-analysis/merge-boms {:$refines-to :ws/A$v1} {:$refines-to :ws/B$v1})))
 
@@ -137,5 +174,37 @@
                                    :$concrete-choices {:ws/X$v1 {:$instance-of :ws/X$v1}}}
                                   {:$refines-to :ws/A$v1
                                    :$concrete-choices {:ws/X$v1 {:$instance-of :ws/Y$v1}}}))))
+
+(deftest test-merge-abstract-with-concrete
+  (is (= {:$refines-to :ws/A$v1
+          :$concrete-choices {:ws/A$v1 {:$instance-of :ws/A$v1}}}
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1}
+                                  {:$instance-of :ws/A$v1})))
+
+  (is (= {:$refines-to :ws/A$v1
+          :x 2
+          :$concrete-choices {:ws/A$v1 {:$instance-of :ws/A$v1
+                                        :x 1}}}
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :x 2}
+                                  {:$instance-of :ws/A$v1
+                                   :x 1})))
+
+  (is (= bom/no-value-bom
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :$concrete-choices {:ws/X$v1 {:$instance-of :ws/X$v1}}}
+                                  {:$instance-of :ws/A$v1})))
+
+  (is (= bom/impossible-bom
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :$concrete-choices {:ws/X$v1 {:$instance-of :ws/X$v1}}}
+                                  {:$instance-of :ws/A$v1
+                                   :$value? true})))
+
+  (is (= bom/impossible-bom
+         (bom-analysis/merge-boms {:$refines-to :ws/A$v1
+                                   :$value? true
+                                   :$concrete-choices {:ws/X$v1 {:$instance-of :ws/X$v1}}}
+                                  {:$instance-of :ws/A$v1}))))
 
 ;; (run-tests)
