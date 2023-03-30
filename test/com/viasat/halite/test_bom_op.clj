@@ -35,7 +35,10 @@
   [:concrete-instance-bom bom]
 
   bom/NoValueBom
-  [:no-value-bom bom])
+  [:no-value-bom bom]
+
+  bom/ImpossibleBom
+  [:impossible-bom bom])
 
 (deftest test-multimethod
   (is (= [:primitive 100] (sample-multimethod 100)))
@@ -95,7 +98,8 @@
     #{}
     []
     bom/PrimitiveBom
-    bom/NoValueBom}
+    bom/NoValueBom
+    bom/ImpossibleBom}
   bom
 
   bom/AbstractInstanceBom
@@ -137,7 +141,8 @@
     bom/PrimitiveBom
     bom/AbstractInstanceBom
     bom/ConcreteInstanceBom
-    bom/NoValueBom}
+    bom/NoValueBom
+    bom/ImpossibleBom}
   n)
 
 (deftest test-sample-bom-op-with-extra-args

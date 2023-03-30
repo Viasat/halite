@@ -18,6 +18,7 @@
     String
     Boolean
     bom/NoValueBom
+    bom/ImpossibleBom
     #{}
     []
     bom/InstanceValue}
@@ -35,9 +36,14 @@
     bom/AbstractInstanceBom}
   (let [bom (-> bom
                 bom-analysis/collapse-to-no-value
-                bom-analysis/detect-empty-enum)]
-    (if (bom/is-no-value-bom? bom)
+                bom-analysis/detect-empty-enum
+                bom-analysis/detect-empty-concrete-choices)]
+    (if (or (bom/is-no-value-bom? bom)
+            (bom/is-impossible-bom? bom))
       bom
-      (merge bom (-> bom
-                     bom/to-bare-instance
-                     (update-vals canon-op))))))
+      (let [bare-result (-> bom
+                            bom/to-bare-instance
+                            (update-vals canon-op))]
+        (if (some bom/is-impossible-bom? (vals bare-result))
+          bom/impossible-bom
+          (merge bom bare-result))))))

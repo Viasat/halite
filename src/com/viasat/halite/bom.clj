@@ -143,10 +143,6 @@
           is-primitive-bom? PrimitiveBom
           :else BomValue))
 
-(def VariableValueBom (s/conditional
-                       is-instance-value? InstanceValue
-                       :else Bom))
-
 (def NoValueBom {:$value? (s/eq false)})
 
 (def no-value-bom {:$value? false})
@@ -159,6 +155,19 @@
   [bom]
   (= false (:$value? bom)))
 
+(def ImpossibleBom {:$impossible? (s/eq true)})
+
+(def impossible-bom {:$impossible? true})
+
+(s/defn is-impossible-bom? [bom]
+  (= impossible-bom bom))
+
+(def VariableValueBom (s/conditional
+                       is-instance-value? InstanceValue
+                       is-no-value-bom? NoValueBom
+                       is-impossible-bom? ImpossibleBom
+                       :else Bom))
+
 (def BareInstanceBom {VariableKeyword VariableValueBom})
 
 (def ConcreteInstanceBom
@@ -167,7 +176,9 @@
          (s/optional-key :$enum) #{InstanceValue}
          (s/optional-key :$value?) BooleanBom
          (s/optional-key :$accessed?) BooleanBom
-         (s/optional-key :$refinements) {SpecId (s/recursive #'ConcreteInstanceBom)}))
+         (s/optional-key :$refinements) {SpecId (s/conditional
+                                                 is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
+                                                 :else ImpossibleBom)}))
 
 (def AbstractInstanceBom
   (-> ConcreteInstanceBom
@@ -179,7 +190,8 @@
 
 (def InstanceBom (s/conditional
                   is-abstract-instance-bom? AbstractInstanceBom
-                  is-concrete-instance-bom? ConcreteInstanceBom))
+                  is-concrete-instance-bom? ConcreteInstanceBom
+                  is-impossible-bom? ImpossibleBom))
 
 (def InstanceBomOrValue (s/conditional
                          is-abstract-instance-bom? AbstractInstanceBom

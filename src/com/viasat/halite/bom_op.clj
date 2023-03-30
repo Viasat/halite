@@ -14,6 +14,7 @@
   [x :- bom/VariableValueBom]
   (cond
     (bom/is-no-value-bom? x) bom/NoValueBom
+    (bom/is-impossible-bom? x) bom/ImpossibleBom
     (base/integer-or-long? x) Integer
     (base/fixed-decimal? x) FixedDecimal
     (string? x) String
@@ -43,7 +44,8 @@
         bom/AbstractInstanceBom 'bom/AbstractInstanceBom
         bom/ConcreteInstanceBom 'bom/ConcreteInstanceBom
         bom/PrimitiveBom 'bom/PrimitiveBom
-        bom/NoValueBom 'bom/NoValueBom}
+        bom/NoValueBom 'bom/NoValueBom
+        bom/ImpossibleBom 'bom/ImpossibleBom}
        d d))
 
 (defn type-of-bom [bom]
@@ -152,7 +154,8 @@
     Boolean
     bom/InstanceValue
     #{}
-    []}
+    []
+    bom/ImpossibleBom}
   false
 
   bom/NoValueBom

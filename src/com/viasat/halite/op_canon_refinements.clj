@@ -18,6 +18,7 @@
     String
     Boolean
     bom/NoValueBom
+    bom/ImpossibleBom
     #{}
     []
     bom/InstanceValue

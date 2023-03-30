@@ -33,7 +33,8 @@
   Boolean
   :Boolean
 
-  bom/NoValueBom
+  #{bom/NoValueBom
+    bom/ImpossibleBom}
   nil
 
   bom/PrimitiveBom
@@ -90,6 +91,7 @@
     Boolean
     bom/PrimitiveBom
     bom/NoValueBom
+    bom/ImpossibleBom
     #{}
     []}
   (get-bom-type bom)

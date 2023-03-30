@@ -58,6 +58,7 @@
     #{}
     []
     bom/NoValueBom
+    bom/ImpossibleBom
     bom/PrimitiveBom}
   bom
 

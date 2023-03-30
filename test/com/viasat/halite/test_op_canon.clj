@@ -88,6 +88,14 @@
               :x #{1 3 2}}}
          (op-canon/canon-op {:$instance-of :ws/A$v1
                              :b {:$refines-to :ws/B$v1
-                                 :x {:$enum #{#{1 2 3}}}}}))))
+                                 :x {:$enum #{#{1 2 3}}}}})))
+
+  (is (= bom/no-value-bom
+         (op-canon/canon-op {:$refines-to :ws/A$v1
+                             :$concrete-choices {}})))
+  (is (= bom/impossible-bom
+         (op-canon/canon-op {:$refines-to :ws/A$v1
+                             :$value? true
+                             :$concrete-choices {}}))))
 
 ;; (run-tests)

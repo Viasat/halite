@@ -55,6 +55,15 @@
     bom/no-value-bom
     bom))
 
+(defn detect-empty-concrete-choices
+  [bom]
+  (if (and (:$concrete-choices bom)
+           (zero? (count (:$concrete-choices bom))))
+    (if (= true (:$value? bom))
+      bom/impossible-bom
+      bom/no-value-bom)
+    bom))
+
 (defn- ranges-to-expression-tree [ranges]
   (conj (->> ranges
              (map (fn [[min max]]
@@ -135,7 +144,7 @@
           #{bom/InstanceValue bom/NoValueBom}
           #{bom/ConcreteInstanceBom bom/NoValueBom}
           #{bom/AbstractInstanceBom bom/NoValueBom}} bom-types)
-      bom/no-value-bom
+      bom/impossible-bom
 
       ('#{#{Integer}
           #{FixedDecimal}
@@ -146,7 +155,7 @@
           #{bom/InstanceValue}} bom-types)
       (if (= a b)
         a
-        bom/no-value-bom)
+        bom/impossible-bom)
 
       ('#{#{Integer bom/PrimitiveBom}
           #{FixedDecimal bom/PrimitiveBom}
@@ -166,7 +175,9 @@
 
       ('#{#{bom/PrimitiveBom}} bom-types)
       (if (or (= false (:$value? a)) (= false (:$value? b)))
-        bom/no-value-bom
+        (if (or (= true (:$value? a)) (= true (:$value? b)))
+          bom/impossible-bom
+          bom/no-value-bom)
         (let [enum-bom (let [enum-set (cond
                                         (and (:$enum a) (:$enum b)) (set/intersection (:$enum a) (:$enum b))
                                         (:$enum a) (:$enum a)
@@ -212,32 +223,63 @@
                       (:$accessed? b))
                 (dissoc merged :$type)
                 (dissoc merged :$instance-of)))))
-        bom/no-value-bom)
+        (if (or (= true (:$value? a)) (= true (:$value? b)))
+          bom/impossible-bom
+          bom/no-value-bom))
 
-      ('#{#{bom/ConcreteInstanceBom}} bom-types)
+      ('#{#{bom/ConcreteInstanceBom}
+          #{bom/AbstractInstanceBom}} bom-types)
       (if (and (= (bom/get-spec-id a)
                   (bom/get-spec-id b))
                (not (bom/is-a-no-value-bom? a))
                (not (bom/is-a-no-value-bom? b)))
-        (-> (merge-with merge-boms (bom/to-bare-instance a) (bom/to-bare-instance b))
-            (assoc :$instance-of (bom/get-spec-id a)
-                   :$enum (cond
-                            (and (:$enum a) (:$enum b)) (set/intersection (:$enum a) (:$enum b))
-                            (:$enum a) (:$enum a)
-                            (:$enum b) (:$enum b)
-                            :default nil)
-                   :$value? (cond
-                              (and (= true (:$value? a)) (= true (:$value? b))) true
-                              (= true (:$value? a)) true
-                              (= true (:$value? b)) true
-                              (or (:$value a) (:$value b)) (throw (ex-info "did not expect :$value" {:a a :b b}))
-                              :default nil)
-                   :$accessed? (cond
-                                 (or (= true (:$accessed? a)) (= true (:$accessed? b))) true
-                                 (or (:$accessed? a) (:$accessed? b)) (throw (ex-info "did not expect :$accessed?" {:a a :b b})))
-                   :$refinements (merge-with merge-boms (:$refinements a) (:$refinements b)))
-            no-nil-entries)
-        bom/no-value-bom)
+        (let [result (-> (merge-with merge-boms (bom/to-bare-instance a) (bom/to-bare-instance b))
+                         (assoc (if (bom/is-abstract-instance-bom? a)
+                                  :$refines-to
+                                  :$instance-of) (bom/get-spec-id a)
+                                :$enum (cond
+                                         (and (:$enum a) (:$enum b)) (set/intersection (:$enum a) (:$enum b))
+                                         (:$enum a) (:$enum a)
+                                         (:$enum b) (:$enum b)
+                                         :default nil)
+                                :$value? (cond
+                                           (and (= true (:$value? a)) (= true (:$value? b))) true
+                                           (= true (:$value? a)) true
+                                           (= true (:$value? b)) true
+                                           (or (:$value a) (:$value b)) (throw (ex-info "did not expect :$value" {:a a :b b}))
+                                           :default nil)
+                                :$accessed? (cond
+                                              (or (= true (:$accessed? a)) (= true (:$accessed? b))) true
+                                              (or (:$accessed? a) (:$accessed? b)) (throw (ex-info "did not expect :$accessed?" {:a a :b b})))
+                                :$refinements (cond
+                                                (and (:$refinements a) (:$refinements b))
+                                                (merge-with merge-boms (:$refinements a) (:$refinements b))
+
+                                                (:$refinements a) (:$refinements a)
+                                                (:$refinements b) (:$refinements b)
+                                                :default nil)
+                                :$concrete-choices (cond
+                                                     (and (:$concrete-choices a) (:$concrete-choices b))
+                                                     (let [keyset (set/intersection (->> a :$concrete-choices keys set)
+                                                                                    (->> b :$concrete-choices keys set))]
+                                                       (merge-with merge-boms
+                                                                   (select-keys a keyset)
+                                                                   (select-keys b keyset)))
+
+                                                     (:$concrete-choices a) (:$concrete-choices a)
+                                                     (:$concrete-choices b) (:$concrete-choices b)
+                                                     :default nil))
+                         no-nil-entries
+                         detect-empty-concrete-choices)]
+          (if (= 1 (count (:$enum result)))
+            (merge-boms (first (:$enum result))
+                        (dissoc result :$enum))
+            result))
+        (if (or (= true (:$value? a)) (= true (:$value? b)))
+          bom/impossible-bom
+          (if (bom/is-abstract-instance-bom? a)
+            (throw (ex-info "merging abstract boms of different specs not supported" {:a a :b b}))
+            bom/no-value-bom)))
 
       ('#{#{bom/InstanceValue bom/AbstractInstanceBom}
           #{bom/ConcreteInstanceBom bom/AbstractInstanceBom}} bom-types)
@@ -247,22 +289,4 @@
                                                            (merge-boms current-choice a)
                                                            a)}))
 
-      ('#{#{bom/AbstractInstanceBom}} bom-types)
-      (if (= (bom/get-spec-id a)
-             (bom/get-spec-id b))
-        (-> (merge-with merge-boms (bom/to-bare-instance a) (bom/to-bare-instance b))
-            (assoc :$refines-to (bom/get-spec-id a)
-                   :$concrete-choices (cond
-                                        (and (:$concrete-choices a) (:$concrete-choices b))
-                                        (let [keyset (set/intersection (->> a :$concrete-choices keys set)
-                                                                       (->> b :$concrete-choices keys set))]
-                                          (merge-with merge-boms
-                                                      (select-keys a keyset)
-                                                      (select-keys b keyset)))
-
-                                        (:$concrete-choices a) (:$concrete-choices a)
-                                        (:$concrete-choices b) (:$concrete-choices b)
-                                        :default nil))
-            no-nil-entries)
-        (throw (ex-info "merging abstract boms of different specs not supported" {:a a :b b})))
-      :default bom/no-value-bom)))
+      :default bom/impossible-bom)))
