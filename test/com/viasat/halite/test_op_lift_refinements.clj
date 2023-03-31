@@ -53,7 +53,7 @@
           :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
                                    :b 100}
                          :ws/F$v1 {:$instance-of :ws/F$v1
-                                   :x {:$impossible? true}}
+                                   :x {:$contradiction? true}}
                          :ws/G$v1 {:$instance-of :ws/G$v1
                                    :q 2}}}
          (op-lift-refinements/lift-refinements-op {:$instance-of :ws/A$v1

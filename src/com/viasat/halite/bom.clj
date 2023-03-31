@@ -155,17 +155,17 @@
   [bom]
   (= false (:$value? bom)))
 
-(def ImpossibleBom {:$impossible? (s/eq true)})
+(def ContradictionBom {:$contradiction? (s/eq true)})
 
-(def impossible-bom {:$impossible? true})
+(def contradiction-bom {:$contradiction? true})
 
-(s/defn is-impossible-bom? [bom]
-  (= impossible-bom bom))
+(s/defn is-contradiction-bom? [bom]
+  (= contradiction-bom bom))
 
 (def VariableValueBom (s/conditional
                        is-instance-value? InstanceValue
                        is-no-value-bom? NoValueBom
-                       is-impossible-bom? ImpossibleBom
+                       is-contradiction-bom? ContradictionBom
                        :else Bom))
 
 (def BareInstanceBom {VariableKeyword VariableValueBom})
@@ -178,7 +178,7 @@
          (s/optional-key :$accessed?) BooleanBom
          (s/optional-key :$refinements) {SpecId (s/conditional
                                                  is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
-                                                 :else ImpossibleBom)}))
+                                                 :else ContradictionBom)}))
 
 (def AbstractInstanceBom
   (-> ConcreteInstanceBom
@@ -191,7 +191,7 @@
 (def InstanceBom (s/conditional
                   is-abstract-instance-bom? AbstractInstanceBom
                   is-concrete-instance-bom? ConcreteInstanceBom
-                  is-impossible-bom? ImpossibleBom))
+                  is-contradiction-bom? ContradictionBom))
 
 (def InstanceBomOrValue (s/conditional
                          is-abstract-instance-bom? AbstractInstanceBom

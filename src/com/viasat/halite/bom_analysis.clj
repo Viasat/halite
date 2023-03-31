@@ -60,7 +60,7 @@
   (if (and (:$concrete-choices bom)
            (zero? (count (:$concrete-choices bom))))
     (if (= true (:$value? bom))
-      bom/impossible-bom
+      bom/contradiction-bom
       bom/no-value-bom)
     bom))
 
@@ -144,7 +144,7 @@
           #{bom/InstanceValue bom/NoValueBom}
           #{bom/ConcreteInstanceBom bom/NoValueBom}
           #{bom/AbstractInstanceBom bom/NoValueBom}} bom-types)
-      bom/impossible-bom
+      bom/contradiction-bom
 
       ('#{#{Integer}
           #{FixedDecimal}
@@ -155,7 +155,7 @@
           #{bom/InstanceValue}} bom-types)
       (if (= a b)
         a
-        bom/impossible-bom)
+        bom/contradiction-bom)
 
       ('#{#{Integer bom/PrimitiveBom}
           #{FixedDecimal bom/PrimitiveBom}
@@ -176,7 +176,7 @@
       ('#{#{bom/PrimitiveBom}} bom-types)
       (if (or (= false (:$value? a)) (= false (:$value? b)))
         (if (or (= true (:$value? a)) (= true (:$value? b)))
-          bom/impossible-bom
+          bom/contradiction-bom
           bom/no-value-bom)
         (let [enum-bom (let [enum-set (cond
                                         (and (:$enum a) (:$enum b)) (set/intersection (:$enum a) (:$enum b))
@@ -224,7 +224,7 @@
                 (dissoc merged :$type)
                 (dissoc merged :$instance-of)))))
         (if (or (= true (:$value? a)) (= true (:$value? b)))
-          bom/impossible-bom
+          bom/contradiction-bom
           bom/no-value-bom))
 
       ('#{#{bom/ConcreteInstanceBom}
@@ -276,7 +276,7 @@
                         (dissoc result :$enum))
             result))
         (if (or (= true (:$value? a)) (= true (:$value? b)))
-          bom/impossible-bom
+          bom/contradiction-bom
           (if (bom/is-abstract-instance-bom? a)
             (throw (ex-info "merging abstract boms of different specs not supported" {:a a :b b}))
             bom/no-value-bom)))
@@ -291,10 +291,10 @@
 
           (and (:$concrete-choices b) (not current-choice))
           (if (or (= true (:$value? a)) (= true (:$value? b)))
-            bom/impossible-bom
+            bom/contradiction-bom
             bom/no-value-bom)
 
           :default
           (assoc b :$concrete-choices {(bom/get-spec-id a) a})))
 
-      :default bom/impossible-bom)))
+      :default bom/contradiction-bom)))

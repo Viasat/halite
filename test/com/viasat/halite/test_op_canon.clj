@@ -93,7 +93,7 @@
   (is (= bom/no-value-bom
          (op-canon/canon-op {:$refines-to :ws/A$v1
                              :$concrete-choices {}})))
-  (is (= bom/impossible-bom
+  (is (= bom/contradiction-bom
          (op-canon/canon-op {:$refines-to :ws/A$v1
                              :$value? true
                              :$concrete-choices {}}))))

@@ -18,7 +18,7 @@
     String
     Boolean
     bom/NoValueBom
-    bom/ImpossibleBom
+    bom/ContradictionBom
     #{}
     []
     bom/InstanceValue}
@@ -39,11 +39,11 @@
                 bom-analysis/detect-empty-enum
                 bom-analysis/detect-empty-concrete-choices)]
     (if (or (bom/is-no-value-bom? bom)
-            (bom/is-impossible-bom? bom))
+            (bom/is-contradiction-bom? bom))
       bom
       (let [bare-result (-> bom
                             bom/to-bare-instance
                             (update-vals canon-op))]
-        (if (some bom/is-impossible-bom? (vals bare-result))
-          bom/impossible-bom
+        (if (some bom/is-contradiction-bom? (vals bare-result))
+          bom/contradiction-bom
           (merge bom bare-result))))))
