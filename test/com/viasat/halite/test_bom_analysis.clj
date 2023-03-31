@@ -37,7 +37,9 @@
   (is (= bom/contradiction-bom (bom-analysis/merge-boms 1 "hi")))
   (is (= bom/contradiction-bom (bom-analysis/merge-boms [1] #{"hi"})))
 
-  (is (= 2 (bom-analysis/merge-boms {:$enum #{1 2}} {:$enum #{2 3}})))
+  (is (= {:$enum #{2}} (bom-analysis/merge-boms {:$enum #{1 2}} {:$enum #{2 3}})))
+  (is (= 2 (bom-analysis/merge-boms {:$enum #{1 2}} {:$enum #{2 3}
+                                                     :$value? true})))
   (is (= {:$enum #{3 2}} (bom-analysis/merge-boms {:$enum #{1 2 3}} {:$enum #{2 3 4}})))
   (is (= bom/no-value-bom (bom-analysis/merge-boms {:$enum #{1 2 3}} {:$enum #{2 3 4}
                                                                       :$value? false})))

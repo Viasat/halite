@@ -34,7 +34,8 @@
 
 (defn collapse-enum-into-value [bom]
   (if (and (contains? bom :$enum)
-           (= 1 (count (:$enum bom))))
+           (= 1 (count (:$enum bom)))
+           (= true (:$value? bom)))
     (first (:$enum bom))
     bom))
 
@@ -45,7 +46,12 @@
        (contains? bom :$ranges)
        (= 1 (count (:$ranges bom)))
        (range-size-one? (first (:$ranges bom))))
-    (first (first (:$ranges bom)))
+    (let [value (first (first (:$ranges bom)))]
+      (if (= true (:$value? bom))
+        value
+        (if (nil? (:$enum bom))
+          (-> bom (dissoc :$ranges) (assoc :$enum #{value}))
+          bom)))
     bom))
 
 (defn detect-empty-enum

@@ -45,6 +45,21 @@
   (is (= {:$instance-of :ws/A$v1
           :x 5}
          (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :x {:$value? true
+                                 :$enum #{-1 5}
+                                 :$ranges #{[1 10]
+                                            [20 30]}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$enum #{5}}}
+         (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :x {:$enum #{-1 5}
+                                 :$ranges #{[1 10]
+                                            [20 30]}}})))
+
+  (is (= {:$refines-to :ws/A$v1
+          :x {:$enum #{5}}}
+         (op-canon/canon-op {:$refines-to :ws/A$v1
                              :x {:$enum #{-1 5}
                                  :$ranges #{[1 10]
                                             [20 30]}}})))
@@ -52,40 +67,69 @@
   (is (= {:$refines-to :ws/A$v1
           :x 5}
          (op-canon/canon-op {:$refines-to :ws/A$v1
-                             :x {:$enum #{-1 5}
+                             :x {:$value? true
+                                 :$enum #{-1 5}
                                  :$ranges #{[1 10]
                                             [20 30]}}})))
 
   (is (= {:$instance-of :ws/A$v1
-          :x #d "5.5"}
+          :x {:$enum #{#d "5.5"}}}
          (op-canon/canon-op {:$instance-of :ws/A$v1
                              :x {:$enum #{#d "-1.0" #d "5.5"}
                                  :$ranges #{[#d "1.0" #d "10.2"]
                                             [#d "20.2" #d "30.3"]}}})))
 
   (is (= {:$instance-of :ws/A$v1
-          :x 1}
+          :x #d "5.5"}
+         (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :x {:$value? true
+                                 :$enum #{#d "-1.0" #d "5.5"}
+                                 :$ranges #{[#d "1.0" #d "10.2"]
+                                            [#d "20.2" #d "30.3"]}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$enum #{1}}}
          (op-canon/canon-op {:$instance-of :ws/A$v1
                              :x {:$ranges #{[1 2]}}})))
 
   (is (= {:$instance-of :ws/A$v1
+          :x 1}
+         (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :x {:$value? true
+                                 :$ranges #{[1 2]}}})))
+
+  (is (= {:$instance-of :ws/A$v1
           :x #d "1.1"}
+         (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :x {:$value? true
+                                 :$ranges #{[#d "1.1" #d "1.2"]}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$enum #{#d "1.1"}}}
          (op-canon/canon-op {:$instance-of :ws/A$v1
                              :x {:$ranges #{[#d "1.1" #d "1.2"]}}})))
 
   (is (= {:$instance-of :ws/A$v1
-          :x [1 2 3]}
+          :x {:$enum #{[1 2 3]}}}
          (op-canon/canon-op {:$instance-of :ws/A$v1
                              :x {:$enum #{[1 2 3]}}})))
 
   (is (= {:$instance-of :ws/A$v1
           :x #{1 2 3}}
          (op-canon/canon-op {:$instance-of :ws/A$v1
-                             :x {:$enum #{#{1 2 3}}}})))
+                             :x {:$value? true
+                                 :$enum #{#{1 2 3}}}})))
 
   (is (= {:$instance-of :ws/A$v1
           :b {:$refines-to :ws/B$v1
               :x #{1 3 2}}}
+         (op-canon/canon-op {:$instance-of :ws/A$v1
+                             :b {:$refines-to :ws/B$v1
+                                 :x {:$value? true
+                                     :$enum #{#{1 2 3}}}}})))
+  (is (= {:$instance-of :ws/A$v1
+          :b {:$refines-to :ws/B$v1
+              :x {:$enum #{#{1 3 2}}}}}
          (op-canon/canon-op {:$instance-of :ws/A$v1
                              :b {:$refines-to :ws/B$v1
                                  :x {:$enum #{#{1 2 3}}}}})))
