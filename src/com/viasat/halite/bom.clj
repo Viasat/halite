@@ -92,6 +92,20 @@
 
 ;;;;
 
+;; Boms describe values. The following bom fields are used:
+;; :$enum : if a value is provided, it must be a value that is in the set
+;; :$ranges : if a value is provided it must be within one of the ranges
+;; :$value? : 'true' means a value must be provided, 'false' means a value must not be provided
+;; :$instance-of : the value must be an instance of this spec type
+;; :$refines-to : the value provided must refine to this spec type
+;; :$refinements : the value must satisfy all of the specified refinements, a "no value" in the refinement identifies a disallowed refinement
+;; :$concrete-choices : the value must satisfy one of the values in the map, an empty map is equivalent to "no value"
+
+;; Special bom values:
+;; no-value-bom : indicates that no value is to be provided in this location (this is roughly like a 'nil' value)
+;; contradiction-bom : indicates that it is impossible to satisfy all of the constraints indicated in the bom for this value (this is roughly like an exception)
+;; NOTE: these two mean different things
+
 (declare InstanceValue)
 
 (def BomValue (s/conditional
@@ -125,6 +139,9 @@
 (def RangeConstraint (s/conditional
                       #(base/integer-or-long? (first %)) IntegerRangeConstraint
                       :else FixedDecimalRangeConstraint))
+
+;; ranges are interpreted to include the lower bound and exclude the upper bound
+;; it is not possible to specify an 'open ended' range
 
 (def RangesConstraint #{RangeConstraint})
 

@@ -2,6 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-syntax-check
+  "Check a bom to ensure that all of the specs and fields names actually exist in the spec-env."
   (:require [com.viasat.halite.b-err :as b-err]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]

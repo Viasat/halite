@@ -2,6 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-mandatory
+  "Ensure that all boms for mandatory fields are marked as required. Convert to contradictions as
+  appropriate."
   (:require [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]

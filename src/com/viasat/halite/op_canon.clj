@@ -2,6 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-canon
+  "Convert a bom to a canonical form."
   (:require [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]

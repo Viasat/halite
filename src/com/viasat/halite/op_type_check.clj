@@ -2,6 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-type-check
+  "Check that all of the values provided in a bom match the expected types, per the specs in the
+  spec-env."
   (:require [com.viasat.halite.b-err :as b-err]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
