@@ -78,8 +78,14 @@
                                                      {:$instance-of :ws/A$v1
                                                       :b {:$refines-to :ws/B$v1}})))
 
-  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+  (is (thrown-with-msg? ExceptionInfo #"spec not found"
                         (op-type-check/type-check-op {:ws/A$v1 {:fields {:b [:Instance :* #{:ws/B$v1}]}}}
+                                                     {:$instance-of :ws/A$v1
+                                                      :b {:$instance-of :ws/B$v1}})))
+
+  (is (thrown-with-msg? ExceptionInfo #"cannot use an abstract instance"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:b [:Instance :* #{:ws/B$v1}]}}
+                                                      :ws/B$v1 {:abstract? true}}
                                                      {:$instance-of :ws/A$v1
                                                       :b {:$instance-of :ws/B$v1}})))
 
@@ -101,8 +107,7 @@
                                                       :b {:$instance-of :ws/B$v1
                                                           :$value true}})))
 
-  ;; this invalid field-name should be caught by syntax check, but maybe a better error message would be good?
-  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+  (is (thrown-with-msg? ExceptionInfo #"field not found"
                         (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}}
                                                      {:$refines-to :ws/A$v1
                                                       :y "hi"})))
@@ -136,13 +141,20 @@
                                                       :x {:$enum #{#{#d "1.0" #d "2.0"} #{#d "3.0" #d "4.01"}}}}))))
 
 (deftest test-refinements
-  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+  (is (thrown-with-msg? ExceptionInfo #"field not found"
                         (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}
                                                       :ws/B$v1 {}}
                                                      {:$instance-of :ws/A$v1
                                                       :$refinements {:ws/B$v1 {:$instance-of :ws/A$v1
                                                                                :y "hi"}}})))
+
   (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                                      :ws/B$v1 {}}
+                                                     {:$instance-of :ws/A$v1
+                                                      :$refinements {:ws/B$v1 {:$instance-of :ws/A$v1
+                                                                               :x "hi"}}})))
+  (is (thrown-with-msg? ExceptionInfo #"field not found"
                         (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}
                                                       :ws/B$v1 {}}
                                                      {:$refines-to :ws/A$v1
@@ -154,7 +166,7 @@
                                                      {:$refines-to :ws/A$v1
                                                       :$concrete-choices {:ws/B$v1 {:$instance-of :ws/A$v1
 
-                                                                                    :y "hi"}}})))
+                                                                                    :x "hi"}}})))
   (let [bom {:$refines-to :ws/A$v1
              :$concrete-choices {:ws/B$v1 {:$instance-of :ws/A$v1
                                            :x 1}}}]

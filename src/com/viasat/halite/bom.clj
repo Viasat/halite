@@ -246,6 +246,11 @@
   [instance :- InstanceBomOrValue]
   (apply dissoc instance meta-fields))
 
+(s/defn strip-bare-fields
+  "Remove all but the meta fields"
+  [instance :- InstanceBomOrValue]
+  (select-keys instance meta-fields))
+
 ;;
 
 (s/defn get-spec-id :- SpecId

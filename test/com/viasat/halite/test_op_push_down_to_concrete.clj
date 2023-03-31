@@ -30,6 +30,18 @@
                                                                                  :ws/C$v1 {:$instance-of :ws/C$v1}}})))
 
   (is (= {:$refines-to :ws/A$v1
+          :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
+                                        :$refinements {:ws/A$v1 {:$instance-of :ws/A$v1
+                                                                 :x 1}}}
+                              :ws/C$v1 {:$instance-of :ws/C$v1
+                                        :$refinements {:ws/A$v1 {:$instance-of :ws/A$v1
+                                                                 :x 1}}}}}
+         (op-push-down-to-concrete/push-down-to-concrete-op {:$refines-to :ws/A$v1
+                                                             :x 1
+                                                             :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1}
+                                                                                 :ws/C$v1 {:$instance-of :ws/C$v1}}})))
+
+  (is (= {:$refines-to :ws/A$v1
           :$value? true
           :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
                                         :$refinements {:ws/A$v1 {:$instance-of :ws/A$v1

@@ -111,8 +111,26 @@
                                                                                         :field-bom field-bom})))
                 (let [field-type (spec/get-field-type spec field-name)
                       field-bom-type (get-bom-type field-bom)]
+                  (when (not field-type)
+                    (throw (ex-info "field not found: " {:bom bom
+                                                         :field-bom field-bom
+                                                         :field-name field-name})))
+                  (when (and (not= true (:abstract? spec))
+                             (bom/is-concrete-instance-bom? bom)
+                             (types/spec-type? field-bom-type)
+                             (bom/is-concrete-instance-bom? field-bom)
+                             (let [field-spec (envs/lookup-spec spec-env (bom/get-spec-id field-bom))]
+                               (when (nil? field-spec)
+                                 (throw (ex-info "spec not found for field-bom" {:bom bom
+                                                                                 :field-bom field-bom
+                                                                                 :field-spec-id (bom/get-spec-id field-bom)})))
+                               (= true (:abstract? field-spec))))
+                    (throw (ex-info "cannot use an abstract instance to construct a concrete instance" {:bom bom
+                                                                                                        :field-name field-name
+                                                                                                        :field-type field-type
+                                                                                                        :field-bom field-bom})))
                   (when (and field-bom-type
-                             (not= field-type field-bom-type))
+                             (not (types/subtype? field-bom-type field-type)))
                     (throw (ex-info "unexpected type: " {:field-type field-type
                                                          :field-bom-type field-bom-type
                                                          :field-bom field-bom}))))))
