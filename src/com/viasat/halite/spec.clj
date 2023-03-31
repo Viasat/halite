@@ -43,32 +43,45 @@
 (def Refinement {:to-spec-id types/NamespacedKeyword
                  (s/optional-key :extrinsic?) (s/eq true)})
 
+(defn- make-spec-id-graph-following-refinements-starting-at-spec-id
+  [spec-env
+   spec-id]
+  (loop [[spec-id & more-spec-ids] #{spec-id}
+         spec-id-graph {}
+         refinement-objects {}]
+    (if spec-id
+      (let [{:keys [refines-to]} (envs/lookup-spec spec-env spec-id)
+            found (set (keys refines-to))
+            new-graph (assoc spec-id-graph spec-id found)]
+        (recur (set/union (set more-spec-ids)
+                          (set/difference found (->> new-graph keys set)))
+               new-graph
+               (reduce (fn [refinement-objects arg2]
+                         (let [[to-spec-id {:keys [extrinsic?]}] arg2]
+                           (assoc-in refinement-objects
+                                     [spec-id to-spec-id]
+                                     (if (= true extrinsic?)
+                                       {:extrinsic? true}
+                                       nil))))
+                       refinement-objects
+                       refines-to)))
+      {:spec-id-graph spec-id-graph
+       :refinement-objects refinement-objects})))
+
+(defn- make-spec-id-graph-reversing-refinements
+  [spec-env]
+  (->> spec-env
+       (map (fn [[spec-id spec]]
+              (let [{:keys [refines-to]} spec]
+                [spec-id (-> refines-to keys)])))
+       (into {})))
+
 (s/defn find-refinement-path :- (s/maybe [Refinement])
   [spec-env
    from-spec-id :- types/NamespacedKeyword
    to-spec-id :- types/NamespacedKeyword]
   (let [{:keys [spec-id-graph
-                refinement-objects]} (loop [[spec-id & more-spec-ids] #{from-spec-id}
-                                            spec-id-graph {}
-                                            refinement-objects {}]
-                                       (if spec-id
-                                         (let [{:keys [refines-to]} (envs/lookup-spec spec-env spec-id)
-                                               found (set (keys refines-to))
-                                               new-graph (assoc spec-id-graph spec-id found)]
-                                           (recur (set/union (set more-spec-ids)
-                                                             (set/difference found (->> new-graph keys set)))
-                                                  new-graph
-                                                  (reduce (fn [refinement-objects arg2]
-                                                            (let [[to-spec-id {:keys [extrinsic?]}] arg2]
-                                                              (assoc-in refinement-objects
-                                                                        [spec-id to-spec-id]
-                                                                        (if (= true extrinsic?)
-                                                                          {:extrinsic? true}
-                                                                          nil))))
-                                                          refinement-objects
-                                                          refines-to)))
-                                         {:spec-id-graph spec-id-graph
-                                          :refinement-objects refinement-objects}))]
+                refinement-objects]} (make-spec-id-graph-following-refinements-starting-at-spec-id spec-env from-spec-id)]
     (loop [spec-id-path (-> spec-id-graph
                             loom.graph/digraph
                             (loom.alg/shortest-path from-spec-id to-spec-id))
@@ -80,3 +93,16 @@
                        (assoc (get-in refinement-objects [from-spec-id to-spec-id])
                               :to-spec-id to-spec-id))))
         refinement-object-path))))
+
+(s/defn find-specs-refining-to
+  [spec-env
+   to-spec-id :- types/NamespacedKeyword]
+  (let [spec-id-graph (make-spec-id-graph-reversing-refinements spec-env)
+        g (when-not (empty? spec-id-graph)
+            (->> spec-id-graph loom.graph/digraph))]
+    (some->> g
+             loom.alg/topsort
+             (take-while #(not= % to-spec-id))
+             (map #(loom.alg/shortest-path g % to-spec-id))
+             (remove nil?)
+             (map first))))
