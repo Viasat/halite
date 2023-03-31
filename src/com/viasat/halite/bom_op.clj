@@ -165,3 +165,8 @@
     bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
   (contains? bom :$value?))
+
+;;
+
+(defn no-nil-entries [m]
+  (into {} (remove (comp nil? val) m)))

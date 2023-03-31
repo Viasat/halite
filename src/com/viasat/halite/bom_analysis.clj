@@ -119,9 +119,6 @@
           (merge to-merge)))
     bom))
 
-(defn no-nil-entries [m]
-  (into {} (remove (comp nil? val) m)))
-
 (defn- and-ranges
   [ranges-a ranges-b]
   (let [{enum :enum ranges :ranges} (-> (list 'and
@@ -131,7 +128,7 @@
                                         (get 'x))]
     (->> {:$enum enum
           :$ranges (ranges-to-bom-format ranges)}
-         no-nil-entries)))
+         bom-op/no-nil-entries)))
 
 ;;;;
 
@@ -275,7 +272,7 @@
                                                      (:$concrete-choices a) (:$concrete-choices a)
                                                      (:$concrete-choices b) (:$concrete-choices b)
                                                      :default nil))
-                         no-nil-entries
+                         bom-op/no-nil-entries
                          detect-empty-concrete-choices)]
           (if (= 1 (count (:$enum result)))
             (merge-boms (first (:$enum result))
