@@ -42,7 +42,7 @@
                                                                                                                    (assoc :$instance-of spec-id)
                                                                                                                    (dissoc :$concrete-choices))}
                                                                                                       (:$refinements bom))))))))
-                    (dissoc :$refinements :$value?))
+                    (dissoc :$refinements))
                 bom)]
       (if (= 1 (count (:$concrete-choices bom)))
         (->> bom

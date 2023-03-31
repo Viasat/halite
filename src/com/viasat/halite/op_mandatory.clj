@@ -21,10 +21,8 @@
     Boolean
     #{}
     []
-    bom/InstanceValue}
-  bom
-
-  #{bom/NoValueBom
+    bom/InstanceValue
+    bom/NoValueBom
     bom/ContradictionBom}
   bom
 

@@ -30,6 +30,7 @@
                                                                                  :ws/C$v1 {:$instance-of :ws/C$v1}}})))
 
   (is (= {:$refines-to :ws/A$v1
+          :$value? true
           :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
                                         :$refinements {:ws/A$v1 {:$instance-of :ws/A$v1
                                                                  :$value? true}}}
@@ -77,6 +78,7 @@
                                                                                                                     :y 2}}}}})))
 
   (is (= {:$refines-to :ws/A$v1
+          :$value? true
           :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
                                         :$refinements {:ws/A$v1 {:$instance-of :ws/A$v1
                                                                  :$value? true}
@@ -95,6 +97,7 @@
                                                                                  :ws/C$v1 {:$instance-of :ws/C$v1}}})))
 
   (is (= {:$refines-to :ws/A$v1
+          :$value? true
           :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
                                         :$refinements {:ws/A$v1 {:$instance-of :ws/A$v1
                                                                  :$value? true}
