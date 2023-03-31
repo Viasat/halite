@@ -76,4 +76,35 @@
          (op-mandatory/mandatory-op {:ws/A$v1 {:fields {:x :Integer}}}
                                     {:$instance-of :ws/A$v1}))))
 
+(deftest test-refinements
+  (is (= {:$instance-of :ws/A$v1
+          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                   :y {:$value? true
+                                       :$ranges #{[1 10]}}}}}
+         (op-mandatory/mandatory-op {:ws/A$v1 {:fields {:x :Integer}}
+                                     :ws/B$v1 {:fields {:y :Integer}}}
+                                    {:$instance-of :ws/A$v1
+                                     :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                              :y {:$ranges #{[1 10]}}}}})))
+
+  (is (= {:$refines-to :ws/A$v1
+          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                   :y {:$value? true
+                                       :$ranges #{[1 10]}}}}}
+         (op-mandatory/mandatory-op {:ws/A$v1 {:fields {:x :Integer}}
+                                     :ws/B$v1 {:fields {:y :Integer}}}
+                                    {:$refines-to :ws/A$v1
+                                     :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                              :y {:$ranges #{[1 10]}}}}})))
+
+  (is (= {:$refines-to :ws/A$v1
+          :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
+                                        :y {:$value? true
+                                            :$ranges #{[1 10]}}}}}
+         (op-mandatory/mandatory-op {:ws/A$v1 {:fields {:x :Integer}}
+                                     :ws/B$v1 {:fields {:y :Integer}}}
+                                    {:$refines-to :ws/A$v1
+                                     :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                                   :y {:$ranges #{[1 10]}}}}}))))
+
 ;; (run-tests)

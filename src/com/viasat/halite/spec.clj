@@ -33,7 +33,7 @@
                    (types/maybe-type? field-type)))
          (map first))))
 
-(s/defn get-field-type :- types/HaliteType
+(s/defn get-field-type :- (s/maybe types/HaliteType)
   [spec-info :- envs/SpecInfo
    field-name :- types/BareKeyword]
   (let [{:keys [fields]} spec-info]

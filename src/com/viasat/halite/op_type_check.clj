@@ -81,8 +81,6 @@
   [bom :- bom/VariableValueBom]
   (get-bom-type* bom))
 
-(declare type-check)
-
 (bom-op/def-bom-multimethod type-check*
   [spec-env bom]
   #{Integer
@@ -116,6 +114,12 @@
                     (throw (ex-info "unexpected type: " {:field-type field-type
                                                          :field-bom-type field-bom-type
                                                          :field-bom field-bom}))))))
+         dorun)
+    (->> (some-> bom :$refinements vals)
+         (map (partial type-check* spec-env))
+         dorun)
+    (->> (some-> bom :$concrete-choices vals)
+         (map (partial type-check* spec-env))
          dorun)
     (bom/instance-bom-halite-type bom))
 

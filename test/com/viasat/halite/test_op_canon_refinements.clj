@@ -141,10 +141,28 @@
   (is (= {:$refines-to :ws/A$v1
           :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
                                    :b 100}}}
-         (op-canon-refinements/canon-refinements-op {}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {}
+                                                     :ws/B$v1 {}
+                                                     :ws/C$v1 {:refines-to {:ws/A$v1 {:expr nil}
+                                                                            :ws/B$v1 {:expr nil}}}}
                                                     {:$refines-to :ws/A$v1
                                                      :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
                                                                               :b 100}}})))
+  (is (= {:$refines-to :ws/X$v1
+          :$concrete-choices {:ws/Y$v1 {:$instance-of :ws/Y$v1
+                                        :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                                 :$refinements {:ws/C$v1
+                                                                                {:$instance-of :ws/C$v1
+                                                                                 :$value? false}}}}}}}
+         (op-canon-refinements/canon-refinements-op {:ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}
+                                                     :ws/C$v1 {:refines-to {:ws/A$v1 {:expr nil}
+                                                                            :ws/B$v1 {:expr nil}}}
+                                                     :ws/Y$v1 {:refines-to {:ws/X$v1 {:expr nil}
+                                                                            :ws/B$v1 {:expr nil}}}}
+                                                    {:$refines-to :ws/X$v1
+                                                     :$concrete-choices {:ws/Y$v1 {:$instance-of :ws/Y$v1
+                                                                                   :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                                                                                            :$value? false}}}}})))
 
   (is (thrown-with-msg? ExceptionInfo #"no refinement path"
                         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {}

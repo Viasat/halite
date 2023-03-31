@@ -71,4 +71,34 @@
                                              :ws/D$v1 {:fields {:d1 :String}}}
                                             bom)))))
 
+(deftest test-refinements
+  (is (thrown-with-msg? ExceptionInfo #"Variable does not exist"
+                        (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                                          :ws/B$v1 {:fields {:b :String}}}
+                                                         {:$instance-of :ws/A$v1
+                                                          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                                                   :q 1}}})))
+
+  (is (thrown-with-msg? ExceptionInfo #"Variable does not exist"
+                        (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                                          :ws/B$v1 {:fields {:b :String}}}
+                                                         {:$refines-to :ws/A$v1
+                                                          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                                                   :q 1}}})))
+
+  (let [bom {:$refines-to :ws/A$v1
+             :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                      :b 1}}}]
+    (is (= bom
+           (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                             :ws/B$v1 {:fields {:b :String}}}
+                                            bom))))
+
+  (is (thrown-with-msg? ExceptionInfo #"Variable does not exist"
+                        (op-syntax-check/syntax-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                                          :ws/B$v1 {:fields {:b :String}}}
+                                                         {:$refines-to :ws/A$v1
+                                                          :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
+                                                                                        :q 1}}}))))
+
 ;; (run-tests)

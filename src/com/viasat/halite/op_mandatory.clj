@@ -63,10 +63,6 @@
                                          (ensure-value field-bom)
                                          field-bom)]))
                     (into {})))
-        (assoc :$refinements (some->> bom
-                                      :$refinements
-                                      (update-vals (partial mandatory-op spec-env))))
-        (assoc :$concrete-choices (some->> bom
-                                           :$concrete-choices
-                                           (update-vals (partial mandatory-op spec-env))))
+        (assoc :$refinements (some-> bom :$refinements (update-vals (partial mandatory-op spec-env))))
+        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial mandatory-op spec-env))))
         bom-op/no-nil-entries)))

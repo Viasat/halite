@@ -102,7 +102,7 @@
                                                           :$value true}})))
 
   ;; this invalid field-name should be caught by syntax check, but maybe a better error message would be good?
-  (is (thrown-with-msg? ExceptionInfo #"does not match schema"
+  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
                         (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}}
                                                      {:$refines-to :ws/A$v1
                                                       :y "hi"})))
@@ -134,5 +134,32 @@
                         (op-type-check/type-check-op {:ws/A$v1 {:fields {:x [:Set :Integer]}}}
                                                      {:$refines-to :ws/A$v1
                                                       :x {:$enum #{#{#d "1.0" #d "2.0"} #{#d "3.0" #d "4.01"}}}}))))
+
+(deftest test-refinements
+  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                                      :ws/B$v1 {}}
+                                                     {:$instance-of :ws/A$v1
+                                                      :$refinements {:ws/B$v1 {:$instance-of :ws/A$v1
+                                                                               :y "hi"}}})))
+  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                                      :ws/B$v1 {}}
+                                                     {:$refines-to :ws/A$v1
+                                                      :$refinements {:ws/B$v1 {:$instance-of :ws/A$v1
+                                                                               :y "hi"}}})))
+  (is (thrown-with-msg? ExceptionInfo #"unexpected type"
+                        (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                                      :ws/B$v1 {}}
+                                                     {:$refines-to :ws/A$v1
+                                                      :$concrete-choices {:ws/B$v1 {:$instance-of :ws/A$v1
+
+                                                                                    :y "hi"}}})))
+  (let [bom {:$refines-to :ws/A$v1
+             :$concrete-choices {:ws/B$v1 {:$instance-of :ws/A$v1
+                                           :x 1}}}]
+    (is (= bom (op-type-check/type-check-op {:ws/A$v1 {:fields {:x :Integer}}
+                                             :ws/B$v1 {}}
+                                            bom)))))
 
 ;; (run-tests)

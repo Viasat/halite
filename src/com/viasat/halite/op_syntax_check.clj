@@ -65,4 +65,7 @@
   #{bom/InstanceValue
     bom/AbstractInstanceBom
     bom/ConcreteInstanceBom}
-  (syntax-check-spec spec-env bom))
+  (-> (syntax-check-spec spec-env bom)
+      (assoc :$refinements (some-> bom :$refinements (update-vals (partial syntax-check-op spec-env))))
+      (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial syntax-check-op spec-env))))
+      bom-op/no-nil-entries))

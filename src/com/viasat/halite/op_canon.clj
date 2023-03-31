@@ -46,4 +46,7 @@
                             (update-vals canon-op))]
         (if (some bom/is-contradiction-bom? (vals bare-result))
           bom/contradiction-bom
-          (merge bom bare-result))))))
+          (-> (merge bom bare-result)
+              (assoc :$refinements (some-> bom :$refinements (update-vals canon-op)))
+              (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals canon-op)))
+              bom-op/no-nil-entries))))))
