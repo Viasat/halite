@@ -74,4 +74,34 @@
                                              :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1}
                                                                  :ws/C$v1 {:$instance-of :ws/C$v1}}}))))
 
+(deftest test-refinements
+  (is (= {:$instance-of :ws/X$v1
+          :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1
+                                   :a bom/no-value-bom}}}
+         (op-find-concrete/find-concrete-op {}
+                                            {:$instance-of :ws/X$v1
+                                             :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1
+                                                                      :a {:$refines-to :ws/A$v1
+                                                                          :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1}}}}}})))
+
+  (is (= {:$instance-of :ws/X$v1
+          :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1
+                                   :a bom/no-value-bom}}}
+         (op-find-concrete/find-concrete-op {}
+                                            {:$instance-of :ws/X$v1
+                                             :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1
+                                                                      :a {:$refines-to :ws/A$v1}}}})))
+
+  (is (= {:$instance-of :ws/X$v1
+          :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1
+                                   :a {:$refines-to :ws/A$v1
+                                       :$concrete-choices {:ws/C$v1 {:$instance-of :ws/C$v1}}}}}}
+         (op-find-concrete/find-concrete-op {:ws/A$v1 {}
+                                             :ws/B$v1 {:abstract? true
+                                                       :refines-to {:ws/A$v1 {:expr nil}}}
+                                             :ws/C$v1 {:refines-to {:ws/B$v1 {:expr nil}}}}
+                                            {:$instance-of :ws/X$v1
+                                             :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1
+                                                                      :a {:$refines-to :ws/A$v1}}}}))))
+
 ;; (run-tests)

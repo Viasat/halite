@@ -43,27 +43,38 @@
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
-  (cond
-    (nil? (:$concrete-choices bom))
-    ;; fill in the choices
-    (-> bom
-        (assoc :$concrete-choices (->> bom
-                                       bom/get-spec-id
-                                       (spec/find-specs-refining-to spec-env)
-                                       (map (fn [concrete-spec-id]
-                                              [concrete-spec-id {:$instance-of concrete-spec-id}]))
-                                       (filter-out-abstract spec-env)))
-        bom-op/no-nil-entries
-        handle-empty-choices)
+  (let [bom (if (bom/is-abstract-instance-bom? bom)
+              (cond
+                (nil? (:$concrete-choices bom))
+                ;; fill in the choices
+                (-> bom
+                    (assoc :$concrete-choices (->> bom
+                                                   bom/get-spec-id
+                                                   (spec/find-specs-refining-to spec-env)
+                                                   (map (fn [concrete-spec-id]
+                                                          [concrete-spec-id {:$instance-of concrete-spec-id}]))
+                                                   (filter-out-abstract spec-env)))
+                    bom-op/no-nil-entries
+                    handle-empty-choices)
 
-    (empty? (:$concrete-choices bom))
-    (handle-empty-choices bom)
+                (empty? (:$concrete-choices bom))
+                (handle-empty-choices bom)
 
-    :default
-    ;; filter out the inapplicable concrete choices provided
-    (-> bom
-        (assoc :$concrete-choices (->> bom
-                                       :$concrete-choices
-                                       (filter-out-abstract spec-env)))
-        bom-op/no-nil-entries
-        handle-empty-choices)))
+                :default
+                ;; filter out the inapplicable concrete choices provided
+                (-> bom
+                    (assoc :$concrete-choices (->> bom
+                                                   :$concrete-choices
+                                                   (filter-out-abstract spec-env)))
+                    bom-op/no-nil-entries
+                    handle-empty-choices))
+              bom)]
+    (if (bom/is-instance-bom? bom)
+      (-> bom
+          (merge (-> bom
+                     bom/to-bare-instance-bom
+                     (update-vals (partial find-concrete-op spec-env))
+                     (into {})))
+          (assoc :$refinements (some-> bom :$refinements (update-vals (partial find-concrete-op spec-env))))
+          bom-op/no-nil-entries)
+      bom)))
