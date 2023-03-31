@@ -35,13 +35,6 @@
                                  :$ranges #{[1 10]
                                             [20 30]}}})))
 
-  (is (= bom/no-value-bom
-         (op-canon/canon-op {:$refines-to :ws/A$v1
-                             :$enum #{}
-                             :x {:$enum #{0}
-                                 :$ranges #{[1 10]
-                                            [20 30]}}})))
-
   (is (= {:$instance-of :ws/A$v1
           :x 5}
          (op-canon/canon-op {:$instance-of :ws/A$v1

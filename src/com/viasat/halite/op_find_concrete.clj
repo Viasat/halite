@@ -2,6 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-find-concrete
+  "Update abstract instance bom elements to have their concrete choices field populated and/or trimmed
+  based on refinement paths in the spec-env."
   (:require [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]

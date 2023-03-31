@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-lift-refinements
-  "Transform a bom such that nested $refinements field values are all 'lifted' to the top-level."
+  "Transform a bom such that nested $refinements field values are all 'lifted' to the
+  top-level. i.e. break up whatever refinement chains are implied by the bom"
   (:require [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]

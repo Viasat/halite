@@ -198,9 +198,12 @@
                                                  :else ContradictionBom)}))
 
 (def AbstractInstanceBom
-  (-> ConcreteInstanceBom
-      (dissoc :$instance-of)
+  (-> BareInstanceBom
       (assoc :$refines-to SpecId
+             (s/optional-key :$value?) BooleanBom
+             (s/optional-key :$refinements) {SpecId (s/conditional
+                                                     is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
+                                                     :else ContradictionBom)}
              (s/optional-key :$concrete-choices) {SpecId (s/conditional
                                                           is-concrete-instance-bom? ConcreteInstanceBom
                                                           :else InstanceValue)})))

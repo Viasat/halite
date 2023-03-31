@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-canon-refinements
   "Based on the actual refinement paths in play in the spec-env, convert boms such that the
-  $refinements fields reflect the actual refinement paths."
+  $refinements fields reflect the actual refinement paths. i.e. chain them together following the
+  refinement paths"
   (:require [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.spec :as spec]
