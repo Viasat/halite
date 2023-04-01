@@ -30,9 +30,8 @@
 
        op-lift-refinements/lift-refinements-op
        (op-find-concrete/find-concrete-op spec-env)
-       (op-canon-refinements/canon-refinements-op spec-env)
-
        op-push-down-to-concrete/push-down-to-concrete-op
+       (op-canon-refinements/canon-refinements-op spec-env)
 
        op-contradictions/bubble-up-contradictions))
 
@@ -44,8 +43,9 @@
                                             :$refinements {:ws/X$v1 {:x2 2
                                                                      :$instance-of :ws/X$v1}}}
                                   :ws/ZZ$v1 {:$instance-of :ws/ZZ$v1
-                                             :$refinements {:ws/X$v1 {:x2 2
-                                                                      :$instance-of :ws/X$v1}}}}}}
+                                             :$refinements {:ws/Z$v1 {:$instance-of :ws/Z$v1
+                                                                      :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1
+                                                                                               :x2 2}}}}}}}}
          (pipeline {:ws/A$v1 {:fields {:i :Integer
                                        :x [:Maybe [:Instance :* #{:ws/X$v1}]]}}
                     :ws/X$v1 {:fields {:x2 :Integer}}
@@ -62,21 +62,33 @@
           :i 1
           :x {:$refines-to :ws/X$v1
               :$value? true
-              :$concrete-choices {:ws/Y$v1 {:$instance-of :ws/Y$v1
-                                            :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1
-                                                                     :$value? true
-                                                                     :x2 2}}}
-                                  :ws/ZZ$v1 {:$instance-of :ws/ZZ$v1
-                                             :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1
-                                                                      :$value? true
-                                                                      :x2 2}}}}}}
+              :$concrete-choices
+              {:ws/Y$v1 {:$instance-of :ws/Y$v1
+                         :$refinements {:ws/X$v1
+                                        {:$instance-of :ws/X$v1
+                                         :x2 2
+                                         :$value? true}}}
+               :ws/ZZ$v1 {:$instance-of :ws/ZZ$v1
+                          :$refinements {:ws/Z$v1 {:$instance-of :ws/Z$v1
+                                                   :$refinements {:ws/X$v1
+                                                                  {:$instance-of :ws/X$v1
+                                                                   :x2 2
+                                                                   :$value? true}}}}}
+               :ws/ZZZ$v1 {:$instance-of :ws/ZZZ$v1
+                           :$refinements {:ws/ZZ$v1 {:$instance-of :ws/ZZ$v1
+                                                     :$refinements
+                                                     {:ws/Z$v1 {:$instance-of :ws/Z$v1
+                                                                :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1
+                                                                                         :x2 2
+                                                                                         :$value? true}}}}}}}}}}
          (pipeline {:ws/A$v1 {:fields {:i :Integer
                                        :x [:Instance :* #{:ws/X$v1}]}}
                     :ws/X$v1 {:fields {:x2 :Integer}}
                     :ws/Y$v1 {:refines-to {:ws/X$v1 {:expr nil}}}
                     :ws/Z$v1 {:abstract? true
                               :refines-to {:ws/X$v1 {:expr nil}}}
-                    :ws/ZZ$v1 {:refines-to {:ws/Z$v1 {:expr nil}}}}
+                    :ws/ZZ$v1 {:refines-to {:ws/Z$v1 {:expr nil}}}
+                    :ws/ZZZ$v1 {:refines-to {:ws/ZZ$v1 {:expr nil}}}}
                    {:$instance-of :ws/A$v1
                     :i 1
                     :x {:$refines-to :ws/X$v1
