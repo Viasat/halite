@@ -24,7 +24,8 @@
   (is (= {:$instance-of :ws/A$v1
           :x bom/no-value-bom}
          (op-canon/canon-op {:$instance-of :ws/A$v1
-                             :x {:$enum #{0}
+                             :x {:$value? true
+                                 :$enum #{0}
                                  :$ranges #{[1 10]
                                             [20 30]}}})))
 
@@ -141,7 +142,8 @@
                                    :x {:$value? false}}}}
          (op-canon/canon-op {:$instance-of :ws/A$v1
                              :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
-                                                      :x {:$enum #{0}
+                                                      :x {:$value? true
+                                                          :$enum #{0}
                                                           :$ranges #{[1 10]
                                                                      [20 30]}}}}})))
 
@@ -150,7 +152,8 @@
                                         :x {:$value? false}}}}
          (op-canon/canon-op {:$refines-to :ws/A$v1
                              :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
-                                                           :x {:$enum #{0}
+                                                           :x {:$value? true
+                                                               :$enum #{0}
                                                                :$ranges #{[1 10]
                                                                           [20 30]}}}}}))))
 

@@ -4,7 +4,8 @@
 (ns com.viasat.halite.op-find-concrete
   "Update abstract instance bom elements to have their concrete choices field populated and/or trimmed
   based on refinement paths in the spec-env."
-  (:require [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.spec :as spec]
@@ -56,7 +57,7 @@
                                                    (map (fn [concrete-spec-id]
                                                           [concrete-spec-id {:$instance-of concrete-spec-id}]))
                                                    (filter-out-abstract spec-env)))
-                    bom-op/no-nil-entries
+                    base/no-nil-entries
                     handle-empty-choices)
 
                 (empty? (:$concrete-choices bom))
@@ -68,7 +69,7 @@
                     (assoc :$concrete-choices (->> bom
                                                    :$concrete-choices
                                                    (filter-out-abstract spec-env)))
-                    bom-op/no-nil-entries
+                    base/no-nil-entries
                     handle-empty-choices))
               bom)]
     (if (bom/is-instance-bom? bom)
@@ -78,5 +79,5 @@
                      (update-vals (partial find-concrete-op spec-env))
                      (into {})))
           (assoc :$refinements (some-> bom :$refinements (update-vals (partial find-concrete-op spec-env))))
-          bom-op/no-nil-entries)
+          base/no-nil-entries)
       bom)))

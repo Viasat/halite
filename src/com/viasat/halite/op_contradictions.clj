@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-contradictions
   "Bubble contradictions up."
-  (:require [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.spec :as spec]
@@ -40,7 +41,7 @@
                                                              (or (bom/is-contradiction-bom? bom)
                                                                  (bom/is-no-value-bom? bom))))
                                                    (into {})))
-                bom-op/no-nil-entries)
+                base/no-nil-entries)
         ;; detect if any fields are contradictions
         bom (if (->> bom
                      bom/to-bare-instance-bom

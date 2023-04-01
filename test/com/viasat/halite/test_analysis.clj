@@ -298,6 +298,15 @@
      '{x {:ranges #{{:max 500
                      :max-inclusive false}}}}]
 
+    '(and (and (< x 505) ;; mutually exclusive ranges are detected as no value can satisfy
+               (> x 0))
+          (and (< x 1505)
+               (> x 1000)))
+    ['(and (< x 505) (> x 0) (< x 1505) (> x 1000))
+     '{x (and (< x 505) (> x 0) (< x 1505) (> x 1000))}
+     '{x {:enum #{}}}
+     '{x {:enum #{}}}]
+
     '(< 510 x) ;; arguments can be in either order
     ['(< 510 x)
      '{x (< 510 x)}

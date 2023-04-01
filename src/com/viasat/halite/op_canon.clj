@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-canon
   "Convert a bom to a canonical form."
-  (:require [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
             [schema.core :as s])
@@ -50,4 +51,4 @@
           (-> (merge bom bare-result)
               (assoc :$refinements (some-> bom :$refinements (update-vals canon-op)))
               (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals canon-op)))
-              bom-op/no-nil-entries))))))
+              base/no-nil-entries))))))

@@ -7,6 +7,8 @@
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
@@ -99,9 +101,15 @@
        max)]))
 
 (defn- ranges-to-bom-format [ranges]
-  (->> ranges
-       (map range-to-bom-format)
-       set))
+  (some->> ranges
+           (map range-to-bom-format)
+           set))
+
+(defn- tlfc-to-bom [tlfc]
+  (let [{:keys [enum ranges]} tlfc]
+    (some->> {:$enum enum
+              :$ranges (ranges-to-bom-format ranges)}
+             base/no-nil-entries)))
 
 (defn collapse-ranges-and-enum
   "Normalize all the ranges and enumerated values to the smallest equivalent"
@@ -109,11 +117,16 @@
   (if (or (contains? bom :$enum)
           (contains? bom :$ranges))
     (let [{enum :$enum ranges :$ranges} bom
-          {enum' :enum ranges' :ranges} (invoke-analysis enum ranges)
+          {enum' :$enum ranges' :$ranges} (->> (invoke-analysis enum ranges) tlfc-to-bom)
           to-merge (cond
-                     (and enum (zero? (count enum'))) bom/no-value-bom
+                     (and enum enum' (zero? (count enum'))) (if (= true (:$value? bom))
+                                                              bom/no-value-bom
+                                                              {:$enum #{}})
+                     (and enum (nil? enum')) (throw (ex-info "bug: expected an enum value" {:enum enum
+                                                                                            :enum' enum'
+                                                                                            :bom bom}))
                      (> (count enum') 0) {:$enum enum'}
-                     (> (count ranges') 0) {:$ranges (ranges-to-bom-format ranges')})]
+                     (> (count ranges') 0) {:$ranges ranges'})]
       (-> bom
           (dissoc :$enum :$ranges)
           (merge to-merge)))
@@ -128,7 +141,7 @@
                                         (get 'x))]
     (->> {:$enum enum
           :$ranges (ranges-to-bom-format ranges)}
-         bom-op/no-nil-entries)))
+         base/no-nil-entries)))
 
 ;;;;
 
@@ -272,7 +285,7 @@
                                                      (:$concrete-choices a) (:$concrete-choices a)
                                                      (:$concrete-choices b) (:$concrete-choices b)
                                                      :default nil))
-                         bom-op/no-nil-entries
+                         base/no-nil-entries
                          detect-empty-concrete-choices)]
           (if (= 1 (count (:$enum result)))
             (merge-boms (first (:$enum result))
@@ -301,3 +314,39 @@
           (assoc b :$concrete-choices {(bom/get-spec-id a) a})))
 
       :default bom/contradiction-bom)))
+
+;;;;
+
+(s/defn bom-for-field
+  [tlfc-map [field-name field-type]]
+  (-> field-name
+      symbol
+      tlfc-map
+      tlfc-to-bom
+      (assoc :$value? (when-not (types/maybe-type? field-type)
+                        true))
+      base/no-nil-entries
+      base/no-empty))
+
+(defn- make-conjunct [es]
+  (apply list 'and es))
+
+(s/defn compute-tlfc-map
+  [spec-info :- envs/SpecInfo]
+  (let [{:keys [constraints]} spec-info]
+    (->> constraints
+         (map second)
+         make-conjunct
+         analysis/compute-tlfc-map)))
+
+(s/defn bom-for-spec
+  [spec-id
+   spec-info :- envs/SpecInfo]
+  (let [{:keys [fields]} spec-info
+        field-names (->> fields (map first))
+        tlfc-map (compute-tlfc-map spec-info)]
+    (assoc (->> fields
+                (map (partial bom-for-field tlfc-map))
+                (zipmap field-names)
+                base/no-nil-entries)
+           :$instance-of spec-id)))

@@ -4,7 +4,8 @@
 (ns com.viasat.halite.op-lift-refinements
   "Transform a bom such that nested $refinements field values are all 'lifted' to the
   top-level. i.e. break up whatever refinement chains are implied by the bom"
-  (:require [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
             [schema.core :as s])
@@ -48,7 +49,7 @@
                                                               refinements-from-children)))))
                    bom)
                  (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals lift-refinements-op)))
-                 bom-op/no-nil-entries)]
+                 base/no-nil-entries)]
 
     ;; process child boms
     (merge bom (-> bom

@@ -133,3 +133,14 @@
 (def h>=   (math-f >=   fixed-decimal/f>=))
 (def h<    (math-f <    fixed-decimal/f<))
 (def h>    (math-f >    fixed-decimal/f>))
+
+;;;;
+
+(defn no-nil-entries [m]
+  (when m
+    (into {} (remove (comp nil? val) m))))
+
+(defn no-empty [m]
+  (when (and m
+             (not (empty? m)))
+    m))

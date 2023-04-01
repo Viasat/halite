@@ -5,7 +5,8 @@
   "Based on the actual refinement paths in play in the spec-env, convert boms such that the
   $refinements fields reflect the actual refinement paths. i.e. chain them together following the
   refinement paths"
-  (:require [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.spec :as spec]
             [schema.core :as s])
@@ -68,7 +69,7 @@
                                 refinements))))
                   bom)
                 (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial canon-refinements-op spec-env))))
-                bom-op/no-nil-entries)]
+                base/no-nil-entries)]
 
     ;; process child boms
     (if (bom/is-no-value-bom? bom)

@@ -4,7 +4,8 @@
 (ns com.viasat.halite.op-mandatory
   "Ensure that all boms for mandatory fields are marked as required. Convert to contradictions as
   appropriate."
-  (:require [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.spec :as spec]
@@ -65,4 +66,4 @@
                     (into {})))
         (assoc :$refinements (some-> bom :$refinements (update-vals (partial mandatory-op spec-env))))
         (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial mandatory-op spec-env))))
-        bom-op/no-nil-entries)))
+        base/no-nil-entries)))

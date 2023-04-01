@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-push-down-to-concrete
   "Update abstract instance bom elements to push their constraints down into the concrete choices."
-  (:require [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
             [schema.core :as s])
@@ -58,4 +59,4 @@
                         (into {})))
             (assoc :$refinements (some-> bom :$refinements (update-vals push-down-to-concrete-op)))
             (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals push-down-to-concrete-op)))
-            bom-op/no-nil-entries)))))
+            base/no-nil-entries)))))

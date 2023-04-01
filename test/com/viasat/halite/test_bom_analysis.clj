@@ -20,8 +20,14 @@
                                                    :$ranges #{[1 10]
                                                               [20 30]}})))
 
-  (is (= bom/no-value-bom
+  (is (= {:$enum #{}}
          (#'bom-analysis/collapse-ranges-and-enum {:$enum #{0}
+                                                   :$ranges #{[1 10]
+                                                              [20 30]}})))
+
+  (is (= bom/no-value-bom
+         (#'bom-analysis/collapse-ranges-and-enum {:$value? true
+                                                   :$enum #{0}
                                                    :$ranges #{[1 10]
                                                               [20 30]}})))
 
@@ -208,5 +214,24 @@
                                    :$value? true
                                    :$concrete-choices {:ws/X$v1 {:$instance-of :ws/X$v1}}}
                                   {:$instance-of :ws/A$v1}))))
+
+(deftest test-bom-for-spec
+  {:ws/B$v1 {:fields {:b1 :Integer}}
+   :ws/C$v1 {:fields {:x :Integer}}}
+
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$value? true}}
+         (bom-analysis/bom-for-spec :ws/A$v1 {:fields {:x :Integer}})))
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$ranges #{[1 10000]}
+              :$value? true}}
+         (bom-analysis/bom-for-spec :ws/A$v1 {:fields {:x :Integer}
+                                              :constraints [["x" '(and (> x 0) (< x 10000))]]})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :b {:$value? true}
+          :c {:$value? true}}
+         (bom-analysis/bom-for-spec :ws/A$v1 {:fields {:b [:Instance :ws/B$v1]
+                                                       :c [:Instance :* #{:ws/C$v1}]}}))))
 
 ;; (run-tests)
