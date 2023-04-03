@@ -73,9 +73,10 @@
                                                           :x 2})))
   (is (= {:$instance-of :ws/A$v1
           :x 1
-          :$accessed? true} (bom-analysis/merge-boms {:$type :ws/A$v1 :x 1}
-                                                     {:$instance-of :ws/A$v1
-                                                      :$accessed? true})))
+          :$valid? true}
+         (bom-analysis/merge-boms {:$type :ws/A$v1 :x 1}
+                                  {:$instance-of :ws/A$v1
+                                   :$valid? true})))
   (is (= {:$instance-of :ws/A$v1
           :x 1
           :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1}}} (bom-analysis/merge-boms {:$type :ws/A$v1 :x 1}

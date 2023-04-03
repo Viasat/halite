@@ -213,8 +213,7 @@
                                                                                       (let [to-add {:$instance-of (:to-spec-id (last remaining-path))}]
                                                                                         (if (and (not (bom/is-a-no-value-bom? refinement-bom))
                                                                                                  (:extrinsic? (last remaining-path)))
-                                                                                          ;; what if accessed field has already been set to false?
-                                                                                          (assoc to-add :$accessed? true)
+                                                                                          (assoc to-add :$extrinsic? true)
                                                                                           to-add))))
                                                                     bom''))]
                                                      ;; now at the end of the refinement path, put the refinement-bom

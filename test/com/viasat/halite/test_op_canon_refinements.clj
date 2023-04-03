@@ -320,7 +320,7 @@
 
   (is (= {:$instance-of :ws/A$v1
           :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
-                                   :$accessed? true
+                                   :$extrinsic? true
                                    :b 100}}}
          (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil
                                                                                       :extrinsic? true}}}}
@@ -330,10 +330,10 @@
 
   (is (= {:$instance-of :ws/A$v1
           :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
-                                   :$accessed? true
+                                   :$extrinsic? true
                                    :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
                                                             :$refinements {:ws/D$v1 {:$instance-of :ws/D$v1
-                                                                                     :$accessed? true
+                                                                                     :$extrinsic? true
                                                                                      :$refinements {:ws/E$v1
                                                                                                     {:$instance-of :ws/E$v1
                                                                                                      :b 100}}}}}}}}}

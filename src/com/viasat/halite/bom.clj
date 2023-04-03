@@ -192,7 +192,8 @@
          :$instance-of SpecId
          (s/optional-key :$enum) #{InstanceValue}
          (s/optional-key :$value?) BooleanBom
-         (s/optional-key :$accessed?) BooleanBom
+         (s/optional-key :$valid?) BooleanBom
+         (s/optional-key :$extrinsic?) (s/eq true)
          (s/optional-key :$refinements) {SpecId (s/conditional
                                                  is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
                                                  is-no-value-bom? NoValueBom

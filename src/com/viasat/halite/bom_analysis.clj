@@ -236,7 +236,7 @@
                :$value? false})
             (let [merged (merge-with merge-boms a b)]
               (if (or (:$refinements b)
-                      (:$accessed? b))
+                      (:$valid? b))
                 (dissoc merged :$type)
                 (dissoc merged :$instance-of)))))
         (if (or (= true (:$value? a)) (= true (:$value? b)))
@@ -264,9 +264,9 @@
                                            (= true (:$value? b)) true
                                            (or (:$value a) (:$value b)) (throw (ex-info "did not expect :$value" {:a a :b b}))
                                            :default nil)
-                                :$accessed? (cond
-                                              (or (= true (:$accessed? a)) (= true (:$accessed? b))) true
-                                              (or (:$accessed? a) (:$accessed? b)) (throw (ex-info "did not expect :$accessed?" {:a a :b b})))
+                                :$valid? (cond
+                                           (or (= true (:$valid? a)) (= true (:$valid? b))) true
+                                           (or (:$valid? a) (:$valid? b)) (throw (ex-info "did not expect :$valid?" {:a a :b b})))
                                 :$refinements (cond
                                                 (and (:$refinements a) (:$refinements b))
                                                 (merge-with merge-boms (:$refinements a) (:$refinements b))
