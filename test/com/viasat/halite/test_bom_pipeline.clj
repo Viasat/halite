@@ -3,6 +3,7 @@
 
 (ns com.viasat.halite.test-bom-pipeline
   (:require [clojure.test :refer :all]
+            [com.viasat.halite.op-add-types :as op-add-types]
             [com.viasat.halite.op-canon :as op-canon]
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
             [com.viasat.halite.op-contradictions :as op-contradictions]
@@ -49,7 +50,8 @@
        (op-find-concrete/find-concrete-op spec-env)
        op-push-down-to-concrete/push-down-to-concrete-op
        (op-canon-refinements/canon-refinements-op spec-env)
-       op-contradictions/bubble-up-contradictions))
+       op-contradictions/bubble-up-contradictions
+       (op-add-types/add-types-op spec-env)))
 
 (deftest test-pipeline
   (is (= {:$instance-of :ws/A$v1
@@ -129,7 +131,8 @@
                         :$value? false}})))
 
   (is (= {:$instance-of :ws/A$v1
-          :i {:$value? true}
+          :i {:$primitive-type :Integer
+              :$value? true}
           :x {:$refines-to :ws/X$v1
               :$concrete-choices {:ws/Y$v1 {:$instance-of :ws/Y$v1
                                             :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}
@@ -146,7 +149,8 @@
                      {:$instance-of :ws/A$v1})))
 
   (is (= {:$instance-of :ws/A$v1
-          :i {:$value? true}
+          :i {:$primitive-type :Integer
+              :$value? true}
           :x {:$instance-of :ws/Y$v1
               :x3 {:$value? true
                    :$ranges #{[1 10000]}}
