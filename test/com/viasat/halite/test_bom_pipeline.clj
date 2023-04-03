@@ -27,7 +27,6 @@
        op-canon/canon-op
        (op-mandatory/mandatory-op spec-env)
 
-       op-canon-refinements/lift-refinements-op
        (op-find-concrete/find-concrete-op spec-env)
        op-push-down-to-concrete/push-down-to-concrete-op
        (op-canon-refinements/canon-refinements-op spec-env)
@@ -69,14 +68,17 @@
                                          :$value? true}}}
                :ws/ZZ$v1 {:$instance-of :ws/ZZ$v1
                           :$refinements {:ws/Z$v1 {:$instance-of :ws/Z$v1
+                                                   :$value? true
                                                    :$refinements {:ws/X$v1
                                                                   {:$instance-of :ws/X$v1
                                                                    :x2 2
                                                                    :$value? true}}}}}
                :ws/ZZZ$v1 {:$instance-of :ws/ZZZ$v1
                            :$refinements {:ws/ZZ$v1 {:$instance-of :ws/ZZ$v1
+                                                     :$value? true
                                                      :$refinements
                                                      {:ws/Z$v1 {:$instance-of :ws/Z$v1
+                                                                :$value? true
                                                                 :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1
                                                                                          :x2 2
                                                                                          :$value? true}}}}}}}}}}

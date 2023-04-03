@@ -3,6 +3,7 @@
 
 (ns com.viasat.halite.test-op-canon-refinements
   (:require [clojure.test :refer :all]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
             [schema.test])
   (:import [clojure.lang ExceptionInfo]))
@@ -107,6 +108,19 @@
 
   (is (= {:$instance-of :ws/A$v1
           :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                   :$value? true
+                                   :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                                            :$value? true
+                                                            :x {:$enum #{1 2}}}}}}}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                                     :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}}
+                                                    {:$instance-of :ws/A$v1
+                                                     :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                                                              :$value? true
+                                                                              :x {:$enum #{1 2}}}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
                                    :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
                                                             :x {:$enum #{1 2}}}
                                                   :ws/D$v1 {:$instance-of :ws/D$v1
@@ -119,6 +133,22 @@
                                                                               :x {:$enum #{1 2}}}
                                                                     :ws/D$v1 {:$instance-of :ws/D$v1
                                                                               :y 12}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                   :$value? true
+                                   :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                                            :$value? false}
+                                                  :ws/D$v1 {:$instance-of :ws/D$v1
+                                                            :$value? true}}}}}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                                     :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}
+                                                                            :ws/D$v1 {:expr nil}}}}
+                                                    {:$instance-of :ws/A$v1
+                                                     :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                                                              :$value? false}
+                                                                    :ws/D$v1 {:$instance-of :ws/D$v1
+                                                                              :$value? true}}})))
 
   (is (= {:$instance-of :ws/A$v1
           :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
@@ -141,6 +171,20 @@
                                                                               :y 12}
                                                                     :ws/E$v1 {:$instance-of :ws/E$v1
                                                                               :z 100}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                   :$value? true
+                                   :$refinements {:ws/D$v1 bom/contradiction-bom}}}}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                                     :ws/B$v1 {:refines-to {:ws/D$v1 {:expr nil}}}
+                                                     :ws/D$v1 {:refines-to {:ws/E$v1 {:expr nil}}}
+                                                     :ws/E$v1 {}}
+                                                    {:$instance-of :ws/A$v1
+                                                     :$refinements {:ws/D$v1 {:$instance-of :ws/D$v1
+                                                                              :$value? false}
+                                                                    :ws/E$v1 {:$instance-of :ws/E$v1
+                                                                              :$value? true}}})))
 
   (is (= {:$instance-of :ws/A$v1
           :$refinements
@@ -189,7 +233,7 @@
                                            {:ws/F$v1 {:$instance-of :ws/F$v1
                                                       :$refinements
                                                       {:ws/G$v1 {:$instance-of :ws/G$v1
-                                                                 ;; :p 99
+                                                                 :p 99
                                                                  :q 100}}}}}}}}}}}
          (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
                                                      :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}
@@ -302,5 +346,115 @@
                                                     {:$instance-of :ws/A$v1
                                                      :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
                                                                               :b 100}}}))))
+
+(deftest test-find-required-values-in-refinements
+  (is (= #{}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                    :b 100}}})))
+  (is (= #{[:ws/E$v1 :ws/A$v1]}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                    :$value? true
+                                    :b 100}}})))
+
+  (is (= #{[:ws/A$v1]}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$value? true
+           :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                    :b 100}}})))
+
+  (is (= #{[:ws/E$v1]
+           [:ws/A$v1]}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$value? true
+           :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                    :$value? true
+                                    :b 100}}})))
+  (is (= #{[:ws/E$v1 :ws/C$v1]
+           [:ws/A$v1]}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$value? true
+           :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                    :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                                             :$value? true
+                                                             :b 100}}
+                                    :b 100}}})))
+  (is (= #{[:ws/C$v1 :ws/A$v1]}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                    :$value? true
+                                    :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                                             :b 100}}
+                                    :b 100}}})))
+  (is (= #{[:ws/E$v1 :ws/C$v1]}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                    :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                                             :$value? true
+                                                             :b 100}}
+                                    :b 100}}})))
+  (is (= #{[:ws/E$v1 :ws/C$v1]
+           [:ws/Z$v1 :ws/X$v1]}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                    :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                                             :$value? true
+                                                             :b 100}}
+                                    :b 100}
+                          :ws/X$v1 {:$instance-of :ws/X$v1
+                                    :$refinements {:ws/Z$v1 {:$instance-of :ws/Z$v1
+                                                             :$value? true
+                                                             :b 100}}
+                                    :b 100}}})))
+  (is (= #{[:ws/E$v1 :ws/C$v1]
+           [:ws/E$v1 :ws/D$v1]}
+         (op-canon-refinements/find-required-values-in-refinements
+          {:$instance-of :ws/A$v1
+           :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                    :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                                             :$value? true
+                                                             :b 100}}
+                                    :b 100}
+                          :ws/D$v1 {:$instance-of :ws/D$v1
+                                    :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                                             :$value? true
+                                                             :b 100}}
+                                    :b 100}}}))))
+
+(deftest test-within-a-pair?
+  (is (not (#'op-canon-refinements/within-a-pair? [:a :b :c]
+                                                  #{[:z :d]}
+                                                  #{:z})))
+  (is (not (#'op-canon-refinements/within-a-pair? [:a :b :c]
+                                                  #{[:z :d]}
+                                                  #{})))
+  (is (not (#'op-canon-refinements/within-a-pair? [:a :b :c :d]
+                                                  #{[:z :d]}
+                                                  #{})))
+  (is (not (#'op-canon-refinements/within-a-pair? [:a :b :c :d]
+                                                  #{[:z]}
+                                                  #{})))
+  (is (not (#'op-canon-refinements/within-a-pair? [:a :b :c :d]
+                                                  #{[:b :a]}
+                                                  #{:z})))
+  (is (not (#'op-canon-refinements/within-a-pair? [:a :b :c :d]
+                                                  #{[:b :a]}
+                                                  #{})))
+  (is (not (#'op-canon-refinements/within-a-pair? [:a :b :c]
+                                                  #{[:z :d]
+                                                    [:b :a]}
+                                                  #{:z})))
+  (is (#'op-canon-refinements/within-a-pair? []
+                                             #{[:z]}
+                                             #{:z})))
 
 ;; (run-tests)
