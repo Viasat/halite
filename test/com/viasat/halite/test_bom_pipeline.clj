@@ -7,7 +7,6 @@
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
             [com.viasat.halite.op-contradictions :as op-contradictions]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
-            [com.viasat.halite.op-lift-refinements :as op-lift-refinements]
             [com.viasat.halite.op-mandatory :as op-mandatory]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
@@ -28,7 +27,7 @@
        op-canon/canon-op
        (op-mandatory/mandatory-op spec-env)
 
-       op-lift-refinements/lift-refinements-op
+       op-canon-refinements/lift-refinements-op
        (op-find-concrete/find-concrete-op spec-env)
        op-push-down-to-concrete/push-down-to-concrete-op
        (op-canon-refinements/canon-refinements-op spec-env)
