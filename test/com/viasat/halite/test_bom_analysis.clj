@@ -58,6 +58,21 @@
                                                                                       [2600 2700]}
                                                                            :$value? false}))))
 
+(deftest test-merge-no-values
+  (is (= bom/contradiction-bom (bom-analysis/merge-boms 1 bom/no-value-bom)))
+  (is (= bom/no-value-bom (bom-analysis/merge-boms bom/no-value-bom bom/no-value-bom)))
+  (is (= bom/no-value-bom (bom-analysis/merge-boms bom/no-value-bom {:$instance-of :ws/A$v1})))
+  (is (= bom/contradiction-bom (bom-analysis/merge-boms bom/no-value-bom {:$instance-of :ws/A$v1
+                                                                          :$value? true})))
+  (is (= bom/no-value-bom (bom-analysis/merge-boms bom/no-value-bom {:$refines-to :ws/A$v1})))
+  (is (= bom/contradiction-bom (bom-analysis/merge-boms bom/no-value-bom {:$refines-to :ws/A$v1
+                                                                          :$value? true})))
+  (is (= bom/contradiction-bom (bom-analysis/merge-boms {:$enum #{1 2}}
+                                                        {:$refines-to :ws/A$v1})))
+  (is (= bom/contradiction-bom (bom-analysis/merge-boms {:$value? false
+                                                         :$enum #{1 2}}
+                                                        {:$refines-to :ws/A$v1}))))
+
 (deftest test-merge-bom-instances
   (is (= bom/contradiction-bom (bom-analysis/merge-boms [1] {:$type :ws/A$v1 :x 1})))
   (is (= bom/contradiction-bom (bom-analysis/merge-boms {:$type :ws/A$v1 :x 1} {:$type :ws/B$v1 :x 1})))

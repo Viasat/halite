@@ -149,18 +149,26 @@
   (let [bom-types (set [(bom-op/type-symbol-of-bom a)
                         (bom-op/type-symbol-of-bom b)])]
     (cond
-      ('#{#{bom/NoValueBom}
-          #{Integer bom/NoValueBom}
+      ('#{#{Integer bom/NoValueBom}
           #{FixedDecimal bom/NoValueBom}
           #{String bom/NoValueBom}
           #{Boolean bom/NoValueBom}
           #{[] bom/NoValueBom}
-          #{#{} bom/NoValueBom}
-          #{bom/PrimitiveBom bom/NoValueBom}
+          #{#{} bom/NoValueBom}} bom-types)
+      bom/contradiction-bom
+
+      ('#{#{bom/NoValueBom}} bom-types)
+      bom/no-value-bom
+
+      ('#{#{bom/PrimitiveBom bom/NoValueBom}
           #{bom/InstanceValue bom/NoValueBom}
           #{bom/ConcreteInstanceBom bom/NoValueBom}
           #{bom/AbstractInstanceBom bom/NoValueBom}} bom-types)
-      bom/contradiction-bom
+      (let [[a b] (if (bom/is-no-value-bom? a) [b a] [a b])]
+        (cond
+          (= true (:$value? a)) bom/contradiction-bom
+          (= false (:$value? a)) bom/no-value-bom
+          (nil? (:$value? a)) bom/no-value-bom))
 
       ('#{#{Integer}
           #{FixedDecimal}
@@ -312,6 +320,17 @@
 
           :default
           (assoc b :$concrete-choices {(bom/get-spec-id a) a})))
+
+      ('#{#{bom/AbstractInstanceBom bom/PrimitiveBom}
+          #{bom/ConcreteInstanceBom bom/PrimitiveBom}} bom-types)
+      (let [[a b] (if (bom/is-primitive-bom? a) [b a] [a b])]
+        (if (and (= 1 (count b))
+                 (contains? b :$value?))
+          (cond
+            (and (= true (:$value? a)) (= true (:$value? b))) a
+            ;; bom/NoValueBom case elsewhere handles case of (= false (:$value? b))
+            (nil? (:$value? a)) (merge a b))
+          bom/contradiction-bom))
 
       :default bom/contradiction-bom)))
 

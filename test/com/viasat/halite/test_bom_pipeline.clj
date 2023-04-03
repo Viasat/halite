@@ -8,6 +8,7 @@
             [com.viasat.halite.op-contradictions :as op-contradictions]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
             [com.viasat.halite.op-mandatory :as op-mandatory]
+            [com.viasat.halite.op-merge-spec-bom :as op-merge-spec-bom]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
             [com.viasat.halite.op-type-check :as op-type-check]
@@ -31,6 +32,7 @@
        op-push-down-to-concrete/push-down-to-concrete-op
        (op-canon-refinements/canon-refinements-op spec-env)
 
+       (op-merge-spec-bom/merge-spec-bom-op spec-env)
        op-contradictions/bubble-up-contradictions))
 
 (deftest test-pipeline
