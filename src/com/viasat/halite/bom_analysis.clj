@@ -325,6 +325,14 @@
       tlfc-to-bom
       (assoc :$value? (when-not (types/maybe-type? field-type)
                         true))
+      (assoc :$instance-of (when (->> field-type
+                                      types/no-maybe
+                                      types/spec-type?)
+                             (->> field-type types/no-maybe types/inner-spec-type)))
+      (assoc :$refines-to (when (and (->> field-type
+                                          types/no-maybe
+                                          types/abstract-spec-type?))
+                            (->> field-type types/no-maybe types/inner-abstract-spec-type)))
       base/no-nil-entries
       base/no-empty))
 

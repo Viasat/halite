@@ -230,8 +230,10 @@
                                               :constraints [["x" '(and (> x 0) (< x 10000))]]})))
 
   (is (= {:$instance-of :ws/A$v1
-          :b {:$value? true}
-          :c {:$value? true}}
+          :b {:$instance-of :ws/B$v1
+              :$value? true}
+          :c {:$refines-to :ws/C$v1
+              :$value? true}}
          (bom-analysis/bom-for-spec :ws/A$v1 {:fields {:b [:Instance :ws/B$v1]
                                                        :c [:Instance :* #{:ws/C$v1}]}}))))
 
