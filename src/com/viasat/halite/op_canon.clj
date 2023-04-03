@@ -20,6 +20,7 @@
     String
     Boolean
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []

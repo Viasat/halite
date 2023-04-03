@@ -36,6 +36,7 @@
   :Boolean
 
   #{bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom}
   nil
 
@@ -91,6 +92,7 @@
     Boolean
     bom/PrimitiveBom
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []}

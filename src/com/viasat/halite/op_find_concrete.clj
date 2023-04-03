@@ -38,6 +38,7 @@
     Boolean
     bom/PrimitiveBom
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []

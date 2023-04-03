@@ -172,6 +172,13 @@
   [bom]
   (= false (:$value? bom)))
 
+(def YesValueBom {:$value? (s/eq true)})
+
+(def yes-value-bom {:$value? true})
+
+(s/defn is-yes-value-bom? [bom]
+  (= yes-value-bom bom))
+
 (def ContradictionBom {:$contradiction? (s/eq true)})
 
 (def contradiction-bom {:$contradiction? true})

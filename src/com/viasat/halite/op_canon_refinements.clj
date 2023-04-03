@@ -25,6 +25,7 @@
     String
     Boolean
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []
@@ -70,6 +71,7 @@
     String
     Boolean
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []
@@ -103,6 +105,7 @@
     String
     Boolean
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []
@@ -142,6 +145,7 @@
     String
     Boolean
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []
@@ -177,6 +181,7 @@
     String
     Boolean
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []

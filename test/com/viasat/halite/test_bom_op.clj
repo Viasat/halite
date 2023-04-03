@@ -37,6 +37,9 @@
   bom/NoValueBom
   [:no-value-bom bom]
 
+  bom/YesValueBom
+  [:yes-value-bom bom]
+
   bom/ContradictionBom
   [:contradiction-bom bom])
 
@@ -99,6 +102,7 @@
     []
     bom/PrimitiveBom
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom}
   bom
 
@@ -142,6 +146,7 @@
     bom/AbstractInstanceBom
     bom/ConcreteInstanceBom
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom}
   n)
 

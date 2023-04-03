@@ -24,6 +24,7 @@
     []
     bom/InstanceValue
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom}
   bom
 
@@ -44,6 +45,7 @@
     Boolean
     bom/PrimitiveBom
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     #{}
     []

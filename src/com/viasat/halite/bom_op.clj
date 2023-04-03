@@ -14,6 +14,7 @@
   [x :- bom/VariableValueBom]
   (cond
     (bom/is-no-value-bom? x) bom/NoValueBom
+    (bom/is-yes-value-bom? x) bom/YesValueBom
     (bom/is-contradiction-bom? x) bom/ContradictionBom
     (base/integer-or-long? x) Integer
     (base/fixed-decimal? x) FixedDecimal
@@ -45,6 +46,7 @@
         bom/ConcreteInstanceBom 'bom/ConcreteInstanceBom
         bom/PrimitiveBom 'bom/PrimitiveBom
         bom/NoValueBom 'bom/NoValueBom
+        bom/YesValueBom 'bom/YesValueBom
         bom/ContradictionBom 'bom/ContradictionBom}
        d d))
 
@@ -79,7 +81,8 @@
                                         bom/AbstractInstanceBom
                                         bom/ConcreteInstanceBom
                                         bom/PrimitiveBom
-                                        bom/NoValueBom}
+                                        bom/NoValueBom
+                                        bom/YesValueBom}
                                       (map dispatch-values-symbols)
                                       set)
         dups (find-dups (->> dispatch-values-raw
@@ -155,7 +158,8 @@
     bom/InstanceValue
     #{}
     []
-    bom/ContradictionBom}
+    bom/ContradictionBom
+    bom/YesValueBom}
   false
 
   bom/NoValueBom

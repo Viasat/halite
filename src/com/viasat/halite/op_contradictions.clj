@@ -23,6 +23,7 @@
     []
     bom/InstanceValue
     bom/NoValueBom
+    bom/YesValueBom
     bom/ContradictionBom
     bom/PrimitiveBom}
   bom
