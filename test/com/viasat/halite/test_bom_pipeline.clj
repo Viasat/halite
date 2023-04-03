@@ -32,7 +32,23 @@
        op-push-down-to-concrete/push-down-to-concrete-op
        (op-canon-refinements/canon-refinements-op spec-env)
 
+       op-contradictions/bubble-up-contradictions))
+
+(defn pipeline-2 [spec-env bom]
+  (->> bom
+       (op-syntax-check/syntax-check-op spec-env)
+       (op-type-check/type-check-op spec-env)
+       op-canon/canon-op
+       (op-mandatory/mandatory-op spec-env)
+
+       (op-find-concrete/find-concrete-op spec-env)
+       op-push-down-to-concrete/push-down-to-concrete-op
+       (op-canon-refinements/canon-refinements-op spec-env)
+
        (op-merge-spec-bom/merge-spec-bom-op spec-env)
+       (op-find-concrete/find-concrete-op spec-env)
+       op-push-down-to-concrete/push-down-to-concrete-op
+       (op-canon-refinements/canon-refinements-op spec-env)
        op-contradictions/bubble-up-contradictions))
 
 (deftest test-pipeline
@@ -110,6 +126,41 @@
                    {:$instance-of :ws/A$v1
                     :i 1
                     :x {:$refines-to :ws/X$v1
-                        :$value? false}}))))
+                        :$value? false}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :i {:$value? true}
+          :x {:$refines-to :ws/X$v1
+              :$concrete-choices {:ws/Y$v1 {:$instance-of :ws/Y$v1
+                                            :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}
+                                  :ws/ZZ$v1 {:$instance-of :ws/ZZ$v1
+                                             :$refinements {:ws/Z$v1 {:$instance-of :ws/Z$v1
+                                                                      :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}}}}}}
+         (pipeline-2 {:ws/A$v1 {:fields {:i :Integer
+                                         :x [:Maybe [:Instance :* #{:ws/X$v1}]]}}
+                      :ws/X$v1 {:fields {:x2 :Integer}}
+                      :ws/Y$v1 {:refines-to {:ws/X$v1 {:expr nil}}}
+                      :ws/Z$v1 {:abstract? true
+                                :refines-to {:ws/X$v1 {:expr nil}}}
+                      :ws/ZZ$v1 {:refines-to {:ws/Z$v1 {:expr nil}}}}
+                     {:$instance-of :ws/A$v1})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :i {:$value? true}
+          :x {:$instance-of :ws/Y$v1
+              :x3 {:$value? true
+                   :$ranges #{[1 10000]}}
+              :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}}
+         (pipeline-2 {:ws/A$v1 {:fields {:i :Integer
+                                         :x [:Maybe [:Instance :* #{:ws/X$v1}]]}}
+                      :ws/X$v1 {:fields {:x2 :Integer}}
+                      :ws/Y$v1 {:fields {:x3 :Integer}
+                                :constraints [["x3" '(and (> x3 0) (< x3 10000))]]
+                                :refines-to {:ws/X$v1 {:expr nil}}}
+                      :ws/Z$v1 {:abstract? true
+                                :refines-to {:ws/X$v1 {:expr nil}}}
+                      :ws/ZZ$v1 {:refines-to {:ws/Z$v1 {:expr nil}}}}
+                     {:$instance-of :ws/A$v1
+                      :x {:$instance-of :ws/Y$v1}}))))
 
 ;; (time (run-tests))
