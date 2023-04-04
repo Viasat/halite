@@ -205,7 +205,8 @@
          (s/optional-key :$refinements) {SpecId (s/conditional
                                                  is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
                                                  is-no-value-bom? NoValueBom
-                                                 :else ContradictionBom)}))
+                                                 :else ContradictionBom)}
+         (s/optional-key :$constraints) {base/ConstraintName s/Any}))
 
 (def AbstractInstanceBom
   (-> BareInstanceBom
@@ -242,7 +243,8 @@
                    :$refinements
                    :$concrete-choices
                    :$type
-                   :$primitive-type})
+                   :$primitive-type
+                   :$constraints})
 
 (s/defn is-instance? :- Boolean
   [instance]
