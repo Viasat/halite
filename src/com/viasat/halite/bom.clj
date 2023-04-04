@@ -148,7 +148,8 @@
 (def PrimitiveBom
   {(s/optional-key :$ranges) RangesConstraint
    (s/optional-key :$enum) #{BomValue}
-   (s/optional-key :$value?) BooleanBom})
+   (s/optional-key :$value?) BooleanBom
+   (s/optional-key :$primitive-type) types/HaliteType})
 
 (declare AbstractInstanceBom)
 
@@ -236,9 +237,12 @@
                    :$instance-of
                    :$enum
                    :$value?
+                   :$valid?
+                   :$extrinsic?
                    :$refinements
                    :$concrete-choices
-                   :$type})
+                   :$type
+                   :$primitive-type})
 
 (s/defn is-instance? :- Boolean
   [instance]
