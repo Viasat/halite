@@ -212,7 +212,7 @@
       m'
       (assoc m' :position n))))
 
-(s/defn ^:private type-check-set-scale :- types/HaliteType
+(s/defn ^:private type-check-rescale :- types/HaliteType
   [ctx :- TypeContext, expr :- s/Any]
   (arg-count-exactly 2 expr)
   (let [[_ _ scale] expr
@@ -525,7 +525,7 @@
                              'get-in (type-check-get-in ctx expr)
                              '= (type-check-equals ctx expr)
                              'not= (type-check-equals ctx expr) ; = and not= have same typing rule
-                             'rescale (type-check-set-scale ctx expr)
+                             'rescale (type-check-rescale ctx expr)
                              'if (type-check-if ctx expr)
                              'cond (type-check-cond ctx expr)
                              'when (type-check-when ctx expr)
