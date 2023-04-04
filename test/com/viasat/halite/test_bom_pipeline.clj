@@ -58,8 +58,8 @@
           :i 1
           :x {:$refines-to :ws/X$v1
               :$concrete-choices {:ws/Y$v1 {:$instance-of :ws/Y$v1
-                                            :$refinements {:ws/X$v1 {:x2 2
-                                                                     :$instance-of :ws/X$v1}}}
+                                            :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1
+                                                                     :x2 2}}}
                                   :ws/ZZ$v1 {:$instance-of :ws/ZZ$v1
                                              :$refinements {:ws/Z$v1 {:$instance-of :ws/Z$v1
                                                                       :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1
