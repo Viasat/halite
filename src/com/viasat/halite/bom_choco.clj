@@ -20,9 +20,10 @@
                                     [path (condp = (:$primitive-type value)
                                             :Integer :Int)]))
                              (into {}))
-                  :constraints (->> constraints
-                                    (map :constraint-e)
-                                    set)}
+                  :constraint-map (->> constraints
+                                       (map (fn [{:keys [constraint-path constraint-e]}]
+                                              [constraint-path constraint-e]))
+                                       (into {}))}
      :choco-bounds (->> vars
                         (map (fn [{:keys [path value]}]
                                ;; TODO use actual bounds here
@@ -36,11 +37,19 @@
 (defn paths-to-syms [bom choco-data]
   (let [path-to-sym-map (->> bom op-flatten/flatten-op flattened-vars-to-sym-map)
         {:keys [choco-spec choco-bounds]} choco-data
-        {:keys [vars constraints]} choco-spec]
+        {:keys [vars constraint-map]} choco-spec]
     {:choco-spec {:vars (-> vars (update-keys path-to-sym-map))
-                  :constraints (->> constraints
+                  :constraints (->> constraint-map
+                                    vals
                                     (walk/postwalk (fn [x]
                                                      (if (var-ref/var-ref? x)
                                                        (-> x var-ref/get-path path-to-sym-map)
-                                                       x))))}
-     :choco-bounds (-> choco-bounds (update-keys path-to-sym-map))}))
+                                                       x)))
+                                    set)}
+     :choco-bounds (-> choco-bounds (update-keys path-to-sym-map))
+     :sym-to-path (->> path-to-sym-map
+                       (map (fn [[path sym]]
+                              [sym path]))
+                       sort
+                       (mapcat identity)
+                       vec)}))
