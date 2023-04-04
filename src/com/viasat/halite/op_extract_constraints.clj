@@ -3,10 +3,8 @@
 
 (ns com.viasat.halite.op-extract-constraints
   "Lift all constraints up out of the bom to a 'top' level collection"
-  (:require [com.viasat.halite.base :as base]
-            [com.viasat.halite.bom :as bom]
+  (:require [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
-            [com.viasat.halite.envs :as envs]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 

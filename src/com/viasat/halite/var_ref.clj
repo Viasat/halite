@@ -25,6 +25,15 @@
   [path]
   (var-ref path))
 
+(s/defn var-ref? :- Boolean
+  "Is the value a var-ref object? Only returns true for objects created by this module."
+  [value :- s/Any]
+  (instance? VarRef value))
+
+(s/defn get-path
+  [var-ref :- VarRef]
+  (.-path var-ref))
+
 (def ^:dynamic *reader-symbol* 'r)
 
 (defn print-var-ref [^VarRef var-ref ^Writer writer]
