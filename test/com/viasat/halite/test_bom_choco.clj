@@ -96,4 +96,17 @@
                            $_2 [:c :y]]}
            (bom-choco/paths-to-syms bom (bom-choco/bom-to-choco bom))))))
 
-;; (run-tests)
+(deftest test-propagate
+  (let [f (fn [bom] (->> bom
+                         bom-choco/bom-to-choco
+                         (bom-choco/paths-to-syms bom)
+                         (bom-choco/choco-propagate bom)))]
+    (is (= {} (f {:$instance-of :ws/A$v1})))
+    (is (= '{[:x] [2 100]
+             [:y] [1 99]}
+           (f {:$instance-of :ws/A$v1
+               :x {:$primitive-type :Integer}
+               :y {:$primitive-type :Integer}
+               :$constraints {"c" '(> #r [:x] #r [:y])}})))))
+
+;; (run-tests)p

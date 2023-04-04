@@ -5,6 +5,7 @@
   "Convert a bom into the format expected by choco"
   (:require [clojure.walk :as walk]
             [com.viasat.halite.bom :as bom]
+            [com.viasat.halite.choco-clj :as choco-clj]
             [com.viasat.halite.op-extract-constraints :as op-extract-constraints]
             [com.viasat.halite.op-flatten :as op-flatten]
             [com.viasat.halite.var-ref :as var-ref]
@@ -34,6 +35,10 @@
   (-> (map :path vars)
       (zipmap (->> (range) (map #(symbol (str "$_" %)))))))
 
+(defn- flattened-vars-to-reverse-sym-map [vars]
+  (->> (map :path vars)
+       (zipmap (->> (range) (map #(symbol (str "$_" %)))))))
+
 (defn paths-to-syms [bom choco-data]
   (let [path-to-sym-map (->> bom op-flatten/flatten-op flattened-vars-to-sym-map)
         {:keys [choco-spec choco-bounds]} choco-data
@@ -53,3 +58,10 @@
                        sort
                        (mapcat identity)
                        vec)}))
+
+(defn choco-propagate [bom choco-data]
+  (let [{:keys [choco-spec choco-bounds]} choco-data
+        result (choco-clj/propagate choco-spec choco-bounds)
+        sym-to-path-map (->> bom op-flatten/flatten-op flattened-vars-to-reverse-sym-map)]
+    (-> result
+        (update-keys sym-to-path-map))))

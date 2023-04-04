@@ -3,12 +3,15 @@
 
 (ns com.viasat.halite.test-bom-pipeline
   (:require [clojure.test :refer :all]
+            [com.viasat.halite.bom-choco :as bom-choco]
+            [com.viasat.halite.op-add-constraints :as op-add-constraints]
             [com.viasat.halite.op-add-types :as op-add-types]
             [com.viasat.halite.op-canon :as op-canon]
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
             [com.viasat.halite.op-contradictions :as op-contradictions]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
             [com.viasat.halite.op-mandatory :as op-mandatory]
+            [com.viasat.halite.op-make-var-refs :as op-make-var-refs]
             [com.viasat.halite.op-merge-spec-bom :as op-merge-spec-bom]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
@@ -166,5 +169,35 @@
                       :ws/ZZ$v1 {:refines-to {:ws/Z$v1 {:expr nil}}}}
                      {:$instance-of :ws/A$v1
                       :x {:$instance-of :ws/Y$v1}}))))
+
+(deftest test-propagate
+  (let [spec-env {:ws/A$v1 {:fields {:x :Integer
+                                     :y :Integer}
+                            :constraints [["c1" '(> x y)]]}}
+        user-bom {:$instance-of :ws/A$v1}
+        bom (->> user-bom
+                 (op-syntax-check/syntax-check-op spec-env)
+                 (op-type-check/type-check-op spec-env)
+                 op-canon/canon-op
+                 (op-mandatory/mandatory-op spec-env)
+
+                 (op-find-concrete/find-concrete-op spec-env)
+                 op-push-down-to-concrete/push-down-to-concrete-op
+                 (op-canon-refinements/canon-refinements-op spec-env)
+
+                 (op-merge-spec-bom/merge-spec-bom-op spec-env)
+                 (op-find-concrete/find-concrete-op spec-env)
+                 op-push-down-to-concrete/push-down-to-concrete-op
+                 (op-canon-refinements/canon-refinements-op spec-env)
+                 op-contradictions/bubble-up-contradictions
+                 (op-add-types/add-types-op spec-env)
+                 (op-add-constraints/add-constraints-op spec-env)
+                 op-make-var-refs/make-var-refs-op)]
+    (is (= {[:x] [2 100]
+            [:y] [1 99]}
+           (->> bom
+                bom-choco/bom-to-choco
+                (bom-choco/paths-to-syms bom)
+                (bom-choco/choco-propagate bom))))))
 
 ;; (time (run-tests))
