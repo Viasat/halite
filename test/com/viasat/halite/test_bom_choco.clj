@@ -3,7 +3,6 @@
 
 (ns com.viasat.halite.test-bom-choco
   (:require [clojure.test :refer :all]
-            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-choco :as bom-choco]
             [com.viasat.halite.var-ref :as var-ref]
             [schema.test])
