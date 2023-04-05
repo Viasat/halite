@@ -212,38 +212,53 @@
              collapse-enum-into-value))
 
       ('#{#{bom/PrimitiveBom}} bom-types)
-      (if (or (= false (:$value? a)) (= false (:$value? b)))
-        (if (or (= true (:$value? a)) (= true (:$value? b)))
-          bom/contradiction-bom
-          bom/no-value-bom)
-        (let [enum-bom (let [enum-set (cond
-                                        (and (:$enum a) (:$enum b)) (set/intersection (:$enum a) (:$enum b))
-                                        (:$enum a) (:$enum a)
-                                        (:$enum b) (:$enum b)
-                                        :default nil)]
-                         (when enum-set {:$enum enum-set}))
-              ranges-bom (cond
-                           (and (:$ranges a) (:$ranges b)) (and-ranges (:$ranges a) (:$ranges b))
-                           (:$ranges a) (select-keys a [:$ranges])
-                           (:$ranges b) (select-keys b [:$ranges])
-                           :default nil)
-              value?-bom (cond
-                           (or (= true (:$value? a)) (= true (:$value? b))) {:$value? true}
-                           (and (nil? (:$value? a)) (nil? (:$value? b))) nil
+      (let [base-bom-a (dissoc a :$value? :$enum :$ranges)
+            base-bom-b (dissoc b :$value? :$enum :$ranges)]
+        (when (not= (merge base-bom-a base-bom-b)
+                    (merge base-bom-b base-bom-a))
+          (throw (ex-info "unexpected case" {:a a :b b
+                                             :merge-1 (merge base-bom-a base-bom-b)
+                                             :merge-2 (merge base-bom-b base-bom-a)})))
+        ;; keep other fields of the bom that we are not accounting for here
+        (let [result (if (or (= false (:$value? a)) (= false (:$value? b)))
+                       (if (or (= true (:$value? a)) (= true (:$value? b)))
+                         bom/contradiction-bom
+                         bom/no-value-bom)
+                       (let [enum-bom (let [enum-set (cond
+                                                       (and (:$enum a) (:$enum b)) (set/intersection (:$enum a) (:$enum b))
+                                                       (:$enum a) (:$enum a)
+                                                       (:$enum b) (:$enum b)
+                                                       :default nil)]
+                                        (when enum-set {:$enum enum-set}))
+                             ranges-bom (cond
+                                          (and (:$ranges a) (:$ranges b)) (and-ranges (:$ranges a) (:$ranges b))
+                                          (:$ranges a) (select-keys a [:$ranges])
+                                          (:$ranges b) (select-keys b [:$ranges])
+                                          :default nil)
+                             value?-bom (cond
+                                          (or (= true (:$value? a)) (= true (:$value? b))) {:$value? true}
+                                          (and (nil? (:$value? a)) (nil? (:$value? b))) nil
 
-                           :default (throw (ex-info "unexpected :$value? field" {:a a :b b})))]
-          (cond (and enum-bom ranges-bom) (->> (merge enum-bom ranges-bom value?-bom)
-                                               detect-empty-enum
-                                               collapse-to-no-value
-                                               collapse-ranges-and-enum
-                                               collapse-enum-into-value
-                                               collapse-ranges-into-value)
-                enum-bom (->> (merge enum-bom value?-bom)
-                              detect-empty-enum
-                              collapse-enum-into-value)
-                ranges-bom (merge ranges-bom value?-bom)
-                value?-bom value?-bom
-                :default (throw (ex-info "bug: expected a bom to have been produced" {:a a :b b})))))
+                                          :default (throw (ex-info "unexpected :$value? field" {:a a :b b})))]
+                         (cond (and enum-bom ranges-bom) (->> (merge enum-bom ranges-bom value?-bom)
+                                                              detect-empty-enum
+                                                              collapse-to-no-value
+                                                              collapse-ranges-and-enum
+                                                              collapse-enum-into-value
+                                                              collapse-ranges-into-value)
+                               enum-bom (->> (merge enum-bom value?-bom)
+                                             detect-empty-enum
+                                             collapse-enum-into-value)
+                               ranges-bom (merge ranges-bom value?-bom)
+                               value?-bom value?-bom
+                               :default (throw (ex-info "bug: expected a bom to have been produced" {:a a :b b})))))]
+          (if (and (map? result)
+                   (not (bom/is-no-value-bom? result))
+                   (not (bom/is-contradiction-bom? result)))
+            (merge base-bom-a
+                   base-bom-b
+                   result)
+            result)))
 
       ('#{#{bom/InstanceValue bom/ConcreteInstanceBom}} bom-types)
       (if (and (= (bom/get-spec-id a)

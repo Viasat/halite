@@ -10,10 +10,12 @@
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
             [com.viasat.halite.op-contradictions :as op-contradictions]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
+            [com.viasat.halite.op-inflate :as op-inflate]
             [com.viasat.halite.op-mandatory :as op-mandatory]
             [com.viasat.halite.op-make-var-refs :as op-make-var-refs]
             [com.viasat.halite.op-merge-spec-bom :as op-merge-spec-bom]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
+            [com.viasat.halite.op-strip :as op-strip]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
             [com.viasat.halite.op-type-check :as op-type-check]
             [schema.test])
@@ -193,7 +195,11 @@
          result# (->> bom#
                       bom-choco/bom-to-choco
                       (bom-choco/paths-to-syms bom#)
-                      (bom-choco/choco-propagate bom#))
+                      (bom-choco/choco-propagate bom#)
+                      bom-choco/propagate-results-to-bounds
+                      (bom-choco/propagate-results-into-bom bom#)
+                      (op-inflate/inflate-op bom#)
+                      op-strip/strip-op)
          expected# ~expected]
      (is (= expected# result#))
      (when-not (= expected# result#)
@@ -204,7 +210,13 @@
                                        :y :Integer}
                               :constraints [["c1" '(> x y)]]}}
                    {:$instance-of :ws/A$v1}
-                   {[:x] [2 100], [:y] [1 99]}))
+                   {:$instance-of :ws/A$v1
+                    :x {:$primitive-type :Integer
+                        :$value? true
+                        :$ranges #{[2 100]}}
+                    :y {:$primitive-type :Integer
+                        :$value? true
+                        :$ranges #{[1 99]}}}))
 
 ;; (set! *print-namespace-maps* false)
 

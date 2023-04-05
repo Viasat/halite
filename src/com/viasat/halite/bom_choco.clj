@@ -4,6 +4,7 @@
 (ns com.viasat.halite.bom-choco
   "Convert a bom into the format expected by choco"
   (:require [clojure.walk :as walk]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.choco-clj :as choco-clj]
             [com.viasat.halite.op-extract-constraints :as op-extract-constraints]
@@ -65,3 +66,19 @@
         sym-to-path-map (->> bom op-flatten/flatten-op flattened-vars-to-reverse-sym-map)]
     (-> result
         (update-keys sym-to-path-map))))
+
+(defn choco-bound-to-bom [bound]
+  (cond
+    (base/integer-or-long? bound) bound
+    (boolean? bound) bound
+    (set? bound) {:$enum bound}
+    :default (let [[lower-bound upper-bound] bound]
+               ;; TODO: is the edge of this right, is upper-bound inclusive or exclusive
+               {:$ranges #{[lower-bound upper-bound]}})))
+
+(defn propagate-results-to-bounds [propagate-results]
+  (-> propagate-results
+      (update-vals choco-bound-to-bom)))
+
+(defn propagate-results-into-bom [bom propagate-results]
+  propagate-results)

@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-flatten
-  "Add type indicators to primitive boms"
+  "Flatten the bom tree into a simple sequence of variables. This brings all the leaves up to the 'top'"
   (:require [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [schema.core :as s])
