@@ -283,7 +283,32 @@
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
                     :x {:$value? true
-                        :$ranges #{[-1000 1000]}}}))
+                        :$ranges #{[-1000 1000]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]
+                                       :y [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value x (if-value y true false) false)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :x {:$value? true
+                        :$ranges #{[-1000 1000]}}
+                    :y {:$value? true
+                        :$ranges #{[-1000 1000]}}})
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]
+                                       :y [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value x false (if-value y true false))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :x {:$value? false}
+                    :y {:$value? true
+                        :$ranges #{[-1000 1000]}}})
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]
+                                       :y [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value x false (if-value y false true))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :x {:$value? false}
+                    :y {:$value? false}}))
 
 ;; (set! *print-namespace-maps* false)
 
