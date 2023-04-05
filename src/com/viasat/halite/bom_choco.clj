@@ -40,8 +40,10 @@
         vars (op-flatten/flatten-op bom)]
     {:choco-spec {:vars (->> vars
                              (map (fn [{:keys [path value]}]
-                                    [path (condp = (:$primitive-type value)
-                                            :Integer :Int)]))
+                                    [path (cond
+                                            (boolean? value) :Bool
+                                            (= (:$primitive-type value) :Integer) :Int
+                                            :default (throw (ex-info "unexpected bom value" {:path path :value value})))]))
                              (into {}))
                   :constraint-map (->> constraints
                                        (map (fn [{:keys [constraint-path constraint-e]}]

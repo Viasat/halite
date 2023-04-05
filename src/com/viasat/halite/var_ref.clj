@@ -17,13 +17,13 @@
   (hashCode [_]
     (.hashCode path)))
 
-(s/defn var-ref :- VarRef
+(s/defn make-var-ref :- VarRef
   [path]
   (VarRef. path))
 
 (s/defn var-ref-reader :- VarRef
   [path]
-  (var-ref path))
+  (make-var-ref path))
 
 (s/defn var-ref? :- Boolean
   "Is the value a var-ref object? Only returns true for objects created by this module."
@@ -33,6 +33,11 @@
 (s/defn get-path
   [var-ref :- VarRef]
   (.-path var-ref))
+
+(s/defn extend-path :- VarRef
+  [var-ref :- VarRef
+   more-path]
+  (make-var-ref (into (get-path var-ref) more-path)))
 
 (def ^:dynamic *reader-symbol* 'r)
 

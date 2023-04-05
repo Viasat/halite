@@ -58,9 +58,12 @@
         (merge (->> bom
                     bom/to-bare-instance-bom
                     (map (fn [[field-name field-bom]]
-                           [field-name (merge-type-op (->> (spec/get-field-type spec field-name)
-                                                           types/no-maybe)
-                                                      field-bom)]))
+                           [field-name (->> field-bom
+                                            ;; handles primitive fields
+                                            (merge-type-op (->> (spec/get-field-type spec field-name)
+                                                                types/no-maybe))
+                                            ;; handles composite fields
+                                            (add-types-op spec-env))]))
                     (into {})))
         (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-types-op spec-env))))
         (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial add-types-op spec-env))))

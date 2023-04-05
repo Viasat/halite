@@ -16,4 +16,16 @@
   (is (= #r [:x :y :z]
          (var-ref/var-ref-reader [:x :y :z]))))
 
+(deftest test-get-path
+  (is (= [:a :b]
+         (->> [:a :b]
+              var-ref/make-var-ref
+              var-ref/get-path))))
+
+(deftest test-extend
+  (is (= #r [:a :b :c :d]
+         (-> [:a :b]
+             var-ref/make-var-ref
+             (var-ref/extend-path [:c :d])))))
+
 ;; (time (run-tests))

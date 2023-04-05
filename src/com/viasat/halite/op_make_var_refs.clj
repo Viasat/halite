@@ -25,7 +25,7 @@
     sym
     (if (contains? (envs/bindings env) sym)
       sym
-      (var-ref/var-ref (conj path (keyword sym))))))
+      (var-ref/make-var-ref (conj path (keyword sym))))))
 
 (s/defn ^:private make-var-refs-instance
   [path
@@ -41,8 +41,13 @@
    path
    env :- (s/protocol envs/Env)
    expr]
-  (let [[_ target accessor] expr]
-    (list op (make-var-refs path env target) accessor)))
+  (let [[_ target accessor] expr
+        target' (make-var-refs path env target)]
+    (if (var-ref/var-ref? target')
+      (var-ref/extend-path target' (if (vector? accessor)
+                                     accessor
+                                     [accessor]))
+      (list op target' accessor))))
 
 (def ^:private placeholder-value 0)
 

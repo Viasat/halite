@@ -157,7 +157,8 @@
           :i {:$primitive-type :Integer
               :$value? true}
           :x {:$instance-of :ws/Y$v1
-              :x3 {:$value? true
+              :x3 {:$primitive-type :Integer
+                   :$value? true
                    :$ranges #{[1 10000]}}
               :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}}
          (pipeline-2 {:ws/A$v1 {:fields {:i :Integer
@@ -218,6 +219,7 @@
                         :$value? true
                         :$ranges #{[-1000 999]}}})
 
+  ;; test constraint across two fields
   (check-propagate {:ws/A$v1 {:fields {:x :Integer
                                        :y :Integer}
                               :constraints [["c1" '(= 15 (+ x y))]
@@ -232,6 +234,28 @@
                     :x {:$primitive-type :Integer
                         :$value? true
                         :$enum #{1 3}}
+                    :y {:$primitive-type :Integer
+                        :$value? true
+                        :$enum #{12 14}}})
+
+  ;; test composition
+  (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
+                                       :y :Integer}
+                              :constraints [["c1" '(= 15 (+ (get a :x) y))]
+                                            ["c3" '(or (= y 10)
+                                                       (= y 12)
+                                                       (= y 14))]]}
+                    :ws/A$v1 {:fields {:x :Integer}
+                              :constraints [["c2" '(or (= x 1)
+                                                       (= x 2)
+                                                       (= x 3))]]}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$value? true
+                        :$instance-of :ws/A$v1
+                        :x {:$primitive-type :Integer
+                            :$value? true
+                            :$enum #{1 3}}}
                     :y {:$primitive-type :Integer
                         :$value? true
                         :$enum #{12 14}}}))

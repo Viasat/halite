@@ -49,7 +49,27 @@
           :x {:$refines-to :ws/X$v1}}
          (op-add-types/add-types-op {:ws/A$v1 {:fields {:x [:Maybe [:Instance :* #{:ws/X$v1}]]}}}
                                     {:$instance-of :ws/A$v1
-                                     :x {:$refines-to :ws/X$v1}}))))
+                                     :x {:$refines-to :ws/X$v1}})))
+
+  (is (= {:$instance-of :ws/B$v1
+          :a {:$instance-of :ws/A$v1
+              :$value? true
+              :x {:$primitive-type :Integer
+                  :$value? true
+                  :$enum #{1 3 2}}}
+          :y {:$primitive-type :Integer
+              :$value? true
+              :$enum #{12 14 10}}}
+         (op-add-types/add-types-op {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
+                                                        :y :Integer}}
+                                     :ws/A$v1 {:fields {:x :Integer}}}
+                                    {:$instance-of :ws/B$v1
+                                     :a {:$instance-of :ws/A$v1
+                                         :$value? true
+                                         :x {:$enum #{1 2 3}
+                                             :$value? true}}
+                                     :y {:$enum #{10 12 14}
+                                         :$value? true}}))))
 
 (deftest test-refinements
   (is (= {:$refines-to :ws/A$v1
