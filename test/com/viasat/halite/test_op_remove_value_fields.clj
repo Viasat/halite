@@ -26,6 +26,20 @@
 
   (is (= {:$instance-of :ws/A$v1
           :x {:$enum #{1 2}}}
+         (op-remove-value-fields/remove-value-fields-op {:ws/A$v1 {:fields {:x :Integer}}}
+                                                        {:$instance-of :ws/A$v1
+                                                         :x {:$enum #{1 2}
+                                                             :$value? true}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$value? false}}
+         (op-remove-value-fields/remove-value-fields-op {:ws/A$v1 {:fields {:x :Integer}}}
+                                                        {:$instance-of :ws/A$v1
+                                                         :x {:$enum #{1 2}
+                                                             :$value? false}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$enum #{1 2}}}
          (op-remove-value-fields/remove-value-fields-op {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
                                                         {:$instance-of :ws/A$v1
                                                          :x {:$enum #{1 2}

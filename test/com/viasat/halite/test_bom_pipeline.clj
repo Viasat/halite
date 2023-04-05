@@ -206,6 +206,7 @@
                       (bom-choco/choco-propagate bom#)
                       bom-choco/propagate-results-to-bounds
                       (op-inflate/inflate-op (op-remove-value-fields/remove-value-fields-op spec-env# bom#))
+                      (op-remove-value-fields/remove-value-fields-op spec-env#)
                       op-strip/strip-op)
          expected# ~expected]
      (is (= expected# result#))
@@ -218,10 +219,8 @@
                               :constraints [["c1" '(> x y)]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
-                    :x {:$value? true
-                        :$ranges #{[-999 1000]}}
-                    :y {:$value? true
-                        :$ranges #{[-1000 999]}}})
+                    :x {:$ranges #{[-999 1000]}}
+                    :y {:$ranges #{[-1000 999]}}})
 
   ;; test constraint across two fields
   (check-propagate {:ws/A$v1 {:fields {:x :Integer
@@ -235,10 +234,8 @@
                                                        (= y 14))]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
-                    :x {:$value? true
-                        :$enum #{1 3}}
-                    :y {:$value? true
-                        :$enum #{12 14}}})
+                    :x {:$enum #{1 3}}
+                    :y {:$enum #{12 14}}})
 
   ;; test composition
   (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
@@ -253,12 +250,9 @@
                                                        (= x 3))]]}}
                    {:$instance-of :ws/B$v1}
                    {:$instance-of :ws/B$v1
-                    :a {:$value? true
-                        :$instance-of :ws/A$v1
-                        :x {:$value? true
-                            :$enum #{1 3}}}
-                    :y {:$value? true
-                        :$enum #{12 14}}})
+                    :a {:$instance-of :ws/A$v1
+                        :x {:$enum #{1 3}}}
+                    :y {:$enum #{12 14}}})
 
   ;; test optional-field
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
@@ -294,6 +288,7 @@
                         :$ranges #{[-1000 1000]}}
                     :y {:$value? true
                         :$ranges #{[-1000 1000]}}})
+
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]
                                        :y [:Maybe :Integer]}
                               :constraints [["c1" '(if-value x false (if-value y true false))]]}}
@@ -302,13 +297,56 @@
                     :x {:$value? false}
                     :y {:$value? true
                         :$ranges #{[-1000 1000]}}})
+
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]
                                        :y [:Maybe :Integer]}
                               :constraints [["c1" '(if-value x false (if-value y false true))]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
                     :x {:$value? false}
-                    :y {:$value? false}}))
+                    :y {:$value? false}})
+
+  ;; optional-field with composition
+  (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
+                                       :y [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value y
+                                                             (= 15 (+ (get a :x) y))
+                                                             true)]
+                                            ["c3" '(if-value y
+                                                             (or (= y 10)
+                                                                 (= y 12)
+                                                                 (= y 14))
+                                                             true)]]}
+                    :ws/A$v1 {:fields {:x :Integer}
+                              :constraints [["c2" '(or (= x 1)
+                                                       (= x 2)
+                                                       (= x 3))]]}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x {:$enum #{1 3 2}}}
+                    :y {:$enum #{12 14 10}}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
+                                       :y [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value y
+                                                             (= 15 (+ (get a :x) y))
+                                                             false)]
+                                            ["c3" '(if-value y
+                                                             (or (= y 10)
+                                                                 (= y 12)
+                                                                 (= y 14))
+                                                             true)]]}
+                    :ws/A$v1 {:fields {:x :Integer}
+                              :constraints [["c2" '(or (= x 1)
+                                                       (= x 2)
+                                                       (= x 3))]]}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x {:$enum #{1 3}}}
+                    :y {:$value? true
+                        :$enum #{12 14}}}))
 
 ;; (set! *print-namespace-maps* false)
 
