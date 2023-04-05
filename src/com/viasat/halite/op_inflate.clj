@@ -12,6 +12,28 @@
 
 (set! *warn-on-reflection* true)
 
+(defn- bring-value-field-into-bom [flat-bom-map path bom]
+  (let [value-path (conj path :$value?)
+        value-entry? (contains? flat-bom-map value-path)
+        value-entry (flat-bom-map value-path)]
+    (cond
+      (and (map? bom)
+           value-entry?
+           (or (map? value-entry)
+               (= true value-entry)))
+      (assoc bom :$value? value-entry)
+
+      (and (map? bom)
+           value-entry?
+           (= false value-entry))
+      bom/no-value-bom
+
+      (not value-entry?)
+      bom
+
+      :default (throw (ex-info "value-entry scenario not yet supported" {:bom bom
+                                                                         :value-entry value-entry})))))
+
 (bom-op/def-bom-multimethod inflate-op*
   [flat-bom-map path bom]
   #{Integer
@@ -28,31 +50,12 @@
 
   bom/PrimitiveBom
   (bom-analysis/merge-boms bom
-                           (let [base-bom-from-map (flat-bom-map path)
-                                 value-path (conj path :$value?)
-                                 value-entry? (contains? flat-bom-map value-path)
-                                 value-entry (flat-bom-map value-path)]
-                             (cond
-                               (and (map? base-bom-from-map)
-                                    value-entry?
-                                    (or (map? value-entry)
-                                        (= true value-entry)))
-                               (assoc base-bom-from-map :$value? value-entry)
-
-                               (and (map? base-bom-from-map)
-                                    value-entry?
-                                    (= false value-entry))
-                               bom/no-value-bom
-
-                               (not value-entry?)
-                               base-bom-from-map
-
-                               :default (throw (ex-info "value-entry scenario not yet supported" {:bom bom
-                                                                                                  :value-entry value-entry})))))
+                           (->> (flat-bom-map path)
+                                (bring-value-field-into-bom flat-bom-map path)))
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
-  (-> bom
+  (-> (bring-value-field-into-bom flat-bom-map path bom)
       (merge (->> bom
                   bom/to-bare-instance-bom
                   (map (fn [[field-name field-bom]]

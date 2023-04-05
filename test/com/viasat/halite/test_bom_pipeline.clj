@@ -346,7 +346,33 @@
                     :a {:$instance-of :ws/A$v1
                         :x {:$enum #{1 3}}}
                     :y {:$value? true
-                        :$enum #{12 14}}}))
+                        :$enum #{12 14}}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}}
+                    :ws/A$v1 {:fields {:x :Integer}}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x {:$ranges #{[-1000 1000]}}}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}
+                              :constraints [["c1" '(if-value a
+                                                             false
+                                                             true)]]}
+                    :ws/A$v1 {:fields {}}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$value? false}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}
+                              :constraints [["c1" '(if-value a
+                                                             true
+                                                             false)]]}
+                    :ws/A$v1 {:fields {}}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true}}))
 
 ;; (set! *print-namespace-maps* false)
 
