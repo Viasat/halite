@@ -170,34 +170,42 @@
                      {:$instance-of :ws/A$v1
                       :x {:$instance-of :ws/Y$v1}}))))
 
+(defmacro check-propagate [spec-env bom expected]
+  `(let [spec-env# ~spec-env
+         bom# (->> ~bom
+                   (op-syntax-check/syntax-check-op spec-env#)
+                   (op-type-check/type-check-op spec-env#)
+                   op-canon/canon-op
+                   (op-mandatory/mandatory-op spec-env#)
+
+                   (op-find-concrete/find-concrete-op spec-env#)
+                   op-push-down-to-concrete/push-down-to-concrete-op
+                   (op-canon-refinements/canon-refinements-op spec-env#)
+
+                   (op-merge-spec-bom/merge-spec-bom-op spec-env#)
+                   (op-find-concrete/find-concrete-op spec-env#)
+                   op-push-down-to-concrete/push-down-to-concrete-op
+                   (op-canon-refinements/canon-refinements-op spec-env#)
+                   op-contradictions/bubble-up-contradictions
+                   (op-add-types/add-types-op spec-env#)
+                   (op-add-constraints/add-constraints-op spec-env#)
+                   op-make-var-refs/make-var-refs-op)
+         result# (->> bom#
+                      bom-choco/bom-to-choco
+                      (bom-choco/paths-to-syms bom#)
+                      (bom-choco/choco-propagate bom#))
+         expected# ~expected]
+     (is (= expected# result#))
+     (when-not (= expected# result#)
+       result#)))
+
 (deftest test-propagate
-  (let [spec-env {:ws/A$v1 {:fields {:x :Integer
-                                     :y :Integer}
-                            :constraints [["c1" '(> x y)]]}}
-        user-bom {:$instance-of :ws/A$v1}
-        bom (->> user-bom
-                 (op-syntax-check/syntax-check-op spec-env)
-                 (op-type-check/type-check-op spec-env)
-                 op-canon/canon-op
-                 (op-mandatory/mandatory-op spec-env)
+  (check-propagate {:ws/A$v1 {:fields {:x :Integer
+                                       :y :Integer}
+                              :constraints [["c1" '(> x y)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {[:x] [2 100], [:y] [1 99]}))
 
-                 (op-find-concrete/find-concrete-op spec-env)
-                 op-push-down-to-concrete/push-down-to-concrete-op
-                 (op-canon-refinements/canon-refinements-op spec-env)
-
-                 (op-merge-spec-bom/merge-spec-bom-op spec-env)
-                 (op-find-concrete/find-concrete-op spec-env)
-                 op-push-down-to-concrete/push-down-to-concrete-op
-                 (op-canon-refinements/canon-refinements-op spec-env)
-                 op-contradictions/bubble-up-contradictions
-                 (op-add-types/add-types-op spec-env)
-                 (op-add-constraints/add-constraints-op spec-env)
-                 op-make-var-refs/make-var-refs-op)]
-    (is (= {[:x] [2 100]
-            [:y] [1 99]}
-           (->> bom
-                bom-choco/bom-to-choco
-                (bom-choco/paths-to-syms bom)
-                (bom-choco/choco-propagate bom))))))
+;; (set! *print-namespace-maps* false)
 
 ;; (time (run-tests))
