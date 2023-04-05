@@ -218,11 +218,9 @@
                               :constraints [["c1" '(> x y)]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
-                    :x {:$primitive-type :Integer
-                        :$value? true
+                    :x {:$value? true
                         :$ranges #{[-999 1000]}}
-                    :y {:$primitive-type :Integer
-                        :$value? true
+                    :y {:$value? true
                         :$ranges #{[-1000 999]}}})
 
   ;; test constraint across two fields
@@ -237,11 +235,9 @@
                                                        (= y 14))]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
-                    :x {:$primitive-type :Integer
-                        :$value? true
+                    :x {:$value? true
                         :$enum #{1 3}}
-                    :y {:$primitive-type :Integer
-                        :$value? true
+                    :y {:$value? true
                         :$enum #{12 14}}})
 
   ;; test composition
@@ -259,32 +255,35 @@
                    {:$instance-of :ws/B$v1
                     :a {:$value? true
                         :$instance-of :ws/A$v1
-                        :x {:$primitive-type :Integer
-                            :$value? true
+                        :x {:$value? true
                             :$enum #{1 3}}}
-                    :y {:$primitive-type :Integer
-                        :$value? true
+                    :y {:$value? true
                         :$enum #{12 14}}})
 
   ;; test optional-field
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
-                    :x {:$primitive-type :Integer
-                        :$ranges #{[-1000 1000]}}})
+                    :x {:$ranges #{[-1000 1000]}}})
 
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}
                               :constraints [["c1" '(if-value x (and (> x 20) (< x 30)) true)]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
-                    :x {:$primitive-type :Integer
-                        :$enum #{27 24 21 22 29 28 25 23 26}}})
+                    :x {:$enum #{27 24 21 22 29 28 25 23 26}}})
 
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}
                               :constraints [["c1" '(if-value x false true)]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
-                    :x {:$value? false}}))
+                    :x {:$value? false}})
+
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value x true false)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :x {:$value? true
+                        :$ranges #{[-1000 1000]}}}))
 
 ;; (set! *print-namespace-maps* false)
 

@@ -17,6 +17,11 @@
     (dissoc bom :$value?)
     bom))
 
+(defn- remove-primitive-type [bom]
+  (-> bom
+      (dissoc :$primitive-type)
+      base/no-empty))
+
 (bom-op/def-bom-multimethod strip-op
   [bom]
   #{Integer
@@ -32,7 +37,7 @@
   bom
 
   bom/PrimitiveBom
-  (remove-value-bom bom)
+  (->> bom remove-value-bom remove-primitive-type)
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}

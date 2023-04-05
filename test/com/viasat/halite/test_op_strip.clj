@@ -16,10 +16,8 @@
 
 (deftest test-basic
   (is (= {:$instance-of :ws/A$v1
-          :x {:$primitive-type :Integer
-              :$value? true}
-          :y {:$primitive-type :Integer
-              :$value? true}}
+          :x {:$value? true}
+          :y {:$value? true}}
          (op-strip/strip-op {:$instance-of :ws/A$v1
                              :x {:$primitive-type :Integer
                                  :$value? true}
@@ -28,13 +26,11 @@
                              :$constraints {"w" '(> x 1)}}))))
 
 (deftest test-value-boms
-  (is (= {:$instance-of :ws/A$v1
-          :x {:$primitive-type :Integer}}
+  (is (= {:$instance-of :ws/A$v1}
          (op-strip/strip-op {:$instance-of :ws/A$v1
                              :x {:$primitive-type :Integer
                                  :$value? {:$primitive-type :Boolean}}})))
-  (is (= {:$instance-of :ws/A$v1
-          :x {:$primitive-type :Integer}}
+  (is (= {:$instance-of :ws/A$v1}
          (op-strip/strip-op {:$instance-of :ws/A$v1
                              :x {:$primitive-type :Integer
                                  :$value? {:$enum #{true false}}}}))))
