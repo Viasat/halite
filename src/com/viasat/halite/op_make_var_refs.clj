@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-make-var-refs
-  "Add constraint expressions from specs to boms"
+  "Update expressions in the bom to use VarRef objects to refer to variables in the bom."
   (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
@@ -41,13 +41,8 @@
    path
    env :- (s/protocol envs/Env)
    expr]
-  (let [[_ target accessor] expr
-        target' (make-var-refs path env target)]
-    (if (var-ref/var-ref? target')
-      (var-ref/extend-path target' (if (vector? accessor)
-                                     accessor
-                                     [accessor]))
-      (list op target' accessor))))
+  (let [[_ target accessor] expr]
+    (list op (make-var-refs path env target) accessor)))
 
 (def ^:private placeholder-value 0)
 

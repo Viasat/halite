@@ -6,11 +6,13 @@
             [com.viasat.halite.bom-choco :as bom-choco]
             [com.viasat.halite.op-add-constraints :as op-add-constraints]
             [com.viasat.halite.op-add-types :as op-add-types]
+            [com.viasat.halite.op-add-value-fields :as op-add-value-fields]
             [com.viasat.halite.op-canon :as op-canon]
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
             [com.viasat.halite.op-contradictions :as op-contradictions]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
             [com.viasat.halite.op-inflate :as op-inflate]
+            [com.viasat.halite.op-lower-expressions :as op-lower-expressions]
             [com.viasat.halite.op-mandatory :as op-mandatory]
             [com.viasat.halite.op-make-var-refs :as op-make-var-refs]
             [com.viasat.halite.op-merge-spec-bom :as op-merge-spec-bom]
@@ -191,8 +193,10 @@
                    (op-canon-refinements/canon-refinements-op spec-env#)
                    op-contradictions/bubble-up-contradictions
                    (op-add-types/add-types-op spec-env#)
+                   (op-add-value-fields/add-value-fields-op spec-env#)
                    (op-add-constraints/add-constraints-op spec-env#)
-                   op-make-var-refs/make-var-refs-op)
+                   op-make-var-refs/make-var-refs-op
+                   op-lower-expressions/lower-expression-op)
          result# (->> bom#
                       bom-choco/bom-to-choco
                       (bom-choco/paths-to-syms bom#)
@@ -258,7 +262,19 @@
                             :$enum #{1 3}}}
                     :y {:$primitive-type :Integer
                         :$value? true
-                        :$enum #{12 14}}}))
+                        :$enum #{12 14}}})
+
+  ;; test optional-field
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1})
+
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value x (and (> x 20) (< x 30)) true)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :x {:$primitive-type :Integer
+                        :$enum #{27 24 21 22 29 28 25 23 26}}}))
 
 ;; (set! *print-namespace-maps* false)
 

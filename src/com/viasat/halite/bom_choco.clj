@@ -30,8 +30,9 @@
           (map second)
           (apply max))]
 
-    (= :Integer (:$primitive-type bom))
-    choco-clj/*default-int-bounds*
+    (= :Integer (:$primitive-type bom)) choco-clj/*default-int-bounds*
+
+    (= :Boolean (:$primitive-type bom)) #{true false}
 
     :default (throw (ex-info "failed to convert to bound" {:bom bom}))))
 
@@ -43,6 +44,7 @@
                                     [path (cond
                                             (boolean? value) :Bool
                                             (= (:$primitive-type value) :Integer) :Int
+                                            (= (:$primitive-type value) :Boolean) :Bool
                                             :default (throw (ex-info "unexpected bom value" {:path path :value value})))]))
                              (into {}))
                   :constraint-map (->> constraints

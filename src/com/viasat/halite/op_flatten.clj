@@ -27,14 +27,17 @@
   (throw (ex-info "unexpected bom element" {:bom bom}))
 
   bom/PrimitiveBom
-  [{:path path :value bom}]
+  (->> [{:path path :value bom}
+        (when (:$value? bom)
+          {:path (conj path :$value?) :value (:$value? bom)})]
+       (remove nil?)
+       vec)
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
   (->> (reduce into
                [(when (:$value? bom)
-                  {:path (conj path :$value?)
-                   :value (:$value? bom)})
+                  {:path (conj path :$value?) :value (:$value? bom)})
                 (cond
                   (:$valid? bom) {:path (conj path :$valid?) :value (:$valid? bom)}
                   (= true (:$extrinsic? bom)) {:path (conj path :$valid?) :value (:$valid? :unknown)}

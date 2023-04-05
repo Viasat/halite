@@ -129,7 +129,7 @@
 (declare ConcreteInstanceBom)
 
 (def BooleanBom (s/conditional
-                 map? {(s/optional-key :$atom) Atom}
+                 map? {:$primitive-type types/HaliteType}
                  :else Boolean))
 
 (def IntegerRangeConstraint [(s/one Number :start) (s/one Number :end)])

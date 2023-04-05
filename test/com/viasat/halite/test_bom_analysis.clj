@@ -46,6 +46,21 @@
   (is (= {:$enum #{2}} (bom-analysis/merge-boms {:$enum #{1 2}} {:$enum #{2 3}})))
   (is (= 2 (bom-analysis/merge-boms {:$enum #{1 2}} {:$enum #{2 3}
                                                      :$value? true})))
+  (is (= {:$value? {:$primitive-type :Boolean}
+          :$enum #{2}}
+         (bom-analysis/merge-boms {:$enum #{1 2}} {:$enum #{2 3}
+                                                   :$value? {:$primitive-type :Boolean}})))
+  (is (= {:$value? {:$primitive-type :Boolean}
+          :$enum #{2}}
+         (bom-analysis/merge-boms {:$enum #{1 2}
+                                   :$value? {:$primitive-type :Boolean}}
+                                  {:$enum #{2 3}
+                                   :$value? {:$primitive-type :Boolean}})))
+  (is (= {:$value? {:$primitive-type :Boolean}
+          :$enum #{2 3}}
+         (bom-analysis/merge-boms {:$value? {:$primitive-type :Boolean}}
+                                  {:$enum #{2 3}
+                                   :$value? {:$primitive-type :Boolean}})))
   (is (= {:$enum #{3 2}} (bom-analysis/merge-boms {:$enum #{1 2 3}} {:$enum #{2 3 4}})))
   (is (= bom/no-value-bom (bom-analysis/merge-boms {:$enum #{1 2 3}} {:$enum #{2 3 4}
                                                                       :$value? false})))

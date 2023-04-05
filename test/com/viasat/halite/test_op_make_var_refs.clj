@@ -76,10 +76,10 @@
     '(valid {:$type :ws/A :x x}) '(valid {:$type :ws/A :x #r [:p :x]})
     '(valid? {:$type :ws/A :x x}) '(valid? {:$type :ws/A :x #r [:p :x]})
     '(get {:$type :ws/A :x x} :x) '(get {:$type :ws/A :x #r [:p :x]} :x)
-    '(get x :q) '#r [:p :x :q]
-    '(get x :x) '#r [:p :x :x]
-    '(get-in x [:q :r]) '#r [:p :x :q :r]
-    '(get-in x [:x :y]) '#r [:p :x :x :y]
+    '(get x :q) '(get #r [:p :x] :q)
+    '(get x :x) '(get #r [:p :x] :x)
+    '(get-in x [:q :r]) '(get-in #r [:p :x] [:q :r])
+    '(get-in x [:x :y]) '(get-in #r [:p :x] [:x :y])
 
     '(if-value-let [x (get {:$type :my/Spec$v1 :n x :p 2} :o)]
                    (div x y)

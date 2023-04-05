@@ -238,6 +238,9 @@
                              value?-bom (cond
                                           (or (= true (:$value? a)) (= true (:$value? b))) {:$value? true}
                                           (and (nil? (:$value? a)) (nil? (:$value? b))) nil
+                                          (and (contains? a :$value?) (not (contains? b :$value?))) (select-keys a [:$value?])
+                                          (and (contains? b :$value?) (not (contains? a :$value?))) (select-keys b [:$value?])
+                                          (= (:$value? a) (:$value? b)) (select-keys a [:$value?])
 
                                           :default (throw (ex-info "unexpected :$value? field" {:a a :b b})))]
                          (cond (and enum-bom ranges-bom) (->> (merge enum-bom ranges-bom value?-bom)

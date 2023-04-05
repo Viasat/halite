@@ -11,6 +11,11 @@
 
 (set! *warn-on-reflection* true)
 
+(defn- remove-value-bom [bom]
+  (if (= (:$value? bom) {:$primitive-type :Boolean})
+    (dissoc bom :$value?)
+    bom))
+
 (bom-op/def-bom-multimethod strip-op
   [bom]
   #{Integer
@@ -22,9 +27,11 @@
     bom/InstanceValue
     bom/ContradictionBom
     bom/NoValueBom
-    bom/YesValueBom
-    bom/PrimitiveBom}
+    bom/YesValueBom}
   bom
+
+  bom/PrimitiveBom
+  (remove-value-bom bom)
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
@@ -39,4 +46,5 @@
                                         :$concrete-choices
                                         (update-vals strip-op)))
       (dissoc :$constraints)
-      base/no-nil-entries))
+      base/no-nil-entries
+      remove-value-bom))

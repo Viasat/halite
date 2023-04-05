@@ -15,7 +15,6 @@
 (use-fixtures :each fixtures)
 
 (deftest test-basic
-
   (is (= [{:path [:x] :value {:$primitive-type :Integer}}]
          (op-flatten/flatten-op {:$instance-of :ws/A$v1
                                  :x {:$primitive-type :Integer}})))
@@ -51,5 +50,13 @@
                                                                                             :d1 {:$instance-of :ws/E$v1
                                                                                                  :$valid? true
                                                                                                  :e1 {:$primitive-type :Integer}}}}}}}}))))
+
+(deftest test-optional-field
+  (is (= [{:path [:x] :value {:$primitive-type :Integer
+                              :$value? {:$primitive-type :Boolean}}}
+          {:path [:x :$value?] :value {:$primitive-type :Boolean}}]
+         (op-flatten/flatten-op {:$instance-of :ws/A$v1
+                                 :x {:$primitive-type :Integer
+                                     :$value? {:$primitive-type :Boolean}}}))))
 
 ;; (run-tests)

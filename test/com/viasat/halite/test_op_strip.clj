@@ -27,4 +27,11 @@
                                  :$value? true}
                              :$constraints {"w" '(> x 1)}}))))
 
+(deftest test-value-boms
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$primitive-type :Integer}}
+         (op-strip/strip-op {:$instance-of :ws/A$v1
+                             :x {:$primitive-type :Integer
+                                 :$value? {:$primitive-type :Boolean}}}))))
+
 ;; (run-tests)
