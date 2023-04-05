@@ -686,7 +686,10 @@
     x))
 
 (defn- tlfc-data [expr]
-  (->> (let [result (tlfc-data* #{} expr)]
+  (->> (let [result (tlfc-data* #{} expr)
+             result (if (boolean? result)
+                      :none
+                      result)]
          (if (and (map? result)
                   (or (contains? result :min)
                       (contains? result :max)))

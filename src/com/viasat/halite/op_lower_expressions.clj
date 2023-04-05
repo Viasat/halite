@@ -41,8 +41,6 @@
                                    accessor
                                    [accessor]))))
 
-(def ^:private placeholder-value 0)
-
 (s/defn ^:private lower-expression-let
   [path
    env :- (s/protocol envs/Env)
@@ -50,10 +48,11 @@
   (let [[bindings body] (rest expr)
         {env' :env
          bindings' :bindings} (reduce (fn [{:keys [env bindings]} [sym binding-e]]
-                                        (let [env' (envs/bind env sym placeholder-value)]
+                                        (let [binding-e' (lower-expression path env binding-e)
+                                              env' (envs/bind env sym binding-e')]
                                           {:env env'
                                            :bindings (into bindings
-                                                           [sym (lower-expression path env' binding-e)])}))
+                                                           [sym binding-e'])}))
                                       {:env env
                                        :bindings []}
                                       (partition 2 bindings))]
@@ -66,10 +65,14 @@
    env :- (s/protocol envs/Env)
    expr]
   (let [[_ target then-clause else-clause] expr
-        target' (lower-expression path env target)]
+        target' (if (and (symbol? target)
+                         (contains? (envs/bindings env) target))
+                  (get (envs/bindings env) target)
+                  (lower-expression path env target))]
     (when-not (var-ref/var-ref? target')
       (throw (ex-info "unexpected target of if-value" {:expr expr
-                                                       :target' target'})))
+                                                       :target' target'
+                                                       :env (envs/bindings env)})))
     (list 'if
           (var-ref/extend-path target' [:$value?])
           (lower-expression path env then-clause)
@@ -79,18 +82,20 @@
   [path
    env :- (s/protocol envs/Env)
    expr]
-  (let [[_ [sym target] then-clause else-clause] expr]
-    (list 'if-value-let [sym (lower-expression path env target)]
-          (lower-expression path (envs/bind env sym placeholder-value) then-clause)
+  (let [[_ [sym target] then-clause else-clause] expr
+        target' (lower-expression path env target)]
+    (list 'if-value-let [sym target']
+          (lower-expression path (envs/bind env sym target') then-clause)
           (lower-expression path env else-clause))))
 
 (s/defn ^:private lower-expression-when-value-let
   [path
    env :- (s/protocol envs/Env)
    expr]
-  (let [[_ [sym target] then-clause] expr]
-    (list 'when-value-let [sym (lower-expression path env target)]
-          (lower-expression path (envs/bind env sym placeholder-value) then-clause))))
+  (let [[_ [sym target] then-clause] expr
+        target' (lower-expression path env target)]
+    (list 'when-value-let [sym target']
+          (lower-expression path (envs/bind env sym target') then-clause))))
 
 (s/defn ^:private lower-expression-refine-to
   [op
@@ -99,6 +104,8 @@
    expr]
   (let [[_ instance spec-id] expr]
     (list op (lower-expression path env instance) spec-id)))
+
+(def ^:private placeholder-value 0)
 
 (s/defn ^:private lower-expression-every?
   [op

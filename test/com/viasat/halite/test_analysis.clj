@@ -11,7 +11,9 @@
 
 (set! *warn-on-reflection* true)
 
-(use-fixtures :once schema.test/validate-schemas)
+(def fixtures (join-fixtures [schema.test/validate-schemas]))
+
+(use-fixtures :each fixtures)
 
 (deftest test-schema
   (s/check analysis/EnumConstraint {:enum #{100}})
@@ -1197,7 +1199,13 @@
      '{x {:enum #{7100}}}]
 
     '(if-value x false true)
-    [true nil {} {}]))
+    [true nil {} {}]
+
+    '(if-value a (let [q (get a :x)] (if-value q true false)) false)
+    ['(if-value a true)
+     '{a (if-value a true)}
+     '{a :none}
+     '{a :none}]))
 
 (deftest test-find-spec-refs
   (is (= #{}

@@ -62,7 +62,8 @@
     (-> bom
         (merge (->> spec-field-names
                     (map (fn [field-name]
-                           (when-not (contains? bom field-name)
+                           (if (contains? bom field-name)
+                             [field-name (ensure-fields-op spec-env (get bom field-name))]
                              [field-name (bom-analysis/bom-for-field true {} [field-name (spec/get-field-type spec field-name)])])))
                     (into {})))
         (assoc :$refinements (some-> bom :$refinements (update-vals (partial ensure-fields-op spec-env))))

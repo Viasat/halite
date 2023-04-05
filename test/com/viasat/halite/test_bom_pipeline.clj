@@ -372,7 +372,36 @@
                    {:$instance-of :ws/B$v1}
                    {:$instance-of :ws/B$v1
                     :a {:$instance-of :ws/A$v1
-                        :$value? true}}))
+                        :$value? true}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}
+                              :constraints [["c1" '(if-value a
+                                                             (let [q (get a :x)]
+                                                               (if-value q
+                                                                         false
+                                                                         true))
+                                                             false)]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? false}}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}
+                              :constraints [["c1" '(if-value a
+                                                             (let [q (get a :x)]
+                                                               (if-value q
+                                                                         true
+                                                                         false))
+                                                             false)]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? true
+                            :$ranges #{[-1000 1000]}}}}))
 
 ;; (set! *print-namespace-maps* false)
 
