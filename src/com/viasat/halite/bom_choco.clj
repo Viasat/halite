@@ -14,6 +14,27 @@
 
 (set! *warn-on-reflection* true)
 
+(defn bom-to-bound [bom]
+  (cond
+    (base/integer-or-long? bom) bom
+
+    (boolean? bom) bom
+
+    (:$enum bom) (:$enum bom)
+
+    (:$ranges bom)
+    [(->> (:$ranges bom)
+          (map first)
+          (apply min))
+     (->> (:$ranges bom)
+          (map second)
+          (apply max))]
+
+    (= :Integer (:$primitive-type bom))
+    choco-clj/*default-int-bounds*
+
+    :default (throw (ex-info "failed to convert to bound" {:bom bom}))))
+
 (defn bom-to-choco [bom]
   (let [constraints (op-extract-constraints/extract-constraints-op bom)
         vars (op-flatten/flatten-op bom)]
@@ -28,8 +49,7 @@
                                        (into {}))}
      :choco-bounds (->> vars
                         (map (fn [{:keys [path value]}]
-                               ;; TODO use actual bounds here
-                               [path [1 100]]))
+                               [path (bom-to-bound value)]))
                         (into {}))}))
 
 (defn- flattened-vars-to-sym-map [vars]

@@ -309,16 +309,16 @@
                                               (first other-args'))
                                              (.le ;; ^ArExpression
                                               (ensure-var m arg1)
-                                                  ;; ^ArExpression
+                                              ;; ^ArExpression
                                               (first other-args)))
                                        '> (if switch?
                                             (.lt ;; ^ArExpression
                                              arg1'
-                                                 ;; ^ArExpression
+                                             ;; ^ArExpression
                                              (first other-args'))
                                             (.gt ;; ^ArExpression
                                              arg1
-                                                 ;; ^ArExpression
+                                             ;; ^ArExpression
                                              (first other-args)))
                                        '>= (if switch?
                                              (.le ;; ^ArExpression
@@ -400,7 +400,7 @@
         vars' (update-vals vars first)]
     {:model m
      :vars vars
-     :constraints (->> spec :constraints (mapv (partial make-constraint m vars')))}))
+     :constraints (->> spec :constraints (mapv (partial make-constraint m vars')) (remove nil?))}))
 
 (s/defn ^:private intersect-bound* :- ChocoVarType
   [a :- ChocoVarType, b :- ChocoVarType]

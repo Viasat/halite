@@ -213,10 +213,28 @@
                    {:$instance-of :ws/A$v1
                     :x {:$primitive-type :Integer
                         :$value? true
-                        :$ranges #{[2 100]}}
+                        :$ranges #{[-999 1000]}}
                     :y {:$primitive-type :Integer
                         :$value? true
-                        :$ranges #{[1 99]}}}))
+                        :$ranges #{[-1000 999]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:x :Integer
+                                       :y :Integer}
+                              :constraints [["c1" '(= 15 (+ x y))]
+                                            ["c2" '(or (= x 1)
+                                                       (= x 2)
+                                                       (= x 3))]
+                                            ["c3" '(or (= y 10)
+                                                       (= y 12)
+                                                       (= y 14))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :x {:$primitive-type :Integer
+                        :$value? true
+                        :$enum #{1 3}}
+                    :y {:$primitive-type :Integer
+                        :$value? true
+                        :$enum #{12 14}}}))
 
 ;; (set! *print-namespace-maps* false)
 
