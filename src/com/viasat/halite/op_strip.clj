@@ -12,7 +12,8 @@
 (set! *warn-on-reflection* true)
 
 (defn- remove-value-bom [bom]
-  (if (= (:$value? bom) {:$primitive-type :Boolean})
+  (if (or (= (:$value? bom) {:$primitive-type :Boolean})
+          (= (:$value? bom) {:$enum #{true false}}))
     (dissoc bom :$value?)
     bom))
 

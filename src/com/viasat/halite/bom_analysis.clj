@@ -358,7 +358,7 @@
 ;;;;
 
 (s/defn bom-for-field
-  [tlfc-map [field-name field-type]]
+  [include-primitive-type-field? tlfc-map [field-name field-type]]
   (-> field-name
       symbol
       tlfc-map
@@ -373,6 +373,14 @@
                                           types/no-maybe
                                           types/abstract-spec-type?))
                             (->> field-type types/no-maybe types/inner-abstract-spec-type)))
+      (assoc :$primitive-type (when include-primitive-type-field?
+                                (when-not (or (->> field-type
+                                                   types/no-maybe
+                                                   types/spec-type?)
+                                              (->> field-type
+                                                   types/no-maybe
+                                                   types/abstract-spec-type?))
+                                  (->> field-type types/no-maybe))))
       base/no-nil-entries
       base/no-empty))
 
@@ -394,7 +402,7 @@
         field-names (->> fields (map first))
         tlfc-map (compute-tlfc-map spec-info)]
     (assoc (->> fields
-                (map (partial bom-for-field tlfc-map))
+                (map (partial bom-for-field false tlfc-map))
                 (zipmap field-names)
                 base/no-nil-entries)
            :$instance-of spec-id)))

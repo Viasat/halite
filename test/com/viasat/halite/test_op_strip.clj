@@ -32,6 +32,11 @@
           :x {:$primitive-type :Integer}}
          (op-strip/strip-op {:$instance-of :ws/A$v1
                              :x {:$primitive-type :Integer
-                                 :$value? {:$primitive-type :Boolean}}}))))
+                                 :$value? {:$primitive-type :Boolean}}})))
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$primitive-type :Integer}}
+         (op-strip/strip-op {:$instance-of :ws/A$v1
+                             :x {:$primitive-type :Integer
+                                 :$value? {:$enum #{true false}}}}))))
 
 ;; (run-tests)

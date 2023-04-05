@@ -254,8 +254,8 @@
           :x {:$value? true}}
          (bom-analysis/bom-for-spec :ws/A$v1 {:fields {:x :Integer}})))
   (is (= {:$instance-of :ws/A$v1
-          :x {:$ranges #{[1 10000]}
-              :$value? true}}
+          :x {:$value? true
+              :$ranges #{[1 10000]}}}
          (bom-analysis/bom-for-spec :ws/A$v1 {:fields {:x :Integer}
                                               :constraints [["x" '(and (> x 0) (< x 10000))]]})))
 

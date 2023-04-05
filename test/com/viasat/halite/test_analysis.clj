@@ -1194,7 +1194,10 @@
      '{x (and (not= x $no-value)
               (if-value x (contains? #{7100} x)))}
      '{x {:enum #{7100}}}
-     '{x {:enum #{7100}}}]))
+     '{x {:enum #{7100}}}]
+
+    '(if-value x false true)
+    [true nil {} {}]))
 
 (deftest test-find-spec-refs
   (is (= #{}

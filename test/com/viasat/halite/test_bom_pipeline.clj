@@ -10,6 +10,7 @@
             [com.viasat.halite.op-canon :as op-canon]
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
             [com.viasat.halite.op-contradictions :as op-contradictions]
+            [com.viasat.halite.op-ensure-fields :as op-ensure-fields]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
             [com.viasat.halite.op-inflate :as op-inflate]
             [com.viasat.halite.op-lower-expressions :as op-lower-expressions]
@@ -17,6 +18,7 @@
             [com.viasat.halite.op-make-var-refs :as op-make-var-refs]
             [com.viasat.halite.op-merge-spec-bom :as op-merge-spec-bom]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
+            [com.viasat.halite.op-remove-value-fields :as op-remove-value-fields]
             [com.viasat.halite.op-strip :as op-strip]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
             [com.viasat.halite.op-type-check :as op-type-check]
@@ -193,6 +195,7 @@
                    (op-canon-refinements/canon-refinements-op spec-env#)
                    op-contradictions/bubble-up-contradictions
                    (op-add-types/add-types-op spec-env#)
+                   (op-ensure-fields/ensure-fields-op spec-env#)
                    (op-add-value-fields/add-value-fields-op spec-env#)
                    (op-add-constraints/add-constraints-op spec-env#)
                    op-make-var-refs/make-var-refs-op
@@ -202,8 +205,7 @@
                       (bom-choco/paths-to-syms bom#)
                       (bom-choco/choco-propagate bom#)
                       bom-choco/propagate-results-to-bounds
-                      (bom-choco/propagate-results-into-bom bom#)
-                      (op-inflate/inflate-op bom#)
+                      (op-inflate/inflate-op (op-remove-value-fields/remove-value-fields-op spec-env# bom#))
                       op-strip/strip-op)
          expected# ~expected]
      (is (= expected# result#))
@@ -267,14 +269,22 @@
   ;; test optional-field
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
                    {:$instance-of :ws/A$v1}
-                   {:$instance-of :ws/A$v1})
+                   {:$instance-of :ws/A$v1
+                    :x {:$primitive-type :Integer
+                        :$ranges #{[-1000 1000]}}})
 
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}
                               :constraints [["c1" '(if-value x (and (> x 20) (< x 30)) true)]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
                     :x {:$primitive-type :Integer
-                        :$enum #{27 24 21 22 29 28 25 23 26}}}))
+                        :$enum #{27 24 21 22 29 28 25 23 26}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value x false true)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :x {:$value? false}}))
 
 ;; (set! *print-namespace-maps* false)
 

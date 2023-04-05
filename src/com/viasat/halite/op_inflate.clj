@@ -27,7 +27,28 @@
   bom
 
   bom/PrimitiveBom
-  (bom-analysis/merge-boms bom (flat-bom-map path))
+  (bom-analysis/merge-boms bom
+                           (let [base-bom-from-map (flat-bom-map path)
+                                 value-path (conj path :$value?)
+                                 value-entry? (contains? flat-bom-map value-path)
+                                 value-entry (flat-bom-map value-path)]
+                             (cond
+                               (and (map? base-bom-from-map)
+                                    value-entry?
+                                    (or (map? value-entry)
+                                        (= true value-entry)))
+                               (assoc base-bom-from-map :$value? value-entry)
+
+                               (and (map? base-bom-from-map)
+                                    value-entry?
+                                    (= false value-entry))
+                               bom/no-value-bom
+
+                               (not value-entry?)
+                               base-bom-from-map
+
+                               :default (throw (ex-info "value-entry scenario not yet supported" {:bom bom
+                                                                                                  :value-entry value-entry})))))
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}

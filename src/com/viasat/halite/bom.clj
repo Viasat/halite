@@ -129,7 +129,8 @@
 (declare ConcreteInstanceBom)
 
 (def BooleanBom (s/conditional
-                 map? {:$primitive-type types/HaliteType}
+                 map? {(s/optional-key :$primitive-type) types/HaliteType
+                       (s/optional-key :$enum) #{Boolean}}
                  :else Boolean))
 
 (def IntegerRangeConstraint [(s/one Number :start) (s/one Number :end)])

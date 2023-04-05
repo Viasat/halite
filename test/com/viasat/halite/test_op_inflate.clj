@@ -30,4 +30,30 @@
                                 {[:x] {:$ranges #{[2 100]}}
                                  [:y] {:$ranges #{[1 99]}}}))))
 
+(deftest test-value-field
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$primitive-type :Integer
+              :$value? true
+              :$ranges #{[2 100]}}}
+         (op-inflate/inflate-op {:$instance-of :ws/A$v1
+                                 :x {:$primitive-type :Integer}}
+                                {[:x] {:$ranges #{[2 100]}}
+                                 [:x :$value?] true})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$primitive-type :Integer
+              :$value? {:$enum #{true false}}
+              :$ranges #{[2 100]}}}
+         (op-inflate/inflate-op {:$instance-of :ws/A$v1
+                                 :x {:$primitive-type :Integer}}
+                                {[:x] {:$ranges #{[2 100]}}
+                                 [:x :$value?] {:$enum #{true false}}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :x {:$value? false}}
+         (op-inflate/inflate-op {:$instance-of :ws/A$v1
+                                 :x {:$primitive-type :Integer}}
+                                {[:x] {:$ranges #{[2 100]}}
+                                 [:x :$value?] false}))))
+
 ;; (run-tests)

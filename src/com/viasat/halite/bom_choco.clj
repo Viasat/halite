@@ -103,6 +103,3 @@
 (defn propagate-results-to-bounds [propagate-results]
   (-> propagate-results
       (update-vals choco-bound-to-bom)))
-
-(defn propagate-results-into-bom [bom propagate-results]
-  propagate-results)
