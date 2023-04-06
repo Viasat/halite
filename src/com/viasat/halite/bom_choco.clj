@@ -7,8 +7,10 @@
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.choco-clj :as choco-clj]
+            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.op-extract-constraints :as op-extract-constraints]
             [com.viasat.halite.op-flatten :as op-flatten]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.var-ref :as var-ref]
             [schema.core :as s]))
 
@@ -30,7 +32,8 @@
           (map second)
           (apply max))]
 
-    (= :Integer (:$primitive-type bom)) choco-clj/*default-int-bounds*
+    (or (= :Integer (:$primitive-type bom))
+        (types/decimal-type? (:$primitive-type bom))) choco-clj/*default-int-bounds*
 
     (= :Boolean (:$primitive-type bom)) #{true false}
 
@@ -46,6 +49,7 @@
                                             (base/integer-or-long? value) :Int
                                             (= (:$primitive-type value) :Integer) :Int
                                             (= (:$primitive-type value) :Boolean) :Bool
+                                            (types/decimal-type? (:$primitive-type value)) :Int
                                             :default (throw (ex-info "unexpected bom value" {:path path :value value})))]))
                              (into {}))
                   :constraint-map (->> constraints
@@ -109,15 +113,26 @@
     (-> result
         (update-keys sym-to-path-map))))
 
-(defn choco-bound-to-bom [bound]
+(defn- handle-fixed-decimals-out [type x]
+  (if (types/decimal-type? type)
+    (fixed-decimal/package-long (types/decimal-scale type) (long x))
+    x))
+
+(defn choco-bound-to-bom [type bound]
   (cond
-    (base/integer-or-long? bound) bound
+    (base/integer-or-long? bound) (handle-fixed-decimals-out type bound)
     (boolean? bound) bound
-    (set? bound) {:$enum bound}
+    (set? bound) {:$enum (->> bound
+                              (map (partial handle-fixed-decimals-out type))
+                              set)}
     :default (let [[lower-bound upper-bound] bound]
                ;; TODO: is the edge of this right, is upper-bound inclusive or exclusive
-               {:$ranges #{[lower-bound upper-bound]}})))
+               {:$ranges #{(->> [lower-bound upper-bound]
+                                (mapv (partial handle-fixed-decimals-out type)))}})))
 
-(defn propagate-results-to-bounds [propagate-results]
-  (-> propagate-results
-      (update-vals choco-bound-to-bom)))
+(defn propagate-results-to-bounds [bom propagate-results]
+  (let [path-to-bom-map (->> bom op-flatten/flatten-op flattened-vars-to-bom-map)]
+    (->> propagate-results
+         (map (fn [[path bound]]
+                [path (choco-bound-to-bom (:$primitive-type (path-to-bom-map path)) bound)]))
+         (into {}))))

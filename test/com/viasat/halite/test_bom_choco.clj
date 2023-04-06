@@ -109,15 +109,18 @@
                :$constraints {"c" '(> #r [:x] #r [:y])}})))))
 
 (deftest test-choco-bound-to-bom
-  (is (= 1 (bom-choco/choco-bound-to-bom 1)))
-  (is (= true (bom-choco/choco-bound-to-bom true)))
-  (is (= {:$enum #{1 2}} (bom-choco/choco-bound-to-bom #{1 2})))
-  (is (= {:$ranges #{[1 10]}} (bom-choco/choco-bound-to-bom [1 10]))))
+  (is (= 1 (bom-choco/choco-bound-to-bom nil 1)))
+  (is (= true (bom-choco/choco-bound-to-bom nil true)))
+  (is (= {:$enum #{1 2}} (bom-choco/choco-bound-to-bom nil #{1 2})))
+  (is (= {:$ranges #{[1 10]}} (bom-choco/choco-bound-to-bom nil [1 10]))))
 
 (deftest test-propagate-results-to-bounds
   (is (= {[:x] {:$ranges #{[2 100]}}
-          [:y] {:$ranges #{[1 99]}}}
-         (bom-choco/propagate-results-to-bounds '{[:x] [2 100]
+          [:y] {:$ranges #{[#d "0.01" #d "0.99"]}}}
+         (bom-choco/propagate-results-to-bounds {:$instance-of :ws/A$v1
+                                                 :x {:$primitive-type :Integer}
+                                                 :y {:$primitive-type [:Decimal 2]}}
+                                                '{[:x] [2 100]
                                                   [:y] [1 99]}))))
 
 ;; (run-tests)

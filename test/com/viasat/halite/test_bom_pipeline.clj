@@ -205,7 +205,7 @@
                       bom-choco/bom-to-choco
                       (bom-choco/paths-to-syms bom#)
                       (bom-choco/choco-propagate bom#)
-                      bom-choco/propagate-results-to-bounds
+                      (bom-choco/propagate-results-to-bounds bom#)
                       (op-inflate/inflate-op (op-remove-value-fields/remove-value-fields-op spec-env# bom#))
                       (op-remove-value-fields/remove-value-fields-op spec-env#)
                       op-canon-up/canon-up-op
@@ -216,6 +216,7 @@
        result#)))
 
 (deftest test-propagate
+  ;; boolean fields
   (check-propagate {:ws/A$v1 {:fields {:x :Boolean
                                        :y :Boolean}
                               :constraints [["c1" '(if x true y)]]}}
@@ -263,6 +264,28 @@
                     :x false
                     :y true})
 
+  ;; optional boolean fields
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Boolean]
+                                       :y :Boolean}}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1})
+
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Boolean]
+                                       :y :Boolean}
+                              :constraints [["c1" '(if-value x y true)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1})
+
+  (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Boolean]
+                                       :y :Boolean}
+                              :constraints [["c1" '(if-value x y true)]]}}
+                   {:$instance-of :ws/A$v1
+                    :x true}
+                   {:$instance-of :ws/A$v1
+                    :x true
+                    :y true})
+
+  ;; integer fields
   (check-propagate {:ws/A$v1 {:fields {:x :Integer
                                        :y :Integer}
                               :constraints [["c1" '(> x y)]]}}
@@ -271,7 +294,7 @@
                     :x {:$ranges #{[-999 1000]}}
                     :y {:$ranges #{[-1000 999]}}})
 
-  ;; test constraint across two fields
+  ;; constraint across two integer fields
   (check-propagate {:ws/A$v1 {:fields {:x :Integer
                                        :y :Integer}
                               :constraints [["c1" '(= 15 (+ x y))]
@@ -286,7 +309,13 @@
                     :x {:$enum #{1 3}}
                     :y {:$enum #{12 14}}})
 
-  ;; test composition
+  ;; fixed decimal
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$ranges #{[#d "-10.00" #d "10.00"]}}})
+
+  ;; composition
   (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
                                        :y :Integer}
                               :constraints [["c1" '(= 15 (+ (get a :x) y))]
@@ -303,7 +332,7 @@
                         :x {:$enum #{1 3}}}
                     :y {:$enum #{12 14}}})
 
-  ;; test optional-field
+  ;; optional integer field
   (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1

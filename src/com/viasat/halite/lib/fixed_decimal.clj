@@ -73,7 +73,7 @@
   (extract-long f)
   nil)
 
-(s/defn ^:private package-long :- FixedDecimal
+(s/defn package-long :- FixedDecimal
   "Interpret the long value as if it were a fixed decimal with the given scale. Assumes that scale
   is a positive value."
   [scale :- s/Int
