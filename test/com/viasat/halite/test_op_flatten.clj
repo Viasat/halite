@@ -62,6 +62,19 @@
 (deftest test-primitive-value
   (is (= [{:path [:x] :value true}]
          (op-flatten/flatten-op {:$instance-of :ws/A$v1
-                                 :x true}))))
+                                 :x true})))
+  (is (= [{:path [:x] :value 30}]
+         (op-flatten/flatten-op {:$instance-of :ws/A$v1
+                                 :x 30})))
+  (is (= [{:path [:a :$value?], :value {:$primitive-type :Boolean}}
+          {:path [:a :x] :value 30}
+          {:path [:b] :value {:$primitive-type :Boolean, :$value? true}}
+          {:path [:b :$value?] :value true}]
+         (op-flatten/flatten-op {:$instance-of :ws/B$v1
+                                 :a {:$instance-of :ws/A$v1
+                                     :$value? {:$primitive-type :Boolean}
+                                     :x 30}
+                                 :b {:$primitive-type :Boolean
+                                     :$value? true}}))))
 
 ;; (run-tests)

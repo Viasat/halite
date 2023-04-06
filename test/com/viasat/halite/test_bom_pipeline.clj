@@ -9,6 +9,7 @@
             [com.viasat.halite.op-add-value-fields :as op-add-value-fields]
             [com.viasat.halite.op-canon :as op-canon]
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
+            [com.viasat.halite.op-canon-up :as op-canon-up]
             [com.viasat.halite.op-contradictions :as op-contradictions]
             [com.viasat.halite.op-ensure-fields :as op-ensure-fields]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
@@ -207,6 +208,7 @@
                       bom-choco/propagate-results-to-bounds
                       (op-inflate/inflate-op (op-remove-value-fields/remove-value-fields-op spec-env# bom#))
                       (op-remove-value-fields/remove-value-fields-op spec-env#)
+                      op-canon-up/canon-up-op
                       op-strip/strip-op)
          expected# ~expected]
      (is (= expected# result#))
@@ -421,7 +423,82 @@
                     :a {:$instance-of :ws/A$v1
                         :$value? true
                         :x {:$value? true
-                            :$ranges #{[-1000 1000]}}}}))
+                            :$ranges #{[-1000 1000]}}}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           (> q 20)
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :b false}
+                   {:$instance-of :ws/B$v1
+                    :b false
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? true
+                            :$ranges #{[21 1000]}}}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           (> q 20)
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :b false}
+                   {:$instance-of :ws/B$v1
+                    :b false
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? true
+                            :$ranges #{[21 1000]}}}})
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           (> q 20)
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x 30}}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x 30}})
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           (> q 20)
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x 10}}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x 10}
+                    :b true}))
 
 ;; (set! *print-namespace-maps* false)
 

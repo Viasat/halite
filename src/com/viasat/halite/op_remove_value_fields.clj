@@ -13,14 +13,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- remove-value-from-mandatory [bom]
-  (if (= true (:$value? bom))
-    (-> bom
-        (dissoc :$value?)
-        base/no-empty)
-    bom))
-
-(bom-op/def-bom-multimethod remove-value-field
+(bom-op/def-bom-multimethod remove-value-from-mandatory
   [bom]
   #{Integer
     FixedDecimal
@@ -38,15 +31,15 @@
     bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
   (cond
-    (= true (:$value? bom)) bom
+    (= true (:$value? bom)) (dissoc bom :$value?) ;; since the field is mandatory, the :$value? field is not needed
     (= false (:$value? bom)) bom/no-value-bom
-    (= (:$value? bom) {:$primitive-type :Boolean}) (dissoc bom :$value?)
     (= (:$value? bom) {:$enum #{true false}}) (dissoc bom :$value?)
+    (not (contains? bom :$value?)) bom
     :default (throw (ex-info "unexpected :$value? condition" {:bom bom}))))
 
 ;;
 
-(bom-op/def-bom-multimethod remove-value-fields-op
+(bom-op/def-bom-multimethod remove-value-fields-op*
   [spec-env bom]
   #{Integer
     FixedDecimal
@@ -61,7 +54,10 @@
   bom
 
   bom/PrimitiveBom
-  (remove-value-field bom)
+  (cond
+    (= (:$value? bom) {:$primitive-type :Boolean}) (dissoc bom :$value?)
+    (= (:$value? bom) {:$enum #{true false}}) (dissoc bom :$value?)
+    :default bom)
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
@@ -71,12 +67,15 @@
     (-> bom
         (merge (->> (-> bom
                         bom/to-bare-instance-bom
-                        (update-vals (partial remove-value-fields-op spec-env)))
+                        (update-vals (partial remove-value-fields-op* spec-env)))
                     (map (fn [[field-name field-bom]]
                            [field-name (if (spec-mandatory-field-names field-name)
                                          (remove-value-from-mandatory field-bom)
                                          field-bom)]))
                     (into {})))
-        (assoc :$refinements (some-> bom :$refinements (update-vals (partial remove-value-fields-op spec-env))))
-        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial remove-value-fields-op spec-env))))
+        (assoc :$refinements (some-> bom :$refinements (update-vals (partial remove-value-fields-op* spec-env))))
+        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial remove-value-fields-op* spec-env))))
         base/no-nil-entries)))
+
+(defn remove-value-fields-op [spec-env bom]
+  (remove-value-fields-op* spec-env bom))

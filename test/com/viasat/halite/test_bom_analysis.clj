@@ -86,7 +86,10 @@
                                                         {:$refines-to :ws/A$v1})))
   (is (= bom/contradiction-bom (bom-analysis/merge-boms {:$value? false
                                                          :$enum #{1 2}}
-                                                        {:$refines-to :ws/A$v1}))))
+                                                        {:$refines-to :ws/A$v1})))
+  (is (= bom/no-value-bom (bom-analysis/merge-boms {:$value? {:$primitive-type :Boolean}
+                                                    :$enum #{1 2}}
+                                                   {:$value? false}))))
 
 (deftest test-merge-bom-instances
   (is (= bom/contradiction-bom (bom-analysis/merge-boms [1] {:$type :ws/A$v1 :x 1})))

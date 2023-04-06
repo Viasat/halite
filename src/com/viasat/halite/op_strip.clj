@@ -22,6 +22,14 @@
       (dissoc :$primitive-type)
       base/no-empty))
 
+(defn- remove-boolean-wildcard [bom]
+  (if (and (bom/is-primitive-bom? bom)
+           (= (:$enum bom) #{true false}))
+    (-> bom
+        (dissoc :$enum)
+        base/no-empty)
+    bom))
+
 (bom-op/def-bom-multimethod strip-op
   [bom]
   #{Integer
@@ -37,7 +45,7 @@
   bom
 
   bom/PrimitiveBom
-  (->> bom remove-value-bom remove-primitive-type)
+  (->> bom remove-value-bom remove-primitive-type remove-boolean-wildcard)
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}

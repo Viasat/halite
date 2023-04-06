@@ -43,6 +43,7 @@
                              (map (fn [{:keys [path value]}]
                                     [path (cond
                                             (boolean? value) :Bool
+                                            (base/integer-or-long? value) :Int
                                             (= (:$primitive-type value) :Integer) :Int
                                             (= (:$primitive-type value) :Boolean) :Bool
                                             :default (throw (ex-info "unexpected bom value" {:path path :value value})))]))
@@ -60,12 +61,28 @@
   (-> (map :path vars)
       (zipmap (->> (range) (map #(symbol (str "$_" %)))))))
 
+(defn- flattened-vars-to-bom-map [vars]
+  (zipmap (map :path vars) (map :value vars)))
+
 (defn- flattened-vars-to-reverse-sym-map [vars]
   (->> (map :path vars)
        (zipmap (->> (range) (map #(symbol (str "$_" %)))))))
 
+(defn- resolve-path [path-to-bom-map path-to-sym-map path]
+  (cond
+    (contains? path-to-sym-map path) (path-to-sym-map path)
+
+    (and (= :$value? (last path))
+         (bom/is-primitive-value? (path-to-bom-map (butlast path))))
+    true
+
+    :default (throw (ex-info "unhandled path resolution case" {:path path
+                                                               :path-to-sym-map path-to-sym-map
+                                                               :path-to-bom-map path-to-bom-map}))))
+
 (defn paths-to-syms [bom choco-data]
   (let [path-to-sym-map (->> bom op-flatten/flatten-op flattened-vars-to-sym-map)
+        path-to-bom-map (->> bom op-flatten/flatten-op flattened-vars-to-bom-map)
         {:keys [choco-spec choco-bounds]} choco-data
         {:keys [vars constraint-map]} choco-spec]
     {:choco-spec {:vars (-> vars (update-keys path-to-sym-map))
@@ -73,7 +90,8 @@
                                     vals
                                     (walk/postwalk (fn [x]
                                                      (if (var-ref/var-ref? x)
-                                                       (-> x var-ref/get-path path-to-sym-map)
+                                                       (->> x var-ref/get-path (resolve-path path-to-bom-map
+                                                                                             path-to-sym-map))
                                                        x)))
                                     set)}
      :choco-bounds (-> choco-bounds (update-keys path-to-sym-map))
