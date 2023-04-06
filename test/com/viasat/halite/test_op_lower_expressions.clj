@@ -19,13 +19,13 @@
 
 (deftest test-lower-expression
   (are [in out]
-       (= out (op-lower-expressions/lower-expression [:p] (envs/env '{a 1 b 2}) in))
+       (= out (op-lower-expressions/lower-expression nil [:p] (envs/env '{a 1 b 2}) in))
 
     '1 '1
     "hi" "hi"
     '(= #r [:p :x] a) '(= #r [:p :x] a)
     '(not= #r [:p :x] a) '(not= #r [:p :x] a)
-    '(+ #d "1.1" #r [:p :x]) '(+ #d "1.1" #r [:p :x])
+    '(+ #d "1.1" #r [:p :x]) '(+ 11 #r [:p :x])
     '{:$type :ws/A :x #r [:p :x] :a a} '{:$type :ws/A :x #r [:p :x] :a a}
     '(+ #r [:p :x] a #r [:p :y] b) '(+ #r [:p :x] a #r [:p :y] b)
     '(+ #r [:p :x] (- a #r [:p :y])) '(+ #r [:p :x] (- a #r [:p :y]))
@@ -57,6 +57,24 @@
     ;; '(get-in x [:q :r]) '(get-in #r [:p :x] [:q :r])
     ;; '(get-in x [:x :y]) '(get-in #r [:p :x] [:x :y])
     ))
+
+(deftest test-lower-rescale
+  (is (= {:$instance-of :ws/A$v1
+          :a {:$primitive-type [:Decimal 2]
+              :$value? true}
+          :$constraints {"c1" '(= (* 501 10) (* #r [:a] 10))}}
+         (op-lower-expressions/lower-expression-op {:$instance-of :ws/A$v1
+                                                    :a {:$value? true, :$primitive-type [:Decimal 2]},
+                                                    :$constraints {"c1" '(= (rescale #d "5.01" 3) (rescale #r [:a] 3))}})))
+
+  (is (= {:$instance-of :ws/A$v1
+          :a {:$primitive-type [:Decimal 2]
+              :$value? true}
+          :$constraints {"c1" '(= (div 501 10) (div #r [:a] 10))}}
+         (op-lower-expressions/lower-expression-op {:$instance-of :ws/A$v1
+                                                    :a {:$value? true, :$primitive-type [:Decimal 2]},
+                                                    :$constraints {"c1" '(= (rescale #d "5.01" 1) (rescale #r [:a] 1))}}))))
+
 (comment
   '(if-value-let [x (get {:$type :my/Spec$v1 :n x :p 2} :o)]
                  (div x y)

@@ -315,7 +315,41 @@
                    {:$instance-of :ws/A$v1
                     :a {:$ranges #{[#d "-10.00" #d "10.00"]}}})
 
-  ;; composition
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]
+                                       :b [:Decimal 2]}
+                              :constraints [["c1" '(= #d "1.05" (+ a b))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$ranges #{[#d "-8.95" #d "10.00"]}}
+                    :b {:$ranges #{[#d "-8.95" #d "10.00"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]
+                                       :b [:Decimal 2]}
+                              :constraints [["c1" '(= #d "1.05" (+ a b))]]}}
+                   {:$instance-of :ws/A$v1
+                    :a {:$enum #{#d "0.05" #d "0.06"}}}
+                   {:$instance-of :ws/A$v1
+                    :a {:$enum #{#d "0.05" #d "0.06"}}
+                    :b {:$ranges #{[#d "0.99" #d "1.00"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
+                              :constraints [["c1" '(= (rescale #d "5.01" 3) (rescale a 3))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1, :a #d "5.01"})
+
+  ;; TODO
+  #_(check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
+                                :constraints [["c1" '(= (rescale #d "50.01" 1) (rescale a 1))]]}}
+                     {:$instance-of :ws/A$v1}
+                     {:$instance-of :ws/A$v1, :a #d "5.01"})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
+                              :constraints [["c1" '(= #d "3.0" (rescale a 1))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$ranges #{[#d "-3.09" #d "3.09"]}}})
+
+;; composition
   (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
                                        :y :Integer}
                               :constraints [["c1" '(= 15 (+ (get a :x) y))]

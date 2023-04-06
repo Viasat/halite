@@ -61,8 +61,8 @@
   [f :- FixedDecimal]
   (count (.fractional f)))
 
-(s/defn ^:private extract-long :- [(s/one s/Int :scale)
-                                   (s/one Long :long)]
+(s/defn extract-long :- [(s/one s/Int :scale)
+                         (s/one Long :long)]
   [f :- FixedDecimal]
   (let [long-value (parse-long (str (.-sign f) (.-integer f) (.-fractional f)))]
     (when (nil? long-value)

@@ -16,28 +16,37 @@
 
 (set! *warn-on-reflection* true)
 
+(defn- fixed-decimals-in [x]
+  (if (fixed-decimal/fixed-decimal? x)
+    (-> x fixed-decimal/extract-long second)
+    x))
+
 (defn bom-to-bound [bom]
-  (cond
-    (base/integer-or-long? bom) bom
+  (let [bom (fixed-decimals-in bom)]
+    (cond
+      (base/integer-or-long? bom) bom
 
-    (boolean? bom) bom
+      (boolean? bom) bom
 
-    (:$enum bom) (:$enum bom)
+      (:$enum bom) (->> (:$enum bom)
+                        (map fixed-decimals-in)
+                        set)
 
-    (:$ranges bom)
-    [(->> (:$ranges bom)
-          (map first)
-          (apply min))
-     (->> (:$ranges bom)
-          (map second)
-          (apply max))]
+      (:$ranges bom)
+      (->> [(->> (:$ranges bom)
+                 (map first)
+                 (apply min))
+            (->> (:$ranges bom)
+                 (map second)
+                 (apply max))]
+           (mapv fixed-decimals-in))
 
-    (or (= :Integer (:$primitive-type bom))
-        (types/decimal-type? (:$primitive-type bom))) choco-clj/*default-int-bounds*
+      (or (= :Integer (:$primitive-type bom))
+          (types/decimal-type? (:$primitive-type bom))) choco-clj/*default-int-bounds*
 
-    (= :Boolean (:$primitive-type bom)) #{true false}
+      (= :Boolean (:$primitive-type bom)) #{true false}
 
-    :default (throw (ex-info "failed to convert to bound" {:bom bom}))))
+      :default (throw (ex-info "failed to convert to bound" {:bom bom})))))
 
 (defn bom-to-choco [bom]
   (let [constraints (op-extract-constraints/extract-constraints-op bom)
