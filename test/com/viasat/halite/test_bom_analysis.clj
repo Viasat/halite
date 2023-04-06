@@ -246,6 +246,10 @@
                                    :$concrete-choices {:ws/X$v1 {:$instance-of :ws/X$v1}}}
                                   {:$instance-of :ws/A$v1}))))
 
+(deftest test-yes-value
+  (is (= false (bom-analysis/merge-boms bom/yes-value-bom false)))
+  (is (= true (bom-analysis/merge-boms bom/yes-value-bom true))))
+
 (deftest test-bom-for-spec
   {:ws/B$v1 {:fields {:b1 :Integer}}
    :ws/C$v1 {:fields {:x :Integer}}}

@@ -18,20 +18,18 @@
     Boolean
     #{}
     []
-    bom/InstanceValue}
-  nil
-
-  #{bom/ContradictionBom
-    bom/NoValueBom
-    bom/YesValueBom}
-  (throw (ex-info "unexpected bom element" {:bom bom}))
-
-  bom/PrimitiveBom
+    bom/InstanceValue
+    bom/PrimitiveBom}
   (->> [{:path path :value bom}
         (when (:$value? bom)
           {:path (conj path :$value?) :value (:$value? bom)})]
        (remove nil?)
        vec)
+
+  #{bom/ContradictionBom
+    bom/NoValueBom
+    bom/YesValueBom}
+  (throw (ex-info "unexpected bom element" {:bom bom}))
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}

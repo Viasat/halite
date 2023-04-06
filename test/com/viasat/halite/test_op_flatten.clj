@@ -59,4 +59,9 @@
                                  :x {:$primitive-type :Integer
                                      :$value? {:$primitive-type :Boolean}}}))))
 
+(deftest test-primitive-value
+  (is (= [{:path [:x] :value true}]
+         (op-flatten/flatten-op {:$instance-of :ws/A$v1
+                                 :x true}))))
+
 ;; (run-tests)

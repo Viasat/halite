@@ -158,6 +158,15 @@
           #{bom/YesValueBom bom/NoValueBom}} bom-types)
       bom/contradiction-bom
 
+      ('#{#{Integer bom/YesValueBom}
+          #{FixedDecimal bom/YesValueBom}
+          #{String bom/YesValueBom}
+          #{Boolean bom/YesValueBom}
+          #{[] bom/YesValueBom}
+          #{#{} bom/YesValueBom}} bom-types)
+      (let [[a b] (if (bom/is-yes-value-bom? a) [a b] [b a])]
+        b)
+
       ('#{#{bom/NoValueBom}} bom-types)
       bom/no-value-bom
 

@@ -401,6 +401,26 @@
                     :a {:$instance-of :ws/A$v1
                         :$value? true
                         :x {:$value? true
+                            :$ranges #{[-1000 1000]}}}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           true
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :b false}
+                   {:$instance-of :ws/B$v1
+                    :b false
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? true
                             :$ranges #{[-1000 1000]}}}}))
 
 ;; (set! *print-namespace-maps* false)

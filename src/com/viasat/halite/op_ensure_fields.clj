@@ -62,9 +62,11 @@
     (-> bom
         (merge (->> spec-field-names
                     (map (fn [field-name]
-                           (if (contains? bom field-name)
-                             [field-name (ensure-fields-op spec-env (get bom field-name))]
-                             [field-name (bom-analysis/bom-for-field true {} [field-name (spec/get-field-type spec field-name)])])))
+                           [field-name (->> (if (contains? bom field-name)
+                                              (get bom field-name)
+                                              (->> [field-name (spec/get-field-type spec field-name)]
+                                                   (bom-analysis/bom-for-field true {})))
+                                            (ensure-fields-op spec-env))]))
                     (into {})))
         (assoc :$refinements (some-> bom :$refinements (update-vals (partial ensure-fields-op spec-env))))
         (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial ensure-fields-op spec-env))))
