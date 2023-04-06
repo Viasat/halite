@@ -216,6 +216,53 @@
        result#)))
 
 (deftest test-propagate
+  (check-propagate {:ws/A$v1 {:fields {:x :Boolean
+                                       :y :Boolean}
+                              :constraints [["c1" '(if x true y)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1})
+
+  (check-propagate {:ws/A$v1 {:fields {:x :Boolean
+                                       :y :Boolean}
+                              :constraints [["c1" '(if x true y)]]}}
+                   {:$instance-of :ws/A$v1
+                    :x false}
+                   {:$instance-of :ws/A$v1
+                    :x false
+                    :y true})
+
+  (check-propagate {:ws/A$v1 {:fields {:x :Boolean
+                                       :y :Boolean}
+                              :constraints [["c1" '(if x true y)]]}}
+                   {:$instance-of :ws/A$v1
+                    :y false}
+                   {:$instance-of :ws/A$v1
+                    :x true
+                    :y false})
+
+  (check-propagate {:ws/A$v1 {:fields {:x :Boolean
+                                       :y :Boolean}
+                              :constraints [["c1" '(if x true y)]]}}
+                   {:$instance-of :ws/A$v1
+                    :x true}
+                   {:$instance-of :ws/A$v1
+                    :x true})
+
+  (check-propagate {:ws/A$v1 {:fields {:x :Boolean
+                                       :y :Boolean}
+                              :constraints [["c1" '(or x y)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1})
+
+  (check-propagate {:ws/A$v1 {:fields {:x :Boolean
+                                       :y :Boolean}
+                              :constraints [["c1" '(or x y)]]}}
+                   {:$instance-of :ws/A$v1
+                    :x false}
+                   {:$instance-of :ws/A$v1
+                    :x false
+                    :y true})
+
   (check-propagate {:ws/A$v1 {:fields {:x :Integer
                                        :y :Integer}
                               :constraints [["c1" '(> x y)]]}}

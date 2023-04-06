@@ -378,8 +378,9 @@
           (.addConstructiveDisjunction m
                                        (into-array Constraint
                                                    (into
-                                                    [(.decompose ^ReExpression arg1)]
-                                                    (map (fn [x] (.decompose ^ReExpression x)) other-args))))
+                                                    [(.decompose ^ReExpression (bool-var-as-expr arg1))]
+                                                    (map (fn [x]
+                                                           (.decompose ^ReExpression (bool-var-as-expr x))) other-args))))
           nil)
         (let [^ReExpression expr (bool-var-as-expr base-expr)
               constraint (.decompose expr)]
