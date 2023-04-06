@@ -44,11 +44,11 @@
                                                                    (let [lifted-child (lift-refinements-op refinement-bom)]
                                                                      (:$refinements lifted-child))))
                                                             (reduce (fn [refinements child-refinements]
-                                                                      (merge-with bom-analysis/merge-boms
+                                                                      (merge-with bom-analysis/conjoin-boms
                                                                                   refinements
                                                                                   child-refinements))
                                                                     {}))]
-                         (assoc bom :$refinements (merge-with bom-analysis/merge-boms
+                         (assoc bom :$refinements (merge-with bom-analysis/conjoin-boms
                                                               (-> refinements
                                                                   (update-vals #(dissoc % :$refinements)))
                                                               refinements-from-children)))))

@@ -37,7 +37,7 @@
                                                   :$concrete-choices
                                                   (update-vals (fn [concrete-bom]
                                                                  (-> concrete-bom
-                                                                     (assoc :$refinements (merge-with bom-analysis/merge-boms
+                                                                     (assoc :$refinements (merge-with bom-analysis/conjoin-boms
                                                                                                       (:$refinements concrete-bom)
                                                                                                       {spec-id (-> bom
                                                                                                                    (dissoc :$refines-to :$refinements)

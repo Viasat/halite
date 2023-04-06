@@ -10,6 +10,7 @@
             [com.viasat.halite.op-canon :as op-canon]
             [com.viasat.halite.op-canon-refinements :as op-canon-refinements]
             [com.viasat.halite.op-canon-up :as op-canon-up]
+            [com.viasat.halite.op-conjoin-spec-bom :as op-conjoin-spec-bom]
             [com.viasat.halite.op-contradictions :as op-contradictions]
             [com.viasat.halite.op-ensure-fields :as op-ensure-fields]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
@@ -17,7 +18,6 @@
             [com.viasat.halite.op-lower-expressions :as op-lower-expressions]
             [com.viasat.halite.op-mandatory :as op-mandatory]
             [com.viasat.halite.op-make-var-refs :as op-make-var-refs]
-            [com.viasat.halite.op-merge-spec-bom :as op-merge-spec-bom]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
             [com.viasat.halite.op-remove-value-fields :as op-remove-value-fields]
             [com.viasat.halite.op-strip :as op-strip]
@@ -56,7 +56,7 @@
        op-push-down-to-concrete/push-down-to-concrete-op
        (op-canon-refinements/canon-refinements-op spec-env)
 
-       (op-merge-spec-bom/merge-spec-bom-op spec-env)
+       (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env)
        (op-find-concrete/find-concrete-op spec-env)
        op-push-down-to-concrete/push-down-to-concrete-op
        (op-canon-refinements/canon-refinements-op spec-env)
@@ -190,7 +190,7 @@
                    op-push-down-to-concrete/push-down-to-concrete-op
                    (op-canon-refinements/canon-refinements-op spec-env#)
 
-                   (op-merge-spec-bom/merge-spec-bom-op spec-env#)
+                   (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env#)
                    (op-find-concrete/find-concrete-op spec-env#)
                    op-push-down-to-concrete/push-down-to-concrete-op
                    (op-canon-refinements/canon-refinements-op spec-env#)

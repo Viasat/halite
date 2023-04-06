@@ -57,9 +57,9 @@
   bom
 
   bom/PrimitiveBom
-  (bom-analysis/merge-boms bom
-                           (->> (flat-bom-map path)
-                                (bring-value-field-into-bom flat-bom-map path)))
+  (bom-analysis/conjoin-boms bom
+                             (->> (flat-bom-map path)
+                                  (bring-value-field-into-bom flat-bom-map path)))
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}

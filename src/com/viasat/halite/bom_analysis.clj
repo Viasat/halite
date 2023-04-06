@@ -145,7 +145,7 @@
 
 ;;;;
 
-(s/defn merge-boms [a b]
+(s/defn conjoin-boms [a b]
   (let [bom-types (set [(bom-op/type-symbol-of-bom a)
                         (bom-op/type-symbol-of-bom b)])]
     (cond
@@ -287,7 +287,7 @@
               a
               {:$instance-of (bom/get-spec-id a)
                :$value? false})
-            (let [merged (merge-with merge-boms a b)]
+            (let [merged (merge-with conjoin-boms a b)]
               (if (or (:$refinements b)
                       (:$valid? b))
                 (dissoc merged :$type)
@@ -302,7 +302,7 @@
                   (bom/get-spec-id b))
                (not (bom/is-a-no-value-bom? a))
                (not (bom/is-a-no-value-bom? b)))
-        (let [result (-> (merge-with merge-boms (bom/to-bare-instance a) (bom/to-bare-instance b))
+        (let [result (-> (merge-with conjoin-boms (bom/to-bare-instance a) (bom/to-bare-instance b))
                          (assoc (if (bom/is-abstract-instance-bom? a)
                                   :$refines-to
                                   :$instance-of) (bom/get-spec-id a)
@@ -322,7 +322,7 @@
                                            (or (:$valid? a) (:$valid? b)) (throw (ex-info "did not expect :$valid?" {:a a :b b})))
                                 :$refinements (cond
                                                 (and (:$refinements a) (:$refinements b))
-                                                (merge-with merge-boms (:$refinements a) (:$refinements b))
+                                                (merge-with conjoin-boms (:$refinements a) (:$refinements b))
 
                                                 (:$refinements a) (:$refinements a)
                                                 (:$refinements b) (:$refinements b)
@@ -331,7 +331,7 @@
                                                      (and (:$concrete-choices a) (:$concrete-choices b))
                                                      (let [keyset (set/intersection (->> a :$concrete-choices keys set)
                                                                                     (->> b :$concrete-choices keys set))]
-                                                       (merge-with merge-boms
+                                                       (merge-with conjoin-boms
                                                                    (select-keys a keyset)
                                                                    (select-keys b keyset)))
 
@@ -341,8 +341,8 @@
                          base/no-nil-entries
                          detect-empty-concrete-choices)]
           (if (= 1 (count (:$enum result)))
-            (merge-boms (first (:$enum result))
-                        (dissoc result :$enum))
+            (conjoin-boms (first (:$enum result))
+                          (dissoc result :$enum))
             result))
         (if (or (= true (:$value? a)) (= true (:$value? b)))
           bom/contradiction-bom
@@ -356,7 +356,7 @@
             current-choice (get-in b [:$concrete-choices (bom/get-spec-id a)])]
         (cond
           (and (:$concrete-choices b) current-choice)
-          (assoc b :$concrete-choices {(bom/get-spec-id a) (merge-boms current-choice a)})
+          (assoc b :$concrete-choices {(bom/get-spec-id a) (conjoin-boms current-choice a)})
 
           (and (:$concrete-choices b) (not current-choice))
           (if (or (= true (:$value? a)) (= true (:$value? b)))
