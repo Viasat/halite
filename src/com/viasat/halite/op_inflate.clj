@@ -86,4 +86,6 @@
       base/no-nil-entries))
 
 (defn inflate-op [bom flat-bom-map]
-  (inflate-op* flat-bom-map [] bom))
+  (if (nil? flat-bom-map)
+    bom/contradiction-bom
+    (inflate-op* flat-bom-map [] bom)))

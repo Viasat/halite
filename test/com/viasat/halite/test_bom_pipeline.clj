@@ -3,6 +3,7 @@
 
 (ns com.viasat.halite.test-bom-pipeline
   (:require [clojure.test :refer :all]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-choco :as bom-choco]
             [com.viasat.halite.op-add-constraints :as op-add-constraints]
             [com.viasat.halite.op-add-types :as op-add-types]
@@ -342,6 +343,12 @@
                     :a {:$ranges #{[#d "-5.09" #d "5.09"]}}})
 
   (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
+                              :constraints [["c1" '(= 5 (rescale a 0))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$ranges #{[#d "-5.99" #d "5.99"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
                               :constraints [["c1" '(= 503 (rescale a 2))]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
@@ -358,6 +365,55 @@
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
                     :a {:$ranges #{[#d "-3.10" #d "3.08"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Maybe [:Decimal 2]]}
+                              :constraints [["c1" '(= #d "3.0"
+                                                      (if-value a
+                                                                (rescale (+ a #d "0.01") 1)
+                                                                #d "2.0"))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$value? true
+                        :$ranges #{[#d "-3.10" #d "3.08"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Maybe [:Decimal 2]]}
+                              :constraints [["c1" '(= #d "3.00"
+                                                      (if-value a
+                                                                (rescale (+ a #d "0.01") 1)
+                                                                #d "3.00"))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$value? false}})
+
+  ;; TODO: the output is not constrained as one would hope
+  (check-propagate {:ws/A$v1 {:fields {:a [:Maybe [:Decimal 2]]}
+                              :constraints [["c1" '(= #d "3.0"
+                                                      (if-value a
+                                                                (rescale (+ a #d "0.01") 1)
+                                                                #d "3.0"))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$ranges #{[#d "-10.00" #d "10.00"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Maybe [:Decimal 2]]}
+                              :constraints [["c1" '(= #d "3.0"
+                                                      (if-value a
+                                                                (rescale (+ a #d "0.01") 1)
+                                                                #d "3.0"))]]}}
+                   {:$instance-of :ws/A$v1
+                    :a bom/yes-value-bom}
+                   {:$instance-of :ws/A$v1
+                    :a {:$value? true
+                        :$ranges #{[#d "-3.10" #d "3.08"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Maybe [:Decimal 2]]}
+                              :constraints [["c1" '(= #d "3.0"
+                                                      (if-value a
+                                                                (rescale (+ a #d "0.01") 1)
+                                                                #d "3.0"))]]}}
+                   {:$instance-of :ws/A$v1
+                    :a #d "4.00"}
+                   bom/contradiction-bom)
 
   ;; composition
   (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]

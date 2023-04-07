@@ -12,7 +12,8 @@
             [com.viasat.halite.op-flatten :as op-flatten]
             [com.viasat.halite.types :as types]
             [com.viasat.halite.var-ref :as var-ref]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import [org.chocosolver.solver.exception ContradictionException]))
 
 (set! *warn-on-reflection* true)
 
@@ -117,10 +118,14 @@
 
 (defn choco-propagate [bom choco-data]
   (let [{:keys [choco-spec choco-bounds]} choco-data
-        result (choco-clj/propagate choco-spec choco-bounds)
-        sym-to-path-map (->> bom op-flatten/flatten-op flattened-vars-to-reverse-sym-map)]
-    (-> result
-        (update-keys sym-to-path-map))))
+        result (try (choco-clj/propagate choco-spec choco-bounds)
+                    (catch ContradictionException ex
+                      nil))]
+    (if (nil? result)
+      result
+      (let [sym-to-path-map (->> bom op-flatten/flatten-op flattened-vars-to-reverse-sym-map)]
+        (-> result
+            (update-keys sym-to-path-map))))))
 
 (defn- handle-fixed-decimals-out [type x]
   (if (types/decimal-type? type)
@@ -140,8 +145,9 @@
                                 (mapv (partial handle-fixed-decimals-out type)))}})))
 
 (defn propagate-results-to-bounds [bom propagate-results]
-  (let [path-to-bom-map (->> bom op-flatten/flatten-op flattened-vars-to-bom-map)]
-    (->> propagate-results
-         (map (fn [[path bound]]
-                [path (choco-bound-to-bom (:$primitive-type (path-to-bom-map path)) bound)]))
-         (into {}))))
+  (when propagate-results
+    (let [path-to-bom-map (->> bom op-flatten/flatten-op flattened-vars-to-bom-map)]
+      (->> propagate-results
+           (map (fn [[path bound]]
+                  [path (choco-bound-to-bom (:$primitive-type (path-to-bom-map path)) bound)]))
+           (into {})))))

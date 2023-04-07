@@ -232,13 +232,16 @@
       (flower-fog context expr)
       (apply list op args'))))
 
+(defn- flower-fixed-decimal [expr]
+  (-> expr fixed-decimal/extract-long second))
+
 (s/defn flower
   [context :- LowerContext
    expr]
   (cond
     (boolean? expr) expr
     (base/integer-or-long? expr) expr
-    (base/fixed-decimal? expr) (-> expr fixed-decimal/extract-long second)
+    (base/fixed-decimal? expr) (flower-fixed-decimal expr)
     (string? expr) expr
     (symbol? expr) (flower-symbol context expr)
     (map? expr) (flower-instance context expr)
@@ -271,7 +274,6 @@
 (bom-op/def-bom-multimethod flower-op*
   [context bom]
   #{Integer
-    FixedDecimal
     String
     Boolean
     bom/PrimitiveBom
@@ -282,6 +284,9 @@
     []
     bom/InstanceValue}
   bom
+
+  FixedDecimal
+  (flower-fixed-decimal bom)
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
