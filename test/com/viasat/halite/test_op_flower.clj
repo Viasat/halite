@@ -68,7 +68,9 @@
                                                               '~'b :Integer})
                                     :env (envs/env {'~'a 10
                                                     '~'b 20})
-                                    :path [:p]}
+                                    :path [:p]
+                                    :counter-atom (atom -1)
+                                    :instance-literal-constraints-atom (atom [])}
                                    in#)]
      (is (= out# result#))
      result#))

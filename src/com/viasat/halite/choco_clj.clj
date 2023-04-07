@@ -84,6 +84,13 @@
         :else (throw (ex-info (format "Unrecognized var type: '%s'" (pr-str var-type)) {:var-type var-type})))
       var-type]]))
 
+(defn- to-ar-expressions [m args]
+  (->> args
+       (map (fn [arg]
+              (if (integer? arg)
+                (ArExpression$IntPrimitive. arg m)
+                arg)))))
+
 (defn- arithmetic ^"[Lorg.chocosolver.solver.expression.discrete.arithmetic.ArExpression;"
   [args]
   (if (= 1 (count args))
@@ -286,12 +293,13 @@
                                          switch-other-args (if switch? other-args' other-args)]
                                      (condp = op
                                        '+ (.add ;; ^ArExpression
-                                           (ensure-var m switch-arg1) (arithmetic switch-other-args))
+                                           (ensure-var m switch-arg1) (arithmetic (to-ar-expressions m switch-other-args)))
                                        '- (.sub ^ArExpression (ensure-var m arg1) ^ArExpression (ensure-var m (first other-args)))
                                        '* (.mul ;; ^ArExpression
                                            (ensure-var m arg1)
                                            (->> other-args
                                                 (map (partial ensure-var m))
+                                                (to-ar-expressions m)
                                                 arithmetic))
                                        '< (if switch?
                                             (.gt ;; ^ArExpression
@@ -331,7 +339,7 @@
                                               (first other-args)))
                                        '= (.eq ;; ^ArExpression
                                            (ensure-var m switch-arg1)
-                                           (arithmetic switch-other-args))
+                                           (arithmetic (to-ar-expressions m switch-other-args)))
                                        'and (.and ^ReExpression arg1 (relational other-args))
                                        'or (do
                                              (swap! *expr-stack* conj ['or arg1 (relational other-args)])

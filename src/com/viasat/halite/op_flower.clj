@@ -27,7 +27,10 @@
                    :spec-type-env (s/protocol envs/TypeEnv) ;; holds the types coming from the contextual spec
                    :type-env (s/protocol envs/TypeEnv) ;; holds local types, e.g. from 'let' forms
                    :env (s/protocol envs/Env) ;; contains local values, e.g. from 'let' forms
-                   :path [s/Any]})
+                   :path [s/Any]
+                   :counter-atom s/Any ;; an atom to generate unique IDs
+                   :instance-literal-constraints-atom s/Any ;; holds constraints arising from instance literals in expressions
+                   })
 
 ;;;;
 
@@ -49,6 +52,11 @@
 
 ;;;;
 
+(defn- next-id [counter-atom]
+  (swap! counter-atom inc))
+
+;;
+
 (declare flower)
 
 (s/defn ^:private flower-fog
@@ -69,16 +77,37 @@
 (s/defn ^:private flower-instance
   [context :- LowerContext
    expr]
-  (let [{:keys [path]} context
+  (let [{:keys [spec-env type-env env path counter-atom instance-literal-constraints-atom]} context
         new-contents (-> expr
                          (dissoc :$type)
-                         (update-vals (partial flower context))
-                         (assoc :$type (:$type expr)))]
+                         (update-vals (partial flower context)))]
+
     (if (->> new-contents
              vals
              (some non-root-fog?))
       (flower-fog context expr)
-      (instance-literal/make-instance-literal new-contents))))
+      (do
+        ;; compute instance-literal constraints
+        (let [env' (reduce (fn [env [field-name value]]
+                             (envs/bind env (symbol field-name) value))
+                           env
+                           new-contents)
+              type-env' (reduce (fn [type-env [field-name value]]
+                                  (envs/extend-scope type-env
+                                                     (symbol field-name)
+                                                     (expression-type
+                                                      context
+                                                      (get expr field-name))))
+                                type-env
+                                new-contents)
+              context' (assoc context :env env' :type-env type-env')
+              instance-literal-constraints (->> (:constraints (envs/lookup-spec spec-env (:$type expr)))
+                                                (map (fn [[constraint-name constraint-expr]]
+                                                       [(str (conj path :instance-literal constraint-name (next-id counter-atom)))
+                                                        (flower context' constraint-expr)])))]
+          (swap! instance-literal-constraints-atom into instance-literal-constraints))
+        (instance-literal/make-instance-literal (-> new-contents
+                                                    (assoc :$type (:$type expr))))))))
 
 (s/defn ^:private flower-get
   [context :- LowerContext
@@ -310,28 +339,37 @@
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
   (let [{:keys [spec-env path]} context
+        instance-literal-constraints-atom (atom [])
+        context (assoc context :instance-literal-constraints-atom instance-literal-constraints-atom)
         spec-id (bom/get-spec-id bom)
-        spec-info (envs/lookup-spec spec-env spec-id)]
-    (-> bom
-        (merge (->> bom
-                    bom/to-bare-instance-bom
-                    (map (fn [[field-name field-bom]]
-                           [field-name (flower-op* (assoc context :path (conj path field-name)) field-bom)]))
-                    (into {})))
-        (assoc :$constraints (some-> bom
-                                     :$constraints
-                                     (update-vals (partial flower (assoc context
-                                                                         :spec-type-env (envs/type-env-from-spec spec-info))))))
-        (assoc :$refinements (some-> bom
-                                     :$refinements
-                                     (map (fn [[other-spec-id sub-bom]]
-                                            [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
-                                     (into {})))
-        (assoc :$concrete-choices (some-> bom
-                                          :$concrete-choices
-                                          (map (fn [[other-spec-id sub-bom]]
-                                                 [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
-                                          (into {})))
+        spec-info (envs/lookup-spec spec-env spec-id)
+        bom' (-> bom
+                 (merge (->> bom
+                             bom/to-bare-instance-bom
+                             (map (fn [[field-name field-bom]]
+                                    [field-name (flower-op* (assoc context :path (conj path field-name)) field-bom)]))
+                             (into {})))
+                 (assoc :$constraints (some-> bom
+                                              :$constraints
+                                              (update-vals (partial flower (assoc context
+                                                                                  :spec-type-env (envs/type-env-from-spec spec-info))))))
+                 (assoc :$refinements (some-> bom
+                                              :$refinements
+                                              (map (fn [[other-spec-id sub-bom]]
+                                                     [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
+                                              (into {})))
+                 (assoc :$concrete-choices (some-> bom
+                                                   :$concrete-choices
+                                                   (map (fn [[other-spec-id sub-bom]]
+                                                          [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
+                                                   (into {})))
+                 base/no-nil-entries)]
+    (-> bom'
+        (assoc :$constraints (-> bom'
+                                 :$constraints
+                                 (merge (->> @instance-literal-constraints-atom
+                                             (into {})
+                                             (base/no-empty)))))
         base/no-nil-entries)))
 
 (s/defn flower-op
@@ -340,5 +378,7 @@
   (flower-op* {:spec-env spec-env
                :type-env (envs/type-env {})
                :env (envs/env {})
-               :path []}
+               :path []
+               :counter-atom (atom -1)
+               :instance-literal-constraints-atom (atom [])}
               bom))

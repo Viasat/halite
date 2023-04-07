@@ -50,7 +50,11 @@
 
       :default (throw (ex-info "failed to convert to bound" {:bom bom})))))
 
+(def ^:dynamic *trace-propagate* false)
+
 (defn bom-to-choco [bom]
+  (when *trace-propagate*
+    (pprint/pprint [:bom bom]))
   (let [constraints (op-extract-constraints/extract-constraints-op bom)
         vars (op-flatten/flatten-op bom)]
     {:choco-spec {:vars (->> vars
@@ -116,8 +120,6 @@
                        sort
                        (mapcat identity)
                        vec)}))
-
-(def ^:dynamic *trace-propagate* false)
 
 (defn choco-propagate [bom choco-data]
   (when *trace-propagate*
