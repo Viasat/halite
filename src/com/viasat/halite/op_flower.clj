@@ -24,7 +24,30 @@
 
 ;;;;
 
+(defn- combine-envs [spec-type-env type-env]
+  (reduce (fn [effective-type-env [sym value]]
+            (envs/extend-scope effective-type-env sym value))
+          spec-type-env
+          (envs/scope type-env)))
+
+(defn- expression-type [context expr]
+  (let [{:keys [spec-env spec-type-env type-env path]} context]
+    (type-check/type-check spec-env
+                           (combine-envs spec-type-env type-env)
+                           expr)))
+
+(defn- non-root-fog? [x]
+  (and (fog/fog? x)
+       (not (#{:Integer :Boolean} (fog/get-type x)))))
+
+;;;;
+
 (declare flower)
+
+(s/defn ^:private flower-fog
+  [context :- LowerContext
+   expr]
+  (fog/make-fog (expression-type context expr)))
 
 (s/defn ^:private flower-symbol
   [context :- LowerContext
@@ -39,11 +62,16 @@
 (s/defn ^:private flower-instance
   [context :- LowerContext
    expr]
-  (let [{:keys [path]} context]
-    (-> expr
-        (dissoc :$type)
-        (update-vals (partial flower context))
-        (assoc :$type (:$type expr)))))
+  (let [{:keys [path]} context
+        new-contents (-> expr
+                         (dissoc :$type)
+                         (update-vals (partial flower context))
+                         (assoc :$type (:$type expr)))]
+    (if (->> new-contents
+             vals
+             (some non-root-fog?))
+      (flower-fog context expr)
+      new-contents)))
 
 (s/defn ^:private flower-get
   [op
@@ -58,18 +86,6 @@
     (var-ref/extend-path target' (if (vector? accessor)
                                    accessor
                                    [accessor]))))
-
-(defn- combine-envs [spec-type-env type-env]
-  (reduce (fn [effective-type-env [sym value]]
-            (envs/extend-scope effective-type-env sym value))
-          spec-type-env
-          (envs/scope type-env)))
-
-(defn- expression-type [context expr]
-  (let [{:keys [spec-env spec-type-env type-env path]} context]
-    (type-check/type-check spec-env
-                           (combine-envs spec-type-env type-env)
-                           expr)))
 
 (s/defn ^:private flower-let
   [context :- LowerContext
@@ -87,10 +103,17 @@
                                                            [sym binding-e'])}))
                                       {:type-env type-env
                                        :bindings []}
-                                      (partition 2 bindings))]
-    (list 'let
-          bindings'
-          (flower (assoc context :type-env type-env') body))))
+                                      (partition 2 bindings))
+        body' (flower (assoc context :type-env type-env') body)]
+    (if (or (->> bindings'
+                 (partition 2)
+                 (map second)
+                 (some non-root-fog?))
+            (non-root-fog? body'))
+      (flower-fog context expr)
+      (list 'let
+            bindings'
+            body'))))
 
 (s/defn ^:private flower-if-value
   [context :- LowerContext
@@ -101,61 +124,66 @@
       (throw (ex-info "unexpected target of if-value" {:expr expr
                                                        :target' target'
                                                        :context context})))
-    (list 'if
-          (var-ref/extend-path target' [:$value?])
-          (flower context then-clause)
-          (flower context else-clause))))
+    (let [then-clause' (flower context then-clause)
+          else-clause' (flower context else-clause)]
+      (if (or (non-root-fog? then-clause')
+              (non-root-fog? else-clause'))
+        (flower-fog context expr)
+        (list 'if
+              (var-ref/extend-path target' [:$value?])
+              then-clause'
+              else-clause')))))
 
 (s/defn ^:private flower-if-value-let
   [context :- LowerContext
    expr]
   (let [{:keys [type-env]} context
-        [_ [sym target] then-clause else-clause] expr]
-    (list 'if-value-let [sym (flower context target)]
-          (flower (assoc context :type-env (envs/extend-scope type-env sym (expression-type context target)))
-                  then-clause)
-          (flower context else-clause))))
+        [_ [sym target] then-clause else-clause] expr
+        target' (flower context target)
+        then-clause' (flower (assoc context :type-env (envs/extend-scope type-env sym (expression-type context target)))
+                             then-clause)
+        else-clause' (flower context else-clause)]
+    (if (or (non-root-fog? target')
+            (non-root-fog? then-clause')
+            (non-root-fog? else-clause'))
+      (flower-fog context expr)
+      (list 'if-value-let [sym target']
+            then-clause'
+            else-clause'))))
 
 (s/defn ^:private flower-when-value-let
   [context :- LowerContext
    expr]
   (let [{:keys [type-env]} context
-        [_ [sym target] then-clause] expr]
-    (list 'when-value-let [sym (flower context target)]
-          (flower (assoc context :type-env (envs/extend-scope sym (expression-type context target)))
-                  then-clause))))
+        [_ [sym target] body] expr
+        target' (flower context target)
+        body' (flower (assoc context :type-env (envs/extend-scope sym (expression-type context target)))
+                      body)]
+    (if (or (non-root-fog? target')
+            (non-root-fog? body'))
+      (flower-fog context expr)
+      (list 'when-value-let [sym target']
+            body'))))
 
 (s/defn ^:private flower-refine-to
   [op
    context :- LowerContext
    expr]
-  (let [[_ instance spec-id] expr]
-    (list op (flower context instance) spec-id)))
-
-(s/defn ^:private flower-fog
-  [context :- LowerContext
-   expr]
-  (fog/make-fog (expression-type context expr)))
+  (let [[_ instance spec-id] expr
+        instance' (flower context instance)]
+    (if (non-root-fog? instance')
+      (flower-fog context expr)
+      (list op instance' spec-id))))
 
 (s/defn ^:private flower-fn-application
   [context :- LowerContext
    expr]
-  (let [[op & args] expr]
-    (apply list op (->> args
-                        (map (partial flower context))))))
-
-(s/defn ^:private flower-vector
-  [context :- LowerContext
-   expr]
-  (->> expr
-       (mapv (partial flower context))))
-
-(s/defn ^:private flower-set
-  [context :- LowerContext
-   expr]
-  (->> expr
-       (map (partial flower context))
-       set))
+  (let [[op & args] expr
+        args' (->> args
+                   (map (partial flower context)))]
+    (if (some non-root-fog? args')
+      (flower-fog context expr)
+      (apply list op args'))))
 
 (s/defn flower
   [context :- LowerContext
@@ -185,8 +213,8 @@
 
                   ;; else:
                   (flower-fn-application context expr))
-    (vector? expr) (flower-vector context expr)
-    (set? expr) (flower-set context expr)
+    (vector? expr) (flower-fog context expr)
+    (set? expr) (flower-fog context expr)
     :else (throw (ex-info "unrecognized halite form" {:expr expr}))))
 
 ;;;;

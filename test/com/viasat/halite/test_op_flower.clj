@@ -49,6 +49,14 @@
                                    :$constraints {"x" '(let [a 100]
                                                          (> x a))}}}))))
 
+(deftest test-fog
+  (is (= {:$instance-of :ws/A$v1
+          :$constraints {"c" '(> #fog :Integer 30)}}
+         (op-flower/flower-op {:ws/A$v1 {:fields {:xs [:Vec :Integer]
+                                                  :ys [:Vec :Integer]}}}
+                              {:$instance-of :ws/A$v1
+                               :$constraints {"c" '(> (reduce [a 0] [x xs] (+ a x)) 30)}}))))
+
 (defmacro check-flower [in out]
   `(let [in# ~in
          out# ~out
@@ -74,8 +82,8 @@
   (check-flower '(+ x a y b) '(+ #r [:p :x] a #r [:p :y] b))
   (check-flower '(+ x (- a y)) '(+ #r [:p :x] (- a #r [:p :y])))
   (check-flower '(let [c x d 1] (+ c d)) '(let [c #r [:p :x] d 1] (+ c d)))
-  (check-flower '(first [a x 100]) '(first [a #r [:p :x] 100]))
-  (check-flower '#{a x 100} '#{a #r [:p :x] 100})
+  (check-flower '(first [a x 100]) #fog :Integer)
+  (check-flower '#{a x 100} #fog [:Set :Integer])
   (check-flower '(if x y z) '(if #r [:p :x] #r [:p :y] #r [:p :z]))
   (check-flower '(when x a) '(when #r [:p :x] a))
   (check-flower '(cond true x y a) '(cond true #r [:p :x] #r [:p :y] a))
