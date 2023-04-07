@@ -81,8 +81,7 @@
       (instance-literal/make-instance-literal new-contents))))
 
 (s/defn ^:private flower-get
-  [op
-   context :- LowerContext
+  [context :- LowerContext
    expr]
   (let [[_ target accessor] expr
         target' (flower context target)]
@@ -95,9 +94,21 @@
                                                        instance-literal/get-bindings
                                                        (get accessor))
 
-      :default (throw (ex-info "unexpected target of get" {:op op
-                                                           :expr expr
+      :default (throw (ex-info "unexpected target of get" {:expr expr
                                                            :target' target'})))))
+
+(s/defn ^:private flower-get-in
+  [context :- LowerContext
+   expr]
+  (let [[_ target accessor] expr]
+    (flower-get context (loop [[a & more-a] accessor
+                               result target]
+                          (if (nil? a)
+                            result
+                            (recur more-a
+                                   (list 'get
+                                         result
+                                         a)))))))
 
 (s/defn ^:private flower-let
   [context :- LowerContext
@@ -254,8 +265,8 @@
     (symbol? expr) (flower-symbol context expr)
     (map? expr) (flower-instance context expr)
     (seq? expr) (condp = (first expr)
-                  'get (flower-get 'get context expr)
-                  'get-in (flower-get 'get-in context expr) ;; same form as get
+                  'get (flower-get context expr)
+                  'get-in (flower-get-in context expr)
                   'let (flower-let context expr)
                   'if-value (flower-if-value context expr)
                   'when-value (flower-if-value context expr) ;; also handles 'when-value

@@ -111,6 +111,8 @@
   ;; (check-flower '(get {:$type :ws/A :x x} :x) '(get {:$type :ws/A :x x} :x))
   (check-flower '(get x :q) '#r [:p :x :q])
   (check-flower '(get x :x) '#r [:p :x :x])
+  (check-flower '(get x {:$type :ws/A$v1 :x 1 :xs [10 20] :z 3} :x) #r [:p :x {:$type :ws/A$v1 :x 1 :xs [10 20] :z 3}])
+  (check-flower '(get-in x {:$type :ws/A$v1 :x 1 :xs [10 20] :z 3} [:x]) #r [:p :x :$type :ws/A$v1 :x 1 :xs [10 20] :z 3])
   (check-flower '(get-in x [:q :r]) '#r [:p :x :q :r])
   (check-flower '(get-in x [:x :y]) '#r [:p :x :x :y])
 
