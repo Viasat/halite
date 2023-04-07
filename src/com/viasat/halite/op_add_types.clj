@@ -28,10 +28,8 @@
     bom/AbstractInstanceBom}
   bom
 
-  bom/NoValueBom
-  bom/no-value-bom
-
-  #{bom/PrimitiveBom
+  #{bom/NoValueBom
+    bom/PrimitiveBom
     bom/YesValueBom}
   (assoc bom :$primitive-type type))
 

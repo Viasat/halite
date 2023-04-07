@@ -22,7 +22,8 @@
                                     {:$instance-of :ws/A$v1
                                      :x {:$value? true}})))
   (is (= {:$instance-of :ws/A$v1
-          :x {:$value? false}}
+          :x {:$primitive-type :Integer
+              :$value? false}}
          (op-add-types/add-types-op {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
                                     {:$instance-of :ws/A$v1
                                      :x {:$value? false}})))
@@ -97,5 +98,4 @@
                                      :x {:$value? true}
                                      :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1
                                                                    :y {:$ranges #{[1 10]}}}}}))))
-
 ;; (run-tests)

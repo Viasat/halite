@@ -412,6 +412,16 @@
                                                                 (rescale (+ a #d "0.01") 1)
                                                                 #d "3.0"))]]}}
                    {:$instance-of :ws/A$v1
+                    :a bom/no-value-bom}
+                   {:$instance-of :ws/A$v1
+                    :a bom/no-value-bom})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Maybe [:Decimal 2]]}
+                              :constraints [["c1" '(= #d "3.0"
+                                                      (if-value a
+                                                                (rescale (+ a #d "0.01") 1)
+                                                                #d "3.0"))]]}}
+                   {:$instance-of :ws/A$v1
                     :a #d "4.00"}
                    bom/contradiction-bom)
 

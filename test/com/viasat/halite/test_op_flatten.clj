@@ -77,4 +77,11 @@
                                  :b {:$primitive-type :Boolean
                                      :$value? true}}))))
 
+(deftest test-no-value
+  (is (= [{:path [:a] :value {:$primitive-type :Integer, :$value? false}}
+          {:path [:a :$value?] :value false}]
+         (op-flatten/flatten-op {:$instance-of :ws/B$v1
+                                 :a {:$primitive-type :Integer
+                                     :$value? false}}))))
+
 ;; (run-tests)

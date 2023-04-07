@@ -21,7 +21,8 @@
     bom/InstanceValue
     bom/PrimitiveBom}
   (->> [{:path path :value bom}
-        (when (:$value? bom)
+        (when (and (map? bom)
+                   (contains? bom :$value?))
           {:path (conj path :$value?) :value (:$value? bom)})]
        (remove nil?)
        vec)
