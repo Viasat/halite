@@ -16,7 +16,9 @@
 
 (set! *warn-on-reflection* true)
 
-(use-fixtures :once schema.test/validate-schemas)
+(def fixtures (join-fixtures [schema.test/validate-schemas]))
+
+(use-fixtures :each fixtures)
 
 (defmacro h
   [expr & args]
@@ -1279,6 +1281,18 @@
    1
    "(reduce( a = []; x in #{1}.sort() ) { a.conj(x) }).first()"
    "1")
+  (h
+   (reduce [a []] [x [1 2 3]] (cond (= x 1) "a" (= x 2) 20 #{true}))
+   :Value
+   #{true}
+   "(reduce( a = []; x in [1, 2, 3] ) { (if((x == 1)) {\"a\"} else {(if((x == 2)) {20} else {#{true}})}) })"
+   "#{true}")
+  (h
+   (reduce [a []] [x [1 2 3]] (cond (= x 1) "a" (= x 2) #{true} 20))
+   :Value
+   20
+   "(reduce( a = []; x in [1, 2, 3] ) { (if((x == 1)) {\"a\"} else {(if((x == 2)) {#{true}} else {20})}) })"
+   "20")
   (h
    (first (reduce [a []] [x (sort-by [y #{"a"}] 1)] (conj a x)))
    :String

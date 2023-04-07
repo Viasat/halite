@@ -17,7 +17,9 @@
             [schema.test :as schema.test])
   (:import [clojure.lang ExceptionInfo]))
 
-(use-fixtures :once schema.test/validate-schemas)
+(def fixtures (join-fixtures [schema.test/validate-schemas]))
+
+(use-fixtures :each fixtures)
 
 (envs/init)
 
@@ -1072,5 +1074,11 @@
        (is false)
        (catch ExceptionInfo ex
          (is (= [:spec/Self :spec/Self] (:cycle (ex-data ex)))))))
+
+(deftest test-reduce-varying-type
+  (let [tenv (-> tenv (envs/extend-scope 'xs [:Vec :Integer]))]
+    (is (= :Value (halite/type-check-and-lint senv tenv '(reduce [a []] [x xs] (cond (= x 1) "hi"
+                                                                                     (= x 2) 20
+                                                                                     #{true})))))))
 
 ;; (time (run-tests))

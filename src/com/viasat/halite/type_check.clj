@@ -570,7 +570,7 @@
 
 (s/defn type-check :- types/HaliteType
   "Return the type of the expression, or throw an error if the form is syntactically invalid,
-  or not well typed in the given typ environment."
+  or not well typed in the given type environment."
   [senv :- (s/protocol envs/SpecEnv) tenv :- (s/protocol envs/TypeEnv) expr :- s/Any]
   (type-check* {:senv senv :tenv tenv} expr))
 

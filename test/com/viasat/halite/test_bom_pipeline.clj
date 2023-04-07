@@ -337,11 +337,17 @@
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1, :a #d "5.01"})
 
-  ;; TODO
-  #_(check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
-                                :constraints [["c1" '(= (rescale #d "50.01" 1) (rescale a 1))]]}}
-                     {:$instance-of :ws/A$v1}
-                     {:$instance-of :ws/A$v1, :a #d "5.01"})
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
+                              :constraints [["c1" '(= (rescale #d "5.01" 1) (rescale a 1))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$ranges #{[#d "-5.09" #d "5.09"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
+                              :constraints [["c1" '(= 503 (rescale a 2))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a #d "5.03"})
 
   (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
                               :constraints [["c1" '(= #d "3.0" (rescale a 1))]]}}
@@ -349,7 +355,14 @@
                    {:$instance-of :ws/A$v1
                     :a {:$ranges #{[#d "-3.09" #d "3.09"]}}})
 
-;; composition
+  ;; TODO
+  #_(check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
+                                :constraints [["c1" '(= #d "3.0" (rescale (+ a #d "0.01") 1))]]}}
+                     {:$instance-of :ws/A$v1}
+                     {:$instance-of :ws/A$v1
+                      :a {:$ranges #{[#d "-3.09" #d "3.09"]}}})
+
+  ;; composition
   (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
                                        :y :Integer}
                               :constraints [["c1" '(= 15 (+ (get a :x) y))]
