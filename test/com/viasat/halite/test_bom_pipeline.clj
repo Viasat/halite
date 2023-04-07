@@ -353,12 +353,11 @@
                    {:$instance-of :ws/A$v1
                     :a {:$ranges #{[#d "-3.09" #d "3.09"]}}})
 
-  ;; TODO
-  #_(check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
-                                :constraints [["c1" '(= #d "3.0" (rescale (+ a #d "0.01") 1))]]}}
-                     {:$instance-of :ws/A$v1}
-                     {:$instance-of :ws/A$v1
-                      :a {:$ranges #{[#d "-3.09" #d "3.09"]}}})
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}
+                              :constraints [["c1" '(= #d "3.0" (rescale (+ a #d "0.01") 1))]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$ranges #{[#d "-3.10" #d "3.08"]}}})
 
   ;; composition
   (check-propagate {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1]
@@ -497,138 +496,131 @@
                     :a {:$instance-of :ws/A$v1
                         :$value? true}})
 
-  ;; TODO
-  #_(check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}
-                                :constraints [["c1" '(if-value a
-                                                               (let [q (get a :x)]
-                                                                 (if-value q
-                                                                           false
-                                                                           true))
-                                                               false)]]}
-                      :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
-                     {:$instance-of :ws/B$v1}
-                     {:$instance-of :ws/B$v1
-                      :a {:$instance-of :ws/A$v1
-                          :$value? true
-                          :x {:$value? false}}})
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}
+                              :constraints [["c1" '(if-value a
+                                                             (let [q (get a :x)]
+                                                               (if-value q
+                                                                         false
+                                                                         true))
+                                                             false)]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? false}}})
 
-  ;; TODO
-  #_(check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}
-                                :constraints [["c1" '(if-value a
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}
+                              :constraints [["c1" '(if-value a
+                                                             (let [q (get a :x)]
+                                                               (if-value q
+                                                                         true
+                                                                         false))
+                                                             false)]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? true
+                            :$ranges #{[-1000 1000]}}}})
+
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
                                                                (let [q (get a :x)]
                                                                  (if-value q
                                                                            true
                                                                            false))
-                                                               false)]]}
-                      :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
-                     {:$instance-of :ws/B$v1}
-                     {:$instance-of :ws/B$v1
-                      :a {:$instance-of :ws/A$v1
-                          :$value? true
-                          :x {:$value? true
-                              :$ranges #{[-1000 1000]}}}})
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :b false}
+                   {:$instance-of :ws/B$v1
+                    :b false
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? true
+                            :$ranges #{[-1000 1000]}}}})
 
-  ;; TODO
-  #_(check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
-                                         :b :Boolean}
-                                :constraints [["c1" '(if b
-                                                       true
-                                                       (if-value a
-                                                                 (let [q (get a :x)]
-                                                                   (if-value q
-                                                                             true
-                                                                             false))
-                                                                 false))]]}
-                      :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
-                     {:$instance-of :ws/B$v1
-                      :b false}
-                     {:$instance-of :ws/B$v1
-                      :b false
-                      :a {:$instance-of :ws/A$v1
-                          :$value? true
-                          :x {:$value? true
-                              :$ranges #{[-1000 1000]}}}})
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           (> q 20)
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :b false}
+                   {:$instance-of :ws/B$v1
+                    :b false
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? true
+                            :$ranges #{[21 1000]}}}})
 
-  ;; TODO
-  #_(check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
-                                         :b :Boolean}
-                                :constraints [["c1" '(if b
-                                                       true
-                                                       (if-value a
-                                                                 (let [q (get a :x)]
-                                                                   (if-value q
-                                                                             (> q 20)
-                                                                             false))
-                                                                 false))]]}
-                      :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
-                     {:$instance-of :ws/B$v1
-                      :b false}
-                     {:$instance-of :ws/B$v1
-                      :b false
-                      :a {:$instance-of :ws/A$v1
-                          :$value? true
-                          :x {:$value? true
-                              :$ranges #{[21 1000]}}}})
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           (> q 20)
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :b false}
+                   {:$instance-of :ws/B$v1
+                    :b false
+                    :a {:$instance-of :ws/A$v1
+                        :$value? true
+                        :x {:$value? true
+                            :$ranges #{[21 1000]}}}})
 
-  ;; TODO
-  #_(check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
-                                         :b :Boolean}
-                                :constraints [["c1" '(if b
-                                                       true
-                                                       (if-value a
-                                                                 (let [q (get a :x)]
-                                                                   (if-value q
-                                                                             (> q 20)
-                                                                             false))
-                                                                 false))]]}
-                      :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
-                     {:$instance-of :ws/B$v1
-                      :b false}
-                     {:$instance-of :ws/B$v1
-                      :b false
-                      :a {:$instance-of :ws/A$v1
-                          :$value? true
-                          :x {:$value? true
-                              :$ranges #{[21 1000]}}}})
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           (> q 20)
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x 30}}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x 30}})
 
-  ;; TODO
-  #_(check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
-                                         :b :Boolean}
-                                :constraints [["c1" '(if b
-                                                       true
-                                                       (if-value a
-                                                                 (let [q (get a :x)]
-                                                                   (if-value q
-                                                                             (> q 20)
-                                                                             false))
-                                                                 false))]]}
-                      :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
-                     {:$instance-of :ws/B$v1
-                      :a {:$instance-of :ws/A$v1
-                          :x 30}}
-                     {:$instance-of :ws/B$v1
-                      :a {:$instance-of :ws/A$v1
-                          :x 30}})
-
-  ;; TODO
-  #_(check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
-                                         :b :Boolean}
-                                :constraints [["c1" '(if b
-                                                       true
-                                                       (if-value a
-                                                                 (let [q (get a :x)]
-                                                                   (if-value q
-                                                                             (> q 20)
-                                                                             false))
-                                                                 false))]]}
-                      :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
-                     {:$instance-of :ws/B$v1
-                      :a {:$instance-of :ws/A$v1
-                          :x 10}}
-                     {:$instance-of :ws/B$v1
-                      :a {:$instance-of :ws/A$v1
-                          :x 10}
-                      :b true}))
+  (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]
+                                       :b :Boolean}
+                              :constraints [["c1" '(if b
+                                                     true
+                                                     (if-value a
+                                                               (let [q (get a :x)]
+                                                                 (if-value q
+                                                                           (> q 20)
+                                                                           false))
+                                                               false))]]}
+                    :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x 10}}
+                   {:$instance-of :ws/B$v1
+                    :a {:$instance-of :ws/A$v1
+                        :x 10}
+                    :b true}))
 
 ;; (set! *print-namespace-maps* false)
 

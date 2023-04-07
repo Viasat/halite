@@ -56,11 +56,11 @@
 (s/defn ^:private flower-symbol
   [context :- LowerContext
    sym]
-  (let [{:keys [type-env path]} context]
+  (let [{:keys [env path]} context]
     (if (= '$no-value sym)
       sym
-      (if (contains? (envs/scope type-env) sym)
-        sym
+      (if (contains? (envs/bindings env) sym)
+        ((envs/bindings env) sym)
         (var-ref/make-var-ref (conj path (keyword sym)))))))
 
 (s/defn ^:private flower-instance
@@ -94,30 +94,38 @@
 (s/defn ^:private flower-let
   [context :- LowerContext
    expr]
-  (let [{:keys [type-env path]} context
+  (let [{:keys [type-env env path]} context
         [bindings body] (rest expr)
         {type-env' :type-env
-         bindings' :bindings} (reduce (fn [{:keys [type-env bindings]} [sym binding-e]]
-                                        (let [binding-e' (flower (assoc context :type-env type-env) binding-e)
+         env' :env
+         bindings' :bindings} (reduce (fn [{:keys [type-env env bindings]} [sym binding-e]]
+                                        (let [binding-e' (flower (assoc context
+                                                                        :type-env type-env
+                                                                        :env env)
+                                                                 binding-e)
                                               type-env' (envs/extend-scope type-env
                                                                            sym
-                                                                           (expression-type context binding-e))]
+                                                                           (expression-type context binding-e))
+                                              env' (envs/bind env sym binding-e')]
                                           {:type-env type-env'
+                                           :env env'
                                            :bindings (into bindings
                                                            [sym binding-e'])}))
                                       {:type-env type-env
+                                       :env env
                                        :bindings []}
                                       (partition 2 bindings))
-        body' (flower (assoc context :type-env type-env') body)]
+        body' (flower (assoc context
+                             :type-env type-env'
+                             :env env')
+                      body)]
     (if (or (->> bindings'
                  (partition 2)
                  (map second)
                  (some non-root-fog?))
             (non-root-fog? body'))
       (flower-fog context expr)
-      (list 'let
-            bindings'
-            body'))))
+      body')))
 
 (s/defn ^:private flower-if-value
   [context :- LowerContext
@@ -133,16 +141,17 @@
                    (envs/lookup-type* (combine-envs type-env spec-type-env)))
       (throw (ex-info "symbol not found" {:target target
                                           :type-env (envs/scope type-env)})))
-    (let [then-clause' (if (->> target
-                                (envs/lookup-type* spec-type-env))
-                         (flower context then-clause)
-                         (flower (assoc context
-                                        :type-env (envs/extend-scope type-env
-                                                                     target
-                                                                     (->> target
-                                                                          (envs/lookup-type* type-env)
-                                                                          types/no-maybe)))
-                                 then-clause))
+    (let [then-clause' (flower (assoc context
+                                      :type-env (envs/extend-scope type-env
+                                                                   target
+                                                                   (->> target
+                                                                        (envs/lookup-type*
+                                                                         (if (->> target
+                                                                                  (envs/lookup-type* spec-type-env))
+                                                                           spec-type-env
+                                                                           type-env))
+                                                                        types/no-maybe)))
+                               then-clause)
           else-clause' (some->> else-clause
                                 (flower context))
           target' (var-ref/extend-path target' [:$value?])]

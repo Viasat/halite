@@ -40,8 +40,7 @@
 
   (is (= {:$instance-of :ws/A$v1
           :b {:$instance-of :ws/B$v1
-              :$constraints {"x" '(let [a 100]
-                                    (> #r [:b :x] a))}}}
+              :$constraints {"x" '(> #r [:b :x] 100)}}}
          (op-flower/flower-op {:ws/A$v1 {:fields {:b [:Instance :ws/B$v1]}}
                                :ws/B$v1 {:fields {:x :Integer}}}
                               {:$instance-of :ws/A$v1
@@ -67,7 +66,8 @@
                                     :spec-type-env (envs/type-env-from-spec spec-info#)
                                     :type-env (envs/type-env {'~'a :Integer
                                                               '~'b :Integer})
-                                    :env (envs/env {})
+                                    :env (envs/env {'~'a 10
+                                                    '~'b 20})
                                     :path [:p]}
                                    in#)]
      (is (= out# result#))
@@ -76,23 +76,24 @@
 (deftest test-make-var-refs
   (check-flower '1 '1)
   (check-flower "hi"  "hi")
-  (check-flower '(= x a) '(= #r [:p :x] a))
-  (check-flower '(not= x a) '(not= #r [:p :x] a))
+  (check-flower '(= x a) '(= #r [:p :x] 10))
+  (check-flower '(not= x a) '(not= #r [:p :x] 10))
   (check-flower '(+ #d "1.1" x) '(+ 11 #r [:p :x]))
-  (check-flower '{:$type :ws/A :x x :a a} '{:$type :ws/A, :x #r [:p :x], :a a})
-  (check-flower '(+ x a y b) '(+ #r [:p :x] a #r [:p :y] b))
-  (check-flower '(+ x (- a y)) '(+ #r [:p :x] (- a #r [:p :y])))
-  (check-flower '(let [c x d 1] (+ c d)) '(let [c #r [:p :x] d 1] (+ c d)))
+  (check-flower '{:$type :ws/A :x x :a a} '{:$type :ws/A, :x #r [:p :x], :a 10})
+  (check-flower '(+ x a y b) '(+ #r [:p :x] 10 #r [:p :y] 20))
+  (check-flower '(+ x (- a y)) '(+ #r [:p :x] (- 10 #r [:p :y])))
+  (check-flower '(let [c x d 1] (+ c d)) '(+ #r [:p :x] 1))
   (check-flower '(first [a x 100]) #fog :Integer)
   (check-flower '#{a x 100} #fog [:Set :Integer])
   (check-flower '(if x y z) '(if #r [:p :x] #r [:p :y] #r [:p :z]))
-  (check-flower '(when x a) '(when #r [:p :x] a))
-  (check-flower '(cond true x y a) '(cond true #r [:p :x] #r [:p :y] a))
+  (check-flower '(when x a) '(when #r [:p :x] 10))
+  (check-flower '(cond true x y a) '(cond true #r [:p :x] #r [:p :y] 10))
   (check-flower '(if-value x 1 y) '(if #r [:p :x :$value?] 1 #r [:p :y]))
   (check-flower '(if-value x x y) '(if #r [:p :x :$value?] #r [:p :x] #r [:p :y]))
+
   (check-flower '(when-value x x) '(when #r [:p :x :$value?] #r [:p :x]))
 
-  (check-flower '(refine-to a :ws/A$v1) '(refine-to a :ws/A$v1))
+  (check-flower '(refine-to a :ws/A$v1) '(refine-to 10 :ws/A$v1))
   (check-flower '(refine-to x :ws/A$v1) '(refine-to #r [:p :x] :ws/A$v1))
   (check-flower '(refines-to? x :ws/A$v1) '(refines-to? #r [:p :x] :ws/A$v1))
   (check-flower '(every? [x xs] (= x z)) #fog :Boolean)
