@@ -198,10 +198,11 @@
                    (op-add-types/add-types-op spec-env#)
                    (op-ensure-fields/ensure-fields-op spec-env#)
                    (op-add-value-fields/add-value-fields-op spec-env#)
-                   (op-add-constraints/add-constraints-op spec-env#)
-                   (op-flower/flower-op spec-env#))
-         result# (->> bom#
-                      bom-choco/bom-to-choco
+                   (op-add-constraints/add-constraints-op spec-env#))
+         propagate-result# (->> bom#
+                                (op-flower/flower-op spec-env#)
+                                bom-choco/bom-to-choco)
+         result# (->> propagate-result#
                       (bom-choco/paths-to-syms bom#)
                       (bom-choco/choco-propagate bom#)
                       (bom-choco/propagate-results-to-bounds bom#)
@@ -365,6 +366,12 @@
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
                     :a {:$ranges #{[#d "-3.10" #d "3.08"]}}})
+
+  (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}}}
+                   {:$instance-of :ws/A$v1
+                    :a #d "3.14"}
+                   {:$instance-of :ws/A$v1
+                    :a #d "3.14"})
 
   (check-propagate {:ws/A$v1 {:fields {:a [:Maybe [:Decimal 2]]}
                               :constraints [["c1" '(= #d "3.0"
