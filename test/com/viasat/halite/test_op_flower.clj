@@ -21,13 +21,11 @@
 (deftest test-basic
   (is (= {:$instance-of :ws/A$v1}
          (op-flower/flower-op {:ws/A$v1 {}}
-                              (envs/env {})
                               {:$instance-of :ws/A$v1})))
 
   (is (= {:$instance-of :ws/A$v1
           :$constraints {"x" '(> #r [:x] 100)}}
          (op-flower/flower-op {:ws/A$v1 {:fields {:x :Integer}}}
-                              (envs/env {})
                               {:$instance-of :ws/A$v1
                                :$constraints {"x" '(> x 100)}})))
 
@@ -36,7 +34,6 @@
               :$constraints {"x" '(> #r [:b :x] 100)}}}
          (op-flower/flower-op {:ws/A$v1 {:fields {:b [:Instance :ws/B$v1]}}
                                :ws/B$v1 {:fields {:x :Integer}}}
-                              (envs/env {})
                               {:$instance-of :ws/A$v1
                                :b {:$instance-of :ws/B$v1
                                    :$constraints {"x" '(> x 100)}}})))
@@ -47,7 +44,6 @@
                                     (> #r [:b :x] a))}}}
          (op-flower/flower-op {:ws/A$v1 {:fields {:b [:Instance :ws/B$v1]}}
                                :ws/B$v1 {:fields {:x :Integer}}}
-                              (envs/env {})
                               {:$instance-of :ws/A$v1
                                :b {:$instance-of :ws/B$v1
                                    :$constraints {"x" '(let [a 100]
@@ -60,9 +56,9 @@
                               :xs [:Vec :Integer]
                               :z :Integer}}
          result# (op-flower/flower {:spec-env {:ws/A$v1 spec-info#}
-                                    :type-env (envs/type-env-from-spec spec-info#)
-                                    :env (envs/env {'~'a :Integer
-                                                    '~'b :Integer})
+                                    :spec-type-env (envs/type-env-from-spec spec-info#)
+                                    :type-env (envs/type-env {'~'a :Integer
+                                                              '~'b :Integer})
                                     :path [:p]}
                                    in#)]
      (is (= out# result#))

@@ -18,8 +18,8 @@
 (fog/init)
 
 (def LowerContext {:spec-env (s/protocol envs/SpecEnv)
-                   :type-env (s/protocol envs/TypeEnv)
-                   :env (s/protocol envs/Env) ;; abuse this to hold local types, i.e. like envs/TypeEnv, but for 'let' values
+                   :spec-type-env (s/protocol envs/TypeEnv) ;; holds the types coming from the contextual spec
+                   :type-env (s/protocol envs/TypeEnv) ;; holds local types, e.g. from 'let' values
                    :path [s/Any]})
 
 ;;;;
@@ -29,10 +29,10 @@
 (s/defn ^:private flower-symbol
   [context :- LowerContext
    sym]
-  (let [{:keys [env path]} context]
+  (let [{:keys [type-env path]} context]
     (if (= '$no-value sym)
       sym
-      (if (contains? (envs/bindings env) sym)
+      (if (contains? (envs/scope type-env) sym)
         sym
         (var-ref/make-var-ref (conj path (keyword sym)))))))
 
@@ -59,40 +59,43 @@
                                    accessor
                                    [accessor]))))
 
-(defn- combine-envs [type-env env]
-  (reduce (fn [type-env [sym value]]
-            (envs/extend-scope type-env sym value))
-          type-env
-          (envs/bindings env)))
+(defn- combine-envs [spec-type-env type-env]
+  (reduce (fn [effective-type-env [sym value]]
+            (envs/extend-scope effective-type-env sym value))
+          spec-type-env
+          (envs/scope type-env)))
+
+(defn- expression-type [context expr]
+  (let [{:keys [spec-env spec-type-env type-env path]} context]
+    (type-check/type-check spec-env
+                           (combine-envs spec-type-env type-env)
+                           expr)))
 
 (s/defn ^:private flower-let
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env path]} context
+  (let [{:keys [type-env path]} context
         [bindings body] (rest expr)
-        {env' :env
-         bindings' :bindings} (reduce (fn [{:keys [env bindings]} [sym binding-e]]
-                                        (let [binding-e' (flower (assoc context :env env) binding-e)
-                                              env' (envs/bind env
-                                                              sym
-                                                              (type-check/type-check spec-env
-                                                                                     (combine-envs type-env env)
-                                                                                     binding-e))]
-                                          {:env env'
+        {type-env' :type-env
+         bindings' :bindings} (reduce (fn [{:keys [type-env bindings]} [sym binding-e]]
+                                        (let [binding-e' (flower (assoc context :type-env type-env) binding-e)
+                                              type-env' (envs/extend-scope type-env
+                                                                           sym
+                                                                           (expression-type context binding-e))]
+                                          {:type-env type-env'
                                            :bindings (into bindings
                                                            [sym binding-e'])}))
-                                      {:env env
+                                      {:type-env type-env
                                        :bindings []}
                                       (partition 2 bindings))]
     (list 'let
           bindings'
-          (flower (assoc context :env env') body))))
+          (flower (assoc context :type-env type-env') body))))
 
 (s/defn ^:private flower-if-value
   [context :- LowerContext
    expr]
-  (let [{:keys [type-env path]} context
-        [_ target then-clause else-clause] expr
+  (let [[_ target then-clause else-clause] expr
         target' (flower context target)]
     (when-not (var-ref/var-ref? target')
       (throw (ex-info "unexpected target of if-value" {:expr expr
@@ -106,24 +109,20 @@
 (s/defn ^:private flower-if-value-let
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env path]} context
+  (let [{:keys [type-env]} context
         [_ [sym target] then-clause else-clause] expr]
     (list 'if-value-let [sym (flower context target)]
-          (flower (assoc context :env (envs/bind sym (type-check/type-check spec-env
-                                                                            (combine-envs type-env env)
-                                                                            target)))
+          (flower (assoc context :type-env (envs/extend-scope type-env sym (expression-type context target)))
                   then-clause)
           (flower context else-clause))))
 
 (s/defn ^:private flower-when-value-let
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env path]} context
+  (let [{:keys [type-env]} context
         [_ [sym target] then-clause] expr]
     (list 'when-value-let [sym (flower context target)]
-          (flower (assoc context :env (envs/bind sym (type-check/type-check spec-env
-                                                                            (combine-envs type-env env)
-                                                                            target)))
+          (flower (assoc context :type-env (envs/extend-scope sym (expression-type context target)))
                   then-clause))))
 
 (s/defn ^:private flower-refine-to
@@ -136,10 +135,7 @@
 (s/defn ^:private flower-fog
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env]} context]
-    (fog/make-fog (type-check/type-check spec-env
-                                         (combine-envs type-env env)
-                                         expr))))
+  (fog/make-fog (expression-type context expr)))
 
 (s/defn ^:private flower-fn-application
   [context :- LowerContext
@@ -224,7 +220,7 @@
         (assoc :$constraints (some-> bom
                                      :$constraints
                                      (update-vals (partial flower (assoc context
-                                                                         :type-env (envs/type-env-from-spec spec-info))))))
+                                                                         :spec-type-env (envs/type-env-from-spec spec-info))))))
         (assoc :$refinements (some-> bom
                                      :$refinements
                                      (map (fn [[other-spec-id sub-bom]]
@@ -239,9 +235,8 @@
 
 (s/defn flower-op
   [spec-env :- (s/protocol envs/SpecEnv)
-   env :- (s/protocol envs/Env)
    bom]
   (flower-op* {:spec-env spec-env
-               :env env
+               :type-env (envs/type-env {})
                :path []}
               bom))
