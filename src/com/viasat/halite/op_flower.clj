@@ -8,6 +8,7 @@
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.instance-literal :as instance-literal]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.fog :as fog]
             [com.viasat.halite.type-check :as type-check]
@@ -19,6 +20,8 @@
 (set! *warn-on-reflection* true)
 
 (fog/init)
+
+(instance-literal/init)
 
 (def LowerContext {:spec-env (s/protocol envs/SpecEnv)
                    :spec-type-env (s/protocol envs/TypeEnv) ;; holds the types coming from the contextual spec
@@ -75,7 +78,7 @@
              vals
              (some non-root-fog?))
       (flower-fog context expr)
-      new-contents)))
+      (instance-literal/make-instance-literal new-contents))))
 
 (s/defn ^:private flower-get
   [op
@@ -83,13 +86,18 @@
    expr]
   (let [[_ target accessor] expr
         target' (flower context target)]
-    (when-not (var-ref/var-ref? target')
-      (throw (ex-info "unexpected target of get" {:op op
-                                                  :expr expr
-                                                  :target' target'})))
-    (var-ref/extend-path target' (if (vector? accessor)
-                                   accessor
-                                   [accessor]))))
+    (cond
+      (var-ref/var-ref? target') (var-ref/extend-path target' (if (vector? accessor)
+                                                                accessor
+                                                                [accessor]))
+
+      (instance-literal/instance-literal? target') (-> target'
+                                                       instance-literal/get-bindings
+                                                       (get accessor))
+
+      :default (throw (ex-info "unexpected target of get" {:op op
+                                                           :expr expr
+                                                           :target' target'})))))
 
 (s/defn ^:private flower-let
   [context :- LowerContext

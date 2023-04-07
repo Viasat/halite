@@ -201,10 +201,10 @@
                    (op-add-constraints/add-constraints-op spec-env#))
          propagate-result# (->> bom#
                                 (op-flower/flower-op spec-env#)
-                                bom-choco/bom-to-choco)
+                                bom-choco/bom-to-choco
+                                (bom-choco/paths-to-syms bom#)
+                                (bom-choco/choco-propagate bom#))
          result# (->> propagate-result#
-                      (bom-choco/paths-to-syms bom#)
-                      (bom-choco/choco-propagate bom#)
                       (bom-choco/propagate-results-to-bounds bom#)
                       (op-inflate/inflate-op (op-remove-value-fields/remove-value-fields-op spec-env# bom#))
                       (op-remove-value-fields/remove-value-fields-op spec-env#)
@@ -693,7 +693,33 @@
                    {:$instance-of :ws/B$v1
                     :a {:$instance-of :ws/A$v1
                         :x 10}
-                    :b true}))
+                    :b true})
+
+  ;; instance literals
+  (check-propagate {:ws/X$v1 {:fields {:x :Integer
+                                       :y :Integer}
+                              :constraints [["c1" '(= 10 (+ x y))]]}
+                    :ws/A$v1 {:fields {:a :Integer}
+                              :constraints [["c2" '(= (get {:$type :ws/X$v1
+                                                            :x a
+                                                            :y 7} :x)
+                                                      3)]]}}
+                   {:$instance-of :ws/A$v1
+                    :a 3}
+                   {:$instance-of :ws/A$v1
+                    :a 3})
+
+  (check-propagate {:ws/X$v1 {:fields {:x :Integer
+                                       :y :Integer}
+                              :constraints [["c1" '(= 10 (+ x y))]]}
+                    :ws/A$v1 {:fields {:a :Integer}
+                              :constraints [["c2" '(= (get {:$type :ws/X$v1
+                                                            :x a
+                                                            :y 7} :x)
+                                                      3)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a 3}))
 
 ;; (set! *print-namespace-maps* false)
 

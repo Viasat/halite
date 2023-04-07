@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.bom-choco
   "Convert a bom into the format expected by choco"
-  (:require [clojure.walk :as walk]
+  (:require [clojure.pprint :as pprint]
+            [clojure.walk :as walk]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.choco-clj :as choco-clj]
@@ -116,16 +117,23 @@
                        (mapcat identity)
                        vec)}))
 
+(def ^:dynamic *trace-propagate* false)
+
 (defn choco-propagate [bom choco-data]
+  (when *trace-propagate*
+    (pprint/pprint [:choco-data choco-data]))
   (let [{:keys [choco-spec choco-bounds]} choco-data
-        result (try (choco-clj/propagate choco-spec choco-bounds)
-                    (catch ContradictionException ex
-                      nil))]
-    (if (nil? result)
-      result
-      (let [sym-to-path-map (->> bom op-flatten/flatten-op flattened-vars-to-reverse-sym-map)]
-        (-> result
-            (update-keys sym-to-path-map))))))
+        raw-result (try (choco-clj/propagate choco-spec choco-bounds)
+                        (catch ContradictionException ex
+                          nil))]
+    (if (nil? raw-result)
+      raw-result
+      (let [sym-to-path-map (->> bom op-flatten/flatten-op flattened-vars-to-reverse-sym-map)
+            result (-> raw-result
+                       (update-keys sym-to-path-map))]
+        (when *trace-propagate*
+          (pprint/pprint result))
+        result))))
 
 (defn- handle-fixed-decimals-out [type x]
   (if (types/decimal-type? type)

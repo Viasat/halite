@@ -12,6 +12,8 @@
 
 (use-fixtures :each fixtures)
 
+(fog/init)
+
 (deftest test-reader
   (is (= #fog :String
          (fog/fog-reader :String))))
