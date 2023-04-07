@@ -67,6 +67,7 @@
                                     :spec-type-env (envs/type-env-from-spec spec-info#)
                                     :type-env (envs/type-env {'~'a :Integer
                                                               '~'b :Integer})
+                                    :env (envs/env {})
                                     :path [:p]}
                                    in#)]
      (is (= out# result#))
@@ -77,7 +78,7 @@
   (check-flower "hi"  "hi")
   (check-flower '(= x a) '(= #r [:p :x] a))
   (check-flower '(not= x a) '(not= #r [:p :x] a))
-  (check-flower '(+ #d "1.1" x) '(+ #d "1.1" #r [:p :x]))
+  (check-flower '(+ #d "1.1" x) '(+ 11 #r [:p :x]))
   (check-flower '{:$type :ws/A :x x :a a} '{:$type :ws/A, :x #r [:p :x], :a a})
   (check-flower '(+ x a y b) '(+ #r [:p :x] a #r [:p :y] b))
   (check-flower '(+ x (- a y)) '(+ #r [:p :x] (- a #r [:p :y])))
@@ -89,7 +90,8 @@
   (check-flower '(cond true x y a) '(cond true #r [:p :x] #r [:p :y] a))
   (check-flower '(if-value x 1 y) '(if #r [:p :x :$value?] 1 #r [:p :y]))
   (check-flower '(if-value x x y) '(if #r [:p :x :$value?] #r [:p :x] #r [:p :y]))
-  (check-flower '(when-value a x) '(when-value a #r [:p :x]))
+  (check-flower '(when-value x x) '(when #r [:p :x :$value?] #r [:p :x]))
+
   (check-flower '(refine-to a :ws/A$v1) '(refine-to a :ws/A$v1))
   (check-flower '(refine-to x :ws/A$v1) '(refine-to #r [:p :x] :ws/A$v1))
   (check-flower '(refines-to? x :ws/A$v1) '(refines-to? #r [:p :x] :ws/A$v1))

@@ -3,12 +3,15 @@
 
 (ns com.viasat.halite.op-flower
   "Lower expressions in boms down into expressions that are supported by propagation."
-  (:require [com.viasat.halite.base :as base]
+  (:require [clojure.math :as math]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
+            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.fog :as fog]
             [com.viasat.halite.type-check :as type-check]
+            [com.viasat.halite.types :as types]
             [com.viasat.halite.var-ref :as var-ref]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
@@ -19,7 +22,8 @@
 
 (def LowerContext {:spec-env (s/protocol envs/SpecEnv)
                    :spec-type-env (s/protocol envs/TypeEnv) ;; holds the types coming from the contextual spec
-                   :type-env (s/protocol envs/TypeEnv) ;; holds local types, e.g. from 'let' values
+                   :type-env (s/protocol envs/TypeEnv) ;; holds local types, e.g. from 'let' forms
+                   :env (s/protocol envs/Env) ;; contains local values, e.g. from 'let' forms
                    :path [s/Any]})
 
 ;;;;
@@ -118,21 +122,42 @@
 (s/defn ^:private flower-if-value
   [context :- LowerContext
    expr]
-  (let [[_ target then-clause else-clause] expr
+  (let [{:keys [spec-type-env type-env]} context
+        [_ target then-clause else-clause] expr
         target' (flower context target)]
     (when-not (var-ref/var-ref? target')
-      (throw (ex-info "unexpected target of if-value" {:expr expr
-                                                       :target' target'
-                                                       :context context})))
-    (let [then-clause' (flower context then-clause)
-          else-clause' (flower context else-clause)]
+      (throw (ex-info "unexpected target of if-value or when-value" {:expr expr
+                                                                     :target' target'
+                                                                     :context context})))
+    (when-not (->> target
+                   (envs/lookup-type* (combine-envs type-env spec-type-env)))
+      (throw (ex-info "symbol not found" {:target target
+                                          :type-env (envs/scope type-env)})))
+    (let [then-clause' (if (->> target
+                                (envs/lookup-type* spec-type-env))
+                         (flower context then-clause)
+                         (flower (assoc context
+                                        :type-env (envs/extend-scope type-env
+                                                                     target
+                                                                     (->> target
+                                                                          (envs/lookup-type* type-env)
+                                                                          types/no-maybe)))
+                                 then-clause))
+          else-clause' (some->> else-clause
+                                (flower context))
+          target' (var-ref/extend-path target' [:$value?])]
       (if (or (non-root-fog? then-clause')
-              (non-root-fog? else-clause'))
+              (and (not (nil? else-clause'))
+                   (non-root-fog? else-clause')))
         (flower-fog context expr)
-        (list 'if
-              (var-ref/extend-path target' [:$value?])
-              then-clause'
-              else-clause')))))
+        (if (nil? else-clause')
+          (list 'when
+                target'
+                then-clause')
+          (list (if (nil? else-clause') 'when 'if)
+                target'
+                then-clause'
+                else-clause'))))))
 
 (s/defn ^:private flower-if-value-let
   [context :- LowerContext
@@ -175,6 +200,19 @@
       (flower-fog context expr)
       (list op instance' spec-id))))
 
+(s/defn ^:private flower-rescale
+  [context :- LowerContext
+   expr]
+  (let [[_ target-form new-scale] expr
+        target-scale (types/decimal-scale (expression-type context target-form))
+        target-form' (flower context target-form)]
+    (let [shift (- target-scale new-scale)]
+      (if (= shift 0)
+        target-form'
+        (list (if (> shift 0) 'div '*)
+              target-form'
+              (->> shift abs (math/pow 10) long))))))
+
 (s/defn ^:private flower-fn-application
   [context :- LowerContext
    expr]
@@ -191,7 +229,7 @@
   (cond
     (boolean? expr) expr
     (base/integer-or-long? expr) expr
-    (base/fixed-decimal? expr) expr
+    (base/fixed-decimal? expr) (-> expr fixed-decimal/extract-long second)
     (string? expr) expr
     (symbol? expr) (flower-symbol context expr)
     (map? expr) (flower-instance context expr)
@@ -200,6 +238,7 @@
                   'get-in (flower-get 'get-in context expr) ;; same form as get
                   'let (flower-let context expr)
                   'if-value (flower-if-value context expr)
+                  'when-value (flower-if-value context expr) ;; also handles 'when-value
                   'if-value-let (flower-if-value-let context expr)
                   'when-value-let (flower-when-value-let context expr)
                   'refine-to (flower-refine-to 'refine-to context expr)
@@ -211,6 +250,7 @@
                   'sort-by (flower-fog context expr) ;; same form as every?
                   'reduce (flower-fog context expr)
 
+                  'rescale (flower-rescale context expr)
                   ;; else:
                   (flower-fn-application context expr))
     (vector? expr) (flower-fog context expr)
@@ -266,5 +306,6 @@
    bom]
   (flower-op* {:spec-env spec-env
                :type-env (envs/type-env {})
+               :env (envs/env {})
                :path []}
               bom))
