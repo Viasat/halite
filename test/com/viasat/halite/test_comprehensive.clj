@@ -8645,7 +8645,38 @@
       [:Maybe [:Instance :spec/Inc$v1]]
       [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/resource-spec-not-found 0-0 : Resource spec not found: spec/BigInc$v1\""]
       "(valid {$type: spec/Inc$v1, x: 1, y: 1})"
-      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/resource-spec-not-found 0-0 : Resource spec not found: spec/BigInc$v1\""]]))
+      [:throws "h-err/spec-threw 0-0 : Spec threw error: \"h-err/resource-spec-not-found 0-0 : Resource spec not found: spec/BigInc$v1\""]])
+
+    (hc
+     {:spec/BigInc$v1 {:fields {:x [:Maybe :Integer]
+                                :y :Integer}}
+      :spec/Inc$v1 {:constraints #{{:name "main" :expr '(> (get {:$type :spec/BigInc$v1
+                                                                 :x x
+                                                                 :y y}
+                                                                :y) 5)}}
+                    :fields {:x [:Maybe :Integer] :y :Integer}}}
+     "instance literal can refer to an optional field without if-value guard"
+     [(valid {:$type :spec/Inc$v1, :y 6})
+      [:Maybe [:Instance :spec/Inc$v1]]
+      {:$type :spec/Inc$v1, :y 6}
+      "(valid {$type: spec/Inc$v1, y: 6})"
+      "{$type: spec/Inc$v1, y: 6}"])
+
+    (hc
+     {:spec/BigInc$v1 {:fields {:x [:Maybe :Integer]
+                                :y :Integer}}
+      :spec/Inc$v1 {:fields {:x [:Maybe :Integer] :y :Integer}
+                    :refines-to {:spec/BigInc$v1 {:expr '{:$type :spec/BigInc$v1
+                                                          :x x
+                                                          :y y}
+                                                  :name "spec/Inc$v1/as_big_inc"}}}}
+     "Optional field is included in the instance literal, but does not appear in the result if the expression for the field does not produce a value"
+     [(refine-to {:$type :spec/Inc$v1 :y 6} :spec/BigInc$v1)
+      [:Instance :spec/BigInc$v1]
+      {:$type :spec/BigInc$v1
+       :y 6}
+      "{$type: spec/Inc$v1, y: 6}.refineTo( spec/BigInc$v1 )"
+      "{$type: spec/BigInc$v1, y: 6}"]))
 
   (let
    [ws {:spec/Ratio$v1 {:constraints #{{:name "main" :expr '(= r (div x y))}},
