@@ -774,7 +774,33 @@
                     :a 3}
                    {:$instance-of :ws/A$v1
                     :a 3
-                    :b 2}))
+                    :b 2})
+
+  ;; instance literals and optional
+  (check-propagate {:ws/X$v1 {:fields {:x :Integer
+                                       :y :Integer}
+                              :constraints [["c1" '(= 10 (+ x y))]]}
+                    :ws/A$v1 {:fields {:a :Integer}
+                              :constraints [["c2" '(if-value-let [q (when true {:$type :ws/X$v1
+                                                                                :x a
+                                                                                :y 6})]
+                                                                 true
+                                                                 false)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a 4})
+
+  (check-propagate {:ws/X$v1 {:fields {:x :Integer
+                                       :y :Integer}
+                              :constraints [["c1" '(= 10 (+ x y))]]}
+                    :ws/A$v1 {:fields {:a :Integer}
+                              :constraints [["c2" '(if-value-let [q (when false {:$type :ws/X$v1
+                                                                                 :x a
+                                                                                 :y 6})]
+                                                                 true
+                                                                 false)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$contradiction? true}))
 
 ;; (set! *print-namespace-maps* false)
 

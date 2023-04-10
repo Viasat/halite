@@ -26,6 +26,10 @@
 
 (instance-literal/init)
 
+(declare flower)
+
+;;;;
+
 (def LowerContext {:spec-env (s/protocol envs/SpecEnv)
                    :spec-type-env (s/protocol envs/TypeEnv) ;; holds the types coming from the contextual spec
                    :type-env (s/protocol envs/TypeEnv) ;; holds local types, e.g. from 'let' forms
@@ -34,6 +38,93 @@
                    :counter-atom s/Any ;; an atom to generate unique IDs
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
                    (s/optional-key :constraint-name) String})
+
+;;;;
+
+;; Turn an expression into a boolean expression indicating whether or not the expression produces a value.
+
+(declare return-path)
+
+(s/defn ^:private return-path-if
+  [context :- LowerContext
+   expr]
+  (let [[_ target then-clause else-clause] expr]
+    (list 'if
+          target
+          (return-path context then-clause)
+          (return-path context else-clause))))
+
+(s/defn ^:private return-path-when
+  [context :- LowerContext
+   expr]
+  (let [[_ target then-clause] expr]
+    (list 'if
+          target
+          (return-path context then-clause)
+          false)))
+
+(s/defn ^:private return-path-if-value
+  [context :- LowerContext
+   expr]
+  (let [[_ target then-clause else-clause] expr]
+    (list
+     'if (return-path target)
+     (return-path context then-clause)
+     (return-path context else-clause))))
+
+(s/defn ^:private return-path-when-value
+  [context :- LowerContext
+   expr]
+  (let [[_ target then-clause] expr]
+    (list
+     'if (return-path context target)
+     (return-path context then-clause)
+     false)))
+
+(s/defn ^:private return-path-if-value-let
+  [context :- LowerContext
+   expr]
+  (let [[_ [sym target] then-clause else-clause] expr]
+    (list
+     'if (return-path context target)
+     (flower context (list 'let
+                           [sym target]
+                           (return-path context then-clause)))
+     (return-path context else-clause))))
+
+(s/defn ^:private return-path-when-value-let
+  [context :- LowerContext
+   expr]
+  (let [[_ [sym target] then-clause] expr]
+    (list
+     'if (return-path context target)
+     (list 'let
+           [sym target]
+           (return-path context then-clause))
+     false)))
+
+(s/defn ^:private return-path
+  [context :- LowerContext
+   expr]
+  (cond
+    (boolean? expr) true
+    (base/integer-or-long? expr) true
+    (base/fixed-decimal? expr) true
+    (string? expr) true
+    (symbol? expr) (flower context expr)
+    (keyword? expr) (throw (ex-info "unexpected expr to return-path" {:expr expr}))
+    (map? expr) true
+    (seq? expr) (condp = (first expr)
+                  'if (return-path-if context expr)
+                  'when (return-path-when context expr)
+                  'if-value (return-path-if-value context expr)
+                  'when-value (return-path-when-value context expr)
+                  'if-value-let (return-path-if-value-let context expr)
+                  'when-value-let (return-path-when-value-let context expr)
+                  true)
+    (set? expr) true
+    (vector? expr) true
+    :default (throw (ex-info "unexpected expr to return-path" {:expr expr}))))
 
 ;;;;
 
@@ -59,8 +150,6 @@
   (swap! counter-atom inc))
 
 ;;
-
-(declare flower)
 
 (s/defn ^:private flower-fog
   [context :- LowerContext
@@ -229,6 +318,7 @@
   (let [{:keys [type-env]} context
         [_ [sym target] then-clause else-clause] expr
         target' (flower context target)
+        return-path-target (flower context (return-path context target))
         then-clause' (flower (assoc context :type-env (envs/extend-scope type-env sym (expression-type context target)))
                              then-clause)
         else-clause' (flower context else-clause)]
@@ -236,8 +326,10 @@
             (non-root-fog? then-clause')
             (non-root-fog? else-clause'))
       (flower-fog context expr)
-      (list 'if-value-let [sym target']
-            then-clause'
+      (list 'if return-path-target
+            (flower context (list 'let
+                                  [sym target]
+                                  then-clause))
             else-clause'))))
 
 (s/defn ^:private flower-when-value-let
