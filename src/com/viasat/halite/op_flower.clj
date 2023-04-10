@@ -33,7 +33,7 @@
                    :path [s/Any]
                    :counter-atom s/Any ;; an atom to generate unique IDs
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
-                   })
+                   (s/optional-key :constraint-name) String})
 
 ;;;;
 
@@ -80,11 +80,11 @@
 (s/defn ^:private flower-instance
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom]} context
+  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name]} context
         new-contents (-> expr
                          (dissoc :$type)
                          (update-vals (partial flower context)))
-        path (conj path (next-id counter-atom))]
+        path (conj path (str constraint-name "$" (next-id counter-atom)))]
 
     (if (->> new-contents
              vals
@@ -349,7 +349,9 @@
     bom/InstanceLiteralBom}
   (let [{:keys [spec-env path]} context
         instance-literal-atom (atom {})
-        context (assoc context :instance-literal-atom instance-literal-atom)
+        context (-> context
+                    (assoc :instance-literal-atom instance-literal-atom)
+                    (dissoc :constraint-name))
         spec-id (bom/get-spec-id bom)
         spec-info (envs/lookup-spec spec-env spec-id)
         bom' (-> bom
@@ -358,10 +360,14 @@
                              (map (fn [[field-name field-bom]]
                                     [field-name (flower-op* (assoc context :path (conj path field-name)) field-bom)]))
                              (into {})))
-                 (assoc :$constraints (some-> bom
-                                              :$constraints
-                                              (update-vals (partial flower (assoc context
-                                                                                  :spec-type-env (envs/type-env-from-spec spec-info))))))
+                 (assoc :$constraints (some->> bom
+                                               :$constraints
+                                               (map (fn [[constraint-name x]]
+                                                      [constraint-name (flower (assoc context
+                                                                                      :spec-type-env (envs/type-env-from-spec spec-info)
+                                                                                      :constraint-name constraint-name)
+                                                                               x)]))
+                                               (into {})))
                  (assoc :$refinements (some-> bom
                                               :$refinements
                                               (map (fn [[other-spec-id sub-bom]]

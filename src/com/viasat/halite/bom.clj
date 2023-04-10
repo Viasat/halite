@@ -248,7 +248,7 @@
                                                  is-no-value-bom? NoValueBom
                                                  :else ContradictionBom)}
          (s/optional-key :$constraints) {base/ConstraintName s/Any}
-         (s/optional-key :$instance-literals) {s/Int InstanceLiteralBom}))
+         (s/optional-key :$instance-literals) {String InstanceLiteralBom}))
 
 (def AbstractInstanceBom
   (-> BareInstanceBom
