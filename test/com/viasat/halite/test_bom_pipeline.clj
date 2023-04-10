@@ -695,20 +695,28 @@
                         :x 10}
                     :b true})
 
+  ;; constraints from refinements
+  ;; TODO
+  #_(check-propagate {:ws/B$v1 {:fields {:a :Integer}
+                                :constraints [["c1" '(> a 10)]]}
+                      :ws/A$v1 {:fields {:x [:Maybe :Integer]}
+                                :refines-to {:ws/B$v1 {:expr nil}}}}
+                     {:$instance-of :ws/A$v1
+                      :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1}}}
+                     :moo)
+
   ;; instance literals
   (check-propagate {:ws/X$v1 {:fields {:x :Integer
                                        :y :Integer}
                               :constraints [["c1" '(= 10 (+ x y))]]}
                     :ws/A$v1 {:fields {:a :Integer}
-                              :constraints [["c2" '(= (get {:$type :ws/X$v1
+                              :constraints [["c2" '(let [q {:$type :ws/X$v1
                                                             :x a
-                                                            :y 7}
-                                                           :x)
-                                                      3)]]}}
+                                                            :y 6}]
+                                                     true)]]}}
+                   {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
-                    :a 3}
-                   {:$instance-of :ws/A$v1
-                    :a 3})
+                    :a 4})
 
   (check-propagate {:ws/X$v1 {:fields {:x :Integer
                                        :y :Integer}

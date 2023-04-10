@@ -47,9 +47,14 @@
                            :$refinements
                            (mapcat (fn [[spec-id sub-bom]]
                                      (extract-constraints-op* (conj path :$refinements spec-id) sub-bom))))
-                  (some->> bom :$concrete-choices
+                  (some->> bom
+                           :$concrete-choices
                            (mapcat (fn [[spec-id sub-bom]]
-                                     (extract-constraints-op* (conj path :$concrete-choices spec-id) sub-bom))))])
+                                     (extract-constraints-op* (conj path :$concrete-choices spec-id) sub-bom))))
+                  (some->> bom
+                           :$instance-literals
+                           (mapcat (fn [[instance-literal-id sub-bom]]
+                                     (extract-constraints-op* (conj path :$instance-literals instance-literal-id) sub-bom))))])
          (remove nil?)
          vec)))
 

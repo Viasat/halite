@@ -28,4 +28,14 @@
                                                   {:$instance-of :ws/A$v1
                                                    :x {:$enum #{1 2}}}))))
 
+(deftest test-instance-literal
+  (is (= {:$instance-literal-type :ws/A$v1
+          :x {:$expr #r [:a]}
+          :y 7}
+         (op-add-value-fields/add-value-fields-op {:ws/A$v1 {:fields {:x [:Maybe :Integer]
+                                                                      :y [:Maybe :Integer]}}}
+                                                  {:$instance-literal-type :ws/A$v1
+                                                   :x {:$expr #r [:a]}
+                                                   :y 7}))))
+
 ;; (run-tests)

@@ -70,7 +70,7 @@
                                                     '~'b 20})
                                     :path [:p]
                                     :counter-atom (atom -1)
-                                    :instance-literal-constraints-atom (atom [])}
+                                    :instance-literal-atom (atom {})}
                                    in#)]
      (is (= out# result#))
      result#))

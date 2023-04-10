@@ -106,6 +106,17 @@
                                                      :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
                                                                               :x {:$enum #{1 2}}}}})))
 
+  (is (= {:$instance-of :ws/A$v1}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                                     :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}}
+                                                    {:$instance-of :ws/A$v1})))
+
+  (is (= {:$instance-of :ws/A$v1}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                                     :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}}
+                                                    {:$instance-of :ws/A$v1
+                                                     :$refinements {}})))
+
   (is (= {:$instance-of :ws/A$v1
           :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
                                    :$value? true

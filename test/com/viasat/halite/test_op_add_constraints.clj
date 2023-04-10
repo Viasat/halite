@@ -57,4 +57,19 @@
                                                 {:$refines-to :ws/A$v1
                                                  :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1}}}))))
 
+(deftest test-instance-literal-bom
+  (is (= {:$instance-literal-type :ws/B$v1
+          :$constraints {"x" '(and (> x 0) (< x 10000))}}
+         (op-add-constraints/add-constraints-op {:ws/B$v1 {:fields {:x :Integer}
+                                                           :constraints [["x" '(and (> x 0) (< x 10000))]]}}
+                                                {:$instance-literal-type :ws/B$v1})))
+
+  (is (= {:$instance-literal-type :ws/B$v1
+          :x 7
+          :$constraints {"x" '(and (> x 0) (< x 10000))}}
+         (op-add-constraints/add-constraints-op {:ws/B$v1 {:fields {:x :Integer}
+                                                           :constraints [["x" '(and (> x 0) (< x 10000))]]}}
+                                                {:$instance-literal-type :ws/B$v1
+                                                 :x 7}))))
+
 ;; (run-tests)

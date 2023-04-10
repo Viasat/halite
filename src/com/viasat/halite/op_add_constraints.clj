@@ -31,7 +31,8 @@
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom
     bom/InstanceLiteralBom}
-  (let [bom (if (bom/is-concrete-instance-bom? bom)
+  (let [bom (if (or (bom/is-concrete-instance-bom? bom)
+                    (bom/is-instance-literal-bom? bom))
               (let [spec-id (bom/get-spec-id bom)
                     {:keys [constraints]} (envs/lookup-spec spec-env spec-id)]
                 (when (contains? bom :$constraints)
