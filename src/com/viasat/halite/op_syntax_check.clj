@@ -65,6 +65,10 @@
     bom/PrimitiveBom}
   bom
 
+  #{bom/ExpressionBom
+    bom/InstanceLiteralBom}
+  (throw (ex-info "unexpected bom element" {:bom bom}))
+
   #{bom/InstanceValue
     bom/AbstractInstanceBom
     bom/ConcreteInstanceBom}

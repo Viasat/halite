@@ -30,11 +30,13 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   bom
 
   #{bom/AbstractInstanceBom
-    bom/ConcreteInstanceBom}
+    bom/ConcreteInstanceBom
+    bom/InstanceLiteralBom}
   (let [bom  (-> (if (bom/is-concrete-instance-bom? bom)
                    (let [{refinements :$refinements} bom]
                      (if (zero? (count refinements))
@@ -76,11 +78,13 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   #{}
 
   #{bom/AbstractInstanceBom
-    bom/ConcreteInstanceBom}
+    bom/ConcreteInstanceBom
+    bom/InstanceLiteralBom}
   (let [spec-id (bom/get-spec-id bom)
         {refinements :$refinements} bom
         required-pairs (->> refinements
@@ -110,11 +114,13 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   #{}
 
   #{bom/AbstractInstanceBom
-    bom/ConcreteInstanceBom}
+    bom/ConcreteInstanceBom
+    bom/InstanceLiteralBom}
   (let [{refinements :$refinements} bom]
     (conj (->> refinements
                vals
@@ -150,11 +156,13 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   bom
 
   #{bom/AbstractInstanceBom
-    bom/ConcreteInstanceBom}
+    bom/ConcreteInstanceBom
+    bom/InstanceLiteralBom}
   (let [spec-id (bom/get-spec-id bom)
         result (-> bom
                    (assoc :$refinements (some-> bom
@@ -186,11 +194,13 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   bom
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [bom (-> (if (bom/is-concrete-instance-bom? bom)
                   ;; refinements on abstract instance bom will be handled separately, as they are moved into concrete choices
                   (let [{refinements :$refinements} bom]

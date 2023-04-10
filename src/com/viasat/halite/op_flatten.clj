@@ -12,6 +12,10 @@
 
 (bom-op/def-bom-multimethod flatten-op*
   [path bom]
+
+  bom/ExpressionBom
+  []
+
   #{Integer
     FixedDecimal
     String
@@ -33,7 +37,8 @@
   (throw (ex-info "unexpected bom element" {:bom bom}))
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (->> (reduce into
                [(when (:$value? bom)
                   {:path (conj path :$value?) :value (:$value? bom)})

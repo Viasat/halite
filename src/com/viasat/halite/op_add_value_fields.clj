@@ -24,12 +24,14 @@
     bom/InstanceValue
     bom/NoValueBom
     bom/YesValueBom
-    bom/ContradictionBom}
+    bom/ContradictionBom
+    bom/ExpressionBom}
   bom
 
   #{bom/PrimitiveBom
     bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (cond
     (= true (:$value? bom)) bom
     (= false (:$value? bom)) bom
@@ -50,11 +52,13 @@
     bom/ContradictionBom
     #{}
     []
-    bom/InstanceValue}
+    bom/InstanceValue
+    bom/ExpressionBom}
   bom
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [spec-id (bom/get-spec-id bom)
         spec (envs/lookup-spec spec-env spec-id)
         spec-optional-field-names (->> spec spec/get-optional-field-names set)]

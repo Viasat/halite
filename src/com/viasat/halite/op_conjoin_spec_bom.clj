@@ -26,11 +26,13 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   bom
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [spec-id (bom/get-spec-id bom)
         spec (envs/lookup-spec spec-env spec-id)]
     (-> bom

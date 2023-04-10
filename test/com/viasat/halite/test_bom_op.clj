@@ -28,11 +28,17 @@
     bom/PrimitiveBom}
   [:primitive bom]
 
+  bom/ExpressionBom
+  [:expression-bom bom]
+
   bom/AbstractInstanceBom
   [:abstract-instance-bom bom]
 
   bom/ConcreteInstanceBom
   [:concrete-instance-bom bom]
+
+  bom/InstanceLiteralBom
+  [:instance-literal-bom bom]
 
   bom/NoValueBom
   [:no-value-bom bom]
@@ -103,7 +109,9 @@
     bom/PrimitiveBom
     bom/NoValueBom
     bom/YesValueBom
-    bom/ContradictionBom}
+    bom/ContradictionBom
+    bom/ExpressionBom
+    bom/InstanceLiteralBom}
   bom
 
   bom/AbstractInstanceBom
@@ -147,7 +155,9 @@
     bom/ConcreteInstanceBom
     bom/NoValueBom
     bom/YesValueBom
-    bom/ContradictionBom}
+    bom/ContradictionBom
+    bom/ExpressionBom
+    bom/InstanceLiteralBom}
   n)
 
 (deftest test-sample-bom-op-with-extra-args

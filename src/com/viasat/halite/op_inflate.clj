@@ -53,7 +53,8 @@
     bom/InstanceValue
     bom/ContradictionBom
     bom/NoValueBom
-    bom/YesValueBom}
+    bom/YesValueBom
+    bom/ExpressionBom}
   bom
 
   bom/PrimitiveBom
@@ -62,7 +63,8 @@
                                   (bring-value-field-into-bom flat-bom-map path)))
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (-> (bring-value-field-into-bom flat-bom-map path bom)
       (merge (->> bom
                   bom/to-bare-instance-bom

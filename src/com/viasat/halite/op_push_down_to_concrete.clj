@@ -25,11 +25,13 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   bom
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [{spec-id :$refines-to} bom]
     (let [bom (if (bom/is-abstract-instance-bom? bom)
                 (-> bom

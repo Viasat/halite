@@ -24,7 +24,8 @@
     bom/ContradictionBom
     #{}
     []
-    bom/InstanceValue}
+    bom/InstanceValue
+    bom/ExpressionBom}
   bom
 
   bom/PrimitiveBom
@@ -36,7 +37,8 @@
        bom-analysis/collapse-ranges-into-value)
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [bom (-> bom
                 bom-analysis/collapse-to-no-value
                 bom-analysis/detect-empty-enum

@@ -25,11 +25,13 @@
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   bom
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [;; walk all child boms first to pull up contradictions in them
         bom (-> bom
                 (merge (->> (-> bom

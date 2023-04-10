@@ -325,6 +325,7 @@
     String
     Boolean
     bom/PrimitiveBom
+    bom/ExpressionBom
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom
@@ -337,7 +338,8 @@
   (flower-fixed-decimal bom)
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [{:keys [spec-env path]} context
         instance-literal-constraints-atom (atom [])
         context (assoc context :instance-literal-constraints-atom instance-literal-constraints-atom)

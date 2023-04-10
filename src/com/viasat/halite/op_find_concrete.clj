@@ -42,11 +42,13 @@
     bom/ContradictionBom
     #{}
     []
-    bom/InstanceValue}
+    bom/InstanceValue
+    bom/ExpressionBom}
   bom
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [bom (if (bom/is-abstract-instance-bom? bom)
               (cond
                 (nil? (:$concrete-choices bom))

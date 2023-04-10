@@ -28,8 +28,10 @@
   bom
 
   #{bom/PrimitiveBom
+    bom/ExpressionBom
     bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (cond
     (= true (:$value? bom)) (dissoc bom :$value?) ;; since the field is mandatory, the :$value? field is not needed
     (= false (:$value? bom)) bom/no-value-bom
@@ -53,14 +55,16 @@
     bom/InstanceValue}
   bom
 
-  bom/PrimitiveBom
+  #{bom/PrimitiveBom
+    bom/ExpressionBom}
   (cond
     (= (:$value? bom) {:$primitive-type :Boolean}) (dissoc bom :$value?)
     (= (:$value? bom) {:$enum #{true false}}) (dissoc bom :$value?)
     :default bom)
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [spec-id (bom/get-spec-id bom)
         spec (envs/lookup-spec spec-env spec-id)
         spec-mandatory-field-names (->> spec spec/get-mandatory-field-names set)]

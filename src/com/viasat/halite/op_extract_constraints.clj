@@ -19,7 +19,8 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/PrimitiveBom
+    bom/ExpressionBom}
   nil
 
   #{bom/ContradictionBom
@@ -28,7 +29,8 @@
   (throw (ex-info "unexpected bom element" {:bom bom}))
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [spec-id (bom/get-spec-id bom)]
     (->> (reduce into
                  (or (some->> bom

@@ -25,7 +25,9 @@
     bom/ContradictionBom
     bom/InstanceValue
     bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom
+    bom/ExpressionBom}
   bom
 
   #{bom/NoValueBom
@@ -45,11 +47,13 @@
     bom/ContradictionBom
     #{}
     []
-    bom/InstanceValue}
+    bom/InstanceValue
+    bom/ExpressionBom}
   bom
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [spec-id (bom/get-spec-id bom)
         spec (envs/lookup-spec spec-env spec-id)]
     (-> bom

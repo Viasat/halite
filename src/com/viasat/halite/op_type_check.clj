@@ -40,6 +40,10 @@
     bom/ContradictionBom}
   nil
 
+  #{bom/ExpressionBom
+    bom/InstanceLiteralBom}
+  (throw (ex-info "unexpected bom element" {:bom bom}))
+
   bom/PrimitiveBom
   (let [{ranges :$ranges enum :$enum} bom
         enum-types (->> enum (map get-bom-type*) set)
@@ -97,6 +101,10 @@
     #{}
     []}
   (get-bom-type bom)
+
+  #{bom/ExpressionBom
+    bom/InstanceLiteralBom}
+  (throw (ex-info "unexpected bom element" {:bom bom}))
 
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}

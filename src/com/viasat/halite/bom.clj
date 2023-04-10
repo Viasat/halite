@@ -79,10 +79,16 @@
   (and (map? x)
        (:$instance-of x)))
 
+(defn is-instance-literal-bom?
+  [x]
+  (and (map? x)
+       (:$instance-literal-type x)))
+
 (defn is-instance-bom?
   [x]
   (or (is-abstract-instance-bom? x)
-      (is-concrete-instance-bom? x)))
+      (is-concrete-instance-bom? x)
+      (is-instance-literal-bom? x)))
 
 (defn is-primitive-bom?
   [x]
@@ -206,6 +212,22 @@
 
 (def BareInstanceBom {VariableKeyword VariableValueBom})
 
+(def ExpressionBom {:$expr s/Any})
+
+(defn is-expression-bom? [x]
+  (and (map x)
+       (contains? x :$expr)))
+
+(def InstanceLiteralBom
+  {VariableKeyword ExpressionBom
+   :$instance-literal-type SpecId
+   (s/optional-key :$value?) (s/eq true)
+   (s/optional-key :$valid?) BooleanBom
+   (s/optional-key :$refinements) {SpecId (s/conditional
+                                           is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
+                                           is-no-value-bom? NoValueBom
+                                           :else ContradictionBom)}})
+
 (def ConcreteInstanceBom
   (assoc BareInstanceBom
          :$instance-of SpecId
@@ -217,7 +239,8 @@
                                                  is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
                                                  is-no-value-bom? NoValueBom
                                                  :else ContradictionBom)}
-         (s/optional-key :$constraints) {base/ConstraintName s/Any}))
+         (s/optional-key :$constraints) {base/ConstraintName s/Any}
+         (s/optional-key :$instance-literals) {s/Str {s/Int InstanceLiteralBom}}))
 
 (def AbstractInstanceBom
   (-> BareInstanceBom

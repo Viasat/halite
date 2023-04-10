@@ -25,7 +25,8 @@
     bom/ContradictionBom
     #{}
     []
-    bom/InstanceValue}
+    bom/InstanceValue
+    bom/ExpressionBom}
   bom
 
   bom/PrimitiveBom
@@ -36,7 +37,8 @@
     bom)
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [bare-result (-> bom
                         bom/to-bare-instance
                         (update-vals canon-up-op))]

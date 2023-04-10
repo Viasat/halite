@@ -44,11 +44,13 @@
     bom/YesValueBom}
   bom
 
-  bom/PrimitiveBom
+  #{bom/PrimitiveBom
+    bom/ExpressionBom}
   (->> bom remove-value-bom remove-primitive-type remove-boolean-wildcard)
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (-> bom
       (merge (-> bom
                  bom/to-bare-instance-bom

@@ -29,8 +29,10 @@
   bom
 
   #{bom/PrimitiveBom
+    bom/ExpressionBom
     bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (if (bom/is-a-no-value-bom? bom)
     bom/contradiction-bom
     (assoc bom :$value? true)))
@@ -44,6 +46,7 @@
     String
     Boolean
     bom/PrimitiveBom
+    bom/ExpressionBom
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom
@@ -53,7 +56,8 @@
   bom
 
   #{bom/ConcreteInstanceBom
-    bom/AbstractInstanceBom}
+    bom/AbstractInstanceBom
+    bom/InstanceLiteralBom}
   (let [spec-id (bom/get-spec-id bom)
         spec (envs/lookup-spec spec-env spec-id)
         spec-mandatory-field-names (->> spec spec/get-mandatory-field-names set)]

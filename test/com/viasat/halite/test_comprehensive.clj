@@ -7125,6 +7125,12 @@
    [(valid? (when true {:$type :my/Spec$v1, :n -3, :p 2}))
     [:throws
      "h-err/arg-type-mismatch 0-0 : Argument to 'valid?' must be an instance of known type"]])
+  (hc
+   :basic
+   [(if-value-let [x (when true {:$type :my/Spec$v1, :n -3, :p 2})] (get x :n) 2)
+    :Integer
+    -3
+    "(ifValueLet ( x = (when(true) {{$type: my/Spec$v1, n: -3, p: 2}}) ) {x.n} else {2})" "-3"])
   (h
    (when true $no-value)
    :Unset

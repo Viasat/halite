@@ -25,6 +25,8 @@
     (vector? x) []
     (bom/is-abstract-instance-bom? x) bom/AbstractInstanceBom
     (bom/is-concrete-instance-bom? x) bom/ConcreteInstanceBom
+    (bom/is-instance-literal-bom? x) bom/InstanceLiteralBom
+    (bom/is-expression-bom? x) bom/ExpressionBom
     (bom/is-primitive-bom? x) bom/PrimitiveBom))
 
 (defn- find-dups [seq]
@@ -44,6 +46,8 @@
         [] '[]
         bom/AbstractInstanceBom 'bom/AbstractInstanceBom
         bom/ConcreteInstanceBom 'bom/ConcreteInstanceBom
+        bom/InstanceLiteralBom 'bom/InstanceLiteralBom
+        bom/ExpressionBom 'bom/ExpressionBom
         bom/PrimitiveBom 'bom/PrimitiveBom
         bom/NoValueBom 'bom/NoValueBom
         bom/YesValueBom 'bom/YesValueBom
@@ -80,6 +84,8 @@
                                         []
                                         bom/AbstractInstanceBom
                                         bom/ConcreteInstanceBom
+                                        bom/InstanceLiteralBom
+                                        bom/ExpressionBom
                                         bom/PrimitiveBom
                                         bom/NoValueBom
                                         bom/YesValueBom}
@@ -159,7 +165,9 @@
     #{}
     []
     bom/ContradictionBom
-    bom/YesValueBom}
+    bom/YesValueBom
+    bom/InstanceLiteralBom
+    bom/ExpressionBom}
   false
 
   bom/NoValueBom
