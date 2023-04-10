@@ -111,7 +111,8 @@
     (base/integer-or-long? expr) true
     (base/fixed-decimal? expr) true
     (string? expr) true
-    (symbol? expr) (flower context expr)
+    (symbol? expr) (flower (assoc context
+                                  :path (conj (:path context) (keyword expr))) (symbol :$value?))
     (keyword? expr) (throw (ex-info "unexpected expr to return-path" {:expr expr}))
     (map? expr) true
     (seq? expr) (condp = (first expr)
@@ -318,7 +319,7 @@
   (let [{:keys [type-env]} context
         [_ [sym target] then-clause else-clause] expr
         target' (flower context target)
-        return-path-target (flower context (return-path context target))
+        return-path-target (return-path context target)
         then-clause' (flower (assoc context :type-env (envs/extend-scope type-env sym (expression-type context target)))
                              then-clause)
         else-clause' (flower context else-clause)]

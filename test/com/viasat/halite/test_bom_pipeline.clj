@@ -776,6 +776,32 @@
                     :a 3
                     :b 2})
 
+  ;; if-value-let
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value-let [p x]
+                                                                 (> p 10)
+                                                                 true)]]}}
+                   {:$instance-of :ws/X$v1}
+                   {:$instance-of :ws/X$v1
+                    :x {:$ranges #{[-1000 1000]}}})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value-let [p x]
+                                                                 (> p 10)
+                                                                 true)]]}}
+                   {:$instance-of :ws/X$v1
+                    :x 20}
+                   {:$instance-of :ws/X$v1
+                    :x 20})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]}
+                              :constraints [["c1" '(if-value-let [p x]
+                                                                 (> p 10)
+                                                                 true)]]}}
+                   {:$instance-of :ws/X$v1
+                    :x 10}
+                   {:$contradiction? true})
+
   ;; instance literals and optional
   (check-propagate {:ws/X$v1 {:fields {:x :Integer
                                        :y :Integer}
