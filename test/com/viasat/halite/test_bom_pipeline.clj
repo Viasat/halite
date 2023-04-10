@@ -722,11 +722,10 @@
                                        :y :Integer}
                               :constraints [["c1" '(= 10 (+ x y))]]}
                     :ws/A$v1 {:fields {:a :Integer}
-                              :constraints [["c2" '(= (get {:$type :ws/X$v1
+                              :constraints [["c2" '(let [q {:$type :ws/X$v1
                                                             :x a
-                                                            :y 7}
-                                                           :x)
-                                                      3)]]}}
+                                                            :y 7}]
+                                                     true)]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
                     :a 3})
@@ -736,12 +735,11 @@
                               :constraints [["c1" '(= 10 (+ x y))]]}
                     :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
                     :ws/A$v1 {:fields {:a :Integer}
-                              :constraints [["c2" '(= (get-in {:$type :ws/P$v1
-                                                               :q {:$type :ws/X$v1
-                                                                   :x a
-                                                                   :y 7}}
-                                                              [:q :x])
-                                                      3)]]}}
+                              :constraints [["c2" '(let [f {:$type :ws/P$v1
+                                                            :q {:$type :ws/X$v1
+                                                                :x a
+                                                                :y 7}}]
+                                                     true)]]}}
                    {:$instance-of :ws/A$v1}
                    {:$instance-of :ws/A$v1
                     :a 3})
@@ -751,12 +749,11 @@
                               :constraints [["c1" '(= 10 (+ x y))]]}
                     :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
                     :ws/A$v1 {:fields {:a :Integer}
-                              :constraints [["c2" '(= (get-in {:$type :ws/P$v1
-                                                               :q {:$type :ws/X$v1
-                                                                   :x a
-                                                                   :y 7}}
-                                                              [:q :x])
-                                                      3)]]}}
+                              :constraints [["c2" '(let [f {:$type :ws/P$v1
+                                                            :q {:$type :ws/X$v1
+                                                                :x a
+                                                                :y 7}}]
+                                                     true)]]}}
                    {:$instance-of :ws/A$v1
                     :a 4}
                    bom/contradiction-bom)
@@ -767,14 +764,14 @@
                     :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
                     :ws/A$v1 {:fields {:a :Integer
                                        :b :Integer}
-                              :constraints [["c2" '(= (get-in {:$type :ws/P$v1
-                                                               :q {:$type :ws/X$v1
-                                                                   :x a
-                                                                   :y (let [z 2]
-                                                                        (+ a b z))}}
-                                                              [:q :x])
-                                                      3)]]}}
-                   {:$instance-of :ws/A$v1}
+                              :constraints [["c2" '(let [f {:$type :ws/P$v1
+                                                            :q {:$type :ws/X$v1
+                                                                :x a
+                                                                :y (let [z 2]
+                                                                     (+ a b z))}}]
+                                                     true)]]}}
+                   {:$instance-of :ws/A$v1
+                    :a 3}
                    {:$instance-of :ws/A$v1
                     :a 3
                     :b 2}))
