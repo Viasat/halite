@@ -47,15 +47,24 @@
 
 (declare push-down-get)
 
+(defn- make-if [target then-clause else-clause]
+  (cond
+    (= true target) then-clause
+    (= false target) else-clause
+    (and (= true then-clause) (= true else-clause)) true
+    (and (= false then-clause) (= false else-clause)) false
+    (and (= true then-clause) (= false else-clause)) target
+    (and (= false then-clause) (= true else-clause)) (list 'not target)
+    :default (list 'if target then-clause else-clause)))
+
 (s/defn ^:private push-down-get-if
   [context :- LowerContext
    field
    expr]
   (let [[_ target then-clause else-clause] expr]
-    (list 'if
-          target
-          (push-down-get context field then-clause)
-          (push-down-get context field else-clause))))
+    (make-if target
+             (push-down-get context field then-clause)
+             (push-down-get context field else-clause))))
 
 (s/defn ^:private push-down-get-when
   [context :- LowerContext
@@ -147,19 +156,17 @@
   [context :- LowerContext
    expr]
   (let [[_ target then-clause else-clause] expr]
-    (list 'if
-          (flower context target)
-          (return-path context then-clause)
-          (return-path context else-clause))))
+    (make-if (flower context target)
+             (return-path context then-clause)
+             (return-path context else-clause))))
 
 (s/defn ^:private return-path-when
   [context :- LowerContext
    expr]
   (let [[_ target then-clause] expr]
-    (list 'if
-          (flower context target)
-          (return-path context then-clause)
-          false)))
+    (make-if (flower context target)
+             (return-path context then-clause)
+             false)))
 
 (s/defn ^:private return-path-if-value
   [context :- LowerContext
@@ -481,9 +488,9 @@
             (non-root-fog? then-clause')
             (non-root-fog? else-clause'))
       (flower-fog context expr)
-      (list 'if return-path-target
-            then-clause'
-            else-clause'))))
+      (make-if  return-path-target
+                then-clause'
+                else-clause'))))
 
 (s/defn ^:private flower-if-value-let
   [context :- LowerContext

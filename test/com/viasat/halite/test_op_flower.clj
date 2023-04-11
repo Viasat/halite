@@ -145,15 +145,15 @@
   (is (= true
          (#'op-flower/return-path empty-context 1)))
 
-  (is (= '(if #r [:x] true true)
+  (is (= true
          (#'op-flower/return-path empty-context
                                   '(if x 9 2))))
 
-  (is (= '(if #r [:x] true false)
+  (is (= #r [:x]
          (#'op-flower/return-path empty-context
                                   '(when x 1))))
 
-  (is (= '(if (> 100 5) true false)
+  (is (= '(> 100 5)
          (#'op-flower/return-path (assoc empty-context
                                          :env (envs/env {'x 100}))
                                   '(when (> x 5) 1))))
