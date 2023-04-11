@@ -70,7 +70,8 @@
                                                         '~'b 20})
                                         :path [:p]
                                         :counter-atom (atom -1)
-                                        :instance-literal-atom (atom {})}
+                                        :instance-literal-atom (atom {})
+                                        :guards []}
                                        in#)]
      (is (= out# result#))
      result#))
@@ -137,7 +138,8 @@
                     :env (envs/env {})
                     :path []
                     :counter-atom (atom -1)
-                    :instance-literal-atom (atom {})})
+                    :instance-literal-atom (atom {})
+                    :guards []})
 
 (deftest test-return-path
   (is (= true

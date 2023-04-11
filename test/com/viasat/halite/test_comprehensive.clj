@@ -7090,6 +7090,20 @@
     "(ifValueLet ( o = {$type: my/Spec$v1, n: -3, p: 2}.o ) {1} else {(5 / 0)})"
     [:throws
      "h-err/divide-by-zero 0-0 : Cannot divide by zero"]])
+  (hc
+   :basic
+   [(let [w (get {:$type :my/Spec$v1, :n -3, :p 2, :o 1} :o)]
+      (if-value-let [o w]
+                    1
+                    (div 5 0)))
+    :Integer
+    1
+    "({ w = {$type: my/Spec$v1, n: -3, o: 1, p: 2}.o; (ifValueLet ( o = w ) {1} else {(5 / 0)}) })"
+    "1"])
+  (hc
+   :basic
+   [(if-value-let [o 20] 1 (div 5 0))
+    [:throws "l-err/binding-expression-not-optional 0-0 : Binding expression in 'if-value-let' must have an optional type"]])
   (h
    (if true "yes" (div 5 0))
    :Value

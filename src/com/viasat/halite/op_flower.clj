@@ -40,7 +40,8 @@
                    :path [s/Any]
                    :counter-atom s/Any ;; an atom to generate unique IDs
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
-                   (s/optional-key :constraint-name) String})
+                   (s/optional-key :constraint-name) String
+                   :guards [s/Any]})
 
 ;;;;
 
@@ -273,18 +274,20 @@
     (if (= '$no-value sym)
       sym
       (if (contains? (envs/bindings env) sym)
-        ((envs/bindings env) sym)
+        (let [resolved ((envs/bindings env) sym)]
+          (if (symbol? resolved)
+            (flower context resolved)
+            resolved))
         (var-ref/make-var-ref (conj path (keyword sym)))))))
 
 (s/defn ^:private flower-instance
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name]} context
+  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name guards]} context
         new-contents (-> expr
                          (dissoc :$type)
                          (update-vals (partial flower context)))
         path (conj path (str constraint-name "$" (next-id counter-atom)))]
-
     (if (->> new-contents
              vals
              (some non-root-fog?))
@@ -295,12 +298,12 @@
                              (envs/bind env (symbol field-name) value))
                            env
                            new-contents)
-              type-env' (reduce (fn [type-env [field-name value]]
-                                  (envs/extend-scope type-env
-                                                     (symbol field-name)
-                                                     (expression-type
-                                                      context
-                                                      (get expr field-name))))
+              type-env' (reduce (fn ([type-env [field-name value]]
+                                     envs/extend-scope type-env
+                                     (symbol field-name)
+                                     (expression-type
+                                      context
+                                      (get expr field-name))))
                                 type-env
                                 new-contents)
               context' (assoc context :env env' :type-env type-env')]
@@ -311,7 +314,8 @@
                                     (if (bom/is-primitive-value? val)
                                       val
                                       {:$expr val})))
-                     (assoc :$instance-literal-type (:$type expr)))))
+                     (assoc :$instance-literal-type (:$type expr)
+                            :$guards guards))))
         (instance-literal/make-instance-literal (-> new-contents
                                                     (assoc :$type (:$type expr))))))))
 
@@ -368,10 +372,41 @@
       (flower-fog context expr)
       body')))
 
+(s/defn ^:private flower-if
+  [context :- LowerContext
+   expr]
+  (let [{:keys [guards]} context
+        [_ target then-clause else-clause] expr
+        target' (flower context target)
+        then-clause' (flower (assoc context
+                                    :guards (conj guards target'))
+                             then-clause)
+        else-clause' (flower (assoc context
+                                    :guards (conj guards (list 'not target')))
+                             else-clause)
+        args' [target' then-clause' else-clause']]
+    (if (some non-root-fog? args')
+      (flower-fog context expr)
+      (apply list 'if args'))))
+
+(s/defn ^:private flower-when
+  [context :- LowerContext
+   expr]
+  (let [{:keys [guards]} context
+        [_ target then-clause] expr
+        target' (flower context target)
+        then-clause' (flower (assoc context
+                                    :guards (conj guards target'))
+                             then-clause)
+        args' [target' then-clause']]
+    (if (some non-root-fog? args')
+      (flower-fog context expr)
+      (apply list 'when args'))))
+
 (s/defn ^:private flower-if-value
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-type-env type-env]} context
+  (let [{:keys [spec-type-env type-env guards]} context
         [_ target then-clause else-clause] expr
         target' (flower context target)]
     (when-not (var-ref/var-ref? target')
@@ -414,33 +449,61 @@
       (clojure.pprint/pprint {:env (envs/bindings env)
                               :spec-type-env (envs/scope spec-type-env)})))
 
-(s/defn ^:private flower-if-value-let
+(s/defn ^:private flower-if-value-let*
   [context :- LowerContext
+   guard?
    expr]
-  (let [{:keys [type-env]} context
+  (let [{:keys [env type-env guards]} context
         [_ [sym target] then-clause else-clause] expr
         target' (flower context target)
         return-path-target (return-path context target)
-        then-clause' (flower (assoc context :type-env (envs/extend-scope type-env sym (expression-type context target)))
+        then-clause' (flower (assoc context
+                                    :guards (if guard?
+                                              (conj guards (flower-if-value-let* context
+                                                                                 false
+                                                                                 (list 'if-value-let ['x_0 target] true false)))
+                                              guards)
+                                    :type-env (envs/extend-scope type-env
+                                                                 sym
+                                                                 (types/no-maybe (expression-type context target)))
+                                    :env (envs/bind env
+                                                    sym
+                                                    target))
                              then-clause)
-        else-clause' (flower context else-clause)]
+        else-clause' (flower (assoc context
+                                    :guards (if guard?
+                                              (conj guards (flower-if-value-let* context
+                                                                                 false
+                                                                                 (list 'if-value-let ['x_0 target] false true)))
+                                              guards))
+                             else-clause)]
     (if (or (non-root-fog? target')
             (non-root-fog? then-clause')
             (non-root-fog? else-clause'))
       (flower-fog context expr)
       (list 'if return-path-target
-            (flower context (list 'let
-                                  [sym target]
-                                  then-clause))
+            then-clause'
             else-clause'))))
+
+(s/defn ^:private flower-if-value-let
+  [context :- LowerContext
+   expr]
+  (flower-if-value-let* context true expr))
 
 (s/defn ^:private flower-when-value-let
   [context :- LowerContext
    expr]
-  (let [{:keys [type-env]} context
+  (let [{:keys [type-env guards]} context
         [_ [sym target] body] expr
         target' (flower context target)
-        body' (flower (assoc context :type-env (envs/extend-scope sym (expression-type context target)))
+        body' (flower (assoc context
+                             :guards (conj guards (flower-if-value-let* context
+                                                                        false
+                                                                        (list 'if-value-let ['x_0 target] true false)))
+
+                             :type-env (envs/extend-scope type-env
+                                                          sym
+                                                          (types/no-maybe (expression-type context target))))
                       body)]
     (if (or (non-root-fog? target')
             (non-root-fog? body'))
@@ -498,6 +561,8 @@
                   'get (flower-get context expr)
                   'get-in (throw (ex-info "unrecognized halite form" {:expr expr}))
                   'let (flower-let context expr)
+                  'if (flower-if context expr)
+                  'when (flower-when context expr)
                   'if-value (flower-if-value context expr)
                   'when-value (flower-if-value context expr) ;; also handles 'when-value
                   'if-value-let (flower-if-value-let context expr)
@@ -548,6 +613,23 @@
        pre-lower
        (flower context)))
 
+;;
+
+(defn- add-guards-to-constraints [bom]
+  (let [guards (:$guards bom)]
+    (-> bom
+        (assoc :$constraints (some-> bom
+                                     :$constraints
+                                     (update-vals (fn [constraint]
+                                                    (loop [[g & more-g] guards
+                                                           r constraint]
+                                                      (if g
+                                                        (recur more-g
+                                                               (list 'if g constraint true))
+                                                        r))))))
+        (dissoc :$guards)
+        base/no-nil-entries)))
+
 ;;;;
 
 (bom-op/def-bom-multimethod flower-op*
@@ -590,7 +672,8 @@
                                                       [constraint-name (->> x
                                                                             (lower-expr (assoc context
                                                                                                :spec-type-env (envs/type-env-from-spec spec-info)
-                                                                                               :constraint-name constraint-name)))]))
+                                                                                               :constraint-name constraint-name
+                                                                                               :guards [])))]))
                                                (into {})))
                  (assoc :$refinements (some-> bom
                                               :$refinements
@@ -624,7 +707,8 @@
                                                                                                  (:$expr val)
                                                                                                  val)))
                                                                                   (:env context)
-                                                                                  bare-instance-bom)))))]))
+                                                                                  bare-instance-bom)))
+                                                       add-guards-to-constraints))]))
 
                                         (into {})
                                         base/no-empty))

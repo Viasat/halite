@@ -231,6 +231,7 @@
    (s/optional-key :$value?) (s/eq true)
    (s/optional-key :$valid?) BooleanBom
    (s/optional-key :$constraints) {base/ConstraintName s/Any}
+   (s/optional-key :$guards) [s/Any]
    (s/optional-key :$refinements) {SpecId (s/conditional
                                            is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
                                            is-no-value-bom? NoValueBom
@@ -281,6 +282,7 @@
 (def meta-fields #{:$refines-to
                    :$instance-of
                    :$instance-literal-type
+                   :$guards
                    :$enum
                    :$value?
                    :$valid?
