@@ -212,8 +212,7 @@
                       op-strip/strip-op)
          expected# ~expected]
      (is (= expected# result#))
-     (when-not (= expected# result#)
-       result#)))
+     result#))
 
 (deftest test-propagate
   ;; boolean fields
@@ -826,7 +825,135 @@
                                                                  true
                                                                  false)]]}}
                    {:$instance-of :ws/A$v1}
-                   {:$contradiction? true}))
+                   {:$contradiction? true})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]
+                                       :y :Integer}
+                              :constraints [["c1" '(if-value x
+                                                             (= 10 (+ x y))
+                                                             true)]]}
+                    :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
+                    :ws/A$v1 {:fields {:a [:Maybe :Integer]}
+                              :constraints [["c2" '(if-value-let [f (get-in {:$type :ws/P$v1
+                                                                             :q {:$type :ws/X$v1
+                                                                                 :x a
+                                                                                 :y 7}}
+                                                                            [:q :x])]
+                                                                 true
+                                                                 false)]]}}
+                   {:$instance-of :ws/A$v1
+                    :a {:$value? false}}
+                   {:$contradiction? true})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]
+                                       :y :Integer}
+                              :constraints [["c1" '(if-value x
+                                                             (= 10 (+ x y))
+                                                             true)]]}
+                    :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
+                    :ws/A$v1 {:fields {:a :Integer}
+                              :constraints [["c2" '(if-value-let [f (get-in {:$type :ws/P$v1
+                                                                             :q {:$type :ws/X$v1
+                                                                                 :x a
+                                                                                 :y 7}}
+                                                                            [:q :x])]
+                                                                 true
+                                                                 false)]]}}
+                   {:$instance-of :ws/A$v1
+                    :a 4}
+                   {:$contradiction? true})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]
+                                       :y :Integer}
+                              :constraints [["c1" '(if-value x
+                                                             (= 10 (+ x y))
+                                                             true)]]}
+                    :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
+                    :ws/A$v1 {:fields {:a :Integer}
+                              :constraints [["c2" '(if-value-let [f (get-in {:$type :ws/P$v1
+                                                                             :q {:$type :ws/X$v1
+                                                                                 :x a
+                                                                                 :y 7}}
+                                                                            [:q :x])]
+                                                                 true
+                                                                 false)]]}}
+                   {:$instance-of :ws/A$v1
+                    :a 3}
+                   {:$instance-of :ws/A$v1
+                    :a 3})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]
+                                       :y :Integer}
+                              :constraints [["c1" '(if-value x
+                                                             (= 10 (+ x y))
+                                                             true)]]}
+                    :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
+                    :ws/A$v1 {:fields {:a [:Maybe :Integer]}
+                              :constraints [["c2" '(if-value-let [f (get-in {:$type :ws/P$v1
+                                                                             :q {:$type :ws/X$v1
+                                                                                 :x a
+                                                                                 :y 7}}
+                                                                            [:q :x])]
+                                                                 true
+                                                                 false)]]}}
+                   {:$instance-of :ws/A$v1
+                    :a 3}
+                   {:$instance-of :ws/A$v1
+                    :a 3})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]
+                                       :y :Integer}
+                              :constraints [["c1" '(if-value x
+                                                             (= 10 (+ x y))
+                                                             true)]]}
+                    :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
+                    :ws/A$v1 {:fields {:a [:Maybe :Integer]}
+                              :constraints [["c2" '(if-value-let [f (get-in {:$type :ws/P$v1
+                                                                             :q {:$type :ws/X$v1
+                                                                                 :x a
+                                                                                 :y 7}}
+                                                                            [:q :x])]
+                                                                 true
+                                                                 false)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a 3})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]
+                                       :y :Integer}
+                              :constraints [["c1" '(if-value x
+                                                             (= 10 (+ x y))
+                                                             true)]]}
+                    :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
+                    :ws/A$v1 {:fields {:a [:Maybe :Integer]}
+                              :constraints [["c2" '(if-value-let [f (get-in {:$type :ws/P$v1
+                                                                             :q {:$type :ws/X$v1
+                                                                                 :x a
+                                                                                 :y 7}}
+                                                                            [:q :x])]
+                                                                 false
+                                                                 true)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$value? false}})
+
+  (check-propagate {:ws/X$v1 {:fields {:x [:Maybe :Integer]
+                                       :y :Integer}
+                              :constraints [["c1" '(if-value x
+                                                             (= 10 (+ x y))
+                                                             true)]]}
+                    :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}}
+                    :ws/A$v1 {:fields {:a [:Maybe :Integer]}
+                              :constraints [["c2" '(if-value-let [f (get-in {:$type :ws/P$v1
+                                                                             :q {:$type :ws/X$v1
+                                                                                 :x a
+                                                                                 :y 7}}
+                                                                            [:q :x])]
+                                                                 true
+                                                                 true)]]}}
+                   {:$instance-of :ws/A$v1}
+                   {:$instance-of :ws/A$v1
+                    :a {:$ranges #{[-1000 1000]}}}))
 
 ;; (set! *print-namespace-maps* false)
 

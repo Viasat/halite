@@ -26,6 +26,8 @@
 
 (instance-literal/init)
 
+;;;;
+
 (declare flower)
 
 ;;;;
@@ -41,6 +43,100 @@
 
 ;;;;
 
+(declare push-down-get)
+
+(s/defn ^:private push-down-get-if
+  [context :- LowerContext
+   field
+   expr]
+  (let [[_ target then-clause else-clause] expr]
+    (list 'if
+          target
+          (push-down-get context field then-clause)
+          (push-down-get context field else-clause))))
+
+(s/defn ^:private push-down-get-when
+  [context :- LowerContext
+   field
+   expr]
+  (let [[_ target then-clause] expr]
+    (list 'when
+          target
+          (push-down-get context field then-clause))))
+
+(s/defn ^:private push-down-get-if-value
+  [context :- LowerContext
+   field
+   expr]
+  (let [[_ target then-clause else-clause] expr]
+    (list 'if-value
+          target
+          (push-down-get context field then-clause)
+          (push-down-get context field else-clause))))
+
+(s/defn ^:private push-down-get-when-value
+  [context :- LowerContext
+   field
+   expr]
+  (let [[_ target then-clause] expr]
+    (list 'when-value
+          target
+          (push-down-get context field then-clause))))
+
+(s/defn ^:private push-down-get-if-value-let
+  [context :- LowerContext
+   field
+   expr]
+  (let [{:keys [env]} context
+        [_ [sym target] then-clause else-clause] expr]
+    (list
+     'if-value-let [sym target]
+     (push-down-get context field then-clause)
+     (push-down-get context field else-clause))))
+
+(s/defn ^:private push-down-get-when-value-let
+  [context :- LowerContext
+   field
+   expr]
+  (let [{:keys [env]} context
+        [_ [sym target] then-clause] expr]
+    (list
+     'when-value-let [sym target]
+     (push-down-get context field then-clause))))
+
+(s/defn ^:private push-down-get-get
+  [context :- LowerContext
+   field
+   expr]
+  (let [{:keys [env]} context
+        [_ target accessor] expr]
+    (push-down-get context field (push-down-get context accessor target))))
+
+(s/defn ^:private push-down-get
+  [context :- LowerContext
+   field
+   expr]
+  (cond
+    (symbol? expr) (let [{:keys [path]} context]
+                     (with-meta (list 'if
+                                      (var-ref/make-var-ref (conj path (keyword expr) :$value?))
+                                      (var-ref/make-var-ref (conj path (keyword expr) field :$value?))
+                                      false)
+                       {:done? true}))
+    (map? expr) (get expr field)
+    (vector? expr) (get expr field)
+    (seq? expr) (condp = (first expr)
+                  'if (push-down-get-if context field expr)
+                  'when (push-down-get-when context field expr)
+                  'if-value (push-down-get-if-value context field expr)
+                  'when-value (push-down-get-when-value context field expr)
+                  'if-value-let (push-down-get-if-value-let context field expr)
+                  'when-value-let (push-down-get-when-value-let context field expr) ;; same general form as if-value-let
+                  'get (push-down-get-get context field expr))
+    :default (throw (ex-info "unexpected expr to push-down-get" {:expr expr}))))
+
+;;;;
+
 ;; Turn an expression into a boolean expression indicating whether or not the expression produces a value.
 
 (declare return-path)
@@ -50,7 +146,7 @@
    expr]
   (let [[_ target then-clause else-clause] expr]
     (list 'if
-          target
+          (flower context target)
           (return-path context then-clause)
           (return-path context else-clause))))
 
@@ -59,7 +155,7 @@
    expr]
   (let [[_ target then-clause] expr]
     (list 'if
-          target
+          (flower context target)
           (return-path context then-clause)
           false)))
 
@@ -84,24 +180,44 @@
 (s/defn ^:private return-path-if-value-let
   [context :- LowerContext
    expr]
-  (let [[_ [sym target] then-clause else-clause] expr]
+  (let [{:keys [env]} context
+        [_ [sym target] then-clause else-clause] expr]
     (list
      'if (return-path context target)
-     (flower context (list 'let
-                           [sym target]
-                           (return-path context then-clause)))
-     (return-path context else-clause))))
+     (return-path (assoc context :env (envs/bind env sym target))
+                  then-clause)
+     (if (nil? else-clause)
+       false
+       (return-path context else-clause)))))
 
-(s/defn ^:private return-path-when-value-let
+(s/defn ^:private return-path-get
   [context :- LowerContext
    expr]
-  (let [[_ [sym target] then-clause] expr]
-    (list
-     'if (return-path context target)
-     (list 'let
-           [sym target]
-           (return-path context then-clause))
-     false)))
+  (let [[_ target accessor] expr
+        result (push-down-get context accessor target)]
+    (if (:done? (meta result))
+      result
+      (return-path context result))))
+
+(s/defn ^:private return-path-get-in
+  [context :- LowerContext
+   expr]
+  (let [[_ target accessors] expr]
+    (return-path context (loop [[a & more-a] accessors
+                                r target]
+                           (if a
+                             (recur more-a (list 'get r a))
+                             r)))))
+
+(s/defn ^:private return-path-symbol
+  [context :- LowerContext
+   sym]
+  (let [{:keys [env path]} context]
+    (if (= '$no-value sym)
+      false
+      (if (contains? (envs/bindings env) sym)
+        (return-path context ((envs/bindings env) sym))
+        (var-ref/make-var-ref (conj path (keyword sym) :$value?))))))
 
 (s/defn ^:private return-path
   [context :- LowerContext
@@ -111,8 +227,7 @@
     (base/integer-or-long? expr) true
     (base/fixed-decimal? expr) true
     (string? expr) true
-    (symbol? expr) (flower (assoc context
-                                  :path (conj (:path context) (keyword expr))) (symbol :$value?))
+    (symbol? expr) (return-path-symbol context expr)
     (keyword? expr) (throw (ex-info "unexpected expr to return-path" {:expr expr}))
     (map? expr) true
     (seq? expr) (condp = (first expr)
@@ -121,8 +236,11 @@
                   'if-value (return-path-if-value context expr)
                   'when-value (return-path-when-value context expr)
                   'if-value-let (return-path-if-value-let context expr)
-                  'when-value-let (return-path-when-value-let context expr)
-                  true)
+                  'when-value-let (return-path-if-value-let context expr) ;; same general form as if-value-let
+                  'get (return-path-get context expr)
+                  'get-in (return-path-get-in context expr)
+                  'inc true
+                  (throw (ex-info "return-path not implemented for expr" {:expr expr})))
     (set? expr) true
     (vector? expr) true
     :default (throw (ex-info "unexpected expr to return-path" {:expr expr}))))
@@ -312,6 +430,11 @@
                 target'
                 then-clause'
                 else-clause'))))))
+
+#_(defn- dump-context [context]
+    (let [{:keys [env spec-type-env]} context]
+      (clojure.pprint/pprint {:env (envs/bindings env)
+                              :spec-type-env (envs/scope spec-type-env)})))
 
 (s/defn ^:private flower-if-value-let
   [context :- LowerContext

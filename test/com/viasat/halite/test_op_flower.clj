@@ -131,4 +131,96 @@
                                    (div x y)
                                    x)))
 
+(def empty-context {:spec-env (envs/spec-env {})
+                    :spec-type-env (envs/type-env {})
+                    :type-env (envs/type-env {})
+                    :env (envs/env {})
+                    :path []
+                    :counter-atom (atom -1)
+                    :instance-literal-atom (atom {})})
+
+(deftest test-return-path
+  (is (= true
+         (#'op-flower/return-path empty-context 1)))
+
+  (is (= '(if #r [:x] true true)
+         (#'op-flower/return-path empty-context
+                                  '(if x 9 2))))
+
+  (is (= '(if #r [:x] true false)
+         (#'op-flower/return-path empty-context
+                                  '(when x 1))))
+
+  (is (= '(if (> 100 5) true false)
+         (#'op-flower/return-path (assoc empty-context
+                                         :env (envs/env {'x 100}))
+                                  '(when (> x 5) 1))))
+
+  (is (= true
+         (#'op-flower/return-path (assoc empty-context
+                                         :env (envs/env {'x 100}))
+                                  'x)))
+
+  (is (= #r [:x :$value?]
+         (#'op-flower/return-path empty-context
+                                  'x)))
+
+  ;; boolean ops
+
+  (is (= '(if #r [:x] #r [:y :$value?] #r [:z :$value?])
+         (#'op-flower/return-path empty-context
+                                  '(if x y z))))
+
+  (is (= '(if #r [:x] #r [:y :$value?] false)
+         (#'op-flower/return-path empty-context
+                                  '(when x y))))
+
+  ;; if-value-let
+
+  (is (= '(if #r [:x :$value?] #r [:y :$value?] #r [:z :$value?])
+         (#'op-flower/return-path empty-context
+                                  '(if-value-let [a x] y z))))
+
+  (is (= '(if #r [:x :$value?] #r [:x :$value?] #r [:z :$value?])
+         (#'op-flower/return-path empty-context
+                                  '(if-value-let [a x] a z))))
+
+  (is (= '(if #r [:x :$value?] true #r [:z :$value?])
+         (#'op-flower/return-path empty-context
+                                  '(if-value-let [a x] (inc a) z))))
+
+  ;; when-value-let
+
+  (is (= '(if #r [:x :$value?] #r [:y :$value?] false)
+         (#'op-flower/return-path empty-context
+                                  '(when-value-let [a x] y))))
+
+  (is (= '(if #r [:x :$value?] #r [:x :$value?] false)
+         (#'op-flower/return-path empty-context
+                                  '(when-value-let [a x] a))))
+
+  ;; get
+  (is (= #r [:x :$value?]
+         (#'op-flower/return-path empty-context
+                                  '(get {:$type :spec/A$v1 :a x} :a))))
+
+  (is (= #r [:x :$value?]
+         (#'op-flower/return-path empty-context
+                                  '(get (get {:$type :spec/A$v1 :a {:$type :spec/B$v1 :b x}} :a) :b))))
+
+  (is (= true
+         (#'op-flower/return-path empty-context
+                                  '(get (get {:$type :spec/A$v1 :a {:$type :spec/B$v1 :b 5}} :a) :b))))
+
+  (is (= '(if #r [:y] true #r [:x :$value?])
+         (#'op-flower/return-path empty-context
+                                  '(get (get {:$type :spec/A$v1
+                                              :a (if y
+                                                   {:$type :spec/B$v1 :b 5}
+                                                   {:$type :spec/B$v1 :b x})} :a) :b))))
+
+  (is (= '(if #r [:x :$value?] #r [:x :a :$value?] false)
+         (#'op-flower/return-path empty-context
+                                  '(get x :a)))))
+
 ;; (run-tests)
