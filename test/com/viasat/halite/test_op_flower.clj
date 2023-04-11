@@ -62,16 +62,16 @@
          spec-info# {:fields {:x :Integer
                               :xs [:Vec :Integer]
                               :z :Integer}}
-         result# (op-flower/flower {:spec-env {:ws/A$v1 spec-info#}
-                                    :spec-type-env (envs/type-env-from-spec spec-info#)
-                                    :type-env (envs/type-env {'~'a :Integer
-                                                              '~'b :Integer})
-                                    :env (envs/env {'~'a 10
-                                                    '~'b 20})
-                                    :path [:p]
-                                    :counter-atom (atom -1)
-                                    :instance-literal-atom (atom {})}
-                                   in#)]
+         result# (op-flower/lower-expr {:spec-env {:ws/A$v1 spec-info#}
+                                        :spec-type-env (envs/type-env-from-spec spec-info#)
+                                        :type-env (envs/type-env {'~'a :Integer
+                                                                  '~'b :Integer})
+                                        :env (envs/env {'~'a 10
+                                                        '~'b 20})
+                                        :path [:p]
+                                        :counter-atom (atom -1)
+                                        :instance-literal-atom (atom {})}
+                                       in#)]
      (is (= out# result#))
      result#))
 
@@ -89,7 +89,7 @@
   (check-flower '#{a x 100} #fog [:Set :Integer])
   (check-flower '(if x y z) '(if #r [:p :x] #r [:p :y] #r [:p :z]))
   (check-flower '(when x a) '(when #r [:p :x] 10))
-  (check-flower '(cond true x y a) '(cond true #r [:p :x] #r [:p :y] 10))
+  (check-flower '(cond true x y a 12) '(if true #r [:p :x] (if #r [:p :y] 10 12)))
   (check-flower '(if-value x 1 y) '(if #r [:p :x :$value?] 1 #r [:p :y]))
   (check-flower '(if-value x x y) '(if #r [:p :x :$value?] #r [:p :x] #r [:p :y]))
 

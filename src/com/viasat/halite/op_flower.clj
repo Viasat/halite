@@ -4,6 +4,7 @@
 (ns com.viasat.halite.op-flower
   "Lower expressions in boms down into expressions that are supported by propagation."
   (:require [clojure.math :as math]
+            [clojure.walk :as walk]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
@@ -199,16 +200,6 @@
       result
       (return-path context result))))
 
-(s/defn ^:private return-path-get-in
-  [context :- LowerContext
-   expr]
-  (let [[_ target accessors] expr]
-    (return-path context (loop [[a & more-a] accessors
-                                r target]
-                           (if a
-                             (recur more-a (list 'get r a))
-                             r)))))
-
 (s/defn ^:private return-path-symbol
   [context :- LowerContext
    sym]
@@ -238,7 +229,7 @@
                   'if-value-let (return-path-if-value-let context expr)
                   'when-value-let (return-path-if-value-let context expr) ;; same general form as if-value-let
                   'get (return-path-get context expr)
-                  'get-in (return-path-get-in context expr)
+                  'get-in (ex-info "return-path not implemented for expr" {:expr expr})
                   'inc true
                   (throw (ex-info "return-path not implemented for expr" {:expr expr})))
     (set? expr) true
@@ -340,19 +331,6 @@
 
       :default (throw (ex-info "unexpected target of get" {:expr expr
                                                            :target' target'})))))
-
-(s/defn ^:private flower-get-in
-  [context :- LowerContext
-   expr]
-  (let [[_ target accessor] expr]
-    (flower-get context (loop [[a & more-a] accessor
-                               result target]
-                          (if (nil? a)
-                            result
-                            (recur more-a
-                                   (list 'get
-                                         result
-                                         a)))))))
 
 (s/defn ^:private flower-let
   [context :- LowerContext
@@ -518,7 +496,7 @@
     (map? expr) (flower-instance context expr)
     (seq? expr) (condp = (first expr)
                   'get (flower-get context expr)
-                  'get-in (flower-get-in context expr)
+                  'get-in (throw (ex-info "unrecognized halite form" {:expr expr}))
                   'let (flower-let context expr)
                   'if-value (flower-if-value context expr)
                   'when-value (flower-if-value context expr) ;; also handles 'when-value
@@ -539,6 +517,36 @@
     (vector? expr) (flower-fog context expr)
     (set? expr) (flower-fog context expr)
     :else (throw (ex-info "unrecognized halite form" {:expr expr}))))
+
+;;;;
+
+(defn pre-lower [expr]
+  (->> expr
+       (walk/postwalk (fn [expr]
+                        (cond
+                          (and (seq? expr)
+                               (= 'get-in (first expr)))
+                          (let [[_ target accessors] expr]
+                            (loop [[a & more-a] accessors
+                                   r target]
+                              (if a
+                                (recur more-a (list 'get r a))
+                                r)))
+
+                          (and (seq? expr)
+                               (= 'cond (first expr)))
+                          (reduce (fn [if-expr [pred then]]
+                                    (list 'if pred then if-expr))
+                                  (last expr)
+                                  (reverse (partition 2 (rest expr))))
+
+                          :default
+                          expr)))))
+
+(defn lower-expr [context expr]
+  (->> expr
+       pre-lower
+       (flower context)))
 
 ;;;;
 
@@ -579,10 +587,10 @@
                  (assoc :$constraints (some->> bom
                                                :$constraints
                                                (map (fn [[constraint-name x]]
-                                                      [constraint-name (flower (assoc context
-                                                                                      :spec-type-env (envs/type-env-from-spec spec-info)
-                                                                                      :constraint-name constraint-name)
-                                                                               x)]))
+                                                      [constraint-name (->> x
+                                                                            (lower-expr (assoc context
+                                                                                               :spec-type-env (envs/type-env-from-spec spec-info)
+                                                                                               :constraint-name constraint-name)))]))
                                                (into {})))
                  (assoc :$refinements (some-> bom
                                               :$refinements
