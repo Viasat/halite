@@ -237,7 +237,7 @@
                                            $_1 :Bool,
                                            $_2 :Bool,
                                            $_3 :Bool},
-                                    :constraints #{(if $_0 true $_2)}},
+                                    :constraints #{(or $_0 $_2)}},
                        :choco-bounds {$_0 #{true false},
                                       $_1 true,
                                       $_2 #{true false},
@@ -253,7 +253,7 @@
                      [{:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(if $_0 true $_1)}},
+                                    :constraints #{(or $_0 $_1)}},
                        :choco-bounds {$_0 false,
                                       $_1 #{true false},
                                       $_2 true},
@@ -270,7 +270,7 @@
                      [{:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(if $_1 true $_0)}},
+                                    :constraints #{(or $_1 $_0)}},
                        :choco-bounds {$_0 false,
                                       $_1 #{true false},
                                       $_2 true},
@@ -287,7 +287,7 @@
                      [{:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(if $_0 true $_1)}},
+                                    :constraints #{(or $_0 $_1)}},
                        :choco-bounds {$_0 true,
                                       $_1 #{true false},
                                       $_2 true},
@@ -353,7 +353,7 @@
                                            $_1 :Bool,
                                            $_2 :Bool,
                                            $_3 :Bool},
-                                    :constraints #{(if $_3 $_0 true)}},
+                                    :constraints #{(or (not $_3) $_0)}},
                        :choco-bounds {$_0 #{true false},
                                       $_1 true,
                                       $_2 #{true false},
@@ -369,7 +369,7 @@
                      [{:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(if true $_1 true)}},
+                                    :constraints #{(or (not true) $_1)}},
                        :choco-bounds {$_0 true,
                                       $_1 #{true false},
                                       $_2 true},
@@ -709,7 +709,7 @@
      {:$instance-of :ws/A$v1}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(if $_1 (and (> $_0 20) (< $_0 30)) true)}},
+                    :constraints #{(or (not $_1) (and (> $_0 20) (< $_0 30)))}},
        :choco-bounds {$_0 #{27 24 21 22 29 28 25 23 26},
                       $_1 #{true false}},
        :sym-to-path [$_0 [:x] $_1 [:x :$value?]]}
@@ -721,7 +721,7 @@
                      {:$instance-of :ws/A$v1}
                      [{:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
-                                    :constraints #{(if $_1 false true)}},
+                                    :constraints #{(not $_1)}},
                        :choco-bounds {$_0 [-1000 1000],
                                       $_1 #{true false}},
                        :sym-to-path [$_0 [:x] $_1 [:x :$value?]]}
@@ -733,7 +733,7 @@
                      {:$instance-of :ws/A$v1}
                      [{:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
-                                    :constraints #{(if $_1 true false)}},
+                                    :constraints #{$_1}},
                        :choco-bounds {$_0 [-1000 1000],
                                       $_1 #{true false}},
                        :sym-to-path [$_0 [:x] $_1 [:x :$value?]]}
@@ -750,7 +750,7 @@
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints #{(if $_1 (if $_3 true false) false)}},
+                    :constraints #{(and $_1 $_3)}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -771,7 +771,7 @@
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints #{(if $_1 false (if $_3 true false))}},
+                    :constraints #{(and (not $_1) $_3)}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -791,7 +791,7 @@
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints #{(if $_1 false (if $_3 false true))}},
+                    :constraints #{(and (not $_1) (not $_3))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -817,10 +817,10 @@
                            $_2 :Bool,
                            $_3 :Int,
                            $_4 :Bool},
-                    :constraints #{(if $_4
-                                     (or (= $_3 10) (= $_3 12) (= $_3 14))
-                                     true) (or (= $_1 1) (= $_1 2) (= $_1 3))
-                                   (if $_4 (= 15 (+ $_1 $_3)) true)}},
+                    :constraints #{(or (not $_4) (= 15 (+ $_1 $_3)))
+                                   (or (= $_1 1) (= $_1 2) (= $_1 3))
+                                   (or (not $_4)
+                                       (or (= $_3 10) (= $_3 12) (= $_3 14)))}},
        :choco-bounds {$_0 true,
                       $_1 #{1 3 2},
                       $_2 true,
@@ -847,10 +847,10 @@
                            $_2 :Bool,
                            $_3 :Int,
                            $_4 :Bool},
-                    :constraints #{(if $_4
-                                     (or (= $_3 10) (= $_3 12) (= $_3 14))
-                                     true) (or (= $_1 1) (= $_1 2) (= $_1 3))
-                                   (if $_4 (= 15 (+ $_1 $_3)) false)}},
+                    :constraints #{(and $_4 (= 15 (+ $_1 $_3)))
+                                   (or (= $_1 1) (= $_1 2) (= $_1 3))
+                                   (or (not $_4)
+                                       (or (= $_3 10) (= $_3 12) (= $_3 14)))}},
        :choco-bounds {$_0 true,
                       $_1 #{1 3 2},
                       $_2 true,
@@ -885,7 +885,7 @@
                       :ws/A$v1 {:fields {}}}
                      {:$instance-of :ws/B$v1}
                      [{:choco-spec {:vars {$_0 :Bool},
-                                    :constraints #{(if $_0 false true)}},
+                                    :constraints #{(not $_0)}},
                        :choco-bounds {$_0 #{true false}},
                        :sym-to-path [$_0 [:a :$value?]]}
                       {:$instance-of :ws/B$v1,
@@ -896,7 +896,7 @@
                       :ws/A$v1 {:fields {}}}
                      {:$instance-of :ws/B$v1}
                      [{:choco-spec {:vars {$_0 :Bool},
-                                    :constraints #{(if $_0 true false)}},
+                                    :constraints #{$_0}},
                        :choco-bounds {$_0 #{true false}},
                        :sym-to-path [$_0 [:a :$value?]]}
                       {:$instance-of :ws/B$v1,
@@ -915,7 +915,7 @@
      [{:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool},
-                    :constraints #{(if $_0 (if $_2 false true) false)}},
+                    :constraints #{(and $_0 (not $_2))}},
        :choco-bounds {$_0 #{true false},
                       $_1 [-1000 1000],
                       $_2 #{true false}},
@@ -937,7 +937,7 @@
      [{:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool},
-                    :constraints #{(if $_0 (if $_2 true false) false)}},
+                    :constraints #{(and $_0 $_2)}},
        :choco-bounds {$_0 #{true false},
                       $_1 [-1000 1000],
                       $_2 #{true false}},
@@ -965,8 +965,7 @@
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints
-                    #{(if $_0 true (if $_1 (if $_3 true false) false))}},
+                    :constraints #{(or $_0 (and $_1 $_3))}},
        :choco-bounds {$_0 false,
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -996,8 +995,7 @@
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints
-                    #{(if $_0 true (if $_1 (if $_3 (> $_2 20) false) false))}},
+                    :constraints #{(or $_0 (and $_1 (and $_3 (> $_2 20))))}},
        :choco-bounds {$_0 false,
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -1027,8 +1025,7 @@
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints
-                    #{(if $_0 true (if $_1 (if $_3 (> $_2 20) false) false))}},
+                    :constraints #{(or $_0 (and $_1 (and $_3 (> $_2 20))))}},
        :choco-bounds {$_0 false,
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -1059,8 +1056,7 @@
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Bool},
-                    :constraints
-                    #{(if $_2 true (if $_0 (if true (> $_1 20) false) false))}},
+                    :constraints #{(or $_2 (and $_0 (and true (> $_1 20))))}},
        :choco-bounds {$_0 #{true false},
                       $_1 30,
                       $_2 #{true false},
@@ -1088,8 +1084,7 @@
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Bool},
-                    :constraints
-                    #{(if $_2 true (if $_0 (if true (> $_1 20) false) false))}},
+                    :constraints #{(or $_2 (and $_0 (and true (> $_1 20))))}},
        :choco-bounds {$_0 #{true false},
                       $_1 10,
                       $_2 #{true false},
@@ -1218,7 +1213,7 @@
      {:$instance-of :ws/X$v1}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(if $_1 (> $_0 10) true)}},
+                    :constraints #{(or (not $_1) (> $_0 10))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 #{true false}},
        :sym-to-path [$_0 [:x] $_1 [:x :$value?]]}
@@ -1231,7 +1226,7 @@
      {:$instance-of :ws/X$v1,
       :x 20}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints #{(if true (> $_0 10) true)}},
+                    :constraints #{(or (not true) (> $_0 10))}},
        :choco-bounds {$_0 20},
        :sym-to-path [$_0 [:x]]}
       {:$instance-of :ws/X$v1,
@@ -1243,34 +1238,33 @@
      {:$instance-of :ws/X$v1,
       :x 10}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints #{(if true (> $_0 10) true)}},
+                    :constraints #{(or (not true) (> $_0 10))}},
        :choco-bounds {$_0 10},
        :sym-to-path [$_0 [:x]]} {:$contradiction? true}])
 
     (stanza "instance literals and optional")
 
-    (check-propagate
-     {:ws/X$v1 {:fields {:x :Integer,
-                         :y :Integer},
-                :constraints [["c1" '(= 10 (+ x y))]]},
-      :ws/A$v1 {:fields {:a :Integer},
-                :constraints [["c2"
-                               '(if-value-let [q
-                                               (when true
-                                                 {:$type :ws/X$v1,
-                                                  :x a,
-                                                  :y 6})]
-                                              true
-                                              false)]]}}
-     {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
-                           $_1 :Bool},
-                    :constraints #{true (if true (= 10 (+ $_0 6)) true)}},
-       :choco-bounds {$_0 [-1000 1000],
-                      $_1 true},
-       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
-      {:$instance-of :ws/A$v1,
-       :a 4}])
+    (check-propagate {:ws/X$v1 {:fields {:x :Integer,
+                                         :y :Integer},
+                                :constraints [["c1" '(= 10 (+ x y))]]},
+                      :ws/A$v1 {:fields {:a :Integer},
+                                :constraints [["c2"
+                                               '(if-value-let [q
+                                                               (when true
+                                                                 {:$type :ws/X$v1,
+                                                                  :x a,
+                                                                  :y 6})]
+                                                              true
+                                                              false)]]}}
+                     {:$instance-of :ws/A$v1}
+                     [{:choco-spec {:vars {$_0 :Int,
+                                           $_1 :Bool},
+                                    :constraints #{true (= 10 (+ $_0 6))}},
+                       :choco-bounds {$_0 [-1000 1000],
+                                      $_1 true},
+                       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+                      {:$instance-of :ws/A$v1,
+                       :a 4}])
 
     (check-propagate
      {:ws/X$v1 {:fields {:x :Integer,
@@ -1312,7 +1306,7 @@
       :a {:$value? false}}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{$_1 (if $_1 (= 10 (+ $_0 7)) true)}},
+                    :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 7)))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 false},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]} {:$contradiction? true}])
@@ -1335,7 +1329,7 @@
      {:$instance-of :ws/A$v1,
       :a 4}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints #{true (if true (= 10 (+ $_0 7)) true)}},
+                    :constraints #{(or (not true) (= 10 (+ $_0 7))) true}},
        :choco-bounds {$_0 4},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
 
@@ -1357,7 +1351,7 @@
      {:$instance-of :ws/A$v1,
       :a 3}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints #{true (if true (= 10 (+ $_0 7)) true)}},
+                    :constraints #{(or (not true) (= 10 (+ $_0 7))) true}},
        :choco-bounds {$_0 3},
        :sym-to-path [$_0 [:a]]}
       {:$instance-of :ws/A$v1,
@@ -1381,7 +1375,7 @@
      {:$instance-of :ws/A$v1,
       :a 3}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints #{true (if true (= 10 (+ $_0 7)) true)}},
+                    :constraints #{(or (not true) (= 10 (+ $_0 7))) true}},
        :choco-bounds {$_0 3},
        :sym-to-path [$_0 [:a]]}
       {:$instance-of :ws/A$v1,
@@ -1405,7 +1399,7 @@
      {:$instance-of :ws/A$v1}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{$_1 (if $_1 (= 10 (+ $_0 7)) true)}},
+                    :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 7)))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 #{true false}},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
@@ -1430,7 +1424,7 @@
      {:$instance-of :ws/A$v1}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(not $_1) (if $_1 (= 10 (+ $_0 7)) true)}},
+                    :constraints #{(not $_1) (or (not $_1) (= 10 (+ $_0 7)))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 #{true false}},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
@@ -1455,7 +1449,7 @@
      {:$instance-of :ws/A$v1}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{true (if $_1 (= 10 (+ $_0 7)) true)}},
+                    :constraints #{true (or (not $_1) (= 10 (+ $_0 7)))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 #{true false}},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
@@ -1479,13 +1473,12 @@
      {:$instance-of :ws/A$v1}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(if (> $_0 0) true true)
-                                   (if (> $_0 0) (= 10 (+ $_0 6)) true)}},
+                    :constraints #{(or (not (> $_0 0)) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 true},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[-1000 1000]}}}])
+       :a {:$ranges #{[-1000 4]}}}])
 
     (check-propagate
      {:ws/X$v1 {:fields {:x :Integer,
@@ -1505,10 +1498,8 @@
      {:$instance-of :ws/A$v1,
       :a -4}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints
-                    #{(if (> $_0 0) true true)
-                      (if (> $_0 0) (= 10 (+ $_0 6)) true)
-                      (if (not (> $_0 0)) (= 10 (+ (- 0 $_0) 7)) true)}},
+                    :constraints #{(or (not (> $_0 0)) (= 10 (+ $_0 6))) true
+                                   (or (> $_0 0) (= 10 (+ (- 0 $_0) 7)))}},
        :choco-bounds {$_0 -4},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
 
@@ -1530,10 +1521,8 @@
      {:$instance-of :ws/A$v1,
       :a -3}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints
-                    #{(if (> $_0 0) true true)
-                      (if (> $_0 0) (= 10 (+ $_0 6)) true)
-                      (if (not (> $_0 0)) (= 10 (+ (- 0 $_0) 7)) true)}},
+                    :constraints #{(or (not (> $_0 0)) (= 10 (+ $_0 6))) true
+                                   (or (> $_0 0) (= 10 (+ (- 0 $_0) 7)))}},
        :choco-bounds {$_0 -3},
        :sym-to-path [$_0 [:a]]}
       {:$instance-of :ws/A$v1,
@@ -1555,7 +1544,7 @@
       :a {:$value? true}}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(if $_1 (= 10 (+ $_0 6)) true) true}},
+                    :constraints #{(or (not $_1) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 true},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
@@ -1577,7 +1566,7 @@
      {:$instance-of :ws/A$v1,
       :a 3}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints #{true (if true (= 10 (+ $_0 6)) true)}},
+                    :constraints #{(or (not true) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 3},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
 
@@ -1596,7 +1585,7 @@
      {:$instance-of :ws/A$v1,
       :a 4}
      [{:choco-spec {:vars {$_0 :Int},
-                    :constraints #{true (if true (= 10 (+ $_0 6)) true)}},
+                    :constraints #{(or (not true) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 4},
        :sym-to-path [$_0 [:a]]}
       {:$instance-of :ws/A$v1,
@@ -1618,7 +1607,7 @@
       :a {:$value? false}}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(if $_1 (= 10 (+ $_0 6)) true) true}},
+                    :constraints #{(or (not $_1) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 false},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
@@ -1641,7 +1630,7 @@
       :a {:$value? false}}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(if $_1 (= 10 (+ $_0 6)) true) $_1}},
+                    :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 6)))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 false},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]} {:$contradiction? true}])
@@ -1661,7 +1650,7 @@
      {:$instance-of :ws/A$v1}
      [{:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(if $_1 (= 10 (+ $_0 6)) true) $_1}},
+                    :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 6)))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 #{true false}},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}

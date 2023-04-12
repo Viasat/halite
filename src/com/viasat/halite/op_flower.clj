@@ -47,6 +47,31 @@
 
 (declare push-down-get)
 
+(defn- make-and [& args]
+  (let [args (->> args
+                  (remove #(= true %)))]
+    (cond
+      (= 0 (count args)) true
+      (= 1 (count args)) (first args)
+      (some #(= false %) args) false
+      :default (apply list 'and args))))
+
+(defn- make-or [& args]
+  (let [args (->> args
+                  (remove #(= false %)))]
+    (cond
+      (= 0 (count args)) false
+      (= 1 (count args)) (first args)
+      (some #(= true %) args) true
+      :default (apply list 'or args))))
+
+(defn- make-not [x]
+  (cond
+    (= true x) false
+    (= false x) true
+    (and (seq? x) (= 'not (first x))) (second x)
+    :default (list 'not x)))
+
 (defn- make-if [target then-clause else-clause]
   (cond
     (= true target) then-clause
@@ -54,7 +79,14 @@
     (and (= true then-clause) (= true else-clause)) true
     (and (= false then-clause) (= false else-clause)) false
     (and (= true then-clause) (= false else-clause)) target
-    (and (= false then-clause) (= true else-clause)) (list 'not target)
+    (and (= false then-clause) (= true else-clause)) (make-not target)
+    (= true else-clause) (make-or (make-not target) then-clause)
+    (= true then-clause) (make-or target else-clause)
+    (= false else-clause) (make-and target then-clause)
+    (= false then-clause) (make-and (make-not target) else-clause)
+    ;; cannot do these simplifications because the clauses might not be boolean types
+    ;; (= target then-clause) (make-or then-clause else-clause)
+    ;; (= target else-clause) (make-or 'or then-clause else-clause)
     :default (list 'if target then-clause else-clause)))
 
 (s/defn ^:private push-down-get-if
@@ -100,10 +132,9 @@
    expr]
   (let [{:keys [env]} context
         [_ [sym target] then-clause else-clause] expr]
-    (list
-     'if-value-let [sym target]
-     (push-down-get context field then-clause)
-     (push-down-get context field else-clause))))
+    (list 'if-value-let [sym target]
+          (push-down-get context field then-clause)
+          (push-down-get context field else-clause))))
 
 (s/defn ^:private push-down-get-when-value-let
   [context :- LowerContext
@@ -111,9 +142,8 @@
    expr]
   (let [{:keys [env]} context
         [_ [sym target] then-clause] expr]
-    (list
-     'when-value-let [sym target]
-     (push-down-get context field then-clause))))
+    (list 'when-value-let [sym target]
+          (push-down-get context field then-clause))))
 
 (s/defn ^:private push-down-get-get
   [context :- LowerContext
@@ -129,10 +159,10 @@
    expr]
   (cond
     (symbol? expr) (let [{:keys [path]} context]
-                     (with-meta (list 'if
-                                      (var-ref/make-var-ref (conj path (keyword expr) :$value?))
-                                      (var-ref/make-var-ref (conj path (keyword expr) field :$value?))
-                                      false)
+                     (with-meta (make-if
+                                 (var-ref/make-var-ref (conj path (keyword expr) :$value?))
+                                 (var-ref/make-var-ref (conj path (keyword expr) field :$value?))
+                                 false)
                        {:done? true}))
     (map? expr) (get expr field)
     (vector? expr) (get expr field)
@@ -172,32 +202,29 @@
   [context :- LowerContext
    expr]
   (let [[_ target then-clause else-clause] expr]
-    (list
-     'if (return-path target)
-     (return-path context then-clause)
-     (return-path context else-clause))))
+    (make-if (return-path target)
+             (return-path context then-clause)
+             (return-path context else-clause))))
 
 (s/defn ^:private return-path-when-value
   [context :- LowerContext
    expr]
   (let [[_ target then-clause] expr]
-    (list
-     'if (return-path context target)
-     (return-path context then-clause)
-     false)))
+    (make-if (return-path context target)
+             (return-path context then-clause)
+             false)))
 
 (s/defn ^:private return-path-if-value-let
   [context :- LowerContext
    expr]
   (let [{:keys [env]} context
         [_ [sym target] then-clause else-clause] expr]
-    (list
-     'if (return-path context target)
-     (return-path (assoc context :env (envs/bind env sym target))
-                  then-clause)
-     (if (nil? else-clause)
-       false
-       (return-path context else-clause)))))
+    (make-if (return-path context target)
+             (return-path (assoc context :env (envs/bind env sym target))
+                          then-clause)
+             (if (nil? else-clause)
+               false
+               (return-path context else-clause)))))
 
 (s/defn ^:private return-path-get
   [context :- LowerContext
@@ -389,12 +416,12 @@
                                     :guards (conj guards target'))
                              then-clause)
         else-clause' (flower (assoc context
-                                    :guards (conj guards (list 'not target')))
+                                    :guards (conj guards (make-not target')))
                              else-clause)
         args' [target' then-clause' else-clause']]
     (if (some non-root-fog? args')
       (flower-fog context expr)
-      (apply list 'if args'))))
+      (apply make-if args'))))
 
 (s/defn ^:private flower-when
   [context :- LowerContext
@@ -443,13 +470,8 @@
                    (non-root-fog? else-clause')))
         (flower-fog context expr)
         (if (nil? else-clause')
-          (list 'when
-                target'
-                then-clause')
-          (list (if (nil? else-clause') 'when 'if)
-                target'
-                then-clause'
-                else-clause'))))))
+          (list 'when target' then-clause')
+          (make-if target' then-clause' else-clause'))))))
 
 #_(defn- dump-context [context]
     (let [{:keys [env spec-type-env]} context]
@@ -549,7 +571,11 @@
                    (map (partial flower context)))]
     (if (some non-root-fog? args')
       (flower-fog context expr)
-      (apply list op args'))))
+      (condp = op
+        'and (apply make-and args')
+        'or (apply make-or args')
+        'not (apply make-not args')
+        (apply list op args')))))
 
 (defn- flower-fixed-decimal [expr]
   (-> expr fixed-decimal/extract-long second))
@@ -608,7 +634,7 @@
                           (and (seq? expr)
                                (= 'cond (first expr)))
                           (reduce (fn [if-expr [pred then]]
-                                    (list 'if pred then if-expr))
+                                    (make-if pred then if-expr))
                                   (last expr)
                                   (reverse (partition 2 (rest expr))))
 
@@ -632,7 +658,7 @@
                                                            r constraint]
                                                       (if g
                                                         (recur more-g
-                                                               (list 'if g constraint true))
+                                                               (make-if g constraint true))
                                                         r))))))
         (dissoc :$guards)
         base/no-nil-entries)))

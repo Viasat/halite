@@ -90,7 +90,8 @@
   (check-flower '#{a x 100} #fog [:Set :Integer])
   (check-flower '(if x y z) '(if #r [:p :x] #r [:p :y] #r [:p :z]))
   (check-flower '(when x a) '(when #r [:p :x] 10))
-  (check-flower '(cond true x y a 12) '(if true #r [:p :x] (if #r [:p :y] 10 12)))
+  (check-flower '(cond z x y a 12) '(if #r [:p :z] #r [:p :x] (if #r [:p :y] 10 12)))
+  (check-flower '(cond true x y a 12) '#r [:p :x])
   (check-flower '(if-value x 1 y) '(if #r [:p :x :$value?] 1 #r [:p :y]))
   (check-flower '(if-value x x y) '(if #r [:p :x :$value?] #r [:p :x] #r [:p :y]))
 
@@ -173,7 +174,7 @@
          (#'op-flower/return-path empty-context
                                   '(if x y z))))
 
-  (is (= '(if #r [:x] #r [:y :$value?] false)
+  (is (= '(and #r [:x] #r [:y :$value?])
          (#'op-flower/return-path empty-context
                                   '(when x y))))
 
@@ -187,17 +188,17 @@
          (#'op-flower/return-path empty-context
                                   '(if-value-let [a x] a z))))
 
-  (is (= '(if #r [:x :$value?] true #r [:z :$value?])
+  (is (= '(or #r [:x :$value?] #r [:z :$value?])
          (#'op-flower/return-path empty-context
                                   '(if-value-let [a x] (inc a) z))))
 
   ;; when-value-let
 
-  (is (= '(if #r [:x :$value?] #r [:y :$value?] false)
+  (is (= '(and #r [:x :$value?] #r [:y :$value?])
          (#'op-flower/return-path empty-context
                                   '(when-value-let [a x] y))))
 
-  (is (= '(if #r [:x :$value?] #r [:x :$value?] false)
+  (is (= '(and #r [:x :$value?] #r [:x :$value?])
          (#'op-flower/return-path empty-context
                                   '(when-value-let [a x] a))))
 
@@ -214,15 +215,70 @@
          (#'op-flower/return-path empty-context
                                   '(get (get {:$type :spec/A$v1 :a {:$type :spec/B$v1 :b 5}} :a) :b))))
 
-  (is (= '(if #r [:y] true #r [:x :$value?])
+  (is (= '(or #r [:y] #r [:x :$value?])
          (#'op-flower/return-path empty-context
                                   '(get (get {:$type :spec/A$v1
                                               :a (if y
                                                    {:$type :spec/B$v1 :b 5}
                                                    {:$type :spec/B$v1 :b x})} :a) :b))))
 
-  (is (= '(if #r [:x :$value?] #r [:x :a :$value?] false)
+  (is (= '(and #r [:x :$value?] #r [:x :a :$value?])
          (#'op-flower/return-path empty-context
                                   '(get x :a)))))
+
+(deftest test-make-boolean
+  (is (= 'x (#'op-flower/make-and 'x true)))
+  (is (= false (#'op-flower/make-and 'x false)))
+
+  (is (= true (#'op-flower/make-or 'x true)))
+
+  (is (= false (#'op-flower/make-not true)))
+  (is (= '(not x) (#'op-flower/make-not 'x))))
+
+(deftest test-make-not
+  (is (= false (#'op-flower/make-not true)))
+  (is (= true (#'op-flower/make-not false)))
+  (is (= '(not x) (#'op-flower/make-not 'x)))
+  (is (= 'x (#'op-flower/make-not '(not x))))
+  (is (=  true (#'op-flower/make-not '(not true))))
+  (is (= false (#'op-flower/make-not '(not false)))))
+
+(deftest test-make-and
+  (doseq [x [true false]
+          y [nil true false]
+          z [nil true false]]
+    (let [args (->> [x y z] (remove nil?))]
+      (is (= (eval `(and ~@args))
+             (apply #'op-flower/make-and args))))))
+
+(deftest test-make-or
+  (doseq [x [true false]
+          y [nil true false]
+          z [nil true false]]
+    (let [args (->> [x y z] (remove nil?))]
+      (is (= (eval `(or ~@args))
+             (apply #'op-flower/make-or args))))))
+
+(deftest test-make-if
+  (doseq [target [true false]
+          then-clause [true false]
+          else-clause [true false]]
+    (is (= (eval `(if ~target ~then-clause ~else-clause))
+           (#'op-flower/make-if target then-clause else-clause))))
+  (doseq [target ['com.viasat.halite.test-op-flower/x true false]
+          then-clause ['com.viasat.halite.test-op-flower/y true false]
+          else-clause ['com.viasat.halite.test-op-flower/z true false]]
+    (doseq [x [true false]
+            y [true false]
+            z [true false]]
+      (do (def com.viasat.halite.test-op-flower/x x)
+          (def com.viasat.halite.test-op-flower/y y)
+          (def com.viasat.halite.test-op-flower/z z)
+          (is (= (eval `(if ~target ~then-clause ~else-clause))
+                 (eval (#'op-flower/make-if target then-clause else-clause)))
+              [:target target :then-clause then-clause :else-clause else-clause
+               :x x :y y :z z
+               :if (eval `(if ~target ~then-clause ~else-clause))
+               :make-if (#'op-flower/make-if target then-clause else-clause)])))))
 
 ;; (run-tests)
