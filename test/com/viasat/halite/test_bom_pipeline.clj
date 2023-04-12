@@ -266,11 +266,11 @@
                        :x false,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
-                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                       :$constraints {"c1" #r [:y]}}
                       {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(or $_0 $_1)}},
+                                    :constraints #{$_1}},
                        :choco-bounds {$_0 false,
                                       $_1 #{true false},
                                       $_2 true},
@@ -288,11 +288,11 @@
                        :y false,
                        :x {:$value? true,
                            :$primitive-type :Boolean},
-                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                       :$constraints {"c1" #r [:x]}}
                       {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(or $_1 $_0)}},
+                                    :constraints #{$_1}},
                        :choco-bounds {$_0 false,
                                       $_1 #{true false},
                                       $_2 true},
@@ -310,11 +310,11 @@
                        :x true,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
-                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                       :$constraints {"c1" true}}
                       {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(or $_0 $_1)}},
+                                    :constraints #{true}},
                        :choco-bounds {$_0 true,
                                       $_1 #{true false},
                                       $_2 true},
@@ -353,11 +353,11 @@
                        :x false,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
-                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                       :$constraints {"c1" #r [:y]}}
                       {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(or $_0 $_1)}},
+                                    :constraints #{$_1}},
                        :choco-bounds {$_0 false,
                                       $_1 #{true false},
                                       $_2 true},
@@ -748,10 +748,10 @@
      [{:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type [:Decimal 2]},
-       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
+       :$constraints {"c1" (= 30 (if true (div (+ #r [:a] 1) 10) 30))}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(= 30 (if $_1 (div (+ $_0 1) 10) 30))}},
+                    :constraints #{(= 30 (if true (div (+ $_0 1) 10) 30))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 true},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
@@ -770,10 +770,10 @@
      [{:$instance-of :ws/A$v1,
        :a {:$value? false,
            :$primitive-type [:Decimal 2]},
-       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
+       :$constraints {"c1" (= 30 (if false (div (+ #r [:a] 1) 10) 30))}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{(= 30 (if $_1 (div (+ $_0 1) 10) 30))}},
+                    :constraints #{(= 30 (if false (div (+ $_0 1) 10) 30))}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 false},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
@@ -790,9 +790,9 @@
       :a #d "4.00"}
      [{:$instance-of :ws/A$v1,
        :a 400,
-       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
+       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ 400 1) 10) 30))}}
       {:choco-spec {:vars {$_0 :Int},
-                    :constraints #{(= 30 (if true (div (+ $_0 1) 10) 30))}},
+                    :constraints #{(= 30 (if true (div (+ 400 1) 10) 30))}},
        :choco-bounds {$_0 400},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
 
@@ -1205,13 +1205,12 @@
            :x {:$primitive-type :Integer,
                :$value? {:$primitive-type :Boolean}},
            :$value? {:$primitive-type :Boolean}},
-       :$constraints {"c1" (or #r [:b]
-                               (and #r [:a :$value?] #r [:a :x :$value?]))}}
+       :$constraints {"c1" (and #r [:a :$value?] #r [:a :x :$value?])}}
       {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints #{(or $_0 (and $_1 $_3))}},
+                    :constraints #{(and $_1 $_3)}},
        :choco-bounds {$_0 false,
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -1243,14 +1242,13 @@
            :x {:$primitive-type :Integer,
                :$value? {:$primitive-type :Boolean}},
            :$value? {:$primitive-type :Boolean}},
-       :$constraints {"c1" (or #r [:b]
-                               (and #r [:a :$value?]
-                                    (and #r [:a :x :$value?] (> #r [:a :x] 20))))}}
+       :$constraints {"c1" (and #r [:a :$value?]
+                                (and #r [:a :x :$value?] (> #r [:a :x] 20)))}}
       {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints #{(or $_0 (and $_1 (and $_3 (> $_2 20))))}},
+                    :constraints #{(and $_1 (and $_3 (> $_2 20)))}},
        :choco-bounds {$_0 false,
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -1282,14 +1280,13 @@
            :x {:$primitive-type :Integer,
                :$value? {:$primitive-type :Boolean}},
            :$value? {:$primitive-type :Boolean}},
-       :$constraints {"c1" (or #r [:b]
-                               (and #r [:a :$value?]
-                                    (and #r [:a :x :$value?] (> #r [:a :x] 20))))}}
+       :$constraints {"c1" (and #r [:a :$value?]
+                                (and #r [:a :x :$value?] (> #r [:a :x] 20)))}}
       {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
-                    :constraints #{(or $_0 (and $_1 (and $_3 (> $_2 20))))}},
+                    :constraints #{(and $_1 (and $_3 (> $_2 20)))}},
        :choco-bounds {$_0 false,
                       $_1 #{true false},
                       $_2 [-1000 1000],
@@ -1324,12 +1321,12 @@
            :$primitive-type :Boolean},
        :$constraints {"c1" (or #r [:b]
                                (and #r [:a :$value?]
-                                    (and #r [:a :x :$value?] (> #r [:a :x] 20))))}}
+                                    (and #r [:a :x :$value?] (> 30 20))))}}
       {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Bool},
-                    :constraints #{(or $_2 (and $_0 (and true (> $_1 20))))}},
+                    :constraints #{(or $_2 (and $_0 (and true (> 30 20))))}},
        :choco-bounds {$_0 #{true false},
                       $_1 30,
                       $_2 #{true false},
@@ -1361,12 +1358,12 @@
            :$primitive-type :Boolean},
        :$constraints {"c1" (or #r [:b]
                                (and #r [:a :$value?]
-                                    (and #r [:a :x :$value?] (> #r [:a :x] 20))))}}
+                                    (and #r [:a :x :$value?] (> 10 20))))}}
       {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Bool},
-                    :constraints #{(or $_2 (and $_0 (and true (> $_1 20))))}},
+                    :constraints #{(or $_2 (and $_0 (and true (> 10 20))))}},
        :choco-bounds {$_0 #{true false},
                       $_1 10,
                       $_2 #{true false},
@@ -1569,9 +1566,9 @@
       :x 20}
      [{:$instance-of :ws/X$v1,
        :x 20,
-       :$constraints {"c1" (or (not #r [:x :$value?]) (> #r [:x] 10))}}
+       :$constraints {"c1" (or (not #r [:x :$value?]) (> 20 10))}}
       {:choco-spec {:vars {$_0 :Int},
-                    :constraints #{(or (not true) (> $_0 10))}},
+                    :constraints #{(or (not true) (> 20 10))}},
        :choco-bounds {$_0 20},
        :sym-to-path [$_0 [:x]]}
       {:$instance-of :ws/X$v1,
@@ -1584,9 +1581,9 @@
       :x 10}
      [{:$instance-of :ws/X$v1,
        :x 10,
-       :$constraints {"c1" (or (not #r [:x :$value?]) (> #r [:x] 10))}}
+       :$constraints {"c1" (or (not #r [:x :$value?]) (> 10 10))}}
       {:choco-spec {:vars {$_0 :Int},
-                    :constraints #{(or (not true) (> $_0 10))}},
+                    :constraints #{(or (not true) (> 10 10))}},
        :choco-bounds {$_0 10},
        :sym-to-path [$_0 [:x]]} {:$contradiction? true}])
 
@@ -1672,7 +1669,7 @@
      [{:$instance-of :ws/A$v1,
        :a {:$value? false,
            :$primitive-type :Integer},
-       :$constraints {"c2" #r [:a :$value?]},
+       :$constraints {"c2" false},
        :$instance-literals
        {"c2$0" {:x {:$expr #r [:a]},
                 :y 7,
@@ -1683,7 +1680,7 @@
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 7)))}},
+                    :constraints #{(or (not $_1) (= 10 (+ $_0 7))) false}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 false},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]} {:$contradiction? true}])
@@ -2153,7 +2150,7 @@
      [{:$instance-of :ws/A$v1,
        :a {:$value? false,
            :$primitive-type :Integer},
-       :$constraints {"c2" #r [:a :$value?]},
+       :$constraints {"c2" false},
        :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
                                     :y 6,
                                     :$instance-literal-type :ws/X$v1,
@@ -2162,7 +2159,7 @@
                                                                (+ #r [:a] 6)))}}}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
-                    :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 6)))}},
+                    :constraints #{(or (not $_1) (= 10 (+ $_0 6))) false}},
        :choco-bounds {$_0 [-1000 1000],
                       $_1 false},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]} {:$contradiction? true}])
@@ -2214,11 +2211,11 @@
                        :x false,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
-                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                       :$constraints {"c1" #r [:y]}}
                       {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(or $_0 $_1)}},
+                                    :constraints #{$_1}},
                        :choco-bounds {$_0 false,
                                       $_1 #{true false},
                                       $_2 true},
@@ -2240,11 +2237,11 @@
                        :x true,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
-                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                       :$constraints {"c1" true}}
                       {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
-                                    :constraints #{(or $_0 $_1)}},
+                                    :constraints #{true}},
                        :choco-bounds {$_0 true,
                                       $_1 #{true false},
                                       $_2 true},

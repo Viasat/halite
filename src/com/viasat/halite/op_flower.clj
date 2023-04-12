@@ -650,6 +650,24 @@
        pre-lower
        (flower context)))
 
+(defn inline-constants [bom expr]
+  (->> expr
+       (walk/postwalk (fn [expr]
+                        (cond
+                          (var-ref/var-ref? expr)
+                          (let [v (get-in bom (var-ref/get-path expr))]
+                            (if (bom/is-primitive-value? v)
+                              (if (fixed-decimal/fixed-decimal? v)
+                                (flower-fixed-decimal v)
+                                v)
+                              expr))
+
+                          (and (seq? expr) (= 'not (first expr))) (apply make-not (rest expr))
+                          (and (seq? expr) (= 'or (first expr))) (apply make-or (rest expr))
+                          (and (seq? expr) (= 'and (first expr))) (apply make-and (rest expr))
+
+                          :default expr)))))
+
 ;;
 
 (defn- add-guards-to-constraints [bom]
@@ -710,7 +728,8 @@
                                                                             (lower-expr (assoc context
                                                                                                :spec-type-env (envs/type-env-from-spec spec-info)
                                                                                                :constraint-name constraint-name
-                                                                                               :guards [])))]))
+                                                                                               :guards []))
+                                                                            (inline-constants bom))]))
                                                (into {})))
                  (assoc :$refinements (some-> bom
                                               :$refinements

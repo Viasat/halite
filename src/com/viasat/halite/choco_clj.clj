@@ -325,7 +325,7 @@
                                              ;; ^ArExpression
                                              (first other-args'))
                                             (.gt ;; ^ArExpression
-                                             arg1
+                                             (ensure-var m arg1)
                                              ;; ^ArExpression
                                              (first other-args)))
                                        '>= (if switch?
