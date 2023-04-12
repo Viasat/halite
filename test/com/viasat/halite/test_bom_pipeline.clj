@@ -181,8 +181,11 @@
 
 (def test-atom (atom []))
 
+(defn third [x]
+  (->> x rest rest first))
+
 (defmacro check-propagate [spec-env bom & more]
-  `(let [expected-result# ~(second (first more))
+  `(let [expected-result# ~(third (first more))
          spec-env0# (quote ~spec-env)
          spec-env# (eval spec-env0#)
          bom0# ~bom
@@ -206,8 +209,9 @@
                    (op-add-value-fields/add-value-fields-op spec-env#)
                    (op-add-constraints/add-constraints-op spec-env#))
          ;; _# (clojure.pprint/pprint (op-flower/flower-op spec-env# bom#))
-         choco-data# (->> bom#
-                          (op-flower/flower-op spec-env#)
+         lowered-bom# (->> bom#
+                           (op-flower/flower-op spec-env#))
+         choco-data# (->> lowered-bom#
                           bom-choco/bom-to-choco
                           (bom-choco/paths-to-syms bom#))
          propagate-result# (->> choco-data#
@@ -218,9 +222,10 @@
                       (op-remove-value-fields/remove-value-fields-op spec-env#)
                       op-canon-up/canon-up-op
                       op-strip/strip-op)]
-     (is (= (quote ~(first (first more))) choco-data#))
+     (is (= (quote ~(second (first more))) choco-data#))
+     (is (= (quote ~(first (first more))) lowered-bom#))
      (is (= expected-result# result#))
-     (swap! test-atom conj (list '~'check-propagate spec-env0# bom0# [choco-data# result#]))
+     (swap! test-atom conj (list '~'check-propagate spec-env0# bom0# [lowered-bom# choco-data# result#]))
      [choco-data# result#]))
 
 (defn stanza [s]
@@ -234,7 +239,13 @@
                                          :y :Boolean},
                                 :constraints [["c1" '(if x true y)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :x {:$value? true,
+                           :$primitive-type :Boolean},
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool,
                                            $_3 :Bool},
@@ -244,15 +255,19 @@
                                       $_2 #{true false},
                                       $_3 true},
                        :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3
-                                     [:y :$value?]]}
-                      {:$instance-of :ws/A$v1}])
+                                     [:y :$value?]]} {:$instance-of :ws/A$v1}])
 
     (check-propagate {:ws/A$v1 {:fields {:x :Boolean,
                                          :y :Boolean},
                                 :constraints [["c1" '(if x true y)]]}}
                      {:$instance-of :ws/A$v1,
                       :x false}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :x false,
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
                                     :constraints #{(or $_0 $_1)}},
@@ -269,7 +284,12 @@
                                 :constraints [["c1" '(if x true y)]]}}
                      {:$instance-of :ws/A$v1,
                       :y false}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :y false,
+                       :x {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
                                     :constraints #{(or $_1 $_0)}},
@@ -286,7 +306,12 @@
                                 :constraints [["c1" '(if x true y)]]}}
                      {:$instance-of :ws/A$v1,
                       :x true}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :x true,
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
                                     :constraints #{(or $_0 $_1)}},
@@ -301,7 +326,13 @@
                                          :y :Boolean},
                                 :constraints [["c1" '(or x y)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :x {:$value? true,
+                           :$primitive-type :Boolean},
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool,
                                            $_3 :Bool},
@@ -318,7 +349,12 @@
                                 :constraints [["c1" '(or x y)]]}}
                      {:$instance-of :ws/A$v1,
                       :x false}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :x false,
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
                                     :constraints #{(or $_0 $_1)}},
@@ -335,7 +371,12 @@
     (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Boolean],
                                          :y :Boolean}}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :x {:$primitive-type :Boolean,
+                           :$value? {:$primitive-type :Boolean}}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool,
                                            $_3 :Bool},
@@ -351,7 +392,13 @@
                                          :y :Boolean},
                                 :constraints [["c1" '(if-value x y true)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :x {:$primitive-type :Boolean,
+                           :$value? {:$primitive-type :Boolean}},
+                       :$constraints {"c1" (or (not #r [:x :$value?]) #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool,
                                            $_3 :Bool},
@@ -368,7 +415,12 @@
                                 :constraints [["c1" '(if-value x y true)]]}}
                      {:$instance-of :ws/A$v1,
                       :x true}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :x true,
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or (not #r [:x :$value?]) #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
                                     :constraints #{(or (not true) $_1)}},
@@ -387,7 +439,13 @@
                          :y :Integer},
                 :constraints [["c1" '(> x y)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$value? true,
+           :$primitive-type :Integer},
+       :y {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c1" (> #r [:x] #r [:y])}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -410,7 +468,17 @@
                               ["c2" '(or (= x 1) (= x 2) (= x 3))]
                               ["c3" '(or (= y 10) (= y 12) (= y 14))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$enum #{1 3 2},
+           :$value? true,
+           :$primitive-type :Integer},
+       :y {:$enum #{12 14 10},
+           :$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c1" (= 15 (+ #r [:x] #r [:y])),
+                      "c2" (or (= #r [:x] 1) (= #r [:x] 2) (= #r [:x] 3)),
+                      "c3" (or (= #r [:y] 10) (= #r [:y] 12) (= #r [:y] 14))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -430,7 +498,10 @@
 
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
+                     [{:$instance-of :ws/A$v1,
+                       :a {:$value? true,
+                           :$primitive-type [:Decimal 2]}}
+                      {:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
                                     :constraints #{}},
                        :choco-bounds {$_0 [-1000 1000],
@@ -444,7 +515,13 @@
                          :b [:Decimal 2]},
                 :constraints [["c1" '(= #d "1.05" (+ a b))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type [:Decimal 2]},
+       :b {:$value? true,
+           :$primitive-type [:Decimal 2]},
+       :$constraints {"c1" (= 105 (+ #r [:a] #r [:b]))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -453,10 +530,7 @@
                       $_1 true,
                       $_2 [-1000 1000],
                       $_3 true},
-       :sym-to-path [$_0 [:a]
-                     $_1 [:a :$value?]
-                     $_2 [:b]
-                     $_3 [:b :$value?]]}
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?] $_2 [:b] $_3 [:b :$value?]]}
       {:$instance-of :ws/A$v1,
        :a {:$ranges #{[#d "-8.95" #d "10.01"]}},
        :b {:$ranges #{[#d "-8.95" #d "10.01"]}}}])
@@ -467,7 +541,14 @@
                 :constraints [["c1" '(= #d "1.05" (+ a b))]]}}
      {:$instance-of :ws/A$v1,
       :a {:$enum #{#d "0.05" #d "0.06"}}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$enum #{#d "0.05" #d "0.06"},
+           :$value? true,
+           :$primitive-type [:Decimal 2]},
+       :b {:$value? true,
+           :$primitive-type [:Decimal 2]},
+       :$constraints {"c1" (= 105 (+ #r [:a] #r [:b]))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -485,7 +566,11 @@
      {:ws/A$v1 {:fields {:a [:Decimal 2]},
                 :constraints [["c1" '(= (rescale #d "5.01" 3) (rescale a 3))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type [:Decimal 2]},
+       :$constraints {"c1" (= (* 501 10) (* #r [:a] 10))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= (* 501 10) (* $_0 10))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -498,7 +583,11 @@
      {:ws/A$v1 {:fields {:a [:Decimal 2]},
                 :constraints [["c1" '(= (rescale #d "5.01" 1) (rescale a 1))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type [:Decimal 2]},
+       :$constraints {"c1" (= (div 501 10) (div #r [:a] 10))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= (div 501 10) (div $_0 10))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -510,7 +599,11 @@
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]},
                                 :constraints [["c1" '(= 5 (rescale a 0))]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
+                     [{:$instance-of :ws/A$v1,
+                       :a {:$value? true,
+                           :$primitive-type [:Decimal 2]},
+                       :$constraints {"c1" (= 5 (div #r [:a] 100))}}
+                      {:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
                                     :constraints #{(= 5 (div $_0 100))}},
                        :choco-bounds {$_0 [-1000 1000],
@@ -522,7 +615,11 @@
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]},
                                 :constraints [["c1" '(= 503 (rescale a 2))]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
+                     [{:$instance-of :ws/A$v1,
+                       :a {:$value? true,
+                           :$primitive-type [:Decimal 2]},
+                       :$constraints {"c1" (= 503 #r [:a])}}
+                      {:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
                                     :constraints #{(= 503 $_0)}},
                        :choco-bounds {$_0 [-1000 1000],
@@ -534,7 +631,11 @@
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]},
                                 :constraints [["c1" '(= #d "3.0" (rescale a 1))]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
+                     [{:$instance-of :ws/A$v1,
+                       :a {:$value? true,
+                           :$primitive-type [:Decimal 2]},
+                       :$constraints {"c1" (= 30 (div #r [:a] 10))}}
+                      {:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
                                     :constraints #{(= 30 (div $_0 10))}},
                        :choco-bounds {$_0 [-1000 1000],
@@ -547,7 +648,11 @@
      {:ws/A$v1 {:fields {:a [:Decimal 2]},
                 :constraints [["c1" '(= #d "3.0" (rescale (+ a #d "0.01") 1))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type [:Decimal 2]},
+       :$constraints {"c1" (= 30 (div (+ #r [:a] 1) 10))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= 30 (div (+ $_0 1) 10))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -559,7 +664,9 @@
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}}}
                      {:$instance-of :ws/A$v1,
                       :a #d "3.14"}
-                     [{:choco-spec {:vars {$_0 :Int},
+                     [{:$instance-of :ws/A$v1,
+                       :a 314}
+                      {:choco-spec {:vars {$_0 :Int},
                                     :constraints #{}},
                        :choco-bounds {$_0 314},
                        :sym-to-path [$_0 [:a]]}
@@ -573,7 +680,11 @@
                   '(= #d "3.0"
                       (if-value a (rescale (+ a #d "0.01") 1) #d "2.0"))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$primitive-type [:Decimal 2],
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 20))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= 30 (if $_1 (div (+ $_0 1) 10) 20))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -590,7 +701,12 @@
                   '(= #d "3.00"
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.00"))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$primitive-type [:Decimal 2],
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (= 300
+                              (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 300))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= 300 (if $_1 (div (+ $_0 1) 10) 300))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -608,7 +724,11 @@
                   '(= #d "3.0"
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.0"))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$primitive-type [:Decimal 2],
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= 30 (if $_1 (div (+ $_0 1) 10) 30))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -625,7 +745,11 @@
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.0"))]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? true}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type [:Decimal 2]},
+       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= 30 (if $_1 (div (+ $_0 1) 10) 30))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -643,7 +767,11 @@
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.0"))]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? false}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? false,
+           :$primitive-type [:Decimal 2]},
+       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= 30 (if $_1 (div (+ $_0 1) 10) 30))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -660,7 +788,10 @@
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.0"))]]}}
      {:$instance-of :ws/A$v1,
       :a #d "4.00"}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/A$v1,
+       :a 400,
+       :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(= 30 (if true (div (+ $_0 1) 10) 30))}},
        :choco-bounds {$_0 400},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
@@ -675,7 +806,20 @@
       :ws/A$v1 {:fields {:x :Integer},
                 :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
      {:$instance-of :ws/B$v1}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :a {:$value? true,
+           :$instance-of :ws/A$v1,
+           :x {:$enum #{1 3 2},
+               :$value? true,
+               :$primitive-type :Integer},
+           :$constraints
+           {"c2" (or (= #r [:a :x] 1) (= #r [:a :x] 2) (= #r [:a :x] 3))}},
+       :y {:$enum #{12 14 10},
+           :$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c1" (= 15 (+ #r [:a :x] #r [:y])),
+                      "c3" (or (= #r [:y] 10) (= #r [:y] 12) (= #r [:y] 14))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Int,
@@ -699,7 +843,10 @@
 
     (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
+                     [{:$instance-of :ws/A$v1,
+                       :x {:$primitive-type :Integer,
+                           :$value? {:$primitive-type :Boolean}}}
+                      {:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
                                     :constraints #{}},
                        :choco-bounds {$_0 [-1000 1000],
@@ -712,7 +859,13 @@
      {:ws/A$v1 {:fields {:x [:Maybe :Integer]},
                 :constraints [["c1" '(if-value x (and (> x 20) (< x 30)) true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$enum #{27 24 21 22 29 28 25 23 26},
+           :$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (or (not #r [:x :$value?])
+                               (and (> #r [:x] 20) (< #r [:x] 30)))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(or (not $_1) (and (> $_0 20) (< $_0 30)))}},
        :choco-bounds {$_0 #{27 24 21 22 29 28 25 23 26},
@@ -724,7 +877,11 @@
     (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]},
                                 :constraints [["c1" '(if-value x false true)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
+                     [{:$instance-of :ws/A$v1,
+                       :x {:$primitive-type :Integer,
+                           :$value? {:$primitive-type :Boolean}},
+                       :$constraints {"c1" (not #r [:x :$value?])}}
+                      {:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
                                     :constraints #{(not $_1)}},
                        :choco-bounds {$_0 [-1000 1000],
@@ -736,7 +893,11 @@
     (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]},
                                 :constraints [["c1" '(if-value x true false)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
+                     [{:$instance-of :ws/A$v1,
+                       :x {:$primitive-type :Integer,
+                           :$value? {:$primitive-type :Boolean}},
+                       :$constraints {"c1" #r [:x :$value?]}}
+                      {:choco-spec {:vars {$_0 :Int,
                                            $_1 :Bool},
                                     :constraints #{$_1}},
                        :choco-bounds {$_0 [-1000 1000],
@@ -751,7 +912,13 @@
                          :y [:Maybe :Integer]},
                 :constraints [["c1" '(if-value x (if-value y true false) false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :y {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (and #r [:x :$value?] #r [:y :$value?])}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -772,7 +939,13 @@
                          :y [:Maybe :Integer]},
                 :constraints [["c1" '(if-value x false (if-value y true false))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :y {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (and (not #r [:x :$value?]) #r [:y :$value?])}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -792,7 +965,13 @@
                          :y [:Maybe :Integer]},
                 :constraints [["c1" '(if-value x false (if-value y false true))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :y {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (and (not #r [:x :$value?]) (not #r [:y :$value?]))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -817,7 +996,22 @@
       :ws/A$v1 {:fields {:x :Integer},
                 :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
      {:$instance-of :ws/B$v1}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :a {:$value? true,
+           :$instance-of :ws/A$v1,
+           :x {:$enum #{1 3 2},
+               :$value? true,
+               :$primitive-type :Integer},
+           :$constraints
+           {"c2" (or (= #r [:a :x] 1) (= #r [:a :x] 2) (= #r [:a :x] 3))}},
+       :y {:$enum #{12 14 10},
+           :$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (or (not #r [:y :$value?])
+                               (= 15 (+ #r [:a :x] #r [:y]))),
+                      "c3" (or (not #r [:y :$value?])
+                               (or (= #r [:y] 10) (= #r [:y] 12) (= #r [:y] 14)))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Int,
@@ -847,7 +1041,21 @@
       :ws/A$v1 {:fields {:x :Integer},
                 :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
      {:$instance-of :ws/B$v1}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :a {:$value? true,
+           :$instance-of :ws/A$v1,
+           :x {:$enum #{1 3 2},
+               :$value? true,
+               :$primitive-type :Integer},
+           :$constraints
+           {"c2" (or (= #r [:a :x] 1) (= #r [:a :x] 2) (= #r [:a :x] 3))}},
+       :y {:$enum #{12 14 10},
+           :$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (and #r [:y :$value?] (= 15 (+ #r [:a :x] #r [:y]))),
+                      "c3" (or (not #r [:y :$value?])
+                               (or (= #r [:y] 10) (= #r [:y] 12) (= #r [:y] 14)))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Int,
@@ -873,7 +1081,12 @@
      {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}},
       :ws/A$v1 {:fields {:x :Integer}}}
      {:$instance-of :ws/B$v1}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :a {:$instance-of :ws/A$v1,
+           :x {:$value? true,
+               :$primitive-type :Integer},
+           :$value? {:$primitive-type :Boolean}}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool},
                     :constraints #{}},
@@ -889,7 +1102,11 @@
                                 :constraints [["c1" '(if-value a false true)]]},
                       :ws/A$v1 {:fields {}}}
                      {:$instance-of :ws/B$v1}
-                     [{:choco-spec {:vars {$_0 :Bool},
+                     [{:$instance-of :ws/B$v1,
+                       :a {:$instance-of :ws/A$v1,
+                           :$value? {:$primitive-type :Boolean}},
+                       :$constraints {"c1" (not #r [:a :$value?])}}
+                      {:choco-spec {:vars {$_0 :Bool},
                                     :constraints #{(not $_0)}},
                        :choco-bounds {$_0 #{true false}},
                        :sym-to-path [$_0 [:a :$value?]]}
@@ -900,7 +1117,11 @@
                                 :constraints [["c1" '(if-value a true false)]]},
                       :ws/A$v1 {:fields {}}}
                      {:$instance-of :ws/B$v1}
-                     [{:choco-spec {:vars {$_0 :Bool},
+                     [{:$instance-of :ws/B$v1,
+                       :a {:$instance-of :ws/A$v1,
+                           :$value? {:$primitive-type :Boolean}},
+                       :$constraints {"c1" #r [:a :$value?]}}
+                      {:choco-spec {:vars {$_0 :Bool},
                                     :constraints #{$_0}},
                        :choco-bounds {$_0 #{true false}},
                        :sym-to-path [$_0 [:a :$value?]]}
@@ -917,7 +1138,13 @@
                                           false)]]},
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :a {:$instance-of :ws/A$v1,
+           :x {:$primitive-type :Integer,
+               :$value? {:$primitive-type :Boolean}},
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (and #r [:a :$value?] (not #r [:a :x :$value?]))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool},
                     :constraints #{(and $_0 (not $_2))}},
@@ -939,7 +1166,13 @@
                                           false)]]},
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :a {:$instance-of :ws/A$v1,
+           :x {:$primitive-type :Integer,
+               :$value? {:$primitive-type :Boolean}},
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (and #r [:a :$value?] #r [:a :x :$value?])}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool},
                     :constraints #{(and $_0 $_2)}},
@@ -966,7 +1199,15 @@
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1,
       :b false}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :b false,
+       :a {:$instance-of :ws/A$v1,
+           :x {:$primitive-type :Integer,
+               :$value? {:$primitive-type :Boolean}},
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (or #r [:b]
+                               (and #r [:a :$value?] #r [:a :x :$value?]))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -996,7 +1237,16 @@
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1,
       :b false}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :b false,
+       :a {:$instance-of :ws/A$v1,
+           :x {:$primitive-type :Integer,
+               :$value? {:$primitive-type :Boolean}},
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (or #r [:b]
+                               (and #r [:a :$value?]
+                                    (and #r [:a :x :$value?] (> #r [:a :x] 20))))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -1026,7 +1276,16 @@
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1,
       :b false}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :b false,
+       :a {:$instance-of :ws/A$v1,
+           :x {:$primitive-type :Integer,
+               :$value? {:$primitive-type :Boolean}},
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (or #r [:b]
+                               (and #r [:a :$value?]
+                                    (and #r [:a :x :$value?] (> #r [:a :x] 20))))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -1057,7 +1316,16 @@
      {:$instance-of :ws/B$v1,
       :a {:$instance-of :ws/A$v1,
           :x 30}}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :a {:x 30,
+           :$instance-of :ws/A$v1,
+           :$value? {:$primitive-type :Boolean}},
+       :b {:$value? true,
+           :$primitive-type :Boolean},
+       :$constraints {"c1" (or #r [:b]
+                               (and #r [:a :$value?]
+                                    (and #r [:a :x :$value?] (> #r [:a :x] 20))))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Bool},
@@ -1085,7 +1353,16 @@
      {:$instance-of :ws/B$v1,
       :a {:$instance-of :ws/A$v1,
           :x 10}}
-     [{:choco-spec {:vars {$_0 :Bool,
+     [{:$instance-of :ws/B$v1,
+       :a {:x 10,
+           :$instance-of :ws/A$v1,
+           :$value? {:$primitive-type :Boolean}},
+       :b {:$value? true,
+           :$primitive-type :Boolean},
+       :$constraints {"c1" (or #r [:b]
+                               (and #r [:a :$value?]
+                                    (and #r [:a :x :$value?] (> #r [:a :x] 20))))}}
+      {:choco-spec {:vars {$_0 :Bool,
                            $_1 :Int,
                            $_2 :Bool,
                            $_3 :Bool},
@@ -1105,82 +1382,123 @@
 
     (stanza "instance literals")
 
-    (check-propagate {:ws/X$v1 {:fields {:x :Integer,
-                                         :y :Integer},
-                                :constraints [["c1" '(= 10 (+ x y))]]},
-                      :ws/A$v1 {:fields {:a :Integer},
-                                :constraints [["c2"
-                                               '(let [q {:$type :ws/X$v1,
-                                                         :x a,
-                                                         :y 6}]
-                                                  true)]]}}
-                     {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
-                                           $_1 :Bool},
-                                    :constraints #{true (= 10 (+ $_0 6))}},
-                       :choco-bounds {$_0 [-1000 1000],
-                                      $_1 true},
-                       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
-                      {:$instance-of :ws/A$v1,
-                       :a 4}])
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(let [q {:$type :ws/X$v1,
+                                         :x a,
+                                         :y 6}]
+                                  true)]]}}
+     {:$instance-of :ws/A$v1}
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (= 10 (+ #r [:a] 6))}}}}
+      {:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool},
+                    :constraints #{true (= 10 (+ $_0 6))}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true},
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :a 4}])
 
-    (check-propagate {:ws/X$v1 {:fields {:x :Integer,
-                                         :y :Integer},
-                                :constraints [["c1" '(= 10 (+ x y))]]},
-                      :ws/A$v1 {:fields {:a :Integer},
-                                :constraints [["c2"
-                                               '(let [q {:$type :ws/X$v1,
-                                                         :x a,
-                                                         :y 7}]
-                                                  true)]]}}
-                     {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
-                                           $_1 :Bool},
-                                    :constraints #{true (= 10 (+ $_0 7))}},
-                       :choco-bounds {$_0 [-1000 1000],
-                                      $_1 true},
-                       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
-                      {:$instance-of :ws/A$v1,
-                       :a 3}])
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(let [q {:$type :ws/X$v1,
+                                         :x a,
+                                         :y 7}]
+                                  true)]]}}
+     {:$instance-of :ws/A$v1}
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 7,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (= 10 (+ #r [:a] 7))}}}}
+      {:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool},
+                    :constraints #{true (= 10 (+ $_0 7))}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true},
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :a 3}])
 
-    (check-propagate {:ws/X$v1 {:fields {:x :Integer,
-                                         :y :Integer},
-                                :constraints [["c1" '(= 10 (+ x y))]]},
-                      :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}},
-                      :ws/A$v1 {:fields {:a :Integer},
-                                :constraints [["c2"
-                                               '(let [f {:$type :ws/P$v1,
-                                                         :q {:$type :ws/X$v1,
-                                                             :x a,
-                                                             :y 7}}]
-                                                  true)]]}}
-                     {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
-                                           $_1 :Bool},
-                                    :constraints #{true (= 10 (+ $_0 7))}},
-                       :choco-bounds {$_0 [-1000 1000],
-                                      $_1 true},
-                       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
-                      {:$instance-of :ws/A$v1,
-                       :a 3}])
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(let [f {:$type :ws/P$v1,
+                                         :q {:$type :ws/X$v1,
+                                             :x a,
+                                             :y 7}}]
+                                  true)]]}}
+     {:$instance-of :ws/A$v1}
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" true},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (= 10 (+ #r [:a] 7))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool},
+                    :constraints #{true (= 10 (+ $_0 7))}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true},
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :a 3}])
 
-    (check-propagate {:ws/X$v1 {:fields {:x :Integer,
-                                         :y :Integer},
-                                :constraints [["c1" '(= 10 (+ x y))]]},
-                      :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}},
-                      :ws/A$v1 {:fields {:a :Integer},
-                                :constraints [["c2"
-                                               '(let [f {:$type :ws/P$v1,
-                                                         :q {:$type :ws/X$v1,
-                                                             :x a,
-                                                             :y 7}}]
-                                                  true)]]}}
-                     {:$instance-of :ws/A$v1,
-                      :a 4}
-                     [{:choco-spec {:vars {$_0 :Int},
-                                    :constraints #{true (= 10 (+ $_0 7))}},
-                       :choco-bounds {$_0 4},
-                       :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/P$v1 {:fields {:q [:Instance :ws/X$v1]}},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(let [f {:$type :ws/P$v1,
+                                         :q {:$type :ws/X$v1,
+                                             :x a,
+                                             :y 7}}]
+                                  true)]]}}
+     {:$instance-of :ws/A$v1,
+      :a 4}
+     [{:$instance-of :ws/A$v1,
+       :a 4,
+       :$constraints {"c2" true},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (= 10 (+ #r [:a] 7))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int},
+                    :constraints #{true (= 10 (+ $_0 7))}},
+       :choco-bounds {$_0 4},
+       :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
 
     (check-propagate
      {:ws/X$v1 {:fields {:x :Integer,
@@ -1198,7 +1516,22 @@
                                   true)]]}}
      {:$instance-of :ws/A$v1,
       :a 3}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a 3,
+       :b {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" true},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y {:$expr (+ #r [:a] #r [:b] 2)},
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (= 10 (+ #r [:a] (+ #r [:a] #r [:b] 2)))}},
+        "c2$1"
+        {:q
+         {:$expr
+          #instance {:x #r [:a], :y (+ #r [:a] #r [:b] 2), :$type :ws/X$v1}},
+         :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Int,
                            $_2 :Bool},
                     :constraints #{true (= 10 (+ $_0 (+ $_0 $_1 2)))}},
@@ -1216,7 +1549,11 @@
      {:ws/X$v1 {:fields {:x [:Maybe :Integer]},
                 :constraints [["c1" '(if-value-let [p x] (> p 10) true)]]}}
      {:$instance-of :ws/X$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/X$v1,
+       :x {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c1" (or (not #r [:x :$value?]) (> #r [:x] 10))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(or (not $_1) (> $_0 10))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1230,7 +1567,10 @@
                 :constraints [["c1" '(if-value-let [p x] (> p 10) true)]]}}
      {:$instance-of :ws/X$v1,
       :x 20}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/X$v1,
+       :x 20,
+       :$constraints {"c1" (or (not #r [:x :$value?]) (> #r [:x] 10))}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not true) (> $_0 10))}},
        :choco-bounds {$_0 20},
        :sym-to-path [$_0 [:x]]}
@@ -1242,34 +1582,46 @@
                 :constraints [["c1" '(if-value-let [p x] (> p 10) true)]]}}
      {:$instance-of :ws/X$v1,
       :x 10}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/X$v1,
+       :x 10,
+       :$constraints {"c1" (or (not #r [:x :$value?]) (> #r [:x] 10))}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not true) (> $_0 10))}},
        :choco-bounds {$_0 10},
        :sym-to-path [$_0 [:x]]} {:$contradiction? true}])
 
     (stanza "instance literals and optional")
 
-    (check-propagate {:ws/X$v1 {:fields {:x :Integer,
-                                         :y :Integer},
-                                :constraints [["c1" '(= 10 (+ x y))]]},
-                      :ws/A$v1 {:fields {:a :Integer},
-                                :constraints [["c2"
-                                               '(if-value-let [q
-                                                               (when true
-                                                                 {:$type :ws/X$v1,
-                                                                  :x a,
-                                                                  :y 6})]
-                                                              true
-                                                              false)]]}}
-                     {:$instance-of :ws/A$v1}
-                     [{:choco-spec {:vars {$_0 :Int,
-                                           $_1 :Bool},
-                                    :constraints #{true (= 10 (+ $_0 6))}},
-                       :choco-bounds {$_0 [-1000 1000],
-                                      $_1 true},
-                       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
-                      {:$instance-of :ws/A$v1,
-                       :a 4}])
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(if-value-let [q
+                                               (when true
+                                                 {:$type :ws/X$v1,
+                                                  :x a,
+                                                  :y 6})]
+                                              true
+                                              false)]]}}
+     {:$instance-of :ws/A$v1}
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (= 10 (+ #r [:a] 6))}}}}
+      {:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool},
+                    :constraints #{true (= 10 (+ $_0 6))}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true},
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :a 4}])
 
     (check-propagate
      {:ws/X$v1 {:fields {:x :Integer,
@@ -1285,7 +1637,15 @@
                                               true
                                               false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" false},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (= 10 (+ #r [:a] 6))}}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= 10 (+ $_0 6)) false}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1309,7 +1669,19 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? false}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? false,
+           :$primitive-type :Integer},
+       :$constraints {"c2" #r [:a :$value?]},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not #r [:a :$value?])
+                                        (= 10 (+ #r [:a] 7)))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 7)))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1333,7 +1705,18 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a 4}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/A$v1,
+       :a 4,
+       :$constraints {"c2" #r [:a :$value?]},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not #r [:a :$value?])
+                                        (= 10 (+ #r [:a] 7)))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not true) (= 10 (+ $_0 7))) true}},
        :choco-bounds {$_0 4},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
@@ -1355,7 +1738,18 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a 3}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/A$v1,
+       :a 3,
+       :$constraints {"c2" #r [:a :$value?]},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not #r [:a :$value?])
+                                        (= 10 (+ #r [:a] 7)))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not true) (= 10 (+ $_0 7))) true}},
        :choco-bounds {$_0 3},
        :sym-to-path [$_0 [:a]]}
@@ -1379,7 +1773,18 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a 3}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/A$v1,
+       :a 3,
+       :$constraints {"c2" #r [:a :$value?]},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not #r [:a :$value?])
+                                        (= 10 (+ #r [:a] 7)))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not true) (= 10 (+ $_0 7))) true}},
        :choco-bounds {$_0 3},
        :sym-to-path [$_0 [:a]]}
@@ -1402,7 +1807,19 @@
                                               true
                                               false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c2" #r [:a :$value?]},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not #r [:a :$value?])
+                                        (= 10 (+ #r [:a] 7)))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 7)))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1427,7 +1844,19 @@
                                               false
                                               true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c2" (not #r [:a :$value?])},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not #r [:a :$value?])
+                                        (= 10 (+ #r [:a] 7)))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(not $_1) (or (not $_1) (= 10 (+ $_0 7)))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1452,7 +1881,19 @@
                                               true
                                               true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c2" true},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not #r [:a :$value?])
+                                        (= 10 (+ #r [:a] 7)))}},
+        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+                :$instance-literal-type :ws/P$v1}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{true (or (not $_1) (= 10 (+ $_0 7)))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1476,7 +1917,17 @@
                                     true)
                                   true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (or (not (> #r [:a] 0))
+                                                            (= 10
+                                                               (+ #r [:a] 6)))}}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(or (not (> $_0 0)) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1502,7 +1953,21 @@
                                     true))]]}}
      {:$instance-of :ws/A$v1,
       :a -4}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/A$v1,
+       :a -4,
+       :$constraints {"c2" true},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 6,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not (> #r [:a] 0))
+                                        (= 10 (+ #r [:a] 6)))}},
+        "c2$1" {:x {:$expr (- 0 #r [:a])},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (> #r [:a] 0)
+                                        (= 10 (+ (- 0 #r [:a]) 7)))}}}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not (> $_0 0)) (= 10 (+ $_0 6))) true
                                    (or (> $_0 0) (= 10 (+ (- 0 $_0) 7)))}},
        :choco-bounds {$_0 -4},
@@ -1525,7 +1990,21 @@
                                     true))]]}}
      {:$instance-of :ws/A$v1,
       :a -3}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/A$v1,
+       :a -3,
+       :$constraints {"c2" true},
+       :$instance-literals
+       {"c2$0" {:x {:$expr #r [:a]},
+                :y 6,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (not (> #r [:a] 0))
+                                        (= 10 (+ #r [:a] 6)))}},
+        "c2$1" {:x {:$expr (- 0 #r [:a])},
+                :y 7,
+                :$instance-literal-type :ws/X$v1,
+                :$constraints {"c1" (or (> #r [:a] 0)
+                                        (= 10 (+ (- 0 #r [:a]) 7)))}}}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not (> $_0 0)) (= 10 (+ $_0 6))) true
                                    (or (> $_0 0) (= 10 (+ (- 0 $_0) 7)))}},
        :choco-bounds {$_0 -3},
@@ -1547,7 +2026,17 @@
                                               true)]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? true}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (or (not #r [:a :$value?])
+                                                            (= 10
+                                                               (+ #r [:a] 6)))}}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(or (not $_1) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1570,7 +2059,16 @@
                                               true)]]}}
      {:$instance-of :ws/A$v1,
       :a 3}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/A$v1,
+       :a 3,
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (or (not #r [:a :$value?])
+                                                            (= 10
+                                                               (+ #r [:a] 6)))}}}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not true) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 3},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
@@ -1589,7 +2087,16 @@
                                               true)]]}}
      {:$instance-of :ws/A$v1,
       :a 4}
-     [{:choco-spec {:vars {$_0 :Int},
+     [{:$instance-of :ws/A$v1,
+       :a 4,
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (or (not #r [:a :$value?])
+                                                            (= 10
+                                                               (+ #r [:a] 6)))}}}}
+      {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(or (not true) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 4},
        :sym-to-path [$_0 [:a]]}
@@ -1610,7 +2117,17 @@
                                               true)]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? false}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? false,
+           :$primitive-type :Integer},
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (or (not #r [:a :$value?])
+                                                            (= 10
+                                                               (+ #r [:a] 6)))}}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(or (not $_1) (= 10 (+ $_0 6))) true}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1633,7 +2150,17 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? false}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? false,
+           :$primitive-type :Integer},
+       :$constraints {"c2" #r [:a :$value?]},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (or (not #r [:a :$value?])
+                                                            (= 10
+                                                               (+ #r [:a] 6)))}}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 6)))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1653,7 +2180,17 @@
                                                 true)
                                               false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :a {:$primitive-type :Integer,
+           :$value? {:$primitive-type :Boolean}},
+       :$constraints {"c2" #r [:a :$value?]},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$constraints {"c1" (or (not #r [:a :$value?])
+                                                            (= 10
+                                                               (+ #r [:a] 6)))}}}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{$_1 (or (not $_1) (= 10 (+ $_0 6)))}},
        :choco-bounds {$_0 [-1000 1000],
@@ -1673,7 +2210,12 @@
                                                       (if c true y))))]]}}
                      {:$instance-of :ws/A$v1,
                       :x false}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :x false,
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
                                     :constraints #{(or $_0 $_1)}},
@@ -1694,7 +2236,12 @@
                                                       (if c true y))))]]}}
                      {:$instance-of :ws/A$v1,
                       :x true}
-                     [{:choco-spec {:vars {$_0 :Bool,
+                     [{:$instance-of :ws/A$v1,
+                       :x true,
+                       :y {:$value? true,
+                           :$primitive-type :Boolean},
+                       :$constraints {"c1" (or #r [:x] #r [:y])}}
+                      {:choco-spec {:vars {$_0 :Bool,
                                            $_1 :Bool,
                                            $_2 :Bool},
                                     :constraints #{(or $_0 $_1)}},
@@ -1714,7 +2261,13 @@
                                '(let [a (+ x y)]
                                   (< a 20))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$value? true,
+           :$primitive-type :Integer},
+       :y {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c1" (< (+ #r [:x] #r [:y]) 20)}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -1737,7 +2290,15 @@
      {:$instance-of :ws/A$v1,
       :x {:$ranges #{[15 30]}},
       :y {:$ranges #{[0 1000]}}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$enum #{20 27 24 15 21 22 29 28 25 17 23 19 26 16 18},
+           :$value? true,
+           :$primitive-type :Integer},
+       :y {:$ranges #{[0 1000]},
+           :$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c1" (< (+ #r [:x] #r [:y]) 20)}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -1764,7 +2325,15 @@
      {:$instance-of :ws/A$v1,
       :x {:$ranges #{[15 30]}},
       :y {:$ranges #{[0 1000]}}}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$enum #{20 27 24 15 21 22 29 28 25 17 23 19 26 16 18},
+           :$value? true,
+           :$primitive-type :Integer},
+       :y {:$ranges #{[0 1000]},
+           :$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c1" (< (- (inc (+ #r [:x] #r [:y])) 1) 20)}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool},
@@ -1790,7 +2359,24 @@
                               ["ca" '(and (> a 0) (<= a 5))]
                               ["cb" '(and (>= b 0) (<= b 5))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$enum #{1 4 3 2},
+           :$value? true,
+           :$primitive-type :Integer},
+       :y {:$enum #{0 1 4 3 2},
+           :$value? true,
+           :$primitive-type :Integer},
+       :a {:$enum #{1 4 3 2 5},
+           :$value? true,
+           :$primitive-type :Integer},
+       :b {:$enum #{0 1 4 3 2 5},
+           :$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"cx" (and (> #r [:x] 0) (< #r [:x] 5)),
+                      "cy" (and (>= #r [:y] 0) (< #r [:y] 5)),
+                      "ca" (and (> #r [:a] 0) (<= #r [:a] 5)),
+                      "cb" (and (>= #r [:b] 0) (<= #r [:b] 5))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool,
@@ -1827,7 +2413,24 @@
                               ["ca" '(and (> a -800) (<= a 900))]
                               ["cb" '(and (>= b -800) (<= b 900))]]}}
      {:$instance-of :ws/A$v1}
-     [{:choco-spec {:vars {$_0 :Int,
+     [{:$instance-of :ws/A$v1,
+       :x {:$ranges #{[-799 900]},
+           :$value? true,
+           :$primitive-type :Integer},
+       :y {:$ranges #{[-800 900]},
+           :$value? true,
+           :$primitive-type :Integer},
+       :a {:$ranges #{[-799 901]},
+           :$value? true,
+           :$primitive-type :Integer},
+       :b {:$ranges #{[-800 901]},
+           :$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"cx" (and (> #r [:x] -800) (< #r [:x] 900)),
+                      "cy" (and (>= #r [:y] -800) (< #r [:y] 900)),
+                      "ca" (and (> #r [:a] -800) (<= #r [:a] 900)),
+                      "cb" (and (>= #r [:b] -800) (<= #r [:b] 900))}}
+      {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool,
                            $_2 :Int,
                            $_3 :Bool,
