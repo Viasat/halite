@@ -40,6 +40,7 @@
                    :path [s/Any]
                    :counter-atom s/Any ;; an atom to generate unique IDs
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
+                   (s/optional-key :ignore-instance-literals?) Boolean ;; set to true so that expressions can be lowered again without causing duplicate instance literals to be added to the bom
                    (s/optional-key :constraint-name) String
                    :guards [s/Any]})
 
@@ -317,7 +318,7 @@
 (s/defn ^:private flower-instance
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name guards]} context
+  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name guards ignore-instance-literals?]} context
         new-contents (-> expr
                          (dissoc :$type)
                          (update-vals (partial flower context)))
@@ -341,15 +342,16 @@
                                 type-env
                                 new-contents)
               context' (assoc context :env env' :type-env type-env')]
-          (swap! instance-literal-atom assoc-in
-                 path
-                 (-> new-contents
-                     (update-vals (fn [val]
-                                    (if (bom/is-primitive-value? val)
-                                      val
-                                      {:$expr val})))
-                     (assoc :$instance-literal-type (:$type expr)
-                            :$guards guards))))
+          (when-not ignore-instance-literals?
+            (swap! instance-literal-atom assoc-in
+                   path
+                   (-> new-contents
+                       (update-vals (fn [val]
+                                      (if (bom/is-primitive-value? val)
+                                        val
+                                        {:$expr val})))
+                       (assoc :$instance-literal-type (:$type expr)
+                              :$guards guards)))))
         (instance-literal/make-instance-literal (-> new-contents
                                                     (assoc :$type (:$type expr))))))))
 
@@ -488,7 +490,8 @@
         return-path-target (return-path context target)
         then-clause' (flower (assoc context
                                     :guards (if guard?
-                                              (conj guards (flower-if-value-let* context
+                                              (conj guards (flower-if-value-let* (assoc context
+                                                                                        :ignore-instance-literals? true)
                                                                                  false
                                                                                  (list 'if-value-let ['x_0 target] true false)))
                                               guards)
@@ -501,7 +504,8 @@
                              then-clause)
         else-clause' (flower (assoc context
                                     :guards (if guard?
-                                              (conj guards (flower-if-value-let* context
+                                              (conj guards (flower-if-value-let* (assoc context
+                                                                                        :ignore-instance-literals? true)
                                                                                  false
                                                                                  (list 'if-value-let ['x_0 target] false true)))
                                               guards))
@@ -510,9 +514,9 @@
             (non-root-fog? then-clause')
             (non-root-fog? else-clause'))
       (flower-fog context expr)
-      (make-if  return-path-target
-                then-clause'
-                else-clause'))))
+      (make-if return-path-target
+               then-clause'
+               else-clause'))))
 
 (s/defn ^:private flower-if-value-let
   [context :- LowerContext

@@ -205,6 +205,7 @@
                    (op-ensure-fields/ensure-fields-op spec-env#)
                    (op-add-value-fields/add-value-fields-op spec-env#)
                    (op-add-constraints/add-constraints-op spec-env#))
+         ;; _# (clojure.pprint/pprint (op-flower/flower-op spec-env# bom#))
          choco-data# (->> bom#
                           (op-flower/flower-op spec-env#)
                           bom-choco/bom-to-choco
@@ -243,7 +244,8 @@
                                       $_2 #{true false},
                                       $_3 true},
                        :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3
-                                     [:y :$value?]]} {:$instance-of :ws/A$v1}])
+                                     [:y :$value?]]}
+                      {:$instance-of :ws/A$v1}])
 
     (check-propagate {:ws/A$v1 {:fields {:x :Boolean,
                                          :y :Boolean},
@@ -451,7 +453,10 @@
                       $_1 true,
                       $_2 [-1000 1000],
                       $_3 true},
-       :sym-to-path [$_0 [:a] $_1 [:a :$value?] $_2 [:b] $_3 [:b :$value?]]}
+       :sym-to-path [$_0 [:a]
+                     $_1 [:a :$value?]
+                     $_2 [:b]
+                     $_3 [:b :$value?]]}
       {:$instance-of :ws/A$v1,
        :a {:$ranges #{[#d "-8.95" #d "10.01"]}},
        :b {:$ranges #{[#d "-8.95" #d "10.01"]}}}])
@@ -1205,7 +1210,7 @@
        :a 3,
        :b 2}])
 
-    (stanza "oif-value-let")
+    (stanza "if-value-let")
 
     (check-propagate
      {:ws/X$v1 {:fields {:x [:Maybe :Integer]},
