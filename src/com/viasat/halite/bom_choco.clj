@@ -150,8 +150,8 @@
                               (map (partial handle-fixed-decimals-out type))
                               set)}
     :default (let [[lower-bound upper-bound] bound]
-               ;; TODO: is the edge of this right, is upper-bound inclusive or exclusive
-               {:$ranges #{(->> [lower-bound upper-bound]
+               {:$ranges #{(->> [lower-bound
+                                 (inc upper-bound)]
                                 (mapv (partial handle-fixed-decimals-out type)))}})))
 
 (defn propagate-results-to-bounds [bom propagate-results]

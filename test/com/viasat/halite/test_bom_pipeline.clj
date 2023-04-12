@@ -396,8 +396,8 @@
                       $_3 true},
        :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?]]}
       {:$instance-of :ws/A$v1,
-       :x {:$ranges #{[-999 1000]}},
-       :y {:$ranges #{[-1000 999]}}}])
+       :x {:$ranges #{[-999 1001]}},
+       :y {:$ranges #{[-1000 1000]}}}])
 
     (stanza "constraint across two integer fields")
 
@@ -435,7 +435,7 @@
                                       $_1 true},
                        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
                       {:$instance-of :ws/A$v1,
-                       :a {:$ranges #{[#d "-10.00" #d "10.00"]}}}])
+                       :a {:$ranges #{[#d "-10.00" #d "10.01"]}}}])
 
     (check-propagate
      {:ws/A$v1 {:fields {:a [:Decimal 2],
@@ -453,8 +453,8 @@
                       $_3 true},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?] $_2 [:b] $_3 [:b :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[#d "-8.95" #d "10.00"]}},
-       :b {:$ranges #{[#d "-8.95" #d "10.00"]}}}])
+       :a {:$ranges #{[#d "-8.95" #d "10.01"]}},
+       :b {:$ranges #{[#d "-8.95" #d "10.01"]}}}])
 
     (check-propagate
      {:ws/A$v1 {:fields {:a [:Decimal 2],
@@ -474,7 +474,7 @@
        :sym-to-path [$_0 [:a] $_1 [:a :$value?] $_2 [:b] $_3 [:b :$value?]]}
       {:$instance-of :ws/A$v1,
        :a {:$enum #{#d "0.05" #d "0.06"}},
-       :b {:$ranges #{[#d "0.99" #d "1.00"]}}}])
+       :b {:$ranges #{[#d "0.99" #d "1.01"]}}}])
 
     (check-propagate
      {:ws/A$v1 {:fields {:a [:Decimal 2]},
@@ -500,7 +500,7 @@
                       $_1 true},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[#d "-5.09" #d "5.09"]}}}])
+       :a {:$ranges #{[#d "-5.09" #d "5.10"]}}}])
 
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]},
                                 :constraints [["c1" '(= 5 (rescale a 0))]]}}
@@ -512,7 +512,7 @@
                                       $_1 true},
                        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
                       {:$instance-of :ws/A$v1,
-                       :a {:$ranges #{[#d "-5.99" #d "5.99"]}}}])
+                       :a {:$ranges #{[#d "-5.99" #d "6.00"]}}}])
 
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]},
                                 :constraints [["c1" '(= 503 (rescale a 2))]]}}
@@ -536,7 +536,7 @@
                                       $_1 true},
                        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
                       {:$instance-of :ws/A$v1,
-                       :a {:$ranges #{[#d "-3.09" #d "3.09"]}}}])
+                       :a {:$ranges #{[#d "-3.09" #d "3.10"]}}}])
 
     (check-propagate
      {:ws/A$v1 {:fields {:a [:Decimal 2]},
@@ -549,7 +549,7 @@
                       $_1 true},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[#d "-3.10" #d "3.08"]}}}])
+       :a {:$ranges #{[#d "-3.10" #d "3.09"]}}}])
 
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}}}
                      {:$instance-of :ws/A$v1,
@@ -575,7 +575,7 @@
                       $_1 #{true false}},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[#d "-3.10" #d "3.08"]},
+       :a {:$ranges #{[#d "-3.10" #d "3.09"]},
            :$value? true}}])
 
     (check-propagate
@@ -610,7 +610,7 @@
                       $_1 #{true false}},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[#d "-10.00" #d "10.00"]}}}])
+       :a {:$ranges #{[#d "-10.00" #d "10.01"]}}}])
 
     (check-propagate
      {:ws/A$v1 {:fields {:a [:Maybe [:Decimal 2]]},
@@ -627,7 +627,7 @@
                       $_1 true},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[#d "-3.10" #d "3.08"]},
+       :a {:$ranges #{[#d "-3.10" #d "3.09"]},
            :$value? true}}])
 
     (check-propagate
@@ -701,7 +701,7 @@
                                       $_1 #{true false}},
                        :sym-to-path [$_0 [:x] $_1 [:x :$value?]]}
                       {:$instance-of :ws/A$v1,
-                       :x {:$ranges #{[-1000 1000]}}}])
+                       :x {:$ranges #{[-1000 1001]}}}])
 
     (check-propagate
      {:ws/A$v1 {:fields {:x [:Maybe :Integer]},
@@ -738,7 +738,7 @@
                                       $_1 #{true false}},
                        :sym-to-path [$_0 [:x] $_1 [:x :$value?]]}
                       {:$instance-of :ws/A$v1,
-                       :x {:$ranges #{[-1000 1000]},
+                       :x {:$ranges #{[-1000 1001]},
                            :$value? true}}])
 
     (check-propagate
@@ -757,9 +757,9 @@
                       $_3 #{true false}},
        :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?]]}
       {:$instance-of :ws/A$v1,
-       :x {:$ranges #{[-1000 1000]},
+       :x {:$ranges #{[-1000 1001]},
            :$value? true},
-       :y {:$ranges #{[-1000 1000]},
+       :y {:$ranges #{[-1000 1001]},
            :$value? true}}])
 
     (check-propagate
@@ -779,7 +779,7 @@
        :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?]]}
       {:$instance-of :ws/A$v1,
        :x {:$value? false},
-       :y {:$ranges #{[-1000 1000]},
+       :y {:$ranges #{[-1000 1001]},
            :$value? true}}])
 
     (check-propagate
@@ -878,7 +878,7 @@
        :sym-to-path [$_0 [:a :$value?] $_1 [:a :x] $_2 [:a :x :$value?]]}
       {:$instance-of :ws/B$v1,
        :a {:$instance-of :ws/A$v1,
-           :x {:$ranges #{[-1000 1000]}}}}])
+           :x {:$ranges #{[-1000 1001]}}}}])
 
     (check-propagate {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]},
                                 :constraints [["c1" '(if-value a false true)]]},
@@ -944,7 +944,7 @@
        :sym-to-path [$_0 [:a :$value?] $_1 [:a :x] $_2 [:a :x :$value?]]}
       {:$instance-of :ws/B$v1,
        :a {:$instance-of :ws/A$v1,
-           :x {:$ranges #{[-1000 1000]},
+           :x {:$ranges #{[-1000 1001]},
                :$value? true},
            :$value? true}}])
 
@@ -974,7 +974,7 @@
       {:$instance-of :ws/B$v1,
        :b false,
        :a {:$instance-of :ws/A$v1,
-           :x {:$ranges #{[-1000 1000]},
+           :x {:$ranges #{[-1000 1001]},
                :$value? true},
            :$value? true}}])
 
@@ -1004,7 +1004,7 @@
       {:$instance-of :ws/B$v1,
        :b false,
        :a {:$instance-of :ws/A$v1,
-           :x {:$ranges #{[21 1000]},
+           :x {:$ranges #{[21 1001]},
                :$value? true},
            :$value? true}}])
 
@@ -1034,7 +1034,7 @@
       {:$instance-of :ws/B$v1,
        :b false,
        :a {:$instance-of :ws/A$v1,
-           :x {:$ranges #{[21 1000]},
+           :x {:$ranges #{[21 1001]},
                :$value? true},
            :$value? true}}])
 
@@ -1218,7 +1218,7 @@
                       $_1 #{true false}},
        :sym-to-path [$_0 [:x] $_1 [:x :$value?]]}
       {:$instance-of :ws/X$v1,
-       :x {:$ranges #{[-1000 1000]}}}])
+       :x {:$ranges #{[-1000 1001]}}}])
 
     (check-propagate
      {:ws/X$v1 {:fields {:x [:Maybe :Integer]},
@@ -1454,7 +1454,7 @@
                       $_1 #{true false}},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[-1000 1000]}}}])
+       :a {:$ranges #{[-1000 1001]}}}])
 
     (stanza "conditionals around instance literals")
 
@@ -1478,7 +1478,7 @@
                       $_1 true},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a {:$ranges #{[-1000 4]}}}])
+       :a {:$ranges #{[-1000 5]}}}])
 
     (check-propagate
      {:ws/X$v1 {:fields {:x :Integer,
@@ -1655,7 +1655,200 @@
                       $_1 #{true false}},
        :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
       {:$instance-of :ws/A$v1,
-       :a 4}])))
+       :a 4}])
+
+    (stanza "deep let")
+
+    (check-propagate {:ws/A$v1 {:fields {:x :Boolean,
+                                         :y :Boolean},
+                                :constraints [["c1"
+                                               '(let [a x]
+                                                  (let [b a]
+                                                    (let [c b]
+                                                      (if c true y))))]]}}
+                     {:$instance-of :ws/A$v1,
+                      :x false}
+                     [{:choco-spec {:vars {$_0 :Bool,
+                                           $_1 :Bool,
+                                           $_2 :Bool},
+                                    :constraints #{(or $_0 $_1)}},
+                       :choco-bounds {$_0 false,
+                                      $_1 #{true false},
+                                      $_2 true},
+                       :sym-to-path [$_0 [:x] $_1 [:y] $_2 [:y :$value?]]}
+                      {:$instance-of :ws/A$v1,
+                       :x false,
+                       :y true}])
+
+    (check-propagate {:ws/A$v1 {:fields {:x :Boolean,
+                                         :y :Boolean},
+                                :constraints [["c1"
+                                               '(let [a x]
+                                                  (let [b a]
+                                                    (let [c b]
+                                                      (if c true y))))]]}}
+                     {:$instance-of :ws/A$v1,
+                      :x true}
+                     [{:choco-spec {:vars {$_0 :Bool,
+                                           $_1 :Bool,
+                                           $_2 :Bool},
+                                    :constraints #{(or $_0 $_1)}},
+                       :choco-bounds {$_0 true,
+                                      $_1 #{true false},
+                                      $_2 true},
+                       :sym-to-path [$_0 [:x] $_1 [:y] $_2 [:y :$value?]]}
+                      {:$instance-of :ws/A$v1,
+                       :x true}])
+
+    (stanza "complex let")
+
+    (check-propagate
+     {:ws/A$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1"
+                               '(let [a (+ x y)]
+                                  (< a 20))]]}}
+     {:$instance-of :ws/A$v1}
+     [{:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool,
+                           $_2 :Int,
+                           $_3 :Bool},
+                    :constraints #{(< (+ $_0 $_2) 20)}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true,
+                      $_2 [-1000 1000],
+                      $_3 true},
+       :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :x {:$ranges #{[-1000 1001]}},
+       :y {:$ranges #{[-1000 1001]}}}])
+
+    (check-propagate
+     {:ws/A$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1"
+                               '(let [a (+ x y)]
+                                  (< a 20))]]}}
+     {:$instance-of :ws/A$v1,
+      :x {:$ranges #{[15 30]}},
+      :y {:$ranges #{[0 1000]}}}
+     [{:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool,
+                           $_2 :Int,
+                           $_3 :Bool},
+                    :constraints #{(< (+ $_0 $_2) 20)}},
+       :choco-bounds {$_0 #{20 27 24 15 21 22 29 28 25 17 23 19 26 16 18},
+                      $_1 true,
+                      $_2 [0 1000],
+                      $_3 true},
+       :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :x {:$enum #{15 17 19 16 18}},
+       :y {:$enum #{0 1 4 3 2}}}])
+
+    (check-propagate
+     {:ws/A$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1"
+                               '(let [a x]
+                                  (let [b y]
+                                    (< (let [c (+ a b)]
+                                         (let [d (inc c)]
+                                           (- d 1)))
+                                       20)))]]}}
+     {:$instance-of :ws/A$v1,
+      :x {:$ranges #{[15 30]}},
+      :y {:$ranges #{[0 1000]}}}
+     [{:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool,
+                           $_2 :Int,
+                           $_3 :Bool},
+                    :constraints #{(< (- (inc (+ $_0 $_2)) 1) 20)}},
+       :choco-bounds {$_0 #{20 27 24 15 21 22 29 28 25 17 23 19 26 16 18},
+                      $_1 true,
+                      $_2 [0 1000],
+                      $_3 true},
+       :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :x {:$enum #{15 17 19 16 18}},
+       :y {:$enum #{0 1 4 3 2}}}])
+
+    (stanza "inequality edges")
+
+    (check-propagate
+     {:ws/A$v1 {:fields {:x :Integer,
+                         :y :Integer,
+                         :a :Integer,
+                         :b :Integer},
+                :constraints [["cx" '(and (> x 0) (< x 5))]
+                              ["cy" '(and (>= y 0) (< y 5))]
+                              ["ca" '(and (> a 0) (<= a 5))]
+                              ["cb" '(and (>= b 0) (<= b 5))]]}}
+     {:$instance-of :ws/A$v1}
+     [{:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool,
+                           $_2 :Int,
+                           $_3 :Bool,
+                           $_4 :Int,
+                           $_5 :Bool,
+                           $_6 :Int,
+                           $_7 :Bool},
+                    :constraints
+                    #{(and (> $_4 0) (<= $_4 5)) (and (>= $_2 0) (< $_2 5))
+                      (and (> $_0 0) (< $_0 5)) (and (>= $_6 0) (<= $_6 5))}},
+       :choco-bounds {$_0 #{1 4 3 2},
+                      $_1 true,
+                      $_2 #{0 1 4 3 2},
+                      $_3 true,
+                      $_4 #{1 4 3 2 5},
+                      $_5 true,
+                      $_6 #{0 1 4 3 2 5},
+                      $_7 true},
+       :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?] $_4 [:a]
+                     $_5 [:a :$value?] $_6 [:b] $_7 [:b :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :x {:$enum #{1 4 3 2}},
+       :y {:$enum #{0 1 4 3 2}},
+       :a {:$enum #{1 4 3 2 5}},
+       :b {:$enum #{0 1 4 3 2 5}}}])
+
+    (check-propagate
+     {:ws/A$v1 {:fields {:x :Integer,
+                         :y :Integer,
+                         :a :Integer,
+                         :b :Integer},
+                :constraints [["cx" '(and (> x -800) (< x 900))]
+                              ["cy" '(and (>= y -800) (< y 900))]
+                              ["ca" '(and (> a -800) (<= a 900))]
+                              ["cb" '(and (>= b -800) (<= b 900))]]}}
+     {:$instance-of :ws/A$v1}
+     [{:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool,
+                           $_2 :Int,
+                           $_3 :Bool,
+                           $_4 :Int,
+                           $_5 :Bool,
+                           $_6 :Int,
+                           $_7 :Bool},
+                    :constraints #{(and (>= $_6 -800) (<= $_6 900))
+                                   (and (>= $_2 -800) (< $_2 900))
+                                   (and (> $_4 -800) (<= $_4 900))
+                                   (and (> $_0 -800) (< $_0 900))}},
+       :choco-bounds {$_0 [-799 900],
+                      $_1 true,
+                      $_2 [-800 900],
+                      $_3 true,
+                      $_4 [-799 901],
+                      $_5 true,
+                      $_6 [-800 901],
+                      $_7 true},
+       :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?] $_4 [:a]
+                     $_5 [:a :$value?] $_6 [:b] $_7 [:b :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :x {:$ranges #{[-799 900]}},
+       :y {:$ranges #{[-800 900]}},
+       :a {:$ranges #{[-799 901]}},
+       :b {:$ranges #{[-800 901]}}}])))
 
 (defn format-code [code]
   (str (zprint/zprint-str code 80 {:fn-force-nl #{:binding}

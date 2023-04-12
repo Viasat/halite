@@ -112,11 +112,11 @@
   (is (= 1 (bom-choco/choco-bound-to-bom nil 1)))
   (is (= true (bom-choco/choco-bound-to-bom nil true)))
   (is (= {:$enum #{1 2}} (bom-choco/choco-bound-to-bom nil #{1 2})))
-  (is (= {:$ranges #{[1 10]}} (bom-choco/choco-bound-to-bom nil [1 10]))))
+  (is (= {:$ranges #{[1 11]}} (bom-choco/choco-bound-to-bom nil [1 10]))))
 
 (deftest test-propagate-results-to-bounds
-  (is (= {[:x] {:$ranges #{[2 100]}}
-          [:y] {:$ranges #{[#d "0.01" #d "0.99"]}}}
+  (is (= {[:x] {:$ranges #{[2 101]}}
+          [:y] {:$ranges #{[#d "0.01" #d "1.00"]}}}
          (bom-choco/propagate-results-to-bounds {:$instance-of :ws/A$v1
                                                  :x {:$primitive-type :Integer}
                                                  :y {:$primitive-type [:Decimal 2]}}
