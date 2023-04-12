@@ -724,12 +724,14 @@
                  (assoc :$constraints (some->> bom
                                                :$constraints
                                                (map (fn [[constraint-name x]]
-                                                      [constraint-name (->> x
-                                                                            (lower-expr (assoc context
-                                                                                               :spec-type-env (envs/type-env-from-spec spec-info)
-                                                                                               :constraint-name constraint-name
-                                                                                               :guards []))
-                                                                            (inline-constants bom))]))
+                                                      (let [lowered-x (->> x
+                                                                           (lower-expr (assoc context
+                                                                                              :spec-type-env (envs/type-env-from-spec spec-info)
+                                                                                              :constraint-name constraint-name
+                                                                                              :guards []))
+                                                                           (inline-constants bom))]
+                                                        (when-not (= true lowered-x)
+                                                          [constraint-name lowered-x]))))
                                                (into {})))
                  (assoc :$refinements (some-> bom
                                               :$refinements
@@ -742,33 +744,35 @@
                                                           [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
                                                    (into {})))
                  base/no-nil-entries)]
-    (-> bom'
-        (assoc :$instance-literals (->> @instance-literal-atom
-                                        (map (fn [[instance-literal-id instance-literal-bom]]
-                                               [instance-literal-id
-                                                (let [spec-id (bom/get-spec-id instance-literal-bom)
-                                                      bare-instance-bom (bom/to-bare-instance-bom instance-literal-bom)]
-                                                  (->> instance-literal-bom
-                                                       ;; (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env)
-                                                       ;; (op-add-value-fields/add-value-fields-op spec-env)
-                                                       (op-add-constraints/add-constraints-op spec-env)
-                                                       (flower-op* (assoc context
-                                                                          :path (conj (:path context)
-                                                                                      :$instance-literals
-                                                                                      instance-literal-id)
-                                                                          :env
-                                                                          (reduce (fn [env [field-name val]]
-                                                                                    (envs/bind env (symbol field-name)
-                                                                                               (if (bom/is-expression-bom? val)
-                                                                                                 (:$expr val)
-                                                                                                 val)))
-                                                                                  (:env context)
-                                                                                  bare-instance-bom)))
-                                                       add-guards-to-constraints))]))
+    (if (some #(= false %) (vals (:$constraints bom')))
+      bom/contradiction-bom
+      (-> bom'
+          (assoc :$instance-literals (->> @instance-literal-atom
+                                          (map (fn [[instance-literal-id instance-literal-bom]]
+                                                 [instance-literal-id
+                                                  (let [spec-id (bom/get-spec-id instance-literal-bom)
+                                                        bare-instance-bom (bom/to-bare-instance-bom instance-literal-bom)]
+                                                    (->> instance-literal-bom
+                                                         ;; (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env)
+                                                         ;; (op-add-value-fields/add-value-fields-op spec-env)
+                                                         (op-add-constraints/add-constraints-op spec-env)
+                                                         (flower-op* (assoc context
+                                                                            :path (conj (:path context)
+                                                                                        :$instance-literals
+                                                                                        instance-literal-id)
+                                                                            :env
+                                                                            (reduce (fn [env [field-name val]]
+                                                                                      (envs/bind env (symbol field-name)
+                                                                                                 (if (bom/is-expression-bom? val)
+                                                                                                   (:$expr val)
+                                                                                                   val)))
+                                                                                    (:env context)
+                                                                                    bare-instance-bom)))
+                                                         add-guards-to-constraints))]))
 
-                                        (into {})
-                                        base/no-empty))
-        base/no-nil-entries)))
+                                          (into {})
+                                          base/no-empty))
+          base/no-nil-entries))))
 
 (s/defn flower-op
   [spec-env :- (s/protocol envs/SpecEnv)
