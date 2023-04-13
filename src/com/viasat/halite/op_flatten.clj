@@ -54,7 +54,8 @@
                          :$refinements
                          (mapcat (fn [[spec-id sub-bom]]
                                    (flatten-op* (conj path :$refinements spec-id) sub-bom))))
-                (some->> bom :$concrete-choices
+                (some->> bom
+                         :$concrete-choices
                          (mapcat (fn [[spec-id sub-bom]]
                                    (flatten-op* (conj path :$concrete-choices spec-id) sub-bom))))])
        (remove nil?)

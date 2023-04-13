@@ -41,6 +41,7 @@
                    :env (s/protocol envs/Env) ;; contains local values, e.g. from 'let' forms
                    :path [s/Any]
                    :counter-atom s/Any ;; an atom to generate unique IDs
+                   (s/optional-key :valid-var-path) [s/Any] ;; path to a variable to represent the result of a 'valid' or 'valid?' invocation in an expression
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
                    (s/optional-key :ignore-instance-literals?) Boolean ;; set to true so that expressions can be lowered again without causing duplicate instance literals to be added to the bom
                    (s/optional-key :constraint-name) String
@@ -320,7 +321,8 @@
 (s/defn ^:private flower-instance
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name guards ignore-instance-literals?]} context
+  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name guards ignore-instance-literals?
+                valid-var-path]} context
         new-contents (-> expr
                          (dissoc :$type)
                          (update-vals (partial flower context)))
@@ -347,13 +349,17 @@
           (when-not ignore-instance-literals?
             (swap! instance-literal-atom assoc-in
                    path
-                   (-> new-contents
-                       (update-vals (fn [val]
-                                      (if (bom/is-primitive-value? val)
-                                        val
-                                        {:$expr val})))
-                       (assoc :$instance-literal-type (:$type expr)
-                              :$guards guards)))))
+                   (let [nc (-> new-contents
+                                (update-vals (fn [val]
+                                               (if (bom/is-primitive-value? val)
+                                                 val
+                                                 {:$expr val})))
+                                (assoc :$instance-literal-type (:$type expr)
+                                       :$guards guards))
+                         nc (if (nil? valid-var-path)
+                              nc
+                              (assoc nc :$valid-var-path valid-var-path))]
+                     nc))))
         (instance-literal/make-instance-literal (-> new-contents
                                                     (assoc :$type (:$type expr))))))))
 
@@ -569,6 +575,16 @@
               target-form'
               (->> shift abs (math/pow 10) long))))))
 
+(s/defn ^:private flower-valid?
+  [context :- LowerContext
+   expr]
+  (let [{:keys [constraint-name path counter-atom]} context
+        valid-var-path (conj path :$valid-vars (str constraint-name "$" (next-id counter-atom)))
+        [_ sub-expr] expr]
+    ;; for the side-effects of finding the instance literals
+    (flower (assoc context :valid-var-path valid-var-path) sub-expr)
+    (var-ref/make-var-ref valid-var-path)))
+
 (s/defn ^:private flower-fn-application
   [context :- LowerContext
    expr]
@@ -616,6 +632,8 @@
                   'reduce (flower-fog context expr)
 
                   'rescale (flower-rescale context expr)
+
+                  'valid? (flower-valid? context expr)
                   ;; else:
                   (flower-fn-application context expr))
     (vector? expr) (flower-fog context expr)
@@ -730,7 +748,7 @@
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom
     bom/InstanceLiteralBom}
-  (let [{:keys [top-bom spec-env path]} context
+  (let [{:keys [top-bom spec-env path counter-atom]} context
         instance-literal-atom (atom {})
         context (-> context
                     (assoc :instance-literal-atom instance-literal-atom)
@@ -776,34 +794,61 @@
                                                      (when (= false v)
                                                        [k v])))
                                               (into {})))
-               bom')]
-    (-> bom'
-        (assoc :$instance-literals (->> @instance-literal-atom
-                                        (map (fn [[instance-literal-id instance-literal-bom]]
-                                               [instance-literal-id
-                                                (let [spec-id (bom/get-spec-id instance-literal-bom)
-                                                      bare-instance-bom (bom/to-bare-instance-bom instance-literal-bom)]
-                                                  (->> instance-literal-bom
-                                                       ;; (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env)
-                                                       ;; (op-add-value-fields/add-value-fields-op spec-env)
-                                                       (op-add-constraints/add-constraints-op spec-env)
-                                                       (flower-op* (assoc context
-                                                                          :path (conj (:path context)
-                                                                                      :$instance-literals
-                                                                                      instance-literal-id)
-                                                                          :env
-                                                                          (reduce (fn [env [field-name val]]
-                                                                                    (envs/bind env (symbol field-name)
-                                                                                               (if (bom/is-expression-bom? val)
-                                                                                                 (:$expr val)
-                                                                                                 val)))
-                                                                                  (:env context)
-                                                                                  bare-instance-bom)))
-                                                       add-guards-to-constraints))]))
+               bom')
+        valid-var-atom (atom {})
+        bom' (-> bom'
+                 (assoc :$instance-literals (->> @instance-literal-atom
+                                                 (map (fn [[instance-literal-id instance-literal-bom]]
+                                                        [instance-literal-id
+                                                         (let [spec-id (bom/get-spec-id instance-literal-bom)
+                                                               bare-instance-bom (bom/to-bare-instance-bom instance-literal-bom)
+                                                               instance-literal-bom' (->> instance-literal-bom
+                                                                                          ;; (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env)
+                                                                                          ;; (op-add-value-fields/add-value-fields-op spec-env)
+                                                                                          (op-add-constraints/add-constraints-op spec-env)
+                                                                                          (flower-op* (assoc context
+                                                                                                             :path (conj (:path context)
+                                                                                                                         :$instance-literals
+                                                                                                                         instance-literal-id)
+                                                                                                             :env
+                                                                                                             (reduce (fn [env [field-name val]]
+                                                                                                                       (envs/bind env (symbol field-name)
+                                                                                                                                  (if (bom/is-expression-bom? val)
+                                                                                                                                    (:$expr val)
+                                                                                                                                    val)))
+                                                                                                                     (:env context)
+                                                                                                                     bare-instance-bom)))
+                                                                                          add-guards-to-constraints)]
+                                                           (if (:$valid-var-path instance-literal-bom')
+                                                             (do
+                                                               (swap! valid-var-atom assoc-in
+                                                                      (:$valid-var-path instance-literal-bom')
+                                                                      {:$valid-var-constraints (-> (:$constraints instance-literal-bom')
+                                                                                                   (update-keys #(str % "$" (next-id counter-atom))))})
+                                                               (dissoc instance-literal-bom' :$constraints))
+                                                             instance-literal-bom'))]))
 
-                                        (into {})
-                                        base/no-empty))
-        base/no-nil-entries)))
+                                                 (into {})
+                                                 base/no-empty))
+                 base/no-nil-entries)
+        bom' (->> (-> bom'
+                      (merge @valid-var-atom))
+                  (walk/postwalk (fn [x]
+                                   (if (and (map? x)
+                                            (contains? x :$valid-var-constraints))
+                                     (apply make-and (vals (:$valid-var-constraints x)))
+                                     x))))]
+    (->> bom'
+         (walk/postwalk (fn [x]
+                          (if (and (var-ref/var-ref? x)
+                                   (contains? (set (var-ref/get-path x)) :$valid-vars))
+                            (get-in bom' (var-ref/get-path x))
+                            x)))
+         (walk/postwalk (fn [x]
+                          (if (and (map? x)
+                                   (contains? x :$valid-var-constraints))
+                            (apply make-and (vals (:$valid-var-constraints x)))
+                            x))))))
 
 (s/defn flower-op
   [spec-env :- (s/protocol envs/SpecEnv)

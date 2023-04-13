@@ -8685,6 +8685,35 @@
     (hc
      {:spec/BigInc$v1 {:fields {:x [:Maybe :Integer]
                                 :y :Integer}}
+      :spec/Inc$v1 {:constraints #{{:name "main" :expr '(> (get {:$type :spec/BigInc$v1
+                                                                 :x x
+                                                                 :y y}
+                                                                :y) 5)}}
+                    :fields {:x [:Maybe :Integer] :y :Integer}}}
+     "expression passed to 'valid' must be an instance"
+     [(valid (get {:$type :spec/Inc$v1, :y 6} :y))
+      [:throws "h-err/arg-type-mismatch 0-0 : Argument to 'valid' must be an instance of known type"]])
+
+    (hc
+     {:spec/BigInc$v1 {:fields {:x [:Maybe :Integer]
+                                :y :Integer}}
+      :spec/Inc$v1 {:constraints #{{:name "main" :expr '(> (get {:$type :spec/BigInc$v1
+                                                                 :x x
+                                                                 :y y}
+                                                                :y) 5)}}
+                    :fields {:x [:Maybe :Integer] :y :Integer}}}
+     "expression passed to 'valid' must be an instance"
+     [(valid (if true
+               {:$type :spec/Inc$v1, :y 6}
+               {:$type :spec/Inc$v1, :y 7}))
+      [:Maybe [:Instance :spec/Inc$v1]]
+      {:$type :spec/Inc$v1, :y 6}
+      "(valid (if(true) {{$type: spec/Inc$v1, y: 6}} else {{$type: spec/Inc$v1, y: 7}}))"
+      "{$type: spec/Inc$v1, y: 6}"])
+
+    (hc
+     {:spec/BigInc$v1 {:fields {:x [:Maybe :Integer]
+                                :y :Integer}}
       :spec/Inc$v1 {:fields {:x [:Maybe :Integer] :y :Integer}
                     :refines-to {:spec/BigInc$v1 {:expr '{:$type :spec/BigInc$v1
                                                           :x x

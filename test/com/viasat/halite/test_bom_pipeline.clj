@@ -214,7 +214,7 @@
          choco-data# (when-not (bom/is-contradiction-bom? lowered-bom#)
                        (->> lowered-bom#
                             bom-choco/bom-to-choco
-                            (bom-choco/paths-to-syms bom#)))
+                            (bom-choco/paths-to-syms lowered-bom#)))
          propagate-result# (when-not (bom/is-contradiction-bom? lowered-bom#)
                              (->> choco-data#
                                   (bom-choco/choco-propagate bom#)))
@@ -2441,7 +2441,87 @@
        :x {:$ranges #{[-799 900]}},
        :y {:$ranges #{[-800 900]}},
        :a {:$ranges #{[-799 901]}},
-       :b {:$ranges #{[-800 901]}}}])))
+       :b {:$ranges #{[-800 901]}}}])
+
+    (stanza "valid?")
+
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(valid? {:$type :ws/X$v1,
+                                         :x a,
+                                         :y 6})]]}}
+     {:$instance-of :ws/A$v1}
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" (= 10 (+ #r [:a] 6))},
+       :$instance-literals {"c2$1" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$valid-var-path [:$valid-vars "c2$0"]}},
+       :$valid-vars {"c2$0" (= 10 (+ #r [:a] 6))}}
+      {:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool},
+                    :constraints #{(= 10 (+ $_0 6))}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true},
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :a 4}])
+
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(valid? {:$type :ws/X$v1,
+                                         :x a,
+                                         :y 6})]]}}
+     {:$instance-of :ws/A$v1,
+      :a 4}
+     [{:$instance-of :ws/A$v1,
+       :a 4,
+       :$constraints {"c2" true},
+       :$instance-literals {"c2$1" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$valid-var-path [:$valid-vars "c2$0"]}},
+       :$valid-vars {"c2$0" true}}
+      {:choco-spec {:vars {$_0 :Int},
+                    :constraints #{true}},
+       :choco-bounds {$_0 4},
+       :sym-to-path [$_0 [:a]]}
+      {:$instance-of :ws/A$v1,
+       :a 4}])
+
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(valid? {:$type :ws/X$v1,
+                                         :x a,
+                                         :y 6})]]}}
+     {:$instance-of :ws/A$v1,
+      :a 5}
+     [{:$instance-of :ws/A$v1,
+       :a 5,
+       :$constraints {"c2" false},
+       :$instance-literals {"c2$1" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$valid-var-path [:$valid-vars "c2$0"]}},
+       :$valid-vars {"c2$0" false}}
+      {:choco-spec {:vars {$_0 :Int},
+                    :constraints #{false}},
+       :choco-bounds {$_0 5},
+       :sym-to-path [$_0 [:a]]} {:$contradiction? true}])))
 
 (defn format-code [code]
   (str (zprint/zprint-str code 80 {:fn-force-nl #{:binding}

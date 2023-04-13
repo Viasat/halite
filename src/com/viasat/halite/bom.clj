@@ -114,6 +114,11 @@
 ;; :$refinements : the value must satisfy all of the specified refinements, a "no value" in the refinement identifies a disallowed refinement
 ;; :$concrete-choices : the value must satisfy one of the values in the map, an empty map is equivalent to "no value"
 
+;; :$valid? : indicates whether an instance in a refinement chain must be present
+;; :$extrinsic? : indicates if a leg of a refinement chain is reached via an extrinsic refinement
+;; :$valid-var-path : the path to the variable where the constraints for this instance are to be accumulated
+;; :$valid-vars : map of the vars representing 'valid' invocations in expressions for this bom
+
 ;; Special bom values:
 ;; no-value-bom : indicates that no value is to be provided in this location (this is roughly like a 'nil' value)
 ;; contradiction-bom : indicates that it is impossible to satisfy all of the constraints indicated in the bom for this value (this is roughly like an exception)
@@ -232,6 +237,7 @@
    :$instance-literal-type SpecId
    (s/optional-key :$value?) (s/eq true)
    (s/optional-key :$valid?) BooleanBom
+   (s/optional-key :$valid-var-path) [s/Any]
    (s/optional-key :$constraints) {base/ConstraintName s/Any}
    (s/optional-key :$guards) [s/Any]
    (s/optional-key :$refinements) {SpecId (s/conditional
@@ -251,7 +257,8 @@
                                                  is-no-value-bom? NoValueBom
                                                  :else ContradictionBom)}
          (s/optional-key :$constraints) {base/ConstraintName s/Any}
-         (s/optional-key :$instance-literals) {String InstanceLiteralBom}))
+         (s/optional-key :$instance-literals) {String InstanceLiteralBom}
+         (s/optional-key :$valid-vars) {String s/Any}))
 
 (def AbstractInstanceBom
   (-> BareInstanceBom
@@ -288,6 +295,8 @@
                    :$enum
                    :$value?
                    :$valid?
+                   :$valid-vars
+                   :$valid-var-path
                    :$extrinsic?
                    :$refinements
                    :$concrete-choices
@@ -309,6 +318,9 @@
 (s/defn to-bare-instance-bom :- BareInstanceBom
   "Take all meta-fields out of instance."
   [instance :- InstanceBomOrValue]
+  (let [result (apply dissoc instance meta-fields)]
+    (when (s/check BareInstanceBom result)
+      (clojure.pprint/pprint [:tbib :instance instance :result (apply dissoc instance meta-fields)])))
   (apply dissoc instance meta-fields))
 
 (s/defn strip-bare-fields
