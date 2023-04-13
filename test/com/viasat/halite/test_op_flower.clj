@@ -62,7 +62,8 @@
          spec-info# {:fields {:x :Integer
                               :xs [:Vec :Integer]
                               :z :Integer}}
-         result# (op-flower/lower-expr {:spec-env {:ws/A$v1 spec-info#}
+         result# (op-flower/lower-expr {:top-bom {:$instance-of :ws/A$v1} ;; not used by test
+                                        :spec-env {:ws/A$v1 spec-info#}
                                         :spec-type-env (envs/type-env-from-spec spec-info#)
                                         :type-env (envs/type-env {'~'a :Integer
                                                                   '~'b :Integer})
@@ -133,7 +134,8 @@
                                    (div x y)
                                    x)))
 
-(def empty-context {:spec-env (envs/spec-env {})
+(def empty-context {:top-bom {:$instance-of :ws/A$v1} ;; not used by tests
+                    :spec-env (envs/spec-env {})
                     :spec-type-env (envs/type-env {})
                     :type-env (envs/type-env {})
                     :env (envs/env {})

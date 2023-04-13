@@ -137,8 +137,10 @@
    (boolean? x)
    (base/fixed-decimal? x)
    (is-instance-value? x)
-   (set? x)
-   (vector? x)))
+   (and (set? x)
+        (every? is-primitive-value? x))
+   (and (vector? x)
+        (every? is-primitive-value? x))))
 
 (defn is-bom-value? [x]
   (nil? (s/check BomValue x)))
