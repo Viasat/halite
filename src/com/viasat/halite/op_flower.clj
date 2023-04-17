@@ -4,7 +4,6 @@
 (ns com.viasat.halite.op-flower
   "Lower expressions in boms down into expressions that are supported by propagation."
   (:require [clojure.math :as math]
-            [clojure.walk :as walk]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
@@ -19,6 +18,7 @@
             [com.viasat.halite.type-check :as type-check]
             [com.viasat.halite.types :as types]
             [com.viasat.halite.var-ref :as var-ref]
+            [com.viasat.halite.walk :as walk2]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
@@ -34,6 +34,14 @@
 
 ;;;;
 
+(defn- preserve-meta [in out]
+  (let [m (meta in)]
+    (if m
+      (with-meta out m)
+      out)))
+
+;;;;
+
 (def LowerContext {:top-bom bom/Bom
                    :spec-env (s/protocol envs/SpecEnv)
                    :spec-type-env (s/protocol envs/TypeEnv) ;; holds the types coming from the contextual spec
@@ -43,7 +51,6 @@
                    :counter-atom s/Any ;; an atom to generate unique IDs
                    (s/optional-key :valid-var-path) [s/Any] ;; path to a variable to represent the result of a 'valid' or 'valid?' invocation in an expression
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
-                   (s/optional-key :ignore-instance-literals?) Boolean ;; set to true so that expressions can be lowered again without causing duplicate instance literals to be added to the bom
                    (s/optional-key :constraint-name) String
                    :guards [s/Any]})
 
@@ -157,6 +164,14 @@
         [_ target accessor] expr]
     (push-down-get context field (push-down-get context accessor target))))
 
+(s/defn ^:private push-down-get-valid
+  [context :- LowerContext
+   field
+   expr]
+  (let [{:keys [env]} context
+        [_ target] expr]
+    (list 'valid (push-down-get context field target))))
+
 (s/defn ^:private push-down-get
   [context :- LowerContext
    field
@@ -177,7 +192,9 @@
                   'when-value (push-down-get-when-value context field expr)
                   'if-value-let (push-down-get-if-value-let context field expr)
                   'when-value-let (push-down-get-when-value-let context field expr) ;; same general form as if-value-let
-                  'get (push-down-get-get context field expr))
+                  'get (push-down-get-get context field expr)
+                  'valid (push-down-get-valid context field expr)
+                  (throw (ex-info "expr not supported in push-down-get" {:expr expr})))
     :default (throw (ex-info "unexpected expr to push-down-get" {:expr expr}))))
 
 ;;;;
@@ -218,13 +235,16 @@
              (return-path context then-clause)
              false)))
 
+(defn- add-binding [env sym value]
+  (envs/bind env sym value))
+
 (s/defn ^:private return-path-if-value-let
   [context :- LowerContext
    expr]
   (let [{:keys [env]} context
         [_ [sym target] then-clause else-clause] expr]
     (make-if (return-path context target)
-             (return-path (assoc context :env (envs/bind env sym target))
+             (return-path (assoc context :env (add-binding env sym target))
                           then-clause)
              (if (nil? else-clause)
                false
@@ -270,6 +290,11 @@
                   'get (return-path-get context expr)
                   'get-in (ex-info "return-path not implemented for expr" {:expr expr})
                   'inc true
+                  'valid (let [id-path (:id-path (meta expr))]
+                           (when (nil? id-path)
+                             (throw (ex-info "expected id-path in metadata" {:expr expr
+                                                                             :meta (meta expr)})))
+                           (var-ref/make-var-ref id-path))
                   (throw (ex-info "return-path not implemented for expr" {:expr expr})))
     (set? expr) true
     (vector? expr) true
@@ -313,15 +338,13 @@
       sym
       (if (contains? (envs/bindings env) sym)
         (let [resolved ((envs/bindings env) sym)]
-          (if (symbol? resolved)
-            (flower context resolved)
-            resolved))
+          (flower context resolved))
         (var-ref/make-var-ref (conj path (keyword sym)))))))
 
 (s/defn ^:private flower-instance
   [context :- LowerContext
    expr]
-  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name guards ignore-instance-literals?
+  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name guards
                 valid-var-path]} context
         new-contents (-> expr
                          (dissoc :$type)
@@ -337,9 +360,10 @@
       (do
         ;; compute instance-literal constraints
         (let [env' (reduce (fn [env [field-name value]]
-                             (envs/bind env (symbol field-name) value))
+                             (add-binding env (symbol field-name) value))
                            env
-                           new-contents)
+                           (-> expr
+                               (dissoc :$type)))
               type-env' (reduce (fn ([type-env [field-name value]]
                                      envs/extend-scope type-env
                                      (symbol field-name)
@@ -349,20 +373,19 @@
                                 type-env
                                 new-contents)
               context' (assoc context :env env' :type-env type-env')]
-          (when-not ignore-instance-literals?
-            (swap! instance-literal-atom assoc-in
-                   path
-                   (let [nc (-> new-contents
-                                (update-vals (fn [val]
-                                               (if (bom/is-primitive-value? val)
-                                                 val
-                                                 {:$expr val})))
-                                (assoc :$instance-literal-type (:$type expr)
-                                       :$guards guards))
-                         nc (if (nil? valid-var-path)
-                              nc
-                              (assoc nc :$valid-var-path valid-var-path))]
-                     nc))))
+          (swap! instance-literal-atom assoc-in
+                 path
+                 (let [nc (-> new-contents
+                              (update-vals (fn [val]
+                                             (if (bom/is-primitive-value? val)
+                                               val
+                                               {:$expr val})))
+                              (assoc :$instance-literal-type (:$type expr)
+                                     :$guards guards))
+                       nc (if (nil? valid-var-path)
+                            nc
+                            (assoc nc :$valid-var-path valid-var-path))]
+                   nc)))
         (instance-literal/make-instance-literal (-> new-contents
                                                     (assoc :$type (:$type expr))))))))
 
@@ -379,6 +402,8 @@
       (instance-literal/instance-literal? target') (-> target'
                                                        instance-literal/get-bindings
                                                        (get accessor))
+
+      (seq? target') (push-down-get context accessor target')
 
       :default (throw (ex-info "unexpected target of get" {:expr expr
                                                            :target' target'})))))
@@ -398,7 +423,7 @@
                                               type-env' (envs/extend-scope type-env
                                                                            sym
                                                                            (expression-type context binding-e))
-                                              env' (envs/bind env sym binding-e')]
+                                              env' (add-binding env sym binding-e)]
                                           {:type-env type-env'
                                            :env env'
                                            :bindings (into bindings
@@ -499,24 +524,27 @@
         [_ [sym target] then-clause else-clause] expr
         target' (flower context target)
         return-path-target (return-path context target)
+        inner-target (if (and (seq? target)
+                              (= 'valid (first target)))
+                       ;; sniff out the value inside target
+                       (second target)
+                       target)
         then-clause' (flower (assoc context
                                     :guards (if guard?
-                                              (conj guards (flower-if-value-let* (assoc context
-                                                                                        :ignore-instance-literals? true)
+                                              (conj guards (flower-if-value-let* context
                                                                                  false
                                                                                  (list 'if-value-let ['x_0 target] true false)))
                                               guards)
                                     :type-env (envs/extend-scope type-env
                                                                  sym
-                                                                 (types/no-maybe (expression-type context target)))
-                                    :env (envs/bind env
-                                                    sym
-                                                    target))
+                                                                 (types/no-maybe (expression-type context inner-target)))
+                                    :env (add-binding env
+                                                      sym
+                                                      inner-target))
                              then-clause)
         else-clause' (flower (assoc context
                                     :guards (if guard?
-                                              (conj guards (flower-if-value-let* (assoc context
-                                                                                        :ignore-instance-literals? true)
+                                              (conj guards (flower-if-value-let* context
                                                                                  false
                                                                                  (list 'if-value-let ['x_0 target] false true)))
                                               guards))
@@ -590,6 +618,18 @@
     (flower (assoc context :valid-var-path valid-var-path) sub-expr)
     (var-ref/make-var-ref valid-var-path)))
 
+(s/defn ^:private flower-valid
+  [context :- LowerContext
+   expr]
+  (let [{:keys [constraint-name path counter-atom]} context
+        valid-var-path (:id-path (meta expr))
+        [_ sub-expr] expr]
+    (when (nil? valid-var-path)
+      (throw (ex-info "did not find :id-path in metadata" {:expr expr
+                                                           :meta (meta expr)})))
+    (list 'when (var-ref/make-var-ref valid-var-path)
+          (flower (assoc context :valid-var-path valid-var-path) sub-expr))))
+
 (s/defn ^:private flower-fn-application
   [context :- LowerContext
    expr]
@@ -639,41 +679,39 @@
                   'rescale (flower-rescale context expr)
 
                   'valid? (flower-valid? context expr)
+                  'valid (flower-valid context expr)
                   ;; else:
                   (flower-fn-application context expr))
     (vector? expr) (flower-fog context expr)
     (set? expr) (flower-fog context expr)
+    (var-ref/var-ref? expr) expr
     :else (throw (ex-info "unrecognized halite form" {:expr expr}))))
 
 ;;;;
 
 (defn pre-lower [expr]
-  (let [m (meta expr)
-        result (->> expr
-                    (walk/postwalk (fn [expr]
-                                     (cond
-                                       (and (seq? expr)
-                                            (= 'get-in (first expr)))
-                                       (let [[_ target accessors] expr]
-                                         (loop [[a & more-a] accessors
-                                                r target]
-                                           (if a
-                                             (recur more-a (list 'get r a))
-                                             r)))
+  (->> expr
+       (walk2/postwalk* (fn [old-expr expr]
+                          (preserve-meta old-expr
+                                         (cond
+                                           (and (seq? expr)
+                                                (= 'get-in (first expr)))
+                                           (let [[_ target accessors] expr]
+                                             (loop [[a & more-a] accessors
+                                                    r target]
+                                               (if a
+                                                 (recur more-a (list 'get r a))
+                                                 r)))
 
-                                       (and (seq? expr)
-                                            (= 'cond (first expr)))
-                                       (reduce (fn [if-expr [pred then]]
-                                                 (make-if pred then if-expr))
-                                               (last expr)
-                                               (reverse (partition 2 (rest expr))))
+                                           (and (seq? expr)
+                                                (= 'cond (first expr)))
+                                           (reduce (fn [if-expr [pred then]]
+                                                     (make-if pred then if-expr))
+                                                   (last expr)
+                                                   (reverse (partition 2 (rest expr))))
 
-                                       :default
-                                       expr))))]
-    (if m
-      ;; preserve the existing metadata
-      (with-meta result m)
-      result)))
+                                           :default
+                                           expr))))))
 
 (defn lower-expr [context expr]
   (->> expr
@@ -692,31 +730,31 @@
   "If a variable is constrained to a single value and it must have a value, then in-line the value."
   [bom expr]
   (->> expr
-       (walk/postwalk (fn [expr]
-                        (collapse-booleans (if (var-ref/var-ref? expr)
-                                             (let [path (var-ref/get-path expr)
-                                                   v (or (get-in bom path)
-                                                         (when (and (= :$value? (last path))
-                                                                    (bom/is-primitive-value? (get-in bom (butlast path))))
-                                                           true))]
-                                               (if (bom/is-primitive-value? v)
-                                                 (if (fixed-decimal/fixed-decimal? v)
-                                                   (flower-fixed-decimal v)
-                                                   v)
-                                                 expr))
-                                             expr))))))
+       (walk2/postwalk (fn [expr]
+                         (collapse-booleans (if (var-ref/var-ref? expr)
+                                              (let [path (var-ref/get-path expr)
+                                                    v (or (get-in bom path)
+                                                          (when (and (= :$value? (last path))
+                                                                     (bom/is-primitive-value? (get-in bom (butlast path))))
+                                                            true))]
+                                                (if (bom/is-primitive-value? v)
+                                                  (if (fixed-decimal/fixed-decimal? v)
+                                                    (flower-fixed-decimal v)
+                                                    v)
+                                                  expr))
+                                              expr))))))
 
 (defn inline-ops
   "If an expression is a function call with all args as primitive values, then go ahead and evaluate it."
   [expr]
   (->> expr
-       (walk/postwalk (fn [expr]
-                        (collapse-booleans (if (and (seq? expr)
-                                                    (every? bom/is-primitive-value? (rest expr)))
-                                             (eval/eval-expr* {:senv (envs/spec-env {})
-                                                               :env (envs/env {})}
-                                                              expr)
-                                             expr))))))
+       (walk2/postwalk (fn [expr]
+                         (collapse-booleans (if (and (seq? expr)
+                                                     (every? bom/is-primitive-value? (rest expr)))
+                                              (eval/eval-expr* {:senv (envs/spec-env {})
+                                                                :env (envs/env {})}
+                                                               expr)
+                                              expr))))))
 
 ;;
 
@@ -822,10 +860,10 @@
                                                                                                                          instance-literal-id)
                                                                                                              :env
                                                                                                              (reduce (fn [env [field-name val]]
-                                                                                                                       (envs/bind env (symbol field-name)
-                                                                                                                                  (if (bom/is-expression-bom? val)
-                                                                                                                                    (:$expr val)
-                                                                                                                                    val)))
+                                                                                                                       (add-binding env (symbol field-name)
+                                                                                                                                    (if (bom/is-expression-bom? val)
+                                                                                                                                      (:$expr val)
+                                                                                                                                      val)))
                                                                                                                      (:env context)
                                                                                                                      bare-instance-bom)))
                                                                                           add-guards-to-constraints)]
@@ -843,22 +881,22 @@
                  base/no-nil-entries)
         bom' (->> (-> bom'
                       (merge @valid-var-atom))
-                  (walk/postwalk (fn [x]
-                                   (if (and (map? x)
-                                            (contains? x :$valid-var-constraints))
-                                     (apply make-and (vals (:$valid-var-constraints x)))
-                                     x))))]
+                  (walk2/postwalk (fn [x]
+                                    (if (and (map? x)
+                                             (contains? x :$valid-var-constraints))
+                                      (apply make-and (vals (:$valid-var-constraints x)))
+                                      x))))]
     (->> bom'
-         (walk/postwalk (fn [x]
-                          (if (and (var-ref/var-ref? x)
-                                   (contains? (set (var-ref/get-path x)) :$valid-vars))
-                            (get-in bom' (var-ref/get-path x))
-                            x)))
-         (walk/postwalk (fn [x]
-                          (if (and (map? x)
-                                   (contains? x :$valid-var-constraints))
-                            (apply make-and (vals (:$valid-var-constraints x)))
-                            x))))))
+         (walk2/postwalk (fn [x]
+                           (if (and (var-ref/var-ref? x)
+                                    (contains? (set (var-ref/get-path x)) :$valid-vars))
+                             (get-in bom' (var-ref/get-path x))
+                             x)))
+         (walk2/postwalk (fn [x]
+                           (if (and (map? x)
+                                    (contains? x :$valid-var-constraints))
+                             (apply make-and (vals (:$valid-var-constraints x)))
+                             x))))))
 
 (s/defn flower-op
   [spec-env :- (s/protocol envs/SpecEnv)

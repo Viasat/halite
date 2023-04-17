@@ -185,8 +185,12 @@
 (defn third [x]
   (->> x rest rest first))
 
+(defn fourth [x]
+  (->> x rest rest rest first))
+
 (defmacro check-propagate [spec-env bom & more]
   `(let [expected-result# ~(third (first more))
+         comment# ~(fourth (first more))
          spec-env0# (quote ~spec-env)
          spec-env# (eval spec-env0#)
          bom0# ~bom
@@ -209,7 +213,7 @@
                    (op-ensure-fields/ensure-fields-op spec-env#)
                    (op-add-value-fields/add-value-fields-op spec-env#)
                    (op-add-constraints/add-constraints-op spec-env#))
-         ;; _# (clojure.pprint/pprint (op-flower/flower-op spec-env# bom#))
+         ;; _# (clojure.pprint/pprint [:bom bom#])
          lowered-bom# (->> bom#
                            op-id/id-op
                            (op-flower/flower-op spec-env#))
@@ -227,12 +231,15 @@
                         (op-inflate/inflate-op (op-remove-value-fields/remove-value-fields-op spec-env# bom#))
                         (op-remove-value-fields/remove-value-fields-op spec-env#)
                         op-canon-up/canon-up-op
-                        op-strip/strip-op))]
+                        op-strip/strip-op))
+         test-result-block# (if comment#
+                              [lowered-bom# choco-data# result# comment#]
+                              [lowered-bom# choco-data# result#])]
      (is (= (quote ~(second (first more))) choco-data#))
      (is (= (quote ~(first (first more))) lowered-bom#))
      (is (= expected-result# result#))
-     (swap! test-atom conj (list '~'check-propagate spec-env0# bom0# [lowered-bom# choco-data# result#]))
-     [lowered-bom# choco-data# result#]))
+     (swap! test-atom conj (list '~'check-propagate spec-env0# bom0# test-result-block#))
+     test-result-block#))
 
 (defn stanza [s]
   (swap! test-atom conj (list 'stanza s)))
@@ -2523,6 +2530,133 @@
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{false}},
        :choco-bounds {$_0 5},
+       :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
+
+    (stanza "valid")
+
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(< (if-value-let [i
+                                                  (valid {:$type :ws/X$v1,
+                                                          :x a,
+                                                          :y 6})]
+                                                 (get i :x)
+                                                 12)
+                                   11)]]}}
+     {:$instance-of :ws/A$v1}
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" (< (if (= 10 (+ #r [:a] 6)) #r [:a] 12) 11)},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$valid-var-path [:$valid-vars "c2$1"]}},
+       :$valid-vars {"c2$1" (= 10 (+ #r [:a] 6))}}
+      {:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool},
+                    :constraints #{(< (if (= 10 (+ $_0 6)) $_0 12) 11)}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true},
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :a 4}])
+
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(> (if-value-let [i
+                                                  (valid {:$type :ws/X$v1,
+                                                          :x a,
+                                                          :y 6})]
+                                                 (get i :x)
+                                                 12)
+                                   11)]]}}
+     {:$instance-of :ws/A$v1}
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" (> (if (= 10 (+ #r [:a] 6)) #r [:a] 12) 11)},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$valid-var-path [:$valid-vars "c2$1"]}},
+       :$valid-vars {"c2$1" (= 10 (+ #r [:a] 6))}}
+      {:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool},
+                    :constraints #{(> (if (= 10 (+ $_0 6)) $_0 12) 11)}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true},
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :a {:$ranges #{[-1000 1001]}}}
+      "Ideally this would omit the value '4', but we are not doing split ranges in choco."])
+
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 1006 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(> (if-value-let [i
+                                                  (valid {:$type :ws/X$v1,
+                                                          :x a,
+                                                          :y 6})]
+                                                 (- (get i :x) 996)
+                                                 12)
+                                   11)]]}}
+     {:$instance-of :ws/A$v1}
+     [{:$instance-of :ws/A$v1,
+       :a {:$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c2" (> (if (= 1006 (+ #r [:a] 6)) (- #r [:a] 996) 12) 11)},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$valid-var-path [:$valid-vars "c2$1"]}},
+       :$valid-vars {"c2$1" (= 1006 (+ #r [:a] 6))}}
+      {:choco-spec {:vars {$_0 :Int,
+                           $_1 :Bool},
+                    :constraints #{(> (if (= 1006 (+ $_0 6)) (- $_0 996) 12) 11)}},
+       :choco-bounds {$_0 [-1000 1000],
+                      $_1 true},
+       :sym-to-path [$_0 [:a] $_1 [:a :$value?]]}
+      {:$instance-of :ws/A$v1,
+       :a {:$ranges #{[-1000 1000]}}}])
+
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer,
+                         :y :Integer},
+                :constraints [["c1" '(= 10 (+ x y))]]},
+      :ws/A$v1 {:fields {:a :Integer},
+                :constraints [["c2"
+                               '(> (if-value-let [i
+                                                  (valid {:$type :ws/X$v1,
+                                                          :x a,
+                                                          :y 6})]
+                                                 (get i :x)
+                                                 12)
+                                   11)]]}}
+     {:$instance-of :ws/A$v1,
+      :a 4}
+     [{:$instance-of :ws/A$v1,
+       :a 4,
+       :$constraints {"c2" (> (if true 4 12) 11)},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
+                                    :y 6,
+                                    :$instance-literal-type :ws/X$v1,
+                                    :$valid-var-path [:$valid-vars "c2$1"]}},
+       :$valid-vars {"c2$1" true}}
+      {:choco-spec {:vars {$_0 :Int},
+                    :constraints #{(> (if true 4 12) 11)}},
+       :choco-bounds {$_0 4},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])))
 
 (defn format-code [code]
