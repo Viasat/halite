@@ -2461,11 +2461,11 @@
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {"c2" (= 10 (+ #r [:a] 6))},
-       :$instance-literals {"c2$1" {:x {:$expr #r [:a]},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
                                     :y 6,
                                     :$instance-literal-type :ws/X$v1,
-                                    :$valid-var-path [:$valid-vars "c2$0"]}},
-       :$valid-vars {"c2$0" (= 10 (+ #r [:a] 6))}}
+                                    :$valid-var-path [:$valid-vars "c2$1"]}},
+       :$valid-vars {"c2$1" (= 10 (+ #r [:a] 6))}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
                     :constraints #{(= 10 (+ $_0 6))}},
@@ -2489,11 +2489,11 @@
      [{:$instance-of :ws/A$v1,
        :a 4,
        :$constraints {"c2" true},
-       :$instance-literals {"c2$1" {:x {:$expr #r [:a]},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
                                     :y 6,
                                     :$instance-literal-type :ws/X$v1,
-                                    :$valid-var-path [:$valid-vars "c2$0"]}},
-       :$valid-vars {"c2$0" true}}
+                                    :$valid-var-path [:$valid-vars "c2$1"]}},
+       :$valid-vars {"c2$1" true}}
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{true}},
        :choco-bounds {$_0 4},
@@ -2515,11 +2515,11 @@
      [{:$instance-of :ws/A$v1,
        :a 5,
        :$constraints {"c2" false},
-       :$instance-literals {"c2$1" {:x {:$expr #r [:a]},
+       :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
                                     :y 6,
                                     :$instance-literal-type :ws/X$v1,
-                                    :$valid-var-path [:$valid-vars "c2$0"]}},
-       :$valid-vars {"c2$0" false}}
+                                    :$valid-var-path [:$valid-vars "c2$1"]}},
+       :$valid-vars {"c2$1" false}}
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{false}},
        :choco-bounds {$_0 5},

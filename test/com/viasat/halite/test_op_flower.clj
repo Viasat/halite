@@ -83,7 +83,7 @@
   (check-flower '(= x a) '(= #r [:p :x] 10))
   (check-flower '(not= x a) '(not= #r [:p :x] 10))
   (check-flower '(+ #d "1.1" x) '(+ 11 #r [:p :x]))
-  (check-flower '{:$type :ws/A :x x :a a} #instance {:$type :ws/A, :x #r [:p :x], :a 10})
+  (check-flower (with-meta '{:$type :ws/A :x x :a a} {:id-path [:q]}) #instance {:$type :ws/A, :x #r [:p :x], :a 10})
   (check-flower '(+ x a y b) '(+ #r [:p :x] 10 #r [:p :y] 20))
   (check-flower '(+ x (- a y)) '(+ #r [:p :x] (- 10 #r [:p :y])))
   (check-flower '(let [c x d 1] (+ c d)) '(+ #r [:p :x] 1))

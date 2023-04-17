@@ -39,10 +39,19 @@
   (let [{:keys [path counter-atom]} id-context]
     (->> expr
          (walk/postwalk (fn [expr]
-                          (if (or (and (seq? expr)
-                                       (#{'valid 'valid?} (first expr)))
-                                  (map? expr))
-                            (with-meta expr {:id-path (conj path (next-id counter-atom))})
+                          (cond
+                            (and (seq? expr)
+                                 (#{'valid 'valid?} (first expr)))
+                            (with-meta expr {:id-path
+                                             (conj (vec (butlast path))
+                                                   :$valid-vars
+                                                   (str (last path) "$" (next-id counter-atom)))})
+
+                            (map? expr)
+                            (with-meta expr {:id-path
+                                             (conj (vec (butlast path))
+                                                   (str (last path) "$" (next-id counter-atom)))})
+                            :default
                             expr))))))
 
 ;;
@@ -77,7 +86,7 @@
                                       :$constraints
                                       (map (fn [[constraint-name x]]
                                              [constraint-name (id-expr (assoc context :path
-                                                                              (conj path :$constraints constraint-name))
+                                                                              (conj path (str constraint-name)))
                                                                        x)]))
                                       (into {})))
         (assoc :$refinements (some-> bom

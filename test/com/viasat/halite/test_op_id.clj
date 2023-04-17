@@ -31,7 +31,7 @@
             :b {:$instance-of :ws/B$v1
                 :$constraints {"x" '(get {:$type :ws/A, :x true, :a 10} :x)}}}
            result))
-    (is (= {:id-path [:b :$constraints "x" 0]}
+    (is (= {:id-path [:b "x$0"]}
            (meta (second (get-in result [:b :$constraints "x"]))))))
 
   (let [result (op-id/id-op {:$instance-of :ws/A$v1
@@ -41,9 +41,9 @@
             :b {:$instance-of :ws/B$v1
                 :$constraints {"x" '(valid {:$type :ws/A, :x true, :a 10})}}}
            result))
-    (is (= {:id-path [:b :$constraints "x" 0]}
+    (is (= {:id-path [:b "x$0"]}
            (meta (second (get-in result [:b :$constraints "x"])))))
-    (is (= {:id-path [:b :$constraints "x" 1]}
+    (is (= {:id-path [:b :$valid-vars "x$1"]}
            (meta (get-in result [:b :$constraints "x"])))))
 
   (let [result (op-id/id-op {:$instance-of :ws/A$v1
@@ -53,9 +53,9 @@
             :b {:$instance-of :ws/B$v1
                 :$constraints {"x" '(valid? {:$type :ws/A, :x true, :a 10})}}}
            result))
-    (is (= {:id-path [:b :$constraints "x" 0]}
+    (is (= {:id-path [:b "x$0"]}
            (meta (second (get-in result [:b :$constraints "x"])))))
-    (is (= {:id-path [:b :$constraints "x" 1]}
+    (is (= {:id-path [:b :$valid-vars "x$1"]}
            (meta (get-in result [:b :$constraints "x"]))))))
 
 ;; (run-tests)

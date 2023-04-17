@@ -326,7 +326,10 @@
         new-contents (-> expr
                          (dissoc :$type)
                          (update-vals (partial flower context)))
-        path (conj path (str constraint-name "$" (next-id counter-atom)))]
+        path (:id-path (meta expr))]
+    (when (nil? path)
+      (throw (ex-info "did not find expected id-path in metadata" {:expr expr
+                                                                   :meta (meta expr)})))
     (if (->> new-contents
              vals
              (some non-root-fog?))
@@ -578,9 +581,11 @@
 (s/defn ^:private flower-valid?
   [context :- LowerContext
    expr]
-  (let [{:keys [constraint-name path counter-atom]} context
-        valid-var-path (conj path :$valid-vars (str constraint-name "$" (next-id counter-atom)))
+  (let [valid-var-path (:id-path (meta expr))
         [_ sub-expr] expr]
+    (when (nil? valid-var-path)
+      (throw (ex-info "did not find expected id-path in metadata" {:expr expr
+                                                                   :meta (meta expr)})))
     ;; for the side-effects of finding the instance literals
     (flower (assoc context :valid-var-path valid-var-path) sub-expr)
     (var-ref/make-var-ref valid-var-path)))
@@ -643,27 +648,32 @@
 ;;;;
 
 (defn pre-lower [expr]
-  (->> expr
-       (walk/postwalk (fn [expr]
-                        (cond
-                          (and (seq? expr)
-                               (= 'get-in (first expr)))
-                          (let [[_ target accessors] expr]
-                            (loop [[a & more-a] accessors
-                                   r target]
-                              (if a
-                                (recur more-a (list 'get r a))
-                                r)))
+  (let [m (meta expr)
+        result (->> expr
+                    (walk/postwalk (fn [expr]
+                                     (cond
+                                       (and (seq? expr)
+                                            (= 'get-in (first expr)))
+                                       (let [[_ target accessors] expr]
+                                         (loop [[a & more-a] accessors
+                                                r target]
+                                           (if a
+                                             (recur more-a (list 'get r a))
+                                             r)))
 
-                          (and (seq? expr)
-                               (= 'cond (first expr)))
-                          (reduce (fn [if-expr [pred then]]
-                                    (make-if pred then if-expr))
-                                  (last expr)
-                                  (reverse (partition 2 (rest expr))))
+                                       (and (seq? expr)
+                                            (= 'cond (first expr)))
+                                       (reduce (fn [if-expr [pred then]]
+                                                 (make-if pred then if-expr))
+                                               (last expr)
+                                               (reverse (partition 2 (rest expr))))
 
-                          :default
-                          expr)))))
+                                       :default
+                                       expr))))]
+    (if m
+      ;; preserve the existing metadata
+      (with-meta result m)
+      result)))
 
 (defn lower-expr [context expr]
   (->> expr
