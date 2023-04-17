@@ -304,7 +304,8 @@
                    :$expr
                    :$type
                    :$primitive-type
-                   :$constraints})
+                   :$constraints
+                   :$id-path})
 
 (s/defn is-instance? :- Boolean
   [instance]

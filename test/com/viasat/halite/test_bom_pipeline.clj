@@ -16,6 +16,7 @@
             [com.viasat.halite.op-ensure-fields :as op-ensure-fields]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
             [com.viasat.halite.op-flower :as op-flower]
+            [com.viasat.halite.op-id :as op-id]
             [com.viasat.halite.op-inflate :as op-inflate]
             [com.viasat.halite.op-mandatory :as op-mandatory]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
@@ -210,6 +211,7 @@
                    (op-add-constraints/add-constraints-op spec-env#))
          ;; _# (clojure.pprint/pprint (op-flower/flower-op spec-env# bom#))
          lowered-bom# (->> bom#
+                           op-id/id-op
                            (op-flower/flower-op spec-env#))
          choco-data# (when-not (bom/is-contradiction-bom? lowered-bom#)
                        (->> lowered-bom#
