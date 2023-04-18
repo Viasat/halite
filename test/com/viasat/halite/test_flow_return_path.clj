@@ -6,6 +6,8 @@
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.fog :as fog]
             [com.viasat.halite.flow-return-path :as flow-return-path]
+            [com.viasat.halite.op-flower :as op-flower]
+            [com.viasat.halite.test-op-flower :as test-op-flower]
             [schema.test])
   (:import [clojure.lang ExceptionInfo]))
 
@@ -16,7 +18,9 @@
 (use-fixtures :each fixtures)
 
 (def empty-context {:env (envs/env {})
-                    :path []})
+                    :path []
+                    :lower-f (fn [expr]
+                               (op-flower/lower-expr test-op-flower/empty-context expr))})
 
 (deftest test-return-path
   (is (= true
@@ -26,11 +30,11 @@
          (flow-return-path/return-path empty-context
                                        '(if x 9 2))))
 
-  (is (= 'x
+  (is (= #r [:x]
          (flow-return-path/return-path empty-context
                                        '(when x 1))))
 
-  (is (= '(> x 5)
+  (is (= '(> #r [:x] 5)
          (flow-return-path/return-path (assoc empty-context
                                               :env (envs/env {'x 100}))
                                        '(when (> x 5) 1))))
@@ -46,11 +50,11 @@
 
   ;; boolean ops
 
-  (is (= '(if x #r [:y :$value?] #r [:z :$value?])
+  (is (= '(if #r [:x] #r [:y :$value?] #r [:z :$value?])
          (flow-return-path/return-path empty-context
                                        '(if x y z))))
 
-  (is (= '(and x #r [:y :$value?])
+  (is (= '(and #r [:x] #r [:y :$value?])
          (flow-return-path/return-path empty-context
                                        '(when x y))))
 
@@ -91,7 +95,7 @@
          (flow-return-path/return-path empty-context
                                        '(get (get {:$type :spec/A$v1 :a {:$type :spec/B$v1 :b 5}} :a) :b))))
 
-  (is (= '(or y #r [:x :$value?])
+  (is (= '(or #r [:y] #r [:x :$value?])
          (flow-return-path/return-path empty-context
                                        '(get (get {:$type :spec/A$v1
                                                    :a (if y

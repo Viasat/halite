@@ -280,7 +280,11 @@
   (let [{:keys [env type-env guards]} context
         [_ [sym target] then-clause else-clause] expr
         target' (flower context target)
-        return-path-target (flow-return-path/return-path (select-keys context [:env :path]) target)
+        return-path-target (flow-return-path/return-path
+                            (-> context
+                                (select-keys [:env :path])
+                                (assoc :lower-f #(flower context %)))
+                            target)
         inner-target (if (and (seq? target)
                               (= 'valid (first target)))
                        ;; sniff out the value inside target

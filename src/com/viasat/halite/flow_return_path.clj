@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.flow-return-path
-  "Turn an expression into a boolean expression indicating whether or not the expression produces a value."
+  "Turn a non-lowered expression into a lowered boolean expression indicating whether or not the expression produces a value."
   (:require [clojure.math :as math]
             [com.viasat.halite.flow-boolean :as flow-boolean]
             [com.viasat.halite.flow-get :as flow-get]
@@ -33,7 +33,9 @@
 ;;;;
 
 (def ReturnPathContext {:env (s/protocol envs/Env) ;; contains local values, e.g. from 'let' forms
-                        :path [s/Any]})
+                        :path [s/Any]
+                        :lower-f s/Any ;; a function to use to lower expressions
+                        })
 
 ;;;;
 
@@ -44,16 +46,18 @@
 (s/defn ^:private return-path-if
   [context :- ReturnPathContext
    expr]
-  (let [[_ target then-clause else-clause] expr]
-    (flow-boolean/make-if target
+  (let [{:keys [lower-f]} context
+        [_ target then-clause else-clause] expr]
+    (flow-boolean/make-if (lower-f target)
                           (return-path context then-clause)
                           (return-path context else-clause))))
 
 (s/defn ^:private return-path-when
   [context :- ReturnPathContext
    expr]
-  (let [[_ target then-clause] expr]
-    (flow-boolean/make-if target
+  (let [{:keys [lower-f]} context
+        [_ target then-clause] expr]
+    (flow-boolean/make-if (lower-f target)
                           (return-path context then-clause)
                           false)))
 
