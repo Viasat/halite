@@ -18,13 +18,16 @@
 
 (fog/init)
 
-(defmacro check-flower [in out]
+(defmacro check-flower [in out & more]
   `(let [in# ~in
          out# ~out
          spec-info# {:fields {:x :Integer
                               :xs [:Vec :Integer]
                               :z :Integer}}
-         result# (flow-expr/lower-expr {:spec-env {:ws/A$v1 spec-info#}
+         instance-literal-atom# (atom {})
+         result# (flow-expr/lower-expr {:spec-env {:ws/A$v1 spec-info#
+                                                   :ws/B$v1 {:fields {:n :Integer
+                                                                      :o [:Maybe :Integer]}}}
                                         :spec-type-env (envs/type-env-from-spec spec-info#)
                                         :type-env (envs/type-env {'~'a :Integer
                                                                   '~'b :Integer})
@@ -32,11 +35,14 @@
                                                         '~'b 20})
                                         :path [:p]
                                         :counter-atom (atom -1)
-                                        :instance-literal-atom (atom {})
+                                        :instance-literal-f (fn [path# instance-literal#]
+                                                              (swap! instance-literal-atom# assoc-in path# instance-literal#))
                                         :guards []}
-                                       in#)]
+                                       in#)
+         expected-instance-literals# (or ~(first more) {})]
      (is (= out# result#))
-     result#))
+     (is (= expected-instance-literals# @instance-literal-atom#))
+     [result# @instance-literal-atom#]))
 
 (deftest test-make-var-refs
   (check-flower '1 '1)
@@ -44,7 +50,11 @@
   (check-flower '(= x a) '(= #r [:p :x] 10))
   (check-flower '(not= x a) '(not= #r [:p :x] 10))
   (check-flower '(+ #d "1.1" x) '(+ 11 #r [:p :x]))
-  (check-flower (with-meta '{:$type :ws/A :x x :a a} {:id-path [:q]}) #instance {:$type :ws/A, :x #r [:p :x], :a 10})
+  (check-flower (with-meta '{:$type :ws/A :x x :a a} {:id-path [:q]}) #instance {:$type :ws/A, :x #r [:p :x], :a 10}
+                {:q {:$instance-literal-type :ws/A
+                     :x {:$expr #r [:p :x]}
+                     :a 10
+                     :$guards []}})
   (check-flower '(+ x a y b) '(+ #r [:p :x] 10 #r [:p :y] 20))
   (check-flower '(+ x (- a y)) '(+ #r [:p :x] (- 10 #r [:p :y])))
   (check-flower '(let [c x d 1] (+ c d)) '(+ #r [:p :x] 1))
@@ -71,10 +81,24 @@
   (check-flower '(reduce [a 0] [x xs] (cond (= x 1) "hi" 2)) #fog :Value)
   (check-flower '(sort-by [x #{[3] [1 2]}] (count x)) #fog [:Vec [:Vec :Integer]])
   (check-flower '(sort-by [p xs] (count xs)) #fog [:Vec :Integer])
-  ;; TODO
-  ;; (check-flower '(valid {:$type :ws/A :x x}) '(valid {:x #r [:p :x], :$type :ws/A}))
-  ;; (check-flower '(valid? {:$type :ws/A :x x}) '(valid? {:x #r [:p :x], :$type :ws/A}))
-  ;; (check-flower '(get {:$type :ws/A :x x} :x) '(get {:$type :ws/A :x x} :x))
+  (check-flower '^{:id-path [:q 2]} (valid ^{:id-path [:q 1]} {:$type :ws/A :x x})
+                '(when #r [:q 2] #instance {:x #r [:p :x], :$type :ws/A})
+                '{:q {1 {:$instance-literal-type :ws/A
+                         :x {:$expr #r [:p :x]}
+                         :$guards []
+                         :$valid-var-path [:q 2]}}})
+  (check-flower '^{:id-path [:q 2]} (valid? ^{:id-path [:q 1]} {:$type :ws/A :x x})
+                '#r [:q 2]
+                {:q {1 {:$instance-literal-type :ws/A
+                        :x {:$expr #r [:p :x]}
+                        :$guards []
+                        :$valid-var-path [:q 2]}}})
+
+  (check-flower '(get ^{:id-path [:q 1]} {:$type :ws/A :x x} :x)
+                #r [:p :x]
+                {:q {1 {:$instance-literal-type :ws/A,
+                        :x {:$expr #r [:p :x]}
+                        :$guards []}}})
   (check-flower '(get x :q) '#r [:p :x :q])
   (check-flower '(get x :x) '#r [:p :x :x])
   (check-flower '(get x {:$type :ws/A$v1 :x 1 :xs [10 20] :z 3} :x) #r [:p :x {:$type :ws/A$v1 :x 1 :xs [10 20] :z 3}])
@@ -82,17 +106,48 @@
   (check-flower '(get-in x [:q :r]) '#r [:p :x :q :r])
   (check-flower '(get-in x [:x :y]) '#r [:p :x :x :y])
 
-  #_(check-flower '(if-value-let [x (get {:n x, :p 2, :$type :my/Spec$v1} :o)]
-                                 (div x y)
-                                 x)
-                  '(if-value-let [x (get {:$type :my/Spec$v1 :n x :p 2} :o)]
-                                 (div x y)
-                                 x))
+  (check-flower '(if-value-let [x (get ^{:id-path [:q 1]} {:$type :ws/B$v1 :n x} :o)]
+                               (div x 3)
+                               5)
+                5
+                {:q {1 {:$instance-literal-type :ws/B$v1
+                        :n {:$expr #r [:p :x]}
+                        :$guards []}}})
 
-  #_(check-flower '(when-value-let [x (get {:n x, :p 2, :$type :my/Spec$v1} :o)]
-                                   (div x y))
-                  '(when-value-let [x (get {:$type :my/Spec$v1 :n x :p 2} :o)]
-                                   (div x y)
-                                   x)))
+  (check-flower '(if-value-let [x (get ^{:id-path [:q 1]} {:$type :ws/B$v1 :n x :o 6} :o)]
+                               (div x 3)
+                               5)
+                '(div 6 3)
+                {:q {1 {:n {:$expr #r [:p :x]}
+                        :o 6
+                        :$instance-literal-type :ws/B$v1
+                        :$guards []}}})
+
+  (check-flower '(if-value-let [x (get ^{:id-path [:q 1]} {:$type :ws/B$v1 :n 3 :o x} :o)]
+                               (div x 3)
+                               5)
+                '(if #r [:p :x :$value?]
+                   (div #r [:p :x] 3)
+                   5)
+                {:q {1 {:$instance-literal-type :ws/B$v1
+                        :n 3
+                        :o {:$expr #r [:p :x]}
+                        :$guards []}}})
+
+  (check-flower '(when-value-let [x (get ^{:id-path [:q 1]} {:$type :ws/B$v1 :n x} :o)]
+                                 (div x 3))
+                '$no-value
+                {:q {1 {:n {:$expr #r [:p :x]}, :$instance-literal-type :ws/B$v1, :$guards []}}})
+
+  (check-flower '(when-value-let [x (get ^{:id-path [:q 1]} {:$type :ws/B$v1 :n x :o 6} :o)]
+                                 (div x 3))
+                '(div 6 3)
+                {:q {1 {:n {:$expr #r [:p :x]}, :o 6, :$instance-literal-type :ws/B$v1, :$guards []}}})
+
+  (check-flower '(when-value-let [x (get ^{:id-path [:q 1]} {:$type :ws/B$v1 :n 6 :o x} :o)]
+                                 (div x 3))
+                '(when #r [:p :x :$value?]
+                   (div #r [:p :x] 3))
+                {:q {1 {:n 6, :o {:$expr #r [:p :x]}, :$instance-literal-type :ws/B$v1, :$guards []}}}))
 
 ;; (run-tests)

@@ -88,14 +88,16 @@
                  (assoc :$constraints (some->> bom
                                                :$constraints
                                                (map (fn [[constraint-name x]]
-                                                      (let [lowered-x (->> x
-                                                                           (flow-expr/lower-expr
-                                                                            (-> context
-                                                                                (assoc
-                                                                                 :spec-type-env (envs/type-env-from-spec spec-info)
-                                                                                 :constraint-name constraint-name)
-                                                                                (dissoc :top-bom)))
-                                                                           (flow-inline/inline top-bom))]
+                                                      (let [lowered-x
+                                                            (->> x
+                                                                 (flow-expr/lower-expr
+                                                                  (-> context
+                                                                      (assoc
+                                                                       :spec-type-env (envs/type-env-from-spec spec-info)
+                                                                       :constraint-name constraint-name
+                                                                       :instance-literal-f #(swap! instance-literal-atom assoc-in %1 %2))
+                                                                      (dissoc :top-bom :instance-literal-atom)))
+                                                                 (flow-inline/inline top-bom))]
                                                         ;; a constraint of 'true is always satisfied, so simply drop it
                                                         (when-not (= true lowered-x)
                                                           [constraint-name lowered-x]))))

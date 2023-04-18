@@ -34,7 +34,7 @@
                   :path [s/Any]
                   :counter-atom s/Any ;; an atom to generate unique IDs
                   (s/optional-key :valid-var-path) [s/Any] ;; path to a variable to represent the result of a 'valid' or 'valid?' invocation in an expression
-                  :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
+                  :instance-literal-f s/Any ;; "callback" for indicating that an instance literal is encountered
                   (s/optional-key :constraint-name) String
                   :guards [s/Any]})
 
@@ -58,6 +58,27 @@
 
 ;;;;
 
+(deftype LoweredExpr [expr]
+  Object
+  (equals [_ other]
+    (and (instance? LoweredExpr other)
+         (= expr (.-expr ^LoweredExpr other))))
+  (hashCode [_]
+    (.hashCode expr)))
+
+(s/defn lowered-expr? :- Boolean
+  [value :- s/Any]
+  (instance? LoweredExpr value))
+
+(defn wrap-lowered-expr [expr]
+  (LoweredExpr. expr))
+
+(s/defn unwrap-lowered-expr
+  [expr :- LoweredExpr]
+  (.-expr expr))
+
+;;;;
+
 (declare flower)
 
 (s/defn ^:private flower-fog
@@ -73,13 +94,15 @@
       sym
       (if (contains? (envs/bindings env) sym)
         (let [resolved ((envs/bindings env) sym)]
-          (flower context resolved))
+          (if (lowered-expr? resolved)
+            (unwrap-lowered-expr resolved)
+            (flower context resolved)))
         (var-ref/make-var-ref (conj path (keyword sym)))))))
 
 (s/defn ^:private flower-instance
   [context :- ExprContext
    expr]
-  (let [{:keys [spec-env type-env env path counter-atom instance-literal-atom constraint-name guards
+  (let [{:keys [spec-env type-env env path counter-atom instance-literal-f constraint-name guards
                 valid-var-path]} context
         new-contents (-> expr
                          (dissoc :$type)
@@ -108,19 +131,18 @@
                                 type-env
                                 new-contents)
               context' (assoc context :env env' :type-env type-env')]
-          (swap! instance-literal-atom assoc-in
-                 path
-                 (let [nc (-> new-contents
-                              (update-vals (fn [val]
-                                             (if (bom/is-primitive-value? val)
-                                               val
-                                               {:$expr val})))
-                              (assoc :$instance-literal-type (:$type expr)
-                                     :$guards guards))
-                       nc (if (nil? valid-var-path)
-                            nc
-                            (assoc nc :$valid-var-path valid-var-path))]
-                   nc)))
+          (instance-literal-f path
+                              (let [nc (-> new-contents
+                                           (update-vals (fn [val]
+                                                          (if (bom/is-primitive-value? val)
+                                                            val
+                                                            {:$expr val})))
+                                           (assoc :$instance-literal-type (:$type expr)
+                                                  :$guards guards))
+                                    nc (if (nil? valid-var-path)
+                                         nc
+                                         (assoc nc :$valid-var-path valid-var-path))]
+                                nc)))
         (instance-literal/make-instance-literal (-> new-contents
                                                     (assoc :$type (:$type expr))))))))
 
@@ -265,9 +287,16 @@
                             target)
         inner-target (if (and (seq? target)
                               (= 'valid (first target)))
-                       ;; sniff out the value inside target
+                                    ;; sniff out the value inside target
                        (second target)
                        target)
+        inner-target' (if (nil? target')
+                        '$no-value
+                        (if (and (seq? target)
+                                 (= 'valid (first target)))
+                                       ;; sniff out the value inside target
+                          (second (rest target'))
+                          target'))
         then-clause' (flower (assoc context
                                     :guards (if guard?
                                               (conj guards (flower-if-value-let* context
@@ -279,22 +308,27 @@
                                                                  (types/no-maybe (expression-type context inner-target)))
                                     :env (flow-return-path/add-binding env
                                                                        sym
-                                                                       inner-target))
+                                                                       (wrap-lowered-expr inner-target')))
                              then-clause)
-        else-clause' (flower (assoc context
-                                    :guards (if guard?
-                                              (conj guards (flower-if-value-let* context
-                                                                                 false
-                                                                                 (list 'if-value-let ['x_0 target] false true)))
-                                              guards))
-                             else-clause)]
+        else-clause' (when-not (nil? else-clause)
+                       (flower (assoc context
+                                      :guards (if guard?
+                                                (conj guards (flower-if-value-let* context
+                                                                                   false
+                                                                                   (list 'if-value-let ['x_0 target] false true)))
+                                                guards))
+                               else-clause))]
     (if (or (non-root-fog? target')
             (non-root-fog? then-clause')
-            (non-root-fog? else-clause'))
+            (and (not (nil? else-clause'))
+                 (non-root-fog? else-clause')))
       (flower-fog context expr)
-      (flow-boolean/make-if return-path-target
-                            then-clause'
-                            else-clause'))))
+      (if (nil? else-clause)
+        (flow-boolean/make-when return-path-target
+                                then-clause')
+        (flow-boolean/make-if return-path-target
+                              then-clause'
+                              else-clause')))))
 
 (s/defn ^:private flower-if-value-let
   [context :- ExprContext
@@ -304,23 +338,7 @@
 (s/defn ^:private flower-when-value-let
   [context :- ExprContext
    expr]
-  (let [{:keys [type-env guards]} context
-        [_ [sym target] body] expr
-        target' (flower context target)
-        body' (flower (assoc context
-                             :guards (conj guards (flower-if-value-let* context
-                                                                        false
-                                                                        (list 'if-value-let ['x_0 target] true false)))
-
-                             :type-env (envs/extend-scope type-env
-                                                          sym
-                                                          (types/no-maybe (expression-type context target))))
-                      body)]
-    (if (or (non-root-fog? target')
-            (non-root-fog? body'))
-      (flower-fog context expr)
-      (list 'when-value-let [sym target']
-            body'))))
+  (flower-if-value-let* context true expr))
 
 (s/defn ^:private flower-refine-to
   [op
@@ -463,4 +481,3 @@
        pre-lower
        (flower (assoc context
                       :guards []))))
-

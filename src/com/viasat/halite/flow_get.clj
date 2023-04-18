@@ -4,6 +4,7 @@
 (ns com.viasat.halite.flow-get
   (:require [com.viasat.halite.envs :as envs]
             [com.viasat.halite.flow-boolean :as flow-boolean]
+            [com.viasat.halite.instance-literal :as instance-literal]
             [com.viasat.halite.var-ref :as var-ref]
             [schema.core :as s]))
 
@@ -90,6 +91,7 @@
                                false)
                      {:done? true})
     (map? expr) (get expr field)
+    (instance-literal/instance-literal? expr) (get (instance-literal/get-bindings expr) field)
     (vector? expr) (get expr field)
     (seq? expr) (condp = (first expr)
                   'if (push-down-get-if path field expr)

@@ -13,7 +13,12 @@
 
 (set! *warn-on-reflection* true)
 
-(def fixtures (join-fixtures [schema.test/validate-schemas]))
+(def instance-literal-atom (atom {}))
+
+(def fixtures (join-fixtures [(fn [f]
+                                (reset! instance-literal-atom (atom {}))
+                                (f))
+                              schema.test/validate-schemas]))
 
 (use-fixtures :each fixtures)
 
@@ -23,7 +28,8 @@
                               :env (envs/env {})
                               :path []
                               :counter-atom (atom -1)
-                              :instance-literal-atom (atom {})
+                              :instance-literal-f (fn [path instance-literal]
+                                                    (swap! instance-literal-atom assoc-in path instance-literal))
                               :guards []})
 
 (def empty-context {:env (envs/env {})

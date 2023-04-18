@@ -49,3 +49,9 @@
     ;; (= target then-clause) (make-or then-clause else-clause)
     ;; (= target else-clause) (make-or 'or then-clause else-clause)
     :default (list 'if target then-clause else-clause)))
+
+(defn make-when [target then-clause]
+  (cond
+    (= true target) then-clause
+    (= false target) '$no-value
+    :default (list 'when target then-clause)))

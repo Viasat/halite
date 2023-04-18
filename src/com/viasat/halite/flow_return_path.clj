@@ -100,7 +100,9 @@
         result (flow-get/push-down-get path accessor target)]
     (if (:done? (meta result))
       result
-      (return-path context result))))
+      (if (nil? result)
+        false
+        (return-path context result)))))
 
 (s/defn ^:private return-path-symbol
   [context :- ReturnPathContext

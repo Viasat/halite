@@ -68,4 +68,31 @@
                :if (eval `(if ~target ~then-clause ~else-clause))
                :make-if (flow-boolean/make-if target then-clause else-clause)])))))
 
+(defn nil-to-no-value [x]
+  (if (nil? x)
+    '$no-value
+    x))
+
+(defn no-value-to-nil [x]
+  (when-not (= '$no-value x)
+    x))
+
+(deftest test-make-when
+  (doseq [target [true false]
+          then-clause [true false]]
+    (is (= (nil-to-no-value (eval `(when ~target ~then-clause)))
+           (flow-boolean/make-when target then-clause))))
+  (doseq [target ['com.viasat.halite.test-flow-boolean/x true false]
+          then-clause ['com.viasat.halite.test-flow-boolean/y true false]]
+    (doseq [x [true false]
+            y [true false]]
+      (do (def com.viasat.halite.test-flow-boolean/x x)
+          (def com.viasat.halite.test-flow-boolean/y y)
+          (is (= (eval `(when ~target ~then-clause))
+                 (eval (no-value-to-nil (flow-boolean/make-when target then-clause))))
+              [:target target :then-clause then-clause
+               :x x :y y
+               :when (nil-to-no-value (eval `(when ~target ~then-clause)))
+               :make-when (flow-boolean/make-when target then-clause)])))))
+
 ;; (run-tests)
