@@ -9,6 +9,9 @@
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.eval :as eval]
+            [com.viasat.halite.flow-boolean :as flow-boolean]
+            [com.viasat.halite.flow-get :as flow-get]
+            [com.viasat.halite.flow-return-path :as flow-return-path]
             [com.viasat.halite.instance-literal :as instance-literal]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.op-add-constraints :as op-add-constraints]
@@ -53,252 +56,6 @@
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
                    (s/optional-key :constraint-name) String
                    :guards [s/Any]})
-
-;;;;
-
-(declare push-down-get)
-
-(defn- make-and [& args]
-  (let [args (->> args
-                  (remove #(= true %)))]
-    (cond
-      (= 0 (count args)) true
-      (= 1 (count args)) (first args)
-      (some #(= false %) args) false
-      :default (apply list 'and args))))
-
-(defn- make-or [& args]
-  (let [args (->> args
-                  (remove #(= false %)))]
-    (cond
-      (= 0 (count args)) false
-      (= 1 (count args)) (first args)
-      (some #(= true %) args) true
-      :default (apply list 'or args))))
-
-(defn- make-not [x]
-  (cond
-    (= true x) false
-    (= false x) true
-    (and (seq? x) (= 'not (first x))) (second x)
-    :default (list 'not x)))
-
-(defn- make-if [target then-clause else-clause]
-  (cond
-    (= true target) then-clause
-    (= false target) else-clause
-    (and (= true then-clause) (= true else-clause)) true
-    (and (= false then-clause) (= false else-clause)) false
-    (and (= true then-clause) (= false else-clause)) target
-    (and (= false then-clause) (= true else-clause)) (make-not target)
-    (= true else-clause) (make-or (make-not target) then-clause)
-    (= true then-clause) (make-or target else-clause)
-    (= false else-clause) (make-and target then-clause)
-    (= false then-clause) (make-and (make-not target) else-clause)
-    ;; cannot do these simplifications because the clauses might not be boolean types
-    ;; (= target then-clause) (make-or then-clause else-clause)
-    ;; (= target else-clause) (make-or 'or then-clause else-clause)
-    :default (list 'if target then-clause else-clause)))
-
-(s/defn ^:private push-down-get-if
-  [context :- LowerContext
-   field
-   expr]
-  (let [[_ target then-clause else-clause] expr]
-    (make-if target
-             (push-down-get context field then-clause)
-             (push-down-get context field else-clause))))
-
-(s/defn ^:private push-down-get-when
-  [context :- LowerContext
-   field
-   expr]
-  (let [[_ target then-clause] expr]
-    (list 'when
-          target
-          (push-down-get context field then-clause))))
-
-(s/defn ^:private push-down-get-if-value
-  [context :- LowerContext
-   field
-   expr]
-  (let [[_ target then-clause else-clause] expr]
-    (list 'if-value
-          target
-          (push-down-get context field then-clause)
-          (push-down-get context field else-clause))))
-
-(s/defn ^:private push-down-get-when-value
-  [context :- LowerContext
-   field
-   expr]
-  (let [[_ target then-clause] expr]
-    (list 'when-value
-          target
-          (push-down-get context field then-clause))))
-
-(s/defn ^:private push-down-get-if-value-let
-  [context :- LowerContext
-   field
-   expr]
-  (let [{:keys [env]} context
-        [_ [sym target] then-clause else-clause] expr]
-    (list 'if-value-let [sym target]
-          (push-down-get context field then-clause)
-          (push-down-get context field else-clause))))
-
-(s/defn ^:private push-down-get-when-value-let
-  [context :- LowerContext
-   field
-   expr]
-  (let [{:keys [env]} context
-        [_ [sym target] then-clause] expr]
-    (list 'when-value-let [sym target]
-          (push-down-get context field then-clause))))
-
-(s/defn ^:private push-down-get-get
-  [context :- LowerContext
-   field
-   expr]
-  (let [{:keys [env]} context
-        [_ target accessor] expr]
-    (push-down-get context field (push-down-get context accessor target))))
-
-(s/defn ^:private push-down-get-valid
-  [context :- LowerContext
-   field
-   expr]
-  (let [{:keys [env]} context
-        [_ target] expr]
-    (list 'valid (push-down-get context field target))))
-
-(s/defn ^:private push-down-get
-  [context :- LowerContext
-   field
-   expr]
-  (cond
-    (symbol? expr) (let [{:keys [path]} context]
-                     (with-meta (make-if
-                                 (var-ref/make-var-ref (conj path (keyword expr) :$value?))
-                                 (var-ref/make-var-ref (conj path (keyword expr) field :$value?))
-                                 false)
-                       {:done? true}))
-    (map? expr) (get expr field)
-    (vector? expr) (get expr field)
-    (seq? expr) (condp = (first expr)
-                  'if (push-down-get-if context field expr)
-                  'when (push-down-get-when context field expr)
-                  'if-value (push-down-get-if-value context field expr)
-                  'when-value (push-down-get-when-value context field expr)
-                  'if-value-let (push-down-get-if-value-let context field expr)
-                  'when-value-let (push-down-get-when-value-let context field expr) ;; same general form as if-value-let
-                  'get (push-down-get-get context field expr)
-                  'valid (push-down-get-valid context field expr)
-                  (throw (ex-info "expr not supported in push-down-get" {:expr expr})))
-    :default (throw (ex-info "unexpected expr to push-down-get" {:expr expr}))))
-
-;;;;
-
-;; Turn an expression into a boolean expression indicating whether or not the expression produces a value.
-
-(declare return-path)
-
-(s/defn ^:private return-path-if
-  [context :- LowerContext
-   expr]
-  (let [[_ target then-clause else-clause] expr]
-    (make-if (flower context target)
-             (return-path context then-clause)
-             (return-path context else-clause))))
-
-(s/defn ^:private return-path-when
-  [context :- LowerContext
-   expr]
-  (let [[_ target then-clause] expr]
-    (make-if (flower context target)
-             (return-path context then-clause)
-             false)))
-
-(s/defn ^:private return-path-if-value
-  [context :- LowerContext
-   expr]
-  (let [[_ target then-clause else-clause] expr]
-    (make-if (return-path target)
-             (return-path context then-clause)
-             (return-path context else-clause))))
-
-(s/defn ^:private return-path-when-value
-  [context :- LowerContext
-   expr]
-  (let [[_ target then-clause] expr]
-    (make-if (return-path context target)
-             (return-path context then-clause)
-             false)))
-
-(defn- add-binding [env sym value]
-  (envs/bind env sym value))
-
-(s/defn ^:private return-path-if-value-let
-  [context :- LowerContext
-   expr]
-  (let [{:keys [env]} context
-        [_ [sym target] then-clause else-clause] expr]
-    (make-if (return-path context target)
-             (return-path (assoc context :env (add-binding env sym target))
-                          then-clause)
-             (if (nil? else-clause)
-               false
-               (return-path context else-clause)))))
-
-(s/defn ^:private return-path-get
-  [context :- LowerContext
-   expr]
-  (let [[_ target accessor] expr
-        result (push-down-get context accessor target)]
-    (if (:done? (meta result))
-      result
-      (return-path context result))))
-
-(s/defn ^:private return-path-symbol
-  [context :- LowerContext
-   sym]
-  (let [{:keys [env path]} context]
-    (if (= '$no-value sym)
-      false
-      (if (contains? (envs/bindings env) sym)
-        (return-path context ((envs/bindings env) sym))
-        (var-ref/make-var-ref (conj path (keyword sym) :$value?))))))
-
-(s/defn ^:private return-path
-  [context :- LowerContext
-   expr]
-  (cond
-    (boolean? expr) true
-    (base/integer-or-long? expr) true
-    (base/fixed-decimal? expr) true
-    (string? expr) true
-    (symbol? expr) (return-path-symbol context expr)
-    (keyword? expr) (throw (ex-info "unexpected expr to return-path" {:expr expr}))
-    (map? expr) true
-    (seq? expr) (condp = (first expr)
-                  'if (return-path-if context expr)
-                  'when (return-path-when context expr)
-                  'if-value (return-path-if-value context expr)
-                  'when-value (return-path-when-value context expr)
-                  'if-value-let (return-path-if-value-let context expr)
-                  'when-value-let (return-path-if-value-let context expr) ;; same general form as if-value-let
-                  'get (return-path-get context expr)
-                  'get-in (ex-info "return-path not implemented for expr" {:expr expr})
-                  'inc true
-                  'valid (let [id-path (:id-path (meta expr))]
-                           (when (nil? id-path)
-                             (throw (ex-info "expected id-path in metadata" {:expr expr
-                                                                             :meta (meta expr)})))
-                           (var-ref/make-var-ref id-path))
-                  (throw (ex-info "return-path not implemented for expr" {:expr expr})))
-    (set? expr) true
-    (vector? expr) true
-    :default (throw (ex-info "unexpected expr to return-path" {:expr expr}))))
 
 ;;;;
 
@@ -360,7 +117,7 @@
       (do
         ;; compute instance-literal constraints
         (let [env' (reduce (fn [env [field-name value]]
-                             (add-binding env (symbol field-name) value))
+                             (flow-return-path/add-binding env (symbol field-name) value))
                            env
                            (-> expr
                                (dissoc :$type)))
@@ -403,7 +160,7 @@
                                                        instance-literal/get-bindings
                                                        (get accessor))
 
-      (seq? target') (push-down-get context accessor target')
+      (seq? target') (flow-get/push-down-get (:path context) accessor target')
 
       :default (throw (ex-info "unexpected target of get" {:expr expr
                                                            :target' target'})))))
@@ -423,7 +180,7 @@
                                               type-env' (envs/extend-scope type-env
                                                                            sym
                                                                            (expression-type context binding-e))
-                                              env' (add-binding env sym binding-e)]
+                                              env' (flow-return-path/add-binding env sym binding-e)]
                                           {:type-env type-env'
                                            :env env'
                                            :bindings (into bindings
@@ -454,12 +211,12 @@
                                     :guards (conj guards target'))
                              then-clause)
         else-clause' (flower (assoc context
-                                    :guards (conj guards (make-not target')))
+                                    :guards (conj guards (flow-boolean/make-not target')))
                              else-clause)
         args' [target' then-clause' else-clause']]
     (if (some non-root-fog? args')
       (flower-fog context expr)
-      (apply make-if args'))))
+      (apply flow-boolean/make-if args'))))
 
 (s/defn ^:private flower-when
   [context :- LowerContext
@@ -509,7 +266,7 @@
         (flower-fog context expr)
         (if (nil? else-clause')
           (list 'when target' then-clause')
-          (make-if target' then-clause' else-clause'))))))
+          (flow-boolean/make-if target' then-clause' else-clause'))))))
 
 #_(defn- dump-context [context]
     (let [{:keys [env spec-type-env]} context]
@@ -523,7 +280,7 @@
   (let [{:keys [env type-env guards]} context
         [_ [sym target] then-clause else-clause] expr
         target' (flower context target)
-        return-path-target (return-path context target)
+        return-path-target (flow-return-path/return-path (select-keys context [:env :path]) target)
         inner-target (if (and (seq? target)
                               (= 'valid (first target)))
                        ;; sniff out the value inside target
@@ -538,9 +295,9 @@
                                     :type-env (envs/extend-scope type-env
                                                                  sym
                                                                  (types/no-maybe (expression-type context inner-target)))
-                                    :env (add-binding env
-                                                      sym
-                                                      inner-target))
+                                    :env (flow-return-path/add-binding env
+                                                                       sym
+                                                                       inner-target))
                              then-clause)
         else-clause' (flower (assoc context
                                     :guards (if guard?
@@ -553,9 +310,9 @@
             (non-root-fog? then-clause')
             (non-root-fog? else-clause'))
       (flower-fog context expr)
-      (make-if return-path-target
-               then-clause'
-               else-clause'))))
+      (flow-boolean/make-if return-path-target
+                            then-clause'
+                            else-clause'))))
 
 (s/defn ^:private flower-if-value-let
   [context :- LowerContext
@@ -639,9 +396,9 @@
     (if (some non-root-fog? args')
       (flower-fog context expr)
       (condp = op
-        'and (apply make-and args')
-        'or (apply make-or args')
-        'not (apply make-not args')
+        'and (apply flow-boolean/make-and args')
+        'or (apply flow-boolean/make-or args')
+        'not (apply flow-boolean/make-not args')
         (apply list op args')))))
 
 (defn- flower-fixed-decimal [expr]
@@ -706,7 +463,7 @@
                                            (and (seq? expr)
                                                 (= 'cond (first expr)))
                                            (reduce (fn [if-expr [pred then]]
-                                                     (make-if pred then if-expr))
+                                                     (flow-boolean/make-if pred then if-expr))
                                                    (last expr)
                                                    (reverse (partition 2 (rest expr))))
 
@@ -721,9 +478,9 @@
 (defn collapse-booleans [expr]
   "Attempt to simplify boolean expressions."
   (cond
-    (and (seq? expr) (= 'not (first expr))) (apply make-not (rest expr))
-    (and (seq? expr) (= 'or (first expr))) (apply make-or (rest expr))
-    (and (seq? expr) (= 'and (first expr))) (apply make-and (rest expr))
+    (and (seq? expr) (= 'not (first expr))) (apply flow-boolean/make-not (rest expr))
+    (and (seq? expr) (= 'or (first expr))) (apply flow-boolean/make-or (rest expr))
+    (and (seq? expr) (= 'and (first expr))) (apply flow-boolean/make-and (rest expr))
     :default expr))
 
 (defn inline-constants
@@ -768,7 +525,7 @@
                                                            r constraint]
                                                       (if g
                                                         (recur more-g
-                                                               (make-if g constraint true))
+                                                               (flow-boolean/make-if g constraint true))
                                                         r))))))
         (dissoc :$guards)
         base/no-nil-entries)))
@@ -860,10 +617,10 @@
                                                                                                                          instance-literal-id)
                                                                                                              :env
                                                                                                              (reduce (fn [env [field-name val]]
-                                                                                                                       (add-binding env (symbol field-name)
-                                                                                                                                    (if (bom/is-expression-bom? val)
-                                                                                                                                      (:$expr val)
-                                                                                                                                      val)))
+                                                                                                                       (flow-return-path/add-binding env (symbol field-name)
+                                                                                                                                                     (if (bom/is-expression-bom? val)
+                                                                                                                                                       (:$expr val)
+                                                                                                                                                       val)))
                                                                                                                      (:env context)
                                                                                                                      bare-instance-bom)))
                                                                                           add-guards-to-constraints)]
@@ -884,7 +641,7 @@
                   (walk2/postwalk (fn [x]
                                     (if (and (map? x)
                                              (contains? x :$valid-var-constraints))
-                                      (apply make-and (vals (:$valid-var-constraints x)))
+                                      (apply flow-boolean/make-and (vals (:$valid-var-constraints x)))
                                       x))))]
     (->> bom'
          (walk2/postwalk (fn [x]
@@ -895,7 +652,7 @@
          (walk2/postwalk (fn [x]
                            (if (and (map? x)
                                     (contains? x :$valid-var-constraints))
-                             (apply make-and (vals (:$valid-var-constraints x)))
+                             (apply flow-boolean/make-and (vals (:$valid-var-constraints x)))
                              x))))))
 
 (s/defn flower-op
