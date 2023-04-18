@@ -7,11 +7,10 @@
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.eval :as eval]
             [com.viasat.halite.flow-boolean :as flow-boolean]
             [com.viasat.halite.flow-expr :as flow-expr]
+            [com.viasat.halite.flow-inline :as flow-inline]
             [com.viasat.halite.flow-return-path :as flow-return-path]
-            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.op-add-constraints :as op-add-constraints]
             [com.viasat.halite.op-add-value-fields :as op-add-value-fields]
             [com.viasat.halite.op-conjoin-spec-bom :as op-conjoin-spec-bom]
@@ -37,46 +36,6 @@
                    :counter-atom s/Any ;; an atom to generate unique IDs
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
                    (s/optional-key :constraint-name) String})
-
-;;;;
-
-(defn collapse-booleans [expr]
-  "Attempt to simplify boolean expressions."
-  (cond
-    (and (seq? expr) (= 'not (first expr))) (apply flow-boolean/make-not (rest expr))
-    (and (seq? expr) (= 'or (first expr))) (apply flow-boolean/make-or (rest expr))
-    (and (seq? expr) (= 'and (first expr))) (apply flow-boolean/make-and (rest expr))
-    :default expr))
-
-(defn inline-constants
-  "If a variable is constrained to a single value and it must have a value, then in-line the value."
-  [bom expr]
-  (->> expr
-       (walk2/postwalk (fn [expr]
-                         (collapse-booleans (if (var-ref/var-ref? expr)
-                                              (let [path (var-ref/get-path expr)
-                                                    v (or (get-in bom path)
-                                                          (when (and (= :$value? (last path))
-                                                                     (bom/is-primitive-value? (get-in bom (butlast path))))
-                                                            true))]
-                                                (if (bom/is-primitive-value? v)
-                                                  (if (fixed-decimal/fixed-decimal? v)
-                                                    (flow-expr/flower-fixed-decimal v)
-                                                    v)
-                                                  expr))
-                                              expr))))))
-
-(defn inline-ops
-  "If an expression is a function call with all args as primitive values, then go ahead and evaluate it."
-  [expr]
-  (->> expr
-       (walk2/postwalk (fn [expr]
-                         (collapse-booleans (if (and (seq? expr)
-                                                     (every? bom/is-primitive-value? (rest expr)))
-                                              (eval/eval-expr* {:senv (envs/spec-env {})
-                                                                :env (envs/env {})}
-                                                               expr)
-                                              expr))))))
 
 ;;
 
@@ -141,8 +100,7 @@
                                                                                  :spec-type-env (envs/type-env-from-spec spec-info)
                                                                                  :constraint-name constraint-name)
                                                                                 (dissoc :top-bom)))
-                                                                           (inline-constants top-bom)
-                                                                           inline-ops)]
+                                                                           (flow-inline/inline top-bom))]
                                                         ;; a constraint of 'true is always satisfied, so simply drop it
                                                         (when-not (= true lowered-x)
                                                           [constraint-name lowered-x]))))
