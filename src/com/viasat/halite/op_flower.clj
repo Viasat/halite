@@ -32,14 +32,11 @@
 (def LowerContext {:top-bom bom/Bom
                    :spec-env (s/protocol envs/SpecEnv)
                    :spec-type-env (s/protocol envs/TypeEnv) ;; holds the types coming from the contextual spec
-                   :type-env (s/protocol envs/TypeEnv) ;; holds local types, e.g. from 'let' forms
                    :env (s/protocol envs/Env) ;; contains local values, e.g. from 'let' forms
                    :path [s/Any]
                    :counter-atom s/Any ;; an atom to generate unique IDs
-                   (s/optional-key :valid-var-path) [s/Any] ;; path to a variable to represent the result of a 'valid' or 'valid?' invocation in an expression
                    :instance-literal-atom s/Any ;; holds information about instance literals discovered in expressions
-                   (s/optional-key :constraint-name) String
-                   :guards [s/Any]})
+                   (s/optional-key :constraint-name) String})
 
 ;;;;
 
@@ -142,8 +139,7 @@
                                                                             (-> context
                                                                                 (assoc
                                                                                  :spec-type-env (envs/type-env-from-spec spec-info)
-                                                                                 :constraint-name constraint-name
-                                                                                 :guards [])
+                                                                                 :constraint-name constraint-name)
                                                                                 (dissoc :top-bom)))
                                                                            (inline-constants top-bom)
                                                                            inline-ops)]

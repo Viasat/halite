@@ -466,5 +466,6 @@
 (defn lower-expr [context expr]
   (->> expr
        pre-lower
-       (flower context)))
+       (flower (assoc context
+                      :guards []))))
 
