@@ -7,7 +7,7 @@
             [com.viasat.halite.fog :as fog]
             [com.viasat.halite.flow-return-path :as flow-return-path]
             [com.viasat.halite.op-flower :as op-flower]
-            [com.viasat.halite.test-op-flower :as test-op-flower]
+            [com.viasat.halite.flow-expr :as flow-expr]
             [schema.test])
   (:import [clojure.lang ExceptionInfo]))
 
@@ -17,10 +17,19 @@
 
 (use-fixtures :each fixtures)
 
+(def flow-expr-empty-context {:spec-env (envs/spec-env {})
+                              :spec-type-env (envs/type-env {})
+                              :type-env (envs/type-env {})
+                              :env (envs/env {})
+                              :path []
+                              :counter-atom (atom -1)
+                              :instance-literal-atom (atom {})
+                              :guards []})
+
 (def empty-context {:env (envs/env {})
                     :path []
                     :lower-f (fn [expr]
-                               (op-flower/lower-expr test-op-flower/empty-context expr))})
+                               (flow-expr/lower-expr flow-expr-empty-context expr))})
 
 (deftest test-return-path
   (is (= true
