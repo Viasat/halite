@@ -144,3 +144,8 @@
   (when (and m
              (not (empty? m)))
     m))
+
+;;
+
+(defn next-id [counter-atom]
+  (swap! counter-atom inc))

@@ -32,9 +32,6 @@
 
 ;;
 
-(defn- next-id [counter-atom]
-  (swap! counter-atom inc))
-
 (defn id-expr [id-context expr]
   (let [{:keys [path counter-atom]} id-context]
     (->> expr
@@ -45,12 +42,12 @@
                             (with-meta expr {:id-path
                                              (conj (vec (butlast path))
                                                    :$valid-vars
-                                                   (str (last path) "$" (next-id counter-atom)))})
+                                                   (str (last path) "$" (base/next-id counter-atom)))})
 
                             (map? expr)
                             (with-meta expr {:id-path
                                              (conj (vec (butlast path))
-                                                   (str (last path) "$" (next-id counter-atom)))})
+                                                   (str (last path) "$" (base/next-id counter-atom)))})
                             :default
                             expr))))))
 

@@ -23,11 +23,6 @@
 
 ;;;;
 
-(defn- next-id [counter-atom]
-  (swap! counter-atom inc))
-
-;;;;
-
 (def LowerContext {:top-bom bom/Bom
                    :spec-env (s/protocol envs/SpecEnv)
                    :spec-type-env (s/protocol envs/TypeEnv) ;; holds the types coming from the contextual spec
@@ -154,7 +149,7 @@
                                                                (swap! valid-var-atom assoc-in
                                                                       (:$valid-var-path instance-literal-bom')
                                                                       {:$valid-var-constraints (-> (:$constraints instance-literal-bom')
-                                                                                                   (update-keys #(str % "$" (next-id counter-atom))))})
+                                                                                                   (update-keys #(str % "$" (base/next-id counter-atom))))})
                                                                (dissoc instance-literal-bom' :$constraints))
                                                              instance-literal-bom'))]))
 

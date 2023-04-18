@@ -58,11 +58,6 @@
 
 ;;;;
 
-(defn- next-id [counter-atom]
-  (swap! counter-atom inc))
-
-;;
-
 (declare flower)
 
 (s/defn ^:private flower-fog
