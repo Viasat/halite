@@ -113,7 +113,7 @@
         spec-optional-field-names (->> spec
                                        spec/get-optional-field-names
                                        set)]
-    (->> (bom/to-bare-instance bom)
+    (->> (bom/to-bare-instance-bom bom)
          (map (fn [[field-name field-bom]]
                 (when (and (bom-op/bom-assumes-optional? field-bom)
                            (not (spec-optional-field-names field-name)))

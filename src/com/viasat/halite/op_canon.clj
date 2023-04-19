@@ -47,7 +47,7 @@
             (bom/is-contradiction-bom? bom))
       bom
       (let [bare-result (-> bom
-                            bom/to-bare-instance
+                            bom/to-bare-instance-bom
                             (update-vals canon-op))]
         (if (some bom/is-contradiction-bom? (vals bare-result))
           bom/contradiction-bom

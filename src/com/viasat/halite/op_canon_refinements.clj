@@ -60,7 +60,7 @@
 
     ;; process child boms
     (merge bom (-> bom
-                   bom/to-bare-instance
+                   bom/to-bare-instance-bom
                    (update-vals lift-refinements-op)))))
 
 (bom-op/def-bom-multimethod find-required-values-in-refinements
@@ -248,5 +248,5 @@
     (if (bom/is-no-value-bom? bom)
       bom
       (merge bom (-> bom
-                     bom/to-bare-instance
+                     bom/to-bare-instance-bom
                      (update-vals (partial canon-refinements-op spec-env)))))))

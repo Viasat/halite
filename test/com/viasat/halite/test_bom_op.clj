@@ -116,11 +116,11 @@
 
   bom/AbstractInstanceBom
   (merge (to-concrete bom)
-         (update-vals (bom/to-bare-instance bom) sample-bom-op))
+         (update-vals (bom/to-bare-instance-bom bom) sample-bom-op))
 
   bom/ConcreteInstanceBom
   (merge (to-abstract bom)
-         (update-vals (bom/to-bare-instance bom) sample-bom-op)))
+         (update-vals (bom/to-bare-instance-bom bom) sample-bom-op)))
 
 (deftest test-sample-bom-op
   (is (= 100

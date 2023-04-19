@@ -26,35 +26,28 @@
 
 (def workspace-name-length-limit 120)
 
-(def specid-regex-pattern "[A-Z][a-zA-Z0-9_]*[$]v[0-9]+")
+(def specid-regex-str "[A-Z][a-zA-Z0-9_]*[$]v[0-9]+")
 
 (def spec-name-length-limit 80)
 
 (def spec-id-length-limit (+ spec-name-length-limit workspace-name-length-limit 20))
+
+;;
 
 (def WorkspaceName (schema-conjunct keyword keyword?
                                     has-namespace #(nil? (namespace %))
                                     valid-characters #(re-matches dotted-name (name %))
                                     valid-length #(<= (count (name %)) workspace-name-length-limit)))
 
-(defmacro spec-id-schema [regex-pattern length-limit]
-  `(schema-conjunct keyword keyword?
-                    valid-workspace #(nil? (s/check WorkspaceName (keyword (namespace %))))
-                    valid-characters #(re-matches (re-pattern ~regex-pattern) (name %))
-                    valid-length #(<= (count (name %)) ~length-limit)))
-
-(def SpecId (spec-id-schema specid-regex-pattern spec-id-length-limit))
+(def SpecId (schema-conjunct keyword keyword?
+                             valid-workspace #(nil? (s/check WorkspaceName (keyword (namespace %))))
+                             valid-characters #(re-matches (re-pattern specid-regex-str) (name %))
+                             valid-length #(<= (count (name %)) spec-id-length-limit)))
 
 ;; types for instance expressions
 
-(def VariableKeyword (schema-conjunct keyword keyword?
+(def VariableKeyword (schema-conjunct bare-keyword types/bare-keyword?
                                       not-reserved #(not= reserved-char (first (name %)))))
-
-(def InstanceKeyword (schema-conjunct keyword keyword?
-                                      not-reserved #(or (not= reserved-char (first (str %)))
-                                                        (#{} %))))
-
-(def BareInstance {VariableKeyword s/Any})
 
 ;;;;
 
@@ -137,6 +130,8 @@
 
 (defn is-bom-value? [x]
   (nil? (s/check BomValue x)))
+
+(def BareInstance {VariableKeyword BomValue})
 
 (def InstanceValue
   {:$type SpecId
@@ -307,9 +302,6 @@
 (s/defn to-bare-instance-bom :- BareInstanceBom
   "Take all meta-fields out of instance."
   [instance :- InstanceBomOrValue]
-  (let [result (apply dissoc instance meta-fields)]
-    (when (s/check BareInstanceBom result)
-      (clojure.pprint/pprint [:tbib :instance instance :result (apply dissoc instance meta-fields)])))
   (apply dissoc instance meta-fields))
 
 (s/defn strip-bare-fields

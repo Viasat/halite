@@ -302,7 +302,7 @@
                   (bom/get-spec-id b))
                (not (bom/is-a-no-value-bom? a))
                (not (bom/is-a-no-value-bom? b)))
-        (let [result (-> (merge-with conjoin-boms (bom/to-bare-instance a) (bom/to-bare-instance b))
+        (let [result (-> (merge-with conjoin-boms (bom/to-bare-instance-bom a) (bom/to-bare-instance-bom b))
                          (assoc (if (bom/is-abstract-instance-bom? a)
                                   :$refines-to
                                   :$instance-of) (bom/get-spec-id a)
