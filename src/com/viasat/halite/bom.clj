@@ -254,22 +254,35 @@
   [bom]
   (= yes-value-bom bom))
 
-(def ContradictionBom {:$contradiction? (s/eq true)})
+(def ContradictionBom
+  "Schema representing the inability to satisfy all of the constraints."
+  {:$contradiction? (s/eq true)})
 
-(def contradiction-bom {:$contradiction? true})
+(def contradiction-bom
+  "The bom object representing the inability to satisfy all of the constraints."
+  {:$contradiction? true})
 
-(s/defn is-contradiction-bom? [bom]
+(s/defn is-contradiction-bom?
+  "See ContradictionBom"
+  [bom]
   (= contradiction-bom bom))
 
-(def VariableValueBom (s/conditional
-                       is-instance-value? InstanceValue
-                       is-no-value-bom? NoValueBom
-                       is-contradiction-bom? ContradictionBom
-                       :else Bom))
+(def VariableValueBom
+  "Everything that can appear as the value of an instance field with a bom object"
+  (s/conditional
+   is-instance-value? InstanceValue
+   is-no-value-bom? NoValueBom
+   is-contradiction-bom? ContradictionBom
+   :else Bom))
 
-(def BareInstanceBom {VariableKeyword VariableValueBom})
+(def BareInstanceBom
+  "A map that only contains field names mapped to bom values (i.e. all of the bom object fields have
+  been removed)."
+  {VariableKeyword VariableValueBom})
 
 (def InstanceLiteralBom
+  "An internal representation used to brin instance literals from spec expression into the bom directly as
+  objects (i.e. outside of their containing expressions)."
   {VariableKeyword (s/conditional
                     is-expression-bom? ExpressionBom
                     :else BomValue)
@@ -285,6 +298,7 @@
                                            :else ContradictionBom)}})
 
 (def ConcreteInstanceBom
+  "Indicates that a value in a bom must be and instance of a given spec."
   (assoc BareInstanceBom
          :$instance-of SpecId
          (s/optional-key :$enum) #{InstanceValue}
@@ -300,6 +314,7 @@
          (s/optional-key :$valid-vars) {String s/Any}))
 
 (def AbstractInstanceBom
+  "Indicates that a value in a bom must be an instance that can be refined to the given spec."
   (-> BareInstanceBom
       (assoc :$refines-to SpecId
              (s/optional-key :$value?) BooleanBom
@@ -311,49 +326,51 @@
                                                           is-concrete-instance-bom? ConcreteInstanceBom
                                                           :else InstanceValue)})))
 
-(def InstanceBom (s/conditional
-                  is-abstract-instance-bom? AbstractInstanceBom
-                  is-concrete-instance-bom? ConcreteInstanceBom
-                  is-instance-literal-bom? InstanceLiteralBom
-                  is-contradiction-bom? ContradictionBom))
+(def InstanceBom
+  "Umbrella type for all of the valid bom objects that can appear as the value for a spec
+  instance. Note: resolve whether this should include BasicBom."
+  (s/conditional
+   is-abstract-instance-bom? AbstractInstanceBom
+   is-concrete-instance-bom? ConcreteInstanceBom
+   is-instance-literal-bom? InstanceLiteralBom
+   is-contradiction-bom? ContradictionBom))
 
-(def InstanceBomOrValue (s/conditional
-                         is-abstract-instance-bom? AbstractInstanceBom
-                         is-concrete-instance-bom? ConcreteInstanceBom
-                         is-instance-literal-bom? InstanceLiteralBom
-                         :else InstanceValue))
+(def InstanceBomOrValue
+  "Includes both InstanceBom and InstanceValue"
+  (s/conditional
+   is-abstract-instance-bom? AbstractInstanceBom
+   is-concrete-instance-bom? ConcreteInstanceBom
+   is-instance-literal-bom? InstanceLiteralBom
+   is-contradiction-bom? ContradictionBom
+   :else InstanceValue))
 
 ;;
 
-(def TypeField (s/enum :$refines-to :$instance-of))
+(def meta-fields
+  "The system defined field names that are included in instances and instance boms."
+  #{:$type
 
-(def meta-fields #{:$refines-to
-                   :$instance-of
-                   :$instance-literal-type
-                   :$guards
-                   :$enum
-                   :$value?
-                   :$valid?
-                   :$valid-vars
-                   :$valid-var-path
-                   :$extrinsic?
-                   :$refinements
-                   :$concrete-choices
-                   :$instance-literals
-                   :$expr
-                   :$type
-                   :$primitive-type
-                   :$constraints
-                   :$id-path})
+    :$instance-of
+    :$refines-to
+    :$instance-literal-type
 
-(s/defn is-instance? :- Boolean
-  [instance]
-  (boolean (nil? (s/check InstanceBom instance))))
+    :$refinements
+    :$concrete-choices
+    :$instance-literals
 
-(s/defn to-bare-instance :- BareInstance
-  "Take all meta-fields out of instance."
-  [instance :- InstanceBom]
-  (apply dissoc instance meta-fields))
+    :$enum
+    :$value?
+
+    :$guards
+    :$valid?
+    :$valid-vars
+    :$valid-var-path
+    :$extrinsic?
+
+    :$expr
+    :$primitive-type ;; TODO: should this be here?
+    :$constraints
+    :$id-path})
 
 (s/defn to-bare-instance-bom :- BareInstanceBom
   "Take all meta-fields out of instance."
@@ -368,6 +385,8 @@
 ;;
 
 (s/defn get-spec-id :- SpecId
+  "Single function to retrieve the spec-id from a bom object or value that represents an instance,
+  regardless of what kind of object it is."
   [bom :- InstanceBomOrValue]
   (or (:$refines-to bom)
       (:$instance-of bom)
@@ -375,6 +394,7 @@
       (:$type bom)))
 
 (s/defn instance-bom-halite-type :- types/HaliteType
+  "Produce the halite type that corresponds to this bom object or value."
   [bom :- InstanceBomOrValue]
   ((cond
      (is-concrete-instance-bom? bom) types/concrete-spec-type
@@ -382,15 +402,3 @@
      (is-instance-value? bom) types/concrete-spec-type
      :default (throw (ex-info "unknown bom type" {:bom bom})))
    (get-spec-id bom)))
-
-;;
-
-(def PrimitiveType (apply s/enum types/primitive-types))
-
-(def VariableType (s/conditional
-                   string? PrimitiveType
-                   vector? (s/constrained [(s/recursive #'VariableType)]
-                                          #(pos? (count %)))
-                   set? (s/constrained #{(s/recursive #'VariableType)}
-                                       #(pos? (count %)))
-                   :else SpecId))

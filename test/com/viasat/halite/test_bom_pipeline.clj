@@ -33,7 +33,7 @@
     (binding [*ns* (find-namespace ns-symbol)]
       (f))))
 
-(def fixtures (join-fixtures [schema.test/validate-schemas namespace-fixture]))
+(def fixtures (join-fixtures [schema.test/validate-schemas (namespace-fixture 'com.viasat.halite.test-bom-pipeline)]))
 
 (use-fixtures :each fixtures)
 
