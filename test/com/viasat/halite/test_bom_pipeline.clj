@@ -212,22 +212,6 @@
 (defn stanza [s]
   (swap! test-atom conj (list 'stanza s)))
 
-(deftest test-todo
-  (stanza "composition with a basic bom")
-  #_(is (thrown-with-msg? ExceptionInfo #"not yet implemented"
-                          (check-propagate
-                           {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1],
-                                               :y :Integer},
-                                      :constraints [["c1" '(= 15 (+ (get a :x) y))]
-                                                    ["c3" '(or (= y 10) (= y 12) (= y 14))]]},
-                            :ws/A$v1 {:fields {:x :Integer},
-                                      :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
-                           {:$instance-of :ws/B$v1
-                            :a {:$enum #{{:$instance-of :ws/A$v1
-                                          :x 1}
-                                         {:$instance-of :ws/A$v1
-                                          :x 3}}}}))))
-
 (def test-data
   "Generating all of this code inside of a method was blowing the java method size limit"
   '[(stanza "composition with a basic bom")
