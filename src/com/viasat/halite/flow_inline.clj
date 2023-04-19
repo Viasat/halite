@@ -32,9 +32,9 @@
                                               (let [path (var-ref/get-path expr)
                                                     v (or (get-in bom path)
                                                           (when (and (= :$value? (last path))
-                                                                     (bom/is-primitive-value? (get-in bom (butlast path))))
+                                                                     (bom/is-bom-value? (get-in bom (butlast path))))
                                                             true))]
-                                                (if (bom/is-primitive-value? v)
+                                                (if (bom/is-bom-value? v)
                                                   (if (fixed-decimal/fixed-decimal? v)
                                                     (flow-expr/flower-fixed-decimal v)
                                                     v)
@@ -47,7 +47,7 @@
   (->> expr
        (walk2/postwalk (fn [expr]
                          (collapse-booleans (if (and (seq? expr)
-                                                     (every? bom/is-primitive-value? (rest expr)))
+                                                     (every? bom/is-bom-value? (rest expr)))
                                               (eval/eval-expr* {:senv (envs/spec-env {})
                                                                 :env (envs/env {})}
                                                                expr)

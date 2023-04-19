@@ -159,7 +159,7 @@
           (instance-literal-f path
                               (let [nc (-> new-contents
                                            (update-vals (fn [val]
-                                                          (if (bom/is-primitive-value? val)
+                                                          (if (bom/is-bom-value? val)
                                                             val
                                                             {:$expr val})))
                                            (assoc :$instance-literal-type (:$type expr)

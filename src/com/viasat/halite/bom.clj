@@ -135,18 +135,6 @@
                set? #{(s/recursive #'BomValue)}
                vector? [(s/recursive #'BomValue)]))
 
-(defn is-primitive-value? [x]
-  (or
-   (base/integer-or-long? x)
-   (string? x)
-   (boolean? x)
-   (base/fixed-decimal? x)
-   (is-instance-value? x)
-   (and (set? x)
-        (every? is-primitive-value? x))
-   (and (vector? x)
-        (every? is-primitive-value? x))))
-
 (defn is-bom-value? [x]
   (nil? (s/check BomValue x)))
 

@@ -92,7 +92,7 @@
     (contains? path-to-sym-map path) (path-to-sym-map path)
 
     (and (= :$value? (last path))
-         (bom/is-primitive-value? (path-to-bom-map (butlast path))))
+         (bom/is-bom-value? (path-to-bom-map (butlast path))))
     true
 
     :default (throw (ex-info "unhandled path resolution case" {:path path

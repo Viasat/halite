@@ -28,11 +28,11 @@
            (= false value-entry))
       bom/no-value-bom
 
-      (and (bom/is-primitive-value? bom)
+      (and (bom/is-bom-value? bom)
            (= true value-entry))
       bom
 
-      (and (bom/is-primitive-value? bom)
+      (and (bom/is-bom-value? bom)
            (= false value-entry))
       bom/contradiction-bom
 
