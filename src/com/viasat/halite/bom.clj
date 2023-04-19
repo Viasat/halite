@@ -93,7 +93,7 @@
 ;;
 
 (defn is-expression-bom?
-  "Used internally to assign expressions to fields, e.g. for instance literals."
+  "See ExpressionBom"
   [x]
   (and (map? x)
        (contains? x :$expr)))
@@ -194,8 +194,8 @@
   then if the field has a value it must be included in the enumeration set. If a :$value? field is
   provided then it constrains whether or not the field must or must not have a
   value. The :$primitive-type field is used for internal purposes to track the type of the field
-  which this bom object is being used for. Note: this could be used to describe a composite field
-  via the :$enum and :$value? fields."
+  which this bom object is being used for. Note: in theory this could be used to describe a
+  composite field via the :$enum and :$value? fields."
   {(s/optional-key :$ranges) RangesConstraint
    (s/optional-key :$enum) #{BomValue}
    (s/optional-key :$value?) BooleanBom
@@ -207,33 +207,51 @@
 
 (declare InstanceLiteralBom)
 
-(def ExpressionBom {:$expr s/Any})
+(def ExpressionBom
+  "Used internally to assign expressions to fields, e.g. for instance literals."
+  {:$expr s/Any})
 
-(def Bom (s/conditional
-          is-abstract-instance-bom? (s/recursive #'AbstractInstanceBom)
-          is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
-          is-instance-literal-bom? (s/recursive #'InstanceLiteralBom)
-          is-basic-bom? BasicBom
-          is-expression-bom? ExpressionBom
-          :else BomValue))
+(def Bom
+  "A bom object which is a recursive structure that represents requirements for values that populate
+  fields in instances."
+  (s/conditional
+   is-abstract-instance-bom? (s/recursive #'AbstractInstanceBom)
+   is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
+   is-instance-literal-bom? (s/recursive #'InstanceLiteralBom)
+   is-basic-bom? BasicBom
+   is-expression-bom? ExpressionBom
+   :else BomValue))
 
-(def NoValueBom {:$value? (s/eq false)})
+(def NoValueBom
+  "Schema that represents that no value is to be provided for the field where this appears."
+  {:$value? (s/eq false)})
 
-(def no-value-bom {:$value? false})
+(def no-value-bom
+  "The bom object used to represent the absence of a value."
+  {:$value? false})
 
-(s/defn is-no-value-bom? [bom]
+(s/defn is-no-value-bom?
+  "See NoValueBom"
+  [bom]
   (= no-value-bom bom))
 
 (s/defn is-a-no-value-bom?
-  "This handles concrete instance boms which also have a field indicating type."
+  "This handles concrete instance boms which also have a field indicating whether they represent a
+  value."
   [bom]
   (= false (:$value? bom)))
 
-(def YesValueBom {:$value? (s/eq true)})
+(def YesValueBom
+  "Schema for a bom object that represents the mandatory presence of a field."
+  {:$value? (s/eq true)})
 
-(def yes-value-bom {:$value? true})
+(def yes-value-bom
+  "The bom object used to represent the mandatory presence of a field."
+  {:$value? true})
 
-(s/defn is-yes-value-bom? [bom]
+(s/defn is-yes-value-bom?
+  "See YesValueBom"
+  [bom]
   (= yes-value-bom bom))
 
 (def ContradictionBom {:$contradiction? (s/eq true)})

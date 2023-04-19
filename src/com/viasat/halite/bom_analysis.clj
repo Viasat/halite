@@ -119,12 +119,12 @@
     (let [{enum :$enum ranges :$ranges} bom
           {enum' :$enum ranges' :$ranges} (->> (invoke-analysis enum ranges) tlfc-to-bom)
           to-merge (cond
-                     (and enum enum' (zero? (count enum'))) (if (= true (:$value? bom))
-                                                              bom/no-value-bom
-                                                              {:$enum #{}})
-                     (and enum (nil? enum')) (throw (ex-info "bug: expected an enum value" {:enum enum
-                                                                                            :enum' enum'
-                                                                                            :bom bom}))
+                     (and enum (or (and enum' (zero? (count enum')))
+                                   (nil? enum')))
+                     (if (= true (:$value? bom))
+                       bom/no-value-bom
+                       {:$enum #{}})
+
                      (> (count enum') 0) {:$enum enum'}
                      (> (count ranges') 0) {:$ranges ranges'})]
       (-> bom
@@ -365,6 +365,11 @@
 
           :default
           (assoc b :$concrete-choices {(bom/get-spec-id a) a})))
+
+      ('#{#{bom/BasicBom bom/ConcreteInstanceBom}} bom-types)
+      (throw (ex-info "conjoin not yet implemented" {:bom-types bom-types
+                                                     :a a
+                                                     :b b}))
 
       :default bom/contradiction-bom)))
 

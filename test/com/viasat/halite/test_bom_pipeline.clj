@@ -18,11 +18,22 @@
             [com.viasat.halite.op-type-check :as op-type-check]
             [schema.test]
             [zprint.core :as zprint])
-  (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
+  (:import [clojure.lang ExceptionInfo]
+           [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
-(def fixtures (join-fixtures [schema.test/validate-schemas]))
+(defn- find-namespace [ns-symbol]
+  (first (filter #(= ns-symbol (ns-name %)) (all-ns))))
+
+(defn namespace-fixture
+  "Used to set the namespace for when the test is invoked from lein. This is required because of the weird 'eval' call in the tests."
+  [ns-symbol]
+  (fn [f]
+    (binding [*ns* (find-namespace ns-symbol)]
+      (f))))
+
+(def fixtures (join-fixtures [schema.test/validate-schemas namespace-fixture]))
 
 (use-fixtures :each fixtures)
 
@@ -188,7 +199,6 @@
          bom0# ~bom
          {lowered-bom# :lowered-bom
           choco-data# :choco-data
-          propagate-result# :propagate-result
           result# :result} (bom-pipeline/propagate spec-env# bom0#)
          test-result-block# (if comment#
                               [lowered-bom# choco-data# result# comment#]
@@ -202,8 +212,26 @@
 (defn stanza [s]
   (swap! test-atom conj (list 'stanza s)))
 
-(deftest test-propagate
-  (do
+(deftest test-todo
+  (stanza "composition with a basic bom")
+  #_(is (thrown-with-msg? ExceptionInfo #"not yet implemented"
+                          (check-propagate
+                           {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1],
+                                               :y :Integer},
+                                      :constraints [["c1" '(= 15 (+ (get a :x) y))]
+                                                    ["c3" '(or (= y 10) (= y 12) (= y 14))]]},
+                            :ws/A$v1 {:fields {:x :Integer},
+                                      :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
+                           {:$instance-of :ws/B$v1
+                            :a {:$enum #{{:$instance-of :ws/A$v1
+                                          :x 1}
+                                         {:$instance-of :ws/A$v1
+                                          :x 3}}}}))))
+
+(def test-data
+  "Generating all of this code inside of a method was blowing the java method size limit"
+  '[(stanza "composition with a basic bom")
+
     (stanza "boolean fields")
 
     (check-propagate {:ws/A$v1 {:fields {:x :Boolean,
@@ -809,6 +837,84 @@
        :a {:$instance-of :ws/A$v1,
            :x {:$enum #{1 3}}},
        :y {:$enum #{12 14}}}])
+
+    (check-propagate
+     {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1],
+                         :y :Integer},
+                :constraints [["c1" '(= 15 (+ (get a :x) y))]
+                              ["c3" '(or (= y 10) (= y 12) (= y 14))]]},
+      :ws/A$v1 {:fields {:x :Integer},
+                :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
+     {:$instance-of :ws/B$v1,
+      :a {:$instance-of :ws/A$v1,
+          :x 3}}
+     [{:$instance-of :ws/B$v1,
+       :a {:x 3,
+           :$instance-of :ws/A$v1,
+           :$value? true,
+           :$constraints {}},
+       :y {:$enum #{12 14 10},
+           :$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c1" (= 15 (+ 3 #r [:y])),
+                      "c3" (or (= #r [:y] 10) (= #r [:y] 12) (= #r [:y] 14))}}
+      {:choco-spec {:vars {$_0 :Bool,
+                           $_1 :Int,
+                           $_2 :Int,
+                           $_3 :Bool},
+                    :constraints #{(= 15 (+ 3 $_2))
+                                   (or (= $_2 10) (= $_2 12) (= $_2 14))}},
+       :choco-bounds {$_0 true,
+                      $_1 3,
+                      $_2 #{12 14 10},
+                      $_3 true},
+       :sym-to-path [$_0 [:a :$value?] $_1 [:a :x] $_2 [:y] $_3 [:y :$value?]]}
+      {:$instance-of :ws/B$v1,
+       :a {:x 3,
+           :$instance-of :ws/A$v1},
+       :y 12}])
+
+    (check-propagate
+     {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1],
+                         :y :Integer},
+                :constraints [["c1" '(= 15 (+ (get a :x) y))]
+                              ["c3" '(or (= y 10) (= y 12) (= y 14))]]},
+      :ws/A$v1 {:fields {:x :Integer},
+                :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
+     {:$instance-of :ws/B$v1,
+      :a {:$instance-of :ws/A$v1,
+          :x 4}}
+     [{:$instance-of :ws/B$v1,
+       :a {:x {:$value? false,
+               :$primitive-type :Integer},
+           :$instance-of :ws/A$v1,
+           :$value? true,
+           :$constraints
+           {"c2" (or (= #r [:a :x] 1) (= #r [:a :x] 2) (= #r [:a :x] 3))}},
+       :y {:$enum #{12 14 10},
+           :$value? true,
+           :$primitive-type :Integer},
+       :$constraints {"c1" (= 15 (+ #r [:a :x] #r [:y])),
+                      "c3" (or (= #r [:y] 10) (= #r [:y] 12) (= #r [:y] 14))}}
+      {:choco-spec {:vars {$_0 :Bool,
+                           $_1 :Int,
+                           $_2 :Bool,
+                           $_3 :Int,
+                           $_4 :Bool},
+                    :constraints #{(or (= $_3 10) (= $_3 12) (= $_3 14))
+                                   (or (= $_1 1) (= $_1 2) (= $_1 3))
+                                   (= 15 (+ $_1 $_3))}},
+       :choco-bounds {$_0 true,
+                      $_1 [-1000 1000],
+                      $_2 false,
+                      $_3 #{12 14 10},
+                      $_4 true},
+       :sym-to-path [$_0 [:a :$value?] $_1 [:a :x] $_2 [:a :x :$value?] $_3 [:y]
+                     $_4 [:y :$value?]]}
+      {:$instance-of :ws/B$v1,
+       :a {:x {:$value? false},
+           :$instance-of :ws/A$v1},
+       :y {:$enum #{12 14 10}}}])
 
     (stanza "optional integer field")
 
@@ -2615,7 +2721,11 @@
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(> (if true 4 12) 11)}},
        :choco-bounds {$_0 4},
-       :sym-to-path [$_0 [:a]]} {:$contradiction? true}])))
+       :sym-to-path [$_0 [:a]]} {:$contradiction? true}])])
+
+(deftest test-propagate
+  (doseq [t test-data]
+    (eval t)))
 
 (defn format-code [code]
   (str (zprint/zprint-str code 80 {:fn-force-nl #{:binding}
@@ -2632,6 +2742,6 @@
 
 ;; (set! *print-namespace-maps* false)
 
-;; (spit "target/propagate-test.edn" (str "(" "do\n" (apply str (map format-code @test-atom)) ")"))
+;; (spit "target/propagate-test.edn" (str "[" (apply str (map format-code @test-atom)) "]"))
 
 ;; (time (run-tests))

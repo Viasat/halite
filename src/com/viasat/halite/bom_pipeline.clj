@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.bom-pipeline
-  (:require [com.viasat.halite.bom :as bom]
+  (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-choco :as bom-choco]
             [com.viasat.halite.op-add-constraints :as op-add-constraints]
             [com.viasat.halite.op-add-types :as op-add-types]
@@ -46,10 +47,11 @@
                           (op-ensure-fields/ensure-fields-op spec-env)
                           (op-add-value-fields/add-value-fields-op spec-env)
                           (op-add-constraints/add-constraints-op spec-env))
-         ;; _# (clojure.pprint/pprint [:bom bom'
+        ;; _ (pprint/pprint [:expanded-bom expanded-bom])
         lowered-bom (->> expanded-bom
                          op-id/id-op
                          (op-flower/flower-op spec-env))
+        ;; _ (pprint/pprint [:lowered-bom lowered-bom])
         choco-data (when-not (bom/is-contradiction-bom? lowered-bom)
                      (->> lowered-bom
                           bom-choco/bom-to-choco
