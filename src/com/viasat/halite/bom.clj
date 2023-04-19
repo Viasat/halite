@@ -6,16 +6,30 @@
   (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.types :as types]
+            [potemkin]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
+(potemkin/import-vars
+ [bom-user
+  is-abstract-instance-bom?
+  is-concrete-instance-bom?
+  is-instance-value?
+  BomValue
+  RangesConstraint
+  NoValueBom
+  no-value-bom
+  is-no-value-bom?
+  ContradictionBom
+  contradiction-bom
+  is-contradiction-bom?
+  InstanceValue
+  VariableKeyword
+  SpecId])
+
 ;;;;
-
-(def is-abstract-instance-bom? bom-user/is-abstract-instance-bom?)
-
-(def is-concrete-instance-bom? bom-user/is-concrete-instance-bom?)
 
 (defn is-instance-literal-bom?
   "See InstanceLiteralBom"
@@ -29,8 +43,6 @@
   (or (is-abstract-instance-bom? x)
       (is-concrete-instance-bom? x)
       (is-instance-literal-bom? x)))
-
-(def is-instance-value? bom-user/is-instance-value?)
 
 ;;
 
@@ -71,8 +83,6 @@
 ;; contradiction-bom : indicates that it is impossible to satisfy all of the constraints indicated in the bom for this value (this is roughly like an exception)
 ;; NOTE: these two mean different things
 
-(def BomValue bom-user/BomValue)
-
 (defn is-bom-value?
   "See BomValue"
   [x]
@@ -89,8 +99,6 @@
          (s/optional-key :$enum) #{Boolean}}
    :else Boolean))
 
-(def RangesConstraint bom-user/RangesConstraint)
-
 (def PrimitiveBom
   "A bom object used to describe a field value. When a :$ranges value is provided, then if the field
   has a value the value must be included in one of the ranges. When an :$enum value is provided,
@@ -103,12 +111,6 @@
    (s/optional-key :$enum) #{BomValue}
    (s/optional-key :$value?) BooleanBom
    (s/optional-key :$primitive-type) types/HaliteType})
-
-(def NoValueBom bom-user/NoValueBom)
-
-(def no-value-bom bom-user/no-value-bom)
-
-(def is-no-value-bom? bom-user/is-no-value-bom?)
 
 (s/defn is-a-no-value-bom?
   "This handles concrete instance boms which also have a field indicating whether they represent a
@@ -128,12 +130,6 @@
   "See YesValueBom"
   [bom]
   (= yes-value-bom bom))
-
-(def ContradictionBom bom-user/ContradictionBom)
-
-(def contradiction-bom bom-user/contradiction-bom)
-
-(def is-contradiction-bom? bom-user/is-contradiction-bom?)
 
 (declare AbstractInstanceBom)
 
@@ -157,8 +153,6 @@
    is-expression-bom? ExpressionBom
    :else BomValue))
 
-(def InstanceValue bom-user/InstanceValue)
-
 (def VariableValueBom
   "Everything that can appear as the value of an instance field with a bom object"
   (s/conditional
@@ -167,14 +161,10 @@
    is-contradiction-bom? ContradictionBom
    :else Bom))
 
-(def VariableKeyword bom-user/VariableKeyword)
-
 (def BareInstanceBom
   "A map that only contains field names mapped to bom values (i.e. all of the bom object fields have
   been removed)."
   {VariableKeyword VariableValueBom})
-
-(def SpecId bom-user/SpecId)
 
 (def InstanceLiteralBom
   "An internal representation used to brin instance literals from spec expression into the bom directly as
