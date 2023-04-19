@@ -19,7 +19,7 @@
     #{}
     []
     bom/InstanceValue
-    bom/BasicBom
+    bom/PrimitiveBom
     bom/ExpressionBom}
   nil
 

@@ -57,7 +57,7 @@
     bom/ExpressionBom}
   bom
 
-  bom/BasicBom
+  bom/PrimitiveBom
   (bom-analysis/conjoin-boms bom
                              (->> (flat-bom-map path)
                                   (bring-value-field-into-bom flat-bom-map path)))

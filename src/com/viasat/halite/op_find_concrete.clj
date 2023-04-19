@@ -36,7 +36,7 @@
     FixedDecimal
     String
     Boolean
-    bom/BasicBom
+    bom/PrimitiveBom
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom

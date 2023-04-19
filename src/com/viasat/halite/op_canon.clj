@@ -28,7 +28,7 @@
     bom/ExpressionBom}
   bom
 
-  bom/BasicBom
+  bom/PrimitiveBom
   (->> bom
        bom-analysis/detect-empty-enum
        bom-analysis/collapse-to-no-value

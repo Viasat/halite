@@ -62,7 +62,7 @@
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom
-    bom/BasicBom}
+    bom/PrimitiveBom}
   bom
 
   #{bom/ExpressionBom

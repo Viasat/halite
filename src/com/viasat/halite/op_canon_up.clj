@@ -29,7 +29,7 @@
     bom/ExpressionBom}
   bom
 
-  bom/BasicBom
+  bom/PrimitiveBom
   (if (and (or (not (contains? bom :$value?))
                (= true (:$value? bom)))
            (= 1 (count (:$enum bom))))

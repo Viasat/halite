@@ -44,7 +44,7 @@
 (defn collapse-ranges-into-value [bom]
   (if (and
        ;; the bom may have been converted to a primitive value by a prior rule
-       (bom/is-basic-bom? bom)
+       (bom/is-primitive-bom? bom)
        (contains? bom :$ranges)
        (= 1 (count (:$ranges bom)))
        (range-size-one? (first (:$ranges bom))))
@@ -173,7 +173,7 @@
       ('#{#{bom/YesValueBom}} bom-types)
       bom/yes-value-bom
 
-      ('#{#{bom/BasicBom bom/NoValueBom}
+      ('#{#{bom/PrimitiveBom bom/NoValueBom}
           #{bom/InstanceValue bom/NoValueBom}
           #{bom/ConcreteInstanceBom bom/NoValueBom}
           #{bom/AbstractInstanceBom bom/NoValueBom}} bom-types)
@@ -185,7 +185,7 @@
           (= {:$primitive-type :Boolean} (:$value? a)) bom/no-value-bom
           :default (throw (ex-info "unhandled merge case" {:a a :b b}))))
 
-      ('#{#{bom/BasicBom bom/YesValueBom}
+      ('#{#{bom/PrimitiveBom bom/YesValueBom}
           #{bom/InstanceValue bom/YesValueBom}
           #{bom/ConcreteInstanceBom bom/YesValueBom}
           #{bom/AbstractInstanceBom bom/YesValueBom}} bom-types)
@@ -206,14 +206,14 @@
         a
         bom/contradiction-bom)
 
-      ('#{#{Integer bom/BasicBom}
-          #{FixedDecimal bom/BasicBom}
-          #{String bom/BasicBom}
-          #{Boolean bom/BasicBom}
-          #{[] bom/BasicBom}
-          #{#{} bom/BasicBom}
-          #{bom/InstanceValue bom/BasicBom}} bom-types)
-      (let [[a b] (if (bom/is-basic-bom? a)
+      ('#{#{Integer bom/PrimitiveBom}
+          #{FixedDecimal bom/PrimitiveBom}
+          #{String bom/PrimitiveBom}
+          #{Boolean bom/PrimitiveBom}
+          #{[] bom/PrimitiveBom}
+          #{#{} bom/PrimitiveBom}
+          #{bom/InstanceValue bom/PrimitiveBom}} bom-types)
+      (let [[a b] (if (bom/is-primitive-bom? a)
                     [b a]
                     [a b])]
         (->> (merge b {:$enum (if (:$enum b)
@@ -222,7 +222,7 @@
              collapse-ranges-and-enum
              collapse-enum-into-value))
 
-      ('#{#{bom/BasicBom}} bom-types)
+      ('#{#{bom/PrimitiveBom}} bom-types)
       (let [base-bom-a (dissoc a :$value? :$enum :$ranges)
             base-bom-b (dissoc b :$value? :$enum :$ranges)]
         (when (not= (merge base-bom-a base-bom-b)
@@ -365,11 +365,6 @@
 
           :default
           (assoc b :$concrete-choices {(bom/get-spec-id a) a})))
-
-      ('#{#{bom/BasicBom bom/ConcreteInstanceBom}} bom-types)
-      (throw (ex-info "conjoin not yet implemented" {:bom-types bom-types
-                                                     :a a
-                                                     :b b}))
 
       :default bom/contradiction-bom)))
 

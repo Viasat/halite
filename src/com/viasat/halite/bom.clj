@@ -100,8 +100,8 @@
 
 ;;
 
-(defn is-basic-bom?
-  "See BasicBom"
+(defn is-primitive-bom?
+  "See PrimitiveBom"
   [x]
   (and (map? x)
        (not (is-instance-bom? x))
@@ -188,14 +188,14 @@
   "A set of ranges."
   #{RangeConstraint})
 
-(def BasicBom
+(def PrimitiveBom
   "A bom object used to describe a field value. When a :$ranges value is provided, then if the field
   has a value the value must be included in one of the ranges. When an :$enum value is provided,
   then if the field has a value it must be included in the enumeration set. If a :$value? field is
   provided then it constrains whether or not the field must or must not have a
   value. The :$primitive-type field is used for internal purposes to track the type of the field
-  which this bom object is being used for. Note: in theory this could be used to describe a
-  composite field via the :$enum and :$value? fields."
+  which this bom object is being used for. Note: this is not to be be used to describe a composite
+  field. Instead use an InstanceBom for that, possibly including the :$enum and :$value? fields."
   {(s/optional-key :$ranges) RangesConstraint
    (s/optional-key :$enum) #{BomValue}
    (s/optional-key :$value?) BooleanBom
@@ -218,7 +218,7 @@
    is-abstract-instance-bom? (s/recursive #'AbstractInstanceBom)
    is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
    is-instance-literal-bom? (s/recursive #'InstanceLiteralBom)
-   is-basic-bom? BasicBom
+   is-primitive-bom? PrimitiveBom
    is-expression-bom? ExpressionBom
    :else BomValue))
 
@@ -327,8 +327,7 @@
                                                           :else InstanceValue)})))
 
 (def InstanceBom
-  "Umbrella type for all of the valid bom objects that can appear as the value for a spec
-  instance. Note: resolve whether this should include BasicBom."
+  "Umbrella type for all of the valid bom objects that can appear as the value for a spec instance."
   (s/conditional
    is-abstract-instance-bom? AbstractInstanceBom
    is-concrete-instance-bom? ConcreteInstanceBom
@@ -347,7 +346,9 @@
 ;;
 
 (def meta-fields
-  "The system defined field names that are included in instances and instance boms."
+  "The system defined field names that are included in instances and instance boms. Note: these are
+  not all of the fields used in any bom object, but rather are the field name used in instance boms
+  or instance values."
   #{:$type
 
     :$instance-of
@@ -358,19 +359,16 @@
     :$concrete-choices
     :$instance-literals
 
-    :$enum
     :$value?
+    :$enum
 
     :$guards
     :$valid?
     :$valid-vars
     :$valid-var-path
-    :$extrinsic?
+    ;; :$extrinsic?
 
-    :$expr
-    :$primitive-type ;; TODO: should this be here?
-    :$constraints
-    :$id-path})
+    :$constraints})
 
 (s/defn to-bare-instance-bom :- BareInstanceBom
   "Take all meta-fields out of instance."

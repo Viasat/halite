@@ -23,7 +23,7 @@
       base/no-empty))
 
 (defn- remove-boolean-wildcard [bom]
-  (if (and (bom/is-basic-bom? bom)
+  (if (and (bom/is-primitive-bom? bom)
            (= (:$enum bom) #{true false}))
     (-> bom
         (dissoc :$enum)
@@ -44,7 +44,7 @@
     bom/YesValueBom}
   bom
 
-  #{bom/BasicBom
+  #{bom/PrimitiveBom
     bom/ExpressionBom}
   (->> bom remove-value-bom remove-primitive-type remove-boolean-wildcard)
 

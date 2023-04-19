@@ -27,7 +27,7 @@
     bom/ContradictionBom}
   bom
 
-  #{bom/BasicBom
+  #{bom/PrimitiveBom
     bom/ExpressionBom
     bom/ConcreteInstanceBom
     bom/AbstractInstanceBom
@@ -55,7 +55,7 @@
     bom/InstanceValue}
   bom
 
-  #{bom/BasicBom
+  #{bom/PrimitiveBom
     bom/ExpressionBom}
   (cond
     (= (:$value? bom) {:$primitive-type :Boolean}) (dissoc bom :$value?)
