@@ -184,7 +184,7 @@
   #{Integer
     String
     Boolean
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/ExpressionBom
     bom/NoValueBom
     bom/YesValueBom

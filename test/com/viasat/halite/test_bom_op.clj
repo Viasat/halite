@@ -25,7 +25,7 @@
     bom/InstanceValue
     #{}
     []
-    bom/PrimitiveBom}
+    bom/BasicBom}
   [:primitive bom]
 
   bom/ExpressionBom
@@ -106,7 +106,7 @@
     bom/InstanceValue
     #{}
     []
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom
@@ -150,7 +150,7 @@
     bom/InstanceValue
     #{}
     []
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/AbstractInstanceBom
     bom/ConcreteInstanceBom
     bom/NoValueBom

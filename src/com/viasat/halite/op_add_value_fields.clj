@@ -28,7 +28,7 @@
     bom/ExpressionBom}
   bom
 
-  #{bom/PrimitiveBom
+  #{bom/BasicBom
     bom/ConcreteInstanceBom
     bom/AbstractInstanceBom
     bom/InstanceLiteralBom}
@@ -46,7 +46,7 @@
     FixedDecimal
     String
     Boolean
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom

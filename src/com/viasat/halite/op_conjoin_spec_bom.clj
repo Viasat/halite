@@ -26,7 +26,7 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/ExpressionBom}
   bom
 

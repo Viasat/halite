@@ -23,7 +23,7 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom}
+    bom/BasicBom}
   (->> [{:path path :value bom}
         (when (and (map? bom)
                    (contains? bom :$value?))

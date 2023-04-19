@@ -30,7 +30,7 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/ExpressionBom}
   bom
 
@@ -78,7 +78,7 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/ExpressionBom}
   #{}
 
@@ -114,7 +114,7 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/ExpressionBom}
   #{}
 
@@ -156,7 +156,7 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/ExpressionBom}
   bom
 
@@ -194,7 +194,7 @@
     #{}
     []
     bom/InstanceValue
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/ExpressionBom}
   bom
 

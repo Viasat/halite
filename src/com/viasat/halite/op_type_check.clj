@@ -44,7 +44,7 @@
     bom/InstanceLiteralBom}
   (throw (ex-info "unexpected bom element" {:bom bom}))
 
-  bom/PrimitiveBom
+  bom/BasicBom
   (let [{ranges :$ranges enum :$enum} bom
         enum-types (->> enum (map get-bom-type*) set)
         ranges-type (some->> ranges first first get-bom-type*)]
@@ -94,7 +94,7 @@
     FixedDecimal
     String
     Boolean
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom

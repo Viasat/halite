@@ -34,62 +34,74 @@
 
 ;;
 
-(def WorkspaceName (schema-conjunct keyword keyword?
-                                    has-namespace #(nil? (namespace %))
-                                    valid-characters #(re-matches dotted-name (name %))
-                                    valid-length #(<= (count (name %)) workspace-name-length-limit)))
+(def WorkspaceName
+  "This constrains the namespace that is used in spec identifier keywords."
+  (schema-conjunct keyword keyword?
+                   has-namespace #(nil? (namespace %))
+                   valid-characters #(re-matches dotted-name (name %))
+                   valid-length #(<= (count (name %)) workspace-name-length-limit)))
 
-(def SpecId (schema-conjunct keyword keyword?
-                             valid-workspace #(nil? (s/check WorkspaceName (keyword (namespace %))))
-                             valid-characters #(re-matches (re-pattern specid-regex-str) (name %))
-                             valid-length #(<= (count (name %)) spec-id-length-limit)))
+(def SpecId
+  "Specs are identified with a keyword."
+  (schema-conjunct keyword keyword?
+                   valid-workspace #(nil? (s/check WorkspaceName (keyword (namespace %))))
+                   valid-characters #(re-matches (re-pattern specid-regex-str) (name %))
+                   valid-length #(<= (count (name %)) spec-id-length-limit)))
 
 ;; types for instance expressions
 
-(def VariableKeyword (schema-conjunct bare-keyword types/bare-keyword?
-                                      not-reserved #(not= reserved-char (first (name %)))))
+(def VariableKeyword
+  "The fields, i.e. variables in an instance are identified by non-namespace qualified keywords"
+  (schema-conjunct bare-keyword types/bare-keyword?
+                   not-reserved #(not= reserved-char (first (name %)))))
 
 ;;;;
 
 (defn is-instance-value?
+  "See InstanceValue"
   [x]
   (and (map? x)
        (:$type x)))
 
-(defn is-valid-bom-instance-type-field? [x]
-  (let [instance-of (:$instance-of x)
-        refines-to (:$refines-to x)]
-    (and (or instance-of refines-to)
-         (not (and instance-of refines-to)))))
+;;
 
 (defn is-abstract-instance-bom?
+  "See AbstractInstanceBom"
   [x]
   (and (map? x)
        (:$refines-to x)))
 
 (defn is-concrete-instance-bom?
+  "See ConcreteInstanceBom"
   [x]
   (and (map? x)
        (:$instance-of x)))
 
 (defn is-instance-literal-bom?
+  "See InstanceLiteralBom"
   [x]
   (and (map? x)
        (:$instance-literal-type x)))
 
 (defn is-instance-bom?
+  "Is this a bom that is used to identify a spec instance."
   [x]
   (or (is-abstract-instance-bom? x)
       (is-concrete-instance-bom? x)
       (is-instance-literal-bom? x)))
 
-(def ExpressionBom {:$expr s/Any})
+;;
 
-(defn is-expression-bom? [x]
+(defn is-expression-bom?
+  "Used internally to assign expressions to fields, e.g. for instance literals."
+  [x]
   (and (map? x)
        (contains? x :$expr)))
 
-(defn is-primitive-bom?
+;;
+
+(defn is-basic-bom?
+  "See BasicBom"
   [x]
   (and (map? x)
        (not (is-instance-bom? x))
@@ -119,21 +131,29 @@
 
 (declare InstanceValue)
 
-(def BomValue (s/conditional
-               base/integer-or-long? Number
-               string? String
-               boolean? Boolean
-               base/fixed-decimal? FixedDecimal
-               is-instance-value? (s/recursive #'InstanceValue)
-               set? #{(s/recursive #'BomValue)}
-               vector? [(s/recursive #'BomValue)]))
+(def BomValue
+  "This identifies basic values (i.e. primtives and collections) which appear in boms. These are
+  simple values which are not bom objects per se, but are used as a degenerate case of boms."
+  (s/conditional
+   base/integer-or-long? Number
+   string? String
+   boolean? Boolean
+   base/fixed-decimal? FixedDecimal
+   is-instance-value? (s/recursive #'InstanceValue)
+   set? #{(s/recursive #'BomValue)}
+   vector? [(s/recursive #'BomValue)]))
 
-(defn is-bom-value? [x]
+(defn is-bom-value?
+  "See BomValue"
+  [x]
   (nil? (s/check BomValue x)))
 
-(def BareInstance {VariableKeyword BomValue})
+(def BareInstance
+  "A 'plain' instance that does not contain anything other than BomValues (i.e. no bom objects per se)."
+  {VariableKeyword BomValue})
 
 (def InstanceValue
+  "A bom object that identifies an instance of a spec. This differs from a BareInstance in that it can contains bom objects."
   {:$type SpecId
    VariableKeyword BomValue})
 
@@ -141,25 +161,41 @@
 
 (declare ConcreteInstanceBom)
 
-(def BooleanBom (s/conditional
-                 map? {(s/optional-key :$primitive-type) types/HaliteType
-                       (s/optional-key :$enum) #{Boolean}}
-                 :else Boolean))
+(def BooleanBom
+  "A bom object used to describe a boolean field."
+  (s/conditional
+   map? {(s/optional-key :$primitive-type) types/HaliteType
+         (s/optional-key :$enum) #{Boolean}}
+   :else Boolean))
 
-(def IntegerRangeConstraint [(s/one Number :start) (s/one Number :end)])
+(def IntegerRangeConstraint
+  [(s/one Number :start) (s/one Number :end)])
 
-(def FixedDecimalRangeConstraint [(s/one FixedDecimal :start) (s/one FixedDecimal :end)])
+(def FixedDecimalRangeConstraint
+  [(s/one FixedDecimal :start) (s/one FixedDecimal :end)])
 
-(def RangeConstraint (s/conditional
-                      #(base/integer-or-long? (first %)) IntegerRangeConstraint
-                      :else FixedDecimalRangeConstraint))
+(def RangeConstraint
+  "Indicates a range of numerical values, where the first value is included and the final value is
+  excluded from the range."
+  (s/conditional
+   #(base/integer-or-long? (first %)) IntegerRangeConstraint
+   :else FixedDecimalRangeConstraint))
 
 ;; ranges are interpreted to include the lower bound and exclude the upper bound
 ;; it is not possible to specify an 'open ended' range
 
-(def RangesConstraint #{RangeConstraint})
+(def RangesConstraint
+  "A set of ranges."
+  #{RangeConstraint})
 
-(def PrimitiveBom
+(def BasicBom
+  "A bom object used to describe a field value. When a :$ranges value is provided, then if the field
+  has a value the value must be included in one of the ranges. When an :$enum value is provided,
+  then if the field has a value it must be included in the enumeration set. If a :$value? field is
+  provided then it constrains whether or not the field must or must not have a
+  value. The :$primitive-type field is used for internal purposes to track the type of the field
+  which this bom object is being used for. Note: this could be used to describe a composite field
+  via the :$enum and :$value? fields."
   {(s/optional-key :$ranges) RangesConstraint
    (s/optional-key :$enum) #{BomValue}
    (s/optional-key :$value?) BooleanBom
@@ -171,11 +207,13 @@
 
 (declare InstanceLiteralBom)
 
+(def ExpressionBom {:$expr s/Any})
+
 (def Bom (s/conditional
           is-abstract-instance-bom? (s/recursive #'AbstractInstanceBom)
           is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
           is-instance-literal-bom? (s/recursive #'InstanceLiteralBom)
-          is-primitive-bom? PrimitiveBom
+          is-basic-bom? BasicBom
           is-expression-bom? ExpressionBom
           :else BomValue))
 

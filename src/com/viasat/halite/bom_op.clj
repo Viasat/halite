@@ -27,7 +27,7 @@
     (bom/is-concrete-instance-bom? x) bom/ConcreteInstanceBom
     (bom/is-instance-literal-bom? x) bom/InstanceLiteralBom
     (bom/is-expression-bom? x) bom/ExpressionBom
-    (bom/is-primitive-bom? x) bom/PrimitiveBom))
+    (bom/is-basic-bom? x) bom/BasicBom))
 
 (defn- find-dups [seq]
   (->> seq
@@ -48,7 +48,7 @@
         bom/ConcreteInstanceBom 'bom/ConcreteInstanceBom
         bom/InstanceLiteralBom 'bom/InstanceLiteralBom
         bom/ExpressionBom 'bom/ExpressionBom
-        bom/PrimitiveBom 'bom/PrimitiveBom
+        bom/BasicBom 'bom/BasicBom
         bom/NoValueBom 'bom/NoValueBom
         bom/YesValueBom 'bom/YesValueBom
         bom/ContradictionBom 'bom/ContradictionBom}
@@ -86,7 +86,7 @@
                                         bom/ConcreteInstanceBom
                                         bom/InstanceLiteralBom
                                         bom/ExpressionBom
-                                        bom/PrimitiveBom
+                                        bom/BasicBom
                                         bom/NoValueBom
                                         bom/YesValueBom}
                                       (map dispatch-values-symbols)
@@ -173,7 +173,7 @@
   bom/NoValueBom
   true
 
-  #{bom/PrimitiveBom
+  #{bom/BasicBom
     bom/ConcreteInstanceBom
     bom/AbstractInstanceBom}
   (contains? bom :$value?))

@@ -31,7 +31,7 @@
   bom
 
   #{bom/NoValueBom
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/YesValueBom}
   (assoc bom :$primitive-type type))
 
@@ -41,7 +41,7 @@
     FixedDecimal
     String
     Boolean
-    bom/PrimitiveBom
+    bom/BasicBom
     bom/NoValueBom
     bom/YesValueBom
     bom/ContradictionBom
