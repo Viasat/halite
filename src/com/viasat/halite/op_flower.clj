@@ -124,39 +124,46 @@
                bom')
         valid-var-atom (atom {})
         bom' (-> bom'
-                 (assoc :$instance-literals (->> @instance-literal-atom
-                                                 (map (fn [[instance-literal-id instance-literal-bom]]
-                                                        [instance-literal-id
-                                                         (let [spec-id (bom/get-spec-id instance-literal-bom)
-                                                               bare-instance-bom (bom/to-bare-instance-bom instance-literal-bom)
-                                                               instance-literal-bom' (->> instance-literal-bom
-                                                                                          ;; (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env)
-                                                                                          ;; (op-add-value-fields/add-value-fields-op spec-env)
-                                                                                          (op-add-constraints/add-constraints-op spec-env)
-                                                                                          (flower-op* (assoc context
-                                                                                                             :path (conj (:path context)
-                                                                                                                         :$instance-literals
-                                                                                                                         instance-literal-id)
-                                                                                                             :env
-                                                                                                             (reduce (fn [env [field-name val]]
-                                                                                                                       (flow-return-path/add-binding env (symbol field-name)
-                                                                                                                                                     (if (bom/is-expression-bom? val)
-                                                                                                                                                       (:$expr val)
-                                                                                                                                                       val)))
-                                                                                                                     (:env context)
-                                                                                                                     bare-instance-bom)))
-                                                                                          add-guards-to-constraints)]
-                                                           (if (:$valid-var-path instance-literal-bom')
-                                                             (do
-                                                               (swap! valid-var-atom assoc-in
-                                                                      (:$valid-var-path instance-literal-bom')
-                                                                      {:$valid-var-constraints (-> (:$constraints instance-literal-bom')
-                                                                                                   (update-keys #(str % "$" (base/next-id counter-atom))))})
-                                                               (dissoc instance-literal-bom' :$constraints))
-                                                             instance-literal-bom'))]))
+                 (assoc
+                  :$instance-literals
+                  (->> @instance-literal-atom
+                       (map
+                        (fn [[instance-literal-id instance-literal-bom]]
+                          [instance-literal-id
+                           (let [spec-id (bom/get-spec-id instance-literal-bom)
+                                 bare-instance-bom (bom/to-bare-instance-bom instance-literal-bom)
+                                 instance-literal-bom' (->> instance-literal-bom
+                                                            ;; (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env)
+                                                            ;; (op-add-value-fields/add-value-fields-op spec-env)
+                                                            (op-add-constraints/add-constraints-op spec-env)
+                                                            (flower-op* (assoc
+                                                                         context
+                                                                         :path (conj (:path context)
+                                                                                     :$instance-literals
+                                                                                     instance-literal-id)
+                                                                         :env
+                                                                         (reduce (fn [env [field-name val]]
+                                                                                   (flow-return-path/add-binding
+                                                                                    env
+                                                                                    (symbol field-name)
+                                                                                    (flow-expr/wrap-lowered-expr
+                                                                                     (if (bom/is-expression-bom? val)
+                                                                                       (:$expr val)
+                                                                                       val))))
+                                                                                 (:env context)
+                                                                                 bare-instance-bom)))
+                                                            add-guards-to-constraints)]
+                             (if (:$valid-var-path instance-literal-bom')
+                               (do
+                                 (swap! valid-var-atom assoc-in
+                                        (:$valid-var-path instance-literal-bom')
+                                        {:$valid-var-constraints (-> (:$constraints instance-literal-bom')
+                                                                     (update-keys #(str % "$" (base/next-id counter-atom))))})
+                                 (dissoc instance-literal-bom' :$constraints))
+                               instance-literal-bom'))]))
 
-                                                 (into {})
-                                                 base/no-empty))
+                       (into {})
+                       base/no-empty))
                  base/no-nil-entries)
         bom' (->> (-> bom'
                       (merge @valid-var-atom))

@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.test-flow-expr
-  (:require [clojure.test :refer :all]
+  (:require [clojure.pprint :as pprint]
+            [clojure.test :refer :all]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.fog :as fog]
@@ -149,5 +150,19 @@
                 '(when #r [:p :x :$value?]
                    (div #r [:p :x] 3))
                 {:q {1 {:n 6, :o {:$expr #r [:p :x]}, :$instance-literal-type :ws/B$v1, :$guards []}}}))
+
+(deftest test-lowered
+  (is (= #lowered (+ 1 #r [:x])
+         (flow-expr/wrap-lowered-expr '(+ 1 #r [:x]))))
+
+  (is (flow-expr/lowered-expr? #lowered (+ 1 #r [:x])))
+
+  (is (not (flow-expr/lowered-expr? '(+ 1 x))))
+
+  (is (= '(+ 1 #r [:x])
+         (flow-expr/unwrap-lowered-expr #lowered (+ 1 #r [:x]))))
+
+  (is (= "#lowered #r [:x]\n"
+         (with-out-str (pprint/pprint (flow-expr/wrap-lowered-expr #r [:x]))))))
 
 ;; (run-tests)

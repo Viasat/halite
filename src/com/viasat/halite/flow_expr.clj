@@ -4,6 +4,7 @@
 (ns com.viasat.halite.flow-expr
   "Lower expressions to be in terms of simple operations on bom variables."
   (:require [clojure.math :as math]
+            [clojure.pprint :as pprint]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.envs :as envs]
@@ -17,7 +18,8 @@
             [com.viasat.halite.types :as types]
             [com.viasat.halite.var-ref :as var-ref]
             [com.viasat.halite.walk :as walk2]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import [java.io Writer]))
 
 (set! *warn-on-reflection* true)
 
@@ -66,6 +68,14 @@
   (hashCode [_]
     (.hashCode expr)))
 
+(s/defn make-lowered-expr :- LoweredExpr
+  [expr]
+  (LoweredExpr. expr))
+
+(s/defn lowered-expr-reader :- LoweredExpr
+  [expr]
+  (make-lowered-expr expr))
+
 (s/defn lowered-expr? :- Boolean
   [value :- s/Any]
   (instance? LoweredExpr value))
@@ -76,6 +86,21 @@
 (s/defn unwrap-lowered-expr
   [expr :- LoweredExpr]
   (.-expr expr))
+
+(def ^:dynamic *reader-symbol* 'lowered)
+
+(defn print-lowered-expr [^LoweredExpr lowered-expr ^Writer writer]
+  (.write writer (str "#" *reader-symbol* " " (pr-str (.-expr lowered-expr)))))
+
+(defmethod print-method LoweredExpr [lowered-expr writer]
+  (print-lowered-expr lowered-expr writer))
+
+(defmethod print-dup LoweredExpr [lowered-expr writer]
+  (print-lowered-expr lowered-expr writer))
+
+(.addMethod ^clojure.lang.MultiFn pprint/simple-dispatch LoweredExpr
+            (fn [lowered-expr]
+              (print-lowered-expr lowered-expr *out*)))
 
 ;;;;
 
@@ -441,7 +466,6 @@
                   (flower-fn-application context expr))
     (vector? expr) (flower-fog context expr)
     (set? expr) (flower-fog context expr)
-    (var-ref/var-ref? expr) expr
     :else (throw (ex-info "unrecognized halite form" {:expr expr}))))
 
 ;;;;
@@ -481,3 +505,9 @@
        pre-lower
        (flower (assoc context
                       :guards []))))
+
+;;;;
+
+(defn init []
+  ;; this is here for other modules to call to force this namespace to be loaded
+  )
