@@ -2,80 +2,20 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.bom
+  "Internal schema definitions for the Bom structure that describes instance values."
   (:require [com.viasat.halite.base :as base]
+            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
-  (:import [clojure.lang Atom]
-           [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
+  (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
-(defmacro schema-conjunct
-  [& pred-names]
-  (if (<= (count pred-names) 3)
-    (let [[name pred s] pred-names]
-      `(s/conditional ~pred ~(or s s/Any) '~name))
-    (let [[name pred & rest] pred-names]
-      `(s/conditional ~pred (schema-conjunct ~@rest) '~name))))
-
-;;
-
-(def reserved-char \$)
-
-(def dotted-name #"[a-z][a-zA-Z0-9_]*([.][a-zA-Z][a-zA-Z0-9_]*)*")  ;; in particular cannot have a '/' because that is used as a separator
-
-(def workspace-name-length-limit 120)
-
-(def specid-regex-str "[A-Z][a-zA-Z0-9_]*[$]v[0-9]+")
-
-(def spec-name-length-limit 80)
-
-(def spec-id-length-limit (+ spec-name-length-limit workspace-name-length-limit 20))
-
-;;
-
-(def WorkspaceName
-  "This constrains the namespace that is used in spec identifier keywords."
-  (schema-conjunct keyword keyword?
-                   has-namespace #(nil? (namespace %))
-                   valid-characters #(re-matches dotted-name (name %))
-                   valid-length #(<= (count (name %)) workspace-name-length-limit)))
-
-(def SpecId
-  "Specs are identified with a keyword."
-  (schema-conjunct keyword keyword?
-                   valid-workspace #(nil? (s/check WorkspaceName (keyword (namespace %))))
-                   valid-characters #(re-matches (re-pattern specid-regex-str) (name %))
-                   valid-length #(<= (count (name %)) spec-id-length-limit)))
-
-;; types for instance expressions
-
-(def VariableKeyword
-  "The fields, i.e. variables in an instance are identified by non-namespace qualified keywords"
-  (schema-conjunct bare-keyword types/bare-keyword?
-                   not-reserved #(not= reserved-char (first (name %)))))
-
 ;;;;
 
-(defn is-instance-value?
-  "See InstanceValue"
-  [x]
-  (and (map? x)
-       (:$type x)))
+(def is-abstract-instance-bom? bom-user/is-abstract-instance-bom?)
 
-;;
-
-(defn is-abstract-instance-bom?
-  "See AbstractInstanceBom"
-  [x]
-  (and (map? x)
-       (:$refines-to x)))
-
-(defn is-concrete-instance-bom?
-  "See ConcreteInstanceBom"
-  [x]
-  (and (map? x)
-       (:$instance-of x)))
+(def is-concrete-instance-bom? bom-user/is-concrete-instance-bom?)
 
 (defn is-instance-literal-bom?
   "See InstanceLiteralBom"
@@ -89,6 +29,8 @@
   (or (is-abstract-instance-bom? x)
       (is-concrete-instance-bom? x)
       (is-instance-literal-bom? x)))
+
+(def is-instance-value? bom-user/is-instance-value?)
 
 ;;
 
@@ -129,33 +71,12 @@
 ;; contradiction-bom : indicates that it is impossible to satisfy all of the constraints indicated in the bom for this value (this is roughly like an exception)
 ;; NOTE: these two mean different things
 
-(declare InstanceValue)
-
-(def BomValue
-  "This identifies basic values (i.e. primtives and collections) which appear in boms. These are
-  simple values which are not bom objects per se, but are used as a degenerate case of boms."
-  (s/conditional
-   base/integer-or-long? Number
-   string? String
-   boolean? Boolean
-   base/fixed-decimal? FixedDecimal
-   is-instance-value? (s/recursive #'InstanceValue)
-   set? #{(s/recursive #'BomValue)}
-   vector? [(s/recursive #'BomValue)]))
+(def BomValue bom-user/BomValue)
 
 (defn is-bom-value?
   "See BomValue"
   [x]
   (nil? (s/check BomValue x)))
-
-(def BareInstance
-  "A 'plain' instance that does not contain anything other than BomValues (i.e. no bom objects per se)."
-  {VariableKeyword BomValue})
-
-(def InstanceValue
-  "A bom object that identifies an instance of a spec. This differs from a BareInstance in that it can contains bom objects."
-  {:$type SpecId
-   VariableKeyword BomValue})
 
 (declare AbstractInstanceBom)
 
@@ -168,25 +89,7 @@
          (s/optional-key :$enum) #{Boolean}}
    :else Boolean))
 
-(def IntegerRangeConstraint
-  [(s/one Number :start) (s/one Number :end)])
-
-(def FixedDecimalRangeConstraint
-  [(s/one FixedDecimal :start) (s/one FixedDecimal :end)])
-
-(def RangeConstraint
-  "Indicates a range of numerical values, where the first value is included and the final value is
-  excluded from the range."
-  (s/conditional
-   #(base/integer-or-long? (first %)) IntegerRangeConstraint
-   :else FixedDecimalRangeConstraint))
-
-;; ranges are interpreted to include the lower bound and exclude the upper bound
-;; it is not possible to specify an 'open ended' range
-
-(def RangesConstraint
-  "A set of ranges."
-  #{RangeConstraint})
+(def RangesConstraint bom-user/RangesConstraint)
 
 (def PrimitiveBom
   "A bom object used to describe a field value. When a :$ranges value is provided, then if the field
@@ -201,39 +104,11 @@
    (s/optional-key :$value?) BooleanBom
    (s/optional-key :$primitive-type) types/HaliteType})
 
-(declare AbstractInstanceBom)
+(def NoValueBom bom-user/NoValueBom)
 
-(declare ConcreteInstanceBom)
+(def no-value-bom bom-user/no-value-bom)
 
-(declare InstanceLiteralBom)
-
-(def ExpressionBom
-  "Used internally to assign expressions to fields, e.g. for instance literals."
-  {:$expr s/Any})
-
-(def Bom
-  "A bom object which is a recursive structure that represents requirements for values that populate
-  fields in instances."
-  (s/conditional
-   is-abstract-instance-bom? (s/recursive #'AbstractInstanceBom)
-   is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
-   is-instance-literal-bom? (s/recursive #'InstanceLiteralBom)
-   is-primitive-bom? PrimitiveBom
-   is-expression-bom? ExpressionBom
-   :else BomValue))
-
-(def NoValueBom
-  "Schema that represents that no value is to be provided for the field where this appears."
-  {:$value? (s/eq false)})
-
-(def no-value-bom
-  "The bom object used to represent the absence of a value."
-  {:$value? false})
-
-(s/defn is-no-value-bom?
-  "See NoValueBom"
-  [bom]
-  (= no-value-bom bom))
+(def is-no-value-bom? bom-user/is-no-value-bom?)
 
 (s/defn is-a-no-value-bom?
   "This handles concrete instance boms which also have a field indicating whether they represent a
@@ -254,18 +129,35 @@
   [bom]
   (= yes-value-bom bom))
 
-(def ContradictionBom
-  "Schema representing the inability to satisfy all of the constraints."
-  {:$contradiction? (s/eq true)})
+(def ContradictionBom bom-user/ContradictionBom)
 
-(def contradiction-bom
-  "The bom object representing the inability to satisfy all of the constraints."
-  {:$contradiction? true})
+(def contradiction-bom bom-user/contradiction-bom)
 
-(s/defn is-contradiction-bom?
-  "See ContradictionBom"
-  [bom]
-  (= contradiction-bom bom))
+(def is-contradiction-bom? bom-user/is-contradiction-bom?)
+
+(declare AbstractInstanceBom)
+
+(declare ConcreteInstanceBom)
+
+(declare InstanceLiteralBom)
+
+(def ExpressionBom
+  "Used internally to assign expressions to fields, e.g. for instance literals."
+  {:$expr s/Any})
+
+(def Bom
+  "A bom object which is a recursive structure that represents requirements for values that populate
+  fields in instances."
+  (s/conditional
+   is-contradiction-bom? ContradictionBom
+   is-abstract-instance-bom? (s/recursive #'AbstractInstanceBom)
+   is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
+   is-instance-literal-bom? (s/recursive #'InstanceLiteralBom)
+   is-primitive-bom? PrimitiveBom
+   is-expression-bom? ExpressionBom
+   :else BomValue))
+
+(def InstanceValue bom-user/InstanceValue)
 
 (def VariableValueBom
   "Everything that can appear as the value of an instance field with a bom object"
@@ -275,10 +167,14 @@
    is-contradiction-bom? ContradictionBom
    :else Bom))
 
+(def VariableKeyword bom-user/VariableKeyword)
+
 (def BareInstanceBom
   "A map that only contains field names mapped to bom values (i.e. all of the bom object fields have
   been removed)."
   {VariableKeyword VariableValueBom})
+
+(def SpecId bom-user/SpecId)
 
 (def InstanceLiteralBom
   "An internal representation used to brin instance literals from spec expression into the bom directly as

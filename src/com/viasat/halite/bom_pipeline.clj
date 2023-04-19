@@ -5,6 +5,7 @@
   (:require [clojure.pprint :as pprint]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-choco :as bom-choco]
+            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.op-add-constraints :as op-add-constraints]
             [com.viasat.halite.op-add-types :as op-add-types]
             [com.viasat.halite.op-add-value-fields :as op-add-value-fields]
@@ -23,11 +24,18 @@
             [com.viasat.halite.op-remove-value-fields :as op-remove-value-fields]
             [com.viasat.halite.op-strip :as op-strip]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
-            [com.viasat.halite.op-type-check :as op-type-check]))
+            [com.viasat.halite.op-type-check :as op-type-check]
+            [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
-(defn propagate [spec-env input-bom]
+(s/defn propagate :- {:expanded-bom bom/Bom
+                      :lowered-bom bom/Bom
+                      :choco-data s/Any
+                      :propagate-result s/Any
+                      :result bom-user/UserBom}
+  [spec-env
+   input-bom :- bom-user/UserBom]
   (let [expanded-bom (->> input-bom
                           (op-syntax-check/syntax-check-op spec-env)
                           (op-type-check/type-check-op spec-env)
