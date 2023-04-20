@@ -136,40 +136,42 @@
     (when (nil? path)
       (throw (ex-info "did not find expected id-path in metadata" {:expr expr
                                                                    :meta (meta expr)})))
-    (if (->> new-contents
-             vals
-             (some non-root-fog?))
-      (flower-fog context expr)
-      (do
-        ;; compute instance-literal constraints
-        (let [env' (reduce (fn [env [field-name value]]
-                             (flow-return-path/add-binding env (symbol field-name) value))
-                           env
-                           (-> expr
-                               (dissoc :$type)))
-              type-env' (reduce (fn ([type-env [field-name value]]
-                                     envs/extend-scope type-env
-                                     (symbol field-name)
-                                     (expression-type
-                                      context
-                                      (get expr field-name))))
-                                type-env
-                                new-contents)
-              context' (assoc context :env env' :type-env type-env')]
-          (instance-literal-f path
-                              (let [nc (-> new-contents
-                                           (update-vals (fn [val]
-                                                          (if (bom/is-bom-value? val)
-                                                            val
-                                                            {:$expr val})))
-                                           (assoc :$instance-literal-type (:$type expr)
-                                                  :$guards guards))
-                                    nc (if (nil? valid-var-path)
-                                         nc
-                                         (assoc nc :$valid-var-path valid-var-path))]
-                                nc)))
-        (instance-literal/make-instance-literal (-> new-contents
-                                                    (assoc :$type (:$type expr))))))))
+
+    ;; this seems too aggressive, but is it too permissive to leave it out altogether?
+    #_(if (->> new-contents
+               vals
+               (some non-root-fog?))
+        (flower-fog context expr))
+
+    ;; compute instance-literal constraints
+    (let [env' (reduce (fn [env [field-name value]]
+                         (flow-return-path/add-binding env (symbol field-name) value))
+                       env
+                       (-> expr
+                           (dissoc :$type)))
+          type-env' (reduce (fn ([type-env [field-name value]]
+                                 envs/extend-scope type-env
+                                 (symbol field-name)
+                                 (expression-type
+                                  context
+                                  (get expr field-name))))
+                            type-env
+                            new-contents)
+          context' (assoc context :env env' :type-env type-env')]
+      (instance-literal-f path
+                          (let [nc (-> new-contents
+                                       (update-vals (fn [val]
+                                                      (if (bom/is-bom-value? val)
+                                                        val
+                                                        {:$expr val})))
+                                       (assoc :$instance-literal-type (:$type expr)
+                                              :$guards guards))
+                                nc (if (nil? valid-var-path)
+                                     nc
+                                     (assoc nc :$valid-var-path valid-var-path))]
+                            nc)))
+    (instance-literal/make-instance-literal (-> new-contents
+                                                (assoc :$type (:$type expr))))))
 
 (s/defn ^:private flower-get
   [context :- ExprContext
