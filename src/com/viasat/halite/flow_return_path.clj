@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.flow-return-path
   "Turn a non-lowered expression into a lowered boolean expression indicating whether or not the expression produces a value."
-  (:require [com.viasat.halite.flow-boolean :as flow-boolean]
+  (:require [com.viasat.halite.bom :as bom]
+            [com.viasat.halite.flow-boolean :as flow-boolean]
             [com.viasat.halite.flow-get :as flow-get]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.envs :as envs]
@@ -96,9 +97,9 @@
         (return-path context ((envs/bindings env) sym))
         (var-ref/make-var-ref (conj path (keyword sym) :$value?))))))
 
-(s/defn return-path
+(s/defn return-path :- bom/LoweredExpr
   [context :- ReturnPathContext
-   expr]
+   expr :- bom/Expr]
   (cond
     (boolean? expr) true
     (base/integer-or-long? expr) true

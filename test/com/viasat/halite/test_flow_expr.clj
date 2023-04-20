@@ -155,12 +155,12 @@
   (is (= #lowered (+ 1 #r [:x])
          (flow-expr/wrap-lowered-expr '(+ 1 #r [:x]))))
 
-  (is (flow-expr/lowered-expr? #lowered (+ 1 #r [:x])))
+  (is (flow-expr/lowered-expr-wrapper? #lowered (+ 1 #r [:x])))
 
-  (is (not (flow-expr/lowered-expr? '(+ 1 x))))
+  (is (not (flow-expr/lowered-expr-wrapper? '(+ 1 x))))
 
   (is (= '(+ 1 #r [:x])
-         (flow-expr/unwrap-lowered-expr #lowered (+ 1 #r [:x]))))
+         (flow-expr/unwrap-lowered-expr-wrapper #lowered (+ 1 #r [:x]))))
 
   (is (= "#lowered #r [:x]\n"
          (with-out-str (pprint/pprint (flow-expr/wrap-lowered-expr #r [:x]))))))

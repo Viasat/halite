@@ -286,3 +286,9 @@
      (is-instance-value? bom) types/concrete-spec-type
      :default (throw (ex-info "unknown bom type" {:bom bom})))
    (get-spec-id bom)))
+
+;;;;
+
+(def Expr s/Any)
+
+(def LoweredExpr s/Any)

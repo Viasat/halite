@@ -4,11 +4,12 @@
 (ns com.viasat.halite.flow-boolean
   "Functions to construct boolean expressions. These functions will apply rules to automatically
   simplify the expressions as they are built"
-  (:require [schema.core :as s]))
+  (:require [com.viasat.halite.bom :as bom]
+            [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
 
-(defn make-and [& args]
+(s/defn make-and [& args :- [bom/Expr]]
   (let [args (->> args
                   (remove #(= true %)))]
     (cond
@@ -17,7 +18,7 @@
       (some #(= false %) args) false
       :default (apply list 'and args))))
 
-(defn make-or [& args]
+(s/defn make-or [& args :- [bom/Expr]]
   (let [args (->> args
                   (remove #(= false %)))]
     (cond
@@ -26,14 +27,17 @@
       (some #(= true %) args) true
       :default (apply list 'or args))))
 
-(defn make-not [x]
+(s/defn make-not [x :- bom/Expr]
   (cond
     (= true x) false
     (= false x) true
     (and (seq? x) (= 'not (first x))) (second x)
     :default (list 'not x)))
 
-(defn make-if [target then-clause else-clause]
+(s/defn make-if
+  [target :- bom/Expr
+   then-clause :- bom/Expr
+   else-clause :- bom/Expr]
   (cond
     (= true target) then-clause
     (= false target) else-clause
@@ -50,7 +54,9 @@
     ;; (= target else-clause) (make-or 'or then-clause else-clause)
     :default (list 'if target then-clause else-clause)))
 
-(defn make-when [target then-clause]
+(s/defn make-when
+  [target :- bom/Expr
+   then-clause :- bom/Expr]
   (cond
     (= true target) then-clause
     (= false target) '$no-value

@@ -60,73 +60,73 @@
 
 ;;;;
 
-(deftype LoweredExpr [expr]
+(deftype LoweredExprWrapper [expr]
   Object
   (equals [_ other]
-    (and (instance? LoweredExpr other)
-         (= expr (.-expr ^LoweredExpr other))))
+    (and (instance? LoweredExprWrapper other)
+         (= expr (.-expr ^LoweredExprWrapper other))))
   (hashCode [_]
     (.hashCode expr)))
 
-(s/defn make-lowered-expr :- LoweredExpr
+(s/defn make-lowered-expr-wrapper :- LoweredExprWrapper
   [expr]
-  (LoweredExpr. expr))
+  (LoweredExprWrapper. expr))
 
-(s/defn lowered-expr-reader :- LoweredExpr
+(s/defn lowered-expr-wrapper-reader :- LoweredExprWrapper
   [expr]
-  (make-lowered-expr expr))
+  (make-lowered-expr-wrapper expr))
 
-(s/defn lowered-expr? :- Boolean
+(s/defn lowered-expr-wrapper? :- Boolean
   [value :- s/Any]
-  (instance? LoweredExpr value))
+  (instance? LoweredExprWrapper value))
 
 (defn wrap-lowered-expr [expr]
-  (LoweredExpr. expr))
+  (LoweredExprWrapper. expr))
 
-(s/defn unwrap-lowered-expr
-  [expr :- LoweredExpr]
+(s/defn unwrap-lowered-expr-wrapper
+  [expr :- LoweredExprWrapper]
   (.-expr expr))
 
 (def ^:dynamic *reader-symbol* 'lowered)
 
-(defn print-lowered-expr [^LoweredExpr lowered-expr ^Writer writer]
-  (.write writer (str "#" *reader-symbol* " " (pr-str (.-expr lowered-expr)))))
+(defn print-lowered-expr-wrapper [^LoweredExprWrapper lowered-expr-wrapper ^Writer writer]
+  (.write writer (str "#" *reader-symbol* " " (pr-str (.-expr lowered-expr-wrapper)))))
 
-(defmethod print-method LoweredExpr [lowered-expr writer]
-  (print-lowered-expr lowered-expr writer))
+(defmethod print-method LoweredExprWrapper [lowered-expr-wrapper writer]
+  (print-lowered-expr-wrapper lowered-expr-wrapper writer))
 
-(defmethod print-dup LoweredExpr [lowered-expr writer]
-  (print-lowered-expr lowered-expr writer))
+(defmethod print-dup LoweredExprWrapper [lowered-expr-wrapper writer]
+  (print-lowered-expr-wrapper lowered-expr-wrapper writer))
 
-(.addMethod ^clojure.lang.MultiFn pprint/simple-dispatch LoweredExpr
-            (fn [lowered-expr]
-              (print-lowered-expr lowered-expr *out*)))
+(.addMethod ^clojure.lang.MultiFn pprint/simple-dispatch LoweredExprWrapper
+            (fn [lowered-expr-wrapper]
+              (print-lowered-expr-wrapper lowered-expr-wrapper *out*)))
 
 ;;;;
 
 (declare flower)
 
-(s/defn ^:private flower-fog
+(s/defn ^:private flower-fog :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (fog/make-fog (expression-type context expr)))
 
-(s/defn ^:private flower-symbol
+(s/defn ^:private flower-symbol :- bom/LoweredExpr
   [context :- ExprContext
-   sym]
+   sym :- s/Symbol]
   (let [{:keys [env path]} context]
     (if (= '$no-value sym)
       sym
       (if (contains? (envs/bindings env) sym)
         (let [resolved ((envs/bindings env) sym)]
-          (if (lowered-expr? resolved)
-            (unwrap-lowered-expr resolved)
+          (if (lowered-expr-wrapper? resolved)
+            (unwrap-lowered-expr-wrapper resolved)
             (flower context resolved)))
         (var-ref/make-var-ref (conj path (keyword sym)))))))
 
-(s/defn ^:private flower-instance
+(s/defn ^:private flower-instance :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [{:keys [spec-env type-env env path counter-atom instance-literal-f constraint-name guards
                 valid-var-path]} context
         new-contents (-> expr
@@ -173,9 +173,9 @@
     (instance-literal/make-instance-literal (-> new-contents
                                                 (assoc :$type (:$type expr))))))
 
-(s/defn ^:private flower-get
+(s/defn ^:private flower-get :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [[_ target accessor] expr
         target' (flower context target)]
     (cond
@@ -190,9 +190,9 @@
       :default (throw (ex-info "unexpected target of get" {:expr expr
                                                            :target' target'})))))
 
-(s/defn ^:private flower-let
+(s/defn ^:private flower-let :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [{:keys [type-env env path]} context
         [bindings body] (rest expr)
         {type-env' :type-env
@@ -226,9 +226,9 @@
       (flower-fog context expr)
       body')))
 
-(s/defn ^:private flower-if
+(s/defn ^:private flower-if :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [{:keys [guards]} context
         [_ target then-clause else-clause] expr
         target' (flower context target)
@@ -243,9 +243,9 @@
       (flower-fog context expr)
       (apply flow-boolean/make-if args'))))
 
-(s/defn ^:private flower-when
+(s/defn ^:private flower-when :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [{:keys [guards]} context
         [_ target then-clause] expr
         target' (flower context target)
@@ -257,9 +257,9 @@
       (flower-fog context expr)
       (apply list 'when args'))))
 
-(s/defn ^:private flower-if-value
+(s/defn ^:private flower-if-value :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [{:keys [spec-type-env type-env guards]} context
         [_ target then-clause else-clause] expr
         target' (flower context target)]
@@ -298,10 +298,10 @@
       (clojure.pprint/pprint {:env (envs/bindings env)
                               :spec-type-env (envs/scope spec-type-env)})))
 
-(s/defn ^:private flower-if-value-let*
+(s/defn ^:private flower-if-value-let* :- bom/LoweredExpr
   [context :- ExprContext
-   guard?
-   expr]
+   guard? :- Boolean
+   expr :- bom/Expr]
   (let [{:keys [env type-env guards]} context
         [_ [sym target] then-clause else-clause] expr
         target' (flower context target)
@@ -355,29 +355,29 @@
                               then-clause'
                               else-clause')))))
 
-(s/defn ^:private flower-if-value-let
+(s/defn ^:private flower-if-value-let :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (flower-if-value-let* context true expr))
 
-(s/defn ^:private flower-when-value-let
+(s/defn ^:private flower-when-value-let :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (flower-if-value-let* context true expr))
 
-(s/defn ^:private flower-refine-to
-  [op
+(s/defn ^:private flower-refine-to :- bom/LoweredExpr
+  [op :- s/Symbol
    context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [[_ instance spec-id] expr
         instance' (flower context instance)]
     (if (non-root-fog? instance')
       (flower-fog context expr)
       (list op instance' spec-id))))
 
-(s/defn ^:private flower-rescale
+(s/defn ^:private flower-rescale :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [[_ target-form new-scale] expr
         target-scale (types/decimal-scale (expression-type context target-form))
         target-form' (flower context target-form)]
@@ -388,9 +388,9 @@
               target-form'
               (->> shift abs (math/pow 10) long))))))
 
-(s/defn ^:private flower-valid?
+(s/defn ^:private flower-valid? :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [valid-var-path (:id-path (meta expr))
         [_ sub-expr] expr]
     (when (nil? valid-var-path)
@@ -400,9 +400,9 @@
     (flower (assoc context :valid-var-path valid-var-path) sub-expr)
     (var-ref/make-var-ref valid-var-path)))
 
-(s/defn ^:private flower-valid
+(s/defn ^:private flower-valid :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [{:keys [constraint-name path counter-atom]} context
         valid-var-path (:id-path (meta expr))
         [_ sub-expr] expr]
@@ -412,9 +412,9 @@
     (list 'when (var-ref/make-var-ref valid-var-path)
           (flower (assoc context :valid-var-path valid-var-path) sub-expr))))
 
-(s/defn ^:private flower-fn-application
+(s/defn ^:private flower-fn-application :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (let [[op & args] expr
         args' (->> args
                    (map (partial flower context)))]
@@ -429,9 +429,9 @@
 (defn flower-fixed-decimal [expr]
   (-> expr fixed-decimal/extract-long second))
 
-(s/defn flower
+(s/defn flower :- bom/LoweredExpr
   [context :- ExprContext
-   expr]
+   expr :- bom/Expr]
   (cond
     (boolean? expr) expr
     (base/integer-or-long? expr) expr
@@ -476,7 +476,9 @@
       (with-meta out m)
       out)))
 
-(defn pre-lower [expr]
+(s/defn lower-sugar :- bom/Expr
+  "Lower syntactic sugar of 'get-in and 'cond."
+  [expr :- bom/Expr]
   (->> expr
        (walk2/postwalk* (fn [old-expr expr]
                           (preserve-meta old-expr
@@ -500,9 +502,11 @@
                                            :default
                                            expr))))))
 
-(defn lower-expr [context expr]
+(s/defn lower-expr :- bom/LoweredExpr
+  [context
+   expr :- bom/Expr]
   (->> expr
-       pre-lower
+       lower-sugar
        (flower (assoc context
                       :guards []))))
 

@@ -2,7 +2,8 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.flow-get
-  (:require [com.viasat.halite.envs :as envs]
+  (:require [com.viasat.halite.bom :as bom]
+            [com.viasat.halite.envs :as envs]
             [com.viasat.halite.flow-boolean :as flow-boolean]
             [com.viasat.halite.var-ref :as var-ref]
             [schema.core :as s]))
@@ -79,10 +80,10 @@
   (let [[_ target] expr]
     (list 'valid (push-down-get path field target))))
 
-(s/defn push-down-get
+(s/defn push-down-get :- bom/Expr
   [path :- [s/Any]
    field
-   expr]
+   expr :- bom/Expr]
   (cond
     (symbol? expr) (with-meta (flow-boolean/make-if
                                (var-ref/make-var-ref (conj path (keyword expr) :$value?))
