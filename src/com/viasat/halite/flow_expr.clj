@@ -187,8 +187,6 @@
                                                        instance-literal/get-bindings
                                                        (get accessor))
 
-      (seq? target') (flow-get/push-down-get (:path context) accessor target')
-
       :default (throw (ex-info "unexpected target of get" {:expr expr
                                                            :target' target'})))))
 
