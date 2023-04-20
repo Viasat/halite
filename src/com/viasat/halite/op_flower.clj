@@ -216,9 +216,9 @@
          combine-valid-var-constraints
          resolve-valid-vars)))
 
-(s/defn flower-op
+(s/defn flower-op :- bom/Bom
   [spec-env :- (s/protocol envs/SpecEnv)
-   bom]
+   bom :- bom/Bom]
   (flower-op* {:top-bom bom
                :spec-env spec-env
                :type-env (envs/type-env {})

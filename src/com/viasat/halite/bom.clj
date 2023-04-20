@@ -205,7 +205,7 @@
       (assoc :$refines-to SpecId
              (s/optional-key :$value?) BooleanBom
              (s/optional-key :$refinements) {SpecId (s/conditional
-                                                     is-concrete-instance-bom? (s/recursive #'ConcreteInstanceBom)
+                                                     is-concrete-instance-bom? ConcreteInstanceBom
                                                      is-no-value-bom? NoValueBom
                                                      :else ContradictionBom)}
              (s/optional-key :$concrete-choices) {SpecId (s/conditional

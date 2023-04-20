@@ -215,9 +215,12 @@
       (assoc :$refines-to SpecId
              (s/optional-key :$value?) Boolean
              (s/optional-key :$refinements) {SpecId (s/conditional
-                                                     is-concrete-instance-bom? (s/recursive #'UserConcreteInstanceBom)
+                                                     is-concrete-instance-bom? UserConcreteInstanceBom
                                                      is-no-value-bom? NoValueBom
-                                                     :else ContradictionBom)})))
+                                                     :else ContradictionBom)}
+             (s/optional-key :$concrete-choices) {SpecId (s/conditional
+                                                          is-concrete-instance-bom? UserConcreteInstanceBom
+                                                          :else InstanceValue)})))
 
 (def UserInstanceBom
   "Umbrella type for all of the valid bom objects that can appear as the value for a spec instance."

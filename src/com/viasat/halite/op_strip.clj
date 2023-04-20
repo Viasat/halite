@@ -6,6 +6,7 @@
   (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-user :as bom-user]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
@@ -30,7 +31,7 @@
         base/no-empty)
     bom))
 
-(bom-op/def-bom-multimethod strip-op
+(bom-op/def-bom-multimethod strip-op*
   [bom]
   #{Integer
     FixedDecimal
@@ -54,13 +55,17 @@
   (-> bom
       (merge (-> bom
                  bom/to-bare-instance-bom
-                 (update-vals strip-op)))
+                 (update-vals strip-op*)))
       (assoc :$refinements (some-> bom
                                    :$refinements
-                                   (update-vals strip-op)))
+                                   (update-vals strip-op*)))
       (assoc :$concrete-choices (some-> bom
                                         :$concrete-choices
-                                        (update-vals strip-op)))
+                                        (update-vals strip-op*)))
       (dissoc :$constraints)
       base/no-nil-entries
       remove-value-bom))
+
+(s/defn strip-op :- bom-user/UserBom
+  [bom :- bom/Bom]
+  (strip-op* bom))

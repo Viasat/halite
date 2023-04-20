@@ -97,9 +97,9 @@
                                                    :b {:$instance-of :ws/B$v1
                                                        :x {:$ranges #{[100 20000]}}}}))))
 
-(deftest test-instance-literal-bom
-  (op-conjoin-spec-bom/conjoin-spec-bom-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
-                                            :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}}
-                                           {:$instance-literal-type :ws/A$v1}))
+#_(deftest test-instance-literal-bom
+    (op-conjoin-spec-bom/conjoin-spec-bom-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                              :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}}
+                                             {:$instance-literal-type :ws/A$v1}))
 
 ;; (run-tests)

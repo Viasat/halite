@@ -7,13 +7,14 @@
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.envs :as envs]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
-(bom-op/def-bom-multimethod conjoin-spec-bom-op
+(bom-op/def-bom-multimethod conjoin-spec-bom-op*
   [spec-env bom]
 
   #{Integer
@@ -43,7 +44,12 @@
                                                                      bom/to-bare-instance-bom)))
                      (->> bom
                           bom/to-bare-instance-bom))
-                   (update-vals (partial conjoin-spec-bom-op spec-env))))
-        (assoc :$refinements (some-> bom :$refinements (update-vals (partial conjoin-spec-bom-op spec-env))))
-        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial conjoin-spec-bom-op spec-env))))
+                   (update-vals (partial conjoin-spec-bom-op* spec-env))))
+        (assoc :$refinements (some-> bom :$refinements (update-vals (partial conjoin-spec-bom-op* spec-env))))
+        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial conjoin-spec-bom-op* spec-env))))
         base/no-nil-entries)))
+
+(s/defn conjoin-spec-bom-op :- bom-user/UserBom
+  [spec-env
+   bom :- bom-user/UserBom]
+  (conjoin-spec-bom-op* spec-env bom))

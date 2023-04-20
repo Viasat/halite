@@ -52,7 +52,8 @@
 
 (def ^:dynamic *trace-propagate* false)
 
-(defn bom-to-choco [bom]
+(s/defn bom-to-choco
+  [bom :- bom/Bom]
   (when *trace-propagate*
     (pprint/pprint [:bom bom]))
   (let [constraints (op-extract-constraints/extract-constraints-op bom)
@@ -99,7 +100,9 @@
                                                                :path-to-sym-map path-to-sym-map
                                                                :path-to-bom-map path-to-bom-map}))))
 
-(defn paths-to-syms [bom choco-data]
+(s/defn paths-to-syms
+  [bom :- bom/Bom
+   choco-data]
   (let [path-to-sym-map (->> bom op-flatten/flatten-op flattened-vars-to-sym-map)
         path-to-bom-map (->> bom op-flatten/flatten-op flattened-vars-to-bom-map)
         {:keys [choco-spec choco-bounds]} choco-data
@@ -121,7 +124,9 @@
                        (mapcat identity)
                        vec)}))
 
-(defn choco-propagate [bom choco-data]
+(s/defn choco-propagate
+  [bom :- bom/Bom
+   choco-data]
   (when *trace-propagate*
     (pprint/pprint [:choco-data choco-data]))
   (let [{:keys [choco-spec choco-bounds]} choco-data
@@ -154,7 +159,9 @@
                                  (inc upper-bound)]
                                 (mapv (partial handle-fixed-decimals-out type)))}})))
 
-(defn propagate-results-to-bounds [bom propagate-results]
+(s/defn propagate-results-to-bounds
+  [bom :- bom/Bom
+   propagate-results]
   (when propagate-results
     (let [path-to-bom-map (->> bom op-flatten/flatten-op flattened-vars-to-bom-map)]
       (->> propagate-results

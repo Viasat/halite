@@ -40,7 +40,7 @@
 
 ;;
 
-(bom-op/def-bom-multimethod add-value-fields-op
+(bom-op/def-bom-multimethod add-value-fields-op*
   [spec-env bom]
   #{Integer
     FixedDecimal
@@ -65,12 +65,17 @@
     (-> bom
         (merge (->> (-> bom
                         bom/to-bare-instance-bom
-                        (update-vals (partial add-value-fields-op spec-env)))
+                        (update-vals (partial add-value-fields-op* spec-env)))
                     (map (fn [[field-name field-bom]]
                            [field-name (if (spec-optional-field-names field-name)
                                          (ensure-value-field field-bom)
                                          field-bom)]))
                     (into {})))
-        (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-value-fields-op spec-env))))
-        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial add-value-fields-op spec-env))))
+        (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-value-fields-op* spec-env))))
+        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial add-value-fields-op* spec-env))))
         base/no-nil-entries)))
+
+(s/defn add-value-fields-op :- bom/Bom
+  [spec-env
+   bom :- bom/Bom]
+  (add-value-fields-op* spec-env bom))

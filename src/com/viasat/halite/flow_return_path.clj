@@ -3,32 +3,14 @@
 
 (ns com.viasat.halite.flow-return-path
   "Turn a non-lowered expression into a lowered boolean expression indicating whether or not the expression produces a value."
-  (:require [clojure.math :as math]
-            [com.viasat.halite.flow-boolean :as flow-boolean]
+  (:require [com.viasat.halite.flow-boolean :as flow-boolean]
             [com.viasat.halite.flow-get :as flow-get]
             [com.viasat.halite.base :as base]
-            [com.viasat.halite.bom :as bom]
-            [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.eval :as eval]
-            [com.viasat.halite.instance-literal :as instance-literal]
-            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.op-add-constraints :as op-add-constraints]
-            [com.viasat.halite.op-add-value-fields :as op-add-value-fields]
-            [com.viasat.halite.op-conjoin-spec-bom :as op-conjoin-spec-bom]
-            [com.viasat.halite.fog :as fog]
-            [com.viasat.halite.type-check :as type-check]
-            [com.viasat.halite.types :as types]
             [com.viasat.halite.var-ref :as var-ref]
-            [com.viasat.halite.walk :as walk2]
-            [schema.core :as s])
-  (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
+            [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
-
-(fog/init)
-
-(instance-literal/init)
 
 ;;;;
 

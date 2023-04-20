@@ -7,6 +7,7 @@
   (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.spec :as spec]
             [schema.core :as s])
@@ -39,7 +40,7 @@
 
 ;;
 
-(bom-op/def-bom-multimethod mandatory-op
+(bom-op/def-bom-multimethod mandatory-op*
   [spec-env bom]
   #{Integer
     FixedDecimal
@@ -64,12 +65,17 @@
     (-> bom
         (merge (->> (-> bom
                         bom/to-bare-instance-bom
-                        (update-vals (partial mandatory-op spec-env)))
+                        (update-vals (partial mandatory-op* spec-env)))
                     (map (fn [[field-name field-bom]]
                            [field-name (if (spec-mandatory-field-names field-name)
                                          (ensure-value field-bom)
                                          field-bom)]))
                     (into {})))
-        (assoc :$refinements (some-> bom :$refinements (update-vals (partial mandatory-op spec-env))))
-        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial mandatory-op spec-env))))
+        (assoc :$refinements (some-> bom :$refinements (update-vals (partial mandatory-op* spec-env))))
+        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial mandatory-op* spec-env))))
         base/no-nil-entries)))
+
+(s/defn mandatory-op :- bom-user/UserBom
+  [spec-env
+   bom :- bom-user/UserBom]
+  (mandatory-op* spec-env bom))

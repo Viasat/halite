@@ -3,22 +3,10 @@
 
 (ns com.viasat.halite.op-id
   "Mark forms that contain the 'valid' operator with an identifier. Also mark instance literals with ids."
-  (:require [clojure.math :as math]
-            [clojure.walk :as walk]
+  (:require [clojure.walk :as walk]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
-            [com.viasat.halite.envs :as envs]
-            [com.viasat.halite.eval :as eval]
-            [com.viasat.halite.instance-literal :as instance-literal]
-            [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [com.viasat.halite.op-add-constraints :as op-add-constraints]
-            [com.viasat.halite.op-add-value-fields :as op-add-value-fields]
-            [com.viasat.halite.op-conjoin-spec-bom :as op-conjoin-spec-bom]
-            [com.viasat.halite.fog :as fog]
-            [com.viasat.halite.type-check :as type-check]
-            [com.viasat.halite.types :as types]
-            [com.viasat.halite.var-ref :as var-ref]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
@@ -98,7 +86,7 @@
                                           (into {})))
         base/no-nil-entries)))
 
-(s/defn id-op
-  [bom]
+(s/defn id-op :- bom/Bom
+  [bom :- bom/Bom]
   (id-op* {:path []
            :counter-atom (atom -1)} bom))

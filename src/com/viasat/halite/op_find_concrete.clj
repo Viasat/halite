@@ -7,6 +7,7 @@
   (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.spec :as spec]
             [schema.core :as s])
@@ -30,7 +31,7 @@
       bom/no-value-bom)
     bom))
 
-(bom-op/def-bom-multimethod find-concrete-op
+(bom-op/def-bom-multimethod find-concrete-op*
   [spec-env bom]
   #{Integer
     FixedDecimal
@@ -79,8 +80,13 @@
       (-> bom
           (merge (-> bom
                      bom/to-bare-instance-bom
-                     (update-vals (partial find-concrete-op spec-env))
+                     (update-vals (partial find-concrete-op* spec-env))
                      (into {})))
-          (assoc :$refinements (some-> bom :$refinements (update-vals (partial find-concrete-op spec-env))))
+          (assoc :$refinements (some-> bom :$refinements (update-vals (partial find-concrete-op* spec-env))))
           base/no-nil-entries)
       bom)))
+
+(s/defn find-concrete-op :- bom-user/UserBom
+  [spec-env
+   bom :- bom-user/UserBom]
+  (find-concrete-op* spec-env bom))

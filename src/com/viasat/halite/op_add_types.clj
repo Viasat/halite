@@ -35,7 +35,7 @@
     bom/YesValueBom}
   (assoc bom :$primitive-type type))
 
-(bom-op/def-bom-multimethod add-types-op
+(bom-op/def-bom-multimethod add-types-op*
   [spec-env bom]
   #{Integer
     FixedDecimal
@@ -65,8 +65,13 @@
                                             (merge-type-op (->> (spec/get-field-type spec field-name)
                                                                 types/no-maybe))
                                             ;; handles composite fields
-                                            (add-types-op spec-env))]))
+                                            (add-types-op* spec-env))]))
                     (into {})))
-        (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-types-op spec-env))))
-        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial add-types-op spec-env))))
+        (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-types-op* spec-env))))
+        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial add-types-op* spec-env))))
         base/no-nil-entries)))
+
+(s/defn add-types-op :- bom/Bom
+  [spec-env
+   bom :- bom/Bom]
+  (add-types-op* spec-env bom))

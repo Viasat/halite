@@ -7,6 +7,7 @@
             [com.viasat.halite.b-err :as b-err]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.format-errors :as format-errors]
             [schema.core :as s])
@@ -14,7 +15,7 @@
 
 (set! *warn-on-reflection* true)
 
-(declare syntax-check-op)
+(declare syntax-check-op*)
 
 (s/defn ^:private verify-spec-exists
   "Filter specs out that do not exist"
@@ -33,7 +34,7 @@
                            :fields
                            variable-key)]
     ;; recursive syntax-check of variable
-    (syntax-check-op spec-env variable-value)
+    (syntax-check-op* spec-env variable-value)
     (if (nil? spec-variable)
       (format-errors/throw-err (b-err/variable-does-not-exist {:spec-id (symbol spec-id)
                                                                :variable (symbol variable-key)}))
@@ -50,7 +51,7 @@
                        doall)])
   bom)
 
-(bom-op/def-bom-multimethod syntax-check-op
+(bom-op/def-bom-multimethod syntax-check-op*
   "Recursively walk and syntax-check a bom.  Verify that the specs are in the workspace, and all the variables referenced exist."
   [spec-env bom]
   #{Integer
@@ -73,6 +74,11 @@
     bom/AbstractInstanceBom
     bom/ConcreteInstanceBom}
   (-> (syntax-check-spec spec-env bom)
-      (assoc :$refinements (some-> bom :$refinements (update-vals (partial syntax-check-op spec-env))))
-      (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial syntax-check-op spec-env))))
+      (assoc :$refinements (some-> bom :$refinements (update-vals (partial syntax-check-op* spec-env))))
+      (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial syntax-check-op* spec-env))))
       base/no-nil-entries))
+
+(s/defn syntax-check-op :- bom-user/UserBom
+  [spec-env
+   bom :- bom-user/UserBom]
+  (syntax-check-op* spec-env bom))

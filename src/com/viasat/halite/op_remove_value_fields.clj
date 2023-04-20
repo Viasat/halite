@@ -81,5 +81,7 @@
         (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial remove-value-fields-op* spec-env))))
         base/no-nil-entries)))
 
-(defn remove-value-fields-op [spec-env bom]
+(s/defn remove-value-fields-op :- bom/Bom
+  [spec-env
+   bom :- bom/Bom]
   (remove-value-fields-op* spec-env bom))

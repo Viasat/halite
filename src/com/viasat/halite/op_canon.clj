@@ -7,12 +7,13 @@
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-user :as bom-user]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
-(bom-op/def-bom-multimethod canon-op
+(bom-op/def-bom-multimethod canon-op*
   [bom]
 
   #{Integer
@@ -48,10 +49,14 @@
       bom
       (let [bare-result (-> bom
                             bom/to-bare-instance-bom
-                            (update-vals canon-op))]
+                            (update-vals canon-op*))]
         (if (some bom/is-contradiction-bom? (vals bare-result))
           bom/contradiction-bom
           (-> (merge bom bare-result)
-              (assoc :$refinements (some-> bom :$refinements (update-vals canon-op)))
-              (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals canon-op)))
+              (assoc :$refinements (some-> bom :$refinements (update-vals canon-op*)))
+              (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals canon-op*)))
               base/no-nil-entries))))))
+
+(s/defn canon-op :- bom-user/UserBom
+  [bom :- bom-user/UserBom]
+  (canon-op* bom))

@@ -7,6 +7,7 @@
   (:require [com.viasat.halite.b-err :as b-err]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
             [com.viasat.halite.lib.format-errors :as format-errors]
@@ -160,11 +161,11 @@
 
 (s/defn determine-type :- types/HaliteType
   [spec-env
-   bom :- bom/VariableValueBom]
+   bom :- bom-user/UserBom]
   (type-check* spec-env bom))
 
-(s/defn type-check-op :- bom/VariableValueBom
+(s/defn type-check-op :- bom-user/UserBom
   [spec-env
-   bom :- bom/VariableValueBom]
+   bom :- bom-user/UserBom]
   (determine-type spec-env bom)
   bom)

@@ -13,7 +13,7 @@
 
 (set! *warn-on-reflection* true)
 
-(bom-op/def-bom-multimethod canon-up-op
+(bom-op/def-bom-multimethod canon-up-op*
   [bom]
 
   #{Integer
@@ -41,10 +41,14 @@
     bom/InstanceLiteralBom}
   (let [bare-result (-> bom
                         bom/to-bare-instance-bom
-                        (update-vals canon-up-op))]
+                        (update-vals canon-up-op*))]
     (if (some bom/is-contradiction-bom? (vals bare-result))
       bom/contradiction-bom
       (-> (merge bom bare-result)
-          (assoc :$refinements (some-> bom :$refinements (update-vals canon-up-op)))
-          (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals canon-up-op)))
+          (assoc :$refinements (some-> bom :$refinements (update-vals canon-up-op*)))
+          (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals canon-up-op*)))
           base/no-nil-entries))))
+
+(s/defn canon-up-op :- bom/Bom
+  [bom :- bom/Bom]
+  (canon-up-op* bom))

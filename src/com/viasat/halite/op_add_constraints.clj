@@ -12,7 +12,7 @@
 
 (set! *warn-on-reflection* true)
 
-(bom-op/def-bom-multimethod add-constraints-op
+(bom-op/def-bom-multimethod add-constraints-op*
   [spec-env bom]
   #{Integer
     FixedDecimal
@@ -45,7 +45,12 @@
     (-> bom
         (merge (-> bom
                    bom/to-bare-instance-bom
-                   (update-vals (partial add-constraints-op spec-env))))
-        (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-constraints-op spec-env))))
-        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial add-constraints-op spec-env))))
+                   (update-vals (partial add-constraints-op* spec-env))))
+        (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-constraints-op* spec-env))))
+        (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial add-constraints-op* spec-env))))
         base/no-nil-entries)))
+
+(s/defn add-constraints-op :- bom/Bom
+  [spec-env
+   bom :- bom/Bom]
+  (add-constraints-op* spec-env bom))

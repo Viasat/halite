@@ -13,7 +13,7 @@
 
 (set! *warn-on-reflection* true)
 
-(bom-op/def-bom-multimethod bubble-up-contradictions
+(bom-op/def-bom-multimethod bubble-up-contradictions*
   [bom]
   #{Integer
     FixedDecimal
@@ -36,10 +36,10 @@
         bom (-> bom
                 (merge (->> (-> bom
                                 bom/to-bare-instance-bom
-                                (update-vals bubble-up-contradictions))
+                                (update-vals bubble-up-contradictions*))
                             (into {})))
-                (assoc :$refinements (some-> bom :$refinements (update-vals bubble-up-contradictions)))
-                (assoc :$concrete-choices (some->> (some-> bom :$concrete-choices (update-vals bubble-up-contradictions))
+                (assoc :$refinements (some-> bom :$refinements (update-vals bubble-up-contradictions*)))
+                (assoc :$concrete-choices (some->> (some-> bom :$concrete-choices (update-vals bubble-up-contradictions*))
                                                    (remove (fn [[_ bom]]
                                                              (or (bom/is-contradiction-bom? bom)
                                                                  (bom/is-no-value-bom? bom))))
@@ -70,3 +70,7 @@
                 bom/contradiction-bom
                 bom))]
     bom))
+
+(s/defn bubble-up-contradictions :- bom/Bom
+  [bom :- bom/Bom]
+  (bubble-up-contradictions* bom))

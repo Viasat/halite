@@ -7,12 +7,13 @@
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-user :as bom-user]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
-(bom-op/def-bom-multimethod push-down-to-concrete-op
+(bom-op/def-bom-multimethod push-down-to-concrete-op*
   [bom]
 
   #{Integer
@@ -54,12 +55,16 @@
              :$concrete-choices
              first
              val
-             push-down-to-concrete-op)
+             push-down-to-concrete-op*)
         (-> bom
             (merge (->> (-> bom
                             bom/to-bare-instance-bom
-                            (update-vals push-down-to-concrete-op))
+                            (update-vals push-down-to-concrete-op*))
                         (into {})))
-            (assoc :$refinements (some-> bom :$refinements (update-vals push-down-to-concrete-op)))
-            (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals push-down-to-concrete-op)))
+            (assoc :$refinements (some-> bom :$refinements (update-vals push-down-to-concrete-op*)))
+            (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals push-down-to-concrete-op*)))
             base/no-nil-entries)))))
+
+(s/defn push-down-to-concrete-op :- bom-user/UserBom
+  [bom :- bom-user/UserBom]
+  (push-down-to-concrete-op* bom))

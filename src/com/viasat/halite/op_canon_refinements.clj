@@ -181,7 +181,7 @@
       bom/contradiction-bom
       result)))
 
-(bom-op/def-bom-multimethod canon-refinements-op
+(bom-op/def-bom-multimethod canon-refinements-op*
   [spec-env bom]
 
   #{Integer
@@ -236,12 +236,12 @@
                                                                 (interleave (repeat :$refinements)
                                                                             (->> refinement-path (map :to-spec-id)))
                                                                 merge
-                                                                (canon-refinements-op spec-env refinement-bom)))))
+                                                                (canon-refinements-op* spec-env refinement-bom)))))
                                                (assoc bom :$refinements {})
                                                refinements)]
                         (set-value-field-based-on-refinement-path required-pairs [] result-bom))))
                   bom)
-                (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial canon-refinements-op spec-env))))
+                (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial canon-refinements-op* spec-env))))
                 base/no-nil-entries)]
 
     ;; process child boms
@@ -249,4 +249,9 @@
       bom
       (merge bom (-> bom
                      bom/to-bare-instance-bom
-                     (update-vals (partial canon-refinements-op spec-env)))))))
+                     (update-vals (partial canon-refinements-op* spec-env)))))))
+
+(s/defn canon-refinements-op :- bom/Bom
+  [spec-env
+   bom :- bom/Bom]
+  (canon-refinements-op* spec-env bom))
