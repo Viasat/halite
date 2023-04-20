@@ -15,15 +15,13 @@
 (instance-literal/init)
 
 (deftest test-reader
-  (is (= #instance {a 1}
-         (instance-literal/instance-literal-reader {'a 1}))))
+  (is (= #instance [[:p :q] {a 1}]
+         (instance-literal/instance-literal-reader [[:p :q] {'a 1}]))))
 
 (deftest test-get-bindings
   (is (= '{a 1
            b 2}
-         (->> '{a 1
-                b 2}
-              instance-literal/make-instance-literal
+         (->> (instance-literal/make-instance-literal [:p] '{a 1 b 2})
               instance-literal/get-bindings))))
 
 ;; (time (run-tests))

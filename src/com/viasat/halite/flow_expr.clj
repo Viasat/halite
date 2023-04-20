@@ -175,7 +175,8 @@
                                           nc
                                           (assoc nc :$valid-var-path valid-var-path))]
                                  nc)))
-         (instance-literal/make-instance-literal (-> new-contents
+         (instance-literal/make-instance-literal path
+                                                 (-> new-contents
                                                      (assoc :$type (:$type expr)))))
        bom/flag-lowered))
 
@@ -484,6 +485,7 @@
 
                   'valid? (flower-valid? context expr)
                   'valid (flower-valid context expr)
+
                   ;; else:
                   (flower-fn-application context expr))
     (vector? expr) (flower-fog context expr)

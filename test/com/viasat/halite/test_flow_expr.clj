@@ -51,7 +51,7 @@
   (check-flower '(= x a) '(= #r [:p :x] 10))
   (check-flower '(not= x a) '(not= #r [:p :x] 10))
   (check-flower '(+ #d "1.1" x) '(+ 11 #r [:p :x]))
-  (check-flower '^{:id-path [:q]} {:$type :ws/A :x x :a a}  #instance {:$type :ws/A, :x #r [:p :x], :a 10}
+  (check-flower '^{:id-path [:q]} {:$type :ws/A :x x :a a}  #instance [[:q] {:$type :ws/A, :x #r [:p :x], :a 10}]
                 {:q {:$instance-literal-type :ws/A
                      :x {:$expr #r [:p :x]}
                      :a 10
@@ -83,7 +83,7 @@
   (check-flower '(sort-by [x #{[3] [1 2]}] (count x)) #fog [:Vec [:Vec :Integer]])
   (check-flower '(sort-by [p xs] (count xs)) #fog [:Vec :Integer])
   (check-flower '^{:id-path [:q 2]} (valid ^{:id-path [:q 1]} {:$type :ws/A :x x})
-                '(when #r [:q 2] #instance {:x #r [:p :x], :$type :ws/A})
+                '(when #r [:q 2] #instance [[:q 1] {:x #r [:p :x], :$type :ws/A}])
                 '{:q {1 {:$instance-literal-type :ws/A
                          :x {:$expr #r [:p :x]}
                          :$guards []

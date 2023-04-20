@@ -1517,7 +1517,8 @@
                 :y 7,
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {"c1" (= 10 (+ #r [:a] 7))}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
@@ -1550,7 +1551,8 @@
                 :y 7,
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {"c1" false}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{false}},
@@ -1586,7 +1588,7 @@
         "c2$1"
         {:q
          {:$expr
-          #instance {:x #r [:a], :y (+ #r [:a] #r [:b] 2), :$type :ws/X$v1}},
+          #instance [["c2$0"] {:x #r [:a], :y (+ #r [:a] #r [:b] 2), :$type :ws/X$v1}]},
          :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Int,
@@ -1736,7 +1738,8 @@
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {"c1" (or (not #r [:a :$value?])
                                         (= 10 (+ #r [:a] 7)))}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
@@ -1770,7 +1773,8 @@
                 :y 7,
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {"c1" false}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{false}},
@@ -1802,7 +1806,8 @@
                 :y 7,
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{}},
@@ -1836,7 +1841,8 @@
                 :y 7,
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{}},
@@ -1871,7 +1877,8 @@
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {"c1" (or (not #r [:a :$value?])
                                         (= 10 (+ #r [:a] 7)))}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
@@ -1908,7 +1915,8 @@
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {"c1" (or (not #r [:a :$value?])
                                         (= 10 (+ #r [:a] 7)))}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
@@ -1945,7 +1953,8 @@
                 :$instance-literal-type :ws/X$v1,
                 :$constraints {"c1" (or (not #r [:a :$value?])
                                         (= 10 (+ #r [:a] 7)))}},
-        "c2$1" {:q {:$expr #instance {:x #r [:a], :y 7, :$type :ws/X$v1}},
+        "c2$1" {:q {:$expr
+                    #instance [["c2$0"] {:x #r [:a], :y 7, :$type :ws/X$v1}]},
                 :$instance-literal-type :ws/P$v1}}}
       {:choco-spec {:vars {$_0 :Int,
                            $_1 :Bool},
