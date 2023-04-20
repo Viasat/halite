@@ -100,30 +100,31 @@
 (s/defn return-path :- bom/LoweredExpr
   [context :- ReturnPathContext
    expr :- bom/Expr]
-  (cond
-    (boolean? expr) true
-    (base/integer-or-long? expr) true
-    (base/fixed-decimal? expr) true
-    (string? expr) true
-    (symbol? expr) (return-path-symbol context expr)
-    (keyword? expr) (throw (ex-info "unexpected expr to return-path" {:expr expr}))
-    (map? expr) true
-    (seq? expr) (condp = (first expr)
-                  'if (return-path-if context expr)
-                  'when (return-path-when context expr)
-                  'if-value (return-path-if-value context expr)
-                  'when-value (return-path-when-value context expr)
-                  'if-value-let (return-path-if-value-let context expr)
-                  'when-value-let (return-path-if-value-let context expr) ;; same general form as if-value-let
-                  'get (return-path-get context expr)
-                  'get-in (ex-info "return-path not implemented for expr" {:expr expr})
-                  'inc true
-                  'valid (let [id-path (:id-path (meta expr))]
-                           (when (nil? id-path)
-                             (throw (ex-info "expected id-path in metadata" {:expr expr
-                                                                             :meta (meta expr)})))
-                           (var-ref/make-var-ref id-path))
-                  (throw (ex-info "return-path not implemented for expr" {:expr expr})))
-    (set? expr) true
-    (vector? expr) true
-    :default (throw (ex-info "unexpected expr to return-path" {:expr expr}))))
+  (->> (cond
+         (boolean? expr) true
+         (base/integer-or-long? expr) true
+         (base/fixed-decimal? expr) true
+         (string? expr) true
+         (symbol? expr) (return-path-symbol context expr)
+         (keyword? expr) (throw (ex-info "unexpected expr to return-path" {:expr expr}))
+         (map? expr) true
+         (seq? expr) (condp = (first expr)
+                       'if (return-path-if context expr)
+                       'when (return-path-when context expr)
+                       'if-value (return-path-if-value context expr)
+                       'when-value (return-path-when-value context expr)
+                       'if-value-let (return-path-if-value-let context expr)
+                       'when-value-let (return-path-if-value-let context expr) ;; same general form as if-value-let
+                       'get (return-path-get context expr)
+                       'get-in (ex-info "return-path not implemented for expr" {:expr expr})
+                       'inc true
+                       'valid (let [id-path (:id-path (meta expr))]
+                                (when (nil? id-path)
+                                  (throw (ex-info "expected id-path in metadata" {:expr expr
+                                                                                  :meta (meta expr)})))
+                                (var-ref/make-var-ref id-path))
+                       (throw (ex-info "return-path not implemented for expr" {:expr expr})))
+         (set? expr) true
+         (vector? expr) true
+         :default (throw (ex-info "unexpected expr to return-path" {:expr expr})))
+       bom/ensure-flag-lowered))

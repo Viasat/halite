@@ -4,6 +4,7 @@
 (ns com.viasat.halite.var-ref
   "Represents a reference to a variable"
   (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.bom :as bom]
             [schema.core :as s])
   (:import [java.io Writer]))
 
@@ -15,7 +16,10 @@
     (and (instance? VarRef other)
          (= path (.-path ^VarRef other))))
   (hashCode [_]
-    (.hashCode path)))
+    (.hashCode path))
+
+  bom/LoweredObject
+  (is-lowered-object? [_] true))
 
 (s/defn make-var-ref :- VarRef
   [path]

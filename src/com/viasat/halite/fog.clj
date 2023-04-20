@@ -4,6 +4,7 @@
 (ns com.viasat.halite.fog
   "Represents code for which it is not yet possible to convert it into propagation form."
   (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [java.io Writer]))
@@ -16,7 +17,10 @@
     (and (instance? Fog other)
          (= type (.-type ^Fog other))))
   (hashCode [_]
-    (.hashCode type)))
+    (.hashCode type))
+
+  bom/LoweredObject
+  (is-lowered-object? [_] true))
 
 (s/defn make-fog :- Fog
   [type :- types/HaliteType]

@@ -15,8 +15,7 @@
 
 (set! *warn-on-reflection* true)
 
-(s/defn ^:private collapse-booleans
-  [expr :- bom/Expr]
+(defn- collapse-booleans [expr]
   "Attempt to simplify boolean expressions."
   (cond
     (and (seq? expr) (= 'not (first expr))) (apply flow-boolean/make-not (rest expr))
@@ -24,10 +23,10 @@
     (and (seq? expr) (= 'and (first expr))) (apply flow-boolean/make-and (rest expr))
     :default expr))
 
-(s/defn inline-constants
+(s/defn ^:private inline-constants
   "If a variable is constrained to a single value and it must have a value, then in-line the value."
   [bom :- bom/Bom
-   expr :- bom/Expr]
+   expr :- bom/LoweredExpr]
   (->> expr
        (walk2/postwalk (fn [expr]
                          (collapse-booleans (if (var-ref/var-ref? expr)
@@ -43,9 +42,9 @@
                                                   expr))
                                               expr))))))
 
-(s/defn inline-ops
+(s/defn ^:private inline-ops
   "If an expression is a function call with all args as primitive values, then go ahead and evaluate it."
-  [expr :- bom/Expr]
+  [expr]
   (->> expr
        (walk2/postwalk (fn [expr]
                          (collapse-booleans (if (and (seq? expr)
@@ -55,9 +54,10 @@
                                                                expr)
                                               expr))))))
 
-(s/defn inline
+(s/defn inline :- bom/LoweredExpr
   [bom :- bom/Bom
-   expr :- bom/Expr]
+   expr :- bom/LoweredExpr]
   (->> expr
        (inline-constants bom)
-       inline-ops))
+       inline-ops
+       bom/ensure-flag-lowered))

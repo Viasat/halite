@@ -19,7 +19,8 @@
             [com.viasat.halite.var-ref :as var-ref]
             [com.viasat.halite.walk :as walk2]
             [schema.core :as s])
-  (:import [java.io Writer]))
+  (:import [clojure.lang IObj]
+           [java.io Writer]))
 
 (set! *warn-on-reflection* true)
 
@@ -66,7 +67,10 @@
     (and (instance? LoweredExprWrapper other)
          (= expr (.-expr ^LoweredExprWrapper other))))
   (hashCode [_]
-    (.hashCode expr)))
+    (.hashCode expr))
+
+  bom/LoweredObject
+  (is-lowered-object? [_] true))
 
 (s/defn make-lowered-expr-wrapper :- LoweredExprWrapper
   [expr]
@@ -109,189 +113,199 @@
 (s/defn ^:private flower-fog :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (fog/make-fog (expression-type context expr)))
+  (->> (fog/make-fog (expression-type context expr))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-symbol :- bom/LoweredExpr
   [context :- ExprContext
    sym :- s/Symbol]
-  (let [{:keys [env path]} context]
-    (if (= '$no-value sym)
-      sym
-      (if (contains? (envs/bindings env) sym)
-        (let [resolved ((envs/bindings env) sym)]
-          (if (lowered-expr-wrapper? resolved)
-            (unwrap-lowered-expr-wrapper resolved)
-            (flower context resolved)))
-        (var-ref/make-var-ref (conj path (keyword sym)))))))
+  (->> (let [{:keys [env path]} context]
+         (if (= '$no-value sym)
+           sym
+           (if (contains? (envs/bindings env) sym)
+             (let [resolved ((envs/bindings env) sym)]
+               (if (lowered-expr-wrapper? resolved)
+                 (unwrap-lowered-expr-wrapper resolved)
+                 (flower context resolved)))
+             (var-ref/make-var-ref (conj path (keyword sym))))))))
 
 (s/defn ^:private flower-instance :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [{:keys [spec-env type-env env path counter-atom instance-literal-f constraint-name guards
-                valid-var-path]} context
-        new-contents (-> expr
-                         (dissoc :$type)
-                         (update-vals (partial flower context)))
-        path (:id-path (meta expr))]
-    (when (nil? path)
-      (throw (ex-info "did not find expected id-path in metadata" {:expr expr
-                                                                   :meta (meta expr)})))
+  (->> (let [{:keys [spec-env type-env env path counter-atom instance-literal-f constraint-name guards
+                     valid-var-path]} context
+             new-contents (-> expr
+                              (dissoc :$type)
+                              (update-vals (partial flower context)))
+             path (:id-path (meta expr))]
+         (when (nil? path)
+           (throw (ex-info "did not find expected id-path in metadata" {:expr expr
+                                                                        :meta (meta expr)})))
 
-    ;; this seems too aggressive, but is it too permissive to leave it out altogether?
-    #_(if (->> new-contents
-               vals
-               (some non-root-fog?))
-        (flower-fog context expr))
+         ;; this seems too aggressive, but is it too permissive to leave it out altogether?
+         #_(if (->> new-contents
+                    vals
+                    (some non-root-fog?))
+             (flower-fog context expr))
 
-    ;; compute instance-literal constraints
-    (let [env' (reduce (fn [env [field-name value]]
-                         (flow-return-path/add-binding env (symbol field-name) value))
-                       env
-                       (-> expr
-                           (dissoc :$type)))
-          type-env' (reduce (fn ([type-env [field-name value]]
-                                 envs/extend-scope type-env
-                                 (symbol field-name)
-                                 (expression-type
-                                  context
-                                  (get expr field-name))))
-                            type-env
-                            new-contents)
-          context' (assoc context :env env' :type-env type-env')]
-      (instance-literal-f path
-                          (let [nc (-> new-contents
-                                       (update-vals (fn [val]
-                                                      (if (bom/is-bom-value? val)
-                                                        val
-                                                        {:$expr val})))
-                                       (assoc :$instance-literal-type (:$type expr)
-                                              :$guards guards))
-                                nc (if (nil? valid-var-path)
-                                     nc
-                                     (assoc nc :$valid-var-path valid-var-path))]
-                            nc)))
-    (instance-literal/make-instance-literal (-> new-contents
-                                                (assoc :$type (:$type expr))))))
+         ;; compute instance-literal constraints
+         (let [env' (reduce (fn [env [field-name value]]
+                              (flow-return-path/add-binding env (symbol field-name) value))
+                            env
+                            (-> expr
+                                (dissoc :$type)))
+               type-env' (reduce (fn ([type-env [field-name value]]
+                                      envs/extend-scope type-env
+                                      (symbol field-name)
+                                      (expression-type
+                                       context
+                                       (get expr field-name))))
+                                 type-env
+                                 new-contents)
+               context' (assoc context :env env' :type-env type-env')]
+           (instance-literal-f path
+                               (let [nc (-> new-contents
+                                            (update-vals (fn [val]
+                                                           (if (bom/is-bom-value? val)
+                                                             val
+                                                             {:$expr val})))
+                                            (assoc :$instance-literal-type (:$type expr)
+                                                   :$guards guards))
+                                     nc (if (nil? valid-var-path)
+                                          nc
+                                          (assoc nc :$valid-var-path valid-var-path))]
+                                 nc)))
+         (instance-literal/make-instance-literal (-> new-contents
+                                                     (assoc :$type (:$type expr)))))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-get :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [[_ target accessor] expr
-        target' (flower context target)]
-    (cond
-      (var-ref/var-ref? target') (var-ref/extend-path target' (if (vector? accessor)
-                                                                accessor
-                                                                [accessor]))
+  (->> (let [[_ target accessor] expr
+             target' (flower context target)
+             v (cond
+                 (var-ref/var-ref? target') (var-ref/extend-path target' (if (vector? accessor)
+                                                                           accessor
+                                                                           [accessor]))
 
-      (instance-literal/instance-literal? target') (-> target'
-                                                       instance-literal/get-bindings
-                                                       (get accessor))
+                 (instance-literal/instance-literal? target') (-> target'
+                                                                  instance-literal/get-bindings
+                                                                  (get accessor))
 
-      :default (throw (ex-info "unexpected target of get" {:expr expr
-                                                           :target' target'})))))
+                 :default (throw (ex-info "unexpected target of get" {:expr expr
+                                                                      :target' target'})))]
+         (if (nil? v)
+           'no-value
+           v))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-let :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [{:keys [type-env env path]} context
-        [bindings body] (rest expr)
-        {type-env' :type-env
-         env' :env
-         bindings' :bindings} (reduce (fn [{:keys [type-env env bindings]} [sym binding-e]]
-                                        (let [binding-e' (flower (assoc context
-                                                                        :type-env type-env
-                                                                        :env env)
-                                                                 binding-e)
-                                              type-env' (envs/extend-scope type-env
-                                                                           sym
-                                                                           (expression-type context binding-e))
-                                              env' (flow-return-path/add-binding env sym binding-e)]
-                                          {:type-env type-env'
-                                           :env env'
-                                           :bindings (into bindings
-                                                           [sym binding-e'])}))
-                                      {:type-env type-env
-                                       :env env
-                                       :bindings []}
-                                      (partition 2 bindings))
-        body' (flower (assoc context
-                             :type-env type-env'
-                             :env env')
-                      body)]
-    (if (or (->> bindings'
-                 (partition 2)
-                 (map second)
-                 (some non-root-fog?))
-            (non-root-fog? body'))
-      (flower-fog context expr)
-      body')))
+  (->> (let [{:keys [type-env env path]} context
+             [bindings body] (rest expr)
+             {type-env' :type-env
+              env' :env
+              bindings' :bindings} (reduce (fn [{:keys [type-env env bindings]} [sym binding-e]]
+                                             (let [binding-e' (flower (assoc context
+                                                                             :type-env type-env
+                                                                             :env env)
+                                                                      binding-e)
+                                                   type-env' (envs/extend-scope type-env
+                                                                                sym
+                                                                                (expression-type context binding-e))
+                                                   env' (flow-return-path/add-binding env sym binding-e)]
+                                               {:type-env type-env'
+                                                :env env'
+                                                :bindings (into bindings
+                                                                [sym binding-e'])}))
+                                           {:type-env type-env
+                                            :env env
+                                            :bindings []}
+                                           (partition 2 bindings))
+             body' (flower (assoc context
+                                  :type-env type-env'
+                                  :env env')
+                           body)]
+         (if (or (->> bindings'
+                      (partition 2)
+                      (map second)
+                      (some non-root-fog?))
+                 (non-root-fog? body'))
+           (flower-fog context expr)
+           body'))
+       bom/ensure-flag-lowered))
 
 (s/defn ^:private flower-if :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [{:keys [guards]} context
-        [_ target then-clause else-clause] expr
-        target' (flower context target)
-        then-clause' (flower (assoc context
-                                    :guards (conj guards target'))
-                             then-clause)
-        else-clause' (flower (assoc context
-                                    :guards (conj guards (flow-boolean/make-not target')))
-                             else-clause)
-        args' [target' then-clause' else-clause']]
-    (if (some non-root-fog? args')
-      (flower-fog context expr)
-      (apply flow-boolean/make-if args'))))
+  (->> (let [{:keys [guards]} context
+             [_ target then-clause else-clause] expr
+             target' (flower context target)
+             then-clause' (flower (assoc context
+                                         :guards (conj guards target'))
+                                  then-clause)
+             else-clause' (flower (assoc context
+                                         :guards (conj guards (flow-boolean/make-not target')))
+                                  else-clause)
+             args' [target' then-clause' else-clause']]
+         (if (some non-root-fog? args')
+           (flower-fog context expr)
+           (apply flow-boolean/make-if args')))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-when :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [{:keys [guards]} context
-        [_ target then-clause] expr
-        target' (flower context target)
-        then-clause' (flower (assoc context
-                                    :guards (conj guards target'))
-                             then-clause)
-        args' [target' then-clause']]
-    (if (some non-root-fog? args')
-      (flower-fog context expr)
-      (apply list 'when args'))))
+  (->> (let [{:keys [guards]} context
+             [_ target then-clause] expr
+             target' (flower context target)
+             then-clause' (flower (assoc context
+                                         :guards (conj guards target'))
+                                  then-clause)
+             args' [target' then-clause']]
+         (if (some non-root-fog? args')
+           (flower-fog context expr)
+           (apply list 'when args')))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-if-value :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [{:keys [spec-type-env type-env guards]} context
-        [_ target then-clause else-clause] expr
-        target' (flower context target)]
-    (when-not (var-ref/var-ref? target')
-      (throw (ex-info "unexpected target of if-value or when-value" {:expr expr
-                                                                     :target' target'
-                                                                     :context context})))
-    (when-not (->> target
-                   (envs/lookup-type* (combine-envs type-env spec-type-env)))
-      (throw (ex-info "symbol not found" {:target target
-                                          :type-env (envs/scope type-env)})))
-    (let [then-clause' (flower (assoc context
-                                      :type-env (envs/extend-scope type-env
-                                                                   target
-                                                                   (->> target
-                                                                        (envs/lookup-type*
-                                                                         (if (->> target
-                                                                                  (envs/lookup-type* spec-type-env))
-                                                                           spec-type-env
-                                                                           type-env))
-                                                                        types/no-maybe)))
-                               then-clause)
-          else-clause' (some->> else-clause
-                                (flower context))
-          target' (var-ref/extend-path target' [:$value?])]
-      (if (or (non-root-fog? then-clause')
-              (and (not (nil? else-clause'))
-                   (non-root-fog? else-clause')))
-        (flower-fog context expr)
-        (if (nil? else-clause')
-          (list 'when target' then-clause')
-          (flow-boolean/make-if target' then-clause' else-clause'))))))
+  (->> (let [{:keys [spec-type-env type-env guards]} context
+             [_ target then-clause else-clause] expr
+             target' (flower context target)]
+         (when-not (var-ref/var-ref? target')
+           (throw (ex-info "unexpected target of if-value or when-value" {:expr expr
+                                                                          :target' target'
+                                                                          :context context})))
+         (when-not (->> target
+                        (envs/lookup-type* (combine-envs type-env spec-type-env)))
+           (throw (ex-info "symbol not found" {:target target
+                                               :type-env (envs/scope type-env)})))
+         (let [then-clause' (flower (assoc context
+                                           :type-env (envs/extend-scope type-env
+                                                                        target
+                                                                        (->> target
+                                                                             (envs/lookup-type*
+                                                                              (if (->> target
+                                                                                       (envs/lookup-type* spec-type-env))
+                                                                                spec-type-env
+                                                                                type-env))
+                                                                             types/no-maybe)))
+                                    then-clause)
+               else-clause' (some->> else-clause
+                                     (flower context))
+               target' (var-ref/extend-path target' [:$value?])]
+           (if (or (non-root-fog? then-clause')
+                   (and (not (nil? else-clause'))
+                        (non-root-fog? else-clause')))
+             (flower-fog context expr)
+             (if (nil? else-clause')
+               (list 'when target' then-clause')
+               (flow-boolean/make-if target' then-clause' else-clause')))))
+       bom/flag-lowered))
 
 #_(defn- dump-context [context]
     (let [{:keys [env spec-type-env]} context]
@@ -302,58 +316,59 @@
   [context :- ExprContext
    guard? :- Boolean
    expr :- bom/Expr]
-  (let [{:keys [env type-env guards]} context
-        [_ [sym target] then-clause else-clause] expr
-        target' (flower context target)
-        return-path-target (flow-return-path/return-path
-                            (-> context
-                                (select-keys [:env :path])
-                                (assoc :lower-f #(flower context %)))
+  (->> (let [{:keys [env type-env guards]} context
+             [_ [sym target] then-clause else-clause] expr
+             target' (flower context target)
+             return-path-target (flow-return-path/return-path
+                                 (-> context
+                                     (select-keys [:env :path])
+                                     (assoc :lower-f #(flower context %)))
+                                 target)
+             inner-target (if (and (seq? target)
+                                   (= 'valid (first target)))
+                            ;; sniff out the value inside target
+                            (second target)
                             target)
-        inner-target (if (and (seq? target)
-                              (= 'valid (first target)))
-                                    ;; sniff out the value inside target
-                       (second target)
-                       target)
-        inner-target' (if (nil? target')
-                        '$no-value
-                        (if (and (seq? target)
-                                 (= 'valid (first target)))
-                                       ;; sniff out the value inside target
-                          (second (rest target'))
-                          target'))
-        then-clause' (flower (assoc context
-                                    :guards (if guard?
-                                              (conj guards (flower-if-value-let* context
-                                                                                 false
-                                                                                 (list 'if-value-let ['x_0 target] true false)))
-                                              guards)
-                                    :type-env (envs/extend-scope type-env
-                                                                 sym
-                                                                 (types/no-maybe (expression-type context inner-target)))
-                                    :env (flow-return-path/add-binding env
-                                                                       sym
-                                                                       (wrap-lowered-expr inner-target')))
-                             then-clause)
-        else-clause' (when-not (nil? else-clause)
-                       (flower (assoc context
-                                      :guards (if guard?
-                                                (conj guards (flower-if-value-let* context
-                                                                                   false
-                                                                                   (list 'if-value-let ['x_0 target] false true)))
-                                                guards))
-                               else-clause))]
-    (if (or (non-root-fog? target')
-            (non-root-fog? then-clause')
-            (and (not (nil? else-clause'))
-                 (non-root-fog? else-clause')))
-      (flower-fog context expr)
-      (if (nil? else-clause)
-        (flow-boolean/make-when return-path-target
-                                then-clause')
-        (flow-boolean/make-if return-path-target
-                              then-clause'
-                              else-clause')))))
+             inner-target' (if (nil? target')
+                             '$no-value
+                             (if (and (seq? target)
+                                      (= 'valid (first target)))
+                               ;; sniff out the value inside target
+                               (second (rest target'))
+                               target'))
+             then-clause' (flower (assoc context
+                                         :guards (if guard?
+                                                   (conj guards (flower-if-value-let* context
+                                                                                      false
+                                                                                      (list 'if-value-let ['x_0 target] true false)))
+                                                   guards)
+                                         :type-env (envs/extend-scope type-env
+                                                                      sym
+                                                                      (types/no-maybe (expression-type context inner-target)))
+                                         :env (flow-return-path/add-binding env
+                                                                            sym
+                                                                            (wrap-lowered-expr inner-target')))
+                                  then-clause)
+             else-clause' (when-not (nil? else-clause)
+                            (flower (assoc context
+                                           :guards (if guard?
+                                                     (conj guards (flower-if-value-let* context
+                                                                                        false
+                                                                                        (list 'if-value-let ['x_0 target] false true)))
+                                                     guards))
+                                    else-clause))]
+         (if (or (non-root-fog? target')
+                 (non-root-fog? then-clause')
+                 (and (not (nil? else-clause'))
+                      (non-root-fog? else-clause')))
+           (flower-fog context expr)
+           (if (nil? else-clause)
+             (flow-boolean/make-when return-path-target
+                                     then-clause')
+             (flow-boolean/make-if return-path-target
+                                   then-clause'
+                                   else-clause'))))
+       bom/ensure-flag-lowered))
 
 (s/defn ^:private flower-if-value-let :- bom/LoweredExpr
   [context :- ExprContext
@@ -369,65 +384,72 @@
   [op :- s/Symbol
    context :- ExprContext
    expr :- bom/Expr]
-  (let [[_ instance spec-id] expr
-        instance' (flower context instance)]
-    (if (non-root-fog? instance')
-      (flower-fog context expr)
-      (list op instance' spec-id))))
+  (->> (let [[_ instance spec-id] expr
+             instance' (flower context instance)]
+         (if (non-root-fog? instance')
+           (flower-fog context expr)
+           (list op instance' spec-id)))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-rescale :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [[_ target-form new-scale] expr
-        target-scale (types/decimal-scale (expression-type context target-form))
-        target-form' (flower context target-form)]
-    (let [shift (- target-scale new-scale)]
-      (if (= shift 0)
-        target-form'
-        (list (if (> shift 0) 'div '*)
-              target-form'
-              (->> shift abs (math/pow 10) long))))))
+  (->> (let [[_ target-form new-scale] expr
+             target-scale (types/decimal-scale (expression-type context target-form))
+             target-form' (flower context target-form)]
+         (let [shift (- target-scale new-scale)]
+           (if (= shift 0)
+             target-form'
+             (list (if (> shift 0) 'div '*)
+                   target-form'
+                   (->> shift abs (math/pow 10) long)))))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-valid? :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [valid-var-path (:id-path (meta expr))
-        [_ sub-expr] expr]
-    (when (nil? valid-var-path)
-      (throw (ex-info "did not find expected id-path in metadata" {:expr expr
-                                                                   :meta (meta expr)})))
-    ;; for the side-effects of finding the instance literals
-    (flower (assoc context :valid-var-path valid-var-path) sub-expr)
-    (var-ref/make-var-ref valid-var-path)))
+  (->> (let [valid-var-path (:id-path (meta expr))
+             [_ sub-expr] expr]
+         (when (nil? valid-var-path)
+           (throw (ex-info "did not find expected id-path in metadata" {:expr expr
+                                                                        :meta (meta expr)})))
+         ;; for the side-effects of finding the instance literals
+         (flower (assoc context :valid-var-path valid-var-path) sub-expr)
+         (var-ref/make-var-ref valid-var-path))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-valid :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [{:keys [constraint-name path counter-atom]} context
-        valid-var-path (:id-path (meta expr))
-        [_ sub-expr] expr]
-    (when (nil? valid-var-path)
-      (throw (ex-info "did not find :id-path in metadata" {:expr expr
-                                                           :meta (meta expr)})))
-    (list 'when (var-ref/make-var-ref valid-var-path)
-          (flower (assoc context :valid-var-path valid-var-path) sub-expr))))
+  (->> (let [{:keys [constraint-name path counter-atom]} context
+             valid-var-path (:id-path (meta expr))
+             [_ sub-expr] expr]
+         (when (nil? valid-var-path)
+           (throw (ex-info "did not find :id-path in metadata" {:expr expr
+                                                                :meta (meta expr)})))
+         (list 'when (var-ref/make-var-ref valid-var-path)
+               (flower (assoc context :valid-var-path valid-var-path) sub-expr)))
+       bom/flag-lowered))
 
 (s/defn ^:private flower-fn-application :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
-  (let [[op & args] expr
-        args' (->> args
-                   (map (partial flower context)))]
-    (if (some non-root-fog? args')
-      (flower-fog context expr)
-      (condp = op
-        'and (apply flow-boolean/make-and args')
-        'or (apply flow-boolean/make-or args')
-        'not (apply flow-boolean/make-not args')
-        (apply list op args')))))
+  (->> (let [[op & args] expr
+             args' (->> args
+                        (map (partial flower context)))]
+         (if (some non-root-fog? args')
+           (flower-fog context expr)
+           (condp = op
+             'and (apply flow-boolean/make-and args')
+             'or (apply flow-boolean/make-or args')
+             'not (apply flow-boolean/make-not args')
+             (apply list op args'))))
+       bom/flag-lowered))
 
-(defn flower-fixed-decimal [expr]
-  (-> expr fixed-decimal/extract-long second))
+(s/defn flower-fixed-decimal :- s/Int
+  [expr :- bom/Expr]
+  (->> (-> expr fixed-decimal/extract-long second)
+       bom/flag-lowered))
 
 (s/defn flower :- bom/LoweredExpr
   [context :- ExprContext

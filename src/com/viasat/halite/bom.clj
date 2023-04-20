@@ -8,7 +8,8 @@
             [com.viasat.halite.types :as types]
             [potemkin]
             [schema.core :as s])
-  (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
+  (:import [clojure.lang IObj]
+           [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
 (set! *warn-on-reflection* true)
 
@@ -289,6 +290,46 @@
 
 ;;;;
 
-(def Expr s/Any)
+(defprotocol LoweredObject
+  (is-lowered-object? [this]))
 
-(def LoweredExpr s/Any)
+(extend-type Object
+  LoweredObject
+  (is-lowered-object? [_] false))
+
+(defn flagged-lowered?
+  "Returns true if is flagged, returns false if it definitely is not, returns nil if the expr is not
+  able to be flagged and therefore the answer is unknown."
+  [expr]
+  (cond
+    (is-lowered-object? expr) true
+    (instance? IObj expr) (= true (:lowered? (meta expr)))
+    :default nil))
+
+(defn- flag-lowered*
+  [expr]
+  (cond
+    (is-lowered-object? expr) expr
+    (instance? clojure.lang.IObj expr) (with-meta expr (assoc (meta expr)
+                                                              :lowered? true))
+    :default expr))
+
+(defn flag-lowered
+  [expr]
+  (when (and (not (is-lowered-object? expr))
+             (= true (flagged-lowered? expr)))
+    (throw (ex-info "did not expect flag-lowered to be called" {:expr expr
+                                                                :meta (meta expr)})))
+  (flag-lowered* expr))
+
+(defn ensure-flag-lowered
+  [expr]
+  (if (flagged-lowered? expr)
+    expr
+    (flag-lowered* expr)))
+
+(def Expr (s/pred #(not (= true (flagged-lowered? %)))))
+
+(def LoweredExpr (s/pred #(let [fl (flagged-lowered? %)]
+                            (or (= true fl)
+                                (nil? fl)))))

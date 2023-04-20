@@ -4,6 +4,7 @@
 (ns com.viasat.halite.instance-literal
   "Represents instance literals in expressions."
   (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.bom :as bom]
             [com.viasat.halite.types :as types]
             [schema.core :as s])
   (:import [java.io Writer]))
@@ -16,7 +17,10 @@
     (and (instance? InstanceLiteral other)
          (= bindings (.-bindings ^InstanceLiteral other))))
   (hashCode [_]
-    (.hashCode bindings)))
+    (.hashCode bindings))
+
+  bom/LoweredObject
+  (is-lowered-object? [_] true))
 
 (s/defn make-instance-literal :- InstanceLiteral
   [bindings]

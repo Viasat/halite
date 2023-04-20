@@ -80,7 +80,7 @@
   (let [[_ target] expr]
     (list 'valid (push-down-get path field target))))
 
-(s/defn push-down-get :- bom/Expr
+(s/defn push-down-get :- (s/maybe bom/Expr)
   [path :- [s/Any]
    field
    expr :- bom/Expr]
