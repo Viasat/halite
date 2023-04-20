@@ -2807,7 +2807,37 @@
       {:choco-spec {:vars {$_0 :Int},
                     :constraints #{(> (if true 4 12) 11)}},
        :choco-bounds {$_0 4},
-       :sym-to-path [$_0 [:a]]} {:$contradiction? true}])])
+       :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
+
+    (stanza "refine-to")])
+
+#_(check-propagate
+   {:ws/B$v1 {:fields {:s :Integer}}
+    :ws/A$v1 {:fields {:x :Integer
+                       :y :Integer}
+              :refines-to {:ws/B$v1
+                           {:name "specId"
+                            :expr '{:$type :ws/B$v1
+                                    :s (+ x y)}}}}
+    :ws/C$v1 {:fields {:c :Integer}
+              :constraints [["c1"
+                             '(> (get (refine-to {:$type :ws/A$v1
+                                                  :x c
+                                                  :y 10}
+                                                 :ws/B$v1)
+                                      :s)
+                                 20)]]}}
+   {:$instance-of :ws/C$v1}
+   [89000
+    {:$instance-of :ws/A$v1
+     :x {:$value? true, :$primitive-type :Integer}
+     :y {:$value? true, :$primitive-type :Integer}}
+    {:choco-spec {:vars {$_0 :Int, $_1 :Bool, $_2 :Int, $_3 :Bool}, :constraints #{}}
+     :choco-bounds {$_0 [-1000 1000], $_1 true, $_2 [-1000 1000], $_3 true}
+     :sym-to-path [$_0 [:x] $_1 [:x :$value?] $_2 [:y] $_3 [:y :$value?]]}
+    {:$instance-of :ws/A$v1
+     :x {:$ranges #{[-1000 1001]}}
+     :y {:$ranges #{[-1000 1001]}}}])
 
 (deftest test-propagate
   (doseq [t test-data]

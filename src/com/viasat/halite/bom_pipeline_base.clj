@@ -14,6 +14,7 @@
             [com.viasat.halite.op-contradictions :as op-contradictions]
             [com.viasat.halite.op-ensure-fields :as op-ensure-fields]
             [com.viasat.halite.op-find-concrete :as op-find-concrete]
+            [com.viasat.halite.op-find-refinements :as op-find-refinements]
             [com.viasat.halite.op-mandatory :as op-mandatory]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
@@ -43,6 +44,7 @@
        (op-find-concrete/find-concrete-op spec-env)
        op-push-down-to-concrete/push-down-to-concrete-op
        (op-canon-refinements/canon-refinements-op spec-env)
+       (op-find-refinements/find-refinements-op spec-env)
        op-contradictions/bubble-up-contradictions
        (op-add-types/add-types-op spec-env)
        (op-ensure-fields/ensure-fields-op spec-env)

@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-conjoin-spec-bom
   "Combine a bom with the bom implied by the spec itself."
-  (:require [com.viasat.halite.base :as base]
+  (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
@@ -49,7 +50,12 @@
         (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial conjoin-spec-bom-op* spec-env))))
         base/no-nil-entries)))
 
+(def trace false)
+
 (s/defn conjoin-spec-bom-op :- bom/Bom
   [spec-env
    bom :- bom/Bom]
-  (conjoin-spec-bom-op* spec-env bom))
+  (let [result (conjoin-spec-bom-op* spec-env bom)]
+    (when trace
+      (pprint/pprint [:conjoin-spec-bom-op bom :result result]))
+    result))

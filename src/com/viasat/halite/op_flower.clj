@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-flower
   "Lower expressions in boms down into expressions that are supported by propagation."
-  (:require [com.viasat.halite.base :as base]
+  (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.bom-pipeline-base :as bom-pipeline-base]
@@ -88,21 +89,21 @@
 (defn- lower-refinements [context bom]
   (let [{:keys [path]} context]
     (-> bom
-        (assoc :$refinements (some-> bom
-                                     :$refinements
-                                     (map (fn [[other-spec-id sub-bom]]
-                                            [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
-                                     (into {})))
+        (assoc :$refinements (some->> bom
+                                      :$refinements
+                                      (map (fn [[other-spec-id sub-bom]]
+                                             [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
+                                      (into {})))
         base/no-nil-entries)))
 
 (defn- lower-concrete-choices [context bom]
   (let [{:keys [path]} context]
     (-> bom
-        (assoc :$concrete-choices (some-> bom
-                                          :$concrete-choices
-                                          (map (fn [[other-spec-id sub-bom]]
-                                                 [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
-                                          (into {})))
+        (assoc :$concrete-choices (some->> bom
+                                           :$concrete-choices
+                                           (map (fn [[other-spec-id sub-bom]]
+                                                  [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
+                                           (into {})))
         base/no-nil-entries)))
 
 (defn- handle-false-constraints [bom]
@@ -215,13 +216,18 @@
          combine-valid-var-constraints
          resolve-valid-vars)))
 
+(def trace false)
+
 (s/defn flower-op :- bom/Bom
   [spec-env :- (s/protocol envs/SpecEnv)
    bom :- bom/Bom]
-  (flower-op* {:top-bom bom
-               :spec-env spec-env
-               :type-env (envs/type-env {})
-               :env (envs/env {})
-               :path []
-               :counter-atom (atom -1)}
-              bom))
+  (let [result (flower-op* {:top-bom bom
+                            :spec-env spec-env
+                            :type-env (envs/type-env {})
+                            :env (envs/env {})
+                            :path []
+                            :counter-atom (atom -1)}
+                           bom)]
+    (when trace
+      (pprint/pprint [:flower-op bom :result result]))
+    result))

@@ -105,4 +105,29 @@
              (take-while #(not= % to-spec-id))
              (map #(loom.alg/shortest-path g % to-spec-id))
              (remove nil?)
-             (map first))))
+             (map first)
+             vec)))
+
+(s/defn find-specs-can-refine-to
+  "Find all specs that can be reached by following refinements, starting at from-spec-id"
+  [spec-env
+   from-spec-id :- types/NamespacedKeyword]
+  (let [{:keys [spec-id-graph]} (make-spec-id-graph-following-refinements-starting-at-spec-id spec-env from-spec-id)
+        g (when-not (empty? spec-id-graph)
+            (->> spec-id-graph loom.graph/digraph))]
+    (some->> g
+             loom.alg/topsort
+             rest
+             vec)))
+
+(s/defn find-comprehensive-refinement-paths-from
+  "Find the smallest set of refinement paths which include all possible refinements starting at from-spec-id."
+  [spec-env
+   from-spec-id]
+  (->> (set/difference (set (find-specs-can-refine-to spec-env from-spec-id))
+                       (->> (find-specs-can-refine-to spec-env from-spec-id)
+                            (map #(find-refinement-path spec-env from-spec-id %))
+                            (map butlast)
+                            (reduce into #{})
+                            (map :to-spec-id)))
+       (mapv #(find-refinement-path spec-env from-spec-id %))))
