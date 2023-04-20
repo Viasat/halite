@@ -191,9 +191,13 @@
 (defn fourth [x]
   (->> x rest rest rest first))
 
+(defn fifth [x]
+  (->> x rest rest rest rest first))
+
 (defmacro check-propagate [spec-env bom & more]
-  `(let [expected-result# ~(third (first more))
-         comment# ~(fourth (first more))
+  `(let [test-number# ~(first (first more))
+         expected-result# ~(fourth (first more))
+         comment# ~(fifth (first more))
          spec-env0# (quote ~spec-env)
          spec-env# (eval spec-env0#)
          bom0# ~bom
@@ -201,10 +205,10 @@
           choco-data# :choco-data
           result# :result} (bom-pipeline/propagate spec-env# bom0#)
          test-result-block# (if comment#
-                              [lowered-bom# choco-data# result# comment#]
-                              [lowered-bom# choco-data# result#])]
-     (is (= (quote ~(second (first more))) choco-data#))
-     (is (= (quote ~(first (first more))) lowered-bom#))
+                              [test-number# lowered-bom# choco-data# result# comment#]
+                              [test-number# lowered-bom# choco-data# result#])]
+     (is (= (quote ~(third (first more))) choco-data#))
+     (is (= (quote ~(second (first more))) lowered-bom#))
      (is (= expected-result# result#))
      (swap! test-atom conj (list '~'check-propagate spec-env0# bom0# test-result-block#))
      test-result-block#))
@@ -222,7 +226,8 @@
                                          :y :Boolean},
                                 :constraints [["c1" '(if x true y)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [0
+                      {:$instance-of :ws/A$v1,
                        :x {:$value? true,
                            :$primitive-type :Boolean},
                        :y {:$value? true,
@@ -245,7 +250,8 @@
                                 :constraints [["c1" '(if x true y)]]}}
                      {:$instance-of :ws/A$v1,
                       :x false}
-                     [{:$instance-of :ws/A$v1,
+                     [1000
+                      {:$instance-of :ws/A$v1,
                        :x false,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
@@ -267,7 +273,8 @@
                                 :constraints [["c1" '(if x true y)]]}}
                      {:$instance-of :ws/A$v1,
                       :y false}
-                     [{:$instance-of :ws/A$v1,
+                     [2000
+                      {:$instance-of :ws/A$v1,
                        :y false,
                        :x {:$value? true,
                            :$primitive-type :Boolean},
@@ -289,7 +296,8 @@
                                 :constraints [["c1" '(if x true y)]]}}
                      {:$instance-of :ws/A$v1,
                       :x true}
-                     [{:$instance-of :ws/A$v1,
+                     [3000
+                      {:$instance-of :ws/A$v1,
                        :x true,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
@@ -309,7 +317,8 @@
                                          :y :Boolean},
                                 :constraints [["c1" '(or x y)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [4000
+                      {:$instance-of :ws/A$v1,
                        :x {:$value? true,
                            :$primitive-type :Boolean},
                        :y {:$value? true,
@@ -332,7 +341,8 @@
                                 :constraints [["c1" '(or x y)]]}}
                      {:$instance-of :ws/A$v1,
                       :x false}
-                     [{:$instance-of :ws/A$v1,
+                     [5000
+                      {:$instance-of :ws/A$v1,
                        :x false,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
@@ -354,7 +364,8 @@
     (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Boolean],
                                          :y :Boolean}}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [6000
+                      {:$instance-of :ws/A$v1,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
                        :x {:$primitive-type :Boolean,
@@ -375,7 +386,8 @@
                                          :y :Boolean},
                                 :constraints [["c1" '(if-value x y true)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [7000
+                      {:$instance-of :ws/A$v1,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
                        :x {:$primitive-type :Boolean,
@@ -398,7 +410,8 @@
                                 :constraints [["c1" '(if-value x y true)]]}}
                      {:$instance-of :ws/A$v1,
                       :x true}
-                     [{:$instance-of :ws/A$v1,
+                     [8000
+                      {:$instance-of :ws/A$v1,
                        :x true,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
@@ -422,7 +435,8 @@
                          :y :Integer},
                 :constraints [["c1" '(> x y)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [9000
+      {:$instance-of :ws/A$v1,
        :x {:$value? true,
            :$primitive-type :Integer},
        :y {:$value? true,
@@ -451,7 +465,8 @@
                               ["c2" '(or (= x 1) (= x 2) (= x 3))]
                               ["c3" '(or (= y 10) (= y 12) (= y 14))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [10000
+      {:$instance-of :ws/A$v1,
        :x {:$enum #{1 3 2},
            :$value? true,
            :$primitive-type :Integer},
@@ -481,7 +496,8 @@
 
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [11000
+                      {:$instance-of :ws/A$v1,
                        :a {:$value? true,
                            :$primitive-type [:Decimal 2]}}
                       {:choco-spec {:vars {$_0 :Int,
@@ -498,7 +514,8 @@
                          :b [:Decimal 2]},
                 :constraints [["c1" '(= #d "1.05" (+ a b))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [12000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type [:Decimal 2]},
        :b {:$value? true,
@@ -524,7 +541,8 @@
                 :constraints [["c1" '(= #d "1.05" (+ a b))]]}}
      {:$instance-of :ws/A$v1,
       :a {:$enum #{#d "0.05" #d "0.06"}}}
-     [{:$instance-of :ws/A$v1,
+     [13000
+      {:$instance-of :ws/A$v1,
        :a {:$enum #{#d "0.05" #d "0.06"},
            :$value? true,
            :$primitive-type [:Decimal 2]},
@@ -549,7 +567,8 @@
      {:ws/A$v1 {:fields {:a [:Decimal 2]},
                 :constraints [["c1" '(= (rescale #d "5.01" 3) (rescale a 3))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [14000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type [:Decimal 2]},
        :$constraints {"c1" (= 5010 (* #r [:a] 10))}}
@@ -566,7 +585,8 @@
      {:ws/A$v1 {:fields {:a [:Decimal 2]},
                 :constraints [["c1" '(= (rescale #d "5.01" 1) (rescale a 1))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [15000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type [:Decimal 2]},
        :$constraints {"c1" (= 50 (div #r [:a] 10))}}
@@ -582,7 +602,8 @@
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]},
                                 :constraints [["c1" '(= 5 (rescale a 0))]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [16000
+                      {:$instance-of :ws/A$v1,
                        :a {:$value? true,
                            :$primitive-type [:Decimal 2]},
                        :$constraints {"c1" (= 5 (div #r [:a] 100))}}
@@ -598,7 +619,8 @@
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]},
                                 :constraints [["c1" '(= 503 (rescale a 2))]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [17000
+                      {:$instance-of :ws/A$v1,
                        :a {:$value? true,
                            :$primitive-type [:Decimal 2]},
                        :$constraints {"c1" (= 503 #r [:a])}}
@@ -614,7 +636,8 @@
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]},
                                 :constraints [["c1" '(= #d "3.0" (rescale a 1))]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [18000
+                      {:$instance-of :ws/A$v1,
                        :a {:$value? true,
                            :$primitive-type [:Decimal 2]},
                        :$constraints {"c1" (= 30 (div #r [:a] 10))}}
@@ -631,7 +654,8 @@
      {:ws/A$v1 {:fields {:a [:Decimal 2]},
                 :constraints [["c1" '(= #d "3.0" (rescale (+ a #d "0.01") 1))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [19000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type [:Decimal 2]},
        :$constraints {"c1" (= 30 (div (+ #r [:a] 1) 10))}}
@@ -647,7 +671,8 @@
     (check-propagate {:ws/A$v1 {:fields {:a [:Decimal 2]}}}
                      {:$instance-of :ws/A$v1,
                       :a #d "3.14"}
-                     [{:$instance-of :ws/A$v1,
+                     [20000
+                      {:$instance-of :ws/A$v1,
                        :a 314}
                       {:choco-spec {:vars {$_0 :Int},
                                     :constraints #{}},
@@ -663,7 +688,8 @@
                   '(= #d "3.0"
                       (if-value a (rescale (+ a #d "0.01") 1) #d "2.0"))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [21000
+      {:$instance-of :ws/A$v1,
        :a {:$primitive-type [:Decimal 2],
            :$value? {:$primitive-type :Boolean}},
        :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 20))}}
@@ -684,7 +710,8 @@
                   '(= #d "3.00"
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.00"))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [22000
+      {:$instance-of :ws/A$v1,
        :a {:$primitive-type [:Decimal 2],
            :$value? {:$primitive-type :Boolean}},
        :$constraints {"c1" (= 300
@@ -707,7 +734,8 @@
                   '(= #d "3.0"
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.0"))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [23000
+      {:$instance-of :ws/A$v1,
        :a {:$primitive-type [:Decimal 2],
            :$value? {:$primitive-type :Boolean}},
        :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
@@ -728,7 +756,8 @@
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.0"))]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? true}}
-     [{:$instance-of :ws/A$v1,
+     [24000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type [:Decimal 2]},
        :$constraints {"c1" (= 30 (if true (div (+ #r [:a] 1) 10) 30))}}
@@ -750,7 +779,8 @@
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.0"))]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? false}}
-     [{:$instance-of :ws/A$v1,
+     [25000
+      {:$instance-of :ws/A$v1,
        :a {:$value? false,
            :$primitive-type [:Decimal 2]},
        :$constraints {"c1" (= 30 (if #r [:a :$value?] (div (+ #r [:a] 1) 10) 30))}}
@@ -771,7 +801,8 @@
                       (if-value a (rescale (+ a #d "0.01") 1) #d "3.0"))]]}}
      {:$instance-of :ws/A$v1,
       :a #d "4.00"}
-     [{:$instance-of :ws/A$v1,
+     [26000
+      {:$instance-of :ws/A$v1,
        :a 400,
        :$constraints {"c1" false}}
       {:choco-spec {:vars {$_0 :Int},
@@ -789,7 +820,8 @@
       :ws/A$v1 {:fields {:x :Integer},
                 :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
      {:$instance-of :ws/B$v1}
-     [{:$instance-of :ws/B$v1,
+     [27000
+      {:$instance-of :ws/B$v1,
        :a {:$value? true,
            :$instance-of :ws/A$v1,
            :x {:$enum #{1 3 2},
@@ -832,7 +864,8 @@
      {:$instance-of :ws/B$v1,
       :a {:$instance-of :ws/A$v1,
           :x 3}}
-     [{:$instance-of :ws/B$v1,
+     [28000
+      {:$instance-of :ws/B$v1,
        :a {:x 3,
            :$instance-of :ws/A$v1,
            :$value? true,
@@ -868,7 +901,8 @@
      {:$instance-of :ws/B$v1,
       :a {:$instance-of :ws/A$v1,
           :x 4}}
-     [{:$instance-of :ws/B$v1,
+     [29000
+      {:$instance-of :ws/B$v1,
        :a {:x {:$value? false,
                :$primitive-type :Integer},
            :$instance-of :ws/A$v1,
@@ -904,7 +938,8 @@
 
     (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [30000
+                      {:$instance-of :ws/A$v1,
                        :x {:$primitive-type :Integer,
                            :$value? {:$primitive-type :Boolean}}}
                       {:choco-spec {:vars {$_0 :Int,
@@ -920,7 +955,8 @@
      {:ws/A$v1 {:fields {:x [:Maybe :Integer]},
                 :constraints [["c1" '(if-value x (and (> x 20) (< x 30)) true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [31000
+      {:$instance-of :ws/A$v1,
        :x {:$enum #{27 24 21 22 29 28 25 23 26},
            :$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
@@ -938,7 +974,8 @@
     (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]},
                                 :constraints [["c1" '(if-value x false true)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [32000
+                      {:$instance-of :ws/A$v1,
                        :x {:$primitive-type :Integer,
                            :$value? {:$primitive-type :Boolean}},
                        :$constraints {"c1" (not #r [:x :$value?])}}
@@ -954,7 +991,8 @@
     (check-propagate {:ws/A$v1 {:fields {:x [:Maybe :Integer]},
                                 :constraints [["c1" '(if-value x true false)]]}}
                      {:$instance-of :ws/A$v1}
-                     [{:$instance-of :ws/A$v1,
+                     [33000
+                      {:$instance-of :ws/A$v1,
                        :x {:$primitive-type :Integer,
                            :$value? {:$primitive-type :Boolean}},
                        :$constraints {"c1" #r [:x :$value?]}}
@@ -973,7 +1011,8 @@
                          :y [:Maybe :Integer]},
                 :constraints [["c1" '(if-value x (if-value y true false) false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [34000
+      {:$instance-of :ws/A$v1,
        :x {:$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
        :y {:$primitive-type :Integer,
@@ -1000,7 +1039,8 @@
                          :y [:Maybe :Integer]},
                 :constraints [["c1" '(if-value x false (if-value y true false))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [35000
+      {:$instance-of :ws/A$v1,
        :x {:$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
        :y {:$primitive-type :Integer,
@@ -1026,7 +1066,8 @@
                          :y [:Maybe :Integer]},
                 :constraints [["c1" '(if-value x false (if-value y false true))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [36000
+      {:$instance-of :ws/A$v1,
        :x {:$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
        :y {:$primitive-type :Integer,
@@ -1057,7 +1098,8 @@
       :ws/A$v1 {:fields {:x :Integer},
                 :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
      {:$instance-of :ws/B$v1}
-     [{:$instance-of :ws/B$v1,
+     [37000
+      {:$instance-of :ws/B$v1,
        :a {:$value? true,
            :$instance-of :ws/A$v1,
            :x {:$enum #{1 3 2},
@@ -1102,7 +1144,8 @@
       :ws/A$v1 {:fields {:x :Integer},
                 :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
      {:$instance-of :ws/B$v1}
-     [{:$instance-of :ws/B$v1,
+     [38000
+      {:$instance-of :ws/B$v1,
        :a {:$value? true,
            :$instance-of :ws/A$v1,
            :x {:$enum #{1 3 2},
@@ -1142,7 +1185,8 @@
      {:ws/B$v1 {:fields {:a [:Maybe [:Instance :ws/A$v1]]}},
       :ws/A$v1 {:fields {:x :Integer}}}
      {:$instance-of :ws/B$v1}
-     [{:$instance-of :ws/B$v1,
+     [39000
+      {:$instance-of :ws/B$v1,
        :a {:$instance-of :ws/A$v1,
            :x {:$value? true,
                :$primitive-type :Integer},
@@ -1163,7 +1207,8 @@
                                 :constraints [["c1" '(if-value a false true)]]},
                       :ws/A$v1 {:fields {}}}
                      {:$instance-of :ws/B$v1}
-                     [{:$instance-of :ws/B$v1,
+                     [40000
+                      {:$instance-of :ws/B$v1,
                        :a {:$instance-of :ws/A$v1,
                            :$value? {:$primitive-type :Boolean}},
                        :$constraints {"c1" (not #r [:a :$value?])}}
@@ -1178,7 +1223,8 @@
                                 :constraints [["c1" '(if-value a true false)]]},
                       :ws/A$v1 {:fields {}}}
                      {:$instance-of :ws/B$v1}
-                     [{:$instance-of :ws/B$v1,
+                     [41000
+                      {:$instance-of :ws/B$v1,
                        :a {:$instance-of :ws/A$v1,
                            :$value? {:$primitive-type :Boolean}},
                        :$constraints {"c1" #r [:a :$value?]}}
@@ -1199,7 +1245,8 @@
                                           false)]]},
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1}
-     [{:$instance-of :ws/B$v1,
+     [42000
+      {:$instance-of :ws/B$v1,
        :a {:$instance-of :ws/A$v1,
            :x {:$primitive-type :Integer,
                :$value? {:$primitive-type :Boolean}},
@@ -1227,7 +1274,8 @@
                                           false)]]},
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1}
-     [{:$instance-of :ws/B$v1,
+     [43000
+      {:$instance-of :ws/B$v1,
        :a {:$instance-of :ws/A$v1,
            :x {:$primitive-type :Integer,
                :$value? {:$primitive-type :Boolean}},
@@ -1260,7 +1308,8 @@
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1,
       :b false}
-     [{:$instance-of :ws/B$v1,
+     [44000
+      {:$instance-of :ws/B$v1,
        :b false,
        :a {:$instance-of :ws/A$v1,
            :x {:$primitive-type :Integer,
@@ -1298,7 +1347,8 @@
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1,
       :b false}
-     [{:$instance-of :ws/B$v1,
+     [45000
+      {:$instance-of :ws/B$v1,
        :b false,
        :a {:$instance-of :ws/A$v1,
            :x {:$primitive-type :Integer,
@@ -1337,7 +1387,8 @@
       :ws/A$v1 {:fields {:x [:Maybe :Integer]}}}
      {:$instance-of :ws/B$v1,
       :b false}
-     [{:$instance-of :ws/B$v1,
+     [46000
+      {:$instance-of :ws/B$v1,
        :b false,
        :a {:$instance-of :ws/A$v1,
            :x {:$primitive-type :Integer,
@@ -1377,7 +1428,8 @@
      {:$instance-of :ws/B$v1,
       :a {:$instance-of :ws/A$v1,
           :x 30}}
-     [{:$instance-of :ws/B$v1,
+     [47000
+      {:$instance-of :ws/B$v1,
        :a {:x 30,
            :$instance-of :ws/A$v1,
            :$value? {:$primitive-type :Boolean}},
@@ -1412,7 +1464,8 @@
      {:$instance-of :ws/B$v1,
       :a {:$instance-of :ws/A$v1,
           :x 10}}
-     [{:$instance-of :ws/B$v1,
+     [48000
+      {:$instance-of :ws/B$v1,
        :a {:x 10,
            :$instance-of :ws/A$v1,
            :$value? {:$primitive-type :Boolean}},
@@ -1450,7 +1503,8 @@
                                          :y 6}]
                                   true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [49000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {},
@@ -1478,7 +1532,8 @@
                                          :y 7}]
                                   true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [50000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {},
@@ -1508,7 +1563,8 @@
                                              :y 7}}]
                                   true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [51000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {},
@@ -1543,7 +1599,8 @@
                                   true)]]}}
      {:$instance-of :ws/A$v1,
       :a 4}
-     [{:$instance-of :ws/A$v1,
+     [52000
+      {:$instance-of :ws/A$v1,
        :a 4,
        :$constraints {},
        :$instance-literals
@@ -1575,7 +1632,8 @@
                                   true)]]}}
      {:$instance-of :ws/A$v1,
       :a 3}
-     [{:$instance-of :ws/A$v1,
+     [53000
+      {:$instance-of :ws/A$v1,
        :a 3,
        :b {:$value? true,
            :$primitive-type :Integer},
@@ -1608,7 +1666,8 @@
      {:ws/X$v1 {:fields {:x [:Maybe :Integer]},
                 :constraints [["c1" '(if-value-let [p x] (> p 10) true)]]}}
      {:$instance-of :ws/X$v1}
-     [{:$instance-of :ws/X$v1,
+     [54000
+      {:$instance-of :ws/X$v1,
        :x {:$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
        :$constraints {"c1" (or (not #r [:x :$value?]) (> #r [:x] 10))}}
@@ -1626,7 +1685,8 @@
                 :constraints [["c1" '(if-value-let [p x] (> p 10) true)]]}}
      {:$instance-of :ws/X$v1,
       :x 20}
-     [{:$instance-of :ws/X$v1,
+     [55000
+      {:$instance-of :ws/X$v1,
        :x 20,
        :$constraints {}}
       {:choco-spec {:vars {$_0 :Int},
@@ -1641,7 +1701,8 @@
                 :constraints [["c1" '(if-value-let [p x] (> p 10) true)]]}}
      {:$instance-of :ws/X$v1,
       :x 10}
-     [{:$instance-of :ws/X$v1,
+     [56000
+      {:$instance-of :ws/X$v1,
        :x 10,
        :$constraints {"c1" false}}
       {:choco-spec {:vars {$_0 :Int},
@@ -1665,7 +1726,8 @@
                                               true
                                               false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [57000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {},
@@ -1696,7 +1758,8 @@
                                               true
                                               false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [58000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {"c2" false},
@@ -1728,7 +1791,8 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? false}}
-     [{:$instance-of :ws/A$v1,
+     [59000
+      {:$instance-of :ws/A$v1,
        :a {:$value? false,
            :$primitive-type :Integer},
        :$constraints {"c2" #r [:a :$value?]},
@@ -1765,7 +1829,8 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a 4}
-     [{:$instance-of :ws/A$v1,
+     [60000
+      {:$instance-of :ws/A$v1,
        :a 4,
        :$constraints {},
        :$instance-literals
@@ -1798,7 +1863,8 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a 3}
-     [{:$instance-of :ws/A$v1,
+     [61000
+      {:$instance-of :ws/A$v1,
        :a 3,
        :$constraints {},
        :$instance-literals
@@ -1833,7 +1899,8 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a 3}
-     [{:$instance-of :ws/A$v1,
+     [62000
+      {:$instance-of :ws/A$v1,
        :a 3,
        :$constraints {},
        :$instance-literals
@@ -1867,7 +1934,8 @@
                                               true
                                               false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [63000
+      {:$instance-of :ws/A$v1,
        :a {:$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
        :$constraints {"c2" #r [:a :$value?]},
@@ -1905,7 +1973,8 @@
                                               false
                                               true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [64000
+      {:$instance-of :ws/A$v1,
        :a {:$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
        :$constraints {"c2" (not #r [:a :$value?])},
@@ -1943,7 +2012,8 @@
                                               true
                                               true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [65000
+      {:$instance-of :ws/A$v1,
        :a {:$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
        :$constraints {},
@@ -1980,7 +2050,8 @@
                                     true)
                                   true)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [66000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {},
@@ -2016,7 +2087,8 @@
                                     true))]]}}
      {:$instance-of :ws/A$v1,
       :a -4}
-     [{:$instance-of :ws/A$v1,
+     [67000
+      {:$instance-of :ws/A$v1,
        :a -4,
        :$constraints {},
        :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
@@ -2049,7 +2121,8 @@
                                     true))]]}}
      {:$instance-of :ws/A$v1,
       :a -3}
-     [{:$instance-of :ws/A$v1,
+     [68000
+      {:$instance-of :ws/A$v1,
        :a -3,
        :$constraints {},
        :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
@@ -2081,7 +2154,8 @@
                                               true)]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? true}}
-     [{:$instance-of :ws/A$v1,
+     [69000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {},
@@ -2114,7 +2188,8 @@
                                               true)]]}}
      {:$instance-of :ws/A$v1,
       :a 3}
-     [{:$instance-of :ws/A$v1,
+     [70000
+      {:$instance-of :ws/A$v1,
        :a 3,
        :$constraints {},
        :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
@@ -2140,7 +2215,8 @@
                                               true)]]}}
      {:$instance-of :ws/A$v1,
       :a 4}
-     [{:$instance-of :ws/A$v1,
+     [71000
+      {:$instance-of :ws/A$v1,
        :a 4,
        :$constraints {},
        :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
@@ -2168,7 +2244,8 @@
                                               true)]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? false}}
-     [{:$instance-of :ws/A$v1,
+     [72000
+      {:$instance-of :ws/A$v1,
        :a {:$value? false,
            :$primitive-type :Integer},
        :$constraints {},
@@ -2201,7 +2278,8 @@
                                               false)]]}}
      {:$instance-of :ws/A$v1,
       :a {:$value? false}}
-     [{:$instance-of :ws/A$v1,
+     [73000
+      {:$instance-of :ws/A$v1,
        :a {:$value? false,
            :$primitive-type :Integer},
        :$constraints {"c2" #r [:a :$value?]},
@@ -2231,7 +2309,8 @@
                                                 true)
                                               false)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [74000
+      {:$instance-of :ws/A$v1,
        :a {:$primitive-type :Integer,
            :$value? {:$primitive-type :Boolean}},
        :$constraints {"c2" #r [:a :$value?]},
@@ -2261,7 +2340,8 @@
                                                       (if c true y))))]]}}
                      {:$instance-of :ws/A$v1,
                       :x false}
-                     [{:$instance-of :ws/A$v1,
+                     [75000
+                      {:$instance-of :ws/A$v1,
                        :x false,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
@@ -2287,7 +2367,8 @@
                                                       (if c true y))))]]}}
                      {:$instance-of :ws/A$v1,
                       :x true}
-                     [{:$instance-of :ws/A$v1,
+                     [76000
+                      {:$instance-of :ws/A$v1,
                        :x true,
                        :y {:$value? true,
                            :$primitive-type :Boolean},
@@ -2312,7 +2393,8 @@
                                '(let [a (+ x y)]
                                   (< a 20))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [77000
+      {:$instance-of :ws/A$v1,
        :x {:$value? true,
            :$primitive-type :Integer},
        :y {:$value? true,
@@ -2341,7 +2423,8 @@
      {:$instance-of :ws/A$v1,
       :x {:$ranges #{[15 30]}},
       :y {:$ranges #{[0 1000]}}}
-     [{:$instance-of :ws/A$v1,
+     [78000
+      {:$instance-of :ws/A$v1,
        :x {:$enum #{20 27 24 15 21 22 29 28 25 17 23 19 26 16 18},
            :$value? true,
            :$primitive-type :Integer},
@@ -2376,7 +2459,8 @@
      {:$instance-of :ws/A$v1,
       :x {:$ranges #{[15 30]}},
       :y {:$ranges #{[0 1000]}}}
-     [{:$instance-of :ws/A$v1,
+     [79000
+      {:$instance-of :ws/A$v1,
        :x {:$enum #{20 27 24 15 21 22 29 28 25 17 23 19 26 16 18},
            :$value? true,
            :$primitive-type :Integer},
@@ -2410,7 +2494,8 @@
                               ["ca" '(and (> a 0) (<= a 5))]
                               ["cb" '(and (>= b 0) (<= b 5))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [80000
+      {:$instance-of :ws/A$v1,
        :x {:$enum #{1 4 3 2},
            :$value? true,
            :$primitive-type :Integer},
@@ -2464,7 +2549,8 @@
                               ["ca" '(and (> a -800) (<= a 900))]
                               ["cb" '(and (>= b -800) (<= b 900))]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [81000
+      {:$instance-of :ws/A$v1,
        :x {:$ranges #{[-799 900]},
            :$value? true,
            :$primitive-type :Integer},
@@ -2521,7 +2607,8 @@
                                          :x a,
                                          :y 6})]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [82000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {"c2" (= 10 (+ #r [:a] 6))},
@@ -2550,7 +2637,8 @@
                                          :y 6})]]}}
      {:$instance-of :ws/A$v1,
       :a 4}
-     [{:$instance-of :ws/A$v1,
+     [83000
+      {:$instance-of :ws/A$v1,
        :a 4,
        :$constraints {"c2" true},
        :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
@@ -2576,7 +2664,8 @@
                                          :y 6})]]}}
      {:$instance-of :ws/A$v1,
       :a 5}
-     [{:$instance-of :ws/A$v1,
+     [84000
+      {:$instance-of :ws/A$v1,
        :a 5,
        :$constraints {"c2" false},
        :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
@@ -2605,7 +2694,8 @@
                                                  12)
                                    11)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [85000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {"c2" (< (if (= 10 (+ #r [:a] 6)) #r [:a] 12) 11)},
@@ -2637,7 +2727,8 @@
                                                  12)
                                    11)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [86000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {"c2" (> (if (= 10 (+ #r [:a] 6)) #r [:a] 12) 11)},
@@ -2670,7 +2761,8 @@
                                                  12)
                                    11)]]}}
      {:$instance-of :ws/A$v1}
-     [{:$instance-of :ws/A$v1,
+     [87000
+      {:$instance-of :ws/A$v1,
        :a {:$value? true,
            :$primitive-type :Integer},
        :$constraints {"c2" (> (if (= 1006 (+ #r [:a] 6)) (- #r [:a] 996) 12) 11)},
@@ -2703,7 +2795,8 @@
                                    11)]]}}
      {:$instance-of :ws/A$v1,
       :a 4}
-     [{:$instance-of :ws/A$v1,
+     [88000
+      {:$instance-of :ws/A$v1,
        :a 4,
        :$constraints {"c2" (> (if true 4 12) 11)},
        :$instance-literals {"c2$0" {:x {:$expr #r [:a]},
