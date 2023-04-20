@@ -37,26 +37,27 @@
   #{bom/AbstractInstanceBom
     bom/ConcreteInstanceBom
     bom/InstanceLiteralBom}
-  (let [bom  (-> (if (bom/is-concrete-instance-bom? bom)
-                   (let [{refinements :$refinements} bom]
-                     (if (zero? (count refinements))
-                       (dissoc bom :$refinements)
-                       (let [refinements-from-children (->> refinements
-                                                            (map (fn [[to-spec-id refinement-bom]]
-                                                                   (let [lifted-child (lift-refinements-op refinement-bom)]
-                                                                     (:$refinements lifted-child))))
-                                                            (reduce (fn [refinements child-refinements]
-                                                                      (merge-with bom-analysis/conjoin-boms
-                                                                                  refinements
-                                                                                  child-refinements))
-                                                                    {}))]
-                         (assoc bom :$refinements (merge-with bom-analysis/conjoin-boms
-                                                              (-> refinements
-                                                                  (update-vals #(dissoc % :$refinements)))
-                                                              refinements-from-children)))))
-                   bom)
-                 (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals lift-refinements-op)))
-                 base/no-nil-entries)]
+  (let [bom (-> (if (or (bom/is-concrete-instance-bom? bom)
+                        (bom/is-instance-literal-bom? bom))
+                  (let [{refinements :$refinements} bom]
+                    (if (zero? (count refinements))
+                      (dissoc bom :$refinements)
+                      (let [refinements-from-children (->> refinements
+                                                           (map (fn [[to-spec-id refinement-bom]]
+                                                                  (let [lifted-child (lift-refinements-op refinement-bom)]
+                                                                    (:$refinements lifted-child))))
+                                                           (reduce (fn [refinements child-refinements]
+                                                                     (merge-with bom-analysis/conjoin-boms
+                                                                                 refinements
+                                                                                 child-refinements))
+                                                                   {}))]
+                        (assoc bom :$refinements (merge-with bom-analysis/conjoin-boms
+                                                             (-> refinements
+                                                                 (update-vals #(dissoc % :$refinements)))
+                                                             refinements-from-children)))))
+                  bom)
+                (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals lift-refinements-op)))
+                base/no-nil-entries)]
 
     ;; process child boms
     (merge bom (-> bom
@@ -201,7 +202,8 @@
   #{bom/ConcreteInstanceBom
     bom/AbstractInstanceBom
     bom/InstanceLiteralBom}
-  (let [bom (-> (if (bom/is-concrete-instance-bom? bom)
+  (let [bom (-> (if (or (bom/is-concrete-instance-bom? bom)
+                        (bom/is-instance-literal-bom? bom))
                   ;; refinements on abstract instance bom will be handled separately, as they are moved into concrete choices
                   (let [{refinements :$refinements} bom]
                     (if (zero? (count refinements))

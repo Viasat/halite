@@ -7,7 +7,6 @@
   (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
-            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.spec :as spec]
             [schema.core :as s])
@@ -86,7 +85,7 @@
           base/no-nil-entries)
       bom)))
 
-(s/defn find-concrete-op :- bom-user/UserBom
+(s/defn find-concrete-op :- bom/Bom
   [spec-env
-   bom :- bom-user/UserBom]
+   bom :- bom/Bom]
   (find-concrete-op* spec-env bom))

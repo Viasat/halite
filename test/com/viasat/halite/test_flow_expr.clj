@@ -70,8 +70,9 @@
 
   (check-flower '(when-value x x) '(when #r [:p :x :$value?] #r [:p :x]))
 
-  (check-flower '(refine-to a :ws/A$v1) '(refine-to 10 :ws/A$v1))
-  (check-flower '(refine-to x :ws/A$v1) '(refine-to #r [:p :x] :ws/A$v1))
+  (check-flower '(refine-to ^{:id-path [:q 2]} {:$type :ws/B} :ws/A$v1)
+                #r [:q 2 :$refinements :ws/A$v1] {:q {2 {:$instance-literal-type :ws/B, :$guards []}}})
+  (check-flower '(refine-to x :ws/A$v1) #r [:p :x :$refinements :ws/A$v1] {})
   (check-flower '(refines-to? x :ws/A$v1) '(refines-to? #r [:p :x] :ws/A$v1))
   (check-flower '(every? [x xs] (= x z)) #fog :Boolean)
   (check-flower '(any? [x xs] (= x b)) #fog :Boolean)

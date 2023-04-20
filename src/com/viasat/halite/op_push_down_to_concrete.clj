@@ -7,7 +7,6 @@
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
-            [com.viasat.halite.bom-user :as bom-user]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
 
@@ -65,6 +64,6 @@
             (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals push-down-to-concrete-op*)))
             base/no-nil-entries)))))
 
-(s/defn push-down-to-concrete-op :- bom-user/UserBom
-  [bom :- bom-user/UserBom]
+(s/defn push-down-to-concrete-op :- bom/Bom
+  [bom :- bom/Bom]
   (push-down-to-concrete-op* bom))

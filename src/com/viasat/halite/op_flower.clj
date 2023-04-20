@@ -6,6 +6,7 @@
   (:require [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
+            [com.viasat.halite.bom-pipeline-base :as bom-pipeline-base]
             [com.viasat.halite.envs :as envs]
             [com.viasat.halite.flow-boolean :as flow-boolean]
             [com.viasat.halite.flow-expr :as flow-expr]
@@ -127,9 +128,7 @@
                   (let [spec-id (bom/get-spec-id instance-literal-bom)
                         bare-instance-bom (bom/to-bare-instance-bom instance-literal-bom)
                         instance-literal-bom' (->> instance-literal-bom
-                                                   ;; (op-conjoin-spec-bom/conjoin-spec-bom-op spec-env)
-                                                   ;; (op-add-value-fields/add-value-fields-op spec-env)
-                                                   (op-add-constraints/add-constraints-op spec-env)
+                                                   (bom-pipeline-base/expand-bom spec-env)
                                                    (flower-op* (assoc
                                                                 context
                                                                 :path (conj (:path context)

@@ -50,6 +50,24 @@
                                                                                                       :q 2}}
                                                                              :y 3}}})))
 
+  (is (= {:$instance-literal-type :ws/A$v1
+          :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                   :b 100}
+                         :ws/F$v1 {:$instance-of :ws/F$v1
+                                   :x 99
+                                   :y 3}
+                         :ws/G$v1 {:$instance-of :ws/G$v1
+                                   :q 2}}}
+         (op-canon-refinements/lift-refinements-op {:$instance-literal-type :ws/A$v1
+                                                    :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
+                                                                             :$refinements {:ws/F$v1 {:$instance-of :ws/F$v1
+                                                                                                      :x 99}}
+                                                                             :b 100}
+                                                                   :ws/F$v1 {:$instance-of :ws/F$v1
+                                                                             :$refinements {:ws/G$v1 {:$instance-of :ws/G$v1
+                                                                                                      :q 2}}
+                                                                             :y 3}}})))
+
   (let [bom {:$instance-of :ws/A$v1
              :$refinements {:ws/E$v1 {:$instance-of :ws/E$v1
                                       :$refinements {:ws/F$v1 {:$instance-of :ws/F$v1
@@ -117,6 +135,12 @@
                                                     {:$instance-of :ws/A$v1
                                                      :$refinements {}})))
 
+  (is (= {:$instance-literal-type :ws/A$v1}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                                     :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}}
+                                                    {:$instance-literal-type :ws/A$v1
+                                                     :$refinements {}})))
+
   (is (= {:$instance-of :ws/A$v1
           :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
                                    :$value? true
@@ -126,6 +150,19 @@
          (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
                                                      :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}}
                                                     {:$instance-of :ws/A$v1
+                                                     :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                                                              :$value? true
+                                                                              :x {:$enum #{1 2}}}}})))
+
+  (is (= {:$instance-literal-type :ws/A$v1
+          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
+                                   :$value? true
+                                   :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
+                                                            :$value? true
+                                                            :x {:$enum #{1 2}}}}}}}
+         (op-canon-refinements/canon-refinements-op {:ws/A$v1 {:refines-to {:ws/B$v1 {:expr nil}}}
+                                                     :ws/B$v1 {:refines-to {:ws/C$v1 {:expr nil}}}}
+                                                    {:$instance-literal-type :ws/A$v1
                                                      :$refinements {:ws/C$v1 {:$instance-of :ws/C$v1
                                                                               :$value? true
                                                                               :x {:$enum #{1 2}}}}})))

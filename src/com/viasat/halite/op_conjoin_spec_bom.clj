@@ -7,7 +7,6 @@
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
-            [com.viasat.halite.bom-user :as bom-user]
             [com.viasat.halite.envs :as envs]
             [schema.core :as s])
   (:import [com.viasat.halite.lib.fixed_decimal FixedDecimal]))
@@ -37,7 +36,8 @@
   (let [spec-id (bom/get-spec-id bom)
         spec (envs/lookup-spec spec-env spec-id)]
     (-> bom
-        (merge (-> (if (bom/is-concrete-instance-bom? bom)
+        (merge (-> (if (or (bom/is-concrete-instance-bom? bom)
+                           (bom/is-instance-literal-bom? bom))
                      (->> bom
                           bom/to-bare-instance-bom
                           (merge-with bom-analysis/conjoin-boms (->> (bom-analysis/bom-for-spec spec-id spec)
@@ -49,7 +49,7 @@
         (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial conjoin-spec-bom-op* spec-env))))
         base/no-nil-entries)))
 
-(s/defn conjoin-spec-bom-op :- bom-user/UserBom
+(s/defn conjoin-spec-bom-op :- bom/Bom
   [spec-env
-   bom :- bom-user/UserBom]
+   bom :- bom/Bom]
   (conjoin-spec-bom-op* spec-env bom))

@@ -172,7 +172,7 @@
   objects (i.e. outside of their containing expressions)."
   {VariableKeyword (s/conditional
                     is-expression-bom? ExpressionBom
-                    :else BomValue)
+                    :else VariableValueBom)
    :$instance-literal-type SpecId
    (s/optional-key :$value?) (s/eq true)
    (s/optional-key :$valid?) BooleanBom

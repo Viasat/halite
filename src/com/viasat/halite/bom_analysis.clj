@@ -230,7 +230,7 @@
           (throw (ex-info "unexpected case" {:a a :b b
                                              :merge-1 (merge base-bom-a base-bom-b)
                                              :merge-2 (merge base-bom-b base-bom-a)})))
-        ;; keep other fields of the bom that we are not accounting for here
+                     ;; keep other fields of the bom that we are not accounting for here
         (let [result (if (or (= false (:$value? a)) (= false (:$value? b)))
                        (if (or (= true (:$value? a)) (= true (:$value? b)))
                          bom/contradiction-bom
@@ -365,6 +365,13 @@
 
           :default
           (assoc b :$concrete-choices {(bom/get-spec-id a) a})))
+
+      (and (= 2 (count bom-types))
+           (contains? bom-types 'bom/ExpressionBom))
+                   ;; an expression that appears in an instance literal is not expected to be
+                   ;; combined with another bom, so this simply leaves the ExpressionBom unchanged
+      (let [[a b] (if (bom/is-expression-bom? a) [a b] [b a])]
+        a)
 
       :default bom/contradiction-bom)))
 

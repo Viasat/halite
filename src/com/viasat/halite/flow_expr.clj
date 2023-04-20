@@ -389,7 +389,17 @@
              instance' (flower context instance)]
          (if (non-root-fog? instance')
            (flower-fog context expr)
-           (list op instance' spec-id)))
+           (if (= 'refine-to op)
+             (cond
+               (instance-literal/instance-literal? instance')
+               (var-ref/make-var-ref (conj (instance-literal/get-path instance') :$refinements spec-id))
+
+               (var-ref/var-ref? instance')
+               (var-ref/make-var-ref (conj (var-ref/get-path instance') :$refinements spec-id))
+
+               :default (throw (ex-info "refine-to does not yet handle this case" {:expr expr
+                                                                                   :instance' instance'})))
+             (list op instance' spec-id))))
        bom/flag-lowered))
 
 (s/defn ^:private flower-rescale :- bom/LoweredExpr
