@@ -194,6 +194,13 @@
                                                                   instance-literal/get-bindings
                                                                   (get accessor))
 
+                 (and (seq? target) (= 'if (first target))) (let [[_ if-target if-then if-else] target]
+                                                              (pprint/pprint [:target target])
+                                                              (list 'if
+                                                                    if-target
+                                                                    (flower-get context (list 'get if-then accessor))
+                                                                    (flower-get context (list 'get if-else accessor))))
+
                  :default (throw (ex-info "unexpected target of get" {:expr expr
                                                                       :target' target'})))]
          (if (nil? v)

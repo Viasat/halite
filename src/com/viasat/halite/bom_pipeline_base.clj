@@ -17,6 +17,7 @@
             [com.viasat.halite.op-find-refinements :as op-find-refinements]
             [com.viasat.halite.op-mandatory :as op-mandatory]
             [com.viasat.halite.op-push-down-to-concrete :as op-push-down-to-concrete]
+            [com.viasat.halite.op-refinement-constraints :as op-refinement-constraints]
             [com.viasat.halite.op-refinements :as op-refinements]
             [com.viasat.halite.op-syntax-check :as op-syntax-check]
             [com.viasat.halite.op-type-check :as op-type-check]
@@ -51,4 +52,5 @@
        (op-add-types/add-types-op spec-env)
        (op-ensure-fields/ensure-fields-op spec-env)
        (op-add-value-fields/add-value-fields-op spec-env)
-       (op-add-constraints/add-constraints-op spec-env)))
+       (op-add-constraints/add-constraints-op spec-env)
+       (op-refinement-constraints/refinement-constraints-op spec-env)))
