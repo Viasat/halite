@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-id
   "Mark forms that contain the 'valid' operator with an identifier. Also mark instance literals with ids."
-  (:require [clojure.walk :as walk]
+  (:require [clojure.pprint :as pprint]
+            [clojure.walk :as walk]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
@@ -74,19 +75,24 @@
                                                                               (conj path (str constraint-name)))
                                                                        x)]))
                                       (into {})))
-        (assoc :$refinements (some-> bom
-                                     :$refinements
-                                     (map (fn [[other-spec-id sub-bom]]
-                                            [other-spec-id (id-expr (assoc context :path (conj path :$refinements other-spec-id)) sub-bom)]))
-                                     (into {})))
-        (assoc :$concrete-choices (some-> bom
-                                          :$concrete-choices
-                                          (map (fn [[other-spec-id sub-bom]]
-                                                 [other-spec-id (id-expr (assoc context :path (conj path :$concrete-choices other-spec-id)) sub-bom)]))
-                                          (into {})))
+        (assoc :$refinements (some->> bom
+                                      :$refinements
+                                      (map (fn [[other-spec-id sub-bom]]
+                                             [other-spec-id (id-expr (assoc context :path (conj path :$refinements other-spec-id)) sub-bom)]))
+                                      (into {})))
+        (assoc :$concrete-choices (some->> bom
+                                           :$concrete-choices
+                                           (map (fn [[other-spec-id sub-bom]]
+                                                  [other-spec-id (id-expr (assoc context :path (conj path :$concrete-choices other-spec-id)) sub-bom)]))
+                                           (into {})))
         base/no-nil-entries)))
+
+(def trace false)
 
 (s/defn id-op :- bom/Bom
   [bom :- bom/Bom]
-  (id-op* {:path []
-           :counter-atom (atom -1)} bom))
+  (let [result (id-op* {:path []
+                        :counter-atom (atom -1)} bom)]
+    (when trace
+      (pprint/pprint [:id-op bom result]))
+    result))
