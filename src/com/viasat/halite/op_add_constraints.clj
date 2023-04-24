@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-add-constraints
   "Add constraint expressions from specs to boms"
-  (:require [com.viasat.halite.base :as base]
+  (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-op :as bom-op]
             [com.viasat.halite.envs :as envs]
@@ -46,11 +47,16 @@
         (merge (-> bom
                    bom/to-bare-instance-bom
                    (update-vals (partial add-constraints-op* spec-env))))
-        (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-constraints-op* spec-env))))
+        ;; (assoc :$refinements (some-> bom :$refinements (update-vals (partial add-constraints-op* spec-env))))
         (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial add-constraints-op* spec-env))))
         base/no-nil-entries)))
+
+(def trace false)
 
 (s/defn add-constraints-op :- bom/Bom
   [spec-env
    bom :- bom/Bom]
-  (add-constraints-op* spec-env bom))
+  (let [result (add-constraints-op* spec-env bom)]
+    (when trace
+      (pprint/pprint [:add-constraints-op bom :result result]))
+    result))

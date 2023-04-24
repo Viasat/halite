@@ -2,7 +2,7 @@
 ;; Licensed under the MIT license
 
 (ns com.viasat.halite.op-find-refinements
-  "Extend boms to include the actual refinements in play per the spec-env"
+  "Extend boms to include all of the actual refinements in play per the spec-env"
   (:require [clojure.pprint :as pprint]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]

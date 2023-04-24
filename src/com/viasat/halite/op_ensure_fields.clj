@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-ensure-fields
   "Ensure that all fields from the spec have entries in a bom."
-  (:require [com.viasat.halite.base :as base]
+  (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
@@ -72,11 +73,16 @@
                                                    (bom-analysis/bom-for-field true {})))
                                             (ensure-fields-op* spec-env))]))
                     (into {})))
-        (assoc :$refinements (some-> bom :$refinements (update-vals (partial ensure-fields-op* spec-env))))
+        ;; (assoc :$refinements (some-> bom :$refinements (update-vals (partial ensure-fields-op* spec-env))))
         (assoc :$concrete-choices (some-> bom :$concrete-choices (update-vals (partial ensure-fields-op* spec-env))))
         base/no-nil-entries)))
+
+(def trace false)
 
 (s/defn ensure-fields-op :- bom/Bom
   [spec-env
    bom :- bom/Bom]
-  (ensure-fields-op* spec-env bom))
+  (let [result (ensure-fields-op* spec-env bom)]
+    (when trace
+      (pprint/pprint [:ensure-fields-op bom :result result]))
+    result))

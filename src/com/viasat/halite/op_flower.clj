@@ -92,7 +92,9 @@
         (assoc :$refinements (some->> bom
                                       :$refinements
                                       (map (fn [[other-spec-id sub-bom]]
-                                             [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
+                                             [other-spec-id (flower-op* (assoc context
+                                                                               :path (conj path :$refinements other-spec-id))
+                                                                        sub-bom)]))
                                       (into {})))
         base/no-nil-entries)))
 
@@ -102,7 +104,9 @@
         (assoc :$concrete-choices (some->> bom
                                            :$concrete-choices
                                            (map (fn [[other-spec-id sub-bom]]
-                                                  [other-spec-id (flower-op* (assoc context :path (conj path other-spec-id)) sub-bom)]))
+                                                  [other-spec-id (flower-op* (assoc context
+                                                                                    :path (conj path :$concrete-choices other-spec-id))
+                                                                             sub-bom)]))
                                            (into {})))
         base/no-nil-entries)))
 

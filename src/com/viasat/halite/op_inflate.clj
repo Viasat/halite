@@ -3,7 +3,8 @@
 
 (ns com.viasat.halite.op-inflate
   "Take a flat sequence of bom leaves and merge them into a bom tree."
-  (:require [com.viasat.halite.base :as base]
+  (:require [clojure.pprint :as pprint]
+            [com.viasat.halite.base :as base]
             [com.viasat.halite.bom :as bom]
             [com.viasat.halite.bom-analysis :as bom-analysis]
             [com.viasat.halite.bom-op :as bom-op]
@@ -73,23 +74,28 @@
                   (into {})))
       (assoc :$refinements (some->> bom
                                     :$refinements
-                                    (mapcat (fn [[spec-id sub-bom]]
-                                              [spec-id (inflate-op* flat-bom-map
-                                                                    (conj path :$refinements spec-id)
-                                                                    sub-bom)]))
+                                    (map (fn [[spec-id sub-bom]]
+                                           [spec-id (inflate-op* flat-bom-map
+                                                                 (conj path :$refinements spec-id)
+                                                                 sub-bom)]))
                                     (into {})))
       (assoc :$concrete-choices (some->> bom
                                          :$concrete-choices
-                                         (mapcat (fn [[spec-id sub-bom]]
-                                                   [spec-id (inflate-op* flat-bom-map
-                                                                         (conj path :$concrete-choices spec-id)
-                                                                         sub-bom)]))
+                                         (map (fn [[spec-id sub-bom]]
+                                                [spec-id (inflate-op* flat-bom-map
+                                                                      (conj path :$concrete-choices spec-id)
+                                                                      sub-bom)]))
                                          (into {})))
       base/no-nil-entries))
+
+(def trace false)
 
 (s/defn inflate-op :- bom/Bom
   [bom :- bom/Bom
    flat-bom-map]
-  (if (nil? flat-bom-map)
-    bom/contradiction-bom
-    (inflate-op* flat-bom-map [] bom)))
+  (let [result (if (nil? flat-bom-map)
+                 bom/contradiction-bom
+                 (inflate-op* flat-bom-map [] bom))]
+    (when trace
+      (pprint/pprint [:inflate-op bom :flat-bom-map flat-bom-map :result result]))
+    result))

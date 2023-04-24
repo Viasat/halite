@@ -38,14 +38,13 @@
                                                 {:$instance-of :ws/A$v1
                                                  :b {:$instance-of :ws/B$v1}})))
 
-  (is (= {:$instance-of :ws/A$v1
-          :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1
-                                   :$constraints '{"x" (and (> x 0) (< x 10000))}}}}
+  (is (= {:$instance-of :ws/A$v1, :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1}}}
          (op-add-constraints/add-constraints-op {:ws/A$v1 {:fields {:b [:Instance :ws/B$v1]}}
                                                  :ws/B$v1 {:fields {:x :Integer}
                                                            :constraints [["x" '(and (> x 0) (< x 10000))]]}}
                                                 {:$instance-of :ws/A$v1
-                                                 :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1}}})))
+                                                 :$refinements {:ws/B$v1 {:$instance-of :ws/B$v1}}}))
+      "refinement constraints are _not_ picked up")
 
   (is (= {:$refines-to :ws/A$v1
           :$concrete-choices {:ws/B$v1 {:$instance-of :ws/B$v1

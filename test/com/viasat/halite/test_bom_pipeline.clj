@@ -2809,7 +2809,33 @@
        :choco-bounds {$_0 4},
        :sym-to-path [$_0 [:a]]} {:$contradiction? true}])
 
-    (stanza "refine-to")])
+    (stanza "refine-to")
+    (check-propagate
+     {:ws/X$v1 {:fields {:x :Integer
+                         :y :Integer}
+                :constraints [["c1" '(= 10 (+ x y))]]}
+      :ws/A$v1 {:fields {:f :Boolean
+                         :a :Integer
+                         :b :Integer
+                         :c :Integer}
+                :refines-to {:ws/X$v1
+                             {:name "r1"
+                              :expr '(if f
+                                       {:$type :ws/X$v1
+                                        :x a
+                                        :y b}
+                                       {:$type :ws/X$v1
+                                        :x b
+                                        :y c})}}}}
+     {:$instance-of :ws/A$v1}
+     [89000
+      {:$instance-of :ws/A$v1, :f {:$value? true, :$primitive-type :Boolean}, :a {:$value? true, :$primitive-type :Integer}, :b {:$value? true, :$primitive-type :Integer}, :c {:$value? true, :$primitive-type :Integer}, :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}
+      {:choco-spec {:vars {$_0 :Bool, $_1 :Bool, $_2 :Int, $_3 :Bool, $_4 :Int, $_5 :Bool, $_6 :Int, $_7 :Bool}, :constraints #{}}, :choco-bounds {$_0 #{true false}, $_1 true, $_2 [-1000 1000], $_3 true, $_4 [-1000 1000], $_5 true, $_6 [-1000 1000], $_7 true}, :sym-to-path [$_0 [:f] $_1 [:f :$value?] $_2 [:a] $_3 [:a :$value?] $_4 [:b] $_5 [:b :$value?] $_6 [:c] $_7 [:c :$value?]]}
+      {:$instance-of :ws/A$v1
+       :a {:$ranges #{[-1000 1001]}}
+       :b {:$ranges #{[-1000 1001]}}
+       :c {:$ranges #{[-1000 1001]}}
+       :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}])])
 
 #_(check-propagate
    {:ws/B$v1 {:fields {:s :Integer}}
