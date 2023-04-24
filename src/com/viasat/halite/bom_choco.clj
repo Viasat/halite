@@ -50,11 +50,11 @@
 
       :default (throw (ex-info "failed to convert to bound" {:bom bom})))))
 
-(def ^:dynamic *trace-propagate* false)
+(def trace false)
 
 (s/defn bom-to-choco
   [bom :- bom/Bom]
-  (when *trace-propagate*
+  (when trace
     (pprint/pprint [:bom bom]))
   (let [constraints (op-extract-constraints/extract-constraints-op bom)
         vars (op-flatten/flatten-op bom)]
@@ -127,7 +127,7 @@
 (s/defn choco-propagate
   [bom :- bom/Bom
    choco-data]
-  (when *trace-propagate*
+  (when trace
     (pprint/pprint [:choco-data choco-data]))
   (let [{:keys [choco-spec choco-bounds]} choco-data
         raw-result (try (choco-clj/propagate choco-spec choco-bounds)
@@ -138,7 +138,7 @@
       (let [sym-to-path-map (->> bom op-flatten/flatten-op flattened-vars-to-reverse-sym-map)
             result (-> raw-result
                        (update-keys sym-to-path-map))]
-        (when *trace-propagate*
+        (when trace
           (pprint/pprint result))
         result))))
 

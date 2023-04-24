@@ -119,15 +119,15 @@
 (s/defn ^:private flower-symbol :- bom/LoweredExpr
   [context :- ExprContext
    sym :- s/Symbol]
-  (->> (let [{:keys [env path]} context]
-         (if (= '$no-value sym)
-           sym
-           (if (contains? (envs/bindings env) sym)
-             (let [resolved ((envs/bindings env) sym)]
-               (if (lowered-expr-wrapper? resolved)
-                 (unwrap-lowered-expr-wrapper resolved)
-                 (flower context resolved)))
-             (var-ref/make-var-ref (conj path (keyword sym))))))))
+  (let [{:keys [env path]} context]
+    (if (= '$no-value sym)
+      sym
+      (if (contains? (envs/bindings env) sym)
+        (let [resolved ((envs/bindings env) sym)]
+          (if (lowered-expr-wrapper? resolved)
+            (unwrap-lowered-expr-wrapper resolved)
+            (flower context resolved)))
+        (var-ref/make-var-ref (conj path (keyword sym)))))))
 
 (s/defn ^:private flower-instance :- bom/LoweredExpr
   [context :- ExprContext
@@ -180,6 +180,24 @@
                                                      (assoc :$type (:$type expr)))))
        bom/flag-lowered))
 
+(s/defn ^:private flower-if :- bom/LoweredExpr
+  [context :- ExprContext
+   expr :- bom/Expr]
+  (->> (let [{:keys [guards]} context
+             [_ target then-clause else-clause] expr
+             target' (flower context target)
+             then-clause' (flower (assoc context
+                                         :guards (conj guards target'))
+                                  then-clause)
+             else-clause' (flower (assoc context
+                                         :guards (conj guards (flow-boolean/make-not target')))
+                                  else-clause)
+             args' [target' then-clause' else-clause']]
+         (if (some non-root-fog? args')
+           (flower-fog context expr)
+           (apply flow-boolean/make-if args')))
+       bom/flag-lowered))
+
 (s/defn ^:private flower-get :- bom/LoweredExpr
   [context :- ExprContext
    expr :- bom/Expr]
@@ -190,23 +208,22 @@
                                                                            accessor
                                                                            [accessor]))
 
-                 (instance-literal/instance-literal? target') (-> target'
-                                                                  instance-literal/get-bindings
-                                                                  (get accessor))
+                 (instance-literal/instance-literal? target') (some->> (-> target'
+                                                                           instance-literal/get-bindings
+                                                                           (get accessor))
+                                                                       bom/flag-lowered)
 
                  (and (seq? target) (= 'if (first target))) (let [[_ if-target if-then if-else] target]
-                                                              (pprint/pprint [:target target])
-                                                              (list 'if
-                                                                    if-target
-                                                                    (flower-get context (list 'get if-then accessor))
-                                                                    (flower-get context (list 'get if-else accessor))))
+                                                              (flower-if context (list 'if
+                                                                                       if-target
+                                                                                       (list 'get if-then accessor)
+                                                                                       (list 'get if-else accessor))))
 
                  :default (throw (ex-info "unexpected target of get" {:expr expr
                                                                       :target' target'})))]
          (if (nil? v)
-           'no-value
-           v))
-       bom/flag-lowered))
+           (bom/flag-lowered 'no-value)
+           v))))
 
 (s/defn ^:private flower-let :- bom/LoweredExpr
   [context :- ExprContext
@@ -244,24 +261,6 @@
            (flower-fog context expr)
            body'))
        bom/ensure-flag-lowered))
-
-(s/defn ^:private flower-if :- bom/LoweredExpr
-  [context :- ExprContext
-   expr :- bom/Expr]
-  (->> (let [{:keys [guards]} context
-             [_ target then-clause else-clause] expr
-             target' (flower context target)
-             then-clause' (flower (assoc context
-                                         :guards (conj guards target'))
-                                  then-clause)
-             else-clause' (flower (assoc context
-                                         :guards (conj guards (flow-boolean/make-not target')))
-                                  else-clause)
-             args' [target' then-clause' else-clause']]
-         (if (some non-root-fog? args')
-           (flower-fog context expr)
-           (apply flow-boolean/make-if args')))
-       bom/flag-lowered))
 
 (s/defn ^:private flower-when :- bom/LoweredExpr
   [context :- ExprContext
@@ -543,13 +542,18 @@
                                            :default
                                            expr))))))
 
+(def trace false)
+
 (s/defn lower-expr :- bom/LoweredExpr
   [context
    expr :- bom/Expr]
-  (->> expr
-       lower-sugar
-       (flower (assoc context
-                      :guards []))))
+  (let [result (->> expr
+                    lower-sugar
+                    (flower (assoc context
+                                   :guards [])))]
+    (when trace
+      (pprint/pprint [:lower-expr expr :result result]))
+    result))
 
 ;;;;
 

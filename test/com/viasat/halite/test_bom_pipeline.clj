@@ -2908,7 +2908,92 @@
      [92000
       {:$instance-of :ws/A$v1, :a 3, :b 7, :c 12, :f {:$value? true, :$primitive-type :Boolean}, :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}, :$constraints {}, :$instance-literals {"r/ws/X$v1/c1$0" {:x {:$expr #r [:a]}, :y {:$expr #r [:b]}, :$instance-literal-type :ws/X$v1, :$constraints {}}, "r/ws/X$v1/c1$1" {:x {:$expr #r [:b]}, :y {:$expr #r [:c]}, :$instance-literal-type :ws/X$v1, :$constraints {"c1" #r [:f]}}}}
       {:choco-spec {:vars {$_0 :Int, $_1 :Int, $_2 :Int, $_3 :Bool, $_4 :Bool}, :constraints #{$_3}}, :choco-bounds {$_0 3, $_1 7, $_2 12, $_3 #{true false}, $_4 true}, :sym-to-path [$_0 [:a] $_1 [:b] $_2 [:c] $_3 [:f] $_4 [:f :$value?]]}
-      {:$instance-of :ws/A$v1, :a 3, :b 7, :c 12, :f true, :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}])])
+      {:$instance-of :ws/A$v1, :a 3, :b 7, :c 12, :f true, :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1}}}])
+
+    (check-propagate
+     {:ws/P$v1 {:fields {:p :Integer
+                         :q :Integer}
+                :constraints [["c2" '(= 2 (- p q))]]}
+      :ws/X$v1 {:fields {:x :Integer
+                         :y :Integer}
+                :constraints [["c1" '(= 10 (+ x y))]]
+                :refines-to {:ws/P$v1
+                             {:name "r2"
+                              :expr '{:$type :ws/P$v1
+                                      :p x
+                                      :q y}}}}
+      :ws/A$v1 {:fields {:f :Boolean
+                         :a :Integer
+                         :b :Integer
+                         :c :Integer}
+                :refines-to {:ws/X$v1
+                             {:name "r1"
+                              :expr '(if f
+                                       {:$type :ws/X$v1
+                                        :x a
+                                        :y b}
+                                       {:$type :ws/X$v1
+                                        :x b
+                                        :y c})}}}}
+     {:$instance-of :ws/A$v1
+      :f true
+      :b 4}
+     [93000
+      {:$instance-of :ws/A$v1
+       :f true
+       :b 4
+       :a {:$value? true, :$primitive-type :Integer}
+       :c {:$value? true, :$primitive-type :Integer}
+       :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1, :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1}}}}
+       :$constraints {}
+       :$instance-literals {"r/ws/X$v1/c1$0" {:x {:$expr #r [:a]}
+                                              :y {:$expr #r [:b]}
+                                              :$instance-literal-type :ws/X$v1
+                                              :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1}}
+                                              :$constraints {"c1" (or (not #r [:f]) (= 10 (+ #r [:a] 4)))}}
+
+                            "r/ws/X$v1/c1$1" {:x {:$expr #r [:b]}
+                                              :y {:$expr #r [:c]}
+                                              :$instance-literal-type :ws/X$v1
+                                              :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1}}
+                                              :$constraints {"c1" (or #r [:f] (= 10 (+ 4 #r [:c])))}}
+
+                            "r/ws/P$v1/c2$2" {:x {:$expr #r [:a]}
+                                              :y {:$expr #r [:b]}
+                                              :$instance-literal-type :ws/X$v1
+                                              :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1}}
+                                              :$constraints {"c1" (or (not #r [:f]) (= 10 (+ #r [:a] 4)))}}
+
+                            "r/ws/P$v1/c2$3" {:x {:$expr #r [:b]}
+                                              :y {:$expr #r [:c]}
+                                              :$instance-literal-type :ws/X$v1
+                                              :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1}}
+                                              :$constraints {"c1" (or #r [:f] (= 10 (+ 4 #r [:c])))}}
+
+                            "r/ws/P$v1/c2$4" {:x {:$expr #r [:a]}
+                                              :y {:$expr #r [:b]}
+                                              :$instance-literal-type :ws/X$v1
+                                              :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1}}
+                                              :$constraints {"c1" (or (not #r [:f]) (= 10 (+ #r [:a] 4)))}}
+
+                            "r/ws/P$v1/c2$5" {:x {:$expr #r [:b]}
+                                              :y {:$expr #r [:c]}
+                                              :$instance-literal-type :ws/X$v1
+                                              :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1}}
+                                              :$constraints {"c1" (or #r [:f] (= 10 (+ 4 #r [:c])))}}
+
+                            "r/ws/P$v1/c2$6" {:p {:$expr (if #r [:f] #r [:a] #r [:b])}
+                                              :q {:$expr (if #r [:f] #r [:b] #r [:c])}
+                                              :$instance-literal-type :ws/P$v1
+                                              :$constraints {"c2" (= 2 (- (if true #r [:a] 4) (if true 4 #r [:c])))}}}}
+
+      {:choco-spec {:vars {$_0 :Bool, $_1 :Int, $_2 :Int, $_3 :Bool, $_4 :Int, $_5 :Bool}, :constraints #{(or $_0 (= 10 (+ 4 $_4))) (= 2 (- (if true $_2 4) (if true 4 $_4))) (or (not $_0) (= 10 (+ $_2 4)))}}, :choco-bounds {$_0 true, $_1 4, $_2 [-1000 1000], $_3 true, $_4 [-1000 1000], $_5 true}, :sym-to-path [$_0 [:f] $_1 [:b] $_2 [:a] $_3 [:a :$value?] $_4 [:c] $_5 [:c :$value?]]}
+      {:$instance-of :ws/A$v1
+       :f true
+       :b 4
+       :a 6
+       :c {:$ranges #{[-1000 1001]}}
+       :$refinements {:ws/X$v1 {:$instance-of :ws/X$v1, :$refinements {:ws/P$v1 {:$instance-of :ws/P$v1}}}}}])])
 
 #_(check-propagate
    {:ws/B$v1 {:fields {:s :Integer}}
