@@ -168,7 +168,7 @@
   {VariableKeyword VariableValueBom})
 
 (def InstanceLiteralBom
-  "An internal representation used to brin instance literals from spec expression into the bom directly as
+  "An internal representation used to bring instance literals from spec expression into the bom directly as
   objects (i.e. outside of their containing expressions)."
   {VariableKeyword (s/conditional
                     is-expression-bom? ExpressionBom

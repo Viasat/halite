@@ -133,6 +133,8 @@
   "A set of ranges."
   #{RangeConstraint})
 
+(def PrimitiveEnum #{BomValue})
+
 (def UserPrimitiveBom
   "A bom object used to describe a field value. When a :$ranges value is provided, then if the field
   has a value the value must be included in one of the ranges. When an :$enum value is provided,
@@ -142,7 +144,7 @@
   which this bom object is being used for. Note: this is not to be be used to describe a composite
   field. Instead use an InstanceBom for that, possibly including the :$enum and :$value? fields."
   {(s/optional-key :$ranges) RangesConstraint
-   (s/optional-key :$enum) #{BomValue}
+   (s/optional-key :$enum) PrimitiveEnum
    (s/optional-key :$value?) Boolean})
 
 (def NoValueBom
@@ -198,11 +200,13 @@
   been removed)."
   {VariableKeyword UserVariableValueBom})
 
+(def InstanceEnum #{InstanceValue})
+
 (def UserConcreteInstanceBom
   "Indicates that a value in a bom must be and instance of a given spec."
   (assoc UserBareInstanceBom
          :$instance-of SpecId
-         (s/optional-key :$enum) #{InstanceValue}
+         (s/optional-key :$enum) InstanceEnum
          (s/optional-key :$value?) Boolean
          (s/optional-key :$refinements) {SpecId (s/conditional
                                                  is-concrete-instance-bom? (s/recursive #'UserConcreteInstanceBom)
