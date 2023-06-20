@@ -203,7 +203,7 @@
 (def InstanceEnum #{InstanceValue})
 
 (def UserConcreteInstanceBom
-  "Indicates that a value in a bom must be and instance of a given spec."
+  "Indicates that a value in a bom must be an instance of a given spec."
   (assoc UserBareInstanceBom
          :$instance-of SpecId
          (s/optional-key :$enum) InstanceEnum
