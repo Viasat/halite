@@ -137,6 +137,18 @@
 
     ;;
 
+    '(if x 1 0)
+    '{x true}
+    '1
+
+    '(if x 1 0)
+    '{x false}
+    '0
+
+    '(if x 1 0)
+    '{x a}
+    '(if a 1 0)
+
     '(if-value x 1 0)
     '{x a}
     '1
@@ -144,6 +156,10 @@
     '(if-value x 1 0)
     '{x 99}
     '1
+
+    '(if-value x 1 0)
+    '{x $no-value}
+    '0
 
     '(if-value x 1 0)
     '{x (when-value a a)}
@@ -219,6 +235,10 @@
     '(when-value x 1)
     '{x a}
     '1
+
+    '(when-value x 1)
+    '{x $no-value}
+    '$no-value
 
     '(when-value x 1)
     '{x 99}

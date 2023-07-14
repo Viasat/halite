@@ -41,7 +41,7 @@
                            (bom/is-instance-literal-bom? bom))
                      (->> bom
                           bom/to-bare-instance-bom
-                          (merge-with bom-analysis/conjoin-boms (->> (bom-analysis/bom-for-spec spec-id spec)
+                          (merge-with bom-analysis/conjoin-boms (->> (bom-analysis/bom-for-spec bom spec-id spec)
                                                                      bom/to-bare-instance-bom)))
                      (->> bom
                           bom/to-bare-instance-bom))

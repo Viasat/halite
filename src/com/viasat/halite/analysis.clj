@@ -100,11 +100,25 @@
       (list (first expr) [sym (replace-free-vars var-map context coll)]
             (replace-free-vars var-map (conj context sym) body)))
 
+    (= 'if (first expr))
+    (let [[_ s then else] expr
+          replacement-expr (var-map s)]
+      (cond
+        (= true replacement-expr)
+        (replace-free-vars var-map context then)
+
+        (= false replacement-expr)
+        (replace-free-vars var-map context else)
+
+        :default
+        (apply list (first expr) (->> expr
+                                      rest
+                                      (map (partial replace-free-vars var-map context))))))
+
     (= 'if-value (first expr))
     (let [[_ s then else] expr
           replacement-expr (var-map s)
           optional-var (as-optional-var replacement-expr)]
-
       (cond
         optional-var
         (let [new-var-map (assoc var-map s optional-var)]
@@ -117,6 +131,9 @@
           (list 'if-value-let [s replacement-expr]
                 (replace-free-vars new-var-map context then)
                 (replace-free-vars new-var-map context else)))
+
+        (= '$no-value replacement-expr)
+        (replace-free-vars var-map context else)
 
         :default
         (replace-free-vars var-map context then)))
@@ -136,6 +153,9 @@
         (let [new-var-map (assoc var-map s s)]
           (list 'when-value-let [s replacement-expr]
                 (replace-free-vars new-var-map context then)))
+
+        (= '$no-value replacement-expr)
+        '$no-value
 
         :default
         (replace-free-vars var-map context then)))

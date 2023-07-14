@@ -899,40 +899,75 @@
       :ws/A$v1 {:fields {:x :Integer},
                 :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
      {:$instance-of :ws/B$v1,
-      :a {:$instance-of :ws/A$v1,
-          :x 4}}
+      :a {:$instance-of :ws/A$v1}}
      [29000
-      {:$instance-of :ws/B$v1,
-       :a {:x {:$value? false,
-               :$primitive-type :Integer},
-           :$instance-of :ws/A$v1,
-           :$value? true,
-           :$constraints
-           {"c2" (or (= #r [:a :x] 1) (= #r [:a :x] 2) (= #r [:a :x] 3))}},
-       :y {:$enum #{12 14 10},
-           :$value? true,
-           :$primitive-type :Integer},
-       :$constraints {"c1" (= 15 (+ #r [:a :x] #r [:y])),
+      {:$instance-of :ws/B$v1 :a
+       {:$instance-of :ws/A$v1
+        :$value? true
+        :x {:$enum #{1 3 2}
+            :$value? true
+            :$primitive-type :Integer}
+        :$constraints {"c2" (or (= #r [:a :x] 1)
+                                (= #r [:a :x] 2)
+                                (= #r [:a :x] 3))}}
+       :y {:$enum #{12 14 10}
+           :$value? true
+           :$primitive-type :Integer}
+       :$constraints {"c1" (= 15 (+ #r [:a :x] #r [:y]))
                       "c3" (or (= #r [:y] 10) (= #r [:y] 12) (= #r [:y] 14))}}
-      {:choco-spec {:vars {$_0 :Bool,
-                           $_1 :Int,
-                           $_2 :Bool,
-                           $_3 :Int,
-                           $_4 :Bool},
+      {:choco-spec {:vars {$_0 :Bool, $_1 :Int, $_2 :Bool, $_3 :Int, $_4 :Bool}
                     :constraints #{(or (= $_3 10) (= $_3 12) (= $_3 14))
                                    (or (= $_1 1) (= $_1 2) (= $_1 3))
                                    (= 15 (+ $_1 $_3))}},
-       :choco-bounds {$_0 true,
-                      $_1 [-1000 1000],
-                      $_2 false,
-                      $_3 #{12 14 10},
-                      $_4 true},
-       :sym-to-path [$_0 [:a :$value?] $_1 [:a :x] $_2 [:a :x :$value?] $_3 [:y]
+       :choco-bounds {$_0 true
+                      $_1 #{1 3 2}
+                      $_2 true
+                      $_3 #{12 14 10}
+                      $_4 true}
+       :sym-to-path [$_0 [:a :$value?]
+                     $_1 [:a :x]
+                     $_2 [:a :x :$value?]
+                     $_3 [:y]
                      $_4 [:y :$value?]]}
-      {:$instance-of :ws/B$v1,
-       :a {:x {:$value? false},
-           :$instance-of :ws/A$v1},
-       :y {:$enum #{12 14 10}}}])
+      {:$instance-of :ws/B$v1
+       :a {:$instance-of :ws/A$v1
+           :x {:$enum #{1 3}}}
+       :y {:$enum #{12 14}}}])
+
+    (check-propagate
+     {:ws/B$v1 {:fields {:a [:Instance :ws/A$v1],
+                         :y :Integer},
+                :constraints [["c1" '(= 15 (+ (get a :x) y))]
+                              ["c3" '(or (= y 10) (= y 12) (= y 14))]]},
+      :ws/A$v1 {:fields {:x :Integer},
+                :constraints [["c2" '(or (= x 1) (= x 2) (= x 3))]]}}
+     {:$instance-of :ws/B$v1,
+      :a {:$instance-of :ws/A$v1
+          :x 4}}
+     [29010
+      {:$instance-of :ws/B$v1
+       :a {:x 4
+           :$instance-of :ws/A$v1
+           :$value? true
+           :$constraints {"c2" false}}
+       :y {:$enum #{12 14 10}
+           :$value? true
+           :$primitive-type :Integer}
+       :$constraints {"c1" (= 15 (+ 4 #r [:y])),
+                      "c3" (or (= #r [:y] 10) (= #r [:y] 12) (= #r [:y] 14))}}
+      {:choco-spec {:vars {$_0 :Bool, $_1 :Int, $_2 :Int, $_3 :Bool},
+                    :constraints #{(or (= $_2 10) (= $_2 12) (= $_2 14))
+                                   (= 15 (+ 4 $_2))
+                                   false}},
+       :choco-bounds {$_0 true
+                      $_1 4
+                      $_2 #{12 14 10}
+                      $_3 true}
+       :sym-to-path [$_0 [:a :$value?]
+                     $_1 [:a :x]
+                     $_2 [:y]
+                     $_3 [:y :$value?]]}
+      {:$contradiction? true}])
 
     (stanza "optional integer field")
 

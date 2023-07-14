@@ -230,7 +230,7 @@
           (throw (ex-info "unexpected case" {:a a :b b
                                              :merge-1 (merge base-bom-a base-bom-b)
                                              :merge-2 (merge base-bom-b base-bom-a)})))
-                     ;; keep other fields of the bom that we are not accounting for here
+        ;; keep other fields of the bom that we are not accounting for here
         (let [result (if (or (= false (:$value? a)) (= false (:$value? b)))
                        (if (or (= true (:$value? a)) (= true (:$value? b)))
                          bom/contradiction-bom
@@ -368,8 +368,8 @@
 
       (and (= 2 (count bom-types))
            (contains? bom-types 'bom/ExpressionBom))
-                   ;; an expression that appears in an instance literal is not expected to be
-                   ;; combined with another bom, so this simply leaves the ExpressionBom unchanged
+      ;; an expression that appears in an instance literal is not expected to be
+      ;; combined with another bom, so this simply leaves the ExpressionBom unchanged
       (let [[a b] (if (bom/is-expression-bom? a) [a b] [b a])]
         a)
 
@@ -407,22 +407,41 @@
 (defn- make-conjunct [es]
   (apply list 'and es))
 
+(defn- var-map-from-bom [bom]
+  (update-keys (->> bom
+                    bom/to-bare-instance-bom
+                    (filter (fn [[field-name field-value]]
+                              (bom/is-bom-value? field-value)))
+                    (mapcat identity)
+                    (apply hash-map))
+               symbol))
+
 (s/defn compute-tlfc-map
-  [spec-info :- envs/SpecInfo]
-  (let [{:keys [constraints]} spec-info]
-    (->> constraints
-         (map second)
-         make-conjunct
-         analysis/compute-tlfc-map)))
+  ([spec-info :- envs/SpecInfo]
+   (compute-tlfc-map nil spec-info))
+  ([bom
+    spec-info :- envs/SpecInfo]
+   (let [{:keys [constraints]} spec-info
+         constraint-expression (->> constraints
+                                    (map second)
+                                    make-conjunct)
+         constraint-expression (if bom
+                                 (analysis/replace-free-vars (var-map-from-bom bom) constraint-expression)
+                                 constraint-expression)]
+     (analysis/compute-tlfc-map constraint-expression))))
 
 (s/defn bom-for-spec
-  [spec-id
-   spec-info :- envs/SpecInfo]
-  (let [{:keys [fields]} spec-info
-        field-names (->> fields (map first))
-        tlfc-map (compute-tlfc-map spec-info)]
-    (assoc (->> fields
-                (map (partial bom-for-field false tlfc-map))
-                (zipmap field-names)
-                base/no-nil-entries)
-           :$instance-of spec-id)))
+  ([spec-id
+    spec-info :- envs/SpecInfo]
+   (bom-for-spec nil spec-id spec-info))
+  ([bom
+    spec-id
+    spec-info :- envs/SpecInfo]
+   (let [{:keys [fields]} spec-info
+         field-names (->> fields (map first))
+         tlfc-map (compute-tlfc-map bom spec-info)]
+     (assoc (->> fields
+                 (map (partial bom-for-field false tlfc-map))
+                 (zipmap field-names)
+                 base/no-nil-entries)
+            :$instance-of spec-id))))
