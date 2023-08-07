@@ -18,7 +18,7 @@
 (defmacro check [spec-env bom]
   `(->> ~bom
         (op-add-constraints/add-constraints-op ~spec-env)
-        (op-check-constraints/check-constraints-op ~spec-env false)))
+        (op-check-constraints/check-constraints-op ~spec-env)))
 
 (deftest test-basic
   (is (nil?

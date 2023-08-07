@@ -18,7 +18,7 @@
 (set! *warn-on-reflection* true)
 
 (bom-op/def-bom-multimethod check-constraints-op*
-  [spec-env throw? path bom]
+  [spec-env path bom]
   #{Integer
     FixedDecimal
     String
@@ -49,18 +49,11 @@
                                                     constraint-name))))))
                                      (remove nil?)
                                      vec)]
-    (when (and throw?
-               (not (empty? failed-constraint-names)))
-      (format-errors/throw-err (h-err/invalid-instance
-                                {:spec-id (symbol (bom/get-spec-id bom))
-                                 :violated-constraint-labels failed-constraint-names
-                                 :value bom
-                                 :halite-error :constraint-violation})))
     (->> (merge {path (base/no-empty failed-constraint-names)}
                 (->> bom
                      bom/to-bare-instance-bom
                      (map (fn [[field-name field-val]]
-                            (check-constraints-op* spec-env throw? (conj path field-name) field-val)))
+                            (check-constraints-op* spec-env (conj path field-name) field-val)))
                      (reduce into {})))
          base/no-nil-entries
          base/no-empty)))
@@ -69,9 +62,8 @@
 
 (s/defn check-constraints-op
   [spec-env
-   throw?
    bom :- bom/Bom]
-  (let [result (check-constraints-op* spec-env throw? [] bom)]
+  (let [result (check-constraints-op* spec-env [] bom)]
     (when trace
       (pprint/pprint [:check-constraints-op bom :result result]))
     result))
