@@ -290,7 +290,7 @@
 
 ;;;;
 
-(defprotocol LoweredObject
+(potemkin/defprotocol+ LoweredObject
   (is-lowered-object? [this]))
 
 (extend-type Object

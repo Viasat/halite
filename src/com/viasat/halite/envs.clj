@@ -6,6 +6,7 @@
   (:require [clojure.set :as set]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.types :as types]
+            [potemkin]
             [schema.core :as s]))
 
 (set! *warn-on-reflection* true)
@@ -34,7 +35,7 @@
    (s/optional-key :refines-to) {types/NamespacedKeyword Refinement}
    (s/optional-key :abstract?) s/Bool})
 
-(defprotocol SpecEnv
+(potemkin/defprotocol+ SpecEnv
   (lookup-spec* [self spec-id]))
 
 (s/defn lookup-spec :- (s/maybe SpecInfo)
@@ -51,7 +52,7 @@
   [spec-info-map :- {types/NamespacedKeyword SpecInfo}]
   (->SpecEnvImpl spec-info-map))
 
-(defprotocol TypeEnv
+(potemkin/defprotocol+ TypeEnv
   (scope* [self])
   (lookup-type* [self sym])
   (extend-scope* [self sym t]))
@@ -70,7 +71,7 @@
   [tenv :- (s/protocol TypeEnv), sym :- types/BareSymbol, t :- types/HaliteType]
   (extend-scope* tenv sym t))
 
-(defprotocol Env
+(potemkin/defprotocol+ Env
   (bindings* [self])
   (bind* [self sym value]))
 

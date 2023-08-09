@@ -11,12 +11,13 @@
   operation overflows."
   (:require [clojure.pprint :as pprint]
             [clojure.string :as string]
+            [potemkin]
             [schema.core :as s])
   (:import [java.io Writer]))
 
 (set! *warn-on-reflection* true)
 
-(defprotocol FixedDecimalContents
+(potemkin/defprotocol+ FixedDecimalContents
   (string-representation [this]))
 
 (deftype FixedDecimal [^String sign ^String integer ^String fractional]

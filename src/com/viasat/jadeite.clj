@@ -8,7 +8,8 @@
             [clojure.string :as string]
             [com.viasat.halite.base :as base]
             [com.viasat.halite.lib.fixed-decimal :as fixed-decimal]
-            [instaparse.core :as instaparse]))
+            [instaparse.core :as instaparse]
+            [potemkin]))
 
 (set! *warn-on-reflection* true)
 
@@ -43,7 +44,7 @@
     (symbol weird-s)
     (symbol s)))
 
-(defprotocol AddMetadata
+(potemkin/defprotocol+ AddMetadata
   (add-source-metadata-when-possible [obj source-tree]))
 
 (extend-protocol AddMetadata
