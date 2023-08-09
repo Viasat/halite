@@ -264,21 +264,21 @@ As an exercise, we can convert the logic of the constraints. Instead of checking
    {:fields {:solution [:Vec [:Vec :Integer]]},
     :constraints
       #{'{:name "columns",
-          :expr (not
-                  (any? [i [0 1 2 3]]
-                        (not= #{(get-in solution [3 i]) (get-in solution [1 i])
-                                (get-in solution [2 i]) (get-in solution [0 i])}
-                              #{1 4 3 2})))}
+          :expr (not (any?
+                       [i [0 1 2 3]]
+                       (not= #{(get-in solution [3 i]) (get-in solution [1 i])
+                               (get-in solution [2 i]) (get-in solution [0 i])}
+                             #{1 4 3 2})))}
         '{:name "quadrants",
-          :expr (not
-                  (any? [base [[0 0] [0 2] [2 0] [2 2]]]
-                        (let [base-x (get base 0)
-                              base-y (get base 1)]
-                          (not= #{(get-in solution [base-x base-y])
-                                  (get-in solution [(inc base-x) (inc base-y)])
-                                  (get-in solution [(inc base-x) base-y])
-                                  (get-in solution [base-x (inc base-y)])}
-                                #{1 4 3 2}))))}
+          :expr (not (any? [base [[0 0] [0 2] [2 0] [2 2]]]
+                           (let [base-x (get base 0)
+                                 base-y (get base 1)]
+                             (not= #{(get-in solution [base-x base-y])
+                                     (get-in solution
+                                             [(inc base-x) (inc base-y)])
+                                     (get-in solution [(inc base-x) base-y])
+                                     (get-in solution [base-x (inc base-y)])}
+                                   #{1 4 3 2}))))}
         '{:name "rows",
           :expr (not (any? [r solution] (not= (concat #{} r) #{1 4 3 2})))}}}}
 ```

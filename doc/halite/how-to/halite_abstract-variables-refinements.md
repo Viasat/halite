@@ -19,8 +19,8 @@ The way to use an abstract field value as the result value in a refinement is to
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Canine"}}}},
- :spec/Pet$v1 {:fields {:name :String,
-                        :animal :spec/Animal},
+ :spec/Pet$v1 {:fields {:animal :spec/Animal,
+                        :name :String},
                :refines-to {:spec/Animal {:name "refine_to_Animal",
                                           :expr '(refine-to animal
                                                             :spec/Animal)}}}}
@@ -61,8 +61,8 @@ Even if we happen to know the concrete type of an abstract field is of the right
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Canine"}}}},
- :spec/Pet$v2 {:fields {:name :String,
-                        :animal :spec/Animal},
+ :spec/Pet$v2 {:fields {:animal :spec/Animal,
+                        :name :String},
                :refines-to {:spec/Dog {:name "refine_to_Dog",
                                        :expr 'animal}}}}
 ```
@@ -96,8 +96,8 @@ If instead, we attempt to define the refinement of type animal, but still try to
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Canine"}}}},
- :spec/Pet$v3 {:fields {:name :String,
-                        :animal :spec/Animal},
+ :spec/Pet$v3 {:fields {:animal :spec/Animal,
+                        :name :String},
                :refines-to {:spec/Animal {:name "refine_to_Animal",
                                           :expr 'animal}}}}
 ```

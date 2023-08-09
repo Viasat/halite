@@ -248,18 +248,17 @@ Now we can construct the following events.
 We can verify that all of these events produce the expected abstract events.
 
 ```clojure
-(map
-  [e
-   [{:$type :tutorials.vending/CoinEvent$v1,
-     :denomination "nickel"}
-    {:$type :tutorials.vending/CoinEvent$v1,
-     :denomination "dime"}
-    {:$type :tutorials.vending/CoinEvent$v1,
-     :denomination "quarter"}
-    {:$type :tutorials.vending/VendEvent$v1,
-     :item "snack"}
-    {:$type :tutorials.vending/VendEvent$v1,
-     :item "beverage"}]]
+(map [e
+      [{:$type :tutorials.vending/CoinEvent$v1,
+        :denomination "nickel"}
+       {:$type :tutorials.vending/CoinEvent$v1,
+        :denomination "dime"}
+       {:$type :tutorials.vending/CoinEvent$v1,
+        :denomination "quarter"}
+       {:$type :tutorials.vending/VendEvent$v1,
+        :item "snack"}
+       {:$type :tutorials.vending/VendEvent$v1,
+        :item "beverage"}]]
   (refine-to e :tutorials.vending/AbstractEvent$v1))
 
 
@@ -388,40 +387,41 @@ We have come this far we might as well add one more spec that ties it all togeth
 From an initial state and a sequence of events we can compute the final state.
 
 ```clojure
-(refine-to {:$type :tutorials.vending/Behavior$v1,
-            :initial {:$type :tutorials.vending/InitialState$v1,
-                      :balance #d "0.00",
-                      :beverageCount 10,
-                      :snackCount 15},
-            :events [{:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "quarter"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "nickel"}
-                     {:$type :tutorials.vending/VendEvent$v1,
-                      :item "snack"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "dime"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "quarter"}
-                     {:$type :tutorials.vending/VendEvent$v1,
-                      :item "snack"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "dime"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "nickel"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "dime"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "quarter"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "quarter"}
-                     {:$type :tutorials.vending/CoinEvent$v1,
-                      :denomination "quarter"}
-                     {:$type :tutorials.vending/VendEvent$v1,
-                      :item "beverage"}
-                     {:$type :tutorials.vending/VendEvent$v1,
-                      :item "beverage"}]}
-           :tutorials.vending/State$v1)
+(refine-to
+  {:$type :tutorials.vending/Behavior$v1,
+   :initial {:$type :tutorials.vending/InitialState$v1,
+             :balance #d "0.00",
+             :beverageCount 10,
+             :snackCount 15},
+   :events [{:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "quarter"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "nickel"}
+            {:$type :tutorials.vending/VendEvent$v1,
+             :item "snack"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "dime"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "quarter"}
+            {:$type :tutorials.vending/VendEvent$v1,
+             :item "snack"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "dime"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "nickel"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "dime"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "quarter"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "quarter"}
+            {:$type :tutorials.vending/CoinEvent$v1,
+             :denomination "quarter"}
+            {:$type :tutorials.vending/VendEvent$v1,
+             :item "beverage"}
+            {:$type :tutorials.vending/VendEvent$v1,
+             :item "beverage"}]}
+  :tutorials.vending/State$v1)
 
 
 ;-- result --

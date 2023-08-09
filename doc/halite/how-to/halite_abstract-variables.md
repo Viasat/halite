@@ -19,17 +19,17 @@ Consider the following specs, where a pet is composed of an animal object and a 
             :refines-to {:spec/Animal {:name "refine_to_Animal",
                                        :expr '{:$type :spec/Animal,
                                                :species "Canine"}}}},
- :spec/Pet {:fields {:name :String,
-                     :animal :spec/Animal}}}
+ :spec/Pet {:fields {:animal :spec/Animal,
+                     :name :String}}}
 ```
 
 The animal spec cannot be directly used to make a pet instance.
 
 ```clojure
-{:name "Silver",
- :$type :spec/Pet,
+{:$type :spec/Pet,
  :animal {:$type :spec/Animal,
-          :species "Equine"}}
+          :species "Equine"},
+ :name "Silver"}
 
 
 ;-- result --
@@ -39,17 +39,17 @@ The animal spec cannot be directly used to make a pet instance.
 Instead, to construct a pet instance, a dog or cat instance must be used for the animal field.
 
 ```clojure
-{:name "Rex",
- :$type :spec/Pet,
+{:$type :spec/Pet,
  :animal {:$type :spec/Dog,
-          :breed "Golden Retriever"}}
+          :breed "Golden Retriever"},
+ :name "Rex"}
 ```
 
 ```clojure
-{:name "Tom",
- :$type :spec/Pet,
+{:$type :spec/Pet,
  :animal {:$type :spec/Cat,
-          :lives 9}}
+          :lives 9},
+ :name "Tom"}
 ```
 
 In order to access the value in the animal field as an animal object, the value must be refined to its abstract type.

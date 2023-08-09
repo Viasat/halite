@@ -66,18 +66,18 @@ The following is a full model for the grocery delivery business.
           :expr '{:$type :tutorials.grocery/GroceryStoreSubscription$v1,
                   :name "Acme Foods",
                   :storeCountry subscriberCountry,
-                  :perkIds
-                    (map [p
-                          (sort-by [pi
+                  :perkIds (map [p
+                                 (sort-by
+                                   [pi
                                     (map [p perks]
                                       (refine-to p :tutorials.grocery/Perk$v1))]
                                    (get pi :perkId))]
-                      (get p :perkId))},
+                             (get p :perkId))},
           :extrinsic? true}}},
  :tutorials.grocery/GroceryStoreSubscription$v1
-   {:fields {:name :String,
-             :perkIds [:Vec :Integer],
-             :storeCountry :tutorials.grocery/Country$v1},
+   {:fields {:perkIds [:Vec :Integer],
+             :storeCountry :tutorials.grocery/Country$v1,
+             :name :String},
     :constraints #{'{:name "storeCountryServed",
                      :expr (or (and (= name "Acme Foods")
                                     (contains? #{"Canada" "US" "Costa Rica"}
@@ -107,15 +107,15 @@ The following is a full model for the grocery delivery business.
 Taking it one part at a time. Consider first the country model. This is modeling the countries where the company is operating. This is a valid country instance.
 
 ```clojure
-{:name "Canada",
- :$type :tutorials.grocery/Country$v1}
+{:$type :tutorials.grocery/Country$v1,
+ :name "Canada"}
 ```
 
 Whereas this is not a valid instance.
 
 ```clojure
-{:name "Germany",
- :$type :tutorials.grocery/Country$v1}
+{:$type :tutorials.grocery/Country$v1,
+ :name "Germany"}
 
 
 ;-- result --
@@ -181,8 +181,8 @@ The overall grocery service spec now pulls together perks along with the subscri
  :feePerMonth #d "9.99",
  :perks #{{:$type :tutorials.grocery/FreeDeliveryPerk$v1,
            :usesPerMonth 1}},
- :subscriberCountry {:name "Canada",
-                     :$type :tutorials.grocery/Country$v1}}
+ :subscriberCountry {:$type :tutorials.grocery/Country$v1,
+                     :name "Canada"}}
 ```
 
 While the following violates the constraint that limits the total monthly charges for perks.
@@ -195,8 +195,8 @@ While the following violates the constraint that limits the total monthly charge
            :prescriptionID "XYZ:123"}
           {:$type :tutorials.grocery/FreeDeliveryPerk$v1,
            :usesPerMonth 1}},
- :subscriberCountry {:name "Canada",
-                     :$type :tutorials.grocery/Country$v1}}
+ :subscriberCountry {:$type :tutorials.grocery/Country$v1,
+                     :name "Canada"}}
 
 
 ;-- result --
@@ -222,8 +222,8 @@ This spec models the service from the subscriber's perspective, but now the busi
 {:name "Acme Foods",
  :$type :tutorials.grocery/GroceryStoreSubscription$v1,
  :perkIds [101],
- :storeCountry {:name "Canada",
-                :$type :tutorials.grocery/Country$v1}}
+ :storeCountry {:$type :tutorials.grocery/Country$v1,
+                :name "Canada"}}
 ```
 
 This final object is now in a form that the grocery store understands.

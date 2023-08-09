@@ -34,9 +34,9 @@ This spec can be instantiated as:
 A spec can have multiple fields
 
 ```clojure
-{:spec/Dog$v4 {:fields {:name :String,
-                        :age :Integer,
-                        :colors [:Vec :String]}}}
+{:spec/Dog$v4 {:fields {:age :Integer,
+                        :colors [:Vec :String],
+                        :name :String}}}
 ```
 
 ```clojure
