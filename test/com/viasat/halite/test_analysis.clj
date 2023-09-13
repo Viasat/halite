@@ -840,6 +840,23 @@
                           '{a {:coll-elements {:enum #{3900}}}}
                           '{a {:coll-elements {:enum #{3900}}}}]
 
+    '(and (= y 3950)
+          (every? [x a] true))
+    '[(= y 3950)
+      {y (= y 3950)}
+      {y {:enum #{3950}}}
+      {y {:enum #{3950}}}]
+
+    '(every? [x a] (= (concat #{3960} x) #{3960}))
+    '[[true] nil {} {}]
+
+    '(and (= y 3975)
+          (every? [x a] (= (concat #{1} x) #{1})))
+    '[(and (= y 3975) [true])
+      {y (= y 3975), nil [true]}
+      {y {:enum #{3975}}}
+      {y {:enum #{3975}}}]
+
     '(every? [x a]
              (and (= x 4000)
                   y)) [true nil {} {}]

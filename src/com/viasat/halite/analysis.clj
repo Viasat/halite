@@ -349,6 +349,8 @@
     (= 1 (count (gather-free-vars expr))) {(first (gather-free-vars expr))
                                            expr}
 
+    (= [true] expr) nil
+
     :default (throw (ex-info "unexpected expression" {:expr expr}))))
 
 (defn- tlfc-data-or [xs0]
