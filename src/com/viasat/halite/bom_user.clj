@@ -114,10 +114,14 @@
 (declare ConcreteInstanceBom)
 
 (def IntegerRangeConstraint
-  [(s/one Number :start) (s/one Number :end)])
+  (s/conditional
+   #(nil? (first %)) [(s/one (s/maybe Number) :start) (s/one Number :end)]
+   :else [(s/one Number :start) (s/one (s/maybe Number) :end)]))
 
 (def FixedDecimalRangeConstraint
-  [(s/one FixedDecimal :start) (s/one FixedDecimal :end)])
+  (s/conditional
+   #(nil? (first %)) [(s/one (s/maybe FixedDecimal) :start) (s/one FixedDecimal :end)]
+   :else [(s/one FixedDecimal :start) (s/one (s/maybe FixedDecimal) :end)]))
 
 (def RangeConstraint
   "Indicates a range of numerical values, where the first value is included and the final value is
